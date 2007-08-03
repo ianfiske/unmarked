@@ -5,12 +5,13 @@
 Fit the latent abundance N-mixture model (Royle 2004, Kery and Royle 2005). 
 }
 \usage{
-pcount(stateformula, detformula, y, covdata.site = NULL,
+pcount(stateformula, detformula, data, y, covdata.site = NULL,
        covdata.obs = NULL, K = NULL, mixture = "P")
 }
 \arguments{
   \item{stateformula}{ formula for covariates of occurrance. }
   \item{detformula}{ formula for covariates of detection. }
+  \item{data}{ list containing y, covdata.site, and covdata.obs}
   \item{y}{M x J observation matrix of counts. }
   \item{covdata.site}{ optional data frame containing site-specific covariates. }
   \item{covdata.obs}{ optional array or list containing covariate data. }

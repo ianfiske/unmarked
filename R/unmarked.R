@@ -4,15 +4,17 @@
 # site vectors can be in the obsdata list
 
 occu <-
-function (stateformula, detformula, y, covdata.site = NULL, covdata.obs = NULL)
+function(stateformula, detformula,
+         data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
+         y, covdata.site = NULL, covdata.obs = NULL)
 {
-  arranged <- arrangeData(y, covdata.site, covdata.obs)
-  sitedata <- arranged$sitedata
-  obsdata <- arranged$obsdata
-  cleaned <- handleNA(y, sitedata, obsdata)
+
+  arranged <- arrangeData(data)
+  cleaned <- handleNA(arranged)
   y <- cleaned$y
-  sitedata <- cleaned$sitedata
-  obsdata <- cleaned$obsdata    
+  sitedata <- cleaned$covdata.site
+  obsdata <- cleaned$covdata.obs
+
   design <- getDesign(stateformula = stateformula, detformula = detformula,
     y = y, sitedata = sitedata, obsdata = obsdata)  
   nOP <- design$nOP
@@ -52,15 +54,17 @@ function (stateformula, detformula, y, covdata.site = NULL, covdata.obs = NULL)
 # fit the RN model of Royle and Nichols (2003)
 
 occuRN <- 
-function(stateformula, detformula, y, covdata.site = NULL, covdata.obs = NULL)
+function(stateformula, detformula,
+         data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
+         y, covdata.site = NULL, covdata.obs = NULL)
 {
-  arranged <- arrangeData(y, covdata.site, covdata.obs)
-  sitedata <- arranged$sitedata
-  obsdata <- arranged$obsdata
-  cleaned <- handleNA(y, sitedata, obsdata)
+
+  arranged <- arrangeData(data)
+  cleaned <- handleNA(arranged)
   y <- cleaned$y
-  sitedata <- cleaned$sitedata
-  obsdata <- cleaned$obsdata
+  sitedata <- cleaned$covdata.site
+  obsdata <- cleaned$covdata.obs
+
   design <- getDesign(stateformula = stateformula, detformula = detformula,
     y = y, sitedata = sitedata, obsdata = obsdata)
   nOP <- design$nOP
@@ -115,19 +119,17 @@ function(stateformula, detformula, y, covdata.site = NULL, covdata.obs = NULL)
 
 # fit the N-mixture point count model (Royle 2004)
 pcount <-
-function(stateformula, detformula, y, covdata.site = NULL, covdata.obs = NULL, K = NULL, 
-  mixture = "P")
+function(stateformula, detformula,
+         data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
+         y, covdata.site = NULL, covdata.obs = NULL, K = NULL, mixture = "P")
 { 
   if ((mixture %in% c("P","NB")) == FALSE) stop("Mixture familiy not recognized. Please choose \"P\" or \"NB\".")
   
-  arranged <- arrangeData(y, covdata.site, covdata.obs)
-  sitedata <- arranged$sitedata
-  obsdata <- arranged$obsdata
-  
-  cleaned <- handleNA(y, sitedata, obsdata)
+  arranged <- arrangeData(data)
+  cleaned <- handleNA(arranged)
   y <- cleaned$y
-  sitedata <- cleaned$sitedata
-  obsdata <- cleaned$obsdata    
+  sitedata <- cleaned$covdata.site
+  obsdata <- cleaned$covdata.obs
 
   design <- getDesign(stateformula = stateformula, detformula = detformula,
     y = y, sitedata = sitedata, obsdata = obsdata)
@@ -197,17 +199,16 @@ function(stateformula, detformula, y, covdata.site = NULL, covdata.obs = NULL, K
 }
 
 mnMix <-
-function(stateformula = ~ 1, detformula = ~ 1, y, constraint = NULL,
-         covdata.site = NULL, covdata.obs = NULL)
+function(stateformula = ~ 1, detformula = ~ 1,
+         data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
+         y, covdata.site = NULL, covdata.obs = NULL, constraint = NULL)
 {
-  arranged <- arrangeData(y, covdata.site, covdata.obs)
-  sitedata <- arranged$sitedata
-  obsdata <- arranged$obsdata
-  
-  cleaned <- handleNA(y, sitedata, obsdata)
+
+  arranged <- arrangeData(data)
+  cleaned <- handleNA(arranged)
   y <- cleaned$y
-  sitedata <- cleaned$sitedata
-  obsdata <- cleaned$obsdata    
+  sitedata <- cleaned$covdata.site
+  obsdata <- cleaned$covdata.obs
   
   design <- getDesign(stateformula = stateformula, detformula = detformula,
     y = y, sitedata = sitedata, obsdata = obsdata)
@@ -327,20 +328,16 @@ function(stateformula = ~ 1, detformula = ~ 1, y, constraint = NULL,
 }
 
 markovMN <-
-function(stateformula = ~ 1, detformula = ~ 1, y, detconstraint = NULL,
-         covdata.site = NULL, covdata.obs = NULL, phiconstraint = NULL, J)
+function(stateformula = ~ 1, detformula = ~ 1,
+         data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
+         y, covdata.site = NULL, covdata.obs = NULL, detconstraint = NULL,
+         phiconstraint = NULL, J)
 {
-#  require(Matrix)
-  arranged <- arrangeData(y, covdata.site, covdata.obs)
-  sitedata <- arranged$sitedata
-  obsdata <- arranged$obsdata
-  
-  cleaned <- handleNA(y, sitedata, obsdata)
+  arranged <- arrangeData(data)
+  cleaned <- handleNA(arranged)
   y <- cleaned$y
-  sitedata <- cleaned$sitedata
-  obsdata <- cleaned$obsdata    
-
-
+  sitedata <- cleaned$covdata.site
+  obsdata <- cleaned$covdata.obs
 
   M <- nrow(y)
   nY <- ncol(y)/J

@@ -5,12 +5,13 @@
   Fits occupancy models like in Chapter 3 of Royle and Dorazio 2008 and MacKenzie et al (2006).  The user can specify covariates of the probability of occurrence at the site level and the probability of detection at either the site or observation level.
 }
 \usage{
-occu(stateformula, detformula, y, covdata.site = NULL,
+occu(stateformula, detformula, data, y, covdata.site = NULL,
      covdata.obs = NULL)
 }
 \arguments{
   \item{stateformula}{ formula for covariates of occurrance. }
   \item{detformula}{ formula for covariates of detection. }
+  \item{data}{ list containing y, covdata.site, and covdata.obs}
   \item{y}{M x J observation matrix of 0's and 1's.  }
   \item{covdata.site}{ optional data frame containing site-specific covariates. }
   \item{covdata.obs}{ optional array or list containing covariate data. }

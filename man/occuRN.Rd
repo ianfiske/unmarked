@@ -5,12 +5,13 @@
 This function fits the the occupancy model described in Royle and Nichols (2003) and Royle and Dorazio (2008, Chapter 4).  The user can specify covariates for the latent abundance process and the detection process.
 }
 \usage{
-occuRN(stateformula, detformula, y, covdata.site = NULL,
+occuRN(stateformula, detformula, data, y, covdata.site = NULL,
        covdata.obs = NULL)
 }
 \arguments{
   \item{stateformula}{ formula for covariates of occurrance. }
   \item{detformula}{ formula for covariates of detection. }
+  \item{data}{ list containing y, covdata.site, and covdata.obs}
   \item{y}{ M x J observation matrix of 0's and 1's. }
   \item{covdata.site}{ optional data frame containing site-specific covariates. }
   \item{covdata.obs}{ optional array or list containing covariate data (see \emph{Details}. }

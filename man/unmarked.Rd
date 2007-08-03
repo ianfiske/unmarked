@@ -16,8 +16,8 @@ process.
 \tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.1-4\cr
-Date: \tab 2007-07-24\cr
+Version: \tab 0.1-5\cr
+Date: \tab 2007-08-03\cr
 License: \tab GPL version 2 or newer\cr
 }
 
@@ -35,14 +35,18 @@ multinomial mixture model to categorical observations (Royle and Link
 affect the detection process and several also allow covariates for the
 state process.
 
-\strong{Data:}  All model-fitting functions analyze data that has
-been collected from M sites with up to J samples taken at each site,
-assuming closure within sites.  The only exception is \command{markovMN}
-which uses data from multiple time periods, explicitly modeling the lack
-of closure as a dynamic process.  See the documentation for
+\strong{Data:} All model-fitting functions analyze data that has been
+collected from M sites with up to J samples taken at each site, assuming
+closure within sites.  The only exception is \command{markovMN} which
+uses data from multiple time periods, explicitly modeling the lack of
+closure as a dynamic process.  See the documentation for
 \command{\link{markovMN}} for its data requirements.  In general, survey
 data consist of two fundamental components: \dfn{observation} and
-\dfn{covariate} data.
+\dfn{covariate} data.  All data may be supplied with the argument
+\code{data}.  \code{data} is a list containing \code{y},
+\code{covdata.site}, and \code{covdata.obs}.  The components of
+\code{data} must have these names.
+
 
 \dfn{Observation} data are the observed responses, such as 0's and 1's
 for occurrence data or non-negative integers for point count data.

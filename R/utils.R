@@ -271,10 +271,13 @@ function(lam, r)
 # function to get rid of observations that have NA for any covariate
 # and sites with NA's for all observations.
 handleNA <-
-function(y, sitedata, obsdata)
+function(data)
 {
   library(abind)
-
+  y <- data$y
+  sitedata <- data$covdata.site
+  obsdata <- data$covdata.obs
+  
   obsdata.ar <- abind(obsdata, along = 3)
   obsdata.NA <- is.na(obsdata.ar)
   obsdata.NA <- apply(obsdata.NA, c(1,2), any)
@@ -296,7 +299,7 @@ function(y, sitedata, obsdata)
       obsdata[[i]] <- obsdata[[i]][ - to.rm, ]
     }
   }
-  list(y = y, sitedata = sitedata, obsdata = obsdata)
+  list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
 }
 
 # function to move data around:
@@ -305,8 +308,12 @@ function(y, sitedata, obsdata)
 # puts all site covariates back into obsdata
 # needed because all site vars need to be available for both state and det models
 arrangeData <-
-function(y, sitedata = NULL, obsdata = NULL)
+function(data)
 {
+  y <- data$y
+  sitedata <- data$covdata.site
+  obsdata <- data$covdata.obs
+  
   J <- ncol(y)
   M <- nrow(y)
   nSV <- length(sitedata)
@@ -349,5 +356,5 @@ function(y, sitedata = NULL, obsdata = NULL)
   obsvars <- names(obsdata)
   nOV <- length(obsdata) # update length 
   
-  list(sitedata = sitedata, obsdata = obsdata)
+  list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
 }
