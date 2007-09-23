@@ -64,7 +64,8 @@ function(dfin)
   sites <- unique(sitecol)
   nSite <- length(sites)
   nStop <- colSums(dTab)
-  
+  nStop <- nStop[nStop > 0]  # get rid of the stops for sites with no stops  
+
   obsNum <- numeric(length(sitecol))
   # for each site i, replace stops with 1:nStop[i]
   for(i in 1:nSite){
@@ -166,14 +167,14 @@ formatMult <-
 function(df.in)
 {
   require(reshape)
-  years <- unique(df.in[[1]])
+  years <- sort(unique(df.in[[1]]))
   df.obs <- list()
   nsamp <- numeric()
-  maxsamp <- max(table(df.in[[1]], df.in[[2]]))
+  maxsamp <- max(table(df.in[[1]], df.in[[2]])) # the maximum samples/yr
   for(t in 1:length(years)){
-    df.t <- df.in[df.in[[1]] == years[t],]
-    df.t <- df.t[,-1]
-    df.t <- dateToObs(df.t)
+    df.t <- df.in[df.in[[1]] == years[t],] # subset for current year
+    df.t <- df.t[,-1] # remove year column
+    df.t <- dateToObs(df.t)   
     nsamp <- max(df.t$obsNum)
     if(nsamp < maxsamp) {
       newrows <- df.t[maxsamp - nsamp, ]
