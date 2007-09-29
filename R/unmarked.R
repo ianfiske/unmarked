@@ -10,7 +10,7 @@ function(stateformula, detformula,
 {
 
   arranged <- arrangeData(data)
-  cleaned <- handleNA(arranged)
+  cleaned <- handleNA(arranged, stateformula, detformula)
   y <- cleaned$y
   sitedata <- cleaned$covdata.site
   obsdata <- cleaned$covdata.obs
@@ -60,7 +60,7 @@ function(stateformula, detformula,
 {
 
   arranged <- arrangeData(data)
-  cleaned <- handleNA(arranged)
+  cleaned <- handleNA(arranged, stateformula, detformula)
   y <- cleaned$y
   sitedata <- cleaned$covdata.site
   obsdata <- cleaned$covdata.obs
@@ -126,7 +126,7 @@ function(stateformula, detformula,
   if ((mixture %in% c("P","NB")) == FALSE) stop("Mixture familiy not recognized. Please choose \"P\" or \"NB\".")
   
   arranged <- arrangeData(data)
-  cleaned <- handleNA(arranged)
+  cleaned <- handleNA(arranged, stateformula, detformula)
   y <- cleaned$y
   sitedata <- cleaned$covdata.site
   obsdata <- cleaned$covdata.obs
@@ -205,7 +205,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
 {
 
   arranged <- arrangeData(data)
-  cleaned <- handleNA(arranged)
+  cleaned <- handleNA(arranged, stateformula, detformula)
   y <- cleaned$y
   sitedata <- cleaned$covdata.site
   obsdata <- cleaned$covdata.obs
@@ -333,8 +333,9 @@ function(stateformula = ~ 1, detformula = ~ 1,
          y, covdata.site = NULL, covdata.obs = NULL, detconstraint = NULL,
          phiconstraint = NULL, J)
 {
+
   arranged <- arrangeData(data)
-  cleaned <- handleNA(arranged)
+  cleaned <- handleNA(arranged, stateformula, detformula)
   y <- cleaned$y
   sitedata <- cleaned$covdata.site
   obsdata <- cleaned$covdata.obs

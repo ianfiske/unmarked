@@ -174,7 +174,7 @@ function(df.in)
   for(t in 1:length(years)){
     df.t <- df.in[df.in[[1]] == years[t],] # subset for current year
     df.t <- df.t[,-1] # remove year column
-    df.t <- dateToObs(df.t)   
+    df.t <- dateToObs(df.t)
     nsamp <- max(df.t$obsNum)
     if(nsamp < maxsamp) {
       newrows <- df.t[maxsamp - nsamp, ]
@@ -186,15 +186,23 @@ function(df.in)
   }
   dfnm <- colnames(df.obs)
   nV <- length(dfnm) - 1  # last variable is obsNum
+
+  # create y matrix using reshape
   expr <- substitute(recast(df.obs, var1 ~ year + obsNum + variable, 
     id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[4]), 
                                 list(var1 = as.name(dfnm[2])))
   y <- as.matrix(eval(expr)[,-1])
+
+  # create obsdata with reshape
+  # include date (3rd col) and other measured vars
   expr <- substitute(recast(df.obs, newvar ~ year + obsNum ~ variable, 
-    id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[5:nV]), 
+    id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[c(3,5:nV)]), 
                                 list(newvar=as.name(dfnm[2])))
   obsvars <- eval(expr)
-  list(ymat=y, obsdata = obsvars)
+
+  rownames(y) <- dimnames(obsvars)[[1]]
+  colnames(y) <- dimnames(obsvars)[[2]]
+  list(ymat=y, covdata.obs = obsvars)
 }
 
 # function to take data of form
@@ -271,23 +279,44 @@ function(lam, r)
 
 # function to get rid of observations that have NA for any covariate
 # and sites with NA's for all observations.
+# Only throw out observations for which variables in varlist are missing.
+# still need to implement for sitedata... unless sitedata is now vestigule
 handleNA <-
-function(data)
+function(data, stateformula, detformula)
 {
   library(abind)
   y <- data$y
   sitedata <- data$covdata.site
   obsdata <- data$covdata.obs
+
+  # get variables to handle, remove others
+  state.vars <- attr(terms(stateformula),"term.labels")
+  obs.vars <- attr(terms(detformula),"term.labels")
   
   obsdata.ar <- abind(obsdata, along = 3)
+
+  # remove variables that are not used
+  sitedata <- sitedata[,c("ones",state.vars)]   # CHECK THIS LINE
+  obsdata.ar <- obsdata.ar[,,c("ones",obs.vars)]
+
   obsdata.NA <- is.na(obsdata.ar)
   obsdata.NA <- apply(obsdata.NA, c(1,2), any)
-  if(any(!is.na(y) & obsdata.NA)) warning("NA(s) found in 'covdata.obs' that were not in 'y' matrix; corresponding observations 'y' were replace with NA")
+
+  # determine which sites have problem to give informative warnings.
+  whichsites <- names(which(apply(!is.na(y) & obsdata.NA, 1, any)))
+  whichsites <- paste(whichsites, collapse = ", ")
+
+  if(any(!is.na(y) & obsdata.NA)) {
+    warning("NA(s) found in 'covdata.obs' that were not in 'y' matrix; corresponding observations 'y' were replaced with NA")
+    warning(sprintf("Sites were %s", whichsites))
+  }
   is.na(y) <- (is.na(y) | obsdata.NA) # replace 'y' with NA if cov is NA
   if(any(apply(is.na(y), 1, all))) warning("site(s) found with NA's for all observations in 'y'; these sites cannot be analyzed and have been removed")
-  
+
   sitedata.na <- is.na(sitedata)
-  sitedata.na <- apply(sitedata.na, 1, any)
+  if(!is.null(dim(sitedata.na))) {
+    sitedata.na <- apply(sitedata.na, 1, any)
+  }
   if(any(sitedata.na)) warning("NA(s) found in 'covdata.site'. site(s) were removed from 'y' and covariate data")
 
   # remove sites that have either all NA or an NA in any site covariate
@@ -311,6 +340,7 @@ function(data)
 arrangeData <-
 function(data)
 {
+
   y <- data$y
   sitedata <- data$covdata.site
   obsdata <- data$covdata.obs
