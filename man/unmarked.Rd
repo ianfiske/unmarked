@@ -16,8 +16,8 @@ process.
 \tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.1-5\cr
-Date: \tab 2007-08-03\cr
+Version: \tab 0.1-6\cr
+Date: \tab 2007-10-04\cr
 License: \tab GPL version 2 or newer\cr
 }
 
