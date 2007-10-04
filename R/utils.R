@@ -289,6 +289,15 @@ function(data, stateformula, detformula)
   sitedata <- data$covdata.site
   obsdata <- data$covdata.obs
 
+  # ensure that data are names for giving informative warnings
+  if(is.null(rownames(y))) rownames(y) <- 1:nrow(y)
+##   if(!is.null(sitedata)) {
+##     if(is.null(rownames(sitedata))) rownames(y) <- 1:nrow(sitedata)
+##   }
+##   if(!is.null(obsdata)) {
+##     if(is.null(rownames(obsdata))) rownames(y) <- 1:nrow(obsdata)
+##   }
+  
   # get variables to handle, remove others
   state.vars <- attr(terms(stateformula),"term.labels")
   obs.vars <- attr(terms(detformula),"term.labels")
@@ -307,11 +316,20 @@ function(data, stateformula, detformula)
   whichsites <- paste(whichsites, collapse = ", ")
 
   if(any(!is.na(y) & obsdata.NA)) {
-    warning("NA(s) found in 'covdata.obs' that were not in 'y' matrix; corresponding observations 'y' were replaced with NA")
-    warning(sprintf("Sites were %s", whichsites))
+    warning(sprintf("NA(s) found in 'covdata.obs' that were not in 'y' matrix.
+Corresponding observation(s) 'y' were replaced with NA.
+Observations removed from site(s) %s",whichsites))
   }
   is.na(y) <- (is.na(y) | obsdata.NA) # replace 'y' with NA if cov is NA
-  if(any(apply(is.na(y), 1, all))) warning("site(s) found with NA's for all observations in 'y'; these sites cannot be analyzed and have been removed")
+
+  # look for all NA's for a site
+  whichsites <- names(which(apply(is.na(y),1,all)))
+  whichsites <- paste(whichsites, collapse = ", ")
+  if(any(apply(is.na(y), 1, all))) {
+    warning(sprintf("Site(s) found with NA's for all observations in 'y'.
+Site(s) %s cannot be analyzed and have been removed.",whichsites))
+  }
+
 
   sitedata.na <- is.na(sitedata)
   if(!is.null(dim(sitedata.na))) {
@@ -322,6 +340,7 @@ function(data, stateformula, detformula)
   # remove sites that have either all NA or an NA in any site covariate
   # from y matrix and all covariate data
   to.rm <- which(sitedata.na | apply(is.na(y), 1, all))
+  sitedata <- as.matrix(sitedata)
   if(length(to.rm) > 0) {
     y <- y[ - to.rm, ]  # remove from y
     sitedata <- sitedata[ - to.rm, ]  # remove from sitedata
@@ -348,7 +367,7 @@ function(data)
   J <- ncol(y)
   M <- nrow(y)
   nSV <- length(sitedata)
-  
+
   if(is.null(obsdata)) obsdata <- list(ones = matrix(1,M,J))
 
   # if obsdata is an array, coerce it to a list
