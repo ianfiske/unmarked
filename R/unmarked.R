@@ -124,7 +124,7 @@ function(stateformula, detformula,
          y, covdata.site = NULL, covdata.obs = NULL, K = NULL, mixture = "P")
 { 
   if ((mixture %in% c("P","NB")) == FALSE) stop("Mixture familiy not recognized. Please choose \"P\" or \"NB\".")
-
+  
   arranged <- arrangeData(data)
   cleaned <- handleNA(arranged, stateformula, detformula)
   y <- cleaned$y
