@@ -125,7 +125,7 @@ formatWide <-
 function(dfin)
 {
   # throw placeholder into sitedata
-  sitedata <- data.frame(one = rep(1,nrow(dfin)))
+  sitedata <- data.frame(ones = rep(1,nrow(dfin)))
   
   obsdata <- list()
 
@@ -299,13 +299,33 @@ function(data, stateformula, detformula)
 ##   }
   
   # get variables to handle, remove others
+  # first, get names from formulas
   state.vars <- attr(terms(stateformula),"term.labels")
   obs.vars <- attr(terms(detformula),"term.labels")
+
+  # ensure that "ones" is not called "one" (maybe deprecated)
+  if(!is.null(sitedata$one)) {
+    sitedata$ones <- sitedata$one
+    sitedata$one <- NULL
+  }
+  if(!is.null(obsdata$one)) {
+    names(obsdata)[names(obsdata) == "one"] <- "ones"
+  }
   
+  # coerce obsdata to an array for easier manipulation
   obsdata.ar <- abind(obsdata, along = 3)
 
-  # remove variables that are not used
-  sitedata <- sitedata[,c("ones",state.vars)]   # CHECK THIS LINE
+  # check for formula specification that involves covariates not in obdata
+  if(any(!(obs.vars %in% dimnames(obsdata.ar)[[3]]))) {
+    badvars <- !(obs.vars %in% dimnames(obsdata.ar)[[3]])
+    badvars <- obs.vars[badvars]
+    badvars <- paste(badvars, collapse = ", ")
+    stop(sprintf("Detection covariate(s) %s were specified and were not present in the data.", badvars))
+  }
+
+  # remove variables that are not used so that NAs in unused variables
+  # do not matter
+  sitedata <- sitedata[,c("ones",state.vars)]
   obsdata.ar <- obsdata.ar[,,c("ones",obs.vars)]
 
   obsdata.NA <- is.na(obsdata.ar)
@@ -348,6 +368,7 @@ Site(s) %s cannot be analyzed and have been removed.",whichsites))
       obsdata[[i]] <- obsdata[[i]][ - to.rm, ]
     }
   }
+  sitedata <- as.data.frame(sitedata)
   list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
 }
 
@@ -369,14 +390,15 @@ function(data)
   nSV <- length(sitedata)
 
   if(is.null(obsdata)) obsdata <- list(ones = matrix(1,M,J))
-
+  if(is.null(sitedata)) sitedata=data.frame(ones = rep(1,M))
+  
   # if obsdata is an array, coerce it to a list
   if(identical(class(obsdata),"array")) obsdata <- arrToList(obsdata)    
   nOV <- length(obsdata)
 
   # move all site data (single vectors and matrices of J repeated vectors)
   # in obsdata into sitedata
-  if(is.null(sitedata)) sitedata=data.frame(ones = rep(1,M))
+
   toDel <- numeric(0)
   nuniq <- function(x) length(as.numeric(na.omit(unique(x)))) # lil' helper fun
   for(i in 1:nOV){
@@ -390,6 +412,8 @@ function(data)
       colnames(sitedata)[length(sitedata)] <- names(obsdata[i])
       toDel <- c(toDel,i)
     }
+    # ensure that obsdata is made of matrices rather than dataframes
+    obsdata[[i]] <- as.matrix(obsdata[[i]])
   }
   if(length(toDel) > 0) obsdata[[toDel]] <- NULL # remove sitedata from obsdata
   if(length(obsdata) == 0) obsdata <- list(ones = matrix(1,M,J))
