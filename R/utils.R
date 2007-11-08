@@ -315,8 +315,14 @@ function(data, stateformula, detformula)
   # coerce obsdata to an array for easier manipulation
   obsdata.ar <- abind(obsdata, along = 3)
 
+  # if obsvar contains I(), then remove obsvar before the following check
+  # REALLY, I'd like to just parse out the variable name from the expression
+  # and check it, but i'll do that later.
+  obs.vars2 <- obs.vars[-grep("^I(",obs.vars,extended=FALSE)]
+  
   # check for formula specification that involves covariates not in obdata
-  if(any(!(obs.vars %in% dimnames(obsdata.ar)[[3]]))) {
+  # note that obs.vars2 is now here to ignore "I()" expressions
+  if(any(!(obs.vars2 %in% dimnames(obsdata.ar)[[3]]))) {
     badvars <- !(obs.vars %in% dimnames(obsdata.ar)[[3]])
     badvars <- obs.vars[badvars]
     badvars <- paste(badvars, collapse = ", ")
@@ -326,7 +332,7 @@ function(data, stateformula, detformula)
   # remove variables that are not used so that NAs in unused variables
   # do not matter
   sitedata <- sitedata[,c("ones",state.vars)]
-  obsdata.ar <- obsdata.ar[,,c("ones",obs.vars)]
+  obsdata.ar <- obsdata.ar[,,c("ones",obs.vars2)]  # NOTE obs.vars2 here too
 
   obsdata.NA <- is.na(obsdata.ar)
   obsdata.NA <- apply(obsdata.NA, c(1,2), any)
