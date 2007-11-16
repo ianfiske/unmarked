@@ -532,8 +532,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
     nLL
   }
 
-  fm <- optim(rep(0,nP),nll, method = "BFGS", hessian = TRUE,
-              control = list(trace = 6))
+  fm <- optim(rep(0,nP),nll, method = "BFGS", hessian = TRUE)
   ests <- fm$par
 
   DMP <- H %*% ests[1:nDMP]
