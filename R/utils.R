@@ -395,9 +395,19 @@ function(data)
   M <- nrow(y)
   nSV <- length(sitedata)
 
+  # if not null, then just add "ones"
+  if(!is.null(obsdata)) {
+      if(class(obsdata) == "list") obsdata$ones <- matrix(1,M,J)
+      if(class(obsdata) == "array") {
+          obsdata <- abind(obsdata, ones = matrix(1,M,J),3)
+      }
+  }
+  if(!is.null(sitedata)) sitedata <- cbind(ones = rep(1,M),sitedata)
+  
+  # if data components are null, create as just ones
   if(is.null(obsdata)) obsdata <- list(ones = matrix(1,M,J))
   if(is.null(sitedata)) sitedata=data.frame(ones = rep(1,M))
-  
+
   # if obsdata is an array, coerce it to a list
   if(identical(class(obsdata),"array")) obsdata <- arrToList(obsdata)    
   nOV <- length(obsdata)
