@@ -69,6 +69,7 @@ reducing the model.
 \examples{
 data(mallard)
 fm.nmx1 <- pcount(~ length + elev + forest,
-  ~ ivel+ date + I(date^2), mallard.y, mallard.site, mallard.obs)
+  ~ ivel+ date + I(date^2), list(y = mallard.y,
+  covdata.site = mallard.site, covdata.obs = mallard.obs))
 }
 \keyword{ models }

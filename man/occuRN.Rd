@@ -56,6 +56,6 @@ pp. 777--790.
 \seealso{ \link{unmarked} }
 \examples{
 data(birds)
-fm.wood.rn <- occuRN(~1, ~1, woodthrush.bin)
+fm.wood.rn <- occuRN(~1, ~1, y = woodthrush.bin)
 }
 \keyword{ models }

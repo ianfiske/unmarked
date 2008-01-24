@@ -57,7 +57,7 @@ occu(stateformula, detformula, data, y, covdata.site = NULL,
 %\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
 \examples{
 data(wt)
-fm1 <- occu(~ forest + elev + I(elev^2) + length,
-  ~ ivel + date + I(date^2), wt.y, wt.data, wt.obs)
+fm1 <- occu(~ forest + elev + length,
+  ~ ivel + date, list(y=wt.y, covdata.site = wt.data,covdata.obs = wt.obs))
 }
 \keyword{ models }

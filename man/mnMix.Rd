@@ -7,8 +7,9 @@ calling data (Royle and Link 2005).  Currently, covariates can only be
 supplied to the detection process (as in Royle and Link 2005).
 }
 \usage{
-mnMix(stateformula = ~ 1, detformula = ~ 1, data, y,
-      constraint = NULL, covdata.site = NULL, covdata.obs = NULL)
+mnMix(stateformula = ~ 1, detformula = ~ 1, data = list(y = y,
+      covdata.site = covdata.site, covdata.obs = covdata.obs), y,
+      covdata.site = NULL, covdata.obs = NULL, constraint = NULL)
 }
 \arguments{
   \item{stateformula}{ formula for covariates of occurrance. }
@@ -17,8 +18,8 @@ mnMix(stateformula = ~ 1, detformula = ~ 1, data, y,
   \item{y}{ M x J observation matrix of 0's and 1's. }
   \item{constraint}{ vector to describe which detection parameters are
     the same (see \emph{Details}}
-  \item{sitedata}{ optional data frame containing site-specific covariates. }
-  \item{obsdata}{ optional array or list containing covariate data (see \emph{Details}. }
+  \item{covdata.site}{ optional data frame containing site-specific covariates. }
+  \item{covdata.obs}{ optional array or list containing covariate data (see \emph{Details}. }
 }
 \details{
 
