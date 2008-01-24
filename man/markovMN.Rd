@@ -6,18 +6,21 @@
 }
 \usage{
 
-markovMN(stateformula = ~1, detformula = ~1, y, detconstraint = NULL,
-covdata.site = NULL, covdata.obs = NULL, phiconstraint = NULL, J)
+markovMN(stateformula = ~1, detformula = ~1, data = list(y = y,
+covdata.site = covdata.site, covdata.obs = covdata.obs), y,
+covdata.site = NULL, covdata.obs = NULL,detconstraint = NULL,
+ phiconstraint = NULL, J)
 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{stateformula}{ ~~Describe \code{stateformula} here~~ }
   \item{detformula}{ ~~Describe \code{detformula} here~~ }
+  \item{data}{ provide the data}
   \item{y}{ ~~Describe \code{y} here~~ }
-  \item{detconstraint}{ ~~Describe \code{detconstraint} here~~ }
   \item{covdata.site}{ ~~Describe \code{sitedata} here~~ }
-  \item{cobdata.obs}{ ~~Describe \code{obsdata} here~~ }
+  \item{covdata.obs}{ ~~Describe \code{obsdata} here~~ }
+  \item{detconstraint}{ ~~Describe \code{detconstraint} here~~ }
   \item{phiconstraint}{ ~~Describe \code{phiconstraint} here~~ }
   \item{J}{ ~~Describe \code{J} here~~ }
 }
