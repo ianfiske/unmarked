@@ -2,7 +2,7 @@
 \alias{occu}
 \title{ Fit Occupancy Models }
 \description{
-  Fits occupancy models like in Chapter 3 of Royle and Dorazio 2008 and MacKenzie et al (2006).  The user can specify covariates of the probability of occurrence at the site level and the probability of detection at either the site or observation level.
+  Fits occupancy models like in Chapter 3 of Royle and Dorazio (2008) and MacKenzie et al (2006).  The user can specify covariates of the probability of occurrence at the site level and the probability of detection at either the site or observation level.
 }
 \usage{
 occu(stateformula, detformula, data, y, covdata.site = NULL,
