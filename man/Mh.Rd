@@ -1,6 +1,6 @@
 \name{Mh}
 \alias{Mh}
-###%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Fits Model Mh -- a closed population model with heterogeneity }
 \description{
  This fits the logit-normal version of Model Mh in which the logit of
@@ -11,7 +11,7 @@ individuals, n0, are estimated by integrated likelihood.
 \usage{
 Mh(nx)
 }
-###%- maybe also 'usage' for other objects documented here.
+%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{nx}{ the detection frequency vector, of length J where J is the number of sample occasions }
 }
@@ -19,7 +19,7 @@ Mh(nx)
   At this time there are no further details
 }
 \value{
- # ~Describe the value returned
+% # ~Describe the value returned
   If it is a LIST, use
   \item{comp1 }{Just the nlm output so far}
   \item{comp2 }{Description of 'comp2'}
@@ -36,9 +36,10 @@ Mh(nx)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-
-#% Add one or more standard keywords, see file 'KEYWORDS' in the
-#% R documentation directory.
-\keyword{ closed population }
-\keyword{ model Mh }
-#% __ONLY ONE__ keyword per line
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+%\keyword{ closed population }
+%\keyword{ model Mh }
+\keyword{models}
+% __ONLY ONE__ keyword per line
