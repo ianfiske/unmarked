@@ -26,7 +26,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
   detParms[1] <- "pconst"
   XDet.tji <- design$XDet
   nDCP <- nDCP - 1
-  
+
   XDet.tji <- XDet.tji[, -1] # remove intercept
   XDet.tjik <- XDet.tji %x% rep(1, K)  # repeat rows of X, each = K
   k.diag <- rep(1, M * J * nY) %x% diag(K) # add intercepts the alpha_k
@@ -41,13 +41,17 @@ function(stateformula = ~ 1, detformula = ~ 1,
   # default phi constraint is different s's, equal growth, and equal reg
   if(is.null(phicon)) phicon <- c(1:(K+1), rep(K + 2, K),
                                   rep(K + 3, K + 2))
-  nPhiP.un <- K * (K + 1)
-  
-  nDMP <- max(con)
-  nDP <- nDCP + nDMP + nY
-  nSP <- K
-  nPhiP <- max(phicon)
-  nP <- nDP + nSP + nPhiP
+  nPhiP.un <- K * (K + 1)  # number of transition matrix parameters in
+                                        # an unconstrained matrix
+  nDMP <- max(con)  # number of independent detection matrix parameters among
+                                        # the p's and beta's
+  nDP <- nDCP + nDMP + nY  # number of detection parameters including
+                                        # covariates (b's), alpha's, beta's,
+                                        # year effects (gamma's)
+  nSP <- K                # number of parameters for psi vector of initial
+                                        # latent abundances
+  nPhiP <- max(phicon)    # number of independent transition matrix pars
+  nP <- nDP + nSP + nPhiP  # total number of parameters
 
   # construct constraint matrix.  note that here we constrain beta's and
   # alphas, whereas the paper talks about constraining p's and beta's
@@ -82,7 +86,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
   
   # creates detection matrix from list of detection parameters
   detMatrix <- function(dPars) {
-    nmats <- nrow(dPars)#nrow(dPars)
+    nmats <- nrow(dPars)
     detMat <- lower.tri(matrix(1, K + 1, K + 1),diag = TRUE) %x%
       array(1,c(1,1,nmats))
     # put the p's in the detMats
@@ -141,19 +145,26 @@ function(stateformula = ~ 1, detformula = ~ 1,
     # recover full parameters: alpha's and beta's
     dPars <- H %*% parms[1:nDMP]
 
-    # recover all parameters
-    alpha <- dPars[1 : K]
-    beta <- plogis(dPars[(K + 1) : nDMP.un])
-    b <- if(nDCP > 0) {parms[(nDMP + 1) : (nDMP + nDCP)]}
-    gma <- parms[(nDMP + nDCP + 1) : nDP]
+    # recover detection parameters
+    # see Royle and Link 2005 for further explanations of alpha's,
+    # beta's, and b's.  Here is the general equation for the stasis
+    # (diagonal) detection term in detection matrix:
+    # p_tjik = logistic(gma_t + alpha_k + sum_l^L(b_l*x_l))
+    alpha <- dPars[1 : K]    # "stasis" detection intercepts for each state
+    beta <- plogis(dPars[(K + 1) : nDMP.un]) # underdetection parameters
+    b <- if(nDCP > 0) {parms[(nDMP + 1) : (nDMP + nDCP)]} # "stasis"
+                                        # detection parameters for covariates
+    gma <- parms[(nDMP + nDCP + 1) : nDP] # stasis detection effect for year
 
+    # recover the initial latent abundance vector
     psi <- parms[(nDP + 1) : (nDP + K)]
     psi <- exp(c(0,psi))/sum(exp(c(0,psi)))
 
+    # get transition matrix
     phiPars <- H.phi %*% plogis(parms[(nDP + K  + 1) : nP])
     phi <- phiMatrix(phiPars)
 
-    
+    # create matrix of repeated covariate parameters for vectorization
     beta.tji <- matrix(beta, nY * M * J, length(beta), byrow=TRUE)
 
     # model detection parms (gammas, alphas, and bs)
