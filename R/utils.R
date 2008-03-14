@@ -387,6 +387,7 @@ arrangeData <-
 function(data)
 {
 
+  require(abind)
   y <- data$y
   sitedata <- data$covdata.site
   obsdata <- data$covdata.obs
@@ -399,7 +400,7 @@ function(data)
   if(!is.null(obsdata)) {
       if(class(obsdata) == "list") obsdata$ones <- matrix(1,M,J)
       if(class(obsdata) == "array") {
-          obsdata <- abind(obsdata, ones = matrix(1,M,J),3)
+          obsdata <- abind(obsdata, ones = matrix(1,M,J))
       }
   }
   if(!is.null(sitedata)) sitedata <- cbind(ones = rep(1,M),sitedata)
