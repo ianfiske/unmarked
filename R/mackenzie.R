@@ -147,7 +147,7 @@ detMatrix <- function(dPars) {
 phiMatrix <- function(phiPars) {
     epsilon <- phiPars[1]
     gamma <- phiPars[2]
-    phi <- matrix(c(1-gamma,epsilon,gamma,epsilon), 2, 2)
+    phi <- matrix(c(1-gamma,epsilon,gamma,1-epsilon), 2, 2)
     phi
 }
   
