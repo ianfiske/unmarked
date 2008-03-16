@@ -152,7 +152,9 @@ function(stateformula = ~ 1, detformula = ~ 1,
     # p_tjik = logistic(gma_t + alpha_k + sum_l^L(b_l*x_l))
     alpha <- dPars[1 : K]    # "stasis" detection intercepts for each state
     beta <- plogis(dPars[(K + 1) : nDMP.un]) # underdetection parameters
-    b <- if(nDCP > 0) {parms[(nDMP + 1) : (nDMP + nDCP)]} # "stasis"
+    if(nDCP > 0) {
+        b <- parms[(nDMP + 1) : (nDMP + nDCP)]
+    } # "stasis"
                                         # detection parameters for covariates
     gma <- parms[(nDMP + nDCP + 1) : nDP] # stasis detection effect for year
 
