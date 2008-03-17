@@ -184,7 +184,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
 
     fy.ik.j.t <- array(fy.tjik, c(M * (K + 1), J, nY))
     fy.ik.t.j <- aperm(fy.ik.j.t, c(1,3,2))
-    fy.tik.j <- matrix(fy.ik.t.j, nY * M * (K + 1))
+    fy.tik.j <- matrix(fy.ik.t.j, nY * M * (K + 1), J)
     fy.tik <- rowProds(fy.tik.j, na.rm = TRUE)
 
     # compute products D(p(y_it)) * phi_t for t = 1,..., T-1
