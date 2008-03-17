@@ -91,6 +91,8 @@ phiMatrix <- function(phiPars) {
     #beta <- plogis(dPars[(K + 1) : nDMP]) # underdetection parameters
     if(nDCP > 0) { # detection parameters for covariates
         b <- parms[(nDMP + 1) : (nDMP + nDCP)]
+    } else {
+        b <- NULL
     }
 
     # recover alpha's
@@ -122,24 +124,25 @@ phiMatrix <- function(phiPars) {
     fy.tik.j <- matrix(fy.ik.t.j, nY * M * (K + 1), J)
     fy.tik <- rowProds(fy.tik.j, na.rm = TRUE)
 
-    # compute products D(p(y_it)) * phi_t for t = 1,..., T-1
+    # compute prod{ D(p(y_it)) * phi_t } for t = 1,..., T-1
     fy.k.1.ti <- array(fy.tik[1:(M * (K + 1) * (nY - 1))],
                        c(K + 1, 1, (nY - 1) * M))
     fy.k.k.ti <- fy.k.1.ti %x% t(rep(1, K + 1)) # repeat columns
     phi.ti <- array(1,c(1,1, M * (nY - 1))) %x% phi
     phi.ti.prod <- fy.k.k.ti * phi.ti
 
-    # try brute force:
+    # compute psi^t x prod{ D(p(y_it)) * phi_t } for t = 1,..., T-1
     psi.t <- array(psi, c(1, K + 1, M))
-    for(t in 1 : (nY - 1)){
+    for(t in 1 : (nY - 1)) {
       for(i in 1 : M) {
         psi.t[,,i] <- psi.t[,,i] %*% phi.ti.prod[,,(t-1)*M + i]
       }
     }
 
+    # compute p(y_iT)'s
     fy.k.1.Ti <- array(fy.tik[(M * (K + 1) * (nY - 1) + 1) :
                               (M * (K + 1) * nY)],
-                       c(K + 1, 1, M))
+                       c(K + 1, 1, M)) 
     l.i <- numeric(M)
     for(i in 1:M){
       l.i[i] <- psi.t[,,i] %*% fy.k.1.Ti[,,i]
