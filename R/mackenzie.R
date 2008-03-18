@@ -2,7 +2,7 @@ mackenzie <-
 function(stateformula = ~ 1, detformula = ~ 1,
          data = list(y = y, covdata.site = covdata.site,
          covdata.obs = covdata.obs), y, covdata.site = NULL,
-         covdata.obs = NULL, J,  yearly_alpha = FALSE)
+         covdata.obs = NULL, J,  yearly_alpha = FALSE,starts = NULL)
 {
 
   arranged <- arrangeData(data)
@@ -77,7 +77,7 @@ phiMatrix <- function(phiPars) {
   total <- nY*J*M*(K+1)
   # calc indices of columns of detection matrices
   ind.k.y.tjik <- matrix(c(K.tjik + 1, y.tjik + 1, 1:total),total, 3)
-
+browser()
   # parms: alpha, b's, gamma's, psi's, phi's
   iteration <- 1
   nll <- function(parms) {
@@ -154,7 +154,12 @@ phiMatrix <- function(phiPars) {
     nLL
   }
 
-  fm <- optim(rep(0,nP),nll, method = "BFGS", hessian = TRUE)
+  if(is.null(starts)) {
+      fm <- optim(rep(0,nP),nll, method = "BFGS", hessian = TRUE)
+  } else {
+      fm <- optim(starts, nll, method = "BFGS", hessian=TRUE)
+  }
+  
   ests <- fm$par
 
   DMP <- ests[1:nDMP]
