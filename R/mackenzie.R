@@ -29,7 +29,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
   nDCP <- nDCP - 1 # number of detection covariates
 
   XDet.tji <- XDet.tji[, -1] # remove intercept
-#  XDet.tjik <- XDet.tji %x% rep(1, K)  # repeat rows of X, each = K
+
   if(yearly_alpha) {
       yr.int <- diag(nY) %x% rep(1, M * J)  # add intercepts for gma_k
   } else {
@@ -79,7 +79,7 @@ phiMatrix <- function(phiPars) {
   # calc indices of columns of detection matrices
   ind.k.y.tjik <- matrix(c(K.tjik + 1, y.tjik + 1, 1:total),total, 3)
 
-  # parms: alpha, b's, gamma's, psi's, phi's
+  # parms: b's, alpha(s), psi's, phi's
   iteration <- 1
   nll <- function(parms) {
 
@@ -87,16 +87,15 @@ phiMatrix <- function(phiPars) {
     # see Royle and Link 2005 for further explanations of alpha's,
     # beta's, and b's.  Here is the general equation for the stasis
     # (diagonal) detection term in detection matrix:
-    # p_tjik = logistic(gma_t + alpha_k + sum_l^L(b_l*x_l))
-    #alpha <- dPars[1 : K]    # "stasis" detection intercepts for each state
-    #beta <- plogis(dPars[(K + 1) : nDMP]) # underdetection parameters
+    # p_tjik = logistic(alpha_t + sum_l^L(b_l*x_l))
+
     if(nDCP > 0) { # detection parameters for covariates
         b <- parms[(nDMP + 1) : (nDMP + nDCP)]
     } else {
         b <- NULL
     }
 
-    # recover alpha's
+    # recover alpha(s)
     alpha <- parms[(nDMP + nDCP + 1) : nDP]
 
     # recover the initial latent abundance vector
@@ -110,9 +109,6 @@ phiMatrix <- function(phiPars) {
     # model detection parms (alphas, and bs)
     p.tji <- plogis(XDet.tji %*% c(alpha, b))
     p.tji[is.na(p.tji)] <- 1 # CONSIDER THIS STEP FUTHER!!!!!
-
-##     # Get detmat Paramters (Rows Are p's Then Betas)
-##     detMat.pars <- matrix(p.tjik, nY * M * J, K, byrow=TRUE)
     detMat.pars <- p.tji
 
     detMats.tji <- detMatrix(detMat.pars)
@@ -150,8 +146,10 @@ phiMatrix <- function(phiPars) {
     }
 
     nLL <- -sum(log(l.i))
-    #print(sprintf("%i: %f",get("iteration",parent.frame(3)), nLL))
-    #eval.parent(quote(iteration <- iteration + 1), 3)
+    if(is.null(profiling)) {
+        print(sprintf("%i: %f",get("iteration",parent.frame(3)), nLL))
+        eval.parent(quote(iteration <- iteration + 1), 3)
+    }
     nLL
   }
 
