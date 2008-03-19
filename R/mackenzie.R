@@ -2,7 +2,8 @@ mackenzie <-
 function(stateformula = ~ 1, detformula = ~ 1,
          data = list(y = y, covdata.site = covdata.site,
          covdata.obs = covdata.obs), y, covdata.site = NULL,
-         covdata.obs = NULL, J,  yearly_alpha = FALSE,starts = NULL)
+         covdata.obs = NULL, J,  yearly_alpha = FALSE,starts = NULL,
+         profiling = NULL)
 {
 
   arranged <- arrangeData(data)
@@ -77,7 +78,7 @@ phiMatrix <- function(phiPars) {
   total <- nY*J*M*(K+1)
   # calc indices of columns of detection matrices
   ind.k.y.tjik <- matrix(c(K.tjik + 1, y.tjik + 1, 1:total),total, 3)
-browser()
+
   # parms: alpha, b's, gamma's, psi's, phi's
   iteration <- 1
   nll <- function(parms) {
@@ -149,17 +150,24 @@ browser()
     }
 
     nLL <- -sum(log(l.i))
-    print(sprintf("%i: %f",get("iteration",parent.frame(3)), nLL))
-    eval.parent(quote(iteration <- iteration + 1), 3)
+    #print(sprintf("%i: %f",get("iteration",parent.frame(3)), nLL))
+    #eval.parent(quote(iteration <- iteration + 1), 3)
     nLL
   }
 
-  if(is.null(starts)) {
-      fm <- optim(rep(0,nP),nll, method = "BFGS", hessian = TRUE)
+  if(is.null(profiling)) {
+      if(is.null(starts)) {
+          fm <- optim(rep(0,nP),nll, method = "BFGS", hessian = TRUE)
+      } else {
+          fm <- optim(starts, nll, method = "BFGS", hessian=TRUE)
+      }
   } else {
-      fm <- optim(starts, nll, method = "BFGS", hessian=TRUE)
+      # profing is a matrix of parameter values
+      nll.vec <- apply(profiling, 1, nll)
+      return(cbind(profiling,nll.vec))
   }
-  
+      
+
   ests <- fm$par
 
   DMP <- ests[1:nDMP]
