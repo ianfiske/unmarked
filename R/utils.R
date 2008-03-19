@@ -16,6 +16,13 @@ arrToList <- function(x){
   nl
 }
 
+# compute estimated asymptotic variances of parameter estimates
+# using the observed information matrix
+sd.est <- function(fm) {
+    sqrt(diag(solve(fm$hessian)))
+}
+
+
 # utility function to read a csv file and create data a required for other funs
 # csv is formatted as follows:
 # col 1 is site labels, must be named "site"
