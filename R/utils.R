@@ -22,6 +22,12 @@ sd.est <- function(fm) {
     sqrt(diag(solve(fm$hessian)))
 }
 
+# delta method for variance of proportion given variance of its logistic-
+# transformed counterpart
+sd.prop <- function(est,sd.est) {
+    exp(-est)/(1 + exp(-est))^2 * sd.est
+}
+
 
 # utility function to read a csv file and create data a required for other funs
 # csv is formatted as follows:
