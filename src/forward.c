@@ -6,20 +6,29 @@
 void forward(int *M, int *nY, double *psi_all, double *A_all, 
 	     double *pT_all, double *nLL) {
     
+    // stores temporary psi for site i - used in matrix algebra
     double *psi = (double *)R_alloc(K + 1,sizeof(double));
+
+    // stores temporary matrix for site i - used in matrix alg
     double *A = (double *)R_alloc(pow(K+1,2), sizeof(double));
-    const char *trans = "T";    // transpose A
-//    const char *transb = "N";
+
+    // arguments for dgemv
+    const char *trans = "T";
     const int m = K + 1, incx = 1, incy = 1, matsize = pow(K+1,2);
     const double one = 1.0, zero = 0.0;
+
+    // array of likelihoods of all sites
     double *lik = (double *)R_alloc(*M, sizeof(double));
+
+    // temporary prob vector for time T for completion of likelihood computation
     double *pT = (double *)R_alloc(K + 1, sizeof(double));
-    double *ones = (double *)R_alloc(*M, sizeof(double));
     double *y = (double *)R_alloc(K + 1, sizeof(double));
 
-    for(int i = 0; i < *M; i++){
+
+//    double *ones = (double *)R_alloc(*M, sizeof(double));
+/*    for(int i = 0; i < *M; i++){
 	ones[i] = 1;
-    }
+	}*/
 
     for(int t = 0; t < *nY - 1; t++){
 	for(int i = 0; i < *M; i++){
@@ -35,48 +44,33 @@ void forward(int *M, int *nY, double *psi_all, double *A_all,
 //		printf("%f ",A[k]);
 	    }
 
-	    printf("A^t:\n");
-	    for(int i = 0; i <= K; i++){
-		for(int j = 0; j <= K; j++){
-		    printf("%f ", A[i*(K+1) + j]);
-		}
-		printf("\n");
-	    }
+/* 	    printf("A^t:\n"); */
+/* 	    for(int i = 0; i <= K; i++){ */
+/* 		for(int j = 0; j <= K; j++){ */
+/* 		    printf("%f ", A[i*(K+1) + j]); */
+/* 		} */
+/* 		printf("\n"); */
+/* 	    } */
 
-	    printf("\n");
-	    for(int i = 0; i < ((*M)*(K+1)) ; i++){
-		printf("%f ",psi_all[i]);
-	    }
-	    printf("\n");
+/* 	    printf("\n"); */
+/* 	    for(int i = 0; i < ((*M)*(K+1)) ; i++){ */
+/* 		printf("%f ",psi_all[i]); */
+/* 	    } */
+/* 	    printf("\n"); */
 
-	    printf("before mult: %f %f %f %f\n", psi[0], psi[1], psi[2], psi[3]);
+/* 	    printf("before mult: %f %f %f %f\n", psi[0], psi[1], psi[2], psi[3]); */
 
-
-/*	    F77_CALL(dgemm)(transa, transb, &m,
-			    &m, &one, &one,
-			    A, &m,
-			    psi, &m,
-			    &zero, */
-
-/* C := alpha*op( A )*op( B ) + beta*C */
-/*F77_NAME(dgemm)(const char *transa, const char *transb, const int *m,
-		const int *n, const int *k, const double *alpha,
-		const double *a, const int *lda,
-		const double *b, const int *ldb,
-		const double *beta, double *c, const int *ldc);*/
-
+/* y := alpha*A*x + beta*y,*/
 	    F77_CALL(dgemv)(trans, &m, &m, 
 			    &one, A, &m, 
 			    psi, &incx, &zero, 
 			    y, &incy);
-
-/* y := alpha*A*x + beta*y,
-F77_NAME(dgemv)(const char *trans, const int *m, const int *n,
+/* F77_NAME(dgemv)(const char *trans, const int *m, const int *n,
 		const double *alpha, const double *a, const int *lda,
 		const double *x, const int *incx, const double *beta,
 		double *y, const int *incy); */
 	    
-	    printf("after mult: %f %f %f %f\n", y[0], y[1], y[2], y[3]);
+//	    printf("after mult: %f %f %f %f\n", y[0], y[1], y[2], y[3]);
 
 	    // put psit back in psi vector
 	    for(int k = 0; k <= K; k++){
@@ -105,6 +99,10 @@ const double *dy, const int *incy); */
 
     }
 
-    *nLL = F77_CALL(ddot)(M, lik, &incx, ones, &incy);
-
+    // *nLL = F77_CALL(ddot)(M, lik, &incx, ones, &incy);
+    
+    *nLL = 0;
+    for(int i = 0; i < *M; i++){
+	*nLL += lik[i];
+    }
 }
