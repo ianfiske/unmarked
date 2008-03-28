@@ -9,7 +9,7 @@
 markovMN(stateformula = ~1, detformula = ~1, data = list(y = y,
 covdata.site = covdata.site, covdata.obs = covdata.obs), y,
 covdata.site = NULL, covdata.obs = NULL,detconstraint = NULL,
- phiconstraint = NULL, J)
+ phiconstraint = NULL, J, K)
 
 }
 %- maybe also 'usage' for other objects documented here.
@@ -23,6 +23,7 @@ covdata.site = NULL, covdata.obs = NULL,detconstraint = NULL,
   \item{detconstraint}{ ~~Describe \code{detconstraint} here~~ }
   \item{phiconstraint}{ ~~Describe \code{phiconstraint} here~~ }
   \item{J}{ ~~Describe \code{J} here~~ }
+  \item{K}{ Observations come from \{0,1,\ldots,K\}}
 }
 \details{
  % ~~ If necessary, more details than the description above ~~
