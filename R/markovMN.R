@@ -28,12 +28,18 @@ function(stateformula = ~ 1, detformula = ~ 1,
   nDCP <- nDCP - 1
 
   XDet.tji <- as.matrix(XDet.tji[, -1]) # remove intercept
-#  XDet.tjik <- XDet.tji %x% rep(1, K)  # repeat rows of X, each = K
+###  XDet.tjik <- XDet.tji %x% rep(1, K)  # repeat rows of X, each = K
   XDet.tjik <- matrix(rep(XDet.tji,each=K),M*J*nY*K,ncol(XDet.tji)) # test version
   k.diag <- rep(1, M * J * nY) %x% diag(K) # add intercepts the alpha_k
-  yr.int <- diag(nY) %x% rep(1, M * K * J)  # add intercepts for gma_k
-  XDet.tjik <- cbind(yr.int, k.diag, XDet.tjik)
+
+  ## add intercepts for gma_k
+  ## to keep X full column rank, use first year as baseline
+  yr.int <- diag(nY - 1)
+  yr.int <- rbind(rep(0, nY - 1), yr.int)
+  yr.int <- yr.int %x% rep(1, M * K * J)
   
+  XDet.tjik <- cbind(yr.int, k.diag, XDet.tjik)
+
   con <- detconstraint
   nDMP.un <- K*(K+1)/2
   if (is.null(con)) con <- c(1:K, rep(K + 1, nDMP.un - K))
@@ -46,7 +52,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
                                         # an unconstrained matrix
   nDMP <- max(con)  # number of independent detection matrix parameters among
                                         # the p's and beta's
-  nDP <- nDCP + nDMP + nY  # number of detection parameters including
+  nDP <- nDCP + nDMP + nY - 1  # number of detection parameters including
                                         # covariates (b's), alpha's, beta's,
                                         # year effects (gamma's)
   nSP <- K                # number of parameters for psi vector of initial
@@ -145,7 +151,8 @@ function(stateformula = ~ 1, detformula = ~ 1,
   # parms: alpha's, beta's, b's, gamma's, psi's, phi's
   iteration <- 1
   nll <- function(parms) {
-    # recover full parameters: alpha's and beta's
+    # compute detection parameters, alpha's and beta's, from constrained
+    # parameters
     dPars <- H %*% parms[1:nDMP]
 
     # recover detection parameters
@@ -158,7 +165,8 @@ function(stateformula = ~ 1, detformula = ~ 1,
     if(nDCP > 0) {
         b <- parms[(nDMP + 1) : (nDMP + nDCP)]
     } # "stasis"
-                                        # detection parameters for covariates
+
+    ## detection parameters for covariates
     gma <- parms[(nDMP + nDCP + 1) : nDP] # stasis detection effect for year
 
     # recover the initial latent abundance vector
