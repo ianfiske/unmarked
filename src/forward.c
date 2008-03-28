@@ -3,8 +3,18 @@
 #include <Rdefines.h>
 #define K 3
 
+double arraySum(double array[], const int n)
+{
+    double sum = 0, *ptr;
+    double * const arrayEnd = array + n;
+    for (ptr = array; ptr < arrayEnd; ++ptr)
+	sum += *ptr;
+    return sum;
+}
+
 void forward(int *M, int *nY, double *psi_all, double *A_all, 
-	     double *pT_all, double *nLL) {
+	     double *pT_all, double *nLL) 
+{
     
     // stores temporary psi for site i - used in matrix algebra
     double *psi = (double *)R_alloc(K + 1,sizeof(double));
@@ -13,9 +23,9 @@ void forward(int *M, int *nY, double *psi_all, double *A_all,
     double *A = (double *)R_alloc(pow(K+1,2), sizeof(double));
 
     // arguments for dgemv
-    const char *trans = "T";
+    static const char *trans = "T";
     const int m = K + 1, incx = 1, incy = 1, matsize = pow(K+1,2);
-    const double one = 1.0, zero = 0.0;
+    static const double one = 1.0, zero = 0.0;
 
     // array of likelihoods of all sites
     double *lik = (double *)R_alloc(*M, sizeof(double));
@@ -23,12 +33,6 @@ void forward(int *M, int *nY, double *psi_all, double *A_all,
     // temporary prob vector for time T for completion of likelihood computation
     double *pT = (double *)R_alloc(K + 1, sizeof(double));
     double *y = (double *)R_alloc(K + 1, sizeof(double));
-
-
-//    double *ones = (double *)R_alloc(*M, sizeof(double));
-/*    for(int i = 0; i < *M; i++){
-	ones[i] = 1;
-	}*/
 
     for(int t = 0; t < *nY - 1; t++){
 	for(int i = 0; i < *M; i++){
@@ -65,10 +69,12 @@ void forward(int *M, int *nY, double *psi_all, double *A_all,
 			    &one, A, &m, 
 			    psi, &incx, &zero, 
 			    y, &incy);
-/* F77_NAME(dgemv)(const char *trans, const int *m, const int *n,
+/* 
+F77_NAME(dgemv)(const char *trans, const int *m, const int *n,
 		const double *alpha, const double *a, const int *lda,
 		const double *x, const int *incx, const double *beta,
-		double *y, const int *incy); */
+		double *y, const int *incy);
+ */
 	    
 //	    printf("after mult: %f %f %f %f\n", y[0], y[1], y[2], y[3]);
 
@@ -93,16 +99,14 @@ void forward(int *M, int *nY, double *psi_all, double *A_all,
 	}
 
 	lik[i] = -log(F77_CALL(ddot)(&m, pT, &incx, psi, &incy));
-/* DDOT - inner product of x and y
+/* 
+DDOT - inner product of x and y
 F77_NAME(ddot)(const int *n, const double *dx, const int *incx,
-const double *dy, const int *incy); */
+const double *dy, const int *incy);
+*/
 
     }
 
-    // *nLL = F77_CALL(ddot)(M, lik, &incx, ones, &incy);
+    *nLL = arraySum(lik, *M);
     
-    *nLL = 0;
-    for(int i = 0; i < *M; i++){
-	*nLL += lik[i];
-    }
 }
