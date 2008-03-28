@@ -28,7 +28,6 @@ function(stateformula = ~ 1, detformula = ~ 1,
   nDCP <- nDCP - 1
 
   XDet.tji <- as.matrix(XDet.tji[, -1]) # remove intercept
-###  XDet.tjik <- XDet.tji %x% rep(1, K)  # repeat rows of X, each = K
   XDet.tjik <- matrix(rep(XDet.tji,each=K),M*J*nY*K,ncol(XDet.tji)) # test version
   k.diag <- rep(1, M * J * nY) %x% diag(K) # add intercepts the alpha_k
 
@@ -144,7 +143,6 @@ function(stateformula = ~ 1, detformula = ~ 1,
   i.tjik <- rep(rep(1:M, each = K + 1), nY*J)
   j.tjik <- rep(rep(1:J, each = (K + 1)*M), nY)
   total <- nY*J*M*(K+1)
-  #ind.k.y.tjik <- matrix(c(K.tjik + 1, y.tjik + 1, 1:total),total, 3)
   ind.k.y.tjik2 <- matrix(c(K.tjik + 1, y.tjik + 1,
                             rep(1:total,each = K + 1)), total, 3)
 
@@ -164,7 +162,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
     beta <- plogis(dPars[(K + 1) : nDMP.un]) # underdetection parameters
     if(nDCP > 0) {
         b <- parms[(nDMP + 1) : (nDMP + nDCP)]
-    } # "stasis"
+    }
 
     ## detection parameters for covariates
     gma <- parms[(nDMP + nDCP + 1) : nDP] # stasis detection effect for year
@@ -189,8 +187,6 @@ function(stateformula = ~ 1, detformula = ~ 1,
     detMat.pars <- cbind(p.tji.k, beta.tji)
 
     detMats.tji <- detMatrix(detMat.pars)
-    #detMats.tjik <- detMats.tji %x% array(1,c(1,1,K+1))
-    #fy.tjik <- detMats.tjik[ind.k.y.tjik]
     fy.tjik <- detMats.tji[ind.k.y.tjik2]
     fy.tjik[is.na(y.tjik)] <- 1  # RECONSIDER THIS STEP!!!!
 
@@ -211,22 +207,8 @@ function(stateformula = ~ 1, detformula = ~ 1,
                               (M * (K + 1) * nY)],
                        c(K + 1, 1, M))
 
+    ## compute likelihood from forward recursion in C
     nLL <- forward(M,nY,psi,phi.ti.prod,fy.k.1.Ti)
-
-##     # try brute force:
-##     psi.t <- array(psi, c(1, K + 1, M))
-##     for(t in 1 : (nY - 1)){
-##       for(i in 1 : M) {
-##         psi.t[,,i] <- psi.t[,,i] %*% phi.ti.prod[,,(t-1)*M + i]
-##       }
-##     }
-
-##     l.i <- numeric(M)
-##     for(i in 1:M){
-##       l.i[i] <- psi.t[,,i] %*% fy.k.1.Ti[,,i]
-##     }
-
-##     nLL <- -sum(log(l.i))
 
     print(sprintf("%i: %f",get("iteration",parent.frame(3)), nLL))
     eval.parent(quote(iteration <- iteration + 1), 3)
