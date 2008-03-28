@@ -2,7 +2,7 @@ markovMN <-
 function(stateformula = ~ 1, detformula = ~ 1,
          data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
          y, covdata.site = NULL, covdata.obs = NULL, detconstraint = NULL,
-         phiconstraint = NULL, J)
+         phiconstraint = NULL, J, K)
 {
 
   arranged <- arrangeData(data)
@@ -13,7 +13,6 @@ function(stateformula = ~ 1, detformula = ~ 1,
 
   M <- nrow(y)
   nY <- ncol(y)/J
-  K <- max(y, na.rm = TRUE)
   
   design <- getDesign(stateformula = stateformula, detformula = detformula,
                       y = y, sitedata = sitedata, obsdata = obsdata)
