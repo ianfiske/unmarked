@@ -1,5 +1,5 @@
-# use logarithms to vectorize row-wise products
-# this speeds things up a LOT (vs. apply(x,1,prod))
+## use logarithms to vectorize row-wise products
+## this speeds things up a LOT (vs. apply(x,1,prod))
 rowProds <-
 function(x, na.rm = FALSE)
 {
