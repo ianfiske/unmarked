@@ -2,7 +2,7 @@ markovMN <-
 function(stateformula = ~ 1, detformula = ~ 1,
          data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
          y, covdata.site = NULL, covdata.obs = NULL, detconstraint = NULL,
-         phiconstraint = NULL, J, K)
+         phiconstraint = NULL, J, K, yearly.det = TRUE)
 {
 
   arranged <- arrangeData(data)
@@ -30,14 +30,19 @@ function(stateformula = ~ 1, detformula = ~ 1,
   XDet.tjik <- matrix(rep(XDet.tji,each=K),M*J*nY*K,ncol(XDet.tji)) # test version
   k.diag <- rep(1, M * J * nY) %x% diag(K) # add intercepts the alpha_k
 
-  ## add intercepts for gma_k
-  ## to keep X full column rank, use first year as baseline
-  yr.int <- diag(nY - 1)
-  yr.int <- rbind(rep(0, nY - 1), yr.int)
-  yr.int <- yr.int %x% rep(1, M * K * J)
-  
-  XDet.tjik <- cbind(yr.int, k.diag, XDet.tjik)
 
+  if(yearly.det) {
+      ## add intercepts for gma_k
+      ## to keep X full column rank, use first year as baseline
+      yr.int <- diag(nY - 1)
+      yr.int <- rbind(rep(0, nY - 1), yr.int)
+      yr.int <- yr.int %x% rep(1, M * K * J)
+      
+      XDet.tjik <- cbind(yr.int, k.diag, XDet.tjik)
+  } else {
+      XDet.tjik <- cbind(k.diag, XDet.tjik)
+  }
+  
   con <- detconstraint
   nDMP.un <- K*(K+1)/2
   if (is.null(con)) con <- c(1:K, rep(K + 1, nDMP.un - K))
@@ -50,7 +55,9 @@ function(stateformula = ~ 1, detformula = ~ 1,
                                         # an unconstrained matrix
   nDMP <- max(con)  # number of independent detection matrix parameters among
                                         # the p's and beta's
-  nDP <- nDCP + nDMP + nY - 1  # number of detection parameters including
+  nDYP <- ifelse(yearly.det, nY - 1, 0)
+
+  nDP <- nDCP + nDMP + nDYP # number of detection parameters including
                                         # covariates (b's), alpha's, beta's,
                                         # year effects (gamma's)
   nSP <- K                # number of parameters for psi vector of initial
@@ -164,8 +171,10 @@ function(stateformula = ~ 1, detformula = ~ 1,
     }
 
     ## detection parameters for covariates
-    gma <- parms[(nDMP + nDCP + 1) : nDP] # stasis detection effect for year
-
+    if(yearly.det) {
+        gma <- parms[(nDMP + nDCP + 1) : nDP] # stasis detection effect for year
+    }
+    
     # recover the initial latent abundance vector
     psi <- parms[(nDP + 1) : (nDP + K)]
     psi <- exp(c(0,psi))/sum(exp(c(0,psi)))
@@ -178,8 +187,13 @@ function(stateformula = ~ 1, detformula = ~ 1,
     beta.tji <- matrix(beta, nY * M * J, length(beta), byrow=TRUE)
 
     # model detection parms (gammas, alphas, and bs)
-    p.tjik <- plogis(XDet.tjik %*% c(gma, alpha, b))
-#    p.tjik[is.na(p.tjik)] <- 1 # CONSIDER THIS STEP FUTHER!!!!!
+    if(yearly.det) {
+        p.tjik <- plogis(XDet.tjik %*% c(gma, alpha, b))
+    } else {
+        p.tjik <- plogis(XDet.tjik %*% c(alpha, b))
+    }
+
+    ##   p.tjik[is.na(p.tjik)] <- 1 # CONSIDER THIS STEP FUTHER!!!!!
 
     # Get detmat Paramters (Rows Are Alphas Then Betas)
     p.tji.k <- matrix(p.tjik, nY * M * J, K, byrow=TRUE)
@@ -224,11 +238,17 @@ function(stateformula = ~ 1, detformula = ~ 1,
   phiPars <- H.phi %*% plogis(ests[(nDP + K  + 1) : nP])
   phi <- phiMatrix(phiPars)
 
+  if(yearly.det) {
+      gamma <- ests[(nDMP + nDCP + 1) : nDP]
+  } else {
+      gamma <- NULL
+  }
+  
   list(alpha = DMP[1:K], beta = plogis(DMP[(K+1): nDMP.un]),
        b = if(nDCP > 0) {ests[(nDMP + 1) : (nDMP + nDCP)]},
-       gamma = ests[(nDMP + nDCP + 1) : nDP], psi = psi,
-       phiPars = as.numeric(phiPars), phi = phi, hessian = fm$hessian,
-       AIC = 2*fm$value + 2*nP)
+       gamma = gamma,
+       psi = psi, phiPars = as.numeric(phiPars), phi = phi,
+       hessian = fm$hessian, AIC = 2*fm$value + 2*nP)
 }
 
 
