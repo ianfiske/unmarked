@@ -1,4 +1,4 @@
-markovMN <-
+markovMN_scythe <-
 function(stateformula = ~ 1, detformula = ~ 1,
          data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
          y, covdata.site = NULL, covdata.obs = NULL, detconstraint = NULL,
@@ -67,9 +67,9 @@ function(stateformula = ~ 1, detformula = ~ 1,
 
   # construct constraint matrix.  note that here we constrain beta's and
   # alphas, whereas the paper talks about constraining p's and beta's
-  H <- matrix(0,nDMP.un,nDMP)
+  H.det <- matrix(0,nDMP.un,nDMP)
   for(i in 1:nDMP.un){
-    H[i,con[i]] <- 1
+    H.det[i,con[i]] <- 1
   }
 
   # construct constrain matrix for phi paramters
@@ -78,45 +78,45 @@ function(stateformula = ~ 1, detformula = ~ 1,
     H.phi[i, phicon[i]] <- 1
   }
 
-  # compute indices for vectorization in detMatrix:
-  # det.row and .col give indices for betas in detection matrix
-  det.row <- c(rep(NA,K), rep(3:(K+1), times = 1 : (K - 1))) 
-  det.col <- c(rep(NA,K), sequence(1 : (K - 1)) + 1)
-  # compute offset for each matrix
-  arr.offset <- 0:(M * J * nY - 1) * (K + 1)^2
-  # compute indices of diagonal elements
-  diag.els <- K*(1:K) + (2:(K+1))*2 - 1
-  # compute indices of lower triangular indices and
-  # sort them by row because that is how the (1-p_i) terms are repeated
-  # and translate them into vector indices
-  lower.els <- which((lower.tri(matrix(1,K+1,K+1))),arr.ind=T)
-  lower.els <- lower.els[order(lower.els[,1]),]
-  lower.els <- (lower.els[,2]-1)*(K+1) + lower.els[,1]
-  # compute indices for entire set of matrices with offsets
-  diag.els.arr <- rep(arr.offset, each = K) + diag.els
-  lower.els.arr <- rep(arr.offset, each = sum(1:K)) + lower.els
-  nmats <- M*J*nY
-  detMat <- lower.tri(matrix(1, K + 1, K + 1),diag = TRUE) %x%
-      array(1,c(1,1,nmats))
+##   # compute indices for vectorization in detMatrix:
+##   # det.row and .col give indices for betas in detection matrix
+##   det.row <- c(rep(NA,K), rep(3:(K+1), times = 1 : (K - 1))) 
+##   det.col <- c(rep(NA,K), sequence(1 : (K - 1)) + 1)
+##   # compute offset for each matrix
+##   arr.offset <- 0:(M * J * nY - 1) * (K + 1)^2
+##   # compute indices of diagonal elements
+##   diag.els <- K*(1:K) + (2:(K+1))*2 - 1
+##   # compute indices of lower triangular indices and
+##   # sort them by row because that is how the (1-p_i) terms are repeated
+##   # and translate them into vector indices
+##   lower.els <- which((lower.tri(matrix(1,K+1,K+1))),arr.ind=T)
+##   lower.els <- lower.els[order(lower.els[,1]),]
+##   lower.els <- (lower.els[,2]-1)*(K+1) + lower.els[,1]
+##   # compute indices for entire set of matrices with offsets
+##   diag.els.arr <- rep(arr.offset, each = K) + diag.els
+##   lower.els.arr <- rep(arr.offset, each = sum(1:K)) + lower.els
+##   nmats <- M*J*nY
+##   detMat <- lower.tri(matrix(1, K + 1, K + 1),diag = TRUE) %x%
+##       array(1,c(1,1,nmats))
 
-  # creates detection matrix from list of detection parameters
-  detMatrix <- function(dPars) {
-    # put the p's in the detMats
-    detMat[diag.els.arr] <- t(dPars[, 1:K])
-    detMat[lower.els.arr] <- 1 - t(dPars[,rep(1:K,times=1:K)])
-    # put beta's in the mats
-    for(i in (K+1):nDMP.un) {
-      detMat[det.row[i], det.col[i],] <- dPars[,i] *
-        detMat[det.row[i], det.col[i],]
-      detMat[det.row[i], 1:(det.col[i] - 1),] <- (1 - dPars[,i]) * 
-        detMat[det.row[i], 1:(det.col[i] - 1),]
-    }
-    detMat
-  }
+##   # creates detection matrix from list of detection parameters
+##   detMatrix <- function(dPars) {
+##     # put the p's in the detMats
+##     detMat[diag.els.arr] <- t(dPars[, 1:K])
+##     detMat[lower.els.arr] <- 1 - t(dPars[,rep(1:K,times=1:K)])
+##     # put beta's in the mats
+##     for(i in (K+1):nDMP.un) {
+##       detMat[det.row[i], det.col[i],] <- dPars[,i] *
+##         detMat[det.row[i], det.col[i],]
+##       detMat[det.row[i], 1:(det.col[i] - 1),] <- (1 - dPars[,i]) * 
+##         detMat[det.row[i], 1:(det.col[i] - 1),]
+##     }
+##     detMat
+##   }
 
-  # create process matrix from vector of paramters
-  # WARNING: this is currently frog (K=3)-specific
-  # needs to be modified for general or other use
+##   # create process matrix from vector of paramters
+##   # WARNING: this is currently frog (K=3)-specific
+##   # needs to be modified for general or other use
   phiMatrix <- function(phiPars) {
     phi <- matrix(NA, K + 1, K + 1)
     s <- phiPars[1 : (K + 1)]
@@ -141,97 +141,107 @@ function(stateformula = ~ 1, detformula = ~ 1,
     
     phi    
   }
+
+  y.itj <- as.numeric(t(y))
+
+  ## reorder X.tjik to be X.itjk
+  t.tjik <- rep(1:nY, each = K *M*J)
+  i.tjik <- rep(rep(1:M, each = K), nY*J)
+  j.tjik <- rep(rep(1:J, each = K*M), nY)
+  k.tjik <- rep(1:K, M * J * nY)
+  XDet.itjk <- XDet.tjik[order(i.tjik, t.tjik, j.tjik, k.tjik),]
+
+  ests <- findMLE(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
+         nPhiP.un, H.det, H.phi, K, yearly.det, M, J, nY)
+
   
-  y.tji <- as.numeric(y)  
-  y.tjik <- rep(y.tji, each = K + 1)
-  K.tjik <- rep(0:K, M * J * nY)
-  t.tjik <- rep(1:nY, each = (K+1) *M*J)
-  i.tjik <- rep(rep(1:M, each = K + 1), nY*J)
-  j.tjik <- rep(rep(1:J, each = (K + 1)*M), nY)
-  total <- nY*J*M*(K+1)
-  ind.k.y.tjik2 <- matrix(c(K.tjik + 1, y.tjik + 1,
-                            rep(1:total,each = K + 1)), total, 3)
+##   y.tji <- as.numeric(y)  
+##   y.tjik <- rep(y.tji, each = K + 1)
+
+##   total <- nY*J*M*(K+1)
+##   ind.k.y.tjik2 <- matrix(c(K.tjik + 1, y.tjik + 1,
+##                             rep(1:total,each = K + 1)), total, 3)
 
   # parms: alpha's, beta's, b's, gamma's, psi's, phi's
-  iteration <- 1
-  nll <- function(parms) {
-    # compute detection parameters, alpha's and beta's, from constrained
-    # parameters
-    dPars <- H %*% parms[1:nDMP]
+##   iteration <- 1
+##   nll <- function(parms) {
+##     # compute detection parameters, alpha's and beta's, from constrained
+##     # parameters
+##     dPars <- H %*% parms[1:nDMP]
 
-    # recover detection parameters
-    # see Royle and Link 2005 for further explanations of alpha's,
-    # beta's, and b's.  Here is the general equation for the stasis
-    # (diagonal) detection term in detection matrix:
-    # p_tjik = logistic(gma_t + alpha_k + sum_l^L(b_l*x_l))
-    alpha <- dPars[1 : K]    # "stasis" detection intercepts for each state
-    beta <- plogis(dPars[(K + 1) : nDMP.un]) # underdetection parameters
-    if(nDCP > 0) {
-        b <- parms[(nDMP + 1) : (nDMP + nDCP)]
-    }
+##     # recover detection parameters
+##     # see Royle and Link 2005 for further explanations of alpha's,
+##     # beta's, and b's.  Here is the general equation for the stasis
+##     # (diagonal) detection term in detection matrix:
+##     # p_tjik = logistic(gma_t + alpha_k + sum_l^L(b_l*x_l))
+##     alpha <- dPars[1 : K]    # "stasis" detection intercepts for each state
+##     beta <- plogis(dPars[(K + 1) : nDMP.un]) # underdetection parameters
+##     if(nDCP > 0) {
+##         b <- parms[(nDMP + 1) : (nDMP + nDCP)]
+##     }
 
-    ## detection parameters for covariates
-    if(yearly.det) {
-        gma <- parms[(nDMP + nDCP + 1) : nDP] # stasis detection effect for year
-    }
+##     ## detection parameters for covariates
+##     if(yearly.det) {
+##         gma <- parms[(nDMP + nDCP + 1) : nDP] # stasis detection effect for year
+##     }
     
-    # recover the initial latent abundance vector
-    psi <- parms[(nDP + 1) : (nDP + K)]
-    psi <- exp(c(0,psi))/sum(exp(c(0,psi)))
+##     # recover the initial latent abundance vector
+##     psi <- parms[(nDP + 1) : (nDP + K)]
+##     psi <- exp(c(0,psi))/sum(exp(c(0,psi)))
 
-    # get transition matrix
-    phiPars <- H.phi %*% plogis(parms[(nDP + K  + 1) : nP])
-    phi <- phiMatrix(phiPars)
+##     # get transition matrix
+##     phiPars <- H.phi %*% plogis(parms[(nDP + K  + 1) : nP])
+##     phi <- phiMatrix(phiPars)
 
-    # create matrix of repeated covariate parameters for vectorization
-    beta.tji <- matrix(beta, nY * M * J, length(beta), byrow=TRUE)
+##     # create matrix of repeated covariate parameters for vectorization
+##     beta.tji <- matrix(beta, nY * M * J, length(beta), byrow=TRUE)
 
-    # model detection parms (gammas, alphas, and bs)
-    if(yearly.det) {
-        p.tjik <- plogis(XDet.tjik %*% c(gma, alpha, b))
-    } else {
-        p.tjik <- plogis(XDet.tjik %*% c(alpha, b))
-    }
+##     # model detection parms (gammas, alphas, and bs)
+##     if(yearly.det) {
+##         p.tjik <- plogis(XDet.tjik %*% c(gma, alpha, b))
+##     } else {
+##         p.tjik <- plogis(XDet.tjik %*% c(alpha, b))
+##     }
 
-    ##   p.tjik[is.na(p.tjik)] <- 1 # CONSIDER THIS STEP FUTHER!!!!!
+##     ##   p.tjik[is.na(p.tjik)] <- 1 # CONSIDER THIS STEP FUTHER!!!!!
 
-    # Get detmat Paramters (Rows Are Alphas Then Betas)
-    p.tji.k <- matrix(p.tjik, nY * M * J, K, byrow=TRUE)
-    detMat.pars <- cbind(p.tji.k, beta.tji)
+##     # Get detmat Paramters (Rows Are Alphas Then Betas)
+##     p.tji.k <- matrix(p.tjik, nY * M * J, K, byrow=TRUE)
+##     detMat.pars <- cbind(p.tji.k, beta.tji)
 
-    detMats.tji <- detMatrix(detMat.pars)
-    fy.tjik <- detMats.tji[ind.k.y.tjik2]
-    fy.tjik[is.na(y.tjik)] <- 1  # RECONSIDER THIS STEP!!!!
+##     detMats.tji <- detMatrix(detMat.pars)
+##     fy.tjik <- detMats.tji[ind.k.y.tjik2]
+##     fy.tjik[is.na(y.tjik)] <- 1  # RECONSIDER THIS STEP!!!!
 
-    fy.ik.j.t <- array(fy.tjik, c(M * (K + 1), J, nY))
+##     fy.ik.j.t <- array(fy.tjik, c(M * (K + 1), J, nY))
 
-    fy.ik.t.j <- aperm(fy.ik.j.t, c(1,3,2))
-    fy.tik.j <- matrix(fy.ik.t.j, nY * M * (K + 1), J)
-    fy.tik <- rowProds(fy.tik.j, na.rm = TRUE)
+##     fy.ik.t.j <- aperm(fy.ik.j.t, c(1,3,2))
+##     fy.tik.j <- matrix(fy.ik.t.j, nY * M * (K + 1), J)
+##     fy.tik <- rowProds(fy.tik.j, na.rm = TRUE)
 
-    # compute products D(p(y_it)) * phi_t for t = 1,..., T-1
-    fy.k.1.ti <- array(fy.tik[1:(M * (K + 1) * (nY - 1))],
-                       c(K + 1, 1, (nY - 1) * M))
-    fy.k.k.ti <- fy.k.1.ti %x% t(rep(1, K + 1)) # repeat columns
-    phi.ti <- array(1,c(1,1, M * (nY - 1))) %x% phi
-    phi.ti.prod <- fy.k.k.ti * phi.ti
+##     # compute products D(p(y_it)) * phi_t for t = 1,..., T-1
+##     fy.k.1.ti <- array(fy.tik[1:(M * (K + 1) * (nY - 1))],
+##                        c(K + 1, 1, (nY - 1) * M))
+##     fy.k.k.ti <- fy.k.1.ti %x% t(rep(1, K + 1)) # repeat columns
+##     phi.ti <- array(1,c(1,1, M * (nY - 1))) %x% phi
+##     phi.ti.prod <- fy.k.k.ti * phi.ti
 
-    fy.k.1.Ti <- array(fy.tik[(M * (K + 1) * (nY - 1) + 1) :
-                              (M * (K + 1) * nY)],
-                       c(K + 1, 1, M))
+##     fy.k.1.Ti <- array(fy.tik[(M * (K + 1) * (nY - 1) + 1) :
+##                               (M * (K + 1) * nY)],
+##                        c(K + 1, 1, M))
 
-    ## compute likelihood from forward recursion in C
-    nLL <- forward(M,nY,psi,phi.ti.prod,fy.k.1.Ti)
+##     ## compute likelihood from forward recursion in C
+##     nLL <- forward(M,nY,psi,phi.ti.prod,fy.k.1.Ti)
 
-    print(sprintf("%i: %f",get("iteration",parent.frame(3)), nLL))
-    eval.parent(quote(iteration <- iteration + 1), 3)
-    nLL
-  }
+##     print(sprintf("%i: %f",get("iteration",parent.frame(3)), nLL))
+##     eval.parent(quote(iteration <- iteration + 1), 3)
+##     nLL
+##   }
 
-  fm <- optim(rep(0,nP),nll, method = "BFGS", hessian = TRUE)
-  ests <- fm$par
-
-  DMP <- H %*% ests[1:nDMP]
+##  fm <- optim(rep(0,nP),nll, method = "BFGS", hessian = TRUE)
+##  ests <- fm$par
+  
+  DMP <- H.det %*% ests[1:nDMP]
   psi <- ests[(nDP + 1) : (nDP + K)]
   psi <- exp(c(0,psi))/sum(exp(c(0,psi)))
 
@@ -247,8 +257,8 @@ function(stateformula = ~ 1, detformula = ~ 1,
   list(alpha = DMP[1:K], beta = plogis(DMP[(K+1): nDMP.un]),
        b = if(nDCP > 0) {ests[(nDMP + 1) : (nDMP + nDCP)]},
        gamma = gamma,
-       psi = psi, phiPars = as.numeric(phiPars), phi = phi,
-       hessian = fm$hessian, AIC = 2*fm$value + 2*nP)
+       psi = psi, phiPars = as.numeric(phiPars), phi = phi)
+  ## hessian = fm$hessian, AIC = 2*fm$value + 2*nP)
 }
 
 
@@ -260,4 +270,32 @@ function(M,nY,psi,phi.ti.prod,fy.k.1.Ti)
    as.double(phi.ti.prod), as.double(fy.k.1.Ti),
    nLL = double(1))$nLL
 
+}
+
+findMLE <-
+function(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
+         nPhiP.un, H.det, H.phi, K, yearly.det, M, J, nY)
+{
+    x <- .C("findMLE",
+            as.integer(y.itj),
+            as.double(t(XDet.itjk)),
+            ncol(XDet.itjk),
+            as.integer(nDMP),
+            as.integer(nDCP),
+            as.integer(nDP),
+            as.integer(nDYP),
+            as.integer(nSP),
+            as.integer(nPhiP),
+            as.integer(nP),
+            as.integer(nDMP.un),
+            as.integer(nPhiP.un),
+            as.double(H.det),
+            as.double(H.phi),
+            as.integer(K),
+            as.integer(yearly.det),
+            as.integer(M),
+            as.integer(J),
+            as.integer(nY),
+            MLE = numeric(nP))
+    x$MLE
 }
