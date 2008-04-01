@@ -1,4 +1,4 @@
-markovMN <-
+markovMN_preScythe <-
 function(stateformula = ~ 1, detformula = ~ 1,
          data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
          y, covdata.site = NULL, covdata.obs = NULL, detconstraint = NULL,
