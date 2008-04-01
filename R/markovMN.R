@@ -1,4 +1,4 @@
-markovMN_scythe <-
+markovMN <-
 function(stateformula = ~ 1, detformula = ~ 1,
          data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
          y, covdata.site = NULL, covdata.obs = NULL, detconstraint = NULL,
@@ -154,26 +154,25 @@ findMLE <-
 function(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
          nPhiP.un, H.det, H.phi, K, yearly.det, M, J, nY)
 {
-    x <- .C("findMLE",
-            as.integer(y.itj),
-            as.double(t(XDet.itjk)),
-            ncol(XDet.itjk),
-            as.integer(nDMP),
-            as.integer(nDCP),
-            as.integer(nDP),
-            as.integer(nDYP),
-            as.integer(nSP),
-            as.integer(nPhiP),
-            as.integer(nP),
-            as.integer(nDMP.un),
-            as.integer(nPhiP.un),
-            as.double(H.det),
-            as.double(H.phi),
-            as.integer(K),
-            as.integer(yearly.det),
-            as.integer(M),
-            as.integer(J),
-            as.integer(nY),
-            MLE = numeric(nP))
-    x$MLE
+    .C("findMLE",
+       as.integer(y.itj),
+       as.double(t(XDet.itjk)),
+       ncol(XDet.itjk),
+       as.integer(nDMP),
+       as.integer(nDCP),
+       as.integer(nDP),
+       as.integer(nDYP),
+       as.integer(nSP),
+       as.integer(nPhiP),
+       as.integer(nP),
+       as.integer(nDMP.un),
+       as.integer(nPhiP.un),
+       as.double(H.det),
+       as.double(H.phi),
+       as.integer(K),
+       as.integer(yearly.det),
+       as.integer(M),
+       as.integer(J),
+       as.integer(nY),
+       MLE = numeric(nP))$MLE
 }
