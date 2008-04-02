@@ -14,7 +14,6 @@
 //#define DEBUG
 
 
-
 //typedef Matrix<double,Col,Concrete> matrix;
 
 using namespace std;
@@ -23,9 +22,9 @@ using std::vector;
 
 class HiddenMarkovModel {
 public:
-    double operator() (const Matrix<> parms);
-    Matrix<> Hdet;  //(*nDMP_un, *nDMP, Hdet_in);
-    Matrix<> Hphi;  //(*nPhiP_un, *nPhiP, Hphi_in);
+    double operator() (const Matrix<> &parms);
+    Matrix<> Hdet;
+    Matrix<> Hphi;
     unsigned int nDMP, nDMP_un, nPhiP_un, nDYP, nDP, nSP, nPhiP,
 	nP, K, nDCP, M, J, nY;
     bool yearly_det;
@@ -39,7 +38,7 @@ public:
 
 // This is the transpose of the phi matrix in my notes.  ie., it is column 
 // stochastic
-inline Matrix<> phiMatrix(Matrix<> phiParms)
+inline Matrix<> phiMatrix(const Matrix<>& phiParms)
 {
     double s0 = phiParms(0), s1 = phiParms(1), s2 = phiParms(2), s3 = phiParms(3),
 	g01 = phiParms(4), g02 = phiParms(5), g12 = phiParms(6), 
@@ -57,7 +56,7 @@ inline Matrix<> phiMatrix(Matrix<> phiParms)
 }
 
 // detParms is vector containing p1:p3, beta21, beta32, beta31.
-inline Matrix<> detMatrix(Matrix<> detParms)
+inline Matrix<> detMatrix(const Matrix<>& detParms)
 {
     double p1 = detParms(0), p2 = detParms(1), p3 = detParms(2),
 	beta21 = detParms(3), beta32 = detParms(4), beta31 = detParms(5);
@@ -71,7 +70,7 @@ inline Matrix<> detMatrix(Matrix<> detParms)
     return D;
 }
 
-double  HiddenMarkovModel::operator() (const Matrix<> parms)
+double  HiddenMarkovModel::operator() (const Matrix<>& parms)
 {
 
 #ifdef DEBUG
