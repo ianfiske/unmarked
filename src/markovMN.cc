@@ -3,6 +3,7 @@
 #include "distributions.h"
 #include "stat.h"
 #include "la.h"
+#include "lapack.h"
 #include "ide.h"
 #include "smath.h"
 #include "mersenne.h"
@@ -113,8 +114,8 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
 	detParmVec = rbind(detParmVec, b);
     }
 
-    if (yearly_det > 0) {
-	const Matrix<> gma = parms(nDMP + K, 0, nP - 1, 0);
+    if (yearly_det) {
+	const Matrix<> gma = parms(nDMP + nDCP, 0, nDP - 1, 0);
 	detParmVec = rbind(gma, detParmVec);
     }
   
