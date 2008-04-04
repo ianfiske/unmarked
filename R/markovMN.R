@@ -78,35 +78,6 @@ function(stateformula = ~ 1, detformula = ~ 1,
     H.phi[i, phicon[i]] <- 1
   }
 
-
-##   # create process matrix from vector of paramters
-##   # WARNING: this is currently frog (K=3)-specific
-##   # needs to be modified for general or other use
-  phiMatrix <- function(phiPars) {
-    phi <- matrix(NA, K + 1, K + 1)
-    s <- phiPars[1 : (K + 1)]
-    g <- phiPars[(K + 2) : (K + 4)]
-    r <- phiPars[(K + 5) : 12]
-    diag(phi) <- s
-    phi[1,2:4] <- (1-s[1])
-    phi[2,c(1,3,4)] <- (1-s[2])
-    phi[3,c(1,2,4)] <- (1-s[3])
-    phi[4,1:3] <- (1-s[4])
-
-    # r = r_10, r_21, r_20, r_32, r_31
-    # g = g_01, g_02, g_12
-    phi[1,2:4] <- phi[1,2:4] * c(g[1], 1-g[1], 1-g[1]) *
-      c(1, g[2], 1 - g[2])
-    phi[2,c(1,3,4)] <- phi[2,c(1,3,4)] * c(1-g[3], g[3], 1-g[3]) *
-      c(r[1], 1, 1 - r[1])
-    phi[3,c(1,2,4)] <- phi[3,c(1,2,4)] * c(1-r[2], r[2], 1 - r[2]) *
-      c(r[3], 1, 1 - r[3])
-    phi[4,1:3] <- phi[4,1:3] * c(1-r[4], 1-r[4], r[4]) *
-      c(1-r[5], r[5], 1)
-    
-    phi    
-  }
-
   y.itj <- as.numeric(t(y))
 
   ## reorder X.tjik to be X.itjk
@@ -118,15 +89,11 @@ function(stateformula = ~ 1, detformula = ~ 1,
 
   fm <- findMLE(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
          nPhiP.un, H.det, H.phi, K, yearly.det, M, J, nY)
-
   ests <- fm$mle
   
   DMP <- H.det %*% ests[1:nDMP]
   psi <- ests[(nDP + 1) : (nDP + K)]
   psi <- exp(c(0,psi))/sum(exp(c(0,psi)))
-
-  phiPars <- H.phi %*% plogis(ests[(nDP + K  + 1) : nP])
-  phi <- phiMatrix(phiPars)
 
   if(yearly.det) {
       gamma <- ests[(nDMP + nDCP + 1) : nDP]
@@ -137,7 +104,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
   list(alpha = DMP[1:K], beta = plogis(DMP[(K+1): nDMP.un]),
        b = if(nDCP > 0) {ests[(nDMP + 1) : (nDMP + nDCP)]},
        gamma = gamma,
-       psi = psi, phiPars = as.numeric(phiPars), phi = phi,
+       psi = psi, phiPars = as.numeric(phiPars), phi = fm$phi,
        hessian = fm$hessian, AIC = 2*fm$nll + 2*nP)
 }
 
@@ -178,7 +145,9 @@ function(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
             as.integer(nY),
             mle = numeric(nP),
             hessian = numeric(nP^2),
-            nll = numeric(1))
+            nll = numeric(1),
+            phi = numeric((K + 1)^2))
 
-    return(list(mle = x$mle, hessian = matrix(x$hessian,nP,nP), nll = x$nll))
+    return(list(mle = x$mle, hessian = matrix(x$hessian,nP,nP),
+                nll = x$nll, phi = matrix(x$phi,K + 1, K + 1)))
 }
