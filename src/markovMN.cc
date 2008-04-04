@@ -38,7 +38,7 @@ public:
 
     Matrix<> mle; // will store the MLE after fitting
     Matrix<> hessian;
-//    double negLogLike; //store value of nll at minimum
+    Matrix<> phi;
 };
 
 
@@ -132,19 +132,11 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
     Matrix<> psi = scythe::exp(logPsi);
     psi = psi / sum(psi);
 
-#ifdef DEBUG
-    cout << "psi:\n" << psi;
-#endif
-
     const Matrix<> logitPhiParms = parms(nDP + K, 0, nP - 1, 0);
     const Matrix<> phiParms =  Hphi * plogis(logitPhiParms, 0, 1);
     const Matrix<> phi = phiMatrix(phiParms);
 
-#ifdef DEBUG
-    cout << "phi:\n" << phi << endl;
-#endif
-
-    for (vector<vector<vector<int > > >::size_type i = 0; i < M; ++i) {
+    for (vector<vector<vector< unsigned int > > >::size_type i = 0; i < M; ++i) {
 	
 	// Initialize psi for site i.
 	psiSite = psi;
@@ -216,6 +208,10 @@ void HiddenMarkovModel::fitmodel(const Matrix<>& inits) {
     }
 
     hessian = scythe::hesscdif(*this, mle);
+
+    const Matrix<> logitPhiParms = mle(nDP + K, 0, nP - 1, 0);
+    const Matrix<> phiParms =  Hphi * plogis(logitPhiParms, 0, 1);
+    phi = phiMatrix(phiParms);
 }
 
 
@@ -242,19 +238,13 @@ extern "C" {
 		  const int *nY,
 		  double *mle,
 		  double *hessian,
-		  double *negloglike)
+		  double *negloglike,
+		  double *phi)
     {
-	#ifdef DEBUG
-	cout << "entered findMLE" << endl;
-	#endif
 
 	// instantiate model
 	HiddenMarkovModel hmm;
 	
-	#ifdef DEBUG
-	cout << "model hmm had been instantiated" << endl;
-	#endif
-
 	for (int i = 0; i < *M; ++i) {
 	    hmm.y_itj.push_back(vector< vector< unsigned int > > () );
 	    hmm.XDet_itj.push_back(vector< vector< Matrix<> > > () );
@@ -270,10 +260,6 @@ extern "C" {
 		}
 	    }
 	}
-
-	#ifdef DEBUG
-	cout << "Model data has been input." << endl;
-	#endif
 
 	hmm.Hdet = Matrix<> (*nDMP_un, *nDMP, Hdet_in);
 	hmm.Hphi = Matrix<> (*nPhiP_un, *nPhiP, Hphi_in);
@@ -292,13 +278,12 @@ extern "C" {
 	hmm.J = *J;
 	hmm.nY = *nY;
 	
-	#ifdef DEBUG
-	cout << "Hdet:\n" << hmm.Hdet << endl;
-	#endif
-	    
+	
+	// find the mle
 	Matrix<> inits(*nP, 1, true, 0);
 	hmm.fitmodel(inits);
 
+	// store the results
 	for (int i = 0; i < *nP; ++i)
 	    mle[i] = hmm.mle(i);
 
@@ -306,6 +291,9 @@ extern "C" {
 	    hessian[i] = hmm.hessian(i);
 
 	*negloglike = hmm(hmm.mle);
+
+	for (int i = 0; i < (*K + 1) * (*K + 1); ++i)
+	    phi[i] = hmm.phi(i);
 
     }
 }
