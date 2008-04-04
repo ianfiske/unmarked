@@ -116,8 +116,10 @@ function(stateformula = ~ 1, detformula = ~ 1,
   k.tjik <- rep(1:K, M * J * nY)
   XDet.itjk <- XDet.tjik[order(i.tjik, t.tjik, j.tjik, k.tjik),]
 
-  ests <- findMLE(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
+  fm <- findMLE(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
          nPhiP.un, H.det, H.phi, K, yearly.det, M, J, nY)
+
+  ests <- fm$mle
   
   DMP <- H.det %*% ests[1:nDMP]
   psi <- ests[(nDP + 1) : (nDP + K)]
@@ -135,8 +137,8 @@ function(stateformula = ~ 1, detformula = ~ 1,
   list(alpha = DMP[1:K], beta = plogis(DMP[(K+1): nDMP.un]),
        b = if(nDCP > 0) {ests[(nDMP + 1) : (nDMP + nDCP)]},
        gamma = gamma,
-       psi = psi, phiPars = as.numeric(phiPars), phi = phi)
-  ## hessian = fm$hessian, AIC = 2*fm$value + 2*nP)
+       psi = psi, phiPars = as.numeric(phiPars), phi = phi,
+       hessian = fm$hessian, AIC = 2*fm$nll + 2*nP)
 }
 
 
@@ -154,25 +156,29 @@ findMLE <-
 function(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
          nPhiP.un, H.det, H.phi, K, yearly.det, M, J, nY)
 {
-    .C("findMLE",
-       as.integer(y.itj),
-       as.double(t(XDet.itjk)),
-       ncol(XDet.itjk),
-       as.integer(nDMP),
-       as.integer(nDCP),
-       as.integer(nDP),
-       as.integer(nDYP),
-       as.integer(nSP),
-       as.integer(nPhiP),
-       as.integer(nP),
-       as.integer(nDMP.un),
-       as.integer(nPhiP.un),
-       as.double(H.det),
-       as.double(H.phi),
-       as.integer(K),
-       as.integer(yearly.det),
-       as.integer(M),
-       as.integer(J),
-       as.integer(nY),
-       MLE = numeric(nP))$MLE
+    x <- .C("findMLE",
+            as.integer(y.itj),
+            as.double(t(XDet.itjk)),
+            ncol(XDet.itjk),
+            as.integer(nDMP),
+            as.integer(nDCP),
+            as.integer(nDP),
+            as.integer(nDYP),
+            as.integer(nSP),
+            as.integer(nPhiP),
+            as.integer(nP),
+            as.integer(nDMP.un),
+            as.integer(nPhiP.un),
+            as.double(H.det),
+            as.double(H.phi),
+            as.integer(K),
+            as.integer(yearly.det),
+            as.integer(M),
+            as.integer(J),
+            as.integer(nY),
+            mle = numeric(nP),
+            hessian = numeric(nP^2),
+            nll = numeric(1))
+
+    return(list(mle = x$mle, hessian = matrix(x$hessian,nP,nP), nll = x$nll))
 }

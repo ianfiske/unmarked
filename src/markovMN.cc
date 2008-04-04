@@ -24,6 +24,7 @@ using std::vector;
 class HiddenMarkovModel {
 public:
     double operator() (const Matrix<> &parms);
+    void fitmodel (const Matrix<> &inits);
     Matrix<> Hdet;
     Matrix<> Hphi;
     unsigned int nDMP, nDMP_un, nPhiP_un, nDYP, nDP, nSP, nPhiP,
@@ -34,6 +35,10 @@ public:
 // Design matrix for each site, time, observation. dim:
 // K x ncol(XDet)
     vector< vector< vector < Matrix<> > > > XDet_itj;
+
+    Matrix<> mle; // will store the MLE after fitting
+    Matrix<> hessian;
+//    double negLogLike; //store value of nll at minimum
 };
 
 
@@ -70,6 +75,8 @@ inline Matrix<> detMatrix(const Matrix<>& detParms)
     Matrix<> D(4, 4, vals);
     return D;
 }
+
+
 
 double  HiddenMarkovModel::operator() (const Matrix<>& parms)
 {
@@ -137,7 +144,7 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
     cout << "phi:\n" << phi << endl;
 #endif
 
-    for (unsigned int i = 0; i < M; ++i) {
+    for (vector<vector<vector<int > > >::size_type i = 0; i < M; ++i) {
 	
 	// Initialize psi for site i.
 	psiSite = psi;
@@ -197,6 +204,21 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
     return negLogLike;
 }
     
+void HiddenMarkovModel::fitmodel(const Matrix<>& inits) {
+
+    // set random number generator
+    mersenne myrng;
+
+    try{
+	mle = scythe::BFGS(*this, inits, myrng, 1e5, 1e-5, false);
+    } catch (scythe_convergence_error err) {
+	cout << "BFGS did not converge." << endl;	    
+    }
+
+    hessian = scythe::hesscdif(*this, mle);
+}
+
+
 extern "C" {
     
     void findMLE (int *y_itj,
@@ -218,15 +240,14 @@ extern "C" {
 		  const int *M,
 		  const int *J,
 		  const int *nY,
-		  double *MLE)
+		  double *mle,
+		  double *hessian,
+		  double *negloglike)
     {
 	#ifdef DEBUG
 	cout << "entered findMLE" << endl;
 	#endif
 
-	// set random number generator
-	mersenne myrng;
-	
 	// instantiate model
 	HiddenMarkovModel hmm;
 	
@@ -275,22 +296,16 @@ extern "C" {
 	cout << "Hdet:\n" << hmm.Hdet << endl;
 	#endif
 	    
+	Matrix<> inits(*nP, 1, true, 0);
+	hmm.fitmodel(inits);
 
-	
-	Matrix<> theta(*nP, 1, true, 0);
-
-	Matrix<> theta_MLE;
-	try{
-	    theta_MLE = scythe::BFGS(hmm, theta, myrng, 1e5, 1e-5, false);
-	} catch (scythe_convergence_error err) {
-	    cout << "BFGS did not converge." << endl;	    
-	}
-
-#ifdef DEBUG
-	cout << "MLE:\n" << theta_MLE << endl;
-#endif
 	for (int i = 0; i < *nP; ++i)
-	    MLE[i] = theta_MLE(i);
+	    mle[i] = hmm.mle(i);
+
+	for (int i = 0; i < (*nP)*(*nP); ++i)
+	    hessian[i] = hmm.hessian(i);
+
+	*negloglike = hmm(hmm.mle);
 
     }
 }
