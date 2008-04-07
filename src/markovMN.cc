@@ -11,6 +11,8 @@
 #include <iostream>
 #include <R.h> 
 #include <vector>
+#include "phimatrix.h"
+#include "detmatrix.h"
 
 //#define DEBUG
 
@@ -21,14 +23,41 @@ using namespace std;
 using namespace scythe;
 using std::vector;
 
+// base class for the library
 class HiddenMarkovModel {
 public:
     double operator() (const Matrix<> &parms);
     void fitmodel (const Matrix<> &inits);
+    void loadData (int *y_itj_in, double *XDet_itjk, const int *ncXDet);
+    void setMatrices (phiMatrix *phiMat, detMatrix *detMat);
+
+    // constructor
+    HiddenMarkovModel( const int *nDMP, 
+		       const int *nDCP, 
+		       const int *nDP, 
+		       const int *nDYP,
+		       const int *nSP, 
+		       const int *nPhiP, 
+		       const int *nP,
+		       const int *nDMP_un, 
+		       const int *nPhiP_un,
+		       const int *K,
+		       const int *M,
+		       const int *J,
+		       const int *nY,
+		       const Matrix<> Hdet,
+		       const Matrix<> Hphi,
+		       const int *yearly_det):
+	Hdet(Hdet), Hphi(Hphi),
+	nDMP(*nDMP), nDCP(*nDCP), nDP(*nDP), nDYP(*nDYP), nSP(*nSP),
+	nPhiP(*nPhiP), nP(*nP), nDMP_un(*nDMP_un), nPhiP_un(*nPhiP_un), 
+	K(*K), M(*M), J(*J), nY(*nY),
+	yearly_det(*yearly_det) { }
+
     Matrix<> Hdet;
     Matrix<> Hphi;
-    unsigned int nDMP, nDMP_un, nPhiP_un, nDYP, nDP, nSP, nPhiP,
-	nP, K, nDCP, M, J, nY;
+    unsigned int nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP_un, nPhiP_un,
+	K, M, J, nY;
     bool yearly_det;
     vector< vector< vector <unsigned int> > > y_itj;
 
@@ -39,71 +68,56 @@ public:
     Matrix<> mle; // will store the MLE after fitting
     Matrix<> hessian;
     Matrix<> phi;
+
+    phiMatrix *phiMatPtr;  // phi matrix functor pointer
+    detMatrix *detMatPtr;  // det matrix functor pointer
 };
 
-
-// This is the transpose of the phi matrix in my notes.  ie., it is column 
-// stochastic
-inline Matrix<> phiMatrix(const Matrix<>& phiParms)
+void HiddenMarkovModel::loadData(int *y_itj_in,
+				 double *XDet_itjk,
+				 const int *ncXDet)
 {
-    double s0 = phiParms(0), s1 = phiParms(1), s2 = phiParms(2), s3 = phiParms(3),
-	g01 = phiParms(4), g02 = phiParms(5), g12 = phiParms(6), 
-	r10 = phiParms(7), r21 = phiParms(8), r20 = phiParms(9),
-	r32 = phiParms(10), r31 = phiParms(11);
-
-    double vals[16] = {s0, (1-s0)*g01, (1-s0)*(1-g01)*g02, (1-s0)*(1-g01)*(1-g02),
-		       (1-s1)*(1-g12)*r10, s1, (1-s1)*g12, (1-s1)*(1-g12)*(1-r21),
-		       (1-s2)*(1-r21)*r20, (1-s2)*r21, s2, (1-s2)*(1-r21)*(1-r20),
-		       (1-s3)*(1-r32)*(1-r31), (1-s3)*(1-r32)*r31, (1-s3)*r32, s3};
-    
-    Matrix<> P(4, 4, vals);
-    
-    return P;
+    for (unsigned int i = 0; i < M; ++i) {
+	y_itj.push_back(vector< vector< unsigned int > > () );
+	XDet_itj.push_back(vector< vector< Matrix<> > > () );
+	for (unsigned int t = 0; t < nY; ++t) {
+	    y_itj[i].push_back(vector< unsigned int > () );
+	    XDet_itj[i].push_back(vector< Matrix<> > () );
+	    for (unsigned int j = 0; j < J; ++j) {
+		y_itj[i][t].push_back(*(y_itj_in++));
+		    
+		// note that this is the tranpose of XDet
+		XDet_itj[i][t].push_back(Matrix<> (*ncXDet, K, XDet_itjk));
+		    
+		XDet_itjk += (K) * (*ncXDet);  // this line will change XDet changes.
+		XDet_itj[i][t][j] = scythe::t(XDet_itj[i][t][j]);
+	    }
+	}
+    }
 }
 
-// detParms is vector containing p1:p3, beta21, beta32, beta31.
-inline Matrix<> detMatrix(const Matrix<>& detParms)
+void HiddenMarkovModel::setMatrices (phiMatrix *phiMatPtr, 
+				     detMatrix *detMatPtr)
 {
-    double p1 = detParms(0), p2 = detParms(1), p3 = detParms(2),
-	beta21 = detParms(3), beta32 = detParms(4), beta31 = detParms(5);
-
-    double vals[16] = {1, 1-p1, (1-beta21)*(1-p2),  (1-p3)*(1-beta32)*(1-beta31),
-		       0,  p1,    beta21*(1-p2),      beta31*(1-beta32)*(1-p3),
-		       0,  0,      p2,                 beta32*(1-p3),
-		       0,  0,      0,                      p3};
-
-    Matrix<> D(4, 4, vals);
-    return D;
+    this->phiMatPtr = phiMatPtr;
+    this->detMatPtr = detMatPtr;
 }
 
-
-
-double  HiddenMarkovModel::operator() (const Matrix<>& parms)
+double HiddenMarkovModel::operator() (const Matrix<>& parms)
 {
 
 #ifdef DEBUG
-    cout << "parms:\n" << parms << endl;
+    cout << parms << endl;
 #endif
 
     const Matrix<> detParms = Hdet * parms(0, 0, (nDMP - 1), 0);
-
+    const Matrix<> alpha = detParms(0, 0, K - 1, 0);
 #ifdef DEBUG
     cout << "detParms:\n" << detParms << endl;
 #endif
-
-    const Matrix<> alpha = detParms(0, 0, K - 1, 0);
-
-#ifdef DEBUG
-    cout << "alpha1" << endl;
-#endif
-
     const Matrix<> logitBeta = detParms(K, 0, nDMP_un - 1, 0);
     const Matrix<> beta = plogis(logitBeta, 0, 1);
     Matrix<> detParmVec = alpha;
-
-#ifdef DEBUG
-    cout << "alpha:\n" << alpha << endl;
-#endif
 
     Matrix<> detMatObs(K + 1, K + 1, false, 0);
     Matrix<> p(K, 1, false, 0);
@@ -111,11 +125,9 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
     Matrix<> detVec;
     double negLogLike = 0;
     Matrix<> psiSite;
-
 #ifdef DEBUG
-    cout << "beta:\n" << beta << endl;
+    cout << "alpha:\n" << alpha << endl;
 #endif
-    
     if (nDCP > 0) {
 	const Matrix<> b = parms(nDMP, 0, nDMP + nDCP - 1, 0);
 	detParmVec = rbind(detParmVec, b);
@@ -125,16 +137,25 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
 	const Matrix<> gma = parms(nDMP + nDCP, 0, nDP - 1, 0);
 	detParmVec = rbind(gma, detParmVec);
     }
-  
+
     Matrix<> logPsi = parms(nDP, 0, nDP + K - 1, 0);
     Matrix<> Zero(0);
     logPsi = rbind(Zero, logPsi);
     Matrix<> psi = scythe::exp(logPsi);
     psi = psi / sum(psi);
 
+#ifdef DEBUG
+    cout << "psi\n" << psi << endl;
+#endif
+
     const Matrix<> logitPhiParms = parms(nDP + K, 0, nP - 1, 0);
     const Matrix<> phiParms =  Hphi * plogis(logitPhiParms, 0, 1);
-    const Matrix<> phi = phiMatrix(phiParms);
+    const Matrix<> phi = (*phiMatPtr)(phiParms);
+
+#ifdef DEBUG
+    cout << "phiParms\n" << phiParms
+	 <<"\nphi\n" << phi << endl;
+#endif
 
     for (vector<vector<vector< unsigned int > > >::size_type i = 0; i < M; ++i) {
 	
@@ -147,26 +168,29 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
 	    detVec = ones(K + 1, 1);
 	    
 	    for (unsigned int j = 0; j < J; ++j) {
-		// compute stasis probabilities: p = plogis();
-		p = plogis(XDet_itj[i][t][j] * detParmVec, 0, 1);
-
+		// 99 = missing value
+		if (y_itj[i][t][j] != 99) {
+		    // compute stasis probabilities: p = plogis();
+		    p = plogis(XDet_itj[i][t][j] * detParmVec, 0, 1);
 #ifdef DEBUG
-		cout << "XDet:\n" << XDet_itj[i][t][j] 
-		     << "\ndetParmVec:\n" << detParmVec
-		     << "\np:\n" << p << endl;
+		    cout << "XDet:\n" << XDet_itj[i][t][j] 
+			 << "\ndetParmVec:\n" << detParmVec
+			 << "\np:\n" << p << endl;
 #endif
+		    // get detection matrix for obs j
+		    detMatObs = (*detMatPtr)(rbind(p, beta));
 
-		// get detection matrix for obs j
-		detMatObs = detMatrix(rbind(p, beta));
-
-		// pull out the proper column, according to y
-		detVecObs = detMatObs(_,y_itj[i][t][j]);
+		    // pull out the proper column, according to y
+		    detVecObs = detMatObs(_,y_itj[i][t][j]);
+		} else {
+		    // for missing data, obs prob mult by 1
+		    detVecObs = ones(K + 1, 1);
+		}
 #ifdef DEBUG
 		cout << "detMatObs:\n" << detMatObs
 		     << "\ny:" << y_itj[i][t][j]
 		     << "\ndetVecObs:\n" << detVecObs << endl;
 #endif
-
 		// update yearly detection vector;
 		detVec = detVec % detVecObs;
 	    }
@@ -185,7 +209,8 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
 	    cout << "detVec:\n" << detVec
 		 << "psiSite:\n" << psiSite << endl;
 #endif
-
+	    // allow user interrupts
+	    R_CheckUserInterrupt();              
 	}
     }
 
@@ -195,7 +220,8 @@ double  HiddenMarkovModel::operator() (const Matrix<>& parms)
 
     return negLogLike;
 }
-    
+
+  
 void HiddenMarkovModel::fitmodel(const Matrix<>& inits) {
 
     // set random number generator
@@ -211,12 +237,11 @@ void HiddenMarkovModel::fitmodel(const Matrix<>& inits) {
 
     const Matrix<> logitPhiParms = mle(nDP + K, 0, nP - 1, 0);
     const Matrix<> phiParms =  Hphi * plogis(logitPhiParms, 0, 1);
-    phi = phiMatrix(phiParms);
+    phi = t((*phiMatPtr)(phiParms));
 }
 
 
 extern "C" {
-    
     void findMLE (int *y_itj,
 		  double *XDet_itjk,
 		  const int *ncXDet,
@@ -242,58 +267,43 @@ extern "C" {
 		  double *phi)
     {
 
-	// instantiate model
-	HiddenMarkovModel hmm;
-	
-	for (int i = 0; i < *M; ++i) {
-	    hmm.y_itj.push_back(vector< vector< unsigned int > > () );
-	    hmm.XDet_itj.push_back(vector< vector< Matrix<> > > () );
-	    for (int t = 0; t < *nY; ++t) {
-		hmm.y_itj[i].push_back(vector< unsigned int > () );
-		hmm.XDet_itj[i].push_back(vector< Matrix<> > () );
-		for (int j = 0; j < *J; ++j) {
-		    hmm.y_itj[i][t].push_back(*(y_itj++));
-		    // note that this is the tranpose of XDet
-		    hmm.XDet_itj[i][t].push_back(Matrix<> (*ncXDet, *K, XDet_itjk));
-		    XDet_itjk += (*K) * (*ncXDet);  // this line will change XDet changes.
-		    hmm.XDet_itj[i][t][j] = scythe::t(hmm.XDet_itj[i][t][j]);
-		}
-	    }
+	Matrix<> Hdet = Matrix<> (*nDMP_un, *nDMP, Hdet_in);
+	Matrix<> Hphi = Matrix<> (*nPhiP_un, *nPhiP, Hphi_in);
+	Matrix<> inits(*nP, 1, true, 0);
+
+	HiddenMarkovModel hmm(nDMP, nDCP, nDP, nDYP,
+			      nSP, nPhiP, nP, nDMP_un, nPhiP_un,
+			      K, M, J, nY, Hdet, Hphi, yearly_det);
+	hmm.loadData(y_itj, XDet_itjk, ncXDet);
+
+	if (*K == 2) {
+	    cout << "entered 3 state" << endl;
+	    phiMatrix3 phiMat;
+	    detMatrix3 detMat;
+	    phiMatrix *phiMatPtr = &phiMat;
+	    detMatrix *detMatPtr = &detMat;
+	    hmm.setMatrices(phiMatPtr, detMatPtr);
+	} else {
+	    cout << "model instantiated" << endl;
+	    phiMatrix4 phiMat;
+	    detMatrix4 detMat;
+	    phiMatrix *phiMatPtr = &phiMat;
+	    detMatrix *detMatPtr = &detMat;
+	    hmm.setMatrices(phiMatPtr, detMatPtr);
 	}
 
-	hmm.Hdet = Matrix<> (*nDMP_un, *nDMP, Hdet_in);
-	hmm.Hphi = Matrix<> (*nPhiP_un, *nPhiP, Hphi_in);
-	hmm.nDMP = *nDMP;
-	hmm.nDCP = *nDCP;
-	hmm.nDP = *nDP;
-	hmm.nDYP = *nDYP;
-	hmm.nSP = *nSP;
-	hmm.nPhiP = *nPhiP;
-	hmm.nP = *nP;
-	hmm.nDMP_un = *nDMP_un;
-	hmm.nPhiP_un = *nPhiP_un;
-	hmm.K = *K;
-	hmm.yearly_det = *yearly_det;
-	hmm.M = *M;
-	hmm.J = *J;
-	hmm.nY = *nY;
-	
-	
 	// find the mle
-	Matrix<> inits(*nP, 1, true, 0);
 	hmm.fitmodel(inits);
 
 	// store the results
 	for (int i = 0; i < *nP; ++i)
 	    mle[i] = hmm.mle(i);
-
 	for (int i = 0; i < (*nP)*(*nP); ++i)
 	    hessian[i] = hmm.hessian(i);
-
 	*negloglike = hmm(hmm.mle);
-
 	for (int i = 0; i < (*K + 1) * (*K + 1); ++i)
 	    phi[i] = hmm.phi(i);
+
 
     }
 }
