@@ -80,9 +80,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
   }
 
   y.itj <- as.numeric(t(y))
-  ## replace NA's with 99 before passing to C++
-  y.itj[is.na(y.itj)] <- 99
-  
+    
   ## reorder X.tjik to be X.itjk
   t.tjik <- rep(1:nY, each = K *M*J)
   i.tjik <- rep(rep(1:M, each = K), nY*J)
@@ -90,6 +88,10 @@ function(stateformula = ~ 1, detformula = ~ 1,
   k.tjik <- rep(1:K, M * J * nY)
   XDet.itjk <- XDet.tjik[order(i.tjik, t.tjik, j.tjik, k.tjik),]
 
+  ## replace NA's with 99 before passing to C++
+  y.itj[is.na(y.itj)] <- 99
+  XDet.itjk[is.na(XDet.itjk)] <- 9999
+  
   fm <- findMLE(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
          nPhiP.un, H.det, H.phi, K, yearly.det, M, J, nY)
   ests <- fm$mle
