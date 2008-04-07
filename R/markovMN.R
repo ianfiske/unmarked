@@ -49,10 +49,11 @@ function(stateformula = ~ 1, detformula = ~ 1,
 
   phicon <- phiconstraint
   # default phi constraint is different s's, equal growth, and equal reg
-  if(is.null(phicon)) phicon <- c(1:(K+1), rep(K + 2, K),
-                                  rep(K + 3, K + 2))
+  #if(is.null(phicon)) phicon <- c(1:(K+1), rep(K + 2, K),
+  #                                rep(K + 3, K + 2))
   nPhiP.un <- K * (K + 1)  # number of transition matrix parameters in
                                         # an unconstrained matrix
+  if(is.null(phicon)) phicon <- 1:nPhiP.un
   nDMP <- max(con)  # number of independent detection matrix parameters among
                                         # the p's and beta's
   nDYP <- ifelse(yearly.det, nY - 1, 0)
@@ -79,7 +80,9 @@ function(stateformula = ~ 1, detformula = ~ 1,
   }
 
   y.itj <- as.numeric(t(y))
-
+  ## replace NA's with 99 before passing to C++
+  y.itj[is.na(y.itj)] <- 99
+  
   ## reorder X.tjik to be X.itjk
   t.tjik <- rep(1:nY, each = K *M*J)
   i.tjik <- rep(rep(1:M, each = K), nY*J)
@@ -94,6 +97,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
   DMP <- H.det %*% ests[1:nDMP]
   psi <- ests[(nDP + 1) : (nDP + K)]
   psi <- exp(c(0,psi))/sum(exp(c(0,psi)))
+  phiPars <- H.phi %*% plogis(ests[(nDP + K  + 1) : nP])
 
   if(yearly.det) {
       gamma <- ests[(nDMP + nDCP + 1) : nDP]
