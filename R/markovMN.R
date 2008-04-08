@@ -42,10 +42,13 @@ function(stateformula = ~ 1, detformula = ~ 1,
   } else {
       XDet.tjik <- cbind(k.diag, XDet.tjik)
   }
+
+  nDMP.un <- K*(K+1)/2
+  if(length(detconstraint) > nDMP.un)
+      stop(paste("Detection parameter constraint is longer than",nDMP.un))
   
   con <- detconstraint
-  nDMP.un <- K*(K+1)/2
-  if (is.null(con)) con <- c(1:K, rep(K + 1, nDMP.un - K))
+  if (is.null(con)) con <- 1:nDMP.un#c(1:K, rep(K + 1, nDMP.un - K))
 
   phicon <- phiconstraint
   # default phi constraint is different s's, equal growth, and equal reg
@@ -91,7 +94,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
   ## replace NA's with 99 before passing to C++
   y.itj[is.na(y.itj)] <- 99
   XDet.itjk[is.na(XDet.itjk)] <- 9999
-  
+
   fm <- findMLE(y.itj, XDet.itjk, nDMP, nDCP, nDP, nDYP, nSP, nPhiP, nP, nDMP.un,
          nPhiP.un, H.det, H.phi, K, yearly.det, M, J, nY)
   ests <- fm$mle
