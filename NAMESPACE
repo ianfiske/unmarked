@@ -1,3 +1,2 @@
-useDynLib(unmarked)
-export(occu, occuRN, pcount, mnMix, csvToData, Mh, markovMN, mackenzie,
+export(occu, occuRN, pcount, mnMix, csvToData, Mh, mackenzie,
        csvToData, formatLong, formatWide, formatMult)
