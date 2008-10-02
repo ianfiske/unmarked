@@ -28,6 +28,32 @@ sd.prop <- function(est,sd.est) {
     exp(-est)/(1 + exp(-est))^2 * sd.est
 }
 
+### track linked list of parameters using a data frame
+### add row to linked list
+addParm <- function(list.df, parm.name, parm.length) {
+    if(parm.length > 0) {
+        if(nrow(list.df) == 0) {
+            last.ind <- 0
+        } else {
+            last.ind <- list.df$end[nrow(list.df)]
+        }
+        parm.df <- data.frame(parameter = parm.name, start = last.ind + 1,
+                              end = last.ind + parm.length,
+                              stringsAsFactors = FALSE)
+        list.df <- rbind(list.df, parm.df)
+    }
+    return(list.df)
+}
+
+parmNames <- function(list.df) {
+    npar <- list.df$end[nrow(list.df)]
+    names <- character(npar)
+    for(i in 1:npar) {
+        which.par <- which(i >= list.df$start & i <= list.df$end)
+        names[i] <- list.df$parameter[which.par]
+    }
+    return(names)
+}
 
 # utility function to read a csv file and create data a required for other funs
 # csv is formatted as follows:
@@ -47,11 +73,11 @@ sd.prop <- function(est,sd.est) {
 #   e.g., var1-1 var1-2 var1-3 var2-1 var2-2 var2-3, etc.
 #   the column header of the first variable in each group must indicate the
 #   variable name.
-csvToData <- 
+csvToData <-
 function(filename, long=FALSE, species = NULL)
 {
   dfin <- read.csv(filename)
-  
+
   if(long == TRUE) return(formatLong(dfin, species))
   else return(formatWide(dfin))
 }
@@ -59,25 +85,25 @@ function(filename, long=FALSE, species = NULL)
 # utility function to create a variable that follows the dates as 1,2,3,...
 # site id is first column
 # julian date is second column
-dateToObs <- 
-function(dfin) 
+dateToObs <-
+function(dfin)
 {
   require(reshape)
-  
-  sitecol <- dfin[[1]]
-  datecol <- dfin[[2]]  
 
-  
+  sitecol <- dfin[[1]]
+  datecol <- dfin[[2]]
+
+
   # order by site, then obs date
   dfin <- dfin[order(sitecol,datecol),]
   sitecol <- dfin[[1]]
-  datecol <- dfin[[2]]  
-  
+  datecol <- dfin[[2]]
+
   dTab <- table(datecol,sitecol)
   sites <- unique(sitecol)
   nSite <- length(sites)
   nStop <- colSums(dTab)
-  nStop <- nStop[nStop > 0]  # get rid of the stops for sites with no stops  
+  nStop <- nStop[nStop > 0]  # get rid of the stops for sites with no stops
 
   obsNum <- numeric(length(sitecol))
   # for each site i, replace stops with 1:nStop[i]
@@ -91,17 +117,27 @@ function(dfin)
 }
 
 # take long data set and return data list
+# column names must be
+# site names, first
+# date, one column
+# response, one column
+# obs vars, one per column
 formatLong <-
-function(dfin, species)
+function(dfin, species = NULL)
 {
-  library(reshape)
+  require(reshape)
+
+  ## copy dates to last column so that they are also a covdata var
+  nc <- ncol(dfin)
+  dfin[[nc+1]] <- dfin[[2]]
+  names(dfin)[nc+1] <- "Date"
 
   if(!is.null(species)) {
     dfin$y <- ifelse(dfin$species == species, dfin$y, 0)
     dfin$y[is.na(dfin$y)] <- 0
     dfin$species = NULL
   }
-  
+
   # sum up counts within time/site
   expr <- substitute(recast(dfin[,1:3], sv + dv ~ ..., id.var = 1:2,
                             fun.aggregate = sum),
@@ -109,7 +145,7 @@ function(dfin, species)
                           dv = as.name(names(dfin)[2])))
   dfin2 <- eval(expr)
   dfin1 <- dfin[!duplicated(dfin[,1:2]),]
-  
+
   dfin <- merge(dfin1,dfin2, by = 1:2)
   dfin[,3] <- dfin[,length(dfin)]
   dfin <- dfin[,-length(dfin)]
@@ -118,14 +154,18 @@ function(dfin, species)
   dfin <- dateToObs(dfin)
   dfnm <- colnames(dfin)
   nV <- length(dfnm) - 1  # last variable is obsNum
-  expr <- substitute(recast(dfin, newvar ~ obsNum + variable, 
-    id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[3]), 
+  expr <- substitute(recast(dfin, newvar ~ obsNum + variable,
+    id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[3]),
                                 list(newvar=as.name(dfnm[1])))
   y <- as.matrix(eval(expr)[,-1])
-  expr <- substitute(recast(dfin, newvar ~ obsNum ~ variable, 
-    id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[4:nV]), 
+  expr <- substitute(recast(dfin, newvar ~ obsNum ~ variable,
+    id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[4:nV]),
                                 list(newvar=as.name(dfnm[1])))
   obsvars <- eval(expr)
+
+  which.date <- which(dimnames(obsvars)$variable == "Date")
+  dimnames(obsvars)$variable[which.date] <- "JulianDate"
+
   list(ymat=y, covdata.obs = obsvars)
 }
 
@@ -139,21 +179,21 @@ function(dfin)
 {
   # throw placeholder into sitedata
   sitedata <- data.frame(ones = rep(1,nrow(dfin)))
-  
+
   obsdata <- list()
 
   if(identical(colnames(dfin)[1],"site")) dfin <- dfin[,-1]
-  
+
   dfnm <- colnames(dfin)
   y <- grep("^y.",dfnm)
   J <- length(y)
   y <- as.matrix(dfin[,y])
-  
+
   ncols <- length(dfnm)
   i <- J + 1
   while(i <= ncols) {     # loop through columns
     if(length(grep('.[[:digit:]]+$',dfnm[i]))) {  # check if this is obsdata
-      nv <- sub('.[[:digit:]]+$','',dfnm[i])  
+      nv <- sub('.[[:digit:]]+$','',dfnm[i])
       expr <- substitute(obsdata$newvar <- dfin[,i:(i+J-1)],
                 list(newvar=as.name(nv)))
       eval(expr)
@@ -164,7 +204,7 @@ function(dfin)
       colnames(sitedata)[length(sitedata)] <- dfnm[i]
       i <- i + 1
     }
-  }    
+  }
 
   list(ymat = y, covdata.site = sitedata, covdata.obs = obsdata)
 }
@@ -177,20 +217,21 @@ function(dfin)
 # add sample periods of NA to years with fewer samples
 # to make balanced data... this eases future computations
 formatMult <-
-function(df.in)
+function(df.in, spp, state)
 {
   require(reshape)
   years <- sort(unique(df.in[[1]]))
+  nY <- length(years)
   df.obs <- list()
   nsamp <- numeric()
   maxsamp <- max(table(df.in[[1]], df.in[[2]])) # the maximum samples/yr
-  for(t in 1:length(years)){
+  for(t in 1:nY){
     df.t <- df.in[df.in[[1]] == years[t],] # subset for current year
     df.t <- df.t[,-1] # remove year column
     df.t <- dateToObs(df.t)
     nsamp <- max(df.t$obsNum)
     if(nsamp < maxsamp) {
-      newrows <- df.t[maxsamp - nsamp, ]
+      newrows <- df.t[1:(maxsamp - nsamp), ] # just a placeholder
       newrows[,"obsNum"] <- ((nsamp + 1) : maxsamp)
       newrows[,3 : (ncol(df.t) - 1)] <- NA
       df.t <- rbind(df.t, newrows)
@@ -201,21 +242,22 @@ function(df.in)
   nV <- length(dfnm) - 1  # last variable is obsNum
 
   # create y matrix using reshape
-  expr <- substitute(recast(df.obs, var1 ~ year + obsNum + variable, 
-    id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[4]), 
+  expr <- substitute(recast(df.obs, var1 ~ year + obsNum + variable,
+    id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[4]),
                                 list(var1 = as.name(dfnm[2])))
   y <- as.matrix(eval(expr)[,-1])
 
   # create obsdata with reshape
   # include date (3rd col) and other measured vars
-  expr <- substitute(recast(df.obs, newvar ~ year + obsNum ~ variable, 
-    id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[c(3,5:nV)]), 
+  expr <- substitute(recast(df.obs, newvar ~ year + obsNum ~ variable,
+    id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[c(3,5:nV)]),
                                 list(newvar=as.name(dfnm[2])))
   obsvars <- eval(expr)
 
   rownames(y) <- dimnames(obsvars)[[1]]
   colnames(y) <- dimnames(obsvars)[[2]]
-  list(ymat=y, covdata.obs = obsvars)
+  list(ymat=y, covdata.obs = obsvars, J = ncol(y)/nY,
+       species = spp, state = state)
 }
 
 # function to take data of form
@@ -253,7 +295,7 @@ function(stateformula, detformula, y, sitedata, obsdata)
   occParms <- c("psiconst",colnames(XOcc)[-1])
   nOP <- length(occParms)
   nOV <- length(obsdata)
-  
+
   obsdata.ji.list <- list()
   for(i in 1:nOV) {
      obsdata.ji.list[[i]] <- as.numeric(obsdata[[i]])
@@ -310,7 +352,7 @@ function(data, stateformula, detformula)
 ##   if(!is.null(obsdata)) {
 ##     if(is.null(rownames(obsdata))) rownames(y) <- 1:nrow(obsdata)
 ##   }
-  
+
   # get variables to handle, remove others
   # first, get names from formulas
   state.vars <- attr(terms(stateformula),"term.labels")
@@ -324,16 +366,20 @@ function(data, stateformula, detformula)
   if(!is.null(obsdata$one)) {
     names(obsdata)[names(obsdata) == "one"] <- "ones"
   }
-  
+
   # coerce obsdata to an array for easier manipulation
   obsdata.ar <- abind(obsdata, along = 3)
 
-  # if obsvar contains I(), then remove obsvar before the following check
+  # if obsvar begins with I(), then remove obsvar before the following check
   # REALLY, I'd like to just parse out the variable name from the expression
   # and check it, but i'll do that later.
-  obs.vars2 <- obs.vars[-grep("^I(",obs.vars,extended=FALSE)]
+  if(length(grep("^I(",obs.vars,extended=FALSE)) > 0) {
+    obs.vars2 <- obs.vars[-grep("^I(",obs.vars,extended=FALSE)]
+  } else {
+    obs.vars2 <- obs.vars
+  }
   
-  # check for formula specification that involves covariates not in obdata
+  # check for formula specification that involves covariates not in obsdata
   # note that obs.vars2 is now here to ignore "I()" expressions
   if(any(!(obs.vars2 %in% dimnames(obsdata.ar)[[3]]))) {
     badvars <- !(obs.vars %in% dimnames(obsdata.ar)[[3]])
@@ -351,9 +397,9 @@ function(data, stateformula, detformula)
   obsdata.NA <- apply(obsdata.NA, c(1,2), any)
 
   # determine which sites have problem to give informative warnings.
+  # NA in cov is problem only if it does not correspond to NA in y.
   whichsites <- names(which(apply(!is.na(y) & obsdata.NA, 1, any)))
   whichsites <- paste(whichsites, collapse = ", ")
-
   if(any(!is.na(y) & obsdata.NA)) {
     warning(sprintf("NA(s) found in 'covdata.obs' that were not in 'y' matrix.
 Corresponding observation(s) 'y' were replaced with NA.
@@ -369,7 +415,6 @@ Observations removed from site(s) %s",whichsites))
 Site(s) %s cannot be analyzed and have been removed.",whichsites))
   }
 
-
   sitedata.na <- is.na(sitedata)
   if(!is.null(dim(sitedata.na))) {
     sitedata.na <- apply(sitedata.na, 1, any)
@@ -383,7 +428,7 @@ Site(s) %s cannot be analyzed and have been removed.",whichsites))
   if(length(to.rm) > 0) {
     y <- y[ - to.rm, ]  # remove from y
     sitedata <- sitedata[ - to.rm, ]  # remove from sitedata
-    for(i in 1:length(obsdata)){      # remove from obsdata
+    for(i in 1:length(obsdata)) {      # remove from obsdata
       obsdata[[i]] <- obsdata[[i]][ - to.rm, ]
     }
   }
@@ -404,7 +449,7 @@ function(data)
   y <- data$y
   sitedata <- data$covdata.site
   obsdata <- data$covdata.obs
-  
+
   J <- ncol(y)
   M <- nrow(y)
   nSV <- length(sitedata)
@@ -417,24 +462,23 @@ function(data)
       }
   }
   if(!is.null(sitedata)) sitedata <- cbind(ones = rep(1,M),sitedata)
-  
+
   # if data components are null, create as just ones
   if(is.null(obsdata)) obsdata <- list(ones = matrix(1,M,J))
   if(is.null(sitedata)) sitedata=data.frame(ones = rep(1,M))
 
   # if obsdata is an array, coerce it to a list
-  if(identical(class(obsdata),"array")) obsdata <- arrToList(obsdata)    
+  if(identical(class(obsdata),"array")) obsdata <- arrToList(obsdata)
   nOV <- length(obsdata)
 
   # move all site data (single vectors and matrices of J repeated vectors)
   # in obsdata into sitedata
-
   toDel <- numeric(0)
   nuniq <- function(x) length(as.numeric(na.omit(unique(x)))) # lil' helper fun
   for(i in 1:nOV){
     # test for equality across rows (matrix site data)
-    eqRow <- as.numeric(apply(as.matrix(obsdata[[i]]), 1, nuniq) == 1)  
-    isRep <- as.logical(prod(eqRow)) # make sure all rows are   
+    eqRow <- as.numeric(apply(as.matrix(obsdata[[i]]), 1, nuniq) == 1)
+    isRep <- as.logical(prod(eqRow)) # make sure all rows are
     # move into site data if (vector) or (repeated vector as matrix)
     if((dim(as.matrix(obsdata[[i]]))[2] == 1) || isRep){
       obsdata[[i]] <- matrix(obsdata[[i]],nrow = M, ncol = J)
@@ -445,20 +489,29 @@ function(data)
     # ensure that obsdata is made of matrices rather than dataframes
     obsdata[[i]] <- as.matrix(obsdata[[i]])
   }
-  if(length(toDel) > 0) obsdata[[toDel]] <- NULL # remove sitedata from obsdata
+  if(length(toDel) > 0) {   #obsdata[[toDel]] <- NULL # remove sitedata from obsdata
+    for(t in toDel) {
+      obsdata[[t]] <- NULL
+    }
+  }
   if(length(obsdata) == 0) obsdata <- list(ones = matrix(1,M,J))
   nSV <- length(sitedata) # update nSV
   nOV <- length(obsdata)
-  
-  # make all site terms into obs terms by copying them to 
+
+  # make all site terms into obs terms by copying them to
   # obsdata (from vector to a matrix of repeated vectors)
   # needed if site variables are used to model detection.
   for(i in 1:nSV){
     obsdata[[nOV + i]] <- matrix(sitedata[[i]],nrow=M,ncol=J)
     names(obsdata)[nOV + i] <- colnames(sitedata)[i]
-  }   
+  }
   obsvars <- names(obsdata)
-  nOV <- length(obsdata) # update length 
-  
+  nOV <- length(obsdata) # update length
+
   list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
+}
+
+meanstate <- function(x) {
+    K <- length(x) - 1
+    sum(x*(0:K))
 }
