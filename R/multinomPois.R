@@ -34,33 +34,23 @@ doublePiFun <- function(p){
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param piFun Function to define multinomial cell probabilities.
-#' @return 
+#' @return unMarkedFit object describing the model fit.
+#' @export
 multinomPois <- 
 function(stateformula, detformula, piFun, umf)
 {
 
+  umf <- handleNA(stateformula, detformula, umf)
   y <- umf@y
-  
   ## Compute detection design matrix
-  ## add site Covariates at observation-level
-  obsCovs <- as.data.frame(cbind(umf@obsCovs,
-                                 sapply(umf@siteCovs, rep,
-                                        each = umf@obsNum)))
-  V.mf <- model.frame(detformula, obsCovs)
-  V <- model.matrix(detformula, V.mf) 
+  V.mf <- model.frame(detformula, umf@obsCovs)
+  V <- model.matrix(detformula, V.mf)
  
   ## Compute state design matrix
   X.mf <- model.frame(stateformula, umf@siteCovs)
   X <- model.matrix(stateformula, X.mf)
 
-###   arranged <- arrangeData(data)
 ###   cleaned <- handleNA(arranged, stateformula, detformula)
-###   y <- cleaned$y
-###   sitedata <- cleaned$covdata.site
-###   obsdata <- cleaned$covdata.obs
-
-###   design <- getDesign(stateformula = stateformula, detformula = detformula,
-###     y = y, sitedata = sitedata, obsdata = obsdata)  
 
   lamParms <- colnames(X)
   detParms <- colnames(V)
@@ -77,7 +67,7 @@ function(stateformula, detformula, piFun, umf)
   nll <- function(parms) {
     lambda <- exp(X %*% parms[1 : nAP])
     p <- plogis(V %*% parms[(nAP + 1) : nP])
-    p.matrix <- matrix(p, M, umf@obsNum)
+    p.matrix <- matrix(p, M, umf@obsNum, byrow = TRUE)
     pi <- do.call(piFun, list(p = p.matrix))
     logLikeSite <- dpois(y, matrix(lambda, M, J) * pi, log = TRUE)
     logLikeSite[navec] <- 0

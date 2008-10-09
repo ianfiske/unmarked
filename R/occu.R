@@ -1,29 +1,32 @@
-# model allows covariates at the observation level stateFormula and
-# detFormula are as above obsdata can either be an array of M x J
-# matrices or a list of M x J matrices sitedata is optional, as all
-# site vectors can be in the obsdata list
+#' @include classes.R
+roxygen()
 
+#' Fit the MacKenzie Occupancy Model
+#'
+#' This function fits the standard occupancy model of 
+#'
+#' @param stateformula Right-hand side formula describing covariates of abundance
+#' @param detformula Right-hand side formula describing covariates of detection
+#' @return unMarkedFit object describing the model fit.
+#' @export
 occu <-
-function(stateformula, detformula,
-         data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
-         y, covdata.site = NULL, covdata.obs = NULL)
+function(stateformula, detformula, umf)
 {
 
-  arranged <- arrangeData(data)
-  cleaned <- handleNA(arranged, stateformula, detformula)
-  y <- cleaned$y
-  sitedata <- cleaned$covdata.site
-  obsdata <- cleaned$covdata.obs
+  umf <- handleNA(stateformula, detformula, umf)
+  y <- umf@y
+  ## Compute detection design matrix
+  ## add site Covariates at observation-level
+  V.mf <- model.frame(detformula, umf@obsCovs)
+  V <- model.matrix(detformula, V.mf) 
+  ## Compute state design matrix
+  X.mf <- model.frame(stateformula, umf@siteCovs)
+  X <- model.matrix(stateformula, X.mf)
 
-  design <- getDesign(stateformula = stateformula, detformula = detformula,
-    y = y, sitedata = sitedata, obsdata = obsdata)  
-  nOP <- design$nOP
-  nDP <- design$nDP
-  XDet <-design$XDet
-  XOcc <- design$XOcc
-  occParms <- design$occParms
-  detParms <- design$detParms
-
+  occParms <- colnames(X)
+  detParms <- colnames(V)
+  nDP <- ncol(V)
+  nOP <- ncol(X)
   J <- ncol(y)
   M <- nrow(y)
 
@@ -33,14 +36,13 @@ function(stateformula, detformula,
   nd <- ifelse(rowSums(y,na.rm=TRUE) == 0, 1, 0) # no det at site i indicator
   
   nll <- function(parms) {
-
-    psi <- plogis(XOcc %*% parms[1:nOP])
-      pvec <- plogis(XDet %*% parms[(nOP+1):nP])
-      cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
-      cp[navec] <- 1  # so that NA's don't modify likelihood        
-      cpmat <- matrix(cp,M,J) # put back into matrix to multiply appropriately
-      loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi)) 
-      sum(-1 * loglik)
+    psi <- plogis(X %*% parms[1 : nOP])
+    pvec <- plogis(V %*% parms[(nOP + 1) : nP])
+    cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
+    cp[navec] <- 1  # so that NA's don't modify likelihood        
+    cpmat <- matrix(cp, M, J) # put back into matrix to multiply appropriately
+    loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi)) 
+    -sum(loglik)
   }
   
   fm <- optim(rep(0, nP), nll, method = "BFGS")

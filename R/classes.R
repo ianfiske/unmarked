@@ -3,13 +3,12 @@ setClassUnion("optionalDataFrame", c("data.frame","NULL"))
 validUnMarkedFrame <- function(object) {
   errors <- character(0)
   M <- nrow(object@y)
-  J <- object@obsNum
   if(!is.null(object@siteCovs))
     if(nrow(object@siteCovs) != M)
       errors <- c(errors, "siteCovData does not have same size number of sites as y.")
   if(!is.null(object@obsCovs))
-    if(nrow(object@obsCovs) != M*J)
-      errors <- c(errors, "obsCovData does not have M*J rows.")
+    if(nrow(object@obsCovs) != M*object@obsNum)
+      errors <- c(errors, "obsCovData does not have M*obsNum rows.")
   if(length(errors) == 0)
     TRUE
   else
@@ -21,7 +20,10 @@ validUnMarkedFrame <- function(object) {
 #' @slot y A matrix of the observed measured data.
 #' @slot obsCovData Dataframe of covariates that vary within sites.
 #' @slot siteCovData Dataframe of covariates that vary at the site level.
-#' @slot obsNum Number of observations per site
+#' @slot obsNum Number of observations per site. For most models, this
+#' can be taken to be the number of columns in y.  But this is not always
+#' the case.  For example, double observer: y has 3 columns, but only 2
+#' independent observations were taken at each site.
 setClass("unMarkedFrame",
          representation(y = "matrix",
                         obsCovs = "optionalDataFrame",
@@ -34,12 +36,17 @@ setClass("unMarkedFrame",
 #' @param y A matrix of the observed measured data.
 #' @param obsCovData Dataframe of covariates that vary within sites.
 #' @param siteCovData Dataframe of covariates that vary at the site level.
+#' @param obsNum Number of independent observations. 
 #' @export
 unMarkedFrame <- function(y, obsCovs = NULL, siteCovs = NULL,
-                          obsNum = NULL) {
-  if(is.null(obsNum)) obsNum <- ncol(y)
-  return(new("unMarkedFrame", y = y, obsCovs = obsCovs,
-             siteCovs = siteCovs, obsNum = obsNum))
+                          obsNum = ncol(y)) {
+  umf <- new("unMarkedFrame", y = y, obsCovs = obsCovs,
+             siteCovs = siteCovs, obsNum = obsNum)
+  ## copy siteCovs into obsCovs
+  umf@obsCovs <- as.data.frame(cbind(umf@obsCovs,
+                                     sapply(umf@siteCovs, rep,
+                                            each = umf@obsNum)))
+  return(umf)
 }
 
 #' Summary statistics for an unMarkedFrame
@@ -53,10 +60,6 @@ setMethod("summary", "unMarkedFrame",
             print(paste("Number of sites:",M))
           })
 
-#' Print an unMarkedFrame
-#'
-#' @param object
-#' @export
 setMethod("show", "unMarkedFrame",
           function(object) {
             ## print y
@@ -81,45 +84,25 @@ setMethod("show", "unMarkedFrame",
             }
           })
 
-#' Extract the site covariates from an object
-#' @param object An object to extract site covariates from.
-setGeneric("siteCovs",
-           function(object) {
-             standardGeneric("siteCovs")
-           })
-
-#' Extract site covariates from an unMarkedFrame
-#' @param object The unMarkedFrame whose covariates need to be extracted.
-#' @export
-setMethod("siteCovs", "unMarkedFrame",
-          function(object) {
-            return(object@siteCovs)
-          })
+siteCovs <- function(umf) {
+  return(umf@siteCovs)
+}
           
-setGeneric("obsCovs",
-           function(object, matrices = NULL) {
-             standardGeneric("obsCovs")
-           })
-
-setMethod("obsCovs",
-          signature(object = "unMarkedFrame"),
-          function(object, matrices = FALSE) {
-            M <- nrow(object@y)
-            J <- ncol(object@y)
-            if(matrices) {
-              value <- list()
-              for(i in seq(length=length(object@obsCovs))){
-                value[[i]] <- matrix(object@obsCovs[,i], M, J, byrow = TRUE)
-              }
-              names(value) <- names(object@obsCovs)
-            } else {
-              value <- object@obsCovs
-            }
-            value
-          })
+obsCovs <- function(umf, matrices = FALSE) {
+  M <- nrow(umf@y)
+  J <- ncol(umf@y)
+  if(matrices) {
+    value <- list()
+    for(i in seq(length=length(umf@obsCovs))){
+      value[[i]] <- matrix(umf@obsCovs[,i], M, J, byrow = TRUE)
+    }
+    names(value) <- names(umf@obsCovs)
+  } else {
+    value <- umf@obsCovs
+  }
+  return(value)
+}
             
-
-
 #' Class to store unMarked model fit information
 #'
 #' @slot fitType Name of the model that was fit.
@@ -141,7 +124,6 @@ setClass("unMarkedFit",
                         detMLE = "numeric",
                         detSE = "numeric",
                         AIC = "numeric"))
-
 
 #' Constructor function for unMarkedFit objects
 #'
@@ -192,4 +174,8 @@ setMethod("summary", "unMarkedFit",
             detDF <- data.frame(Estimate = object@detMLE,
                                   SE = object@detSE)
             show(detDF)
+
+            cat("\nAIC:", object@AIC,"\n")
           })
+
+
