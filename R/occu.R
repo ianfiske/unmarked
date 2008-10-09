@@ -50,6 +50,13 @@ function(stateformula, detformula, umf)
   fmAIC <- 2 * fm$value + 2 * nP
   names(ests) <- c(occParms, detParms)
   list(estimates = ests, AIC = fmAIC)
+  umfit <- unMarkedFit(fitType = "occu",
+                       stateformula = stateformula, detformula = detformula,
+                       data = umf, stateMLE = ests[1:nOP],
+                       stateSE = ests.se[1:nOP], 
+                       detMLE = ests[(nOP + 1) : nP],
+                       detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
+
 }
 
 
