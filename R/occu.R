@@ -8,27 +8,26 @@ roxygen()
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @return unMarkedFit object describing the model fit.
+#' @references MacKenzie 2002, Occupancy.
+#' @examples
+#' data(frogs)
+#' pcruUM <- unMarkedFrame(pcru.bin)
+#' fm <- occu(~1, ~1, pcruUM)
 #' @export
 occu <-
 function(stateformula, detformula, umf)
 {
-
   umf <- handleNA(stateformula, detformula, umf)
+  designMats <- getDesign(stateformula, detformula, umf)
+  X <- designMats$X; V <- designMats$V
   y <- umf@y
-  ## Compute detection design matrix
-  ## add site Covariates at observation-level
-  V.mf <- model.frame(detformula, umf@obsCovs)
-  V <- model.matrix(detformula, V.mf) 
-  ## Compute state design matrix
-  X.mf <- model.frame(stateformula, umf@siteCovs)
-  X <- model.matrix(stateformula, X.mf)
+  J <- ncol(y)
+  M <- nrow(y)
 
   occParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
   nOP <- ncol(X)
-  J <- ncol(y)
-  M <- nrow(y)
 
   nP <- nDP + nOP
   yvec <- as.numeric(y)
@@ -45,18 +44,19 @@ function(stateformula, detformula, umf)
     -sum(loglik)
   }
   
-  fm <- optim(rep(0, nP), nll, method = "BFGS")
+  fm <- optim(rep(0, nP), nll, method = "BFGS", hessian = TRUE)
+  ests.se <- diag(solve(fm$hessian))
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP
   names(ests) <- c(occParms, detParms)
-  list(estimates = ests, AIC = fmAIC)
+  names(ests.se) <- c(occParms, detParms)
   umfit <- unMarkedFit(fitType = "occu",
                        stateformula = stateformula, detformula = detformula,
                        data = umf, stateMLE = ests[1:nOP],
                        stateSE = ests.se[1:nOP], 
                        detMLE = ests[(nOP + 1) : nP],
                        detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
-
+  return(umfit)
 }
 
 

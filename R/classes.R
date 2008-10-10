@@ -43,9 +43,11 @@ unMarkedFrame <- function(y, obsCovs = NULL, siteCovs = NULL,
   umf <- new("unMarkedFrame", y = y, obsCovs = obsCovs,
              siteCovs = siteCovs, obsNum = obsNum)
   ## copy siteCovs into obsCovs
-  umf@obsCovs <- as.data.frame(cbind(umf@obsCovs,
-                                     sapply(umf@siteCovs, rep,
-                                            each = umf@obsNum)))
+  if(!is.null(siteCovs)) {
+    umf@obsCovs <- as.data.frame(cbind(umf@obsCovs,
+                                       sapply(umf@siteCovs, rep,
+                                              each = umf@obsNum)))
+  }
   return(umf)
 }
 

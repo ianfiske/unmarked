@@ -278,7 +278,7 @@ function(df.in)
 
 # helper function to take siteformula, sitedata, detformula, obsdata
 # and return design matrices, parameter names, numbers of parameters
-getDesign <-
+getDesign.old <-
 function(stateformula, detformula, y, sitedata, obsdata)
 {
   if(is.null(dim(sitedata))) sitedata <- as.data.frame(sitedata)
@@ -452,31 +452,37 @@ handleNA <- function(stateformula, detformula, umf) {
   X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
   V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
   
-  ## which sites have NA's in obsCovs included in detformula?
-  V.NA <- apply(is.na(V.mf), 1, any)
-  V.NA.obs <- cbind(sites[V.NA], obs[V.NA])
-  V.NA.sites <- unique(sites[V.NA])
-  umf.clean@y[V.NA.obs] <- NA
-  if(any(!is.na(y[V.NA.obs]))) {
-    warning(sprintf("NA(s) found in 'obsCovs' that were not in 'y' matrix.
+  if(!is.null(obsCovs)) {
+    ## which sites have NA's in obsCovs included in detformula?
+    V.NA <- apply(is.na(V.mf), 1, any)
+    V.NA.obs <- cbind(sites[V.NA], obs[V.NA])
+    V.NA.sites <- unique(sites[V.NA])
+    umf.clean@y[V.NA.obs] <- NA
+    if(any(!is.na(y[V.NA.obs]))) {
+      warning(sprintf("NA(s) found in 'obsCovs' that were not in 'y' matrix.
 Corresponding observation(s) 'y' were replaced with NA.
 Observations removed from site(s) %s", paste(V.NA.sites,collapse=", ")))
+    }
   }
   
-  ## which sites have NA in site var included in stateformula?
-  X.NA.sites <- unique(which(apply(is.na(X.mf), 1, any)))
-  umf.clean@y[X.NA.sites,] <- NA
-  if(length(X.NA.sites) > 0) {
-    warning(sprintf("NA(s) found in 'siteCovs' that were not in 'y' matrix.
+  if(!is.null(siteCovs)) {
+    ## which sites have NA in site var included in stateformula?
+    X.NA.sites <- unique(which(apply(is.na(X.mf), 1, any)))
+    umf.clean@y[X.NA.sites,] <- NA
+    if(length(X.NA.sites) > 0) {
+      warning(sprintf("NA(s) found in 'siteCovs' that were not in 'y' matrix.
 Corresponding site(s) in 'y' were replaced with NA: %s",
-                    paste(X.NA.sites,collapse=", ")))
+                      paste(X.NA.sites,collapse=", ")))
+    }
   }
-
+  
   ## which sites have all NA's in y?
   na.sites <- which(apply(is.na(umf.clean@y), 1, all))
-  umf.clean@y <- umf.clean@y[-na.sites,]
-  umf.clean@siteCovs <- umf.clean@siteCovs[-na.sites,]
-  umf.clean@obsCovs <- umf.clean@obsCovs[!(sites %in% na.sites),]
+  if(length(na.sites) > 0) {
+    umf.clean@y <- umf.clean@y[-na.sites,]
+    umf.clean@siteCovs <- umf.clean@siteCovs[-na.sites,]
+    umf.clean@obsCovs <- umf.clean@obsCovs[!(sites %in% na.sites),]
+  }
   
   return(umf.clean)
 }
@@ -557,6 +563,32 @@ function(data)
 
   list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
 }
+
+getDesign <- function(stateformula, detformula, umf) {
+
+  M <- nrow(umf@y)
+
+  ## Compute detection design matrix
+  ## add site Covariates at observation-level
+  if(!is.null(umf@obsCovs)) {
+    V.mf <- model.frame(detformula, umf@obsCovs)
+    V <- model.matrix(detformula, V.mf)
+  } else {
+    V <- matrix(1, M*umf@obsNum, 1)
+    colnames(V) <- "(Intercept)"
+  }
+    
+  ## Compute state design matrix
+  if(!is.null(umf@siteCovs)) {
+    X.mf <- model.frame(stateformula, umf@siteCovs)
+    X <- model.matrix(stateformula, X.mf)
+  } else {
+    X <- matrix(1, M, 1)
+    colnames(X) <- "(Intercept)"
+  }
+  return(list(X = X, V = V))
+}
+
 
 meanstate <- function(x) {
     K <- length(x) - 1

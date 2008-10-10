@@ -41,25 +41,16 @@ function(stateformula, detformula, piFun, umf)
 {
 
   umf <- handleNA(stateformula, detformula, umf)
+  designMats <- getDesign(stateformula, detformula, umf)
+  X <- designMats$X; V <- designMats$V
   y <- umf@y
-  ## Compute detection design matrix
-  V.mf <- model.frame(detformula, umf@obsCovs)
-  V <- model.matrix(detformula, V.mf)
- 
-  ## Compute state design matrix
-  X.mf <- model.frame(stateformula, umf@siteCovs)
-  X <- model.matrix(stateformula, X.mf)
-
-###   cleaned <- handleNA(arranged, stateformula, detformula)
+  J <- ncol(y)
+  M <- nrow(y)
 
   lamParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
   nAP <- ncol(X)
-
-  J <- ncol(y)
-  M <- nrow(y)
-
   nP <- nDP + nAP
   yvec <- as.numeric(y)
   navec <- is.na(yvec)
@@ -86,4 +77,5 @@ function(stateformula, detformula, piFun, umf)
                        stateSE = ests.se[1:nAP], 
                        detMLE = ests[(nAP + 1) : nP],
                        detSE = ests.se[(nAP + 1): nP], AIC = fmAIC)
+  return(umfit)
 }
