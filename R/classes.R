@@ -40,6 +40,19 @@ setClass("unMarkedFrame",
 #' @export
 unMarkedFrame <- function(y, obsCovs = NULL, siteCovs = NULL,
                           obsNum = ncol(y)) {
+
+  ## if obsCovs is a list of matrices, convert to a dataframe
+  if(class(obsCovs) == "list") {
+    obsVars <- names(obsCovs)
+    for(i in seq(length(obsVars))) {
+      if(class(obsCovs[[i]]) != "matrix")
+        stop("At least one element of obsCovs is not a matrix.")
+      if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
+        stop("At least one matrix in obsCovs has incorrect number of dimensions.")
+    }
+    obsCovs <- data.frame(lapply(obsCovs, as.vector))
+  }
+
   umf <- new("unMarkedFrame", y = y, obsCovs = obsCovs,
              siteCovs = siteCovs, obsNum = obsNum)
   ## copy siteCovs into obsCovs
@@ -80,7 +93,7 @@ setMethod("show", "unMarkedFrame",
               M <- nrow(object@y)
               J <- object@obsNum
               for(i in seq(length=ncol(obsCovs))) {
-                cat("\n",colnames(obsCovs)[i],":\n")
+                cat("\n",colnames(obsCovs)[i],":\n", sep="")
                 print(matrix(obsCovs[,i], M, J, byrow = TRUE))
               }
             }
