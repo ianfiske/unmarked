@@ -11,6 +11,9 @@ roxygen()
 #' @return unMarkedFit object describing the model fit.
 #' @references Royle and Nichols (2003)
 #' @examples
+#' data(birds)
+#' woodthrushUMF <- unMarkedFrame(woodthrush.bin)
+#' fm.wood.rn <- occuRN(~1, ~1, y = woodthrush.bin)
 #' data(frogs)
 #' pcruUM <- unMarkedFrame(pcru.bin)
 #' fm <- occu(~1, ~1, pcruUM)
@@ -69,7 +72,7 @@ function(stateformula, detformula, umf)
   fmAIC <- 2 * fm$value + 2 * nP + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)
   names(ests.se) <- c(occParms, detParms)
-  umfit <- unMarkedFit(fitType = "occu",
+  umfit <- unMarkedFit(fitType = "occuRN",
                        stateformula = stateformula, detformula = detformula,
                        data = umf, stateMLE = ests[1:nOP],
                        stateSE = ests.se[1:nOP], 
