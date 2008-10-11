@@ -1,7 +1,7 @@
 #' @include classes.R
 roxygen()
 
-#' Fit the MacKenzie Occupancy Model
+#' Fit the Occupancy model of Royle and Nichols
 #'
 #' This function fits the standard occupancy model of 
 #'
@@ -9,46 +9,64 @@ roxygen()
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param umf unMarkedFrame supplying data to the model.
 #' @return unMarkedFit object describing the model fit.
-#' @references MacKenzie 2002, Occupancy.
+#' @references Royle and Nichols (2003)
 #' @examples
 #' data(frogs)
 #' pcruUM <- unMarkedFrame(pcru.bin)
 #' fm <- occu(~1, ~1, pcruUM)
 #' @export
-occu <-
+occuRN <- 
 function(stateformula, detformula, umf)
 {
+
   umf <- handleNA(stateformula, detformula, umf)
   designMats <- getDesign(stateformula, detformula, umf)
   X <- designMats$X; V <- designMats$V
   y <- umf@y
   J <- ncol(y)
   M <- nrow(y)
-
+  K <- 20
+  
   occParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
   nOP <- ncol(X)
 
   nP <- nDP + nOP
-  yvec <- as.numeric(y)
-  navec <- is.na(yvec)
-  nd <- ifelse(rowSums(y,na.rm=TRUE) == 0, 1, 0) # no det at site i indicator
+  y.ji <- as.numeric(y)
+  y.jik <- rep(y.ji, each = K + 1)
+  navec <- is.na(y.jik)
+  nd <- ifelse(rowSums(y, na.rm=TRUE) == 0, 1, 0) # no det site indicator
+  k <- 0:K
+  k.i <- rep(k, M)
+  k.ji <- rep(k, M * J)
   
-  nll <- function(parms) {
-    psi <- plogis(X %*% parms[1 : nOP])
-    pvec <- plogis(V %*% parms[(nOP + 1) : nP])
-    cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
-    cp[navec] <- 1  # so that NA's don't modify likelihood        
-    cpmat <- matrix(cp, M, J) # put back into matrix to multiply appropriately
-    loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi)) 
-    -sum(loglik)
+  nll <- function(parms, f = "Poisson")
+  {    
+    lam.i <- exp(X %*% parms[1 : nOP])
+    lam.ik <- rep(lam.i, each = K + 1)
+    r.ji <- plogis(V %*% parms[(nOP + 1) : nP])
+
+    r.jik <- rep(r.ji, each = K + 1)
+    p.sup <- 1 - (1 - r.jik)^(k.ji)
+    cp <- p.sup^y.jik * (1 - p.sup)^(1 - y.jik)
+    cp[navec] <- 1
+    cp.mat <- matrix(cp, M * (K + 1), J)
+    p.ik <- rowProds(cp.mat)
+
+    f.ik <- dpois(k.i, lam.ik)
+    dens.mat <- matrix(p.ik * f.ik, M, K + 1, byrow = TRUE)
+    dens.integ <- rowSums(dens.mat)
+  
+    -sum(log(dens.integ))      # multiply likelihood over all sites
   }
-  
+
   fm <- optim(rep(0, nP), nll, method = "BFGS", hessian = TRUE)
   ests.se <- diag(solve(fm$hessian))
   ests <- fm$par
-  fmAIC <- 2 * fm$value + 2 * nP
+  fm <- optim(rep(0,nP), nll, method = "BFGS")
+  ests <- fm$par
+  fmAIC <- 2 * fm$value + 2 * nP + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)
   names(ests.se) <- c(occParms, detParms)
   umfit <- unMarkedFit(fitType = "occu",
@@ -59,5 +77,3 @@ function(stateformula, detformula, umf)
                        detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
   return(umfit)
 }
-
-
