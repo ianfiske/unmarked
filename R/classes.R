@@ -53,6 +53,8 @@ unMarkedFrame <- function(y, obsCovs = NULL, siteCovs = NULL,
     obsCovs <- data.frame(lapply(obsCovs, as.vector))
   }
 
+  if(class(y) == "data.frame") y <- as.matrix(y)
+
   umf <- new("unMarkedFrame", y = y, obsCovs = obsCovs,
              siteCovs = siteCovs, obsNum = obsNum)
   ## copy siteCovs into obsCovs
@@ -105,7 +107,7 @@ siteCovs <- function(umf) {
           
 obsCovs <- function(umf, matrices = FALSE) {
   M <- nrow(umf@y)
-  J <- ncol(umf@y)
+  J <- ncol(umf@obsNum)
   if(matrices) {
     value <- list()
     for(i in seq(length=length(umf@obsCovs))){
