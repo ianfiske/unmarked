@@ -452,7 +452,7 @@ handleNA <- function(stateformula, detformula, umf) {
   X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
   V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
   
-  if(!is.null(obsCovs)) {
+  if(ncol(V.mf) > 0) {
     ## which sites have NA's in obsCovs included in detformula?
     V.NA <- apply(is.na(V.mf), 1, any)
     V.NA.obs <- cbind(sites[V.NA], obs[V.NA])
@@ -465,7 +465,7 @@ Observations removed from site(s) %s", paste(V.NA.sites,collapse=", ")))
     }
   }
   
-  if(!is.null(siteCovs)) {
+  if(ncol(X.mf) > 0) {
     ## which sites have NA in site var included in stateformula?
     X.NA.sites <- unique(which(apply(is.na(X.mf), 1, any)))
     umf.clean@y[X.NA.sites,] <- NA
