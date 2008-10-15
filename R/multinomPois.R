@@ -1,8 +1,10 @@
 #' @include classes.R
+#' @include utils.R
 roxygen()
 
 ## Take an M x J matrix of detection probabilities and return a matrix
 ## of M x K observation probs
+#' @export
 removalPiFun <- function(p){
   M <- nrow(p)
   J <- ncol(p)
@@ -15,7 +17,7 @@ removalPiFun <- function(p){
 }
 
 # p is an M x 2 matrix of detection probabilities (site x observer).
-# return
+#' @export
 doublePiFun <- function(p){
   M <- nrow(p)
   pi <- matrix(NA, M, 3)
@@ -25,16 +27,41 @@ doublePiFun <- function(p){
   return(pi)
 }
 
-#' Fit the multinomial-Poisson abundance mixture model
+#' @title Multinomial-Poisson Mixtures
+#' 
+#' Fit the multinomial-Poisson abundance mixture model.
 #'
 #' This function takes advantage of the closed form of the integrated
 #' likelihood when a latent Poisson distribution is assumed for abundance
-#' at each site and a multinomial distribution 
+#' at each site and a multinomial distribution is taken for the observation
+#' state. Many common sampling methods can be framed in this context.  For
+#' example, double-observer point counts, removal sampling, and distance
+#' sampling can all be analyzed with this function by specifying the proper
+#' multinomial cell probablilities.  This is done with by supplying the
+#' appropriate function (piFun) argument.  removalPiFun() and doublePiFun()
+#' are supplied as example cell probability functions.
 #'
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param piFun Function to define multinomial cell probabilities.
 #' @return unMarkedFit object describing the model fit.
+#' @author Ian Fiske
+#' @keywords models
+#' @references
+#' Royle, J., Dawson, D., & Bates, S. (2004). Modeling abundance effects in distance sampling. Ecology, 85(6), 1591-1597.
+#'
+#' Royle, J. A. (2004). Generalized estimators of avian abundance from count survey data. Animal Biodiversity and Conservation, 27(1), 375-386.
+#'
+#' Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance and Occurrence. Journal Of Agricultural Biological And Environmental Statistics, 11(3), 249.
+#' @examples
+#' data(ovendata.list)
+#' ovenFrame <- unMarkedFrame(ovendata.list$data,
+#'                            siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])))
+#' fm1 <- multinomPois(~ ufp + trba, ~ 1, removalPiFun, ovenFrame)
+#' fm2 <- multinomPois(~ ufp, ~1, removalPiFun, ovenFrame)
+#' fm3 <- multinomPois(~ trba, ~1, removalPiFun, ovenFrame)
+#' fm4 <- multinomPois(~ 1, ~1, removalPiFun, ovenFrame)
+#' summary(fm4)
 #' @export
 multinomPois <- 
 function(stateformula, detformula, piFun, umf)
