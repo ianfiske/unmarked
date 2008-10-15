@@ -1,34 +1,60 @@
 #' @include classes.R
+#' @include utils.R
 roxygen()
 
 #' Fit the Occupancy model of Royle and Nichols
 #'
-#' This function fits the standard occupancy model of 
+#'  See \link{unmarked} for detailed descriptions of passing data \code{y},
+#'  \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
+#'  with \code{stateformula} and \code{detformula}.
+#'
+#'  This function fits the latent abundance mixture model described in
+#'  Royle and Nichols (2003).
+#'
+#'  The latent abundance of site \eqn{i} is modelled as Poisson:
+#'
+#'  \deqn{N_i \sim Poisson(\lambda_i)}{N_i ~ Poisson(lambda_i)}
+#'
+#'  The detection of a single individual in site \eqn{i} during sample
+#'  \eqn{j} is modelled as Bernoulli:
+#'
+#'  \deqn{w_{ij} \sim Bernoulli(r_{ij})}{w_ij ~ Bernoulli(r_ij)}.
+#'
+#'  Thus, the detection probability for a single site is linked to the
+#'  detection probability for an individual by
+#'
+#'  \deqn{p_{ij} = 1 - (1 - r_{ij}) ^ {N_i}}{p_ij = 1 - (1 - r_ij) ^ N_i}
+#'
+#'  Covariates of \eqn{\lambda_i}{lambda_i} are modelled with the log link
+#'  and covariates of \eqn{r_{ij}}{r_ij} are modelled with the logit link.
 #'
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param umf unMarkedFrame supplying data to the model.
 #' @return unMarkedFit object describing the model fit.
-#' @references Royle and Nichols (2003)
+#' @author Ian Fiske
+#' @references
+#' Royle, J. A. and Nichols, J. D. (2003) Estimating Abundance from
+#' Repeated Presence-Absence Data or Point Counts. \emph{Ecology}, 84(3)
+#' pp. 777--790.
 #' @examples
 #' data(birds)
 #' woodthrushUMF <- unMarkedFrame(woodthrush.bin)
-#' fm.wood.rn <- occuRN(~1, ~1, y = woodthrush.bin)
-#' data(frogs)
-#' pcruUM <- unMarkedFrame(pcru.bin)
-#' fm <- occu(~1, ~1, pcruUM)
+#' fm.wood.rn <- occuRN(~1, ~obs, y = woodthrush.bin)
+#' summary(fm.wood.rn)
+#' @keywords models
 #' @export
 occuRN <- 
 function(stateformula, detformula, umf)
 {
-
   umf <- handleNA(stateformula, detformula, umf)
   designMats <- getDesign(stateformula, detformula, umf)
   X <- designMats$X; V <- designMats$V
-  y <- umf@y
+  y <- truncateToBinary(umf@y)
+  
   J <- ncol(y)
   M <- nrow(y)
-  K <- 20
+  K <- 25
   
   occParms <- colnames(X)
   detParms <- colnames(V)
@@ -36,32 +62,39 @@ function(stateformula, detformula, umf)
   nOP <- ncol(X)
 
   nP <- nDP + nOP
-  y.ji <- as.numeric(y)
-  y.jik <- rep(y.ji, each = K + 1)
-  navec <- is.na(y.jik)
-  nd <- ifelse(rowSums(y, na.rm=TRUE) == 0, 1, 0) # no det site indicator
-  k <- 0:K
-  k.i <- rep(k, M)
-  k.ji <- rep(k, M * J)
+  y.ji <- as.vector(y)
+  navec <- is.na(y.ji)
+  n <- 0:K
   
   nll <- function(parms, f = "Poisson")
   {    
-    lam.i <- exp(X %*% parms[1 : nOP])
-    lam.ik <- rep(lam.i, each = K + 1)
-    r.ji <- plogis(V %*% parms[(nOP + 1) : nP])
+    
+    ## compute individual level detection probabilities
+    r.ij <- matrix(plogis(V %*% parms[(nOP + 1) : nP]), M, J, byrow = TRUE)
+    
+    ## compute list of detection probabilities along N
+    p.ij.list <- lapply(n, function(k) 1 - (1 - r.ij)^k)
 
-    r.jik <- rep(r.ji, each = K + 1)
-    p.sup <- 1 - (1 - r.jik)^(k.ji)
-    cp <- p.sup^y.jik * (1 - p.sup)^(1 - y.jik)
-    cp[navec] <- 1
-    cp.mat <- matrix(cp, M * (K + 1), J)
-    p.ik <- rowProds(cp.mat)
+    ## compute P(y_{ij} | N) (cell probabilities) along N
+    cp.ij.list <- lapply(p.ij.list, function(pmat) pmat^y * (1-pmat)^(1-y))
 
-    f.ik <- dpois(k.i, lam.ik)
-    dens.mat <- matrix(p.ik * f.ik, M, K + 1, byrow = TRUE)
-    dens.integ <- rowSums(dens.mat)
-  
-    -sum(log(dens.integ))      # multiply likelihood over all sites
+    ## replace NA cell probabilities with 1.
+    cp.ij.list <- lapply(cp.ij.list, function(cpmat) {
+      cpmat[navec] <- 1
+      cpmat
+    })
+
+    ## multiply across J to get P(y_i | N) along N
+    cp.in <- sapply(cp.ij.list, rowProds)
+    
+    ## compute P(N = n | lambda_i) along i
+    lambda.i <- exp(X %*% parms[1 : nOP])
+    lambda.in <- sapply(n, function(x) dpois(x, lambda.i))
+      
+    ## integrate over P(y_i | N = n) * P(N = n | lambda_i) wrt n
+    like.i <- rowSums(cp.in * lambda.in)
+
+    -sum(log(like.i))
   }
 
   fm <- optim(rep(0, nP), nll, method = "BFGS", hessian = TRUE)
