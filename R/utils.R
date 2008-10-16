@@ -1,3 +1,5 @@
+#' @include classes.R
+
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))
 rowProds <-
@@ -55,25 +57,55 @@ parmNames <- function(list.df) {
     return(names)
 }
 
-# utility function to read a csv file and create data a required for other funs
-# csv is formatted as follows:
-# col 1 is site labels, must be named "site"
 
-# if data is in long format, col 2 is date of observation
-# then col for observations (y) and then all covariates
-# long format may contain multiple species, where the column containing species names must
-# be named "species"
-
-# wide format:
-# next J columns are the observations (y)
-# next is a series of columns for the site variables (one column per variable)
-#   the column header is the variable name
-# next is a series of columns for the observation-level variables
-#   these are in sets of J columns for each variable
-#   e.g., var1-1 var1-2 var1-3 var2-1 var2-2 var2-3, etc.
-#   the column header of the first variable in each group must indicate the
-#   variable name.
-csvToData <-
+#' @title Convert .CSV File to an unMarkedFrame
+#'
+#' This function converts an appropriatedly formated comma-separated
+#' values file (.csv) to a format usable by \emph{unmarked}'s fitting
+#' functions (see \emph{Details}).
+#'
+#'   This function provides a quick way to take a .csv file with headers
+#' named as described below and provides the data required and returns of
+#' data in the format required by the model-fitting functions in
+#' \code{\link{unmarked}}.  The .csv file can be in one of 2 formats: long or
+#' wide.  See the first 2 lines of the \emph{examples} for what these
+#' formats look like.
+#'
+#' The .csv file is formatted as follows:
+#' \itemize{
+#'   \item col 1 is site labels.
+#'   \item if data is in long format, col 2 is date of observation.
+#'   \item next J columns are the observations (y) - counts or 0/1's.
+#'   \item next is a series of columns for the site variables (one column
+#'     per variable).  The column header is the variable name.
+#'   \item next is a series of columns for the observation-level variables.
+#'   These are in sets of J columns for each variable, e.g., var1-1 var1-2
+#'   var1-3 var2-1 var2-2 var2-3, etc.  The column header of the first
+#'   variable in each group must indicate the variable name.
+#' }
+#'
+#' @param filename string describing filename of file to read in
+#' @param long \code{FALSE} if file is in long format or \code{TRUE} if
+#'    file is in long format (see \emph{Details})
+#' @param species if data is in long format with multiple species, then
+#'    this can specify a particular species to extract if there is a
+#'    column named "species".
+#' @return an unMarkedFrame object
+#' @keywords utilities
+#' @examples
+#' # examine a correctly formatted long .csv
+#' #read.csv(R.home("library/unmarked/data/frog2001pcru.csv"))
+#' 
+#' # examine a correctly formatted wide .csv
+#' #read.csv(R.home("library/unmarked/data/widewt.csv"))
+#' 
+#' # convert them!
+#' #dat1 <- csvToUMF(R.home("library/unmarked/data/frog2001pcru.csv"), long = TRUE)
+#' #dat2 <- csvToUMF(R.home("library/unmarked/data/frog2001pfer.csv"), long = TRUE)
+#' #dat3 <- csvToUMF(R.home("library/unmarked/data/widewt.csv"), long = FALSE)
+#' @author Ian Fiske \email{ianfiske@@gmail.com}
+#' @export
+csvToUMF <-
 function(filename, long=FALSE, species = NULL)
 {
   dfin <- read.csv(filename)
@@ -89,7 +121,6 @@ dateToObs <-
 function(dfin)
 {
   require(reshape)
-
   sitecol <- dfin[[1]]
   datecol <- dfin[[2]]
 
@@ -126,6 +157,7 @@ formatLong <-
 function(dfin, species = NULL)
 {
   require(reshape)
+browser()
 
   ## copy dates to last column so that they are also a covdata var
   nc <- ncol(dfin)
@@ -158,15 +190,20 @@ function(dfin, species = NULL)
     id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[3]),
                                 list(newvar=as.name(dfnm[1])))
   y <- as.matrix(eval(expr)[,-1])
+  attr(y,"class") <- "matrix"
+  
   expr <- substitute(recast(dfin, newvar ~ obsNum ~ variable,
     id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[4:nV]),
                                 list(newvar=as.name(dfnm[1])))
   obsvars <- eval(expr)
-
   which.date <- which(dimnames(obsvars)$variable == "Date")
   dimnames(obsvars)$variable[which.date] <- "JulianDate"
 
-  list(ymat=y, covdata.obs = obsvars)
+  obsvars.matlist <- arrToList(obsvars)
+  obsvars.veclist <- lapply(obsvars.matlist, function(x) as.vector(t(x)))
+  obsvars.df <- data.frame(obsvars.veclist)
+
+  unMarkedFrame(y, obsCovs = obsvars.df)
 }
 
 # column names must be
@@ -206,7 +243,11 @@ function(dfin)
     }
   }
 
-  list(ymat = y, covdata.site = sitedata, covdata.obs = obsdata)
+  obsdata.veclist <- lapply(obsdata, function(x) as.vector(t(x)))
+  obsdata.df <- data.frame(obsdata.veclist)
+  sitedata$ones <- NULL
+
+  unMarkedFrame(y, siteCovs = sitedata, obsCovs = obsdata.df)
 }
 
 
