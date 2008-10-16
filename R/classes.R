@@ -64,9 +64,11 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 
   ## add obsCov for the observation number (sampling occasion)
   ## name it obs
-  obs = scale(rep(1:obsNum, nrow(y)))
-  colnames(obs) <- "obs"
-  obsCovs <- as.data.frame(cbind(obsCovs,obs))
+  obs = data.frame(obs = factor(rep(1:obsNum, nrow(y))))
+  if(!is.null(obsCovs))
+    obsCovs <- as.data.frame(cbind(obsCovs,obs))
+  else
+    obsCovs <- obs
 
   umf <- new("unMarkedFrame", y = y, obsCovs = obsCovs,
              siteCovs = siteCovs, obsNum = obsNum)
