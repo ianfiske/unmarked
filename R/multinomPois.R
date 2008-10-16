@@ -27,8 +27,7 @@ doublePiFun <- function(p){
   return(pi)
 }
 
-#' @title Multinomial-Poisson Mixtures
-#' 
+
 #' Fit the multinomial-Poisson abundance mixture model.
 #'
 #' This function takes advantage of the closed form of the integrated
@@ -41,9 +40,11 @@ doublePiFun <- function(p){
 #' appropriate function (piFun) argument.  removalPiFun() and doublePiFun()
 #' are supplied as example cell probability functions.
 #'
+#' @title Multinomial-Poisson Mixtures
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param piFun Function to define multinomial cell probabilities.
+#' @param umf unMarkedFrame supplying data.
 #' @return unMarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @keywords models
@@ -61,7 +62,8 @@ doublePiFun <- function(p){
 #' fm2 <- multinomPois(~ ufp, ~1, removalPiFun, ovenFrame)
 #' fm3 <- multinomPois(~ trba, ~1, removalPiFun, ovenFrame)
 #' fm4 <- multinomPois(~ 1, ~1, removalPiFun, ovenFrame)
-#' summary(fm4)
+#' fm4
+#' fm1
 #' @export
 multinomPois <- 
 function(stateformula, detformula, piFun, umf)

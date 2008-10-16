@@ -5,6 +5,7 @@
 #' parameters  mu and sigma. These parameters and the unobserved number of
 #' individuals, n0, are estimated by integrated likelihood.
 #'
+#' @title Fit model Mh.
 #' @param nx the detection frequency vector, of length J where J is the number of sample occasions
 #' @return optim output for now
 #' @references

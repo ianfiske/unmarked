@@ -40,8 +40,8 @@ setClass("unMarkedFrame",
 #' unMarked functions.
 #'
 #' @param y A matrix of the observed measured data.
-#' @param obsCovData Dataframe of covariates that vary within sites.
-#' @param siteCovData Dataframe of covariates that vary at the site level.
+#' @param obsCovs Dataframe of covariates that vary within sites.
+#' @param siteCovs Dataframe of covariates that vary at the site level.
 #' @param obsNum Number of independent observations.
 #' @return an unmarkedFrame object
 #' @export
@@ -79,21 +79,6 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
   return(umf)
 }
 
-setGeneric("summary", function(object,...) {
-  standardGeneric("summary")})
-
-
-#' Summary statistics for an unMarkedFrame
-#'
-#' @param object An unMarkedFrame to summarize.
-#' @export
-setMethod("summary", "unMarkedFrame",
-          function(object) {
-            ## get number of sites
-            M <- nrow(object@y)
-            print(paste("Number of sites:",M))
-          })
-
 #' @export
 setMethod("show", "unMarkedFrame",
           function(object) {
@@ -119,10 +104,12 @@ setMethod("show", "unMarkedFrame",
             }
           })
 
+#' @export
 siteCovs <- function(umf) {
   return(umf@siteCovs)
 }
           
+#' @export
 obsCovs <- function(umf, matrices = FALSE) {
   M <- nrow(umf@y)
   J <- ncol(umf@obsNum)
@@ -175,22 +162,6 @@ unMarkedFit <- function(fitType,stateformula, detformula,
 
 #' @export
 setMethod("show", "unMarkedFit",
-          function(object) {
-            cat("\nCall:\n")
-            cat(object@fitType,"(stateformula = ~ ",
-                as.character(object@stateformula)[2],
-                ", detformula = ~ ",
-                as.character(object@detformula)[2],")\n", sep = "")
-
-            cat("\nState coefficients:\n")
-            show(object@stateMLE)
-
-            cat("\nDetection coefficients:\n")
-            show(object@detMLE)
-          })
-
-#' @export
-setMethod("summary", "unMarkedFit",
           function(object) {
             cat("\nCall:\n")
             cat(object@fitType,"(stateformula = ~ ",

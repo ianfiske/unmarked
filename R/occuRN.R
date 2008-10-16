@@ -40,8 +40,8 @@ roxygen()
 #' @examples
 #' data(birds)
 #' woodthrushUMF <- unMarkedFrame(woodthrush.bin)
-#' fm.wood.rn <- occuRN(~1, ~obs, y = woodthrush.bin)
-#' summary(fm.wood.rn)
+#' fm.wood.rn <- occuRN(~1, ~obs, woodthrushUMF)
+#' fm.wood.rn
 #' @keywords models
 #' @export
 occuRN <- 

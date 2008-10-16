@@ -43,7 +43,7 @@ roxygen()
 #'                            obsCovs = mallard.obs)
 #' fm.mallard <- pcount(~ length + elev + forest, ~ ivel+ date + I(date^2),
 #'                   mallardUMF)
-#' summary(fm.mallard)
+#' fm.mallard
 #' @export
 #' @keywords models
 pcount <-

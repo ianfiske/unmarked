@@ -1,5 +1,3 @@
-#' @title Fit Multinomial-Multinomial Mixture Models
-#' 
 #' Fit latent abundance models to categorical data such as frog
 #' calling data (Royle and Link 2005).  Currently, covariates can only be
 #' supplied to the detection process (as in Royle and Link 2005).
@@ -26,12 +24,13 @@
 #' and Link (2005).  The default is to allow the \eqn{p_k}'s (\eqn{k = 1,
 #' 2, \ldots, K}{k = 1, 2, ..., K}) separate parameters, but constrain the
 #' the \eqn{\beta}{beta}'s to be all equal.
-#' 
+#'
+#' @title Fit Multinomial-Multinomial Mixture Models
 #' @param stateformula formula for covariates of occurrance.
 #' @param detformula formula for covariates of detection. 
 #' @param umf unMarkedFrame supplying data.
 #' @param constraint vector to describe which detection parameters are
-#'     the same (see \emph{Details}}
+#'     the same (see \emph{Details})
 #' @return still need to convert to UMfit
 #' @export
 #' @author Ian Fiske \email{ianfiske@@gmail.com}
@@ -39,6 +38,7 @@
 #' data(gf)
 #' gfUMF <- unMarkedFrame(gf.data, obsCovs = gf.obs)
 #' fm.mmx1 <- mnMix(~ 1, ~ samp1 + samp3 + temp, con=c(1,2,2,3,3,3), gfUMF)
+#' fm.mmx1
 #' @keywords models
 mnMix <-
 function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)

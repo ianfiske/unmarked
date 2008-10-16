@@ -1,33 +1,15 @@
 \name{mnMix}
 \alias{mnMix}
-\title{ Fix Multinomial Mixture Abundance Models}
-\description{
-Fit latent abundance models to categorical data such as frog
+\title{Fit Multinomial-Multinomial Mixture Models}
+\usage{mnMix(stateformula=~1, detformula=~1, umf, constraint)}
+\description{Fit latent abundance models to categorical data such as frog
 calling data (Royle and Link 2005).  Currently, covariates can only be
-supplied to the detection process (as in Royle and Link 2005).
-}
-\usage{
-mnMix(stateformula = ~ 1, detformula = ~ 1, data = list(y = y,
-      covdata.site = covdata.site, covdata.obs = covdata.obs), y,
-      covdata.site = NULL, covdata.obs = NULL, constraint = NULL)
-}
-\arguments{
-  \item{stateformula}{ formula for covariates of occurrance. }
-  \item{detformula}{ formula for covariates of detection. }
-  \item{data}{ list containing y, covdata.site, and covdata.obs}
-  \item{y}{ M x J observation matrix of 0's and 1's. }
-  \item{constraint}{ vector to describe which detection parameters are
-    the same (see \emph{Details}}
-  \item{covdata.site}{ optional data frame containing site-specific covariates. }
-  \item{covdata.obs}{ optional array or list containing covariate data (see \emph{Details}. }
-}
-\details{
+supplied to the detection process (as in Royle and Link 2005).}
+\details{See \link{unmarked} for detailed descriptions of passing data \code{y},
+\code{covdata.site}, and \code{covdata.obs}, and specifying covariates
+with \code{stateformula} and \code{detformula}.
 
-  See \link{unmarked} for detailed descriptions of passing data \code{y},
-  \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
-  with \code{stateformula} and \code{detformula}.
-  
-  This function fits the model described in Royle and Link (2005).  This
+This function fits the model described in Royle and Link (2005).  This
 function assumes that a site has a latent categorical state, taking on
 values from 0 to K.  Thus, there are K + 1 multinomial states.  Here, we
 estimate the probabilities \eqn{\mathbf{\psi}}{\bold{psi}}, of falling
@@ -44,23 +26,16 @@ the multinomial detection parameters to reduce model complexity.  The
 same constraint vector format is used as described on page 2508 of Royle
 and Link (2005).  The default is to allow the \eqn{p_k}'s (\eqn{k = 1,
 2, \ldots, K}{k = 1, 2, ..., K}) separate parameters, but constrain the
-the \eqn{\beta}{beta}'s to be all equal.
-
-}
-\value{
-  \item{estimates}{parameter estimates}
-  \item{AIC}{AIC computed as \eqn{-2 \times log(like) + 2 \times nP}{-2ll + 2nP}}  
-}
-\references{
-Royle, J. A. and Link W. A. (2005) A general class of multinomial
-mixture models for anuran calling survey data. \emph{Ecology}, \bold{86}(9),
-pp. 2505--2512.
-}
-\author{ Ian Fiske <ianfiske@gmail.com> }
-\seealso{ \link{unmarked}}
-\examples{
-data(gf)
-fm.mmx1 <- mnMix(~ 1, ~ samp1 + samp3 + temp, con=c(1,2,2,3,3,3),
-    y=gf.data, covdata.obs = gf.obs)
-}
-\keyword{ models }
+the \eqn{\beta}{beta}'s to be all equal.}
+\value{still need to convert to UMfit}
+\author{Ian Fiske \email{ianfiske@gmail.com}}
+\keyword{models}
+\arguments{\item{stateformula}{formula for covariates of occurrance.}
+\item{detformula}{formula for covariates of detection.}
+\item{umf}{unMarkedFrame supplying data.}
+\item{constraint}{vector to describe which detection parameters are
+the same (see \emph{Details})}}
+\examples{data(gf)
+gfUMF <- unMarkedFrame(gf.data, obsCovs = gf.obs)
+fm.mmx1 <- mnMix(~ 1, ~ samp1 + samp3 + temp, con=c(1,2,2,3,3,3), gfUMF)
+fm.mmx1}

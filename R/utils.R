@@ -1,4 +1,8 @@
 #' @include classes.R
+#' @import reshape
+#' @import roxygen
+roxygen()
+
 
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))
@@ -58,8 +62,6 @@ parmNames <- function(list.df) {
 }
 
 
-#' @title Convert .CSV File to an unMarkedFrame
-#'
 #' This function converts an appropriatedly formated comma-separated
 #' values file (.csv) to a format usable by \emph{unmarked}'s fitting
 #' functions (see \emph{Details}).
@@ -83,7 +85,7 @@ parmNames <- function(list.df) {
 #'   var1-3 var2-1 var2-2 var2-3, etc.  The column header of the first
 #'   variable in each group must indicate the variable name.
 #' }
-#'
+#' @title Convert .CSV File to an unMarkedFrame
 #' @param filename string describing filename of file to read in
 #' @param long \code{FALSE} if file is in long format or \code{TRUE} if
 #'    file is in long format (see \emph{Details})
@@ -117,7 +119,6 @@ function(filename, long=FALSE, species = NULL)
 # utility function to create a variable that follows the dates as 1,2,3,...
 # site id is first column
 # julian date is second column
-#' @import reshape
 dateToObs <-
 function(dfin)
 {
@@ -153,7 +154,6 @@ function(dfin)
 # date, one column
 # response, one column
 # obs vars, one per column
-#' @import reshape
 formatLong <-
 function(dfin, species = NULL)
 {
@@ -256,7 +256,6 @@ function(dfin)
 # c4 = y, c5 - cX = covariates
 # add sample periods of NA to years with fewer samples
 # to make balanced data... this eases future computations
-#' @import reshape
 formatMult <-
 function(df.in, spp, state)
 {
@@ -304,7 +303,6 @@ function(df.in, spp, state)
 # site  | species | count
 # to
 # site | spp1 | spp2 | ...
-#' @import reshape
 sppLongToWide <-
 function(df.in)
 {
@@ -390,10 +388,10 @@ Corresponding site(s) in 'y' were replaced with NA: %s",
 # copies site covariate info from obsdata to sitedata
 # puts all site covariates back into obsdata
 # needed because all site vars need to be available for both state and det models
-#' @import abind
 arrangeData <-
 function(data)
 {
+  require(abind)
   y <- data$y
   sitedata <- data$covdata.site
   obsdata <- data$covdata.obs

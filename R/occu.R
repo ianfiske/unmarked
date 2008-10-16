@@ -2,8 +2,6 @@
 #' @include utils.R
 roxygen()
 
-#' Fit the MacKenzie Occupancy Model
-#'
 #' This function fits the standard occupancy model of MacKenzie et al
 #'
 #'  See \link{unmarked} for detailed descriptions of passing data \code{y},
@@ -23,7 +21,7 @@ roxygen()
 #'
 #'  Covariates of \eqn{\psi_i}{psi_i} and \eqn{p_{ij}}{p_ij} are modelled
 #'  using the logit link.
-#'  
+#' @title Fit the MacKenzie Occupancy Model
 #' @param stateformula right-hand side formula describing covariates of occurence.
 #' @param detformula right-hand side formula describing covariates of detection.
 #' @param umf unMarkedFrame object that supplies the data (see \link{unMarkedFrame})..
@@ -36,7 +34,7 @@ roxygen()
 #' data(frogs)
 #' pcruUM <- unMarkedFrame(pcru.bin)
 #' fm <- occu(~1, ~1, pcruUM)
-#' summary(fm)
+#' fm
 #' @keywords models
 #' @export
 occu <-
@@ -83,5 +81,3 @@ function(stateformula, detformula, umf)
                        detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
   return(umfit)
 }
-
-
