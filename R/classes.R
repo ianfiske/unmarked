@@ -15,15 +15,16 @@ validUnMarkedFrame <- function(object) {
     errors
 }
 
-#' Class to hold data for analyses in unmarked.
-#'
-#' @slot y A matrix of the observed measured data.
-#' @slot obsCovData Dataframe of covariates that vary within sites.
-#' @slot siteCovData Dataframe of covariates that vary at the site level.
-#' @slot obsNum Number of observations per site. For most models, this
-#' can be taken to be the number of columns in y.  But this is not always
-#' the case.  For example, double observer: y has 3 columns, but only 2
-#' independent observations were taken at each site.
+# Class to hold data for analyses in unmarked.
+#
+# @slot y A matrix of the observed measured data.
+# @slot obsCovData Dataframe of covariates that vary within sites.
+# @slot siteCovData Dataframe of covariates that vary at the site level.
+# @slot obsNum Number of observations per site. For most models, this
+# can be taken to be the number of columns in y.  But this is not always
+# the case.  For example, double observer: y has 3 columns, but only 2
+# independent observations were taken at each site.
+#' @export
 setClass("unMarkedFrame",
          representation(y = "matrix",
                         obsCovs = "optionalDataFrame",
@@ -33,12 +34,18 @@ setClass("unMarkedFrame",
 
 #' Constuctor function to create an unmarkedFrame.
 #'
+#' This function takes observations (y) and covariates at the site level
+#' (siteCovs) and observations level (obsCovs) and generates an
+#' unMarkedFrame object.  This object can then be passed to any of the
+#' unMarked functions.
+#'
 #' @param y A matrix of the observed measured data.
 #' @param obsCovData Dataframe of covariates that vary within sites.
 #' @param siteCovData Dataframe of covariates that vary at the site level.
-#' @param obsNum Number of independent observations. 
+#' @param obsNum Number of independent observations.
+#' @return an unmarkedFrame object
 #' @export
-unMarkedFrame <- function(y, obsCovs = NULL, siteCovs = NULL,
+unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
                           obsNum = ncol(y)) {
 
   ## if obsCovs is a list of matrices, convert to a dataframe
@@ -55,6 +62,12 @@ unMarkedFrame <- function(y, obsCovs = NULL, siteCovs = NULL,
 
   if(class(y) == "data.frame") y <- as.matrix(y)
 
+  ## add obsCov for the observation number (sampling occasion)
+  ## name it obs
+  obs = scale(rep(1:obsNum, nrow(y)))
+  colnames(obs) <- "obs"
+  obsCovs <- as.data.frame(cbind(obsCovs,obs))
+
   umf <- new("unMarkedFrame", y = y, obsCovs = obsCovs,
              siteCovs = siteCovs, obsNum = obsNum)
   ## copy siteCovs into obsCovs
@@ -65,6 +78,10 @@ unMarkedFrame <- function(y, obsCovs = NULL, siteCovs = NULL,
   }
   return(umf)
 }
+
+setGeneric("summary", function(object,...) {
+  standardGeneric("summary")})
+
 
 #' Summary statistics for an unMarkedFrame
 #'
@@ -77,6 +94,7 @@ setMethod("summary", "unMarkedFrame",
             print(paste("Number of sites:",M))
           })
 
+#' @export
 setMethod("show", "unMarkedFrame",
           function(object) {
             ## print y
@@ -120,17 +138,18 @@ obsCovs <- function(umf, matrices = FALSE) {
   return(value)
 }
             
-#' Class to store unMarked model fit information
-#'
-#' @slot fitType Name of the model that was fit.
-#' @slot stateformula The abundance/occupancy formula.
-#' @slot detformula The formula governing the detection process.
-#' @slot data The unMarkedFrame containing the data that was fit.
-#' @slot stateMLE The MLE of the abundance/occupancy parameters
-#' @slot stateSE The standard errors of the state MLE's.
-#' @slot detMLE MLE of the detection parameters.
-#' @slot detSE Standard errors of the detection MLE's.
-#' @slot AIC The AIC of this model fit.
+# Class to store unMarked model fit information
+#
+# @slot fitType Name of the model that was fit.
+# @slot stateformula The abundance/occupancy formula.
+# @slot detformula The formula governing the detection process.
+# @slot data The unMarkedFrame containing the data that was fit.
+# @slot stateMLE The MLE of the abundance/occupancy parameters
+# @slot stateSE The standard errors of the state MLE's.
+# @slot detMLE MLE of the detection parameters.
+# @slot detSE Standard errors of the detection MLE's.
+# @slot AIC The AIC of this model fit.
+#' @export
 setClass("unMarkedFit",
          representation(fitType = "character",
                         stateformula = "formula",
@@ -142,9 +161,6 @@ setClass("unMarkedFit",
                         detSE = "numeric",
                         AIC = "numeric"))
 
-#' Constructor function for unMarkedFit objects
-#'
-#' @param fitType
 unMarkedFit <- function(fitType,stateformula, detformula,
                         data, stateMLE, stateSE,
                         detMLE, detSE, AIC) {
@@ -157,7 +173,7 @@ unMarkedFit <- function(fitType,stateformula, detformula,
   return(umfit)
 }
 
-
+#' @export
 setMethod("show", "unMarkedFit",
           function(object) {
             cat("\nCall:\n")
@@ -173,7 +189,7 @@ setMethod("show", "unMarkedFit",
             show(object@detMLE)
           })
 
-
+#' @export
 setMethod("summary", "unMarkedFit",
           function(object) {
             cat("\nCall:\n")

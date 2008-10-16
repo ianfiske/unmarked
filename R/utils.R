@@ -274,46 +274,6 @@ function(df.in)
   df.out
 }
 
-
-
-# helper function to take siteformula, sitedata, detformula, obsdata
-# and return design matrices, parameter names, numbers of parameters
-getDesign.old <-
-function(stateformula, detformula, y, sitedata, obsdata)
-{
-  if(is.null(dim(sitedata))) sitedata <- as.data.frame(sitedata)
-  nSV <- length(sitedata)
-  nOV <- length(obsdata)
-
-  M = nrow(y)
-  J = ncol(y)
-
-  # get design matrix for occupancy variables
-  mfOcc <- model.frame(formula = stateformula, data = sitedata)
-  mtOcc <- attr(mfOcc, "terms")
-  XOcc <- model.matrix(mtOcc, mfOcc)
-  occParms <- c("psiconst",colnames(XOcc)[-1])
-  nOP <- length(occParms)
-  nOV <- length(obsdata)
-
-  obsdata.ji.list <- list()
-  for(i in 1:nOV) {
-     obsdata.ji.list[[i]] <- as.numeric(obsdata[[i]])
-  }
-  names(obsdata.ji.list) <- names(obsdata)
-  obsdata.ji <- do.call(cbind,obsdata.ji.list)
-  detdf <- as.data.frame(obsdata.ji)
-  mf <- model.frame(formula = detformula, data = detdf, na.action = na.pass)
-  mt <- attr(mf,"terms")
-  detParms <- c("pconst",attr(mt,"term.labels"))
-  nDP <- length(detParms)
-  XDet <- model.matrix(mt, mf)
-
-  list(nOP = nOP, nDP = nDP, XDet = XDet, XOcc = XOcc,
-    occParms = occParms, detParms = detParms)
-}
-
-
 # get estimated psi from rn fit
 getPsi <-
 function(lam)
@@ -332,110 +292,6 @@ function(lam, r)
   sum(pY.k * pN.k)
 }
 
-# function to get rid of observations that have NA for any covariate
-# and sites with NA's for all observations.
-# Only throw out observations for which variables in varlist are missing.
-# still need to implement for sitedata... unless sitedata is now vestigule
-handleNA.old <-
-function(data, stateformula, detformula)
-{
-  library(abind)
-  y <- data$y
-  sitedata <- data$covdata.site
-  obsdata <- data$covdata.obs
-
-  # ensure that data are names for giving informative warnings
-  if(is.null(rownames(y))) rownames(y) <- 1:nrow(y)
-##   if(!is.null(sitedata)) {
-##     if(is.null(rownames(sitedata))) rownames(y) <- 1:nrow(sitedata)
-##   }
-##   if(!is.null(obsdata)) {
-##     if(is.null(rownames(obsdata))) rownames(y) <- 1:nrow(obsdata)
-##   }
-
-  # get variables to handle, remove others
-  # first, get names from formulas
-  state.vars <- attr(terms(stateformula),"term.labels")
-  obs.vars <- attr(terms(detformula),"term.labels")
-
-  # ensure that "ones" is not called "one" (maybe deprecated)
-  if(!is.null(sitedata$one)) {
-    sitedata$ones <- sitedata$one
-    sitedata$one <- NULL
-  }
-  if(!is.null(obsdata$one)) {
-    names(obsdata)[names(obsdata) == "one"] <- "ones"
-  }
-
-  # coerce obsdata to an array for easier manipulation
-  obsdata.ar <- abind(obsdata, along = 3)
-
-  # if obsvar begins with I(), then remove obsvar before the following check
-  # REALLY, I'd like to just parse out the variable name from the expression
-  # and check it, but i'll do that later.
-  if(length(grep("^I(",obs.vars,extended=FALSE)) > 0) {
-    obs.vars2 <- obs.vars[-grep("^I(",obs.vars,extended=FALSE)]
-  } else {
-    obs.vars2 <- obs.vars
-  }
-  
-  # check for formula specification that involves covariates not in obsdata
-  # note that obs.vars2 is now here to ignore "I()" expressions
-  if(any(!(obs.vars2 %in% dimnames(obsdata.ar)[[3]]))) {
-    badvars <- !(obs.vars %in% dimnames(obsdata.ar)[[3]])
-    badvars <- obs.vars[badvars]
-    badvars <- paste(badvars, collapse = ", ")
-    stop(sprintf("Detection covariate(s) %s were specified and were not present in the data.", badvars))
-  }
-
-  # remove variables that are not used so that NAs in unused variables
-  # do not matter
-  sitedata <- sitedata[,c("ones",state.vars)]
-  obsdata.ar <- obsdata.ar[,,c("ones",obs.vars2)]  # NOTE obs.vars2 here too
-
-  obsdata.NA <- is.na(obsdata.ar)
-  obsdata.NA <- apply(obsdata.NA, c(1,2), any)
-
-  # determine which sites have problem to give informative warnings.
-  # NA in cov is problem only if it does not correspond to NA in y.
-  whichsites <- names(which(apply(!is.na(y) & obsdata.NA, 1, any)))
-  whichsites <- paste(whichsites, collapse = ", ")
-  if(any(!is.na(y) & obsdata.NA)) {
-    warning(sprintf("NA(s) found in 'covdata.obs' that were not in 'y' matrix.
-Corresponding observation(s) 'y' were replaced with NA.
-Observations removed from site(s) %s",whichsites))
-  }
-  is.na(y) <- (is.na(y) | obsdata.NA) # replace 'y' with NA if cov is NA
-
-  # look for all NA's for a site
-  whichsites <- names(which(apply(is.na(y),1,all)))
-  whichsites <- paste(whichsites, collapse = ", ")
-  if(any(apply(is.na(y), 1, all))) {
-    warning(sprintf("Site(s) found with NA's for all observations in 'y'.
-Site(s) %s cannot be analyzed and have been removed.",whichsites))
-  }
-
-  sitedata.na <- is.na(sitedata)
-  if(!is.null(dim(sitedata.na))) {
-    sitedata.na <- apply(sitedata.na, 1, any)
-  }
-  if(any(sitedata.na)) warning("NA(s) found in 'covdata.site'. site(s) were removed from 'y' and covariate data")
-
-  # remove sites that have either all NA or an NA in any site covariate
-  # from y matrix and all covariate data
-  to.rm <- which(sitedata.na | apply(is.na(y), 1, all))
-  sitedata <- as.matrix(sitedata)
-  if(length(to.rm) > 0) {
-    y <- y[ - to.rm, ]  # remove from y
-    sitedata <- sitedata[ - to.rm, ]  # remove from sitedata
-    for(i in 1:length(obsdata)) {      # remove from obsdata
-      obsdata[[i]] <- obsdata[[i]][ - to.rm, ]
-    }
-  }
-  sitedata <- as.data.frame(sitedata)
-  list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
-}
-
 handleNA <- function(stateformula, detformula, umf) {
   y <- umf@y
   obsNum <- umf@obsNum
@@ -451,7 +307,7 @@ handleNA <- function(stateformula, detformula, umf) {
   ## assume that siteCovs have already been added to obsCovs
   X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
   V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
-  
+
   if(ncol(V.mf) > 0) {
     ## which sites have NA's in obsCovs included in detformula?
     V.NA <- apply(is.na(V.mf), 1, any)
@@ -475,7 +331,7 @@ Corresponding site(s) in 'y' were replaced with NA: %s",
                       paste(X.NA.sites,collapse=", ")))
     }
   }
-  
+
   ## which sites have all NA's in y?
   na.sites <- which(apply(is.na(umf.clean@y), 1, all))
   if(length(na.sites) > 0) {
@@ -483,7 +339,7 @@ Corresponding site(s) in 'y' were replaced with NA: %s",
     umf.clean@siteCovs <- umf.clean@siteCovs[-na.sites,]
     umf.clean@obsCovs <- umf.clean@obsCovs[!(sites %in% na.sites),]
   }
-  
+
   return(umf.clean)
 }
 
@@ -571,7 +427,7 @@ getDesign <- function(stateformula, detformula, umf) {
   ## Compute detection design matrix
   ## add site Covariates at observation-level
   if(!is.null(umf@obsCovs)) {
-    V.mf <- model.frame(detformula, umf@obsCovs)
+    V.mf <- model.frame(detformula, umf@obsCovs, na.action = NULL)
     V <- model.matrix(detformula, V.mf)
   } else {
     V <- matrix(1, M*umf@obsNum, 1)
@@ -580,7 +436,7 @@ getDesign <- function(stateformula, detformula, umf) {
     
   ## Compute state design matrix
   if(!is.null(umf@siteCovs)) {
-    X.mf <- model.frame(stateformula, umf@siteCovs)
+    X.mf <- model.frame(stateformula, umf@siteCovs, na.action = NULL)
     X <- model.matrix(stateformula, X.mf)
   } else {
     X <- matrix(1, M, 1)
@@ -593,4 +449,12 @@ getDesign <- function(stateformula, detformula, umf) {
 meanstate <- function(x) {
     K <- length(x) - 1
     sum(x*(0:K))
+}
+
+truncateToBinary <- function(y) {
+  if(max(y, na.rm = TRUE) > 1) {
+    y <- ifelse(y > 0, 1, 0)
+    warning("Some observations were > 1.  These were truncated to 1.")
+  }
+  return(y)
 }
