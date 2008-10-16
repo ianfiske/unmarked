@@ -117,10 +117,10 @@ function(filename, long=FALSE, species = NULL)
 # utility function to create a variable that follows the dates as 1,2,3,...
 # site id is first column
 # julian date is second column
+#' @import reshape
 dateToObs <-
 function(dfin)
 {
-  require(reshape)
   sitecol <- dfin[[1]]
   datecol <- dfin[[2]]
 
@@ -153,11 +153,10 @@ function(dfin)
 # date, one column
 # response, one column
 # obs vars, one per column
+#' @import reshape
 formatLong <-
 function(dfin, species = NULL)
 {
-  require(reshape)
-browser()
 
   ## copy dates to last column so that they are also a covdata var
   nc <- ncol(dfin)
@@ -257,10 +256,10 @@ function(dfin)
 # c4 = y, c5 - cX = covariates
 # add sample periods of NA to years with fewer samples
 # to make balanced data... this eases future computations
+#' @import reshape
 formatMult <-
 function(df.in, spp, state)
 {
-  require(reshape)
   years <- sort(unique(df.in[[1]]))
   nY <- length(years)
   df.obs <- list()
@@ -305,10 +304,10 @@ function(df.in, spp, state)
 # site  | species | count
 # to
 # site | spp1 | spp2 | ...
+#' @import reshape
 sppLongToWide <-
 function(df.in)
 {
-  require(reshape)
   df.m <- melt(df.in, id = c("site", "spp"))
   df.out <- cast(df.m, site ~ spp, add.missing=T, fill = 0)
   df.out <- df.out[order(df.out$site),]
@@ -391,11 +390,10 @@ Corresponding site(s) in 'y' were replaced with NA: %s",
 # copies site covariate info from obsdata to sitedata
 # puts all site covariates back into obsdata
 # needed because all site vars need to be available for both state and det models
+#' @import abind
 arrangeData <-
 function(data)
 {
-
-  require(abind)
   y <- data$y
   sitedata <- data$covdata.site
   obsdata <- data$covdata.obs
