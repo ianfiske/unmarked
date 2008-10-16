@@ -44,6 +44,12 @@ setClass("unMarkedFrame",
 #' @param siteCovs Dataframe of covariates that vary at the site level.
 #' @param obsNum Number of independent observations.
 #' @return an unmarkedFrame object
+#' @examples
+#' data(mallard)
+#' mallardUMF <- unMarkedFrame(mallard.y, siteCovs = mallard.site,
+#'                            obsCovs = mallard.obs)
+#' obsCovs(mallardUMF)
+#' obsCovs(mallardUMF, matrices = TRUE)
 #' @export
 unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
                           obsNum = ncol(y)) {
