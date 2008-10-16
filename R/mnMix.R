@@ -1,41 +1,73 @@
-
+#' @title Fit Multinomial-Multinomial Mixture Models
+#' 
+#' Fit latent abundance models to categorical data such as frog
+#' calling data (Royle and Link 2005).  Currently, covariates can only be
+#' supplied to the detection process (as in Royle and Link 2005).
+#'
+#' See \link{unmarked} for detailed descriptions of passing data \code{y},
+#'   \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
+#'   with \code{stateformula} and \code{detformula}.
+#'   
+#'   This function fits the model described in Royle and Link (2005).  This
+#' function assumes that a site has a latent categorical state, taking on
+#' values from 0 to K.  Thus, there are K + 1 multinomial states.  Here, we
+#' estimate the probabilities \eqn{\mathbf{\psi}}{\bold{psi}}, of falling
+#' into the K + 1 categories.
+#' 
+#' Further, the latent states are observed with error, and the detection
+#' process also follows a multinomial distribution according to equation
+#' (3) on page 2508 of Royle and Link (2005).  The user may specify
+#' covariates of the \eqn{p}'s, which are modeled as in equation (4) on
+#' p. 2509.
+#' 
+#' The \code{constraint} argument specifies which constraints are placed on
+#' the multinomial detection parameters to reduce model complexity.  The
+#' same constraint vector format is used as described on page 2508 of Royle
+#' and Link (2005).  The default is to allow the \eqn{p_k}'s (\eqn{k = 1,
+#' 2, \ldots, K}{k = 1, 2, ..., K}) separate parameters, but constrain the
+#' the \eqn{\beta}{beta}'s to be all equal.
+#' 
+#' @param stateformula formula for covariates of occurrance.
+#' @param detformula formula for covariates of detection. 
+#' @param umf unMarkedFrame supplying data.
+#' @param constraint vector to describe which detection parameters are
+#'     the same (see \emph{Details}}
+#' @return still need to convert to UMfit
+#' @export
+#' @author Ian Fiske \email{ianfiske@@gmail.com}
+#' @examples
+#' data(gf)
+#' gfUMF <- unMarkedFrame(gf.data, obsCovs = gf.obs)
+#' fm.mmx1 <- mnMix(~ 1, ~ samp1 + samp3 + temp, con=c(1,2,2,3,3,3), gfUMF)
+#' @keywords models
 mnMix <-
-function(stateformula = ~ 1, detformula = ~ 1,
-         data = list(y = y, covdata.site = covdata.site, covdata.obs = covdata.obs),
-         y, covdata.site = NULL, covdata.obs = NULL, constraint = NULL)
+function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
 {
 
-  arranged <- arrangeData(data)
-  cleaned <- handleNA(arranged, stateformula, detformula)
-  y <- cleaned$y
-  sitedata <- cleaned$covdata.site
-  obsdata <- cleaned$covdata.obs
-  
-  design <- getDesign(stateformula = stateformula, detformula = detformula,
-    y = y, sitedata = sitedata, obsdata = obsdata)
-  nSP <- design$nOP
-  nDCP <- design$nDP
-  XDet <-design$XDet
-  XN <- design$XOcc
-  NParms <- design$occParms
-  detParms <- design$detParms
-  NParms[1] <- "lamconst"
-  detParms[1] <- "pconst"
-
-  M <- nrow(y)
+  umf <- handleNA(stateformula, detformula, umf)
+  designMats <- getDesign(stateformula, detformula, umf)
+  X <- designMats$X; V <- designMats$V
+  y <- umf@y
   J <- ncol(y)
-
+  M <- nrow(y)
   K <- max(y, na.rm = TRUE)
+  
+  nSP <- ncol(X)
+  nDCP <- ncol(V)
+  NParms <- colnames(X)
+  detParms <- colnames(V)
+
   con <- constraint
   nDMP.un <- K*(K+1)/2
   if (is.null(con)) con = c(1:K, rep(K + 1, nDMP.un - K))
 
   # create design matrix with alpha_k intercept for each k=1,2,...,K
-  XDet <- XDet[, -1] # remove intercept
   nDCP <- nDCP - 1
-  XDet.jik <- XDet %x% rep(1, K)  # repeat rows of X, each = K
+  V <- V[,-1]
+  V.ji <- V[order(rep(1:J, M), rep(1:M, each = J)),]
+  V.jik <- V.ji %x% rep(1, K)  # repeat rows of X, each = K
   k.diag <- rep(1, M * J) %x% diag(K) # add intercepts the alpha_k intercepts
-  XDet.jik <- cbind(k.diag, XDet.jik)
+  V.jik <- cbind(k.diag, V.jik)
 
   nDMP <- max(con)    
   nDP <- nDCP + nDMP
@@ -96,7 +128,7 @@ function(stateformula = ~ 1, detformula = ~ 1,
     beta.ji.mat <- matrix(beta, M*J, length(beta), byrow=TRUE)
  
     # model parms 
-    p.jik <- plogis(XDet.jik %*% c(alpha, b))
+    p.jik <- plogis(V.jik %*% c(alpha, b))
 
     # get detMat paramters (rows are alphas then betas)
     p.ji.k.mat <- matrix(p.jik, M*J, K, byrow=TRUE)
