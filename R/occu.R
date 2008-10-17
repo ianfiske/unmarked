@@ -4,7 +4,7 @@ roxygen()
 
 #' This function fits the standard occupancy model of MacKenzie et al
 #'
-#'  See \link{unmarked} for detailed descriptions of passing data \code{y},
+#'  See \link{unmarked-package} for detailed descriptions of passing data \code{y},
 #'  \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
 #'  with \code{stateformula} and \code{detformula}.
 #'
