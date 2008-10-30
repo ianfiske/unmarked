@@ -3,7 +3,7 @@
 \title{Fit the MacKenzie Occupancy Model}
 \usage{occu(stateformula, detformula, umf)}
 \description{This function fits the standard occupancy model of MacKenzie et al}
-\details{See \link{unmarked} for detailed descriptions of passing data \code{y},
+\details{See \link{unmarked-package} for detailed descriptions of passing data \code{y},
 \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
 with \code{stateformula} and \code{detformula}.
 

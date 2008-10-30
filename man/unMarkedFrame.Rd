@@ -12,3 +12,8 @@ unMarked functions.}
 \item{obsCovs}{Dataframe of covariates that vary within sites.}
 \item{siteCovs}{Dataframe of covariates that vary at the site level.}
 \item{obsNum}{Number of independent observations.}}
+\examples{data(mallard)
+mallardUMF <- unMarkedFrame(mallard.y, siteCovs = mallard.site,
+obsCovs = mallard.obs)
+obsCovs(mallardUMF)
+obsCovs(mallardUMF, matrices = TRUE)}

@@ -5,7 +5,7 @@
 \description{Fit latent abundance models to categorical data such as frog
 calling data (Royle and Link 2005).  Currently, covariates can only be
 supplied to the detection process (as in Royle and Link 2005).}
-\details{See \link{unmarked} for detailed descriptions of passing data \code{y},
+\details{See \link{unmarked-package} for detailed descriptions of passing data \code{y},
 \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
 with \code{stateformula} and \code{detformula}.
 
