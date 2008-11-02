@@ -374,7 +374,8 @@ Corresponding site(s) in 'y' were replaced with NA: %s",
   na.sites <- which(apply(is.na(umf.clean@y), 1, all))
   if(length(na.sites) > 0) {
     umf.clean@y <- umf.clean@y[-na.sites,]
-    umf.clean@siteCovs <- umf.clean@siteCovs[-na.sites,]
+    umf.clean@siteCovs <- subset(umf.clean@siteCovs,
+                                 !row(umf.clean@siteCovs) %in% na.sites)
     umf.clean@obsCovs <- umf.clean@obsCovs[!(sites %in% na.sites),]
   }
 
