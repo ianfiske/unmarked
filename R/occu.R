@@ -25,6 +25,7 @@ roxygen()
 #' @param stateformula right-hand side formula describing covariates of occurence.
 #' @param detformula right-hand side formula describing covariates of detection.
 #' @param umf unMarkedFrame object that supplies the data (see \link{unMarkedFrame})..
+#' @param knownOcc vector of sites that are known to be occupied.
 #' @return unMarkedFit object describing the model fit.
 #' @references
 #' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. “Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One.” Ecology 83, no. 8 (2002): 2248-2255.
@@ -38,7 +39,7 @@ roxygen()
 #' @keywords models
 #' @export
 occu <-
-function(stateformula, detformula, umf)
+function(stateformula, detformula, umf, knownOcc = numeric(0))
 {
   umf <- handleNA(stateformula, detformula, umf)
   designMats <- getDesign(stateformula, detformula, umf)
@@ -47,6 +48,9 @@ function(stateformula, detformula, umf)
   J <- ncol(y)
   M <- nrow(y)
 
+  if(nrow(umf@y) != M & length(knownOcc) > 0)
+    stop("sites dropped, but knownOcc was specified.")
+  
   occParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
@@ -59,6 +63,7 @@ function(stateformula, detformula, umf)
 
   nll <- function(parms) {
     psi <- plogis(X %*% parms[1 : nOP])
+    psi[knownOcc] <- 1
     pvec <- plogis(V %*% parms[(nOP + 1) : nP])
     cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
     cp[navec] <- 1  # so that NA's don't modify likelihood        
@@ -70,7 +75,7 @@ function(stateformula, detformula, umf)
   fm <- optim(rnorm(nP), nll, method = "BFGS", hessian = TRUE)
   ests.se <- diag(solve(fm$hessian))
   ests <- fm$par
-  fmAIC <- 2 * fm$value + 2 * nP
+  fmAIC <- 2 * fm$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)
   names(ests) <- c(occParms, detParms)
   names(ests.se) <- c(occParms, detParms)
   umfit <- unMarkedFit(fitType = "occu",
