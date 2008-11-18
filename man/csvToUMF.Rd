@@ -34,12 +34,12 @@ file is in long format (see \emph{Details})}
 this can specify a particular species to extract if there is a
 column named "species".}}
 \examples{# examine a correctly formatted long .csv
-#read.csv(R.home("library/unmarked/data/frog2001pcru.csv"))
+read.csv(system.file("csv","frog2001pcru.csv", package="unmarked"))
 
 # examine a correctly formatted wide .csv
-#read.csv(R.home("library/unmarked/data/widewt.csv"))
+read.csv(system.file("csv","widewt.csv", package="unmarked"))
 
 # convert them!
-#dat1 <- csvToUMF(R.home("library/unmarked/data/frog2001pcru.csv"), long = TRUE)
-#dat2 <- csvToUMF(R.home("library/unmarked/data/frog2001pfer.csv"), long = TRUE)
-#dat3 <- csvToUMF(R.home("library/unmarked/data/widewt.csv"), long = FALSE)}
+dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE)
+dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"), long = TRUE)
+dat3 <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"), long = FALSE)}
