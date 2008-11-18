@@ -67,7 +67,7 @@ function(stateformula, detformula, umf, knownOcc = numeric(0))
     pvec <- plogis(V %*% parms[(nOP + 1) : nP])
     cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
     cp[navec] <- 1  # so that NA's don't modify likelihood        
-    cpmat <- matrix(cp, M, J) # put back into matrix to multiply appropriately
+    cpmat <- matrix(cp, M, J, byrow = TRUE) # put back into matrix to multiply appropriately
     loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi)) 
     -sum(loglik)
   }
