@@ -1,7 +1,7 @@
 \name{occu}
 \alias{occu}
 \title{Fit the MacKenzie Occupancy Model}
-\usage{occu(stateformula, detformula, umf)}
+\usage{occu(stateformula, detformula, umf, knownOcc=numeric(0))}
 \description{This function fits the standard occupancy model of MacKenzie et al}
 \details{See \link{unmarked-package} for detailed descriptions of passing data \code{y},
 \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
@@ -27,7 +27,8 @@ MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amster
 \keyword{models}
 \arguments{\item{stateformula}{right-hand side formula describing covariates of occurence.}
 \item{detformula}{right-hand side formula describing covariates of detection.}
-\item{umf}{unMarkedFrame object that supplies the data (see \link{unMarkedFrame})..}}
+\item{umf}{unMarkedFrame object that supplies the data (see \link{unMarkedFrame})..}
+\item{knownOcc}{vector of sites that are known to be occupied.}}
 \examples{data(frogs)
 pcruUM <- unMarkedFrame(pcru.bin)
 fm <- occu(~1, ~1, pcruUM)
