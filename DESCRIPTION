@@ -13,6 +13,6 @@ Description: This package contains functions to fit models similar to
 License: GPL version 2 or newer
 LazyLoad: yes
 LazyData: yes
-Collate: 'classes.R' 'mackenzie.R' 'Mh.R' 'mnMix.R' 'utils.R'
-    'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
+Collate: 'classes.R' 'mackenzie.R' 'utils.R' 'markovMN.R' 'Mh.R'
+    'mnMix.R' 'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
     'unmarked-package.R'
