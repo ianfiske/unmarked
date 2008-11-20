@@ -32,11 +32,8 @@ markovMN <-
            arDet = FALSE)
 {
   ## truncate at K
-  data$y[data$y > K] <- K
+  umf@y[umf@y > K] <- K
 
-  state <- data$state
-  species <- data$species
-  
   if(K == 3) {
     if(!(phiMatrix %in%
          c("4state", "cumlogit", "4state4", "4stateAR","logit4","logit4ar")))
@@ -62,6 +59,7 @@ markovMN <-
 
 
   ## only do NA checking for variables being used!
+  ## create reduced detection formula from detconstraint
   to.rm <- which(apply(detconstraint == 0, 2, all))
   if(length(to.rm) != 0 & length(to.rm) != (ncol(detconstraint) - 1)) {
     detformula.red <- eval(parse(text=paste("~ ",
@@ -73,12 +71,10 @@ markovMN <-
     detformula.red <- detformula
   }
 
-  J <- data$J
-  arranged <- arrangeData(data)
-  cleaned <- handleNA(arranged, stateformula, detformula.red)
-  y <- cleaned$y
-  sitedata <- cleaned$covdata.site
-  obsdata <- cleaned$covdata.obs
+  umf <- handleNA(stateformula, detformula.red, umf)
+  y <- umf@y
+  J <- umf@obsNum / umf@primaryNum
+  
   M <- nrow(y)
   nY <- ncol(y)/J
   n.det <- sum(apply(y > 0, 1, any, na.rm = TRUE))
@@ -87,9 +83,7 @@ markovMN <-
   fc[[1]] <- as.name("markovMN.fit")
   fc$bootstrap.se <- fc$covdata.site <- fc$covdata.obs <- fc$data <-
     fc$B <- NULL
-  fc$sitedata <- as.name("sitedata")
-  fc$obsdata <- as.name("obsdata")
-  fc$y <- as.name("y")
+  fc$umf <- as.name("umf")
   fc$J <- as.name("J")
   fc$detconstraint <- as.name("detconstraint")
   fm <- eval(fc)
@@ -134,28 +128,31 @@ markovMN <-
 
   }
 
-  fm$state <- state
-  fm$species <- species
   fm$n.det <- n.det
   
   return(fm)
 }
 
 
-markovMN.fit <- function(stateformula = ~ 1, detformula = ~ 1,
-                         y, detconstraint = NULL,
+markovMN.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
+                         detconstraint = NULL,
                          phiconstraint = NULL, psiconstraint = NULL, J, K, 
                          phiMatrix = "cumlogit", EM = FALSE, psi.init = NULL,
                          phiParms.init = NULL, detParms.init = NULL,
-                         get.inits = TRUE, sitedata, obsdata, trace = FALSE,
+                         get.inits = TRUE, trace = FALSE,
                          arDet = FALSE)
 {
+  y <- umf@y
+
   M <- nrow(y)
   nY <- ncol(y)/J
  
-  design <- getDesign(stateformula = stateformula, detformula = detformula,
-                      y = y, sitedata = sitedata, obsdata = obsdata)
-  nDCP <- design$nDP
+  designMats <- getDesign(stateformula = stateformula, detformula = detformula, umf)
+                          
+  V.itj <- designMats$V
+  nDCP <- ncol(V.itj)
+  detParms <- colnames(V.itj)
+  
   ## number of free terms in detection matrix.
   ## these will be modeled by XDet's
   if(arDet)
@@ -167,26 +164,19 @@ markovMN.fit <- function(stateformula = ~ 1, detformula = ~ 1,
     stop(paste("detconstraint has wrong number of rows.\n
 It should have",nDMP))
   
-  XN <- design$XOcc
-  NParms <- design$occParms
-  dP <- design$detParms
-  NParms[1] <- "lamconst"
-  dP[1] <- "Intercept"
-  XDet.tji <- design$XDet
-
   ## for performance, remove variables eliminated by detconstraint
   to.rm <- which(apply(detconstraint == 0, 2, all))
   if(length(to.rm) != 0) {
     detconstraint <- detconstraint[,-to.rm]
     XDet.tji <- XDet.tji[,-to.rm]
-    dP <- dP[-to.rm]
+    detParms <- detParms[-to.rm]
     nDCP <- nDCP - length(to.rm)
   }
   if(is.null(dim(detconstraint)))
     detconstraint <- matrix(detconstraint,nDMP,nDCP)
 
   ## create design matrix for each matrix parameter
-  XDet.tjik <- XDet.tji %x%  diag(nDMP)
+  V.itjk <- V.itj %x%  diag(nDMP)
                                         #get a better line here    if(is.null(detconstraint)) detconstraint <- 1:nDMP.un
 
   fphiMatrix <- paste("f",phiMatrix,sep="")
@@ -262,22 +252,23 @@ It should have",nDMP))
   y.itj <- as.numeric(t(y))
 
   ## reorder X.tjik to be X.itjk
-  t.tjik <- rep(1:nY, each = nDMP *M*J)
-  i.tjik <- rep(rep(1:M, each = nDMP), nY*J)
-  j.tjik <- rep(rep(1:J, each = nDMP*M), nY)
-  k.tjik <- rep(1:nDMP, M * J * nY)
+###   t.tjik <- rep(1:nY, each = nDMP *M*J)
+###   i.tjik <- rep(rep(1:M, each = nDMP), nY*J)
+###   j.tjik <- rep(rep(1:J, each = nDMP*M), nY)
+###   k.tjik <- rep(1:nDMP, M * J * nY)
 
-  XDet.itjk <- XDet.tjik[order(i.tjik, t.tjik, j.tjik, k.tjik),]
+###   XDet.itjk <- XDet.tjik[order(i.tjik, t.tjik, j.tjik, k.tjik),]
 
   ## replace NA's with 99 before passing to C++
+  ## TODO: need better missing data passing mechanism (maybe NaN of Inf?)
   y.itj[is.na(y.itj)] <- 99
-  XDet.itjk[is.na(XDet.itjk)] <- 9999
+  V.itjk[is.na(V.itjk)] <- 9999
 
   if(is.null(psi.init)) psi.init <- rnorm(nSP)
   if(is.null(phiParms.init)) phiParms.init <- rnorm(nPhiP)
   if(is.null(detParms.init)) detParms.init <- rnorm(nDP)
 
-  fm <- findMLE(y.itj, XDet.itjk, nDMP, nDP, nSP, nSP.un,
+  fm <- findMLE(y.itj, V.itjk, nDMP, nDP, nSP, nSP.un,
                    nPhiP, nP, nDP.un,
                    nPhiP.un, H.det, H.phi, H.psi, K, M, J, nY,
                    phiMatrix, EM= EM, psi.init = psi.init,
@@ -285,14 +276,14 @@ It should have",nDMP))
                    detParms.init = detParms.init, get.inits = get.inits,
                    trace = trace, arDet = arDet)
 
-  phiParms <- H.phi %*% fm$phiParms
-  detParms <- H.det %*% fm$detParms
-  detParms <- matrix(detParms, nDMP, nDCP)
-  colnames(detParms) <- dP
-  colnames(detconstraint) <- dP
+  phiEsts <- H.phi %*% fm$phiParms
+  detEsts <- H.det %*% fm$detParms
+  detEsts <- matrix(detEsts, nDMP, nDCP)
+  colnames(detEsts) <- detParms
+  colnames(detconstraint) <- detParms
   phi <- fm$phi
-  psiParms <- H.psi %*% fm$psiParms
-  psi <- exp(c(0,psiParms))/sum(exp(c(0,psiParms)))
+  psiEsts <- H.psi %*% fm$psiParms
+  psi <- exp(c(0,psiEsts))/sum(exp(c(0,psiEsts)))
   ss <- getSS(phi)
   hessian <- fm$hessian
 
@@ -332,8 +323,8 @@ It should have",nDMP))
 ###                           phiMatrix=phiMatrix)
 ###     smooth.se <- sqrt(diag(smooth.cov))
 
-  list(mle = mle.df, psiParms = psiParms, phiParms = phiParms,
-       detParms = detParms, phi = phi, 
+  list(mle = mle.df, psiEsts = psiEsts, phiEsts = phiEsts,
+       detEsts = detEsts, phi = phi, 
        AIC = 2*fm$nll + 2*nP,
        NegLogLike = fm$nll,
        psi = psi, epsi = meanstate(psi), #epsi.se = epsi.se,
@@ -350,16 +341,16 @@ It should have",nDMP))
 
 
 findMLE <-
-  function(y.itj, XDet.itjk, nDMP, nDP, nSP, nSP.un, nPhiP, nP, nDP.un,
+  function(y.itj, V.itjk, nDMP, nDP, nSP, nSP.un, nPhiP, nP, nDP.un,
            nPhiP.un, H.det, H.phi, H.psi, K, M, J, nY,
            phiMatrix, smooth.only = FALSE, EM,
            psi.init, phiParms.init, detParms.init, get.inits, trace,
            arDet)
 {
-  ncX <- ifelse(is.null(ncol(XDet.itjk)), 1, ncol(XDet.itjk))
+  ncX <- ifelse(is.null(ncol(V.itjk)), 1, ncol(V.itjk))
   x <- .C("findMLE",
           as.integer(y.itj),
-          as.double(t(XDet.itjk)),
+          as.double(t(V.itjk)),
           as.integer(ncX),
           as.integer(nDMP),
           as.integer(nDP),
