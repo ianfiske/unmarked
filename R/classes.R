@@ -16,21 +16,23 @@ validUnMarkedFrame <- function(object) {
     errors
 }
 
-# Class to hold data for analyses in unmarked.
-#
-# @slot y A matrix of the observed measured data.
-# @slot obsCovData Dataframe of covariates that vary within sites.
-# @slot siteCovData Dataframe of covariates that vary at the site level.
-# @slot obsNum Number of observations per site. For most models, this
-# can be taken to be the number of columns in y.  But this is not always
-# the case.  For example, double observer: y has 3 columns, but only 2
-# independent observations were taken at each site.
+#' Class to hold data for analyses in unmarked.
+#'
+#' @slot y A matrix of the observed measured data.
+#' @slot obsCovData Dataframe of covariates that vary within sites.
+#' @slot siteCovData Dataframe of covariates that vary at the site level.
+#' @slot obsNum Number of observations per site. For most models, this
+#' can be taken to be the number of columns in y.  But this is not always
+#' the case.  For example, double observer: y has 3 columns, but only 2
+#' independent observations were taken at each site.
+#' @slot primaryNum integer number of primary seasons for multiseason data only
 #' @export
 setClass("unMarkedFrame",
          representation(y = "matrix",
                         obsCovs = "optionalDataFrame",
                         siteCovs = "optionalDataFrame",
-                        obsNum = "numeric"),
+                        obsNum = "numeric",
+                        primaryNum = "numeric"),
          validity = validUnMarkedFrame)
 
 #' Constuctor function to create an unmarkedFrame.
@@ -53,7 +55,7 @@ setClass("unMarkedFrame",
 #' obsCovs(mallardUMF, matrices = TRUE)
 #' @export
 unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
-                          obsNum = ncol(y)) {
+                          obsNum = ncol(y), primaryNum = NULL) {
 
   ## if obsCovs is a list of matrices, convert to a dataframe
   if(class(obsCovs) == "list") {
@@ -64,7 +66,7 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
       if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
         stop("At least one matrix in obsCovs has incorrect number of dimensions.")
     }
-    obsCovs <- data.frame(lapply(obsCovs, as.vector))
+    obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
   }
 
   if(class(y) == "data.frame") y <- as.matrix(y)
@@ -77,8 +79,12 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
   else
     obsCovs <- obs
 
+  if(is.null(primaryNum)) primaryNum <- 1
+
   umf <- new("unMarkedFrame", y = y, obsCovs = obsCovs,
-             siteCovs = siteCovs, obsNum = obsNum)
+             siteCovs = siteCovs, obsNum = obsNum,
+             primaryNum = primaryNum)
+
   ## copy siteCovs into obsCovs
   if(!is.null(siteCovs)) {
     umf@obsCovs <- as.data.frame(cbind(umf@obsCovs,
