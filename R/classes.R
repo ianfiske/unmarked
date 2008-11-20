@@ -1,3 +1,4 @@
+#' @export
 setClassUnion("optionalDataFrame", c("data.frame","NULL"))
 
 validUnMarkedFrame <- function(object) {
