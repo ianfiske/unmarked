@@ -25,7 +25,7 @@ roxygen()
 markovMN <-
   function(stateformula = ~ 1, detformula = ~ 1, umf,
            detconstraint = NULL,
-           phiconstraint = NULL, psiconstraint = NULL, K, 
+           phiconstraint = NULL, psiconstraint = NULL, K,
            phiMatrix = "cumlogit", EM = FALSE, psi.init = NULL,
            phiParms.init = NULL, detParms.init = NULL,
            get.inits = TRUE, bootstrap.se = FALSE, B = 50, trace = FALSE,
@@ -74,11 +74,11 @@ markovMN <-
   umf <- handleNA(stateformula, detformula.red, umf)
   y <- umf@y
   J <- umf@obsNum / umf@primaryNum
-  
+
   M <- nrow(y)
   nY <- ncol(y)/J
   n.det <- sum(apply(y > 0, 1, any, na.rm = TRUE))
-  
+
   fc <- match.call()
   fc[[1]] <- as.name("markovMN.fit")
   fc$bootstrap.se <- fc$covdata.site <- fc$covdata.obs <- fc$data <-
@@ -94,15 +94,22 @@ markovMN <-
     psi.b <- matrix(NA, B, K + 1)
     ss.b <- matrix(NA, B, K + 1)
 
+    obsCovs.siteInd <- matrix(1:(M*J*nY),M,J*nY,byrow=T)
     for(b in 1:B) {
-      
-      samp <- sample(1:M, M, replace = TRUE)
-      y.b <- y[samp,]
-      obsdata.b <- lapply(obsdata, function(x) x[samp,])
 
-      fc$obsdata <- quote(obsdata.b)
-      fc$y <- quote(y.b)
-      
+      samp <- sample(1:M, M, replace = TRUE)
+#      y.b <- y[samp,]
+#      obsdata.b <- lapply(obsdata, function(x) x[samp,])
+#
+#      fc$obsdata <- quote(obsdata.b)
+#      fc$y <- quote(y.b)
+
+      umf.b <- umf
+      umf.b@y <- umf@y[samp,]
+      obsCovsInd.b <- as.vector(t(obsCovs.siteInd[samp,]))
+      umf.b@obsCovs <- umf.b@obsCovs[obsCovsInd.b,]
+      fc$umf <- quote(umf.b)
+
       fm.b <- eval(fc)
 
       if(!(TRUE %in% is.nan(smooth.b[,,b]))) {
@@ -129,14 +136,14 @@ markovMN <-
   }
 
   fm$n.det <- n.det
-  
+
   return(fm)
 }
 
 
 markovMN.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
                          detconstraint = NULL,
-                         phiconstraint = NULL, psiconstraint = NULL, J, K, 
+                         phiconstraint = NULL, psiconstraint = NULL, J, K,
                          phiMatrix = "cumlogit", EM = FALSE, psi.init = NULL,
                          phiParms.init = NULL, detParms.init = NULL,
                          get.inits = TRUE, trace = FALSE,
@@ -146,13 +153,13 @@ markovMN.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
 
   M <- nrow(y)
   nY <- ncol(y)/J
- 
+
   designMats <- getDesign(stateformula = stateformula, detformula = detformula, umf)
-                          
+
   V.itj <- designMats$V
   nDCP <- ncol(V.itj)
   detParms <- colnames(V.itj)
-  
+
   ## number of free terms in detection matrix.
   ## these will be modeled by XDet's
   if(arDet)
@@ -163,12 +170,12 @@ markovMN.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
   if(nrow(detconstraint) != nDMP)
     stop(paste("detconstraint has wrong number of rows.\n
 It should have",nDMP))
-  
+
   ## for performance, remove variables eliminated by detconstraint
   to.rm <- which(apply(detconstraint == 0, 2, all))
   if(length(to.rm) != 0) {
     detconstraint <- detconstraint[,-to.rm]
-    XDet.tji <- XDet.tji[,-to.rm]
+    V.itj <- V.itj[,-to.rm]
     detParms <- detParms[-to.rm]
     nDCP <- nDCP - length(to.rm)
   }
@@ -211,7 +218,7 @@ It should have",nDMP))
                   flogit4ar = max(phiconstraint))
 
   nSP <- max(psiconstraint)
-   
+
   ## create linked list of parameters
   theta.df <- data.frame(parameter = character(), start = numeric(),
                          end = numeric(), stringsAsFactors = FALSE)
@@ -229,7 +236,7 @@ It should have",nDMP))
   detcon.vec <- as.vector(detcon.corr)
   nDP <- max(detcon.vec)
   nDP.un <- length(detcon.vec)
-  
+
   H.det <- matrix(0, nDP.un, nDP)
   for(i in 1:length(detcon.vec)){
     H.det[i,detcon.vec[i]] <- 1
@@ -248,7 +255,7 @@ It should have",nDMP))
   for(i in 1:nSP.un){
     H.psi[i, psiconstraint[i]] <- 1
   }
-  
+
   y.itj <- as.numeric(t(y))
 
   ## reorder X.tjik to be X.itjk
@@ -313,7 +320,7 @@ It should have",nDMP))
 #  smooth.overall.mean <- rowMeans(smooth.mean)
 
   smooth <- apply(fm$smooth, c(1,2), mean)
-  
+
 ###     smooth.cov <- deltaVar(ests, fm$hessian, meanSmooth, y.itj=y.itj,
 ###                           XDet.itjk=XDet.itjk, nDMP=nDMP, nDCP=nDCP,
 ###                           nDP=nDP, nDYP=nDP, nSP=nSP, nPhiP=nPhiP, nP=nP,
@@ -324,7 +331,7 @@ It should have",nDMP))
 ###     smooth.se <- sqrt(diag(smooth.cov))
 
   list(mle = mle.df, psiEsts = psiEsts, phiEsts = phiEsts,
-       detEsts = detEsts, phi = phi, 
+       detEsts = detEsts, phi = phi,
        AIC = 2*fm$nll + 2*nP,
        NegLogLike = fm$nll,
        psi = psi, epsi = meanstate(psi), #epsi.se = epsi.se,
