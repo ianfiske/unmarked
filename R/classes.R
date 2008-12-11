@@ -2,18 +2,18 @@
 setClassUnion("optionalDataFrame", c("data.frame","NULL"))
 
 validUnMarkedFrame <- function(object) {
-  errors <- character(0)
-  M <- nrow(object@y)
-  if(!is.null(object@siteCovs))
-    if(nrow(object@siteCovs) != M)
-      errors <- c(errors, "siteCovData does not have same size number of sites as y.")
-  if(!is.null(object@obsCovs))
-    if(nrow(object@obsCovs) != M*object@obsNum)
-      errors <- c(errors, "obsCovData does not have M*obsNum rows.")
-  if(length(errors) == 0)
-    TRUE
-  else
-    errors
+	errors <- character(0)
+	M <- nrow(object@y)
+	if(!is.null(object@siteCovs))
+		if(nrow(object@siteCovs) != M)
+			errors <- c(errors, "siteCovData does not have same size number of sites as y.")
+	if(!is.null(object@obsCovs))
+		if(nrow(object@obsCovs) != M*object@obsNum)
+			errors <- c(errors, "obsCovData does not have M*obsNum rows.")
+	if(length(errors) == 0)
+		TRUE
+	else
+		errors
 }
 
 #' Class to hold data for analyses in unmarked.
@@ -69,7 +69,8 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
   }
 
-  if(class(y) == "data.frame") y <- as.matrix(y)
+  if(("data.frame" %in% class(y)) | 
+			("cast_matrix" %in% class(y))) y <- as.matrix(y)
 
   ## add obsCov for the observation number (sampling occasion)
   ## name it obs
@@ -127,7 +128,7 @@ siteCovs <- function(umf) {
 #' @export
 obsCovs <- function(umf, matrices = FALSE) {
   M <- nrow(umf@y)
-  J <- ncol(umf@obsNum)
+  J <- umf@obsNum
   if(matrices) {
     value <- list()
     for(i in seq(length=length(umf@obsCovs))){
