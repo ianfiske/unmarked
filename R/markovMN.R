@@ -151,6 +151,14 @@ markovMN <-
 
   fm$n.det <- n.det
 
+  ## compute the projected trajectory
+  fm$projected <- matrix(NA, K + 1, nY)
+  fm$projected[,1] <- fm$psi
+  for(year in 2:nY) {
+    fm$projected[,year] <- t(fm$phi) %*%
+        fm$projected[,year-1]
+  }
+
   return(fm)
 }
 
