@@ -1,7 +1,13 @@
 #' @include utils.R
 roxygen()
 
+# TODO:  improve documentation!!
+
 #' This fits the general multistate multiseason occupancy model of Fiske and Royle
+#'
+#' Detcon is a matrix with number of detection matrix parameters rows and number of
+#' covariates columns.  Each column is a constraint vector beginning with 1 that indicates
+#' which covariates are restricted to have the same effect on a given matrix parameter.
 #'
 #' @param stateformula right-hand side formula describing covariates of occurence.
 #' @param detformula right-hand side formula describing covariates of detection.
@@ -54,7 +60,8 @@ markovMN <-
     nDMP <-  K*(K+1)/2
 
   if(is.null(detconstraint))
-    detconstraint <- matrix(1:(nDMP*nDCP), nDMP, nDCP)
+    detconstraint <- matrix(rep(1:nDMP,nDCP),nDMP, nDCP)
+    #detconstraint <- matrix(1:(nDMP*nDCP), nDMP, nDCP)
 #################################
 
 
@@ -128,6 +135,13 @@ markovMN <-
     smooth.b.cov <- apply(smooth.b, c(2),
                           function(x) cov(t(x), use = "complete.obs"))
     smooth.b.cov <- array(smooth.b.cov, c(K + 1, K + 1, nY))
+
+    ## also get the time-series style covariances for K=1 only.
+    if(identical(K,1)) {
+      smooth.mat <- t(smooth.b[2,,])
+      fm$smooth.covmat <- cov(smooth.mat, use="complete.obs")
+      fm$smooth.cormat <- cor(smooth.mat, use="complete.obs")
+    }
 
     fm$psi.cov <- psi.b.cov
     fm$ss.cov <- ss.b.cov
@@ -225,9 +239,9 @@ It should have",nDMP))
 
   theta.df <- addParm(theta.df, "phiParms", nPhiP)
 
+  ## convert from new easy-input style detcon to computational format
   prev.col.max <- 0
   detcon.corr <- matrix(0, nDMP, nDCP)
-
   for(j in 1:nDCP) {
     detcon.corr[,j] <- ifelse(detconstraint[,j] != 0,
                               detconstraint[,j] + prev.col.max, 0)
@@ -236,6 +250,7 @@ It should have",nDMP))
   detcon.vec <- as.vector(detcon.corr)
   nDP <- max(detcon.vec)
   nDP.un <- length(detcon.vec)
+
 
   H.det <- matrix(0, nDP.un, nDP)
   for(i in 1:length(detcon.vec)){
