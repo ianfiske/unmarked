@@ -1,7 +1,9 @@
+# TODO:  update Mh so that it is in the flavor of unmarked.
+
 #' Fits model Mh - closed population model with heterogeneity
 #'
 #' This fits the logit-normal version of Model Mh in which the logit of
-#' individual detection probability is assumed to have a normal distribution with 
+#' individual detection probability is assumed to have a normal distribution with
 #' parameters  mu and sigma. These parameters and the unobserved number of
 #' individuals, n0, are estimated by integrated likelihood.
 #'
@@ -18,7 +20,7 @@
 #' @keywords models
 #' @export
 #' @note
-#' Assumes balanced data right now. 
+#' Assumes balanced data right now.
 #' this will be the engine for a poisson reg model for spec richness
 Mh <- function(nx) {
 
@@ -33,7 +35,7 @@ Mh <- function(nx) {
     il<-rep(NA,J+1)
     for(k in 0:J){
       il[k+1]<-integrate(function(x){
-                           dbinom(k,J,exp(x)/(1+exp(x)))*dnorm(x,mu,sigma) 
+                           dbinom(k,J,exp(x)/(1+exp(x)))*dnorm(x,mu,sigma)
                          },
                          lower=-30,upper=30)$value
     }

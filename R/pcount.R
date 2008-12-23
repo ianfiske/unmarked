@@ -2,14 +2,13 @@
 #' @include utils.R
 roxygen()
 
-#' Fit the N-mixture point count model 
+#' Fit the N-mixture point count model
 #'
-#' This function fits the standard occupancy model of
+#' This function fits binomial-Poisson mixture model for spatially replicated point count data.
 #'
-#'  See \link{unmarked} for detailed descriptions of passing data \code{y},
-#'  \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
-#'  with \code{stateformula} and \code{detformula}.
-#'  
+#'  See \code{\link{unMarkedFrame}} for a description of how to supply by creating
+#'  and unMarkedFrame.
+#'
 #'  This function fits the latent N-mixture model for point count data
 #'  (Royle 2004, Kery and Royle 2005).
 #'
@@ -34,8 +33,9 @@ roxygen()
 #' @param K Integer upper index of integration for N-mixture.
 #' @param mixture character specifying mixture: either "P" or "NB".
 #' @return unMarkedFit object describing the model fit.
-#' @author Ian Fiske
+#' @author Ian Fiske \email{ianfiske@@gmail.com}
 #' @references Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
+#'
 #' Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.
 #' @examples
 #' data(mallard)
@@ -48,7 +48,7 @@ roxygen()
 #' @keywords models
 pcount <-
 function(stateformula, detformula, umf, K = NULL, mixture = "P")
-{ 
+{
   if ((mixture %in% c("P","NB")) == FALSE)
     stop("Mixture familiy not recognized. Please choose 'P' or 'NB'.")
 
@@ -67,7 +67,7 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
 
   if(is.null(K)) K <- max(y, na.rm = TRUE) + 20
   if(K <= max(y, na.rm = TRUE))
-    stop("specified K is too small. Try a value larger than any observation") 
+    stop("specified K is too small. Try a value larger than any observation")
   k <- 0:K
   M <- nrow(y)
   J <- ncol(y)
@@ -91,7 +91,7 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
     bin.jik[which(is.na(bin.jik))] <- 1
     bin.ik.mat <- matrix(bin.jik, M * (K + 1), J)
     g.ik <- rowProds(bin.ik.mat)
-    
+
     if(identical(mixture,"P")) {
       f.ik <- dpois(k.ik,theta.ik)
     }
@@ -103,7 +103,7 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
 
     -sum(log(dens.i))
   }
-  
+
 #  if(identical(mixture,"P")) {
     fm <- optim(rep(0,nP), nll, method="BFGS", hessian = TRUE)
 #  }
@@ -123,7 +123,7 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
   umfit <- unMarkedFit(fitType = "pcount",
                        stateformula = stateformula, detformula = detformula,
                        data = umf, stateMLE = ests[1:nAP],
-                       stateSE = ests.se[1:nAP], 
+                       stateSE = ests.se[1:nAP],
                        detMLE = ests[(nAP + 1) : nP],
                        detSE = ests.se[(nAP + 1): nP], AIC = fmAIC)
   return(umfit)

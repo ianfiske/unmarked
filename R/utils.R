@@ -97,10 +97,10 @@ parmNames <- function(list.df) {
 #' @examples
 #' # examine a correctly formatted long .csv
 #' read.csv(system.file("csv","frog2001pcru.csv", package="unmarked"))
-#' 
+#'
 #' # examine a correctly formatted wide .csv
 #' read.csv(system.file("csv","widewt.csv", package="unmarked"))
-#' 
+#'
 #' # convert them!
 #' dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE)
 #' dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"), long = TRUE)
@@ -154,7 +154,7 @@ function(dfin)
 # date, one column
 # response, one column
 # obs vars, one per column
-#' @export 
+#' @export
 formatLong <-
 function(dfin, species = NULL)
 {
@@ -191,7 +191,7 @@ function(dfin, species = NULL)
                                 list(newvar=as.name(dfnm[1])))
   y <- as.matrix(eval(expr)[,-1])
   attr(y,"class") <- "matrix"
-  
+
   expr <- substitute(recast(dfin, newvar ~ obsNum ~ variable,
     id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[4:nV]),
                                 list(newvar=as.name(dfnm[1])))
@@ -211,7 +211,7 @@ function(dfin, species = NULL)
 # response: y.1, y.2, ..., y.J
 # site vars: namefoo, namebar, ...
 # obs vars: namefoo.1, namefoo.2, ..., namefoo.J, namebar.1, ..., namebar.J,...
-#' @export 
+#' @export
 formatWide <-
 function(dfin)
 {
@@ -335,12 +335,13 @@ function(lam, r)
 
 handleNA <- function(stateformula, detformula, umf) {
   y <- umf@y
+  # TODO: use J <- ncol(y) here and throughout instead of wrong use of obsNum?
   obsNum <- umf@obsNum
   M <- nrow(y)
   siteCovs <- umf@siteCovs
   obsCovs <- umf@obsCovs
   umf.clean <- umf
-  
+
   ## set up obsCov indices
   sites <- rep(1:M, each = obsNum)
   obs <- rep(1:obsNum, M)
@@ -361,7 +362,7 @@ Corresponding observation(s) 'y' were replaced with NA.
 Observations removed from site(s) %s", paste(V.NA.sites,collapse=", ")))
     }
   }
-  
+
   if(ncol(X.mf) > 0) {
     ## which sites have NA in site var included in stateformula?
     X.NA.sites <- unique(which(apply(is.na(X.mf), 1, any)))
@@ -474,7 +475,7 @@ getDesign <- function(stateformula, detformula, umf) {
     V <- matrix(1, M*umf@obsNum, 1)
     colnames(V) <- "(Intercept)"
   }
-    
+
   ## Compute state design matrix
   if(!is.null(umf@siteCovs)) {
     X.mf <- model.frame(stateformula, umf@siteCovs, na.action = NULL)
@@ -507,7 +508,7 @@ getSS <- function(phi) {
 	ev/sum(ev)
 }
 
-#' @export 
+#' @export
 imputeMissing <- function(umf, whichCovs) {
 # impute observation covariates
 	if(!is.null(umf@obsCovs)) {
@@ -529,7 +530,7 @@ imputeMissing <- function(umf, whichCovs) {
 						if(all(is.na(obs.i.mat[j,]))) {
 							obs.i.imputed[j,k] <- mean(obs.i.mat[,k], na.rm = T)
 						} else {
-							obs.i.imputed[j,k] <- mean(c(mean(obs.i.mat[j,],na.rm = T), 
+							obs.i.imputed[j,k] <- mean(c(mean(obs.i.mat[j,],na.rm = T),
 											mean(obs.i.mat[,k], na.rm = T)))
 						}
 				}

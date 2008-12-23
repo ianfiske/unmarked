@@ -3,7 +3,7 @@
 roxygen()
 
 ## Take an M x J matrix of detection probabilities and return a matrix
-## of M x K observation probs
+## of M x J observation probs
 #' @export
 removalPiFun <- function(p){
   M <- nrow(p)
@@ -17,6 +17,7 @@ removalPiFun <- function(p){
 }
 
 # p is an M x 2 matrix of detection probabilities (site x observer).
+# returns an M x 3 matrix of row=(1 not 2, 2 not 1, 1 and 2).
 #' @export
 doublePiFun <- function(p){
   M <- nrow(p)
@@ -65,7 +66,7 @@ doublePiFun <- function(p){
 #' fm4
 #' fm1
 #' @export
-multinomPois <- 
+multinomPois <-
 function(stateformula, detformula, piFun, umf)
 {
 
@@ -93,7 +94,7 @@ function(stateformula, detformula, piFun, umf)
     logLikeSite[navec] <- 0
     -sum(logLikeSite)
   }
-  
+
   fm <- optim(rep(0, nP), nll, method = "BFGS", hessian = TRUE)
   ests.se <- diag(solve(fm$hessian))
   ests <- fm$par
@@ -103,7 +104,7 @@ function(stateformula, detformula, piFun, umf)
   umfit <- unMarkedFit(fitType = "multinomPois",
                        stateformula = stateformula, detformula = detformula,
                        data = umf, stateMLE = ests[1:nAP],
-                       stateSE = ests.se[1:nAP], 
+                       stateSE = ests.se[1:nAP],
                        detMLE = ests[(nAP + 1) : nP],
                        detSE = ests.se[(nAP + 1): nP], AIC = fmAIC)
   return(umfit)

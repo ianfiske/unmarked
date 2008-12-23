@@ -16,16 +16,18 @@ validUnMarkedFrame <- function(object) {
 		errors
 }
 
+## not used in roxygen currently.
+# @slot y A matrix of the observed measured data.
+# @slot obsCovData Dataframe of covariates that vary within sites.
+# @slot siteCovData Dataframe of covariates that vary at the site level.
+# @slot obsNum Number of observations per site. For most models, this
+# can be taken to be the number of columns in y.  But this is not always
+# the case.  For example, double observer: y has 3 columns, but only 2
+# independent observations were taken at each site.
+# @slot primaryNum integer number of primary seasons for multiseason data only
+
 #' Class to hold data for analyses in unmarked.
 #'
-#' @slot y A matrix of the observed measured data.
-#' @slot obsCovData Dataframe of covariates that vary within sites.
-#' @slot siteCovData Dataframe of covariates that vary at the site level.
-#' @slot obsNum Number of observations per site. For most models, this
-#' can be taken to be the number of columns in y.  But this is not always
-#' the case.  For example, double observer: y has 3 columns, but only 2
-#' independent observations were taken at each site.
-#' @slot primaryNum integer number of primary seasons for multiseason data only
 #' @export
 setClass("unMarkedFrame",
          representation(y = "matrix",
@@ -35,17 +37,30 @@ setClass("unMarkedFrame",
                         primaryNum = "numeric"),
          validity = validUnMarkedFrame)
 
-#' Constuctor function to create an unmarkedFrame.
+#' Constructor for unMarkedFrames.
 #'
-#' This function takes observations (y) and covariates at the site level
-#' (siteCovs) and observations level (obsCovs) and generates an
-#' unMarkedFrame object.  This object can then be passed to any of the
-#' unMarked functions.
+#' unMarkedFrame is the S4 class that holds data structures to be passed to the model-fitting functions in unMarked.
 #'
+#' An unMarkedFrame contains the observations (\code{y}), covariates measured at the observation level (\code{obsCovs}), and covariates measured at the site level (\code{siteCovs}).
+#' For a data set with M sites and J observations at each site, y is an M x J matrix.
+#' \code{obsCovs} and \code{siteCovs} are both data frames (see \link{data.frame}).  \code{siteCovs} has M rows so that each row contains the covariates for the corresponding sites.
+#' \code{obsCovs} has M*obsNum rows so that each covariates is ordered by site first, then observation number.  Missing values are coded with \code{NA} in any of y, siteCovs, or obsCovs.
+#'
+#' Additionally, unMarkedFrames contain metadata, obsNum and primaryNum.  obsNum is the number of observations measured at each site. primaryNum is the number of seasons in a robust design sampling scheme.
+#' Typically, these can be automatically determined by the constructor.  If not specified, obsNum is taken to be the number of columns in y and primaryNum is taken to be 1.
+#' However, for certain situations, these must be supplied.  For example, double observer sampling, y has 3 columns corresponding the observer 1, observer 2, and both, but there were only two independent observations.
+#' In this situation, y has 3 columns, but obsNum must be specified as 2.  This flexibility is currenty only used in the function \link{multinomPois}.
+#'
+#' For convenience, \code{obsCovs} can be a list of M x obsNum matrices, with each one corresponding to an observation level covariate.
+#'
+#' All site-level covariates are automatically copied to obsCovs so that site level covariates are available at the observation level.
+#'
+#' @title Create an unMarkedFrame.
 #' @param y A matrix of the observed measured data.
 #' @param obsCovs Dataframe of covariates that vary within sites.
 #' @param siteCovs Dataframe of covariates that vary at the site level.
 #' @param obsNum Number of independent observations.
+#' @param primaryNum Number of primary time periods (seasons in the multiseason model).
 #' @return an unmarkedFrame object
 #' @examples
 #' data(mallard)
@@ -56,8 +71,6 @@ setClass("unMarkedFrame",
 #' @export
 unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
                           obsNum = ncol(y), primaryNum = NULL) {
-
-  ## if obsCovs is a list of matrices, convert to a dataframe
   if(class(obsCovs) == "list") {
     obsVars <- names(obsCovs)
     for(i in seq(length(obsVars))) {
@@ -66,10 +79,11 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
       if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
         stop("At least one matrix in obsCovs has incorrect number of dimensions.")
     }
+    if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
     obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
   }
 
-  if(("data.frame" %in% class(y)) | 
+  if(("data.frame" %in% class(y)) |
 			("cast_matrix" %in% class(y))) y <- as.matrix(y)
 
   ## add obsCov for the observation number (sampling occasion)
@@ -120,11 +134,19 @@ setMethod("show", "unMarkedFrame",
             }
           })
 
+#' Extractor for site level covariates
+#' @param umf an unMarkedFrame
+#' @return a data frame containing the site level covariates.
 #' @export
 siteCovs <- function(umf) {
   return(umf@siteCovs)
 }
-          
+
+#' Extractor for observation level covariates
+#' @param umf an unMarkedFrame
+#' @param matrices logical indicating whether to return the M * obsNum row data frame (default)
+#'  or a list of M x obsNum matrices (matrices = TRUE).
+#' @return either a data frame (default) or a list of matrices (if matrices = TRUE).
 #' @export
 obsCovs <- function(umf, matrices = FALSE) {
   M <- nrow(umf@y)
@@ -140,10 +162,10 @@ obsCovs <- function(umf, matrices = FALSE) {
   }
   return(value)
 }
-            
+
 # Class to store unMarked model fit information
 #
-# @slot fitType Name of the model that was fit.
+# slot fitType Name of the model that was fit.
 # @slot stateformula The abundance/occupancy formula.
 # @slot detformula The formula governing the detection process.
 # @slot data The unMarkedFrame containing the data that was fit.
@@ -152,6 +174,7 @@ obsCovs <- function(umf, matrices = FALSE) {
 # @slot detMLE MLE of the detection parameters.
 # @slot detSE Standard errors of the detection MLE's.
 # @slot AIC The AIC of this model fit.
+#' A Class to store fit results from unMarkedFrames.
 #' @export
 setClass("unMarkedFit",
          representation(fitType = "character",
@@ -189,7 +212,7 @@ setMethod("show", "unMarkedFit",
             stateDF <- data.frame(Estimate = object@stateMLE,
                                   SE = object@stateSE)
             show(stateDF)
-            
+
             cat("\nDetection coefficients:\n")
             detDF <- data.frame(Estimate = object@detMLE,
                                   SE = object@detSE)
@@ -197,5 +220,3 @@ setMethod("show", "unMarkedFit",
 
             cat("\nAIC:", object@AIC,"\n")
           })
-
-

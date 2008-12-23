@@ -2,11 +2,10 @@
 #' @include utils.R
 roxygen()
 
-#' This function fits the standard occupancy model of MacKenzie et al
+#'  This function estimates the standard occupancy model.
 #'
-#'  See \link{unmarked-package} for detailed descriptions of passing data \code{y},
-#'  \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
-#'  with \code{stateformula} and \code{detformula}.
+#'  See \link{unMarkedFrame} for a description of how to supply data to the \command{umf}
+#'  argument.
 #'
 #'  \command{occu} fits the traditional occupancy model based on the
 #'  binomial mixture models (MacKenzie et al. 2006, Royle and Dorazio
@@ -28,7 +27,7 @@ roxygen()
 #' @param knownOcc vector of sites that are known to be occupied.
 #' @return unMarkedFit object describing the model fit.
 #' @references
-#' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. “Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One.” Ecology 83, no. 8 (2002): 2248-2255.
+#' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. “Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255.
 #' MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008) \emph{Book Name}.
 #' @author Ian Fiske
 #' @examples
@@ -50,7 +49,7 @@ function(stateformula, detformula, umf, knownOcc = numeric(0))
 
   if(nrow(umf@y) != M & length(knownOcc) > 0)
     stop("sites dropped, but knownOcc was specified.")
-  
+
   occParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
@@ -66,12 +65,12 @@ function(stateformula, detformula, umf, knownOcc = numeric(0))
     psi[knownOcc] <- 1
     pvec <- plogis(V %*% parms[(nOP + 1) : nP])
     cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
-    cp[navec] <- 1  # so that NA's don't modify likelihood        
+    cp[navec] <- 1  # so that NA's don't modify likelihood
     cpmat <- matrix(cp, M, J, byrow = TRUE) # put back into matrix to multiply appropriately
-    loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi)) 
+    loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi))
     -sum(loglik)
   }
-  
+
   fm <- optim(rnorm(nP), nll, method = "BFGS", hessian = TRUE)
   ests.se <- diag(solve(fm$hessian))
   ests <- fm$par
@@ -81,7 +80,7 @@ function(stateformula, detformula, umf, knownOcc = numeric(0))
   umfit <- unMarkedFit(fitType = "occu",
                        stateformula = stateformula, detformula = detformula,
                        data = umf, stateMLE = ests[1:nOP],
-                       stateSE = ests.se[1:nOP], 
+                       stateSE = ests.se[1:nOP],
                        detMLE = ests[(nOP + 1) : nP],
                        detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
   return(umfit)

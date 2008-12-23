@@ -2,13 +2,39 @@
 roxygen()
 
 # TODO:  improve documentation!!
+# TODO:  improve mechanism for choosing the detection matrix!
 
-#' This fits the general multistate multiseason occupancy model of Fiske and Royle
+#' Estimate parameters of the general multiseason multistate occpancy model.
 #'
-#' Detcon is a matrix with number of detection matrix parameters rows and number of
-#' covariates columns.  Each column is a constraint vector beginning with 1 that indicates
+#' Site level covariates are currently not implemented for markovMN and so stateformula is ignored.
+#' See \link{unmarked} for a discussion of detformula.  See \link{unMarkedFrame} for a description of how to create
+#' an unMarkedFrame for supplying data to the argument \code{umf}.
+#'
+#' \code{K} and \code{phiMatrix} together determine the model form.  Multiple phi matrices
+#' may be possible for each K.  Options for phi are:
+#'
+#' \begin{tabular}{c|c}
+#' K & Possible phi matrices \\ \hline
+#' 1 & logit2 \\
+#' 2 & logit3 \\
+#' 3 & logit4, logit4ar
+#' \end{tabular}
+#'
+#' TODO:  describe phi matrices in detail.
+#'
+#' Currently, selection of the appropriate detection matrix for a given \code{K}
+#' is given by \code{arDet}.  If \code{arDet} is TRUE, then the autoregressive flavored
+#' detection matrix (reduced form) is chose.
+#'
+#' TODO:  describe detection matrices in detail.
+#'
+#'
+#' Each freely varying detection parameter can be modeled as a linear function of observation level covariates.
+#' \code{detconstraint} is a matrix with number of rows equal to the detection matrix parameters and number of
+#' columns equal to the number of covariates (plus 1 for the intercept).  Each column is a constraint vector beginning with 1 that indicates
 #' which covariates are restricted to have the same effect on a given matrix parameter.
 #'
+#' @title Fit the general multistate multiseason occupancy model.
 #' @param stateformula right-hand side formula describing covariates of occurence.
 #' @param detformula right-hand side formula describing covariates of detection.
 #' @param umf unMarkedFrame object that supplies the data (see \link{unMarkedFrame})..
@@ -39,6 +65,13 @@ markovMN <-
 {
   ## truncate at K
   umf@y[umf@y > K] <- K
+
+  ## correctly coerce vector detcon for K = 1.
+  if(identical(K,1)) {
+    if(class(detconstraint) %in% c("numeric","integer")) {
+      detconstraint <-  t(as.matrix(detconstraint))
+    }
+  }
 
   if(K == 3) {
     if(!(phiMatrix %in%
@@ -158,6 +191,9 @@ markovMN <-
     fm$projected[,year] <- t(fm$phi) %*%
         fm$projected[,year-1]
   }
+
+  ## TODO: add checking of hessian for NaN's, Inf's, 0's, etc.
+  ## Their presence should trigger "convergence <- 1" catching.
 
   return(fm)
 }

@@ -3,8 +3,8 @@
 #' \tabular{ll}{
 #' Package: \tab unmarked\cr
 #' Type: \tab Package\cr
-#' Version: \tab 0.5-3\cr
-#' Date: \tab 2008-12-16\cr
+#' Version: \tab 0.5-4\cr
+#' Date: \tab 2008-12-23\cr
 #' License: \tab GPL (>= 2)\cr
 #' LazyLoad: \tab yes\cr
 #' LazyData: \tab yes\cr
@@ -26,39 +26,10 @@
 #' affect the detection process and several also allow covariates for the
 #' state process.
 #'
-#' \strong{Data:} All model-fitting functions analyze data that has been
-#' collected from M sites with up to J samples taken at each site, assuming
-#' closure within sites.  In general, survey
-#' data consist of two fundamental components: \dfn{observation} and
-#' \dfn{covariate} data.  All data may be supplied with the argument
-#' \code{data}.  \code{data} is a list containing \code{y},
-#' \code{covdata.site}, and \code{covdata.obs}.  The components of
-#' \code{data} must have these names.
-#'
-#'
-#' \dfn{Observation} data are the observed responses, such as 0's and 1's
-#' for occurrence data or non-negative integers for point count data.
-#' Observation data is passed to unmarked functions as the \code{y} argument.
-#' For a study with \eqn{M} sites and at most \eqn{J} observations per
-#' site, \code{y} is an M x J matrix, where the \eqn{[i,j]^{th}} element is
-#' the \eqn{j^{th}} observation for the \eqn{i^{th}} site.
-#'
-#' \dfn{Covariate} data may be specified at either the observation level or
-#' at the site level.  Observation-level covariates are passed to unmarked
-#' functions as the \code{covdata.obs} argument.  \code{covdata.obs} may
-#' either be a list containing M x J matrices for each covariate, or an M x
-#' J x (number of covariates) three-dimensional array.  In either form,
-#' \code{covdata.obs} must appropriately name its covariates.  In the list
-#' format, each matrix must have a name that matches those used in
-#' \code{detformula}.  In the array format, the dimnames for the 3rd
-#' dimension must similarly match references in \code{detformula}.
-#' Site-level covariates may be passed as the \code{covdata.site} argument
-#' or with the observation-level covariates in \code{covdata.obs}.  In the
-#' former form, \code{covdata.site} is a conventional data frame that
-#' stores covariate data at the site level.  In the latter form, each
-#' site-level covariate may be represented by an M x J matrix where each
-#' column is identical.  This matrix can part of \code{covdata.obs} and
-#' appropriately named.
+#' \strong{Data:} All data is passed to unMarked's estimation functions
+#'  as a formal S4 class called an unMarkedFrame.
+#' See \code{\link{unMarkedFrame}} for a detailed description of unMarkedFrames
+#' and how to create them using the convenient constructor \code{unMarkedFrame()}.
 #'
 #' \strong{Model Specification:}  Most of \emph{unmarked}'s
 #' model-fitting functions allow specification of covariates for both the
@@ -72,9 +43,9 @@
 #' model, is full described in the help files for the individual functions
 #' and is not the same for all functions.
 #'
-#' \strong{Utility Functions:}  \emph{Unmarked} contains several utility
+#' \strong{Utility Functions:}  \emph{unMarked} contains several utility
 #' functions for massaging data into the form required by its model-fitting
-#' functions.  \command{\link{csvToUMF}} converts an appropriately
+#' functions.  \code{\link{csvToUMF}} converts an appropriately
 #' formated comma-separated values (.csv) file to a list containing the
 #' components required by model-fitting functions.
 #'
