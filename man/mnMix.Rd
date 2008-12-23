@@ -5,9 +5,10 @@
 \description{Fit latent abundance models to categorical data such as frog
 calling data (Royle and Link 2005).  Currently, covariates can only be
 supplied to the detection process (as in Royle and Link 2005).}
-\details{See \link{unmarked-package} for detailed descriptions of passing data \code{y},
-\code{covdata.site}, and \code{covdata.obs}, and specifying covariates
-with \code{stateformula} and \code{detformula}.
+\details{See \link{unMarkedFrame} for detailed descriptions of passing data to the
+\code{umf} argument.
+See \link{unmarked} for a general description of the specifying covariates to the
+stateformula and detformula arguments.
 
 This function fits the model described in Royle and Link (2005).  This
 function assumes that a site has a latent categorical state, taking on
@@ -29,6 +30,7 @@ and Link (2005).  The default is to allow the \eqn{p_k}'s (\eqn{k = 1,
 the \eqn{\beta}{beta}'s to be all equal.}
 \value{still need to convert to UMfit}
 \author{Ian Fiske \email{ianfiske@gmail.com}}
+\references{Royle, J. Andrew, and William A. Link. 2005. A General Class of Multinomial Mixture Models for Anuran Calling Survey Data. Ecology 86, no. 9: 2505--2512.}
 \keyword{models}
 \arguments{\item{stateformula}{formula for covariates of occurrance.}
 \item{detformula}{formula for covariates of detection.}

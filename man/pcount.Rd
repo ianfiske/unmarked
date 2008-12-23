@@ -3,11 +3,10 @@
 \title{Fit the N-mixture point count model...}
 \usage{pcount(stateformula, detformula, umf, K, mixture=P)}
 \description{Fit the N-mixture point count model}
-\details{This function fits the standard occupancy model of
+\details{This function fits binomial-Poisson mixture model for spatially replicated point count data.
 
-See \link{unmarked} for detailed descriptions of passing data \code{y},
-\code{covdata.site}, and \code{covdata.obs}, and specifying covariates
-with \code{stateformula} and \code{detformula}.
+See \code{\link{unMarkedFrame}} for a description of how to supply by creating
+and unMarkedFrame.
 
 This function fits the latent N-mixture model for point count data
 (Royle 2004, Kery and Royle 2005).
@@ -27,8 +26,9 @@ Binomial(N_i, p_{ij})}{y_ij ~ Binomial(N_i, p_ij)}.
 Covariates of \eqn{\lambda_i}{lamdba_i} use the log link and
 covariates of \eqn{p_{ij}}{p_ij} use the logit link.}
 \value{unMarkedFit object describing the model fit.}
-\author{Ian Fiske}
+\author{Ian Fiske \email{ianfiske@gmail.com}}
 \references{Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
+
 Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.}
 \keyword{models}
 \arguments{\item{stateformula}{Right-hand side formula describing covariates of abundance}
