@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 0.5-3
-Date: 2008-12-16
+Version: 0.5-4
+Date: 2008-12-23
 Type: Package
 Title: Fit Integrated Likelihood Abundance Models
 Author: Ian Fiske
@@ -13,6 +13,6 @@ Description: This package contains functions to fit models similar to
 License: GPL version 2 or newer
 LazyLoad: yes
 LazyData: yes
-Collate: 'classes.R' 'mackenzie.R' 'utils.R' 'markovMN.R' 'Mh.R'
-    'mnMix.R' 'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
+Collate: 'classes.R' 'utils.R' 'markovMN.R' 'Mh.R' 'mnMix.R'
+    'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
     'unmarked-package.R'
