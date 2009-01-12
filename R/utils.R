@@ -3,6 +3,29 @@
 #' @import roxygen
 roxygen()
 
+genFixedNLL <- function(nll, whichFixed, fixedValues) {
+  function(params) {
+    params[whichFixed] <- fixedValues
+    do.call(nll, list(params=params))
+  }
+}
+
+# nll the original negative log likelihood function
+# MLE the full vector of MLE values
+profileCI <- function(nll, whichPar, MLE, interval){
+  MLEnll <- nll(MLE)
+  nPar <- length(MLE)
+  f <- function(value) {
+    fixedNLL <- genFixedNLL(nll, whichPar, value)
+    mleRestricted <- optim(rep(0,nPar), fixedNLL)
+    MLEnll - mleRestricted$value + 1.92
+  }
+
+  lower <- uniroot(f, c(interval[1],MLE[whichPar]))
+  upper <- uniroot(f, c(MLE[whichPar], interval[2]))
+  return(c(lower$root,upper$root))
+}
+
 
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))
