@@ -243,7 +243,7 @@ function(dfin)
 
   obsdata <- list()
 
-  if(identical(colnames(dfin)[1],"site")) dfin <- dfin[,-1]
+  if(identical(tolower(colnames(dfin))[1],"site")) dfin <- dfin[,-1]
 
   dfnm <- colnames(dfin)
   y <- grep("^y.",dfnm)
