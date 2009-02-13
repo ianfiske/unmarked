@@ -1,5 +1,6 @@
 #' @export
 setClassUnion("optionalDataFrame", c("data.frame","NULL"))
+setClassUnion("optionalMatrix", c("matrix","NULL"))
 
 validUnMarkedFrame <- function(object) {
 	errors <- character(0)
@@ -163,6 +164,73 @@ obsCovs <- function(umf, matrices = FALSE) {
   return(value)
 }
 
+# Class to store actual parameter estimates
+setClass("unMarkedEstimate",
+    representation(estimates = "numeric",
+        covMat = "matrix",
+        invlink = "function",
+        invlinkGrad = "function"))
+
+#' @export
+unMarkedEstimate <- function(estimates, covMat, invlink, invlinkGrad) {
+
+  new("unMarkedEstimate",
+      estimates = estimates,
+      covMat = covMat,
+      invlink = invlink,
+      invlinkGrad = invlinkGrad)
+
+}
+
+# need functions to
+# 1. get SE of estimates.
+# 2. get SE(invlink(x'beta)) for some x.
+# 3. get invlink(x'beta) for some x.
+# 4. call 2 & 3 together for some x.
+
+#' @export
+setGeneric("standardError",
+    def = function(obj, contrast) {
+      standardGeneric("standardError")
+    })
+
+## Compute standard error on the unconstrained (transformed) scale.
+## this gets all of the std errors
+#' @export
+setMethod("standardError",
+    signature(obj = "unMarkedEstimate", contrast = "missing"),
+    definition = function(obj) {
+      SE <- sqrt(diag(obj@covMat))
+      names(SE) <- names(obj@estimates)
+      SE
+    })
+
+
+## Provide a contrast and use the delta method to
+## estimate the SE error on the constrained (natural) scale.
+#' @export
+setMethod("standardError",
+    signature(obj = "unMarkedEstimate", contrast = "numeric"),
+    definition = function(obj, contrast) {
+      as.numeric(obj@invlinkGrad(t(contrast) %*% obj@estimates) *
+          sqrt(t(contrast) %*% obj@covMat %*% contrast))
+    })
+
+## Compute contrasts and parameters and place on natural scale
+#' @export
+setGeneric("naturalContrast",
+    function(obj, contrast) {
+      standardGeneric("naturalContrast")
+    })
+
+#' @export
+setMethod("naturalContrast",
+    signature(obj = "unMarkedEstimate", contrast = "numeric"),
+    function(obj, contrast) {
+      as.numeric(obj@invlink(t(contrast) %*% obj@estimates))
+    })
+
+
 # Class to store unMarked model fit information
 #
 # slot fitType Name of the model that was fit.
@@ -177,24 +245,25 @@ obsCovs <- function(umf, matrices = FALSE) {
 #' A Class to store fit results from unMarkedFrames.
 #' @export
 setClass("unMarkedFit",
-         representation(fitType = "character",
-                        stateformula = "formula",
-                        detformula = "formula",
-                        data = "unMarkedFrame",
-                        stateMLE = "numeric",
-                        stateSE = "numeric",
-                        detMLE = "numeric",
-                        detSE = "numeric",
-                        AIC = "numeric"))
+    representation(fitType = "character",
+        stateformula = "formula",
+        detformula = "formula",
+        data = "unMarkedFrame",
+        stateEstimates = "unMarkedEstimate",
+        detEstimates = "unMarkedEstimate",
+        AIC = "numeric",
+        hessian = "matrix"))
 
+# constructor for unMarkedFit objects
 unMarkedFit <- function(fitType,stateformula, detformula,
-                        data, stateMLE, stateSE,
-                        detMLE, detSE, AIC) {
+                        data, stateEstimates,
+                        detEstimates, AIC, hessian) {
   umfit <- new("unMarkedFit", fitType = fitType,
                stateformula = stateformula,
                detformula = detformula, data = data,
-               stateMLE = stateMLE, stateSE = stateSE,
-               detMLE = detMLE, detSE = detSE, AIC = AIC)
+               stateEstimates = stateEstimates,
+               detEstimates = detEstimates, AIC = AIC,
+               hessian = hessian)
 
   return(umfit)
 }
@@ -208,15 +277,30 @@ setMethod("show", "unMarkedFit",
                 ", detformula = ~ ",
                 as.character(object@detformula)[2],")\n", sep = "")
 
+            stateEsts <- object@stateEstimates@estimates
+            stateSE <- standardError(object@stateEstimates)
+            stateT <- stateEsts/stateSE
+            stateP <- 2*pt(abs(stateT), 1, lower.tail = FALSE)
+
+
+            detEsts <- object@detEstimates@estimates
+            detSE <- standardError(object@detEstimates)
+            detT <- detEsts/detSE
+            detP <- 2*pt(abs(detT), 1, lower.tail = FALSE)
+
             cat("\nState coefficients:\n")
-            stateDF <- data.frame(Estimate = object@stateMLE,
-                                  SE = object@stateSE)
-            show(stateDF)
+            stateDF <- data.frame(Estimate = stateEsts,
+                                  SE = stateSE,
+                                  t = stateT,
+                                  "p-val" = stateP)
+            show(round(stateDF,3))
 
             cat("\nDetection coefficients:\n")
-            detDF <- data.frame(Estimate = object@detMLE,
-                                  SE = object@detSE)
-            show(detDF)
+            detDF <- data.frame(Estimate = detEsts,
+                                  SE = detSE,
+                                  t = detT,
+                                  p.val = detP)
+            show(round(detDF,3))
 
             cat("\nAIC:", object@AIC,"\n")
           })
