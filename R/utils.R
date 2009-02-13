@@ -20,10 +20,24 @@ profileCI <- function(nll, whichPar, MLE, interval){
     mleRestricted <- optim(rep(0,nPar), fixedNLL)
     MLEnll - mleRestricted$value + 1.92
   }
-
+## add some kind of try/catch block here for when interval is on boundary.
+## first bnd should be (est-5*se, est+5*se)... catch this and expand?
   lower <- uniroot(f, c(interval[1],MLE[whichPar]))
   upper <- uniroot(f, c(MLE[whichPar], interval[2]))
   return(c(lower$root,upper$root))
+}
+
+## link functions and their gradients
+logistic <- function(x) {
+  1/(1 + exp(-x))
+}
+
+logistic.grad <- function(x) {
+  exp(-x)/(exp(-x)+1)^2
+}
+
+log.grad <- function(x) { # duh! (but for clarity)
+  1/x
 }
 
 
