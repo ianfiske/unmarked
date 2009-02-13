@@ -9,7 +9,7 @@
 #include "mersenne.h"
 #include "optimize.h"
 #include <iostream>
-#include <R.h>
+//#include <R.h>
 #include <vector>
 
 
@@ -130,7 +130,7 @@ class phiMatrix4ar : public phiMatrix {
     {
 
       Matrix<> phiParms = plogis(phiParmsIn, 0, 1);
-      
+
       double s0 = phiParms(0), s1 = phiParms(1), s2 = phiParms(2),
 	s3 = phiParms(3), g0 = phiParms(4), g1 = phiParms(5),
 	g2 = phiParms(6), r1 = phiParms(7), r2 = phiParms(8),
@@ -221,7 +221,7 @@ class phiLogit3 : public phiMatrix {
  public:
   Matrix<> operator() (const Matrix<>& phiParms) {
 
-    const double p0 = phiParms(0), p1 = phiParms(1), p2 = phiParms(2), 
+    const double p0 = phiParms(0), p1 = phiParms(1), p2 = phiParms(2),
       p3 = phiParms(3), p4 = phiParms(4), p5 = phiParms(5);
 
 
@@ -247,8 +247,8 @@ class phiLogit4 : public phiMatrix {
  public:
   Matrix<> operator() (const Matrix<>& phiParms) {
 
-    const double p0 = phiParms(0), p1 = phiParms(1), p2 = phiParms(2), 
-      p3 = phiParms(3), p4 = phiParms(4), p5 = phiParms(5), 
+    const double p0 = phiParms(0), p1 = phiParms(1), p2 = phiParms(2),
+      p3 = phiParms(3), p4 = phiParms(4), p5 = phiParms(5),
       p6 = phiParms(6), p7 = phiParms(7), p8 = phiParms(8),
       p9 = phiParms(9), p10 = phiParms(10), p11 = phiParms(11);
 
@@ -294,7 +294,7 @@ class phiLogit4ar : public phiMatrix {
 			     ea1/d1, 1/d1, eb1/d1, pow(eb1,2)/d1,
 			     pow(ea2,2)/d2, ea2/d2, 1/d2, eb2/d2,
 			     pow(ea3,3)/d3, pow(ea3,2)/d3, ea3/d3, 1/d3};
-    
+
     const Matrix<> P(4, 4, vals);
 
     return(P);

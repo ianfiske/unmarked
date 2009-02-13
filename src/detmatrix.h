@@ -9,7 +9,7 @@
 #include "mersenne.h"
 #include "optimize.h"
 #include <iostream>
-#include <R.h>
+//#include <R.h>
 #include <vector>
 
 using namespace std;
@@ -120,7 +120,7 @@ public:
 	}
 	break;
       }
-			      
+
       return dv;
     }
 };
@@ -162,13 +162,13 @@ class detLogit4: public detMatrix {
 	break;
       case 3:
 	{
-	  double vals[4] = {0, 0, 0, 
+	  double vals[4] = {0, 0, 0,
 			    1/(1 + exp(p4) + exp(p5) + exp(p6))};
 	  dv = Matrix<>(4, 1, vals);
 	}
 	break;
       }
-			      
+
 
       //	Matrix<> D(4, 4, vals);
       //	return scythe::t(D);
@@ -210,13 +210,13 @@ class detLogit4ar: public detMatrix {
 	break;
       case 3:
 	{
-	  double vals[4] = {0, 0, 0, 
+	  double vals[4] = {0, 0, 0,
 			    1/(1 + exp(3*r3) + exp(2*r3) + exp(r3))};
 	  dv = Matrix<>(4, 1, vals);
 	}
 	break;
       }
-			      
+
 
       //	Matrix<> D(4, 4, vals);
       //	return scythe::t(D);
