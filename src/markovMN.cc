@@ -9,7 +9,9 @@
 #include "mersenne.h"
 #include "optimize.h"
 #include <iostream>
-#include <R.h>
+//#include <R.h>
+#include <R_ext/Utils.h> // includes R's interrupt capabilities
+#include <R_ext/Print.h> // includes R's printing system
 #include <vector>
 #include <map>
 #include <string>
@@ -30,7 +32,7 @@ class HiddenMarkovModel {
 public:
   double operator() (const Matrix<>& parms);
   unsigned int gradFit(const Matrix<> &detInits,
-		       const Matrix<> &phiInits, 
+		       const Matrix<> &phiInits,
 		       const Matrix<> &psiInits);
   //  unsigned int fitmodel(const Matrix<> &inits);
   void loadData(int *y_itj_in, double *XDet_itjk, const int *ncXDet);
@@ -68,12 +70,13 @@ public:
 			     const Matrix<> Hdet,
 			     const Matrix<> Hphi,
 			     const Matrix<> Hpsi,
-			     const int *trace)
+			     const int *trace,
+			     const int *homoDet)
     :Hdet(Hdet), Hphi(Hphi), Hpsi(Hpsi),
      nDMP(*nDMP), nDP(*nDP), nSP(*nSP),
      nPhiP(*nPhiP), nP(*nP), nDP_un(*nDP_un),
      nPhiP_un(*nPhiP_un),
-     K(*K), M(*M), J(*J), nY(*nY), trace(*trace)
+     K(*K), M(*M), J(*J), nY(*nY), trace(*trace), homoDet(*homoDet)
   { }
   HiddenMarkovModel() {};
 
@@ -82,7 +85,9 @@ public:
   Matrix<> Hpsi;
   int nDMP, nDP, nSP, nPhiP, nP, nDP_un, nPhiP_un,
     K, M, J;
-  int nY, trace;
+  int nY;
+  bool trace;
+  bool homoDet;
   vector< vector< vector <unsigned int> > > y_itj;
 
   // Design matrix for each site, time, observation. dim:
@@ -121,13 +126,13 @@ const Matrix<> HiddenMarkovModel::getPhi(const Matrix<>& phiParms) {
     phiParms = Hphi * plogis(phiParms, 0, 1);
     phi = (*phiMatPtr)(phiParms);
     } else {*/
-   
+
   return((*phiMatPtr)(Hphi * phiParms));
 }
 
 const Matrix<> HiddenMarkovModel::getPsi(Matrix<> psiParms) {
   Matrix<> Zero(0);
-  psiParms = Hpsi * psiParms;  
+  psiParms = Hpsi * psiParms;
   psiParms = rbind(Zero, psiParms);
   Matrix<> psi = scythe::exp(psiParms);
   psi /= sum(psi);
@@ -184,6 +189,11 @@ double HiddenMarkovModel::forward(const Matrix<>& detParms,
        <<"\nphi\n" << phi << endl;
 #endif
 
+  if(homoDet) {
+	  for(int k = 0; k < K + 1; ++k) {
+		  detMatObs(_,k) = (*detMatPtr)(detParms, k);
+	  }
+  }
 
   for (int i = 0; i < M; ++i) {
       forP.push_back(vector< Matrix<> > () );
@@ -194,7 +204,11 @@ double HiddenMarkovModel::forward(const Matrix<>& detParms,
       // initialize detVec to ones.
       // this will be the product the observation's detVec's.
 
-      detVec = getDetVec(detParms, i, t);
+      if(homoDet) { // if homogenous detection, pass constant det matrix instead of parms
+    	  detVec = getDetVec(detMatObs, i, t);
+      } else {
+    	  detVec = getDetVec(detParms, i, t);
+      }
 
       // mult by appropriate detMat and phi
       psiSite = psiSite % detVec;
@@ -204,9 +218,9 @@ double HiddenMarkovModel::forward(const Matrix<>& detParms,
       // if last time, then instead of multiplying by phi^t, just
       // sum up the vector.  this is the likelihood for site i.
       if (t < (nY - 1))
-	psiSite = phi * psiSite;
+    	  psiSite = phi * psiSite;
       else
-	negLogLike += -log(sum(psiSite));
+    	  negLogLike += -log(sum(psiSite));
 
 
       /*      if(isnan(negLogLike) | isinf(negLogLike)) {
@@ -264,35 +278,27 @@ void HiddenMarkovModel::backward(const Matrix<>& detParms,
 
 Matrix<> HiddenMarkovModel::getDetVec(const Matrix<>& detParms,
 				      const int& i,
-				      const int& t) const 
+				      const int& t) const
 {
-  Matrix<> mp, detMatObs, detVecObs;
-  Matrix<> detVec = ones(K + 1, 1);
-  for (int j = 0; j < J; ++j) {
-    if (y_itj[i][t][j] != 99) {
-      // compute matrix parameters
-      mp = XDet_itj[i][t][j] * detParms;
-      /*
-	cout << "XDet:\n" << XDet_itj[i][t][j]
-	<< "\ndetParmVec:\n" << detParmVec
-	<< "\np:\n" << p << endl;
-      */
-      // get detection matrix for obs j
-      // FOR PERFORMANCE, MODIFY TO RETURN ONLY DESIRED COLUMN OF DETMAT
-      //      detMatObs = (*detMatPtr)(mp);
+	Matrix<> mp, detMatObs, detVecObs;
+	Matrix<> detVec = ones(K + 1, 1);
+	for (int j = 0; j < J; ++j) {
+		if (y_itj[i][t][j] != 99) {
 
-      // pull out the proper column, according to y
-      //      detVecObs = detMatObs(_,y_itj[i][t][j]);
-      detVecObs = (*detMatPtr)(mp, y_itj[i][t][j]);
-      /*
-	cout << "detMatObs:\n" << detMatObs
-	<< "\ny:" << y_itj[i][t][j]
-	<< "\ndetVecObs:\n" << detVecObs << endl;
-      */
-      // update yearly detection vector
-      detVec = detVec % detVecObs;
-    }
-  }
+			if(homoDet) {  // note the abuse of notation... detParms is actually detMatObs in this case. (ugly code!)
+				detVec = detVec % detParms(_,y_itj[i][t][j]);
+			} else {
+				// compute matrix parameters
+				mp = XDet_itj[i][t][j] * detParms;
+
+				detVecObs = (*detMatPtr)(mp, y_itj[i][t][j]);
+
+
+				// update yearly detection vector
+				detVec = detVec % detVecObs;
+			}
+		}
+	}
 
   return detVec;
 }
@@ -317,7 +323,7 @@ double HiddenMarkovModel::operator() (const Matrix<>& parms)
 
   const Matrix<> psi = getPsi(parms(0, 0, nSP - 1, 0));
   const Matrix<> phi = (*phiMatPtr) (Hphi * parms(nSP, 0, nSP - 1 + nPhiP, 0));
-  const Matrix<> detParms = Hdet * parms(nSP + nPhiP, 0, 
+  const Matrix<> detParms = Hdet * parms(nSP + nPhiP, 0,
 					 nSP - 1 + nDP + nPhiP, 0);
 
   double negLogLike = forward(detParms, phi, psi);
@@ -342,7 +348,7 @@ void HiddenMarkovModel::forwardBackward(const Matrix<>& psi,
       gamma = 1/(scythe::t(fP) * bP) * (fP % bP);
       smoothP[i].push_back(gamma);
       /*      for(int k=0; k <= K; k++) {
-	if (isnan(gamma(k))) 
+	if (isnan(gamma(k)))
 	  cout << "i " << i << " t " << t << "\n\n" << gamma << endl;;
 	  }*/
     }
@@ -358,7 +364,7 @@ void HiddenMarkovModel::getTransP(const Matrix<>& psi,
 
   Matrix<> tP(K + 1, K + 1, false);
   Matrix<> detVec;
-  
+
   for(int i = 0; i < M; i++) {
 
     transP.push_back(vector< Matrix<> > () );
@@ -398,7 +404,7 @@ public:
 	for (int k = 0; k <= hmm.K; k++) {
 	  //detvec_k should only be zero when sp_k is also 0
 	  //so the "if" takes care of inf*0 = 0
-	  if(detVec[k] != 0)  
+	  if(detVec[k] != 0)
 	    negloglike -= log(detVec[k]) * sP[k];
 	}
       }
@@ -407,7 +413,7 @@ public:
     return(negloglike);
   }
 
-  detLike(HiddenMarkovModel H): hmm(H) { };    
+  detLike(HiddenMarkovModel H): hmm(H) { };
 
   HiddenMarkovModel hmm;
 };
@@ -481,7 +487,7 @@ int HiddenMarkovModel::EM(double tolerance, Matrix<> detInits,
       nll -= log(sum(forP[i][nY - 1]));
     }
     cout << "nll = " << nll << endl;
-    
+
 
     // M-step
     // update psi;
@@ -522,8 +528,8 @@ int HiddenMarkovModel::EM(double tolerance, Matrix<> detInits,
 
 
 unsigned int HiddenMarkovModel::gradFit(const Matrix<> &detInits,
-					const Matrix<> &phiInits, 
-					const Matrix<> &psiInits) 
+					const Matrix<> &phiInits,
+					const Matrix<> &psiInits)
 {
   mersenne myrng;
   Matrix<> inits = rbind(psiInits, phiInits);
@@ -539,10 +545,19 @@ unsigned int HiddenMarkovModel::gradFit(const Matrix<> &detInits,
       Rprintf("BFGS did not converge.\n");
       return(0);
     }
-  
+
+//TODO why does convergence failure sometimes appear to not get caught?
+
+ /*
+ * The scythe_convergence_error is not caught, but yet nonsensical fits get returned
+ * with a hessian full of NaN's.
+ *
+ * Maybe add manual checking of hessian?  do this in R?
+ *
+ */
+
   Rprintf("BFGS converged.\n");
   hessian = scythe::hesscdif(*this, mle);
-
   psiParms = mle(0, 0, nSP - 1, 0);
   phiParms =  mle(nSP, 0, nSP - 1 + nPhiP, 0);
   detParms = mle(nSP + nPhiP, 0, nSP - 1 + nDP + nPhiP, 0);
@@ -577,7 +592,7 @@ Matrix<> HiddenMarkovModel::getInits(const Matrix<>& starts) {
     }
     delta /= 1.2;
   }
-  
+
   return(parms);
 }
 
@@ -681,6 +696,7 @@ extern "C" {
 	       double *detParmInit,
 	       int *seekInits,
 	       int *trace,
+	       int *homoDet,
 	       int *arDet,
 	       int *convergence)
   {
@@ -695,7 +711,7 @@ extern "C" {
 
     HiddenMarkovModel hmm(nDMP, nDP,
 			  nSP, nPhiP, nP, nDP_un, nPhiP_un,
-			  K, M, J, nY, Hdet, Hphi, Hpsi, trace);
+			  K, M, J, nY, Hdet, Hphi, Hpsi, trace, homoDet);
     hmm.loadData(y_itj, XDet_itjk, ncXDet);
 
     string phiTypeString(*phiTypeCString);
@@ -726,7 +742,7 @@ extern "C" {
     phiMatrix *phiMatPtrL4ar = &phiMatL4ar;
     phi4random phiMat4R;
     phiMatrix *phiMatPtr4R = &phiMat4R;
-    
+
 
     // set the Phi Matrix
     switch (phi_mapStringValues[phiTypeString]) {
@@ -813,7 +829,7 @@ extern "C" {
       {
 	if(*arDet == 1)
 	  hmm.setDetMat(detMatPtr4ar);
-	else 
+	else
 	  hmm.setDetMat(detMatPtr4);
       }
       break;
@@ -823,7 +839,7 @@ extern "C" {
     }
 
     unsigned int fitSuccess;
-  
+
     if(*seekInits == 1){
       Matrix<> starts = rbind(psiInits, phiInits);
       starts = rbind(starts, detInits);
@@ -838,8 +854,8 @@ extern "C" {
     } else {
       fitSuccess = hmm.gradFit(detInits, phiInits, psiInits);
     }
-  
-    
+
+
     if (fitSuccess == 0) {
       Rprintf("Error. Fit did not converge.\n");
       *negloglike = numeric_limits<double>::infinity();
