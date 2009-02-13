@@ -61,12 +61,13 @@ markovMN <-
            phiMatrix = "cumlogit", EM = FALSE, psi.init = NULL,
            phiParms.init = NULL, detParms.init = NULL,
            get.inits = TRUE, bootstrap.se = FALSE, B = 50, trace = FALSE,
-           arDet = FALSE)
+           arDet = FALSE, phiMatFun, detVecFun, n.starts = 1, homo.det = FALSE,
+           max.bad = 3, min.good = 1)
 {
   ## truncate at K
   umf@y[umf@y > K] <- K
 
-  ## correctly coerce vector detcon for K = 1.
+  ## coerce vector detcon for K = 1.
   if(identical(K,1)) {
     if(class(detconstraint) %in% c("numeric","integer")) {
       detconstraint <-  t(as.matrix(detconstraint))
@@ -126,6 +127,9 @@ markovMN <-
   fc$umf <- as.name("umf")
   fc$J <- as.name("J")
   fc$detconstraint <- as.name("detconstraint")
+  fc$max.bad <- as.name("max.bad")
+  fc$min.good <- as.name("max.bad")
+  fc$homo.det <- as.name("homo.det")
   fm <- eval(fc)
 
   if(bootstrap.se) {
@@ -195,6 +199,7 @@ markovMN <-
   ## TODO: add checking of hessian for NaN's, Inf's, 0's, etc.
   ## Their presence should trigger "convergence <- 1" catching.
 
+
   return(fm)
 }
 
@@ -205,7 +210,8 @@ markovMN.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
                          phiMatrix = "cumlogit", EM = FALSE, psi.init = NULL,
                          phiParms.init = NULL, detParms.init = NULL,
                          get.inits = TRUE, trace = FALSE,
-                         arDet = FALSE)
+                         arDet = FALSE, phiMatFun = NULL, detVecFun = NULL,
+                         n.starts = 3, homo.det = FALSE, max.bad, min.good)
 {
   y <- umf@y
 
@@ -241,6 +247,7 @@ It should have",nDMP))
     detconstraint <- matrix(detconstraint,nDMP,nDCP)
 
   ## create design matrix for each matrix parameter
+  # TODO: make this do the right thing if there are constraints.
   V.itjk <- V.itj %x%  diag(nDMP)
                                         #get a better line here    if(is.null(detconstraint)) detconstraint <- 1:nDMP.un
 
@@ -340,7 +347,9 @@ It should have",nDMP))
                    phiMatrix, EM= EM, psi.init = psi.init,
                    phiParms.init = phiParms.init,
                    detParms.init = detParms.init, get.inits = get.inits,
-                   trace = trace, arDet = arDet)
+                   trace = trace, arDet = arDet,
+                   phiMatFun = phiMatFun, detVecFun = detVecFun, n.starts = n.starts,
+                   homo.det = homo.det, max.bad = max.bad, min.good = min.good)
 
   phiEsts <- H.phi %*% fm$phiParms
   detEsts <- H.det %*% fm$detParms
@@ -411,7 +420,8 @@ findMLE <-
            nPhiP.un, H.det, H.phi, H.psi, K, M, J, nY,
            phiMatrix, smooth.only = FALSE, EM,
            psi.init, phiParms.init, detParms.init, get.inits, trace,
-           arDet)
+           arDet,phiMatFun = phiMatFun, detVecFun = detVecFun,n.starts,homo.det,
+           max.bad,min.good)
 {
   ncX <- ifelse(is.null(ncol(V.itjk)), 1, ncol(V.itjk))
   x <- .C("findMLE",
@@ -448,8 +458,11 @@ findMLE <-
           as.double(detParms.init),
           as.integer(get.inits),
           as.integer(trace),
+          as.integer(homo.det),
           as.integer(arDet),
           convergence = integer(1))
+#          as.integer(max.bad),
+#          as.integer(min.good))
 
   return(list(nll = x$nll, phi = matrix(x$phi,K + 1, K + 1),
               psiParms = x$psiParms, detParms = x$detParms,
@@ -488,3 +501,232 @@ findMLE <-
 ##   x <- .C("phi4logit", as.double(phiParms), phi = numeric(16))
 ##   t(matrix(x$phi, 4, 4))
 ## }
+
+
+# The R version
+findMLE2 <-
+    function(y.itj, V.itjk, nDMP, nDP, nSP, nSP.un, nPhiP, nP, nDP.un,
+        nPhiP.un, H.det, H.phi, H.psi, K, M, J, nY,
+        phiMatrix, smooth.only = FALSE, EM,
+        psi.init, phiParms.init, detParms.init, get.inits, trace,
+        arDet, phiMatFun, detVecFun, n.starts = 3, homo.det = FALSE,
+        max.bad,min.good) {
+
+  alpha <- array(NA, c(K + 1, nY, M))
+  beta <- array(NA, c(K + 1, nY, M))
+  gamma <- array(NA, c(K + 1, nY, M))
+
+  ## V.arr is array of matrices for dims: 3=i, 4=t, 5=j
+  #V.arr <- apply(V.itjk,c(1,2),function(x) x)
+  V.arr <- array(t(V.itjk), c(nDP, nDMP, J, nY, M))
+  V.arr <- aperm(V.arr, c(2,1,5,4,3))
+
+  y.arr <- array(y.itj, c(J, nY, M))
+  y.arr <- aperm(y.arr, c(3:1))
+
+#  library(Matrix)
+#  D <- Diagonal(M)
+  ## modifies alpha as side effect
+  ## returns negloglike
+  forward <- function(detParms, phi, psi, storeAlpha = FALSE) {
+
+    negloglike <- 0
+##################    version to get all detvec's at once
+    psiSite <- matrix(psi, K + 1, M)
+    detVec.arr <- array(1, c(K + 1, nY, M))
+    if(homo.det) {
+      detVecMat <- matrix(NA,K+1,K+1)
+      for(i in 1:(K+1)) {
+        detVecMat[,i] <- do.call(detVecFun, list(p = detParms, y = i-1))
+      }
+    } else {
+      mp <- array(V.itjk %*% detParms, c(nDMP, J, nY, M))
+    }
+    for(t in 1:nY) {
+      for(i in 1:M) {
+        for(j in 1:J) {
+          if(y.arr[i,t,j] != 99) {
+            if(!homo.det) {
+              detVec.arr[,t,i] <- detVec.arr[,t,i] *
+                  do.call(detVecFun, list(p=mp[,j,t,i], y=y.arr[i,t,j]))
+            } else {
+              detVec.arr[,t,i] <- detVec.arr[,t,i] * detVecMat[,y.arr[i,t,j]+1]
+            }
+          }
+        }
+      }
+      psiSite <- psiSite * detVec.arr[,t,]
+      if(storeAlpha) alpha[,t,] <<- psiSite[,]
+      if(t < nY) {
+        psiSite <- phi %*% psiSite
+      } else {
+        negloglike <- negloglike - sum(log(colSums(psiSite)))
+      }
+    }
+
+
+
+
+####################
+#
+#    mp <- array(V.itjk %*% detParms, c(nDMP, J, nY, M))
+#
+#    for(i in 1:M) {
+#      psiSite <- psi
+#      for(t in 1:nY) {
+#
+#        detVec <- rep(1, K + 1)
+#        for(j in 1:J) {
+#          if(y.arr[i,t,j] != 99) {
+#            detVecObs <- do.call(detVecFun, list(p=mp[,j,t,i], y=y.arr[i,t,j]))
+#            detVec <- detVec * detVecObs
+#          }
+#        }
+#        psiSite <- psiSite * detVec
+#        if(storeAlpha) alpha[,t,i] <<- psiSite
+#        if(t < nY) {
+#          psiSite <- phi %*% psiSite
+#        } else {
+#          negloglike <- negloglike - log(sum(psiSite))
+#        }
+#
+#      }
+#    }
+    negloglike
+  }
+
+  backward <- function(detParams, phi, psi) {
+    for(i in 1:M) {
+      backP <- rep(1, K + 1)
+      for(t in nY:1) {
+
+        beta[, t, i] <<- backP
+
+        detVec <- rep(1, K + 1)
+        for(j in 1:J) {
+          if(y.arr[i,t,j] != 99) {
+            mp <- V.arr[,,i,t,j] %*% detParams
+            detVecObs <- do.call(detVecFun, list(p=mp, y=y.arr[i,t,j]))
+            detVec <- detVec * detVecObs
+          }
+        }
+
+        backP <- t(phi) %*% (detVec * backP)
+
+      }
+    }
+  }
+
+  nll <- function(params) {
+
+    psiParams <- c(0, H.psi %*% params[1:nSP])
+    psi <- exp(psiParams)
+    psi <- psi/sum(psi)
+
+    phi = do.call(phiMatFun, list(p=H.phi %*% params[(nSP+1):(nSP + nPhiP)]))
+    detParams = H.det %*% params[(nSP + nPhiP+1):(nSP + nDP + nPhiP)]
+    forward(detParams, phi, psi)
+  }
+
+  fmList <- list()
+  for(run in seq(length=n.starts)) {
+    starts <- matrix(rnorm(nP*20), 20, nP)  # sample space initially for better start
+    starts.nll <- apply(starts, 1, nll)
+    start <- starts[which.min(starts.nll),]
+
+    fmList[[run]] <- optim(starts, nll, method="BFGS",hessian = TRUE,
+        control=list(trace=6, maxit=300, REPORT=1))
+  }
+  nlls <- sapply(fmList, function(x) x$nll)
+  fm <- fmList[[which.min(nlls)]]
+
+  mle <- fm$par
+  psiParams <- c(0, H.psi %*% mle[1:nSP])
+  psi <- exp(psiParams)
+  psi <- psi/sum(psi)
+
+  phiParams <- H.phi %*% mle[(nSP+1):(nSP + nPhiP)]
+  phi = t(do.call(phiMatFun, list(p=phiParams)))
+  detParams = as.vector(H.det %*% mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)])
+ # fm <- genoud(nll, nP)
+
+  ## smoothing
+  forward(detParams, phi, psi, storeAlpha = TRUE)
+  backward(detParams, phi, psi)
+  for(i in 1:M) {
+    for(t in 1:nY) {
+      gamma[,t,i] <- alpha[,t,i] * beta[,t,i] / sum(alpha[,t,i] * beta[,t,i])
+    }
+  }
+
+  list(nll = fm$value, phi = phi,
+      psiParms = mle[1:nSP], detParms = mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)],
+      phiParms = mle[(nSP+1):(nSP + nPhiP)],
+      smooth = gamma,
+      hessian = fm$hessian,
+      convergence = fm$convergence)
+}
+
+# return (y+1)^th column of detMat
+detVecLogit4 <- function(p, y) {
+#  p1 = detPars[1]
+#  p2 = detPars[2]
+#  p3 = detPars[3]
+#  p4 = detPars[4]
+#  p5 = detPars[5]
+#  p6 = detPars[6]
+
+  switch(y+1,
+      c(1, exp(p[1])/(1 + exp(p[1])),
+          exp(p[2])/(1 + exp(p[2]) + exp(p[3])),
+          exp(p[4])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
+      c(0, 1/(1 + exp(p[1])),
+          exp(p[3])/(1 + exp(p[2]) + exp(p[3])),
+          exp(p[5])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
+      c(0, 0, 1/(1 + exp(p[2]) + exp(p[3])),
+          exp(p[6])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
+      c(0,0,0,1/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))))
+
+#  matrix(c(1, exp(p[1])/(1 + exp(p[1])),
+#      exp(p[2])/(1 + exp(p[2]) + exp(p[3])),
+#      exp(p[4])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
+#  0, 1/(1 + exp(p[1])),
+#      exp(p[3])/(1 + exp(p[2]) + exp(p[3])),
+#      exp(p[5])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
+#  0, 0, 1/(1 + exp(p[2]) + exp(p[3])),
+#      exp(p[6])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
+#  0,0,0,1/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),4,4)[,y+1]
+
+}
+
+phiLogit4 <- function(p) {
+  p0 <- p[1]
+  p1 <- p[2]
+  p2 <- p[3]
+  p3 <- p[4]
+  p4 <- p[5]
+  p5 <- p[6]
+  p6 <- p[7]
+  p7 <- p[8]
+  p8 <- p[9]
+  p9 <- p[10]
+  p10 <- p[11]
+  p11 <- p[12]
+
+  matrix(c(1/(1 + exp(p0) + exp(p1) + exp(p2)),
+          exp(p0)/(1 + exp(p0) + exp(p1) + exp(p2)),
+          exp(p1)/(1 + exp(p0) + exp(p1) + exp(p2)),
+          exp(p2)/(1 + exp(p0) + exp(p1) + exp(p2)),
+          1/(1 + exp(p3) + exp(p4) + exp(p5)),
+          exp(p3)/(1 + exp(p3) + exp(p4) + exp(p5)),
+          exp(p4)/(1 + exp(p3) + exp(p4) + exp(p5)),
+          exp(p5)/(1 + exp(p3) + exp(p4) + exp(p5)),
+          1/(1 + exp(p6) + exp(p7) + exp(p8)),
+          exp(p6)/(1 + exp(p6) + exp(p7) + exp(p8)),
+          exp(p7)/(1 + exp(p6) + exp(p7) + exp(p8)),
+          exp(p8)/(1 + exp(p6) + exp(p7) + exp(p8)),
+          1/(1 + exp(p9) + exp(p10) + exp(p11)),
+          exp(p9)/(1 + exp(p9) + exp(p10) + exp(p11)),
+          exp(p10)/(1 + exp(p9) + exp(p10) + exp(p11)),
+          exp(p11)/(1 + exp(p9) + exp(p10) + exp(p11))),4,4) # TODO:  make sure this is transposed correctly
+}
