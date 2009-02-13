@@ -38,7 +38,7 @@ roxygen()
 #' @keywords models
 #' @export
 occu <-
-function(stateformula, detformula, umf, knownOcc = numeric(0))
+function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
 {
   umf <- handleNA(stateformula, detformula, umf)
   designMats <- getDesign(stateformula, detformula, umf)
@@ -60,10 +60,10 @@ function(stateformula, detformula, umf, knownOcc = numeric(0))
   navec <- is.na(yvec)
   nd <- ifelse(rowSums(y,na.rm=TRUE) == 0, 1, 0) # no det at site i indicator
 
-  nll <- function(parms) {
-    psi <- plogis(X %*% parms[1 : nOP])
+  nll <- function(params) {
+    psi <- plogis(X %*% params[1 : nOP])
     psi[knownOcc] <- 1
-    pvec <- plogis(V %*% parms[(nOP + 1) : nP])
+    pvec <- plogis(V %*% params[(nOP + 1) : nP])
     cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
     cp[navec] <- 1  # so that NA's don't modify likelihood
     cpmat <- matrix(cp, M, J, byrow = TRUE) # put back into matrix to multiply appropriately
@@ -72,16 +72,30 @@ function(stateformula, detformula, umf, knownOcc = numeric(0))
   }
 
   fm <- optim(rnorm(nP), nll, method = "BFGS", hessian = TRUE)
-  ests.se <- diag(solve(fm$hessian))
+  covMat <- solve(fm$hessian)
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)
   names(ests) <- c(occParms, detParms)
-  names(ests.se) <- c(occParms, detParms)
+
+  if(profile) {
+    profile.matrix <- matrix(NA, nP, 2)
+    for(i in seq(length=nP)) {
+      profile.matrix[i,] <- profileCI(nll, i, ests, c(-10,10))
+          #c(ests[i] - 20*ests.se[i], ests[i] + 20*ests.se[i]))
+    }
+  }
+
+  stateEstimates <- unMarkedEstimate(estimates = ests[1:nOP],
+      covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = logistic,
+      invlinkGrad = logistic.grad)
+
+  detEstimates <- unMarkedEstimate(estimates = ests[(nOP + 1) : nP],
+      covMat = as.matrix(covMat[(nOP + 1) : nP, (nOP + 1) : nP]), invlink = logistic,
+      invlinkGrad = logistic.grad)
+
   umfit <- unMarkedFit(fitType = "occu",
                        stateformula = stateformula, detformula = detformula,
-                       data = umf, stateMLE = ests[1:nOP],
-                       stateSE = ests.se[1:nOP],
-                       detMLE = ests[(nOP + 1) : nP],
-                       detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
+                       data = umf, stateEstimates = stateEstimates,
+                       detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
   return(umfit)
 }
