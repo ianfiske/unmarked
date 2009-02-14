@@ -72,7 +72,8 @@ function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
   }
 
   fm <- optim(rnorm(nP), nll, method = "BFGS", hessian = TRUE)
-  covMat <- solve(fm$hessian)
+  tryCatch(covMat <- solve(fm$hessian),
+      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)
   names(ests) <- c(occParms, detParms)
