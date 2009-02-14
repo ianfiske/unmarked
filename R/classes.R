@@ -182,12 +182,6 @@ unMarkedEstimate <- function(estimates, covMat, invlink, invlinkGrad) {
 
 }
 
-# need functions to
-# 1. get SE of estimates.
-# 2. get SE(invlink(x'beta)) for some x.
-# 3. get invlink(x'beta) for some x.
-# 4. call 2 & 3 together for some x.
-
 #' @export
 setGeneric("standardError",
     def = function(obj, contrast) {
@@ -279,26 +273,26 @@ setMethod("show", "unMarkedFit",
 
             stateEsts <- object@stateEstimates@estimates
             stateSE <- standardError(object@stateEstimates)
-            stateT <- stateEsts/stateSE
-            stateP <- 2*pt(abs(stateT), 1, lower.tail = FALSE)
+            stateZ <- stateEsts/stateSE
+            stateP <- 2*pnorm(abs(stateT), lower.tail = FALSE)
 
 
             detEsts <- object@detEstimates@estimates
             detSE <- standardError(object@detEstimates)
-            detT <- detEsts/detSE
-            detP <- 2*pt(abs(detT), 1, lower.tail = FALSE)
+            detZ <- detEsts/detSE
+            detP <- 2*pnorm(abs(detT), lower.tail = FALSE)
 
             cat("\nState coefficients:\n")
             stateDF <- data.frame(Estimate = stateEsts,
                                   SE = stateSE,
-                                  t = stateT,
+                                  z = stateZ,
                                   "p-val" = stateP)
             show(round(stateDF,3))
 
             cat("\nDetection coefficients:\n")
             detDF <- data.frame(Estimate = detEsts,
                                   SE = detSE,
-                                  t = detT,
+                                  z = detZ,
                                   p.val = detP)
             show(round(detDF,3))
 
