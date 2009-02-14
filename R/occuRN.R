@@ -44,18 +44,18 @@ roxygen()
 #' fm.wood.rn
 #' @keywords models
 #' @export
-occuRN <- 
+occuRN <-
 function(stateformula, detformula, umf)
 {
   umf <- handleNA(stateformula, detformula, umf)
   designMats <- getDesign(stateformula, detformula, umf)
   X <- designMats$X; V <- designMats$V
   y <- truncateToBinary(umf@y)
-  
+
   J <- ncol(y)
   M <- nrow(y)
   K <- 25
-  
+
   occParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
@@ -65,13 +65,13 @@ function(stateformula, detformula, umf)
   y.ji <- as.vector(y)
   navec <- is.na(y.ji)
   n <- 0:K
-  
+
   nll <- function(parms, f = "Poisson")
-  {    
-    
+  {
+
     ## compute individual level detection probabilities
     r.ij <- matrix(plogis(V %*% parms[(nOP + 1) : nP]), M, J, byrow = TRUE)
-    
+
     ## compute list of detection probabilities along N
     p.ij.list <- lapply(n, function(k) 1 - (1 - r.ij)^k)
 
@@ -86,11 +86,11 @@ function(stateformula, detformula, umf)
 
     ## multiply across J to get P(y_i | N) along N
     cp.in <- sapply(cp.ij.list, rowProds)
-    
+
     ## compute P(N = n | lambda_i) along i
     lambda.i <- exp(X %*% parms[1 : nOP])
     lambda.in <- sapply(n, function(x) dpois(x, lambda.i))
-      
+
     ## integrate over P(y_i | N = n) * P(N = n | lambda_i) wrt n
     like.i <- rowSums(cp.in * lambda.in)
 
@@ -98,18 +98,30 @@ function(stateformula, detformula, umf)
   }
 
   fm <- optim(rep(0, nP), nll, method = "BFGS", hessian = TRUE)
-  ests.se <- diag(solve(fm$hessian))
-  ests <- fm$par
-  fm <- optim(rep(0,nP), nll, method = "BFGS")
+  tryCatch(covMat <- solve(fm$hessian),
+      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)
-  names(ests.se) <- c(occParms, detParms)
+
+  stateEstimates <- unMarkedEstimate(estimates = ests[1:nOP],
+      covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = exp,
+      invlinkGrad = exp)
+
+  detEstimates <- unMarkedEstimate(estimates = ests[(nOP + 1) : nP],
+      covMat = as.matrix(covMat[(nOP + 1) : nP, (nOP + 1) : nP]), invlink = logistic,
+      invlinkGrad = logistic.grad)
+
   umfit <- unMarkedFit(fitType = "occuRN",
-                       stateformula = stateformula, detformula = detformula,
-                       data = umf, stateMLE = ests[1:nOP],
-                       stateSE = ests.se[1:nOP], 
-                       detMLE = ests[(nOP + 1) : nP],
-                       detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
+      stateformula = stateformula, detformula = detformula,
+      data = umf, stateEstimates = stateEstimates,
+      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
+
+#  umfit <- unMarkedFit(fitType = "occuRN",
+#                       stateformula = stateformula, detformula = detformula,
+#                       data = umf, stateMLE = ests[1:nOP],
+#                       stateSE = ests.se[1:nOP],
+#                       detMLE = ests[(nOP + 1) : nP],
+#                       detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
   return(umfit)
 }
