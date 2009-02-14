@@ -274,13 +274,13 @@ setMethod("show", "unMarkedFit",
             stateEsts <- object@stateEstimates@estimates
             stateSE <- standardError(object@stateEstimates)
             stateZ <- stateEsts/stateSE
-            stateP <- 2*pnorm(abs(stateT), lower.tail = FALSE)
+            stateP <- 2*pnorm(abs(stateZ), lower.tail = FALSE)
 
 
             detEsts <- object@detEstimates@estimates
             detSE <- standardError(object@detEstimates)
             detZ <- detEsts/detSE
-            detP <- 2*pnorm(abs(detT), lower.tail = FALSE)
+            detP <- 2*pnorm(abs(detZ), lower.tail = FALSE)
 
             cat("\nState coefficients:\n")
             stateDF <- data.frame(Estimate = stateEsts,
@@ -298,3 +298,12 @@ setMethod("show", "unMarkedFit",
 
             cat("\nAIC:", object@AIC,"\n")
           })
+
+
+# TODO: make parent class unMarkedEstimate
+# TODO: make binomial detection child class
+# TODO: make binomial occ child class
+# TODO: make poisson abundance child class
+# TODO: make show method for each of these classes.
+# TODO: make unMarkedFit show that calls the respective children.
+# TODO: separate unmarkedFit class for each model type?... would contain different estimate types
