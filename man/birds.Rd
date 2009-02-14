@@ -21,9 +21,9 @@ These data come from ...
 \source{
  need proper citation.
 }
-\references{
-%  ~~ possibly secondary sources and usages ~~
-}
+%\references{
+%%  ~~ possibly secondary sources and usages ~~
+%}
 \examples{
 data(birds)
 ## maybe str(catbird) ; plot(catbird) ...

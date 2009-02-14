@@ -9,7 +9,7 @@
 }
 \usage{data(mallard)}
 \format{
-
+  describe data format.
 }
 \details{
   ~~ If necessary, more details than the description above ~~

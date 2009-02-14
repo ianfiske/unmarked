@@ -8,7 +8,7 @@
 }
 \usage{data(gf)}
 \format{
-
+ describe data format.
 }
 \details{
   ~~ If necessary, more details than the description above ~~

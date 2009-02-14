@@ -19,7 +19,7 @@
   }
 }
 \details{
-  %~~ If necessary, more details than the __description__ above ~~
+  Put details here.
 }
 \source{
   ~~ reference to a publication or URL from which the data were obtained ~~
