@@ -117,14 +117,28 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
   else
      {nbParm <- character(0)}
   names(ests) <- c(lamParms, detParms, nbParm)
-  ests.se <- diag(solve(fm$hessian))
+  tryCatch(covMat <- solve(fm$hessian),
+      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
   fmAIC <- 2 * fm$value + 2 * nP
-  names(ests.se) <- c(lamParms, detParms)
+
+  stateEstimates <- unMarkedEstimate(estimates = ests[1:nAP],
+      covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = exp,
+      invlinkGrad = exp)
+
+  detEstimates <- unMarkedEstimate(estimates = ests[(nAP + 1) : nP],
+      covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = logistic,
+      invlinkGrad = logistic.grad)
+
   umfit <- unMarkedFit(fitType = "pcount",
-                       stateformula = stateformula, detformula = detformula,
-                       data = umf, stateMLE = ests[1:nAP],
-                       stateSE = ests.se[1:nAP],
-                       detMLE = ests[(nAP + 1) : nP],
-                       detSE = ests.se[(nAP + 1): nP], AIC = fmAIC)
+      stateformula = stateformula, detformula = detformula,
+      data = umf, stateEstimates = stateEstimates,
+      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
+
+#  umfit <- unMarkedFit(fitType = "pcount",
+#                       stateformula = stateformula, detformula = detformula,
+#                       data = umf, stateMLE = ests[1:nAP],
+#                       stateSE = ests.se[1:nAP],
+#                       detMLE = ests[(nAP + 1) : nP],
+#                       detSE = ests.se[(nAP + 1): nP], AIC = fmAIC)
   return(umfit)
 }
