@@ -1,4 +1,4 @@
-/* 
+/*
  * Scythe Statistical Library Copyright (C) 2000-2002 Andrew D. Martin
  * and Kevin M. Quinn; 2002-present Andrew D. Martin, Kevin M. Quinn,
  * and Daniel Pemstein.  All Rights Reserved.
@@ -26,7 +26,7 @@
  * Many of the arithmetic and logical operators in this file are
  * implemented in terms of overloaded template definitions to provide
  * both generic and default versions of each operation.  Generic
- * templates allow (and force) the user to fully specify the 
+ * templates allow (and force) the user to fully specify the
  * template type of the returned matrix object (row or column order,
  * concrete or view) while default templates automatically return
  * concrete matrices with the ordering of the first or only Matrix
@@ -44,7 +44,7 @@
 #ifndef SCYTHE_MATRIX_H
 #define SCYTHE_MATRIX_H
 
-//#include <climits>
+#include <climits>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -109,7 +109,7 @@ namespace scythe {
 	template <typename T_type, matrix_order ORDER, matrix_style STYLE>
 	class Matrix;
 
-  /*!  \brief A helper class for list-wise initialization.  
+  /*!  \brief A helper class for list-wise initialization.
    *
    * This class gets used behind the scenes to provide listwise
    * initialization for Matrix objects.  This documentation is mostly
@@ -149,15 +149,15 @@ namespace scythe {
    * GNU GPL.
    */
 
-  template<typename T_elem, typename T_iter, 
+  template<typename T_elem, typename T_iter,
            matrix_order O, matrix_style S>
   class ListInitializer {
     // An unbound friend
     template <class T, matrix_order OO, matrix_style SS>
     friend class Matrix;
-    
+
     public:
-      ListInitializer (T_elem val, T_iter begin, T_iter end, 
+      ListInitializer (T_elem val, T_iter begin, T_iter end,
                        Matrix<T_elem,O,S>* matrix)
         : vals_ (),
           iter_ (begin),
@@ -201,7 +201,7 @@ namespace scythe {
       Matrix<T_elem, O, S>* matrix_;
       bool populated_;
   };
-	
+
   /*! \brief Matrix superclass.
    *
    * The Matrix_base class handles Matrix functionality that doesn't
@@ -246,7 +246,7 @@ namespace scythe {
         }
       }
 
-      /* Copy constructors 
+      /* Copy constructors
        *
        * The first version handles matrices of the same order and
        * style.  The second handles matrices with different
@@ -306,7 +306,7 @@ namespace scythe {
          * run-time.  Of course, we should never get this far.
          */
         if (STYLE == Concrete) {
-          SCYTHE_THROW(scythe_style_error, 
+          SCYTHE_THROW(scythe_style_error,
               "Tried to construct a concrete submatrix (Matrix_base)!");
         }
       }
@@ -373,7 +373,7 @@ namespace scythe {
 
         storeorder_ = ORDER;
 			}
-			
+
 		public:
 			/**** ACCESSORS ****/
 
@@ -433,11 +433,11 @@ namespace scythe {
       }
 
       /*! \brief Returns the storage order of the underlying
-       * DataBlock.  
+       * DataBlock.
        *
        * In view matrices, the storage order of the data may not be the
        * same as the template ORDER.
-       * 
+       *
        *
        * \see rowstride()
        * \see colstride()
@@ -459,7 +459,7 @@ namespace scythe {
 			{
 				return rowstride_;
 			}
-			
+
       /*! \brief Returns the in-memory distance between elements in
        * successive columns of the matrix.
        *
@@ -501,7 +501,7 @@ namespace scythe {
 			{
 				return (rows() == 1);
 			}
-			
+
 			/*! \brief Returns true if this Matrix is nx1.
        *
        * \see isRowVector()
@@ -521,7 +521,7 @@ namespace scythe {
 			{
 				return (cols() == 1 || rows() == 1);
 			}
-			
+
 			/*! \brief Returns true if this Matrix is nxn.
        *
        * Null and scalar matrices are both considered square.
@@ -535,7 +535,7 @@ namespace scythe {
 			}
 
       /*! \brief Returns true if this Matrix has 0 elements.
-       *  
+       *
        *  \see empty()
        *  \see isScalar()
        */
@@ -555,7 +555,7 @@ namespace scythe {
 			{
 				return (rows() == 0);
 			}
-			
+
 
 			/**** HELPERS ****/
 
@@ -610,7 +610,7 @@ namespace scythe {
        * so great for views.  Of course, the type checks are done at
        * compile time.
 			 */
-			
+
 			/* Turn an index into a true offset into the data. */
 			inline uint index (uint i) const
       {
@@ -644,7 +644,7 @@ namespace scythe {
         }
       }
 
-    
+
     /**** INSTANCE VARIABLES ****/
     protected:
       uint rows_;   // # of rows
@@ -685,7 +685,7 @@ namespace scythe {
    * manipulating matrices.  Most notably, la.h provides definitions
    * of common linear algebra routines and ide.h defines functions
    * that perform inversion and decomposition.
-   * 
+   *
    * This Matrix data structure sits at the core of the library.  In
    * addition to standard matrix operations, this class allows
    * multiple matrices to view and modify the same underlying data.
@@ -732,7 +732,7 @@ namespace scythe {
    * There are also two possible styles of Matrix template, concrete
    * and view.  These two types of matrix provide distinct ways in
    * which to interact with an underlying block of data.
-   * 
+   *
    * Concrete matrices behave like matrices in previous
    * Scythe releases.  They directly encapsulate a block of data and
    * always process it in the same order as it is stored (their
@@ -742,7 +742,7 @@ namespace scythe {
    * the reference() method to make a concrete Matrix a view of
    * another Matrix.  Furthermore, concrete matrices are guaranteed to
    * have unit stride (That is, adjacent Matrix elements are stored
-   * adjacently in memory).  
+   * adjacently in memory).
    *
    * Views, on the other hand, provide references to data blocks.
    * More than one view can look at the same underlying block of data,
@@ -751,7 +751,7 @@ namespace scythe {
    * matrix, perhaps accessing a single row vector or a small
    * submatrix of a larger matrix.  When you copy construct
    * a view a deep copy is not made, rather the view simply provides
-   * access to the extant block of data underlying the copied object.  
+   * access to the extant block of data underlying the copied object.
    * Furthermore, when
    * you assign to a view, you overwrite the data the view is
    * currently pointing to, rather than generating a new data block.
@@ -788,7 +788,7 @@ namespace scythe {
    * objects.
    */
 
-	template <typename T_type = double, matrix_order ORDER = Col, 
+	template <typename T_type = double, matrix_order ORDER = Col,
             matrix_style STYLE = Concrete>
 	class Matrix : public Matrix_base<ORDER, STYLE>,
 								 public DataBlockReference<T_type>
@@ -858,8 +858,8 @@ namespace scythe {
        * \see reverse_bidirectional_iterator
        * \see const_reverse_bidirectional_iterator
        */
-			typedef typename 
-        std::reverse_iterator<matrix_random_access_iterator<T_type, 
+			typedef typename
+        std::reverse_iterator<matrix_random_access_iterator<T_type,
                               ORDER, ORDER, STYLE> > reverse_iterator;
 
       /*! \brief Reverse Const Random Access Iterator type.
@@ -956,7 +956,7 @@ namespace scythe {
        * a convenient shorthand for a compromise (with speed and
        * flexibility between const_matrix_random_access_iterator and
        * const_matrix_forward_iterator) const Matrix iterator type.
-       * 
+       *
        * \see iterator
        * \see const_iterator
        * \see reverse_iterator
@@ -990,8 +990,8 @@ namespace scythe {
        * \see const_bidirectional_iterator
        * \see const_reverse_bidirectional_iterator
        */
-			typedef typename 
-        std::reverse_iterator<matrix_bidirectional_iterator<T_type, 
+			typedef typename
+        std::reverse_iterator<matrix_bidirectional_iterator<T_type,
                 ORDER, ORDER, STYLE> > reverse_bidirectional_iterator;
 
       /*! \brief Reverse Const Bidirectional Iterator type.
@@ -1023,12 +1023,12 @@ namespace scythe {
        * Matrix.
        */
       typedef T_type ttype;
-		
+
 		private:
 			/* Some convenience typedefs */
 			typedef DataBlockReference<T_type> DBRef;
 			typedef Matrix_base<ORDER, STYLE> Base;
-			
+
 		public:
 			/**** CONSTRUCTORS ****/
 
@@ -1089,7 +1089,7 @@ namespace scythe {
        * The standard constructor creates a rowsXcols Matrix, filled
        * with zeros by default.  Optionally, you can leave the Matrix
        * uninitialized, or choose a different fill value.
-       * 
+       *
        * \param rows The number of rows in the Matrix.
        * \param cols The number of columns in the Matrix.
        * \param fill Indicates whether or not the Matrix should be
@@ -1203,7 +1203,7 @@ namespace scythe {
           uint rows, cols;
           file >> rows >> cols;
           resize(rows, cols);
-          std::copy(std::istream_iterator<T_type> (file), 
+          std::copy(std::istream_iterator<T_type> (file),
                     std::istream_iterator<T_type>(), begin_f<Row>());
         } else {
           std::string row;
@@ -1342,8 +1342,8 @@ namespace scythe {
        * matrix, even if the constructed matrix is a view. It is
        * impossible for a matrix view with one element type to
        * reference the data block of a matrix containing elements of a
-       * different type. 
-       * 
+       * different type.
+       *
        * \param M The Matrix to copy.
        *
        * \see Matrix()
@@ -1422,7 +1422,7 @@ namespace scythe {
          * run-time.
          */
         if (STYLE == Concrete) {
-          SCYTHE_THROW(scythe_style_error, 
+          SCYTHE_THROW(scythe_style_error,
               "Tried to construct a concrete submatrix (Matrix)!");
         }
       }
@@ -1430,7 +1430,7 @@ namespace scythe {
     public:
       /**** DESTRUCTOR ****/
 
-      /*!\brief Destructor. 
+      /*!\brief Destructor.
        */
       ~Matrix() {}
 
@@ -1448,7 +1448,7 @@ namespace scythe {
        * This modifier makes this matrix a view of another's data.
        * The action detaches the Matrix from its current view; if no
        * other Matrix views the detached DataBlock, it will be
-       * deallocated.  
+       * deallocated.
        *
        * Concrete matrices cannot convert into views at
        * run time.  Therefore, it is an error to invoke this method on
@@ -1471,7 +1471,7 @@ namespace scythe {
 			inline void reference (const Matrix<T_type, O, S> &M)
 			{
         if (STYLE == Concrete) {
-          SCYTHE_THROW(scythe_style_error, 
+          SCYTHE_THROW(scythe_style_error,
               "Concrete matrices cannot reference other matrices");
         } else {
           referenceOther(M);
@@ -1539,7 +1539,7 @@ namespace scythe {
       }
 
 			/**** INDEXING OPERATORS ****/
-			
+
       /*! \brief Access or modify an element in this Matrix.
        *
        * This indexing operator allows the caller to access or modify
@@ -1554,7 +1554,7 @@ namespace scythe {
        * \see operator()(uint) const
        * \see operator()(uint, uint)
        * \see operator()(uint, uint) const
-       * 
+       *
        * \throw scythe_bounds_error (Level 3)
        */
 			inline T_type& operator[] (uint i)
@@ -1564,10 +1564,10 @@ namespace scythe {
 
 				return data_[Base::index(i)];
 			}
-			
+
       /*! \brief Access an element in this Matrix.
        *
-       * This indexing operator allows the caller to access 
+       * This indexing operator allows the caller to access
        * the ith (indexed in this Matrix's matrix_order) element of
        * this Matrix, indexed from 0 to n - 1, where n is the number
        * of elements in the Matrix.
@@ -1579,7 +1579,7 @@ namespace scythe {
        * \see operator()(uint) const
        * \see operator()(uint, uint)
        * \see operator()(uint, uint) const
-       * 
+       *
        * \throw scythe_bounds_error (Level 3)
        */
 			inline T_type& operator[] (uint i) const
@@ -1604,7 +1604,7 @@ namespace scythe {
        * \see operator()(uint) const
        * \see operator()(uint, uint)
        * \see operator()(uint, uint) const
-       * 
+       *
        * \throw scythe_bounds_error (Level 3)
        */
 			inline T_type& operator() (uint i)
@@ -1614,10 +1614,10 @@ namespace scythe {
 
 				return data_[Base::index(i)];
 			}
-			
+
       /*! \brief Access an element in this Matrix.
        *
-       * This indexing operator allows the caller to access 
+       * This indexing operator allows the caller to access
        * the ith (indexed in this Matrix's matrix_order) element of
        * this Matrix, indexed from 0 to n - 1, where n is the number
        * of elements in the Matrix.
@@ -1629,7 +1629,7 @@ namespace scythe {
        * \see operator()(uint)
        * \see operator()(uint, uint)
        * \see operator()(uint, uint) const
-       * 
+       *
        * \throw scythe_bounds_error (Level 3)
        */
 			inline T_type& operator() (uint i) const
@@ -1655,7 +1655,7 @@ namespace scythe {
        * \see operator()(uint)
        * \see operator()(uint) const
        * \see operator()(uint, uint) const
-       * 
+       *
        * \throw scythe_bounds_error (Level 3)
        */
 			inline T_type& operator() (uint i, uint j)
@@ -1665,10 +1665,10 @@ namespace scythe {
 
 				return data_[Base::index(i, j)];
 			}
-				
+
       /*! \brief Access an element in this Matrix.
        *
-       * This indexing operator allows the caller to access 
+       * This indexing operator allows the caller to access
        * the (i, j)th element of
        * this Matrix, where i is an element of 0, 1, ..., rows - 1 and
        * j is an element of 0, 1, ..., columns - 1.
@@ -1681,7 +1681,7 @@ namespace scythe {
        * \see operator()(uint)
        * \see operator()(uint) const
        * \see operator() (uint, uint)
-       * 
+       *
        * \throw scythe_bounds_error (Level 3)
        */
 			inline T_type& operator() (uint i, uint j) const
@@ -1715,7 +1715,7 @@ namespace scythe {
        * is such complete gibberish that I don't think this is worth
        * the slight optimization.
        */
-      
+
       /*! \brief Returns a view of a submatrix.
        *
        * This operator returns a rectangular submatrix view of this
@@ -1738,19 +1738,19 @@ namespace scythe {
        * \b Example:
        * \include example.matrix.submatrix.cc
        */
-      inline Matrix<T_type, ORDER, View> 
+      inline Matrix<T_type, ORDER, View>
 			operator() (uint x1, uint y1, uint x2, uint y2)
 			{
-				SCYTHE_CHECK_20 (! Base::inRange(x1, y1) 
+				SCYTHE_CHECK_20 (! Base::inRange(x1, y1)
             || ! Base::inRange(x2, y2)
 						|| x1 > x2 || y1 > y2,
 						scythe_bounds_error,
 						"Submatrix (" << x1 << ", " << y1 << ") ; ("
 						<< x2 << ", " << y2 << ") out of range or ill-formed");
-				
+
 				return (Matrix<T_type, ORDER, View>(*this, x1, y1, x2, y2));
 			}
-			
+
       /*! \brief Returns a view of a submatrix.
        *
        * This operator returns a rectangular submatrix view of this
@@ -1770,10 +1770,10 @@ namespace scythe {
        *
        * \throw scythe_bounds_error (Level 2)
        */
-      inline Matrix<T_type, ORDER, View> 
+      inline Matrix<T_type, ORDER, View>
       operator() (uint x1, uint y1, uint x2, uint y2) const
 			{
-				SCYTHE_CHECK_20 (! Base::inRange(x1, y1) 
+				SCYTHE_CHECK_20 (! Base::inRange(x1, y1)
             || ! Base::inRange(x2, y2)
 						|| x1 > x2 || y1 > y2,
 						scythe_bounds_error,
@@ -1801,7 +1801,7 @@ namespace scythe {
        * \b Example:
        * \include example.matrix.vector.cc
        */
-      inline Matrix<T_type, ORDER, View> 
+      inline Matrix<T_type, ORDER, View>
 			operator() (const all_elements a, uint j)
 			{
 				SCYTHE_CHECK_20 (j >= Base::cols(), scythe_bounds_error,
@@ -1810,7 +1810,7 @@ namespace scythe {
 				return (Matrix<T_type, ORDER, View>
            (*this, 0, j, Base::rows() - 1, j));
 			}
-			
+
       /*! \brief Returns a view of a column vector.
        *
        * This operator returns a vector view of column j in this Matrix.
@@ -1826,7 +1826,7 @@ namespace scythe {
        *
        * \throw scythe_bounds_error (Level 2)
        */
-      inline Matrix<T_type, ORDER, View> 
+      inline Matrix<T_type, ORDER, View>
 			operator() (const all_elements a, uint j) const
 			{
 				SCYTHE_CHECK_20 (j >= Base::cols(), scythe_bounds_error,
@@ -1854,7 +1854,7 @@ namespace scythe {
        * \b Example:
        * \include example.matrix.vector.cc
        */
-      inline Matrix<T_type, ORDER, View> 
+      inline Matrix<T_type, ORDER, View>
 			operator() (uint i, const all_elements b)
 			{
 				SCYTHE_CHECK_20 (i >= Base::rows(), scythe_bounds_error,
@@ -1863,7 +1863,7 @@ namespace scythe {
 				return (Matrix<T_type, ORDER, View>
             (*this, i, 0, i, Base::cols() - 1));
 			}
-			
+
       /*! \brief Returns a view of a row vector.
        *
        * This operator returns a vector view of row i in this Matrix.
@@ -1879,14 +1879,14 @@ namespace scythe {
        *
        * \throw scythe_bounds_error (Level 2)
        */
-      inline Matrix<T_type, ORDER, View> 
+      inline Matrix<T_type, ORDER, View>
 			operator() (uint i, const all_elements b) const
 			{
 				SCYTHE_CHECK_20 (i >= Base::rows(), scythe_bounds_error,
 						"Row vector index " << i << " out of range");
 				return (Matrix<T_type, ORDER, View>
             (*this, i, 0, i, Base::cols() - 1));
-			}	
+			}
 
       /**** ASSIGNMENT OPERATORS ****/
 
@@ -1965,7 +1965,7 @@ namespace scythe {
 #ifndef SCYTHE_VIEW_ASSIGNMENT_RECYCLE
           SCYTHE_CHECK_10 (Base::size() != M.size(),
               scythe_conformation_error,
-              "LHS has dimensions (" << Base::rows() 
+              "LHS has dimensions (" << Base::rows()
               << ", " << Base::cols()
               << ") while RHS has dimensions (" << M.rows() << ", "
               << M.cols() << ")");
@@ -1978,7 +1978,7 @@ namespace scythe {
 
         return *this;
       }
-      
+
       /*! \brief Assign the contents of one Matrix to another.
        *
        * Like copy construction, assignment works differently for
@@ -2039,7 +2039,7 @@ namespace scythe {
 #ifndef SCYTHE_VIEW_ASSIGNMENT_RECYCLE
           SCYTHE_CHECK_10 (Base::size() != M.size(),
               scythe_conformation_error,
-              "LHS has dimensions (" << Base::rows() 
+              "LHS has dimensions (" << Base::rows()
               << ", " << Base::cols()
               << ") while RHS has dimensions (" << M.rows() << ", "
               << M.cols() << ")");
@@ -2052,7 +2052,7 @@ namespace scythe {
 
         return *this;
       }
-      
+
       /* List-wise initialization behavior is a touch complicated.
        * List needs to be less than or equal to matrix in size and it
        * is copied into the matrix with R-style recycling.
@@ -2100,10 +2100,10 @@ namespace scythe {
        * \b Example:
        * \include example.matrix.operator.assignment.cc
        */
-			ListInitializer<T_type, iterator, ORDER, STYLE> 
+			ListInitializer<T_type, iterator, ORDER, STYLE>
       operator=(T_type x)
 			{
-				return (ListInitializer<T_type, iterator, ORDER, STYLE> 
+				return (ListInitializer<T_type, iterator, ORDER, STYLE>
           (x, begin(),end(), this));
 			}
 
@@ -2151,27 +2151,27 @@ namespace scythe {
 			 */
 			template <typename OP, matrix_order O, matrix_style S>
 			inline Matrix&
-			elementWiseOperatorAssignment (const Matrix<T_type, O, S>& M, 
+			elementWiseOperatorAssignment (const Matrix<T_type, O, S>& M,
                                      OP op)
 			{
-				SCYTHE_CHECK_10 (Base::size() != 1 && M.size() != 1 && 
+				SCYTHE_CHECK_10 (Base::size() != 1 && M.size() != 1 &&
 						(Base::rows () != M.rows() || Base::cols() != M.cols()),
 						scythe_conformation_error,
-						"Matrices with dimensions (" << Base::rows() 
+						"Matrices with dimensions (" << Base::rows()
             << ", " << Base::cols()
 						<< ") and (" << M.rows() << ", " << M.cols()
 						<< ") are not conformable");
-				
+
 				if (Base::size() == 1) { // 1x1 += nXm
 					T_type tmp = (*this)(0);
 					resize2Match(M);
-          std::transform(M.begin_f<ORDER>(), M.end_f<ORDER>(), 
+          std::transform(M.begin_f<ORDER>(), M.end_f<ORDER>(),
               begin_f(), std::bind1st(op, tmp));
 				} else if (M.size() == 1) { // nXm += 1x1
 					std::transform(begin_f(), end_f(), begin_f(),
 							std::bind2nd(op, M(0)));
 				} else { // nXm += nXm
-            std::transform(begin_f(), end_f(), M.begin_f<ORDER>(), 
+            std::transform(begin_f(), end_f(), M.begin_f<ORDER>(),
                 begin_f(), op);
         }
 
@@ -2222,10 +2222,10 @@ namespace scythe {
        */
       inline Matrix& operator+= (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             std::plus<T_type> ());
       }
-			
+
       /*! \brief Subtract another Matrix from this Matrix.
        *
        * This operator subtracts another Matrix from this one and
@@ -2269,10 +2269,10 @@ namespace scythe {
        */
       inline Matrix& operator-= (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             std::minus<T_type> ());
       }
-			
+
       /*! \brief Multiply the elements of this Matrix with another's.
        *
        * This operator multiplies the elements of this Matrix with
@@ -2300,7 +2300,7 @@ namespace scythe {
       template <matrix_order O, matrix_style S>
 			inline Matrix& operator%= (const Matrix<T_type, O, S> &M)
 			{
-				return elementWiseOperatorAssignment(M, 
+				return elementWiseOperatorAssignment(M,
             std::multiplies<T_type> ());
 			}
 
@@ -2322,10 +2322,10 @@ namespace scythe {
        */
       inline Matrix& operator%= (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             std::multiplies<T_type> ());
       }
-			
+
       /*! \brief Divide the elements of this Matrix by another's.
        *
        * This operator divides the elements of this Matrix by
@@ -2370,7 +2370,7 @@ namespace scythe {
        */
       inline Matrix& operator/= (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             std::divides<T_type> ());
       }
 
@@ -2397,7 +2397,7 @@ namespace scythe {
       template <matrix_order O, matrix_style S>
 			inline Matrix& operator^= (const Matrix<T_type, O, S> &M)
 			{
-				return elementWiseOperatorAssignment(M, 
+				return elementWiseOperatorAssignment(M,
             exponentiate<T_type>());
 			}
 
@@ -2419,7 +2419,7 @@ namespace scythe {
        */
       inline Matrix& operator^= (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             exponentiate<T_type> ());
       }
 
@@ -2466,8 +2466,8 @@ namespace scythe {
          * always have to create a new matrix here, so there is no
          * speed-up from using *=.
          */
-        
-        /* This saves a copy over 
+
+        /* This saves a copy over
          * *this = (*this) * M;
          * if we're concrete
          */
@@ -2503,7 +2503,7 @@ namespace scythe {
        */
       inline Matrix& operator*= (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             std::multiplies<T_type> ());
       }
 
@@ -2561,13 +2561,13 @@ namespace scythe {
             }
           }
         }
-       
+
         referenceOther(res);
         mimic(res);
 
         return *this;
       }
-        
+
       /*! \brief Kronecker multiply this Matrix by a scalar.
        *
        * This method Kronecker multiplies this Matrix with some scalar,
@@ -2591,7 +2591,7 @@ namespace scythe {
        */
       inline Matrix& kronecker (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             std::multiplies<T_type> ());
       }
 
@@ -2619,7 +2619,7 @@ namespace scythe {
       template <matrix_order O, matrix_style S>
 			inline Matrix& operator&= (const Matrix<T_type, O, S> &M)
 			{
-				return elementWiseOperatorAssignment(M, 
+				return elementWiseOperatorAssignment(M,
             std::logical_and<T_type>());
 			}
 
@@ -2641,7 +2641,7 @@ namespace scythe {
        */
       inline Matrix& operator&= (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             std::logical_and<T_type> ());
       }
 
@@ -2667,7 +2667,7 @@ namespace scythe {
       template <matrix_order O, matrix_style S>
 			inline Matrix& operator|= (const Matrix<T_type, O, S> &M)
 			{
-				return elementWiseOperatorAssignment(M, 
+				return elementWiseOperatorAssignment(M,
             std::logical_or<T_type>());
 			}
 
@@ -2689,7 +2689,7 @@ namespace scythe {
        */
       inline Matrix& operator|= (T_type x)
       {
-        return elementWiseOperatorAssignment(Matrix(x), 
+        return elementWiseOperatorAssignment(Matrix(x),
             std::logical_or<T_type> ());
       }
 
@@ -2712,7 +2712,7 @@ namespace scythe {
 			 * even if the dimensions passed to resize are the same as the
 			 * current Matrix's dimensions.  Resized matrices point to new,
 			 * uninitialized data blocks (technically, the Matrix might
-			 * recycle its current block if it is the only Matrix viewing 
+			 * recycle its current block if it is the only Matrix viewing
 			 * the block, but callers cannot rely on this).  It is important
        * to realize that concrete matrices behave just like views in
        * this respect.  Any views to a concrete Matrix will be
@@ -2811,7 +2811,7 @@ namespace scythe {
        * Matrix<double, Col, View> v1 = A(_, 1);
        * A.swap(B);
        * Matrix<double, Col, View> v2 = B(_, 1);
-       * 
+       *
        * v1 == v2; // evaluates to true
        *
        */
@@ -2819,7 +2819,7 @@ namespace scythe {
       /*! \brief Swap this Matrix with another.
        *
        * This modifier is much like a dual copy constructor and is
-       * part of the Standard Template Library (STL) 
+       * part of the Standard Template Library (STL)
        * interface for container objects.  It is only possible to swap
        * two matrices of the same matrix_order and matrix_style.  When
        * two matrices are swapped, they trade their underlying
@@ -2869,7 +2869,7 @@ namespace scythe {
       inline bool isZero () const
       {
         const_forward_iterator last = end_f();
-        return (last == std::find_if(begin_f(), last, 
+        return (last == std::find_if(begin_f(), last,
           std::bind1st(std::not_equal_to<T_type> (), 0)));
       }
 
@@ -3087,7 +3087,7 @@ namespace scythe {
       {
         if (data_ == M.data_ && STYLE == Concrete && S == Concrete)
           return true;
-        else if (data_ == M.data_ && Base::rows() == M.rows() 
+        else if (data_ == M.data_ && Base::rows() == M.rows()
                  && Base::cols() == M.cols()) {
           return true;
         } else if (this->isNull() && M.isNull())
@@ -3113,7 +3113,7 @@ namespace scythe {
       equals(T_type x) const
       {
         const_forward_iterator last = end_f();
-        return (last == std::find_if(begin_f(), last, 
+        return (last == std::find_if(begin_f(), last,
           std::bind1st(std::not_equal_to<T_type> (), x)));
       }
 
@@ -3125,7 +3125,7 @@ namespace scythe {
        *
        * This method returns a pointer to the internal data array
        * contained within the DataBlock that this Matrix references.
-       * 
+       *
        * \warning It is generally a bad idea to use this method.  We
        * provide it only for convenience.  Please note that, when
        * working with views, the internal data array may not even be
@@ -3186,8 +3186,8 @@ namespace scythe {
           SCYTHE_THROW(scythe_invalid_arg, "Invalid flag: " << flag);
 
         if (! out)
-          SCYTHE_THROW(scythe_file_error, 
-              "Could not open file " << path); 
+          SCYTHE_THROW(scythe_file_error,
+              "Could not open file " << path);
 
         if (header) {
           out << Base::rows() << " " << Base::cols();
@@ -3212,7 +3212,7 @@ namespace scythe {
        */
 
       /* Random Access Iterator Factories */
-      
+
       /* Generalized versions */
 
       /*! \brief Get an iterator pointing to the start of a Matrix.
@@ -3225,14 +3225,14 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       matrix_random_access_iterator<T_type, I_ORDER, ORDER, STYLE>
       begin ()
       {
         return matrix_random_access_iterator<T_type, I_ORDER, ORDER,
                                              STYLE>(*this);
       }
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a
@@ -3264,13 +3264,13 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       matrix_random_access_iterator<T_type, I_ORDER, ORDER, STYLE>
       end ()
       {
         return (begin<I_ORDER>() + Base::size());
       }
-      
+
       /*! \brief Get an iterator pointing to the end of a Matrix.
        *
        * This is a factory that returns an
@@ -3282,7 +3282,7 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       const_matrix_random_access_iterator<T_type, I_ORDER, ORDER, STYLE>
       end () const
       {
@@ -3305,7 +3305,7 @@ namespace scythe {
       rbegin()
       {
         return std::reverse_iterator<matrix_random_access_iterator
-                                     <T_type, I_ORDER, ORDER, STYLE> > 
+                                     <T_type, I_ORDER, ORDER, STYLE> >
                (end<I_ORDER>());
       }
 
@@ -3320,13 +3320,13 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       std::reverse_iterator<const_matrix_random_access_iterator
-                            <T_type, I_ORDER, ORDER, STYLE> > 
+                            <T_type, I_ORDER, ORDER, STYLE> >
       rbegin() const
       {
         return std::reverse_iterator<const_matrix_random_access_iterator
-                                     <T_type, I_ORDER, ORDER, STYLE> > 
+                                     <T_type, I_ORDER, ORDER, STYLE> >
         (end<I_ORDER>());
       }
 
@@ -3347,7 +3347,7 @@ namespace scythe {
       rend()
       {
         return std::reverse_iterator<matrix_random_access_iterator
-                                     <T_type, I_ORDER, ORDER, STYLE> > 
+                                     <T_type, I_ORDER, ORDER, STYLE> >
                (begin<I_ORDER>());
       }
 
@@ -3362,20 +3362,20 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       std::reverse_iterator<const_matrix_random_access_iterator
-                            <T_type, I_ORDER, ORDER, STYLE> > 
+                            <T_type, I_ORDER, ORDER, STYLE> >
       rend() const
       {
         return std::reverse_iterator<const_matrix_random_access_iterator
-                                     <T_type, I_ORDER, ORDER, STYLE> > 
+                                     <T_type, I_ORDER, ORDER, STYLE> >
           (begin<I_ORDER>());
       }
 
       /* Specific versions --- the generalized versions force you
        * choose the ordering explicitly.  These definitions set up
        * in-order iteration as a default */
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a Matrix::iterator that
@@ -3391,7 +3391,7 @@ namespace scythe {
       {
         return iterator(*this);
       }
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a Matrix::const_iterator that
@@ -3423,7 +3423,7 @@ namespace scythe {
       {
         return (begin() + Base::size());
       }
-      
+
       /*! \brief Get an iterator pointing to the end of a Matrix.
        *
        * This is a factory that returns an Matrix::const_iterator that
@@ -3435,7 +3435,7 @@ namespace scythe {
        * returned by this function always iterates in the same order
        * as the given Matrix' matrix_order.
        */
-      inline 
+      inline
       const_iterator end () const
       {
         return (begin() + Base::size());
@@ -3522,14 +3522,14 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       matrix_forward_iterator<T_type, I_ORDER, ORDER, STYLE>
       begin_f ()
       {
         return matrix_forward_iterator<T_type, I_ORDER, ORDER,
                                              STYLE>(*this);
       }
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a
@@ -3560,13 +3560,13 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       matrix_forward_iterator<T_type, I_ORDER, ORDER, STYLE>
       end_f ()
       {
         return (begin_f<I_ORDER>().set_end());
       }
-      
+
       /*! \brief Get an iterator pointing to the end of a Matrix.
        *
        * This is a factory that returns an
@@ -3578,7 +3578,7 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       const_matrix_forward_iterator<T_type, I_ORDER, ORDER, STYLE>
       end_f () const
       {
@@ -3586,7 +3586,7 @@ namespace scythe {
       }
 
       /* Default Versions */
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a Matrix::forward_iterator that
@@ -3602,7 +3602,7 @@ namespace scythe {
       {
         return forward_iterator(*this);
       }
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a
@@ -3635,7 +3635,7 @@ namespace scythe {
       {
         return (begin_f().set_end());
       }
-      
+
       /*! \brief Get an iterator pointing to the end of a Matrix.
        *
        * This is a factory that returns an
@@ -3648,7 +3648,7 @@ namespace scythe {
        * returned by this function always iterates in the same order
        * as the given Matrix' matrix_order.
        */
-      inline 
+      inline
       const_forward_iterator end_f () const
       {
         return (begin_f().set_end());
@@ -3669,14 +3669,14 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       matrix_bidirectional_iterator<T_type, I_ORDER, ORDER, STYLE>
       begin_bd ()
       {
         return matrix_bidirectional_iterator<T_type, I_ORDER, ORDER,
                                              STYLE>(*this);
       }
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a
@@ -3708,13 +3708,13 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       matrix_bidirectional_iterator<T_type, I_ORDER, ORDER, STYLE>
       end_bd ()
       {
         return (begin_bd<I_ORDER>().set_end());
       }
-      
+
       /*! \brief Get an iterator pointing to the end of a Matrix.
        *
        * This is a factory that returns an
@@ -3726,7 +3726,7 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       const_matrix_bidirectional_iterator<T_type, I_ORDER, ORDER, STYLE>
       end_bd () const
       {
@@ -3749,7 +3749,7 @@ namespace scythe {
       rbegin_bd ()
       {
         return std::reverse_iterator<matrix_bidirectional_iterator
-                                     <T_type, I_ORDER, ORDER, STYLE> > 
+                                     <T_type, I_ORDER, ORDER, STYLE> >
                (end_bd<I_ORDER>());
       }
 
@@ -3764,13 +3764,13 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       std::reverse_iterator<const_matrix_bidirectional_iterator
-                            <T_type, I_ORDER, ORDER, STYLE> > 
+                            <T_type, I_ORDER, ORDER, STYLE> >
       rbegin_bd () const
       {
         return std::reverse_iterator<const_matrix_bidirectional_iterator
-                                     <T_type, I_ORDER, ORDER, STYLE> > 
+                                     <T_type, I_ORDER, ORDER, STYLE> >
         (end_bd<I_ORDER>());
       }
 
@@ -3791,7 +3791,7 @@ namespace scythe {
       rend_bd ()
       {
         return std::reverse_iterator<matrix_bidirectional_iterator
-                                     <T_type, I_ORDER, ORDER, STYLE> > 
+                                     <T_type, I_ORDER, ORDER, STYLE> >
                (begin_bd<I_ORDER>());
       }
 
@@ -3806,20 +3806,20 @@ namespace scythe {
        * in any order through an explicit template instantiation.
        */
       template <matrix_order I_ORDER>
-      inline 
+      inline
       std::reverse_iterator<const_matrix_bidirectional_iterator
-                            <T_type, I_ORDER, ORDER, STYLE> > 
+                            <T_type, I_ORDER, ORDER, STYLE> >
       rend_bd () const
       {
         return std::reverse_iterator<const_matrix_bidirectional_iterator
-                                     <T_type, I_ORDER, ORDER, STYLE> > 
+                                     <T_type, I_ORDER, ORDER, STYLE> >
           (begin_bd<I_ORDER>());
       }
 
       /* Specific versions --- the generalized versions force you
        * choose the ordering explicitly.  These definitions set up
        * in-order iteration as a default */
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a
@@ -3836,7 +3836,7 @@ namespace scythe {
       {
         return bidirectional_iterator(*this);
       }
-      
+
       /*! \brief Get an iterator pointing to the start of a Matrix.
        *
        * This is a factory that returns a
@@ -3870,7 +3870,7 @@ namespace scythe {
       {
         return (begin_bd().set_end());
       }
-      
+
       /*! \brief Get an iterator pointing to the end of a Matrix.
        *
        * This is a factory that returns an Matrix::const_bidirectional
@@ -3883,7 +3883,7 @@ namespace scythe {
        * returned by this function always iterates in the same order
        * as the given Matrix' matrix_order.
        */
-      inline 
+      inline
       const_bidirectional_iterator end_bd () const
       {
         return (begin_bd().set_end());
@@ -3964,7 +3964,7 @@ namespace scythe {
 			 * more code than should be necessary but "using" inherited ivs
        * is just stupid.
 			 */
-			using DBRef::data_;  // refer to inherited data pointer directly 
+			using DBRef::data_;  // refer to inherited data pointer directly
 			using Base::rows_;   // " # of rows directly
 			using Base::cols_;   // " # of cols directly
 
@@ -4060,7 +4060,7 @@ namespace scythe {
   {                                                                   \
     return (OP <T_type, ORDER, Concrete> (lhs, rhs));                 \
   }
-  
+
 #define SCYTHE_BINARY_OPERATOR_GSM(OP)                                \
   template <typename T_type, matrix_order ORDER, matrix_style STYLE,  \
             matrix_order R_ORDER, matrix_style R_STYLE>               \
@@ -4090,10 +4090,10 @@ namespace scythe {
   SCYTHE_BINARY_OPERATOR_DSM(OP)
 
   /* Matrix multiplication */
-  
+
   /* General template version. Must be called with operator*<> syntax
    */
- 
+
   /* We provide two symmetric algorithms for matrix multiplication,
    * one for col-major and the other for row-major matrices.  They are
    * designed to minimize cache misses.The decision is based on the
@@ -4149,7 +4149,7 @@ namespace scythe {
    * \throw scythe_conformation_error (Level 1)
    * \throw scythe_alloc_error (Level 1)
    */
-   
+
   template <typename T_type, matrix_order ORDER, matrix_style STYLE,
             matrix_order L_ORDER, matrix_style L_STYLE,
             matrix_order R_ORDER, matrix_style R_STYLE>
@@ -4162,7 +4162,7 @@ namespace scythe {
 
     SCYTHE_CHECK_10 (lhs.cols() != rhs.rows(),
         scythe_conformation_error,
-        "Matrices with dimensions (" << lhs.rows() 
+        "Matrices with dimensions (" << lhs.rows()
         << ", " << lhs.cols()
         << ") and (" << rhs.rows() << ", " << rhs.cols()
         << ") are not multiplication-conformable");
@@ -4239,7 +4239,7 @@ namespace scythe {
   /* Macro definition for general return type templates of standard
    * binary operators (this handles, +, -, %, /, but not *)
    */
-    
+
 #define SCYTHE_GENERAL_BINARY_OPERATOR(OP,FUNCTOR)                    \
   template <typename T_type, matrix_order ORDER, matrix_style STYLE,  \
             matrix_order L_ORDER, matrix_style L_STYLE,               \
@@ -4478,13 +4478,13 @@ namespace scythe {
   operator- (const Matrix<T_type, ORDER, STYLE>& M)
   {
     Matrix<T_type, R_ORDER, Concrete> result(M.rows(), M.cols(), false);
-    std::transform(M.template begin_f<ORDER>(), 
-                   M.template end_f<ORDER>(), 
+    std::transform(M.template begin_f<ORDER>(),
+                   M.template end_f<ORDER>(),
                    result.template begin_f<R_ORDER>(),
                    std::negate<T_type> ());
     SCYTHE_VIEW_RETURN(T_type, R_ORDER, R_STYLE, result)
   }
-  
+
   // Default return type version
   template <matrix_order ORDER, matrix_style P_STYLE, typename T_type>
   inline Matrix<T_type, ORDER, Concrete>
@@ -4516,13 +4516,13 @@ namespace scythe {
   operator! (const Matrix<T_type, ORDER, STYLE>& M)
   {
     Matrix<bool, R_ORDER, Concrete> result(M.rows(), M.cols(), false);
-    std::transform(M.template begin_f<ORDER>(), 
-                   M.template end_f<ORDER>(), 
+    std::transform(M.template begin_f<ORDER>(),
+                   M.template end_f<ORDER>(),
                    result.template begin_f<R_ORDER>(),
                    std::logical_not<T_type> ());
     SCYTHE_VIEW_RETURN(T_type, R_ORDER, R_STYLE, result)
   }
-  
+
   // Default return type version
   template <typename T_type, matrix_order ORDER, matrix_style P_STYLE>
   inline Matrix<bool, ORDER, Concrete>
@@ -4606,7 +4606,7 @@ namespace scythe {
   {                                                                   \
     return (OP <ORDER, Concrete> (lhs, rhs));                         \
   }
-  
+
 #define SCYTHE_BINARY_BOOL_OPERATOR_GSM(OP)                           \
   template <matrix_order ORDER, matrix_style STYLE, typename T_type,  \
             matrix_order R_ORDER, matrix_style R_STYLE>               \
@@ -4757,7 +4757,7 @@ namespace scythe {
    *
    * This operator compares the elements of \a lhs and \a rhs and
    * returns a boolean Matrix of true and false values, indicating
-   * whether each of the left-hand side elements is less than 
+   * whether each of the left-hand side elements is less than
    * or equal to its
    * corresponding right hand side element.  This operator is
    * overloaded to provide both Matrix by Matrix inequality testing
@@ -4834,7 +4834,7 @@ namespace scythe {
    *
    * This operator compares the elements of \a lhs and \a rhs and
    * returns a boolean Matrix of true and false values, indicating
-   * whether each of the left-hand side elements is greater than 
+   * whether each of the left-hand side elements is greater than
    * or equal to its
    * corresponding right hand side element.  This operator is
    * overloaded to provide both Matrix by Matrix inequality testing
@@ -5004,7 +5004,7 @@ namespace scythe {
     std::ostringstream oss;
     oss.precision(os.precision());
     oss << std::setiosflags(std::ios::fixed);
-    
+
     typename Matrix<T,O,S>::const_forward_iterator last = M.end_f();
     for (typename Matrix<T,O,S>::const_forward_iterator i = M.begin_f();
         i != last; ++i) {
@@ -5019,22 +5019,22 @@ namespace scythe {
     // Change to a fixed with format.  Users should control precision
     os << std::setiosflags(std::ios::fixed);
 
-    
+
     for (uint i = 0; i < M.rows(); ++i) {
       Matrix<T, O, View> row = M(i, _);
       //for (uint i = 0; i < row.size(); ++i)
       //  os << std::setw(mlen) << row[i] << " ";
-      typename Matrix<T,O,View>::const_forward_iterator row_last 
+      typename Matrix<T,O,View>::const_forward_iterator row_last
         = row.end_f();
-      for (typename 
+      for (typename
           Matrix<T,O,View>::forward_iterator el = row.begin_f();
           el != row_last; ++el) {
         os << std::setw(mlen) << *el << " ";
       }
       os << std::endl;
     }
-    
-    
+
+
     // Restore pre-op flags
     os.flags(preop);
 
@@ -5062,7 +5062,7 @@ namespace scythe {
     SCYTHE_DEBUG_MSG("Using lapack/blas for matrix multiplication");
     SCYTHE_CHECK_10 (lhs.cols() != rhs.rows(),
         scythe_conformation_error,
-        "Matrices with dimensions (" << lhs.rows() 
+        "Matrices with dimensions (" << lhs.rows()
         << ", " << lhs.cols()
         << ") and (" << rhs.rows() << ", " << rhs.cols()
         << ") are not multiplication-conformable");
