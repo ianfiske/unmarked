@@ -40,6 +40,8 @@ log.grad <- function(x) { # duh! (but for clarity)
   1/x
 }
 
+identLink <- function(x) x
+identLinkGrad <- function(x) 1
 
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))

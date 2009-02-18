@@ -86,11 +86,13 @@ function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
     }
   }
 
-  stateEstimates <- unMarkedEstimate(estimates = ests[1:nOP],
+  stateEstimates <- unMarkedEstimate(name = "Occupancy",
+      estimates = ests[1:nOP],
       covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = logistic,
       invlinkGrad = logistic.grad)
 
-  detEstimates <- unMarkedEstimate(estimates = ests[(nOP + 1) : nP],
+  detEstimates <- unMarkedEstimate(name = "Detection",
+      estimates = ests[(nOP + 1) : nP],
       covMat = as.matrix(covMat[(nOP + 1) : nP, (nOP + 1) : nP]), invlink = logistic,
       invlinkGrad = logistic.grad)
 
