@@ -40,6 +40,8 @@ log.grad <- function(x) { # duh! (but for clarity)
   1/x
 }
 
+explink <- function(x) exp(x)
+
 identLink <- function(x) x
 identLinkGrad <- function(x) 1
 

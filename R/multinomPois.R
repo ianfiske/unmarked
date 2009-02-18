@@ -96,16 +96,26 @@ function(stateformula, detformula, piFun, umf)
   }
 
   fm <- optim(rep(0, nP), nll, method = "BFGS", hessian = TRUE)
-  ests.se <- diag(solve(fm$hessian))
+  tryCatch(covMat <- solve(fm$hessian),
+      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP
   names(ests) <- c(lamParms, detParms)
-  names(ests.se) <- c(lamParms, detParms)
+
+  stateEstimates <- unMarkedEstimate(name = "Abundance",
+      estimates = ests[1:nAP],
+      covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = explink,
+      invlinkGrad = explink)
+
+  detEstimates <- unMarkedEstimate(name = "Detection",
+      estimates = ests[(nAP + 1) : nP],
+      covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = logistic,
+      invlinkGrad = logistic.grad)
+
   umfit <- unMarkedFit(fitType = "multinomPois",
                        stateformula = stateformula, detformula = detformula,
-                       data = umf, stateMLE = ests[1:nAP],
-                       stateSE = ests.se[1:nAP],
-                       detMLE = ests[(nAP + 1) : nP],
-                       detSE = ests.se[(nAP + 1): nP], AIC = fmAIC)
+                       data = umf, stateEstimates = stateEstimates,
+                       detEstimates = detEstimates, AIC = fmAIC,
+                       hessian = fm$hessian)
   return(umfit)
 }

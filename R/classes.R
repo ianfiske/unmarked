@@ -1,5 +1,9 @@
-#' @export
+#' @import methods
+
+#' @exportClass
 setClassUnion("optionalDataFrame", c("data.frame","NULL"))
+
+#' @exportClass
 setClassUnion("optionalMatrix", c("matrix","NULL"))
 
 validUnMarkedFrame <- function(object) {
@@ -207,13 +211,19 @@ setMethod("show",
       Z <- ests/SEs
       p <- 2*pnorm(abs(Z), lower.tail = FALSE)
 
+      if(is(object, "unMarkedEstimateLinearComb")) {
+        printRowNames <- FALSE
+      } else {
+        printRowNames <- TRUE
+      }
+
       cat(object@name,":\n", sep="")
       outDF <- data.frame(Estimate = ests,
           SE = SEs,
           z = Z,
-          "P(> |z|)" = p,
+          "P(>|z|)" = p,
           check.names = FALSE)
-      print(outDF, row.names = FALSE, digits = 3)
+      print(outDF, row.names = printRowNames, digits = 3)
     })
 
 setMethod("show",

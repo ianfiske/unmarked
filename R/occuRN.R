@@ -104,11 +104,13 @@ function(stateformula, detformula, umf)
   fmAIC <- 2 * fm$value + 2 * nP + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)
 
-  stateEstimates <- unMarkedEstimate(estimates = ests[1:nOP],
-      covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = exp,
-      invlinkGrad = exp)
+  stateEstimates <- unMarkedEstimate(name = "Abundance",
+      estimates = ests[1:nOP],
+      covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = explink,
+      invlinkGrad = explink)
 
-  detEstimates <- unMarkedEstimate(estimates = ests[(nOP + 1) : nP],
+  detEstimates <- unMarkedEstimate(name = "Detection",
+      estimates = ests[(nOP + 1) : nP],
       covMat = as.matrix(covMat[(nOP + 1) : nP, (nOP + 1) : nP]), invlink = logistic,
       invlinkGrad = logistic.grad)
 

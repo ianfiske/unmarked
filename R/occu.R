@@ -32,8 +32,8 @@ roxygen()
 #' @author Ian Fiske
 #' @examples
 #' data(frogs)
-#' pcruUM <- unMarkedFrame(pcru.bin)
-#' fm <- occu(~1, ~1, pcruUM)
+#' pferUMF <- unMarkedFrame(pfer.bin)
+#' fm <- occu(~1, ~1, pferUMF)
 #' fm
 #' @keywords models
 #' @export

@@ -3,14 +3,14 @@
 #' \tabular{ll}{
 #' Package: \tab unmarked\cr
 #' Type: \tab Package\cr
-#' Version: \tab 0.5-5\cr
-#' Date: \tab 2009-2-13\cr
+#' Version: \tab 0.5-6\cr
+#' Date: \tab 2009-2-18\cr
 #' License: \tab GPL (>= 2)\cr
 #' LazyLoad: \tab yes\cr
 #' LazyData: \tab yes\cr
 #' }
 #'
-#' This package contains functions to fit models similar to those found in Royle and Dorazio (2008).  That is, several methods for estimating occupancy and abundance using unmarked individuals such as point counts or occurrence data.
+#' Unmarked estimates wildlife parameters for many popular sampling methods including occupancy and point count data.
 #'
 #' \strong{Overview of Model-fitting Functions:}  Unmarked provides
 #' several functions for fitting integrated likelihood models for wildlife

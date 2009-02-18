@@ -13,12 +13,6 @@ roxygen()
 #' \code{K} and \code{phiMatrix} together determine the model form.  Multiple phi matrices
 #' may be possible for each K.  Options for phi are:
 #'
-#' \begin{tabular}{c|c}
-#' K & Possible phi matrices \\ \hline
-#' 1 & logit2 \\
-#' 2 & logit3 \\
-#' 3 & logit4, logit4ar
-#' \end{tabular}
 #'
 #' TODO:  describe phi matrices in detail.
 #'
