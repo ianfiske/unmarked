@@ -56,7 +56,7 @@ doublePiFun <- function(p){
 #'
 #' Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance and Occurrence. Journal Of Agricultural Biological And Environmental Statistics, 11(3), 249.
 #' @examples
-#' data(ovendata.list)
+#' data(ovendata)
 #' ovenFrame <- unMarkedFrame(ovendata.list$data,
 #'                            siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])))
 #' fm1 <- multinomPois(~ ufp + trba, ~ 1, removalPiFun, ovenFrame)
