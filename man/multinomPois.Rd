@@ -24,7 +24,7 @@ Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance a
 \item{detformula}{Right-hand side formula describing covariates of detection}
 \item{piFun}{Function to define multinomial cell probabilities.}
 \item{umf}{unMarkedFrame supplying data.}}
-\examples{data(ovendata.list)
+\examples{data(ovendata)
 ovenFrame <- unMarkedFrame(ovendata.list$data,
 siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])))
 fm1 <- multinomPois(~ ufp + trba, ~ 1, removalPiFun, ovenFrame)

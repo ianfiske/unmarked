@@ -1,7 +1,7 @@
 \name{occu}
 \alias{occu}
 \title{Fit the MacKenzie Occupancy Model}
-\usage{occu(stateformula, detformula, umf, knownOcc=numeric(0))}
+\usage{occu(stateformula, detformula, umf, knownOcc=numeric(0), profile=FALSE)}
 \description{This function estimates the standard occupancy model.}
 \details{See \link{unMarkedFrame} for a description of how to supply data to the \command{umf}
 argument.
@@ -29,6 +29,6 @@ MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amster
 \item{umf}{unMarkedFrame object that supplies the data (see \link{unMarkedFrame})..}
 \item{knownOcc}{vector of sites that are known to be occupied.}}
 \examples{data(frogs)
-pcruUM <- unMarkedFrame(pcru.bin)
-fm <- occu(~1, ~1, pcruUM)
+pferUMF <- unMarkedFrame(pfer.bin)
+fm <- occu(~1, ~1, pferUMF)
 fm}
