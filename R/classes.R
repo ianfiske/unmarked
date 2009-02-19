@@ -174,8 +174,8 @@ setClass("unMarkedEstimate",
     representation(name = "character",
         estimates = "numeric",
         covMat = "matrix",
-        invlink = "function",
-        invlinkGrad = "function"))
+        invlink = "character",
+        invlinkGrad = "character"))
 
 setClass("unMarkedEstimateLinearComb",
     representation(originalEstimate = "unMarkedEstimate",
@@ -183,7 +183,7 @@ setClass("unMarkedEstimateLinearComb",
     contains = "unMarkedEstimate")
 
 setClass("unMarkedEstimateBackTransformed",
-    representation(transformation = "call"),
+    representation(transformation = "character"),
     contains = "unMarkedEstimateLinearComb")
 
 
@@ -244,7 +244,7 @@ setMethod("show",
     signature(object = "unMarkedEstimateBackTransformed"),
     function(object) {
       callNextMethod(object)
-      cat("\nTransformation:", deparse(object@transformation),"\n")
+      cat("\nTransformation:", object@transformation,"\n")
     })
 
 ##' @export
@@ -316,8 +316,8 @@ setMethod("backTransform",
     signature(obj = "unMarkedEstimate"),
     function(obj) {
       stopifnot(length(obj@estimates) == 1)
-      e <- obj@invlink(obj@estimates)
-      v <- (obj@invlinkGrad(obj@estimates))^2 * obj@covMat
+      e <- eval(call(obj@invlink,obj@estimates))
+      v <- (eval(call(obj@invlinkGrad,obj@estimates)))^2 * obj@covMat
 
       if(is(obj, "unMarkedEstimateLinearComb")) {
         coef <- obj@coefficients
@@ -330,9 +330,9 @@ setMethod("backTransform",
       umebt <- new("unMarkedEstimateBackTransformed",
           name = paste(obj@name,"transformed to native scale"),
           estimates = e, covMat = v,
-          invlink = function(x) x, invlinkGrad = function(x) x,
+          invlink = "identity", invlinkGrad = "identity",
           originalEstimate = orig, coefficients = coef,
-          transformation = body(obj@invlink)[[2]])
+          transformation = obj@invlink)
       umebt
     })
 

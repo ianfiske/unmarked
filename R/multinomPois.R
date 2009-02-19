@@ -104,13 +104,13 @@ function(stateformula, detformula, piFun, umf)
 
   stateEstimates <- unMarkedEstimate(name = "Abundance",
       estimates = ests[1:nAP],
-      covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = explink,
-      invlinkGrad = explink)
+      covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
+      invlinkGrad = "exp")
 
   detEstimates <- unMarkedEstimate(name = "Detection",
       estimates = ests[(nAP + 1) : nP],
-      covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = logistic,
-      invlinkGrad = logistic.grad)
+      covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
+      invlinkGrad = "logistic.grad")
 
   umfit <- unMarkedFit(fitType = "multinomPois",
                        stateformula = stateformula, detformula = detformula,
