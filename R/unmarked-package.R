@@ -10,7 +10,7 @@
 #' LazyData: \tab yes\cr
 #' }
 #'
-#' Unmarked estimates wildlife parameters for many popular sampling methods including occupancy and point count data.
+#' Unmarked estimates wildlife parameters for many popular sampling methods including occurrence and point count data.
 #'
 #' \strong{Overview of Model-fitting Functions:}  Unmarked provides
 #' several functions for fitting integrated likelihood models for wildlife
