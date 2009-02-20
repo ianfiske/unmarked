@@ -1,3 +1,6 @@
+import(methods)
+exportClasses(optionalDataFrame)
+exportClasses(optionalMatrix)
 exportClasses(unMarkedFrame)
 export(unMarkedFrame)
 exportMethods(show)

@@ -5,7 +5,8 @@ Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske
 Maintainer: Ian Fiske <ianfiske@gmail.com>
-Depends: R (>= 2.8.0), reshape (>= 0.7.4), abind (>= 1.1), roxygen, methods
+Depends: R (>= 2.8.0), reshape (>= 0.7.4), abind (>= 1.1), roxygen,
+    methods
 Description: Unmarked estimates wildlife parameters for many popular
     sampling methods including occurrence and point count data.
 License: GPL version 2 or newer
