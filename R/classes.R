@@ -1,9 +1,9 @@
 #' @import methods
 
-#' @exportClass
+#' @exportClass optionalDataFrame
 setClassUnion("optionalDataFrame", c("data.frame","NULL"))
 
-#' @exportClass
+#' @exportClass optionalMatrix
 setClassUnion("optionalMatrix", c("matrix","NULL"))
 
 validUnMarkedFrame <- function(object) {
@@ -66,7 +66,7 @@ setClass("unMarkedFrame",
 #' @param siteCovs Dataframe of covariates that vary at the site level.
 #' @param obsNum Number of independent observations.
 #' @param primaryNum Number of primary time periods (seasons in the multiseason model).
-#' @return an unmarkedFrame object
+#' @return an unMarkedFrame object
 #' @examples
 #' data(mallard)
 #' mallardUMF <- unMarkedFrame(mallard.y, siteCovs = mallard.site,
@@ -290,6 +290,15 @@ setGeneric("linearComb",
       standardGeneric("linearComb")
     })
 
+#' Compute linear combinations of estimates in unMarkedEstimate objects.
+#'
+#' This function computes the linear combination of parameter estimates in
+#' \code{obj} given by the coefficient vector.  This may be useful to estimate
+#' quantities of interest from a fitted model or to test a hypothesis.
+#'
+#' @param obj an unMarkedEstimate object
+#' @param coefficients vector of same length as obj
+#' @return an unMarkedEstimate object
 #' @export
 setMethod("linearComb",
     signature(obj = "unMarkedEstimate", coefficients = "numeric"),
@@ -305,12 +314,25 @@ setMethod("linearComb",
       umelc
     })
 
+#' Transform an object to it's natural scale.
+#'
+#' @param obj object to be transformed
 #' @export
 setGeneric("backTransform",
     function(obj) {
       standardGeneric("backTransform")
     })
 
+#' Transform an unMarkedEstimate object to it's natural scale.
+#'
+#' The transformation is determined by the invlink and invlinkGrad slots
+#' in \code{obj}.  These slots specify the name of a many-to-one function and
+#' its gradient respectively.  The delta method is used to compute the transformed
+#' estimate.
+#'
+#' @param unMarkedEstimate object to be transformed
+#' @return an unMarkedEstimate object representing the transformed estimate.
+#' This object has invlink and invlinkGrad slots as the identity function.
 #' @export
 setMethod("backTransform",
     signature(obj = "unMarkedEstimate"),
@@ -336,12 +358,22 @@ setMethod("backTransform",
       umebt
     })
 
+#' Compute standard error of an object.
+#'
+#' @param obj object whose standard error is computed.
 #' @export
 setGeneric("SE",
     def = function(obj) {
       standardGeneric("SE")
     })
 
+#' Compute standard error of an unMarkedEstimate object.
+#'
+#' This function computes the large-sample standard error from the inverse of the
+#' hessian matrix.
+#'
+#' @param obj unMarkedEstimate whose standard error is returned
+#' @return vector of the standard error(s) of estimates in obj
 #' @export
 setMethod("SE",
     signature(obj = "unMarkedEstimate"),

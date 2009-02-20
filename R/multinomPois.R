@@ -4,6 +4,16 @@ roxygen()
 
 ## Take an M x J matrix of detection probabilities and return a matrix
 ## of M x J observation probs
+#' Compute the cell probabilities for the observation classes
+#' in removal sampling.
+#'
+#' Both p and the returned matrix are M x J for M sites and J sampling occasions.
+#'
+#' This function and \link{doublePiFun} provide example functions for computing multinomial
+#' cell probabilities for \link{multinomPois}.
+#'
+#' @param p matrix of detection probabilities at each occasion for each site
+#' @return matrix of cell probabilties for multinomial cells in removal sampling observation classes.
 #' @export
 removalPiFun <- function(p){
   M <- nrow(p)
@@ -18,6 +28,14 @@ removalPiFun <- function(p){
 
 # p is an M x 2 matrix of detection probabilities (site x observer).
 # returns an M x 3 matrix of row=(1 not 2, 2 not 1, 1 and 2).
+#' Compute the cell probabilities for the observation classes
+#' in double observer sampling.
+#'
+#' This function and \link{removalPiFun} provide example functions for computing multinomial
+#' cell probabilities for \link{multinomPois}.
+#'
+#' @param p M x 2 matrix of detection probabilities at each occasion for each site
+#' @return M x 3 matrix of cell probabilties for double observer observation classes.
 #' @export
 doublePiFun <- function(p){
   M <- nrow(p)
@@ -38,7 +56,7 @@ doublePiFun <- function(p){
 #' example, double-observer point counts, removal sampling, and distance
 #' sampling can all be analyzed with this function by specifying the proper
 #' multinomial cell probablilities.  This is done with by supplying the
-#' appropriate function (piFun) argument.  removalPiFun() and doublePiFun()
+#' appropriate function (piFun) argument.  \link{removalPiFun} and \link{doublePiFun}
 #' are supplied as example cell probability functions.
 #'
 #' @title Multinomial-Poisson Mixtures

@@ -10,7 +10,7 @@ state. Many common sampling methods can be framed in this context.  For
 example, double-observer point counts, removal sampling, and distance
 sampling can all be analyzed with this function by specifying the proper
 multinomial cell probablilities.  This is done with by supplying the
-appropriate function (piFun) argument.  removalPiFun() and doublePiFun()
+appropriate function (piFun) argument.  \link{removalPiFun} and \link{doublePiFun}
 are supplied as example cell probability functions.}
 \value{unMarkedFit object describing the model fit.}
 \author{Ian Fiske}
