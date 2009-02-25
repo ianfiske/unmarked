@@ -1,4 +1,5 @@
-#' @include classes.R
+#' @include unmarkedFit.R
+#' @include unmarkedEstimate.R
 #' @include utils.R
 roxygen()
 
@@ -27,7 +28,7 @@ roxygen()
 #' @param knownOcc vector of sites that are known to be occupied.
 #' @return unMarkedFit object describing the model fit.
 #' @references
-#' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. “Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255.
+#' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255.
 #' MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008) \emph{Book Name}.
 #' @author Ian Fiske
 #' @examples
@@ -86,19 +87,21 @@ function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
     }
   }
 
-  stateEstimates <- unMarkedEstimate(name = "Occupancy",
+  state <- unMarkedEstimate(name = "Occupancy",
       estimates = ests[1:nOP],
       covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  detEstimates <- unMarkedEstimate(name = "Detection",
+  det <- unMarkedEstimate(name = "Detection",
       estimates = ests[(nOP + 1) : nP],
       covMat = as.matrix(covMat[(nOP + 1) : nP, (nOP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
+  estimateList <- unMarkedEstimateList(list(state=state, det=det))
+
   umfit <- unMarkedFit(fitType = "occu",
-                       stateformula = stateformula, detformula = detformula,
-                       data = umf, stateEstimates = stateEstimates,
-                       detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
+      call = match.call(), data = umf, estimates = estimateList,
+      AIC = fmAIC, hessian = fm$hessian)
+
   return(umfit)
 }

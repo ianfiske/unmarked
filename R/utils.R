@@ -1,4 +1,3 @@
-#' @include classes.R
 #' @import reshape
 #' @import roxygen
 roxygen()
@@ -20,8 +19,8 @@ profileCI <- function(nll, whichPar, MLE, interval){
     mleRestricted <- optim(rep(0,nPar), fixedNLL)
     MLEnll - mleRestricted$value + 1.92
   }
-## add some kind of try/catch block here for when interval is on boundary.
-## first bnd should be (est-5*se, est+5*se)... catch this and expand?
+## TODO: add some kind of try/catch block here for when interval is on boundary.
+## first bnd should be (est-5*se, est+5*se)... catch this and expand interval as necessary?
   lower <- uniroot(f, c(interval[1],MLE[whichPar]))
   upper <- uniroot(f, c(MLE[whichPar], interval[2]))
   return(c(lower$root,upper$root))

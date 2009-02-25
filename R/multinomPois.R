@@ -130,10 +130,17 @@ function(stateformula, detformula, piFun, umf)
       covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
+  estimateList <- unMarkedEstimateList(list(state=stateEstimates,
+          det=detEstimates))
+
   umfit <- unMarkedFit(fitType = "multinomPois",
-                       stateformula = stateformula, detformula = detformula,
-                       data = umf, stateEstimates = stateEstimates,
-                       detEstimates = detEstimates, AIC = fmAIC,
-                       hessian = fm$hessian)
+      call = match.call(), data = umf, estimates = estimateList,
+      AIC = fmAIC, hessian = fm$hessian)
+
+  #  umfit <- unMarkedFit(fitType = "multinomPois",
+#                       stateformula = stateformula, detformula = detformula,
+#                       data = umf, stateEstimates = stateEstimates,
+#                       detEstimates = detEstimates, AIC = fmAIC,
+#                       hessian = fm$hessian)
   return(umfit)
 }

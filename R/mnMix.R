@@ -1,3 +1,8 @@
+#' @include unmarkedEstimate.R
+#' @include unmarkedFit.R
+#' @include utils.R
+roxygen()
+
 # TODO: verify this works for K != 3.
 
 #' Fit latent abundance models to categorical data such as frog
@@ -46,7 +51,7 @@
 #' fm.mmx1
 #' @keywords models
 mnMix <-
-function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
+    function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
 {
 
   umf <- handleNA(stateformula, detformula, umf)
@@ -57,8 +62,8 @@ function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
   M <- nrow(y)
   K <- max(y, na.rm = TRUE)
 
-  nSP <- ncol(X)
-  nDCP <- ncol(V)
+  nSP <- ncol(X)  # TODO: handle names better here.
+  nDCP <- ncol(V) - 1
   NParms <- colnames(X)
   detParms <- colnames(V)
 
@@ -67,7 +72,6 @@ function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
   if (is.null(con)) con = c(1:K, rep(K + 1, nDMP.un - K))
 
   # create design matrix with alpha_k intercept for each k=1,2,...,K
-  nDCP <- nDCP - 1
   V <- V[,-1]
   V.ji <- V[order(rep(1:J, M), rep(1:M, each = J)),]
   V.jik <- V.ji %x% rep(1, K)  # repeat rows of X, each = K
@@ -100,16 +104,16 @@ function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
   detMatrix <- function(dPars) {
     nmats <- nrow(dPars)#nrow(dPars)
     detMat <- lower.tri(matrix(1,(K +1),(K+1)),diag = TRUE) %x%
-      array(1,c(1,1,nmats))
+        array(1,c(1,1,nmats))
     # put the p's in the detMats
     detMat[diag.els.arr] <- t(dPars[, 1:K])
     detMat[lower.els.arr] <- 1 - t(dPars[,rep(1:K,times=1:K)])
     # put beta's in the mats
     for(i in (K+1):nDMP.un){
       detMat[det.row[i], det.col[i],] <- dPars[,i] *
-        detMat[det.row[i], det.col[i],]
+          detMat[det.row[i], det.col[i],]
       detMat[det.row[i], 1:(det.col[i] - 1),] <- (1 - dPars[,i]) *
-        detMat[det.row[i], 1:(det.col[i] - 1),]
+          detMat[det.row[i], 1:(det.col[i] - 1),]
     }
     detMat
   }
@@ -126,7 +130,7 @@ function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
     alpha <- dPars[1 : K]
     beta <- plogis(dPars[(K + 1) : nDMP.un])
     b <- if(nDCP > 0) {parms[(nDMP + 1) : nDP]}
-         else {NULL}
+        else {NULL}
     psi <- parms[(nDP + 1) : nP]
     psi <- exp(c(0,psi))/sum(exp(c(0,psi)))
 
@@ -156,11 +160,55 @@ function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
     -sum(log(g.i))
   }
 
-  fm <- optim(rep(0,nP),nll, method = "BFGS")
+  fm <- optim(rep(0,nP),nll, method = "BFGS", hessian=TRUE)
   ests <- fm$par
+  tryCatch(covMat <- solve(fm$hessian),
+      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
 
   names(ests) <- c(paste(rep("detmat",nDMP),1:nDMP, sep=""),
-    eval(if(nDCP > 0) paste(rep("b", nDCP), 1:nDCP, sep="") else NULL),
-    paste(rep("psi",nSP), 1:nSP, sep=""))
-  list(estimates = ests, AIC = 2*fm$value + 2*nP)
+      eval(if(nDCP > 0) paste(rep("b", nDCP), 1:nDCP, sep="") else NULL),
+      paste(rep("psi",nSP), 1:nSP, sep=""))
+  #list(estimates = ests, AIC = 2*fm$value + 2*nP)
+
+  dEsts <- H %*% ests[1:nDMP]
+
+  # want to handle alpha and b's in a more uniform manner
+  # return one unmarkedEstimate object for alpha and b's
+
+  nPossibleAlphas <- K
+  nAlphas <- max(con[1 : nPossibleAlphas])
+  alphas <- ests[1 : nAlphas]
+  nBetas <- nDMP - nAlphas
+  betas <- ests[(nAlphas + 1) : nDMP]
+  bs <- ests[seq(nDMP + 1, length=nDCP)]
+  names(alphas) <- paste("alpha",1:nAlphas,sep="")
+  names(betas) <- paste("beta",1:nBetas,sep="")
+  names(bs) <- colnames(V)
+
+  stateEstimates <- unMarkedEstimate(name = "State",
+      estimates = ests[(nDP + 1) : nP],
+      covMat = as.matrix(covMat[(nDP + 1) : nP,(nDP + 1) : nP]), invlink = "baselinelogistic",
+      invlinkGrad = "baselinelogistic.grad")
+
+  pEstimates <- unMarkedEstimate(name = "Detection-p",
+      estimates = c(alphas,bs),
+      covMat = as.matrix(covMat[c(1 : nAlphas, seq(nDMP + 1, length=nDCP)),
+              c(1 : nAlphas, seq(nDMP + 1, length=nDCP))]), invlink = "logistic",
+      invlinkGrad = "logistic.grad")
+
+  betaEstimates <- unMarkedEstimate(name = "Detection-beta",
+      estimates = betas,
+      covMat = as.matrix(covMat[(nAlphas + 1) : nDMP, (nAlphas + 1) : nDMP]),
+      invlink = "logistic",
+      invlinkGrad = "logistic.grad")
+
+  estimateList <- unMarkedEstimateList(list(state=stateEstimates,
+          p=pEstimates, beta = betaEstimates))
+
+  umfit <- unMarkedFit(fitType = "mnMix",
+      call = match.call(), data = umf, estimates = estimateList,
+      AIC = 2 * fm$value + 2 * nP, hessian = fm$hessian)
+
+  umfit
+
 }

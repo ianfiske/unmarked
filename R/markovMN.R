@@ -190,9 +190,12 @@ markovMN <-
         fm$projected[,year-1]
   }
 
-  ## TODO: add checking of hessian for NaN's, Inf's, 0's, etc.
-  ## Their presence should trigger "convergence <- 1" catching.
-
+  ## check hessian for NaN's, Inf's, 0's, etc.
+  ## Their presence should trigger "convergence <- 1"
+  if(any(is.na(fm$hessian)) || any(is.infinite(fm$hessian)) ||
+      identical(sum(abs(fm$hessian)), 0)) {
+    fm$convergence <- 1
+  }
 
   return(fm)
 }

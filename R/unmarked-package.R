@@ -1,10 +1,10 @@
-#' Estimate wildlife abundance or occupancy using hierarchical models.
+#' Estimate wildlife abundance or occurrence.
 #'
 #' \tabular{ll}{
 #' Package: \tab unmarked\cr
 #' Type: \tab Package\cr
-#' Version: \tab 0.5-6\cr
-#' Date: \tab 2009-2-18\cr
+#' Version: \tab 0.5-7\cr
+#' Date: \tab 2009-2-24\cr
 #' License: \tab GPL (>= 2)\cr
 #' LazyLoad: \tab yes\cr
 #' LazyData: \tab yes\cr

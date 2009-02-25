@@ -1,4 +1,5 @@
-#' @include classes.R
+#' @include unMarkedFit.R
+#' @include unMarkedEstimate.R
 #' @include utils.R
 roxygen()
 
@@ -114,11 +115,19 @@ function(stateformula, detformula, umf)
       covMat = as.matrix(covMat[(nOP + 1) : nP, (nOP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  umfit <- unMarkedFit(fitType = "occuRN",
-      stateformula = stateformula, detformula = detformula,
-      data = umf, stateEstimates = stateEstimates,
-      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
+  estimateList <- unMarkedEstimateList(list(state=stateEstimates,
+          det=detEstimates))
 
+  umfit <- unMarkedFit(fitType = "occuRN",
+      call = match.call(), data = umf, estimates = estimateList,
+      AIC = fmAIC, hessian = fm$hessian)
+
+
+#  umfit <- unMarkedFit(fitType = "occuRN",
+#      stateformula = stateformula, detformula = detformula,
+#      data = umf, stateEstimates = stateEstimates,
+#      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
+#
 #  umfit <- unMarkedFit(fitType = "occuRN",
 #                       stateformula = stateformula, detformula = detformula,
 #                       data = umf, stateMLE = ests[1:nOP],

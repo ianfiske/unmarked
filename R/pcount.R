@@ -131,16 +131,16 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
       covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  umfit <- unMarkedFit(fitType = "pcount",
-      stateformula = stateformula, detformula = detformula,
-      data = umf, stateEstimates = stateEstimates,
-      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
+  estimateList <- unMarkedEstimateList(list(state=stateEstimates, det=detEstimates))
 
 #  umfit <- unMarkedFit(fitType = "pcount",
-#                       stateformula = stateformula, detformula = detformula,
-#                       data = umf, stateMLE = ests[1:nAP],
-#                       stateSE = ests.se[1:nAP],
-#                       detMLE = ests[(nAP + 1) : nP],
-#                       detSE = ests.se[(nAP + 1): nP], AIC = fmAIC)
+#      stateformula = stateformula, detformula = detformula,
+#      data = umf, stateEstimates = stateEstimates,
+#      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
+
+  umfit <- unMarkedFit(fitType = "pcount",
+      call = match.call(), data = umf, estimates = estimateList,
+      AIC = fmAIC, hessian = fm$hessian)
+
   return(umfit)
 }
