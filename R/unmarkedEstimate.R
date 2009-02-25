@@ -145,7 +145,7 @@ setMethod("linearComb",
 #' Transform an unMarkedEstimate object to it's natural scale.
 #'
 #' The transformation is determined by the invlink and invlinkGrad slots
-#' in \code{obj}.  These slots specify the name of a many-to-one function and
+#' in \code{obj}.  These slots specify the name of a one-to-one function and
 #' its gradient respectively.  The delta method is used to compute the transformed
 #' estimate.
 #'
