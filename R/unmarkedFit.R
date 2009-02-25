@@ -14,19 +14,17 @@ roxygen()
 # @slot detMLE MLE of the detection parameters.
 # @slot detSE Standard errors of the detection MLE's.
 # @slot AIC The AIC of this model fit.
+# @slot negLogLike The negative log likelihood of the fitted model.
 # A Class to store fit results from unMarkedFrames.
 #' @export
 setClass("unMarkedFit",
     representation(fitType = "character",
         call = "call",
-#        stateformula = "formula",
-#        detformula = "formula",
         data = "unMarkedFrame",
-#        stateEstimates = "unMarkedEstimate",
-#        detEstimates = "unMarkedEstimate",
         estimates = "unMarkedEstimateList",
         AIC = "numeric",
-        hessian = "matrix"))
+        hessian = "matrix",
+        negLogLike = "numeric"))
 
 
 
