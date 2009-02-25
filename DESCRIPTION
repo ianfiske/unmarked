@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 0.5-6
-Date: 2009-2-18
+Version: 0.5-7
+Date: 2009-2-24
 Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske
@@ -12,6 +12,7 @@ Description: Unmarked estimates wildlife parameters for many popular
 License: GPL version 2 or newer
 LazyLoad: yes
 LazyData: yes
-Collate: 'classes.R' 'utils.R' 'markovMN.R' 'Mh.R' 'mnMix.R'
-    'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
+Collate: 'classes.R' 'utils.R' 'markovMN.R' 'Mh.R' 'unmarkedFrame.R'
+    'unmarkedEstimate.R' 'unmarkedFit.R' 'mnMix.R' 'multinomPois.R'
+    'occu.R' 'occuRN.R' 'pcount.R'
     'unmarked-package.R'
