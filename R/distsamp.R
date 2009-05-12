@@ -148,6 +148,10 @@ m$n <- n
 m$K <- length(starts)
 m$J <- J
 m$keyfun <- keyfun
+m$survey <- survey
+m$output <- output
+m$unitsIn <- unitsIn
+m$unitsOut <- unitsOut
 m$dist.breaks <- dist.breaks		# original units
 m$area <- a		 					   # output units
 m$tlength <- tlength					# original units

@@ -1,16 +1,21 @@
 \name{distsamp}
 \alias{distsamp}
-\title{ Fit distance sampling model of Royle et al. (2004) }
+\title{ Distance sampling using unconditional likelihood }
 \description{
-  Allows for covariates affecting density while accounting for imperfect detection due to distance from transect.  
+Fit distance sampling model of Royle et al. (2004), which is a multinomial 
+mixture model.
 }
 \usage{
-distsamp(stateformula, detformula = ~1, data, dist.breaks, tlength = NULL, keyfun = c("halfnorm", "exp", "hazard", "uniform"), survey = c("line", "point"), output = c("density", "abund"), unitsIn = c("m", "km"), unitsOut = c("ha", "kmsq"), savedata = T, starts = NULL, hessian = T, method = "BFGS", control = list(maxit = 1000, reltol = 1e-20), ...)
+distsamp(stateformula, detformula = ~1, data, dist.breaks, tlength = NULL, 
+keyfun = c("halfnorm", "exp", "hazard", "uniform"), survey = c("line", "point"), 
+output = c("density", "abund"), unitsIn = c("m", "km"), 
+unitsOut = c("ha", "kmsq"), savedata = T, starts = NULL, hessian = T, 
+method = "BFGS", control = list(maxit = 1000, reltol = 1e-20), ...)
 }
 \arguments{
-  \item{stateformula}{ two-sided formula of density/abundance relationship. See details }
+  \item{stateformula}{ two-sided formula of density/abundance relationship. See details. }
   \item{detormula}{ right-hand sided formula of detection probability covariates. See details }
-  \item{data}{ a data.frame containing response and predictor variables }
+  \item{data}{ a data.frame containing response and predictor variables. Each row is a transect. }
   \item{dist.breaks}{ numeric vector of distance breaks in meters or km }
   \item{tlength}{ transect length in meters or km }
   \item{keyfun}{ detection function: "halfnorm", "hazard", "exp", or "uniform" }
@@ -25,7 +30,7 @@ distsamp(stateformula, detformula = ~1, data, dist.breaks, tlength = NULL, keyfu
   \item{\dots}{ Other arguments passed to optim }
 }
 \details{
-  The left-hand side is the columns (e.g. cbind(dist1, dist2, dist3) for the distance data. The right-hand side represents the predictor variables in the same format as used by standard R formulas.
+  The left-hand side is the columns (e.g. cbind(dist1, dist2, dist3) for the distance data. The right-hand side represents the predictor variables in the same format as used by standard R formulas. 
 }
 \value{
   \item{par}{Named vector of parameter estimates with attribute altNames}
@@ -49,11 +54,95 @@ distsamp(stateformula, detformula = ~1, data, dist.breaks, tlength = NULL, keyfu
   \item{stateformula}{stateformula}      
   \item{detformula}{detformula}   
   }
-\references{ Royle et al. 2004. Ecology }
+\references{ Royle et al. 2004. Ecology 85:1591-1597}
 
 \seealso{ \code{\link{ds.gof}, \link{lm}, \link{formula}} }
 
 \examples{
-distsamp(cbind(X1, X2, X3, X4) ~ encino + I(encino^2), gcwaDat, key="hazard")
+
+### Line transect examples
+
+## Distance cut points in meters
+data(linetran)
+(dbreaksLine <- c(0, 5, 10, 15, 20)) 
+
+## Half-normal detection function. Density output. No covariates. 
+## lineDat$Length is transect lengths in km, so it has to be converted.
+(fm1 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
+	tlength=linetran$Length*1000))
+# backtransform covariates to original scale and use specific names.
+# lam(Intecept) is mean density in hectares.
+# p(Intercept) is the standard deviation of half-normal function in meters.
+exp(coef(fm1, altNames=T))
+# variance-covariance matrix
+vcov(fm1)
+
+
+## Half-normal. Abundance output. No covariates. Note that transect length
+## must be accounted for so abundance is animals per km of transect.
+(fm2 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
+	tlength=linetran$Length*1000, output="abund", unitsOut="kmsq"))
+exp(coef(fm2, altNames=T))
+
+## Halfnormal. Covariates affecting both density and and detection.  
+(fm3.1 <- distsamp(cbind(o1,o2,o3,o4) ~ poly(area, 2) + habitat, ~habitat, 
+   linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
+   unitsOut="ha"))
+exp(coef(fm3.1, altNames=T))
+
+## This won't run without starting values.
+(fm3.2 <- distsamp(cbind(o1,o2,o3,o4) ~ poly(area, 2) + habitat - 1, 
+   ~habitat - 1, linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
+   unitsOut="ha", starts=c(1,0,0,1,2,2)))
+exp(coef(fm3, altNames=T))
+
+
+## Negative exponential detection function. Density output in hectares. 
+(fme <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
+	tlength=linetran$Length*1000, key="exp"))
+exp(coef(fme, altNames=T))
+
+## Hazard-rate detection function. Density output in hectares.
+## This is real slow, especially for large datasets. Needs to be improved.
+(fmhz <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
+	tlength=linetran$Length*1000, keyfun="hazard"))
+exp(coef(fmhz, altNames=T))
+plot(function(x) gxhaz(x, shape=8.38, scale=1.37), 0, 25)
+
+## Uniform detection function. Density output in hectars.
+(fmu <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
+	tlength=linetran$Length*1000, key="uniform"))
+exp(coef(fmu, altNames=T))
+
+
+
+### Point transect examples
+
+## Radius cut points in meters
+data(pointtran)
+(dbreaksPt <- seq(0, 25, by=5))
+
+## Half-normal. Output is animals/point. No covariates.
+(fmp1 <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
+	dist.breaks=dbreaksPt, survey="point", output="abund"))
+exp(coef(fmp1, altNames=T))	# 15.8 animals / point
+
+## Half-normal. Output is animals per km^2. No covariates.
+(fmp2 <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
+	dist.breaks=dbreaksPt, survey="point", output="density", starts=c(8,2)))
+exp(coef(fmp2, altNames=T))	#8050 / km^2
+
+## Negative exponential
+(fmpe <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
+	dist.breaks=dbreaksPt, key="exp", survey="point", output="density"))
+exp(coef(fmpe, altNames=T))
+
+
+
+
+
+
+
+
 }
 \keyword{ models }

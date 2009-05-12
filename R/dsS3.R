@@ -82,3 +82,69 @@ vc <- solve(vc)
 return(vc)
 }
 
+
+
+
+
+
+
+
+
+
+print.parBoot <- function(boot.out)
+{
+t.star <- boot.out$t.star
+t0 <- boot.out$t0
+bias <- mean(t0 - t.star)
+bias.se <- sd(t0 - t.star)
+R <- length(t.star)
+t.val <- abs(bias / bias.se)
+df <- as.integer(R - 1)
+#p.val <- 1 - pt(t.val, df = df)
+p.val <- sum(abs(t.star-1) > abs(t0-1)) / (1+R)
+stats <- c("original" = t0, "bias" = bias, "Std. error" = bias.se, 
+	"t" = t.val, "p.value" = p.val)
+cat("\nCall:", deparse(boot.out$call), fill=T)
+cat("\nBootstrap Statistics:\n")
+print(stats, digits=3)
+cat("\nt quantiles:\n")
+print(quantile(t.star, probs=c(0,2.5,25,50,75,97.5,100)/100))
+}
+
+
+
+
+
+
+plot.parBoot <- function(boot.out, ...)
+{
+op <- par(mfrow=c(1, 2))
+t.star <- boot.out$t.star
+t0 <- boot.out$t0
+t.t0 <- c(t.star, t0)
+bias <- mean(t0 - t.star)
+bias.se <- sd(t0 - t.star)
+R <- length(t.star)
+t.val <- abs(bias / bias.se)
+df <- R - 1
+p <- 1 - pt(t.val, df = df)
+# p <- sum(abs(t.star-1) > abs(t0-1)) / (1+R)
+hist(t.star, xlim=c(min(floor(t.t0)), max(ceiling(t.t0))), 
+	main=paste("P =", format(p), "; R =", format(R)))
+rug(t.star)
+abline(v=t0, lty=2)
+qqnorm(t.star)
+qqline(t.star)
+title(outer=T, ...)
+par(op)
+}
+
+
+
+
+
+
+
+
+
+
