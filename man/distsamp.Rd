@@ -1,0 +1,59 @@
+\name{distsamp}
+\alias{distsamp}
+\title{ Fit distance sampling model of Royle et al. (2004) }
+\description{
+  Allows for covariates affecting density while accounting for imperfect detection due to distance from transect.  
+}
+\usage{
+distsamp(stateformula, detformula = ~1, data, dist.breaks, tlength = NULL, keyfun = c("halfnorm", "exp", "hazard", "uniform"), survey = c("line", "point"), output = c("density", "abund"), unitsIn = c("m", "km"), unitsOut = c("ha", "kmsq"), savedata = T, starts = NULL, hessian = T, method = "BFGS", control = list(maxit = 1000, reltol = 1e-20), ...)
+}
+\arguments{
+  \item{stateformula}{ two-sided formula of density/abundance relationship. See details }
+  \item{detormula}{ right-hand sided formula of detection probability covariates. See details }
+  \item{data}{ a data.frame containing response and predictor variables }
+  \item{dist.breaks}{ numeric vector of distance breaks in meters or km }
+  \item{tlength}{ transect length in meters or km }
+  \item{keyfun}{ detection function: "halfnorm", "hazard", "exp", or "uniform" }
+  \item{survey}{ line transect or point }
+  \item{output}{ density or abundance? }
+  \item{unitsIn}{ are BOTH dist.breaks and tlength in meters or km }
+  \item{unitsOut}{ for density, should it be in hectares or km }
+  \item{savedata}{ Should the data.frame be saved in output? }
+  \item{starts}{ vector of starting values for parameters }
+  \item{hessian}{ return the hessian matrix and calculate SE? }
+  \item{method}{ optimization method used by optim }
+  \item{\dots}{ Other arguments passed to optim }
+}
+\details{
+  The left-hand side is the columns (e.g. cbind(dist1, dist2, dist3) for the distance data. The right-hand side represents the predictor variables in the same format as used by standard R formulas.
+}
+\value{
+  \item{par}{Named vector of parameter estimates with attribute altNames}
+  \item{value}{Final objective value (-logL) reached by optim}
+  \item{counts}{Number of iterations for function and gradient}
+  \item{convegence}{optim convergence code}
+  \item{message}{optim message}
+  \item{hessian}{named hessian matrix returned by optim}
+  \item{SE}{standard errors}
+  \item{y}{response matrix. lefthand side of stateformula}
+  \item{Xlam}{design matrix returned by model.matrix applied to stateformula}
+  \item{Xp}{design matrix from detformula}  
+  \item{n}{nrow(y)}
+  \item{K}{number of estimated parameters}
+  \item{J}{ncol(y)}
+  \item{keyfun}{keyfun}
+  \item{dist.breaks}{dist.breaks in original units}
+  \item{area}{area in output units}
+  \item{tlength}{transect lengths in input units}
+  \item{call}{returned by match.call()}
+  \item{stateformula}{stateformula}      
+  \item{detformula}{detformula}   
+  }
+\references{ Royle et al. 2004. Ecology }
+
+\seealso{ \code{\link{ds.gof}, \link{lm}, \link{formula}} }
+
+\examples{
+distsamp(cbind(X1, X2, X3, X4) ~ encino + I(encino^2), gcwaDat, key="hazard")
+}
+\keyword{ models }
