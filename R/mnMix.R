@@ -163,8 +163,11 @@ mnMix <-
   fm <- optim(rep(0,nP),nll, method = "BFGS", hessian=TRUE)
   ests <- fm$par
   tryCatch(covMat <- solve(fm$hessian),
-      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
-
+      error=function(e) {
+        print("Hessian is not invertible.  Try using fewer covariates.")
+        e
+      })
+  if(!exists("covMat")) covMat <- matrix(Inf,nP,nP)
   names(ests) <- c(paste(rep("detmat",nDMP),1:nDMP, sep=""),
       eval(if(nDCP > 0) paste(rep("b", nDCP), 1:nDCP, sep="") else NULL),
       paste(rep("psi",nSP), 1:nSP, sep=""))
