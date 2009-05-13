@@ -56,6 +56,7 @@ setClass("unMarkedFrame",
 #' All site-level covariates are automatically copied to obsCovs so that site level covariates are available at the observation level.
 #'
 #' @title Create an unMarkedFrame.
+#' @aliases unMarkedFrame obsCovs siteCovs
 #' @param y A matrix of the observed measured data.
 #' @param obsCovs Dataframe of covariates that vary within sites.
 #' @param siteCovs Dataframe of covariates that vary at the site level.
@@ -71,6 +72,9 @@ setClass("unMarkedFrame",
 #' @export
 unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     obsNum = ncol(y), primaryNum = NULL) {
+  if(!is.matrix(y)) {
+    stop("y must be a matrix.")
+  }
   if(class(obsCovs) == "list") {
     obsVars <- names(obsCovs)
     for(i in seq(length(obsVars))) {
@@ -162,3 +166,29 @@ obsCovs <- function(umf, matrices = FALSE) {
   }
   return(value)
 }
+
+##' @export
+# setGeneric("summary")
+#    function(object,...) {
+#      standardGeneric("summary")
+#    })
+
+#' @export
+setMethod("summary","unMarkedFrame",
+    function(object,...) {
+      cat("unMarkedFrame Object\n\n")
+      cat(nrow(object@y), "sites\n")
+      cat("Maximum observations per site:",object@obsNum,"\n\n")
+      cat("Distribution of observations per site:")
+      stem(rowSums(!is.na(umf@y)), scale=0.5)
+      cat("Tabulation of y observations:")
+      print(table(object@y, exclude=NULL))
+      if(!is.null(object@siteCovs)) {
+        cat("\nSite-level covariates:")
+        print(summary(object@siteCovs))
+      }
+      if(!is.null(object@obsCovs)) {
+        cat("\nObservation-level covariates:\n")
+        print(summary(object@obsCovs))
+      }
+    })

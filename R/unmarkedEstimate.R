@@ -54,6 +54,17 @@ setMethod("show", "unMarkedEstimateList",
       }
     })
 
+#' @export
+setGeneric("estimates",
+    function(object) {
+      standardGeneric("estimates")
+    })
+
+setMethod("estimates", "unMarkedEstimate",
+    function(object) {
+      object@estimates
+    })
+
 unMarkedEstimateList <- function(l) {
   new("unMarkedEstimateList", estimates = l)
 }
