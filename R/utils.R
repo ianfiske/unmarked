@@ -209,18 +209,18 @@ function(dfin, species = NULL)
     dfin$y[is.na(dfin$y)] <- 0
     dfin$species = NULL
   }
-
-  # sum up counts within time/site
-  expr <- substitute(recast(dfin[,1:3], sv + dv ~ ..., id.var = 1:2,
-                            fun.aggregate = sum),
-                     list(sv = as.name(names(dfin)[1]),
-                          dv = as.name(names(dfin)[2])))
-  dfin2 <- eval(expr)
-  dfin1 <- dfin[!duplicated(dfin[,1:2]),]
-
-  dfin <- merge(dfin1,dfin2, by = 1:2)
-  dfin[,3] <- dfin[,length(dfin)]
-  dfin <- dfin[,-length(dfin)]
+# TODO: double check that multiple cells per site*time are handled correctly.
+#  # sum up counts within time/site
+#  expr <- substitute(recast(dfin[,1:3], sv + dv ~ ..., id.var = 1:2,
+#                            fun.aggregate = sum),
+#                     list(sv = as.name(names(dfin)[1]),
+#                          dv = as.name(names(dfin)[2])))
+#  dfin2 <- eval(expr)
+#  dfin1 <- dfin[!duplicated(dfin[,1:2]),]
+#
+#  dfin <- merge(dfin1,dfin2, by = 1:2)
+#  dfin[,3] <- dfin[,length(dfin)]
+#  dfin <- dfin[,-length(dfin)]
   names(dfin)[3] <- "y"
 
   dfin <- dateToObs(dfin)
@@ -421,6 +421,33 @@ Corresponding site(s) in 'y' were replaced with NA: %s",
     umf.clean@siteCovs <- subset(umf.clean@siteCovs,
                                  !seq(length=M) %in% na.sites)
     umf.clean@obsCovs <- umf.clean@obsCovs[!(sites %in% na.sites),]
+  }
+
+  ## reorder obs within year/site so that non-NA's come first
+  ## this is needed to use ragged array style indexing
+  if(umf.clean@primaryNum > 1) {
+    J <- umf.clean@obsNum/umf.clean@primaryNum
+    for(i in 1:M) {
+      obsCovs.i <- umf.clean@obsCovs[sites == i, ]
+      for(t in 1:umf.clean@primaryNum) {
+        y.it <- umf.clean@y[i,((t-1)*J + 1 ): (t*J) ]
+        obsCovs.it <- obsCovs.i[((t-1)*J + 1 ): (t*J), ]
+
+        notNA.inds <- which(!is.na(y.it))
+        numGoods <- length(notNA.inds)
+
+        y.it[seq(length=numGoods)] <- y.it[notNA.inds]
+        if(numGoods > 0) obsCovs.it[1:numGoods,] <- obsCovs.it[notNA.inds,]
+        if(numGoods < J) {
+          y.it[(numGoods+1) : J] <-  NA
+          obsCovs.it[(numGoods+1) : J, ] <- NA
+        }
+
+        umf.clean@y[i,((t-1)*J + 1 ): (t*J) ] <- y.it
+        obsCovs.i[((t-1)*J + 1 ): (t*J), ] <- obsCovs.it
+      }
+      umf.clean@obsCovs[sites == i, ] <- obsCovs.i
+    }
   }
 
   return(umf.clean)
