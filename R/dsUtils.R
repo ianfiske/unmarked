@@ -1,9 +1,10 @@
 
 
 
-
+# Make integrate() accept vector inputs for lower and upper
 vIntegrate <- Vectorize(integrate, c("lower", "upper"))
 
+# Detection functions for perpendicular (x) and radial (r) distances
 gxhn <- function(x, sigma=1) exp(-x^2/(2 * sigma^2))
 gxexp <- function(x, rate) rate * exp(-rate * x)
 gxhaz <- function(x, shape=1, scale=1)  1 - exp(-(x/shape)^-scale)
@@ -12,6 +13,9 @@ grexp <- function(r, rate) rate * exp(-rate * r) * r
 grhaz <- function(r, shape=1, scale=1)  (1 - exp(-(r/shape)^-scale)) * r
 
 
+
+
+# Multinomial cell probabilities for line or point transects under half-normal model
 cp.hn <- function(d, s, survey=c("line", "point")) 
 {
 survey <- match.arg(survey)
@@ -167,7 +171,7 @@ return(n2ll + 2*K * (n/(n-K-1)))
 
 
 
-
+# Nagelkerke's R-squared index
 nag.r2 <- function(x, null.fit) 
 {
 type <- class(x)[1]
@@ -194,6 +198,16 @@ return(r2 / r2.max)
 
 
 
+
+
+
+
+# Condition number
+cn <- function(fit) 
+{
+ev <- eigen(fit$hessian)$values
+max(ev)/min(ev)
+}
 
 
 

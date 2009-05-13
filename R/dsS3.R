@@ -1,3 +1,6 @@
+parboot <- function(x, ...) UseMethod("parboot", ...)
+
+modsel <- function(x, ...) UseMethod("modsel", ...)
 
 
 print.mixmod <- function(model, nulldev=NULL, pval=T, digits=3, ...) 

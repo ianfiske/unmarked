@@ -47,15 +47,15 @@ if(output=="density") {
    line = {
 	  stripwidths <- (((dist.breaks*2)[-1] - (dist.breaks*2)[-(J+1)])) / conv
 	  tl <- tlength / conv
-	  a <- rep(tl, each=J) * stripwidths	# km^2
+	  a <- rep(tl, each=J) * stripwidths	 # km^2
 	  },
    point = {
 	  W <- max(dist.breaks) / conv
-	  a <- pi * W^2				# km^2
+	  a <- pi * W^2				             # km^2
 	  })
    if(unitsOut=="ha")
 	  a <- a * 100
-      }
+   }
    else {
       switch(survey, 
    	  line = a <- tlength / conv, # transect length must be accounted for
