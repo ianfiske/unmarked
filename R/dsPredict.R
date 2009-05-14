@@ -2,38 +2,33 @@
 # If newdata is not specified, original data is used.
 # This requires the deltamethod() function from package msm.
 
-predict.mixmod <- function(fit, type=c("state", "p", "identity"), 
-	link=c("log", "logit", "identity"), newdata=NULL, notconstant=NULL, 
+
+setMethod("predict", "umDistsampFit", 
+   function(object, type=c("state", "det"), 
+   link=c("log", "logit", "identity"), newdata=NULL, notconstant=NULL, 
 	alpha=NULL, par=NULL, ...) 
 {
+require(msm)
 type <- match.arg(type)
 link <- match.arg(link)
-mixture <- fit$mixture
-require(msm)
+if(is.null(newdata)) 
+	newdata <- object@data
 switch(type, 
 state = {
-	par <- coef(fit, type="state")
+	par <- coef(object, type="state")
 	xpar <- paste("x", 1:length(par), sep="")
-	varcov <- vcov(fit, type="state") 
+	varcov <- vcov(object, type="state") 
 	covs <- paste("covs", 1:length(par), sep="")
-	if(is.null(newdata)) 
-		X <- fit$Xlam
-	else {
-		mf <- model.frame(fit$stateformula, newdata, na.action=na.pass)
-		X <- model.matrix(fit$stateformula, mf)[,names(par)]
-		}
+	mf <- model.frame(object@stateformula, newdata) #, na.action=na.pass)
+	X <- model.matrix(object@stateformula, mf)#[,names(par)]
 	},
-p = {
-	par <- coef(fit, type="p")
+det = {
+	par <- coef(object, type="det")
 	xpar <- paste("x", 1:length(par), sep="")
-	varcov <- vcov(fit, type="p")
+	varcov <- vcov(object, type="det")
 	covs <- paste("covs", 1:length(par), sep="")
-	if(is.null(newdata))
-		X <- fit$Xp
-	else { 
-		mf <- model.frame(fit$detformula, newdata, na.action=na.pass)
-		X <- model.matrix(fit$detformula, mf)[,names(par)]
-		}
+	mf <- model.frame(object@detformula, newdata, na.action=na.pass)
+	X <- model.matrix(object@detformula, mf)#[,names(par)]
 	})
 SEs <- rep(NA, nrow(X))
 switch(link, 
@@ -72,9 +67,8 @@ if(!is.null(alpha)) {
 	attr(out, "alpha.level") <- alpha
 	}
 rownames(out) <- NULL
-class(out) <- c("mixmodPred", "data.frame")
 return(out)
-}
+})
 
 
 
@@ -83,18 +77,28 @@ return(out)
 
 
 
+setGeneric("modavg",
+    def = function(object, ...) {
+      standardGeneric("modavg")
+    })
 
+
+
+
+
+setClass("umDistsampFitList", representation(fitlist="list"))
 
 
 
 # This functions makes model-averaged predictions from a list of fitted models.
 
-predict.mixmodList <- function(fits, newdata=NULL, notconstant=NULL, 
-	type=c("state", "p"), link=c("log", "logit"))
+setMethod("modavg", "umDistsampFitList", function(object, newdata=NULL, 
+   notconstant=NULL, type=c("state", "p"), link=c("log", "logit"))
 {
 type <- match.arg(type)
 link <- match.arg(link)
-EV <- sapply(fits, function(x) {
+fitlist <- object@fitlist
+EV <- sapply(fitlist, function(x) {
 	tmp <- predict(x, newdata=newdata, type=type, link=link)
 	E <- tmp$Est.
 	V <- tmp$SE
@@ -102,20 +106,16 @@ EV <- sapply(fits, function(x) {
 	})
 E <- sapply(EV[1,], as.numeric)
 V <- sapply(EV[2,], as.numeric)
-ic <- sapply(fits, aic.c)
+ic <- sapply(fitlist, function(x) x@AIC)
 deltaic <- ic - min(ic)
 wts <- exp(-deltaic / 2)
 wts <- wts / sum(wts)
 parav <- as.numeric(E %*% wts)
 seav <- rowSums((V + (E - parav)^2) %*% wts)
-if(is.null(notconstant))
-	notconstant <- NA
-else
-	notconstant <- newdata[,notconstant]
-out <- data.frame(Predictor = notconstant, Est. = parav, SE = seav)
+out <- data.frame(Est. = parav, SE = seav)
 rownames(out) <- NULL
 return(out)
-}
+})
 
 
 
