@@ -72,6 +72,7 @@ setClass("unMarkedFrame",
 #' @export
 unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     obsNum = ncol(y), primaryNum = NULL) {
+
   if(!is.matrix(y)) {
     stop("y must be a matrix.")
   }
@@ -105,11 +106,12 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
       primaryNum = primaryNum)
 
   ## copy siteCovs into obsCovs
-  if(!is.null(siteCovs)) {
-    umf@obsCovs <- as.data.frame(cbind(umf@obsCovs,
-            sapply(umf@siteCovs, rep,
-                each = umf@obsNum)))
-  }
+  ## TODO: DON'T DO THIS HERE... DO IT IN getdesign() in utils.R
+#  if(!is.null(siteCovs)) {
+#    umf@obsCovs <- as.data.frame(cbind(umf@obsCovs,
+#            sapply(umf@siteCovs, rep,
+#                each = umf@obsNum)))
+#  }
   return(umf)
 }
 
@@ -184,7 +186,7 @@ setMethod("summary","unMarkedFrame",
       cat("Tabulation of y observations:")
       print(table(object@y, exclude=NULL))
       if(!is.null(object@siteCovs)) {
-        cat("\nSite-level covariates:")
+        cat("\nSite-level covariates:\n")
         print(summary(object@siteCovs))
       }
       if(!is.null(object@obsCovs)) {
