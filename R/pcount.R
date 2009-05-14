@@ -72,24 +72,24 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
   M <- nrow(y)
   J <- ncol(y)
   k.ik <- rep(k, M)
-  k.jik <- rep(k, M*J)
+  k.ijk <- rep(k, M*J)
 
   nP <- nAP + nDP + ifelse(identical(mixture,"NB"),1,0)
-  y.ji <- as.numeric(y)
-  y.jik <- rep(y.ji, each = K + 1)
-  navec <- is.na(y.jik)
+  y.ij <- as.numeric(t(y))
+  y.ijk <- rep(y.ij, each = K + 1)
+  navec <- is.na(y.ijk)
   nd <- ifelse(rowSums(y, na.rm=TRUE) == 0, 1, 0) # I(no detection at site i)
 
   nll <- function(parms){
 
     theta.i <- exp(X %*% parms[1 : nAP])
-    p.ji <- plogis(V %*% parms[(nAP + 1) : (nAP + nDP)])
+    p.ij <- plogis(V %*% parms[(nAP + 1) : (nAP + nDP)])
     theta.ik <- rep(theta.i, each = K + 1)
-    p.jik <- rep(p.ji, each = K + 1)
+    p.ijk <- rep(p.ij, each = K + 1)
 
-    bin.jik <- dbinom(y.jik,k.jik,p.jik)
-    bin.jik[which(is.na(bin.jik))] <- 1
-    bin.ik.mat <- matrix(bin.jik, M * (K + 1), J)
+    bin.ijk <- dbinom(y.ijk,k.ijk,p.ijk)
+    bin.ijk[which(is.na(bin.ijk))] <- 1
+    bin.ik.mat <- matrix(bin.ijk, M * (K + 1), J)
     g.ik <- rowProds(bin.ik.mat)
 
     if(identical(mixture,"P")) {
