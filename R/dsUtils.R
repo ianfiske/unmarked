@@ -81,10 +81,10 @@ return(cp)
 
 
 
-ll.halfnorm <- function(param, Y, Xlam, Xp, J, d, a, lampars, survey) 
+ll.halfnorm <- function(param, Y, Xlam, Xp, J, d, a, nAP, nP, survey) 
 {
-sigma <- as.numeric(exp(Xp %*% param[(length(lampars)+1):length(param)]))
-lambda <- as.numeric(exp(Xlam %*% param[1:length(lampars)]))
+sigma <- as.numeric(exp(Xp %*% param[(nAP+1):nP]))
+lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
 pvec <- c(sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey)))
 growlam <- rep(lambda, each=J)
 datavec <- c(t(Y))
@@ -95,10 +95,10 @@ ll <- dpois(datavec, growlam * pvec * a, log=T)
 
 
 
-ll.exp <- function(param, Y, Xlam, Xp, K, J, a, d, lampars, survey=survey)
+ll.exp <- function(param, Y, Xlam, Xp, K, J, a, d, nAP, nP, survey=survey)
 {
-rate <- as.numeric(exp(Xp %*% -param[(length(lampars)+1):length(param)]))
-lambda <- as.numeric(exp(Xlam %*% param[1:length(lampars)]))
+rate <- as.numeric(exp(Xp %*% -param[(nAP+1):nP]))
+lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
 pvec <- c(sapply(rate, function(x) cp.exp(d=d, rate=x, survey=survey)))
 growlam <- rep(lambda, each=J)
 datavec <- c(t(Y))
@@ -107,11 +107,11 @@ ll <- dpois(datavec, growlam * pvec * a, log=T)
 }
 
 
-ll.hazard <- function(param, Y, Xlam, Xp, J, a, d, lampars, survey)
+ll.hazard <- function(param, Y, Xlam, Xp, J, a, d, nAP, nP, survey)
 {
-shape <- as.numeric(exp(Xp %*% param[(length(lampars)+1):(length(param)-1)]))
-scale <- as.numeric(exp(param[length(param)]))
-lambda <- as.numeric(exp(Xlam %*% param[1:length(lampars)]))
+shape <- as.numeric(exp(Xp %*% param[(nAP+1):(nP-1)]))
+scale <- as.numeric(exp(param[nP]))
+lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
 pvec <- c(sapply(shape, function(x) cp.haz(d=d, shape=x, scale=scale, 
 	survey=survey)))
 growlam <- rep(lambda, each=J)
