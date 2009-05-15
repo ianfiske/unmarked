@@ -1,7 +1,9 @@
 # Model-based predictions and standard errors (and CI if alpha is specified).
 # If newdata is not specified, original data is used.
 # This requires the deltamethod() function from package msm.
-
+setGeneric("predict",
+		def = function(object, ...) {
+			standardGeneric("predict")		})
 
 setMethod("predict", "umDistsampFit", 
    function(object, type=c("state", "det"), 

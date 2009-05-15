@@ -196,6 +196,12 @@ show(object@estimates)
 })
 
 
+setGeneric("coef",
+		def = function(object, ...) {
+			standardGeneric("coef")		})
+setGeneric("vcov",
+		def = function(object, ...) {
+			standardGeneric("vcov")		})
 
 
 setMethod("coef", "umDistsampFit", function(object, type=NULL, altNames=F)
