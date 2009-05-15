@@ -15,5 +15,5 @@ LazyData: yes
 Collate: 'classes.R' 'utils.R' 'markovMN.R' 'Mh.R' 'unmarkedFrame.R'
     'unmarkedEstimate.R' 'unmarkedFit.R' 'mnMix.R' 'multinomPois.R'
     'occu.R' 'occuRN.R' 'pcount.R'
-    'unmarked-package.R'  'distsamp.R' 'dsModsel.R' 'dsPredict.R' 'dsS3.R'  'dsUtils.R'  'parboot.distsamp.R'
+    'unmarked-package.R'  'distsamp.R' 'dsModsel.R' 'dsPredict.R' 'dsUtils.R' 'dsParboot.R'
     
