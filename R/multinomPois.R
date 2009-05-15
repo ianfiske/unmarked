@@ -21,7 +21,7 @@ removalPiFun <- function(p){
   pi <- matrix(NA, M, J)
   pi[,1] <- p[,1]
   for(i in seq(from = 2, length = J - 1)) {
-    pi[, i] <- pi[, i-1]*(1 - p[,i-1])
+	  pi[, i] <- pi[,i-1] / p[,i-1] * (1-p[,i-1]) * p[,i]
   }
   return(pi)
 }
