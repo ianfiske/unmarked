@@ -1,5 +1,7 @@
+#' include distsamp.R
+roxygen()
 
-
+#' setMethod parboot
 setGeneric("parboot",
     def = function(object, ...) {
       standardGeneric("parboot")
@@ -8,7 +10,7 @@ setGeneric("parboot",
 
 
 
-
+#' @exportClass umParboot
 setClass("umParboot",
     representation(fitType = "character",
         call = "call",
@@ -18,13 +20,28 @@ setClass("umParboot",
         )
 
 
-
-
-#setMethod("update", "umDistsampFit"
-
+#' Evaluate goodness-of-fit for a fitted distance-sampling model
+#'
+#' @param object a fitted model of class "umDistsampFit"
+#' @param R number of bootstrap replicates
+#' @param report print fit statistic every 'report' iterations during resampling
+#' @param label a label for the model
+#'
+#' @examples
+#' data(linetran)
+#' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
+#' (fm <- distsamp(cbind(o1,o2,o3,o4) ~ area, ~habitat, linetran, 
+#'	   dist.breaks=dbreaksLine, tlength=linetran$Length*1000, survey="line", 
+#'	   unitsIn="m"))
+#'
+#' (pb <- parboot(fm))
+#' plot(pb)
+#'
+#' @exportMethod parboot
 setMethod("parboot", "umDistsampFit", function(object, R=10, report=2, 
    label=character(0), ...)  
 {
+call <- match.call()
 stateformula <- object@stateformula
 detformula <- object@detformula
 data <- object@data
@@ -106,7 +123,7 @@ SSEs[i] <- sqrt(sum((sqrt.sim - sqrt.model)^2, na.rm=T))
 if(R > report && i %in% seq(report, R, by=report))
 	cat(paste(round(SSEs[(i-(report-1)):i], 1), collapse=", "), fill=T)
 }
-out <- new("umParboot", call=match.call(fun), t0 = sse0, t.star = SSEs, label=label)
+out <- new("umParboot", call=call, t0 = sse0, t.star = SSEs, label=label)
 return(out)
 })
 
@@ -122,7 +139,7 @@ return(out)
 
 
 
-
+#' @exportMethod show
 setMethod("show", "umParboot", function(object) 
 {
 t.star <- object@t.star
@@ -141,11 +158,10 @@ print(quantile(t.star, probs=c(0,2.5,25,50,75,97.5,100)/100))
 })
 
 
-setGeneric("plot",
-		def = function(x, y,...) {
-			standardGeneric("plot")		})
 
 
+
+#' @exportMethod plot
 setMethod("plot", signature(x="umParboot", y="missing"), function(x, y, ...)
 {
 op <- par(mfrow=c(1, 2))
