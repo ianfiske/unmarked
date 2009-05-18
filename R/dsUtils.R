@@ -1,15 +1,16 @@
+#' include classes.R
+roxygen()
 
 
-
-# Make integrate() accept vector inputs for lower and upper
+#' Vectorized integrate() accepting vector inputs for 'lower' and 'upper'
 vIntegrate <- Vectorize(integrate, c("lower", "upper"))
 
 # Detection functions for perpendicular (x) and radial (r) distances
 gxhn <- function(x, sigma=1) exp(-x^2/(2 * sigma^2))
-gxexp <- function(x, rate) rate * exp(-rate * x)
+gxexp <- function(x, rate) exp(-x / rate)
 gxhaz <- function(x, shape=1, scale=1)  1 - exp(-(x/shape)^-scale)
 grhn <- function(r, sigma) exp(-r^2/(2 * sigma^2)) * r
-grexp <- function(r, rate) rate * exp(-rate * r) * r
+grexp <- function(r, rate) exp(-r / rate) * r
 grhaz <- function(r, shape=1, scale=1)  (1 - exp(-(r/shape)^-scale)) * r
 
 
@@ -97,7 +98,7 @@ ll <- dpois(datavec, growlam * pvec * a, log=T)
 
 ll.exp <- function(param, Y, Xlam, Xp, K, J, a, d, nAP, nP, survey=survey)
 {
-rate <- as.numeric(exp(Xp %*% -param[(nAP+1):nP]))
+rate <- as.numeric(exp(Xp %*% param[(nAP+1):nP]))
 lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
 pvec <- c(sapply(rate, function(x) cp.exp(d=d, rate=x, survey=survey)))
 growlam <- rep(lambda, each=J)
@@ -135,65 +136,6 @@ ll <- dpois(datavec, growlam * a, log=T)
 
 
 
-
-
-
-
-
-
-
-
-
-aic.c <- function(fit) 
-{
-type <- class(fit)[1]
-if(type=="glm") type <- "lm"
-if(type=="mer") type <- "glmer"
-switch(type, mixmod = {
-	n2ll <- 2 * fit$value
-	K <- length(fit$par)
-	n <- fit$n
-}, lm = {
-	n2ll <- -2 * logLik(fit)[1]
-	K <- length(coef(fit))
-	n <- length(fitted(fit))
-}, glmer = {
-	n2ll <- -2 * logLik(fit)[1]
-	K <- length(VarCorr(fit)) + length(fixef(fit))
-	n <- nrow(fit@frame)
-})
-return(n2ll + 2*K * (n/(n-K-1)))
-}
-
-
-
-
-
-
-
-# Nagelkerke's R-squared index
-nag.r2 <- function(x, null.fit) 
-{
-type <- class(x)[1]
-if(type=="glm") type <- "lm"
-if(type=="mer") type <- "glmer"
-switch(type, mixmod = {
-	devN <- 2 * null.fit$value
-	devF <- 2 * x$value
-	n <- x$n
-}, lm = {
-	devN <- -2 * logLik(null.fit)[1]
-	devF <- -2 * logLik(x)[1]
-	n <- length(fitted(x))
-}, glmer = {
-	devN <- -2 * logLik(null.fit)[1]
-	devF <- -2 * logLik(x)[1]
-	n <- nrow(x@frame)
-	})
-r2 <- 1 - exp((devF - devN)/n)
-r2.max <- 1 - exp(-1 * devN/n)
-return(r2 / r2.max)
-}
 
 
 
