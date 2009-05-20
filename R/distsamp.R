@@ -349,6 +349,13 @@ cat("\nSample size: ", nrow(object@data), "\n")
 })
 
 
+setGeneric("coef",
+		def = function(object, ...) {
+			standardGeneric("coef")		})
+setGeneric("vcov",
+		def = function(object, ...) {
+			standardGeneric("vcov")		})
+
 
 #' @exportMethod coef
 setMethod("coef", "umDistsampFit", function(object, type=NULL, altNames=F)

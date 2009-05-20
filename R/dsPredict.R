@@ -2,6 +2,10 @@
 #' @include dsUtils.R
 roxygen()
 
+setGeneric("predict",
+		def = function(object, ...) {
+			standardGeneric("predict")		})
+
 
 #' @exportMethod predict
 setMethod("predict", "umDistsampFit", 
@@ -122,7 +126,6 @@ return(out)
 #'
 #' @exportClass umDistsampFitList
 setClass("umDistsampFitList", representation(fitlist="list"))
-
 
 
 
