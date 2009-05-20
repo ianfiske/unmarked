@@ -3,37 +3,6 @@
 #include <R_ext/Error.h>
 
 
-/*SEXP setDetVecs(SEXP y_arr, SEXP detVec_arr, SEXP mp_arr, SEXP J_i, SEXP tin) {
-	int *mp_dims = INTEGER_POINTER(GET_DIM(mp_arr));
-	int nDMP = mp_dims[0], J = mp_dims[1], nY = mp_dims[2], M = mp_dims[3], K = INTEGER_POINTER(GET_DIM(detVec_arr))[0];
-	//int K = 2, J = 4, nY = 7, M = 170, nDMP = 1;
-	double *y = NUMERIC_POINTER(y_arr);
-	int t = INTEGER_VALUE(tin) - 1;
-	double *detVec = NUMERIC_POINTER(detVec_arr);
-	double *mp = NUMERIC_POINTER(mp_arr);
-	int *J_ip = INTEGER_POINTER(J_i);
-	int detVec_ind, mp_ind, y_ind;
-	for (int i = 0; i != M; ++i) {
-		detVec_ind = t*K + i*nY*K;
-		for(int j = 0; j != J_ip[i]; ++j) {
-			y_ind = i + t*M + j*M*nY;
-			mp_ind = j*nDMP + t*nDMP*J + i*nDMP*J*nY;
-			if(y[y_ind] != 99) {
-
-				if(y[y_ind] == 0) {
-					//detVec_arr[detVec_ind] *= 1;
-					detVec[detVec_ind + 1] *= exp(mp[mp_ind])/(1 + exp(mp[mp_ind]));
-				} else {
-					detVec[detVec_ind] = 0;
-					detVec[detVec_ind + 1] *= 1/(1 + exp(mp[mp_ind]));
-				}
-
-			}
-		}
-	}
-	return R_NilValue;
-}*/
-
 void getDetVec2(int y, double *detVec, double* mp) {
 	if(y == 0) {
 		//detVec[detVec_ind] *= 1;
@@ -84,45 +53,6 @@ void getDetVec4(int y, double *detVec, double* mp) {
 	}
 
 }
-
-//getDetVecs <- cfunction(signature(y_arr = "array", detVec_arr = "array", mp_arr = "array"),code,language="C",verbose=F)
-
-
-/*SEXP getDetVecs(SEXP y_arr, SEXP mp_arr, SEXP J_i, SEXP tin, SEXP K_) {
-	int *mp_dims = INTEGER_POINTER(GET_DIM(mp_arr));
-	int nDMP = mp_dims[0], J = mp_dims[1], nY = mp_dims[2], M = mp_dims[3];
-	int K = INTEGER_VALUE(K_) + 1;
-	SEXP detVec;
-	PROTECT(detVec = NEW_NUMERIC(K*M));
-	int *y = INTEGER_POINTER(y_arr);
-	double *detVecPtr = NUMERIC_POINTER(detVec);
-	int t = INTEGER_VALUE(tin) - 1;
-	double *mp = NUMERIC_POINTER(mp_arr);
-	int *J_ip = INTEGER_POINTER(J_i);
-	int detVec_ind = 0, mp_ind, y_ind;
-	for (int i = 0; i != M; ++i) {
-		for(int k = 0; k != K; ++k) {
-			detVecPtr[detVec_ind + k] = 1;  // initialize to 1.
-		}
-		for(int j = 0; j != J_ip[i]; ++j) {
-			y_ind = i + t*M + j*M*nY;
-			mp_ind = j*nDMP + t*nDMP*J + i*nDMP*J*nY;
-			if(y[y_ind] != 99) {
-				if(y[y_ind] == 0) {
-					//detVec_arr[detVec_ind] *= 1;
-					detVecPtr[detVec_ind + 1] *= exp(mp[mp_ind])/(1 + exp(mp[mp_ind]));
-				} else {
-					detVecPtr[detVec_ind] = 0;
-					detVecPtr[detVec_ind + 1] *= 1/(1 + exp(mp[mp_ind]));
-				}
-
-			}
-		}
-		detVec_ind += K;
-	}
-	UNPROTECT(1);
-	return detVec;
-}*/
 
 SEXP getSingleDetVec(SEXP y_, SEXP mp_, SEXP K_) {
 	int y = INTEGER_VALUE(y_), K = INTEGER_VALUE(K_) + 1;
@@ -179,52 +109,3 @@ SEXP getDetVecs(SEXP y_arr, SEXP mp_arr, SEXP J_i, SEXP tin, SEXP K_) {
 	UNPROTECT(1);
 	return detVec;
 }
-
-/*SEXP getDetMats(SEXP y_arr, SEXP mp_arr, SEXP K_) {
-	int *mp_dims = INTEGER_POINTER(GET_DIM(mp_arr));
-	int nDMP = mp_dims[0], J = mp_dims[1], nY = mp_dims[2], M = mp_dims[3];
-	int K = INTEGER_VALUE(K_) + 1;
-	void (*getDetVecPtr) (int, double*, double*);
-	switch (K) {
-	case 2:
-		getDetVecPtr = getDetVec2;
-		break;
-	case 4:
-		getDetVecPtr = getDetVec4;
-		break;
-	}
-	SEXP detMats;
-	PROTECT(detMats = NEW_NUMERIC(K*K*J*nY*M));
-	int *y = INTEGER_POINTER(y_arr);
-	double *mp = NUMERIC_POINTER(mp_arr), *detMatsPtr = NUMERIC_POINTER(detMats);
-	//int *J_ip = INTEGER_POINTER(J_i);
-	int mp_ind, y_ind;
-
-	// initialize to 1.
-	for (int i = 0; i != K*K*J*nY*M; ++i) {
-		detMatsPtr[i] = 1;
-	}
-
-	for (int i = 0; i != M; ++i)
-		for (int t = 0; t != nY; ++t)
-			for (int j = 0; j != J; ++j) {
-
-				y_ind = i + t*M + j*M*nY;
-				mp_ind = j*nDMP + t*nDMP*J + i*nDMP*J*nY;
-
-				if (y[y_ind] != 99) {
-					for (int k = 0; k != K; ++k) {
-						getDetVecPtr(k, detMatsPtr, mp + mp_ind);
-						detMatsPtr += K;
-					}
-				} else {
-//					for (int k = 0; k != K*K; ++k) {
-//						detMatsPtr[k] = NA_REAL;
-//						detMatsPtr++;
-//					}
-					detMatsPtr += K*K;
-				}
-			}
-	UNPROTECT(1);
-	return detMats;
-}*/
