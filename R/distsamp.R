@@ -1,4 +1,7 @@
-#' include dsUtils.R
+#' @include dsUtils.R
+#' @include unmarkedFit.R
+#' @include unmarkedEstimate.R
+#' @include utils.R
 roxygen()
 
 
@@ -74,7 +77,7 @@ setClass("umDistsampFit",
         survey = "character",
         unitsIn = "character",
         unitsOut = "character",
-        estimates = "unMarkedEstimateList",
+        estimates = "unmarkedEstimateList",
         AIC = "numeric",
         hessian = "matrix",
         negLogLike = "numeric")
@@ -314,11 +317,11 @@ attr(covMatDP, "altNames") <- list(altdetParms, altdetParms)
 attr(fm$hessian, "altNames") <- list(c(altlamParms, altdetParms), 
    c(altlamParms, altdetParms))
 fmAIC <- 2 * fm$value + 2 * nP
-stateEstimates <- unMarkedEstimate(name = "Abundance", estimates = estsAP,
+stateEstimates <- unmarkedEstimate(name = "Abundance", estimates = estsAP,
    covMat = covMatAP, invlink = "exp", invlinkGrad = "exp")
-detEstimates <- unMarkedEstimate(name = "Detection", estimates = estsDP, 
+detEstimates <- unmarkedEstimate(name = "Detection", estimates = estsDP, 
    covMat = covMatDP, invlink = "exp", invlinkGrad = "exp")
-estimateList <- unMarkedEstimateList(list(state=stateEstimates, 
+estimateList <- unmarkedEstimateList(list(state=stateEstimates, 
    det=detEstimates))
 dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
    stateformula=stateformula, detformula=detformula, data = data, keyfun=keyfun, 
@@ -348,13 +351,13 @@ cat("\nAIC:", object@AIC)
 cat("\nSample size: ", nrow(object@data), "\n")
 })
 
-
-setGeneric("coef",
-		def = function(object, ...) {
-			standardGeneric("coef")		})
-setGeneric("vcov",
-		def = function(object, ...) {
-			standardGeneric("vcov")		})
+#
+#setGeneric("coef",
+#		def = function(object, ...) {
+#			standardGeneric("coef")		})
+#setGeneric("vcov",
+#		def = function(object, ...) {
+#			standardGeneric("vcov")		})
 
 
 #' @exportMethod coef

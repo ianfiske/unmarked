@@ -529,6 +529,7 @@ function(data)
   list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
 }
 
+# TODO: grab siteCovs if necessary in the detection formula.
 getDesign <- function(stateformula, detformula, umf) {
 
   M <- nrow(umf@y)

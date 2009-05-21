@@ -20,7 +20,7 @@ setGeneric("SE",
 #' Compute linear combinations of parameters.
 #'
 #' @aliases linearComb-methods linearComb
-#' @seealso \code{\link{linearComb,unMarkedFit-method}}, \code{link{linearComb,unMarkedEstimate-method}}
+#' @seealso \code{\link{linearComb,unmarkedFit-method}}, \code{link{linearComb,unmarkedEstimate-method}}
 #' @exportMethod linearComb
 setGeneric("linearComb",
     function(obj, coefficients, ...) {
@@ -38,10 +38,10 @@ setGeneric("backTransform",
     })
 
 
-# TODO: make parent class unMarkedEstimate
+# TODO: make parent class unmarkedEstimate
 # TODO: make binomial detection child class
 # TODO: make binomial occ child class
 # TODO: make poisson abundance child class
 # TODO: make show method for each of these classes.
-# TODO: make unMarkedFit show that calls the respective children.
+# TODO: make unmarkedFit show that calls the respective children.
 # TODO: separate unmarkedFit class for each model type?... would contain different estimate types

@@ -17,21 +17,21 @@ roxygen()
 # @slot negLogLike The negative log likelihood of the fitted model.
 # A Class to store fit results from unMarkedFrames.
 #' @export
-setClass("unMarkedFit",
+setClass("unmarkedFit",
     representation(fitType = "character",
         call = "call",
         data = "unMarkedFrame",
-        estimates = "unMarkedEstimateList",
+        estimates = "unmarkedEstimateList",
         AIC = "numeric",
         hessian = "matrix",
         negLogLike = "numeric"))
 
 
 
-# constructor for unMarkedFit objects
-unMarkedFit <- function(fitType, call,
+# constructor for unmarkedFit objects
+unmarkedFit <- function(fitType, call,
     data, estimates, AIC, hessian) {
-  umfit <- new("unMarkedFit", fitType = fitType,
+  umfit <- new("unmarkedFit", fitType = fitType,
       call = call, data = data,
       estimates = estimates, AIC = AIC,
       hessian = hessian)
@@ -40,7 +40,7 @@ unMarkedFit <- function(fitType, call,
 }
 
 # @export
-setMethod("show", "unMarkedFit",
+setMethod("show", "unmarkedFit",
     function(object) {
       cat("\nCall:\n")
 #      cat(object@fitType,"(stateformula = ~ ",
@@ -88,7 +88,7 @@ setMethod("show", "unMarkedFit",
     })
 
 
-#' Compute linear combinations of estimates in unMarkedFit objects.
+#' Compute linear combinations of estimates in unmarkedFit objects.
 #'
 #' This function computes the linear combination of parameter estimates in
 #' \code{obj} given by the coefficient vector.  The user must
@@ -96,14 +96,14 @@ setMethod("show", "unMarkedFit",
 #' \code{whichEstimate} argument.  This may be useful to estimate
 #' quantities of interest from a fitted model or to test a hypothesis.
 #'
-#' @name linearComb-unMarkedFit
-#' @aliases linearComb,unMarkedFit-method
-#' @param obj an unMarkedFit object
+#' @name linearComb-unmarkedFit
+#' @aliases linearComb,unmarkedFit-method
+#' @param obj an unmarkedFit object
 #' @param coefficients vector of same length as obj
 #' @param whichEstimate character, either "state" or "det"
-#' @return an unMarkedEstimate object
+#' @return an unmarkedEstimate object
 setMethod("linearComb",
-    signature(obj = "unMarkedFit", coefficients = "numeric"),
+    signature(obj = "unmarkedFit", coefficients = "numeric"),
     function(obj, coefficients, whichEstimate) {
       stopifnot(!missing(whichEstimate))
       stopifnot(whichEstimate %in% names(obj))
@@ -118,12 +118,12 @@ setMethod("linearComb",
     })
 
 setMethod("[",
-    "unMarkedFit",
+    "unmarkedFit",
     function(x, i, j, drop) {
       x@estimates[i]
     })
 
-setMethod("names", "unMarkedFit",
+setMethod("names", "unmarkedFit",
     function(x) {
       names(x@estimates)
     })

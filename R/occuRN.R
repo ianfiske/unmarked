@@ -1,5 +1,5 @@
-#' @include unMarkedFit.R
-#' @include unMarkedEstimate.R
+#' @include unmarkedFit.R
+#' @include unmarkedEstimate.R
 #' @include utils.R
 roxygen()
 
@@ -32,7 +32,7 @@ roxygen()
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param umf unMarkedFrame supplying data to the model.
-#' @return unMarkedFit object describing the model fit.
+#' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @references
 #' Royle, J. A. and Nichols, J. D. (2003) Estimating Abundance from
@@ -105,30 +105,30 @@ function(stateformula, detformula, umf)
   fmAIC <- 2 * fm$value + 2 * nP + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)
 
-  stateEstimates <- unMarkedEstimate(name = "Abundance",
+  stateEstimates <- unmarkedEstimate(name = "Abundance",
       estimates = ests[1:nOP],
       covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = "exp",
       invlinkGrad = "exp")
 
-  detEstimates <- unMarkedEstimate(name = "Detection",
+  detEstimates <- unmarkedEstimate(name = "Detection",
       estimates = ests[(nOP + 1) : nP],
       covMat = as.matrix(covMat[(nOP + 1) : nP, (nOP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  estimateList <- unMarkedEstimateList(list(state=stateEstimates,
+  estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           det=detEstimates))
 
-  umfit <- unMarkedFit(fitType = "occuRN",
+  umfit <- unmarkedFit(fitType = "occuRN",
       call = match.call(), data = umf, estimates = estimateList,
       AIC = fmAIC, hessian = fm$hessian)
 
 
-#  umfit <- unMarkedFit(fitType = "occuRN",
+#  umfit <- unmarkedFit(fitType = "occuRN",
 #      stateformula = stateformula, detformula = detformula,
 #      data = umf, stateEstimates = stateEstimates,
 #      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
 #
-#  umfit <- unMarkedFit(fitType = "occuRN",
+#  umfit <- unmarkedFit(fitType = "occuRN",
 #                       stateformula = stateformula, detformula = detformula,
 #                       data = umf, stateMLE = ests[1:nOP],
 #                       stateSE = ests.se[1:nOP],

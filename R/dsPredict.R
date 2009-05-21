@@ -2,9 +2,9 @@
 #' @include dsUtils.R
 roxygen()
 
-setGeneric("predict",
-		def = function(object, ...) {
-			standardGeneric("predict")		})
+#setGeneric("predict",
+#		def = function(object, ...) {
+#			standardGeneric("predict")		})
 
 
 #' @exportMethod predict

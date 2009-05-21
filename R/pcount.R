@@ -32,7 +32,7 @@ roxygen()
 #' @param umf an unMarkedFrame supplying data to the model.
 #' @param K Integer upper index of integration for N-mixture.
 #' @param mixture character specifying mixture: either "P" or "NB".
-#' @return unMarkedFit object describing the model fit.
+#' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske \email{ianfiske@@gmail.com}
 #' @references Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 #'
@@ -121,24 +121,24 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
       error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
   fmAIC <- 2 * fm$value + 2 * nP
 
-  stateEstimates <- unMarkedEstimate(name = "Abundance",
+  stateEstimates <- unmarkedEstimate(name = "Abundance",
       estimates = ests[1:nAP],
       covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
       invlinkGrad = "exp")
 
-  detEstimates <- unMarkedEstimate(name = "Detection",
+  detEstimates <- unmarkedEstimate(name = "Detection",
       estimates = ests[(nAP + 1) : nP],
       covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  estimateList <- unMarkedEstimateList(list(state=stateEstimates, det=detEstimates))
+  estimateList <- unmarkedEstimateList(list(state=stateEstimates, det=detEstimates))
 
-#  umfit <- unMarkedFit(fitType = "pcount",
+#  umfit <- unmarkedFit(fitType = "pcount",
 #      stateformula = stateformula, detformula = detformula,
 #      data = umf, stateEstimates = stateEstimates,
 #      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
 
-  umfit <- unMarkedFit(fitType = "pcount",
+  umfit <- unmarkedFit(fitType = "pcount",
       call = match.call(), data = umf, estimates = estimateList,
       AIC = fmAIC, hessian = fm$hessian)
 

@@ -64,7 +64,7 @@ doublePiFun <- function(p){
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param piFun Function to define multinomial cell probabilities.
 #' @param umf unMarkedFrame supplying data.
-#' @return unMarkedFit object describing the model fit.
+#' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @keywords models
 #' @references
@@ -120,24 +120,24 @@ function(stateformula, detformula, piFun, umf)
   fmAIC <- 2 * fm$value + 2 * nP
   names(ests) <- c(lamParms, detParms)
 
-  stateEstimates <- unMarkedEstimate(name = "Abundance",
+  stateEstimates <- unmarkedEstimate(name = "Abundance",
       estimates = ests[1:nAP],
       covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
       invlinkGrad = "exp")
 
-  detEstimates <- unMarkedEstimate(name = "Detection",
+  detEstimates <- unmarkedEstimate(name = "Detection",
       estimates = ests[(nAP + 1) : nP],
       covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  estimateList <- unMarkedEstimateList(list(state=stateEstimates,
+  estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           det=detEstimates))
 
-  umfit <- unMarkedFit(fitType = "multinomPois",
+  umfit <- unmarkedFit(fitType = "multinomPois",
       call = match.call(), data = umf, estimates = estimateList,
       AIC = fmAIC, hessian = fm$hessian)
 
-  #  umfit <- unMarkedFit(fitType = "multinomPois",
+  #  umfit <- unmarkedFit(fitType = "multinomPois",
 #                       stateformula = stateformula, detformula = detformula,
 #                       data = umf, stateEstimates = stateEstimates,
 #                       detEstimates = detEstimates, AIC = fmAIC,

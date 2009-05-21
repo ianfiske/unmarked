@@ -1,4 +1,4 @@
-#' include distsamp.R
+#' @include distsamp.R
 roxygen()
 
 #' setMethod parboot
@@ -159,11 +159,10 @@ print(quantile(t.star, probs=c(0,2.5,25,50,75,97.5,100)/100))
 
 
 
-#' setMethod parboot
-setGeneric("plot",
-		def = function(x,y, ...) {
-			standardGeneric("plot")
-		})
+#setGeneric("plot",
+#		def = function(x,y, ...) {
+#			standardGeneric("plot")
+#		})
 
 
 #' @exportMethod plot

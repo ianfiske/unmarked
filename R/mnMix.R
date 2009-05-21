@@ -188,27 +188,27 @@ mnMix <-
   names(betas) <- paste("beta",1:nBetas,sep="")
   names(bs) <- colnames(V)
 
-  stateEstimates <- unMarkedEstimate(name = "State",
+  stateEstimates <- unmarkedEstimate(name = "State",
       estimates = ests[(nDP + 1) : nP],
       covMat = as.matrix(covMat[(nDP + 1) : nP,(nDP + 1) : nP]), invlink = "baselinelogistic",
       invlinkGrad = "baselinelogistic.grad")
 
-  pEstimates <- unMarkedEstimate(name = "Detection-p",
+  pEstimates <- unmarkedEstimate(name = "Detection-p",
       estimates = c(alphas,bs),
       covMat = as.matrix(covMat[c(1 : nAlphas, seq(nDMP + 1, length=nDCP)),
               c(1 : nAlphas, seq(nDMP + 1, length=nDCP))]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  betaEstimates <- unMarkedEstimate(name = "Detection-beta",
+  betaEstimates <- unmarkedEstimate(name = "Detection-beta",
       estimates = betas,
       covMat = as.matrix(covMat[(nAlphas + 1) : nDMP, (nAlphas + 1) : nDMP]),
       invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  estimateList <- unMarkedEstimateList(list(state=stateEstimates,
+  estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           p=pEstimates, beta = betaEstimates))
 
-  umfit <- unMarkedFit(fitType = "mnMix",
+  umfit <- unmarkedFit(fitType = "mnMix",
       call = match.call(), data = umf, estimates = estimateList,
       AIC = 2 * fm$value + 2 * nP, hessian = fm$hessian)
 

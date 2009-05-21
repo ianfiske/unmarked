@@ -1,4 +1,4 @@
-#' include classes.R
+#' @include classes.R
 roxygen()
 
 
