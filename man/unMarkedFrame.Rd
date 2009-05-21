@@ -1,5 +1,4 @@
 \name{unMarkedFrame}
-\alias{unMarkedFrame}
 \title{Create an unMarkedFrame.}
 \usage{unMarkedFrame(y, siteCovs, obsCovs, obsNum=ncol(y), primaryNum)}
 \description{Constructor for unMarkedFrames.}
@@ -18,6 +17,9 @@ In this situation, y has 3 columns, but obsNum must be specified as 2.  This fle
 For convenience, \code{obsCovs} can be a list of M x obsNum matrices, with each one corresponding to an observation level covariate.
 
 All site-level covariates are automatically copied to obsCovs so that site level covariates are available at the observation level.}
+\alias{unMarkedFrame}
+\alias{obsCovs}
+\alias{siteCovs}
 \value{an unMarkedFrame object}
 \arguments{\item{y}{A matrix of the observed measured data.}
 \item{obsCovs}{Dataframe of covariates that vary within sites.}

@@ -12,7 +12,7 @@ sampling can all be analyzed with this function by specifying the proper
 multinomial cell probablilities.  This is done with by supplying the
 appropriate function (piFun) argument.  \link{removalPiFun} and \link{doublePiFun}
 are supplied as example cell probability functions.}
-\value{unMarkedFit object describing the model fit.}
+\value{unmarkedFit object describing the model fit.}
 \author{Ian Fiske}
 \keyword{models}
 \references{Royle, J., Dawson, D., & Bates, S. (2004). Modeling abundance effects in distance sampling. Ecology, 85(6), 1591-1597.

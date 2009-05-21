@@ -25,7 +25,7 @@ Binomial(N_i, p_{ij})}{y_ij ~ Binomial(N_i, p_ij)}.
 
 Covariates of \eqn{\lambda_i}{lamdba_i} use the log link and
 covariates of \eqn{p_{ij}}{p_ij} use the logit link.}
-\value{unMarkedFit object describing the model fit.}
+\value{unmarkedFit object describing the model fit.}
 \author{Ian Fiske \email{ianfiske@gmail.com}}
 \references{Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 

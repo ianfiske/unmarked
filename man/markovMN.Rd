@@ -4,8 +4,8 @@
 \usage{markovMN(stateformula=~1, detformula=~1, umf, detconstraint,
     phiconstraint, psiconstraint, K, phiMatrix=cumlogit, EM=FALSE,
     psi.init, phiParms.init, detParms.init, get.inits=TRUE,
-    bootstrap.se=FALSE, B=50, trace=FALSE, arDet=FALSE, phiMatFun,
-    detVecFun, n.starts=1, homo.det=FALSE, max.bad=3, min.good=1)}
+    bootstrap.se=FALSE, B=50, trace=FALSE, phiMatFun=0, detVecFun,
+    n.starts=1, homo.det=FALSE, max.bad=3, min.good=1, fitStats=TRUE)}
 \description{Estimate parameters of the general multiseason multistate occpancy model.}
 \details{Site level covariates are currently not implemented for markovMN and so stateformula is ignored.
 See \link{unmarked} for a discussion of detformula.  See \link{unMarkedFrame} for a description of how to create

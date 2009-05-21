@@ -26,7 +26,7 @@ detection probability for an individual by
 
 Covariates of \eqn{\lambda_i}{lambda_i} are modelled with the log link
 and covariates of \eqn{r_{ij}}{r_ij} are modelled with the logit link.}
-\value{unMarkedFit object describing the model fit.}
+\value{unmarkedFit object describing the model fit.}
 \author{Ian Fiske}
 \references{Royle, J. A. and Nichols, J. D. (2003) Estimating Abundance from
 Repeated Presence-Absence Data or Point Counts. \emph{Ecology}, 84(3)
