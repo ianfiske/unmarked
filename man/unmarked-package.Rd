@@ -4,8 +4,8 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.5-7\cr
-Date: \tab 2009-2-24\cr
+Version: \tab 0.5-8\cr
+Date: \tab 2009-5-21\cr
 License: \tab GPL (>= 2)\cr
 LazyLoad: \tab yes\cr
 LazyData: \tab yes\cr
