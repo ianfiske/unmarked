@@ -2,6 +2,7 @@
 #' @include unmarkedFit.R
 #' @include unmarkedEstimate.R
 #' @include utils.R
+
 roxygen()
 
 
@@ -38,6 +39,7 @@ roxygen()
 #' # Predict density based upon fitted model and 'new' data
 #' (Elam.A <- predict(fmhnA.H, newdata=ndA, notconstant="area", type="state", 
 #' 	link="log"))
+#'
 #' with(Elam.A, { # Plot relationships between density and area
 #' 	plot(Predictor, Est., ylim=c(0.5, 1.2), xlab="Area", ylab="Density")
 #' 	segments(Predictor, Est.-SE, Predictor, Est.+SE)
@@ -49,6 +51,7 @@ roxygen()
 #' 
 #' (Ep.H <- predict(fmhnA.H, newdata=ndH, notconstant="habitat", type="det", 
 #' 	link="log"))
+#'
 #' with(Ep.H, {  # Plot relationship (lack of) difference in detectability between habitat types
 #' 	bp <- barplot(Est., ylim=c(0, 15), names=Predictor, 
 #' 		ylab="Sigma (half-normal shape parameter)") 
@@ -65,23 +68,24 @@ roxygen()
 #'
 #' @exportClass umDistsampFit
 setClass("umDistsampFit",
-		representation(fitType = "character",
-				call = "call",
-				stateformula = "formula",
-				detformula = "formula",
-				data = "data.frame",
-				keyfun = "character",
-				dist.breaks = "numeric",
-				tlength = "numeric",
-				area = "numeric",
-				survey = "character",
-				unitsIn = "character",
-				unitsOut = "character",
-				estimates = "unmarkedEstimateList",
-				AIC = "numeric",
-				hessian = "matrix",
-				negLogLike = "numeric")
-)
+	representation(fitType = "character",
+		call = "call",
+		stateformula = "formula",
+		detformula = "formula",
+		data = "data.frame",
+		optout = "list",
+		keyfun = "character",
+		dist.breaks = "numeric",
+		tlength = "numeric",
+		area = "numeric",
+		survey = "character",
+		unitsIn = "character",
+		unitsOut = "character",
+		estimates = "unmarkedEstimateList",
+		AIC = "numeric",
+		hessian = "matrix",
+		negLogLike = "numeric")
+		)
 
 
 
@@ -93,6 +97,7 @@ setClass("umDistsampFit",
 #'
 #' 
 #' @param stateformula Right-hand side formula describing covariates of abundance or density.
+#' @param stateformula Two-sided formula describing response matrix and covariates of abundance or density.
 #' @param detformula Right-hand side formula describing covariates of detection.
 #' @param data data.frame containing response and predictor variables. Each row is a transect.
 #' @param dist.breaks Numeric vector defining the distance intervals (in meters or km) in which observations were recorded.
@@ -122,7 +127,7 @@ setClass("umDistsampFit",
 #' # p(Intercept) is the standard deviation of half-normal function in meters.
 #' exp(coef(fm1, altNames=T))
 #' # variance-covariance matrix
-#' vcov(fm1)
+#' vcov(fm1, altNames=T)
 #' 
 #' 
 #' ## Half-normal. Abundance output. No covariates. Note that transect length
@@ -157,6 +162,8 @@ setClass("umDistsampFit",
 #' 	tlength=linetran$Length*1000, keyfun="hazard", survey="line", unitsIn="m"))
 #' exp(coef(fmhz, altNames=T))
 #' plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25)
+#' plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
+#'    xlab="Distance(m)", ylab="Detection probability")
 #' 
 #' ## Uniform detection function. Density output in hectars.
 #' (fmu <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
@@ -219,11 +226,11 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				line = {
 					stripwidths <- (((dist.breaks*2)[-1] - (dist.breaks*2)[-(J+1)])) / conv
 					tl <- tlength / conv
-					a <- rep(tl, each=J) * stripwidths	 # km^2
+					a <- rep(tl, each=J) * stripwidths		# km^2
 				},
 				point = {
 					W <- max(dist.breaks) / conv
-					a <- pi * W^2				             # km^2
+					a <- pi * W^2							# km^2
 				})
 		if(unitsOut=="ha") a <- a * 100
 	}
@@ -307,11 +314,11 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 	attr(estsAP, "altNames") <- altlamParms
 	attr(estsDP, "altNames") <- altdetParms
 	try(covMat <- solve(fm$hessian))
-	covMatAP <- as.matrix(covMat[1:nAP, 1:nAP])
+	covMatAP <- covMat[1:nAP, 1:nAP, drop=F]
 	if(keyfun=="uniform")
 		covMatDP <- matrix(numeric(0), 1)
 	else
-		covMatDP <- as.matrix(covMat[(nAP+1):nP, (nAP+1):nP])
+		covMatDP <- covMat[(nAP+1):nP, (nAP+1):nP, drop=F]
 	attr(covMatAP, "altNames") <- list(altlamParms, altlamParms)
 	attr(covMatDP, "altNames") <- list(altdetParms, altdetParms)
 	attr(fm$hessian, "altNames") <- list(c(altlamParms, altdetParms), 
@@ -405,4 +412,3 @@ setMethod("vcov", "umDistsampFit", function(object, type=NULL, drop=F,
 			attr(vc, "altNames") <- NULL
 			return(vc)
 		})      
-
