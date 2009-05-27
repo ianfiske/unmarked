@@ -188,18 +188,18 @@ mnMix <-
   names(betas) <- paste("beta",1:nBetas,sep="")
   names(bs) <- colnames(V)
 
-  stateEstimates <- unmarkedEstimate(name = "State",
+  stateEstimates <- unmarkedEstimate(name = "State", short.name = "N",
       estimates = ests[(nDP + 1) : nP],
       covMat = as.matrix(covMat[(nDP + 1) : nP,(nDP + 1) : nP]), invlink = "baselinelogistic",
       invlinkGrad = "baselinelogistic.grad")
 
-  pEstimates <- unmarkedEstimate(name = "Detection-p",
+  pEstimates <- unmarkedEstimate(name = "Detection-p", short.name = "p",
       estimates = c(alphas,bs),
       covMat = as.matrix(covMat[c(1 : nAlphas, seq(nDMP + 1, length=nDCP)),
               c(1 : nAlphas, seq(nDMP + 1, length=nDCP))]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  betaEstimates <- unmarkedEstimate(name = "Detection-beta",
+  betaEstimates <- unmarkedEstimate(name = "Detection-beta", short.name = "beta",
       estimates = betas,
       covMat = as.matrix(covMat[(nAlphas + 1) : nDMP, (nAlphas + 1) : nDMP]),
       invlink = "logistic",

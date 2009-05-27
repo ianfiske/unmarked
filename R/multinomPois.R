@@ -120,12 +120,12 @@ function(stateformula, detformula, piFun, umf)
   fmAIC <- 2 * fm$value + 2 * nP
   names(ests) <- c(lamParms, detParms)
 
-  stateEstimates <- unmarkedEstimate(name = "Abundance",
+  stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
       estimates = ests[1:nAP],
       covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
       invlinkGrad = "exp")
 
-  detEstimates <- unmarkedEstimate(name = "Detection",
+  detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
       estimates = ests[(nAP + 1) : nP],
       covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
@@ -137,10 +137,5 @@ function(stateformula, detformula, piFun, umf)
       call = match.call(), data = umf, estimates = estimateList,
       AIC = fmAIC, hessian = fm$hessian)
 
-  #  umfit <- unmarkedFit(fitType = "multinomPois",
-#                       stateformula = stateformula, detformula = detformula,
-#                       data = umf, stateEstimates = stateEstimates,
-#                       detEstimates = detEstimates, AIC = fmAIC,
-#                       hessian = fm$hessian)
   return(umfit)
 }

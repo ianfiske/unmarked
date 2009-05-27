@@ -5,6 +5,7 @@ roxygen()
 #' @export
 setClass("unmarkedEstimate",
     representation(name = "character",
+				short.name = "character",
         estimates = "numeric",
         covMat = "matrix",
         invlink = "character",
@@ -70,10 +71,11 @@ unmarkedEstimateList <- function(l) {
 }
 
 #' @export
-unmarkedEstimate <- function(name, estimates, covMat, invlink, invlinkGrad) {
+unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, invlinkGrad) {
 
   new("unmarkedEstimate",
       name = name,
+			short.name = short.name,
       estimates = estimates,
       covMat = covMat,
       invlink = invlink,
@@ -215,8 +217,13 @@ setMethod("names", "unmarkedEstimateList",
     })
 
 setMethod("coef", "unmarkedEstimate",
-		function(object,...) {
-			object@estimates
+		function(object, unique = TRUE, ...) {
+			coefs <- object@estimates
+			names(coefs)[names(coefs) == "(Intercept)"] <- "Int"
+			if(unique) {
+				names(coefs) <- paste(object@short.name, "(", names(coefs), ")", sep="")
+			}
+			coefs
 		})
 
 setMethod("vcov", "unmarkedEstimate",

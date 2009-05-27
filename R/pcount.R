@@ -121,12 +121,12 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
       error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
   fmAIC <- 2 * fm$value + 2 * nP
 
-  stateEstimates <- unmarkedEstimate(name = "Abundance",
+  stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
       estimates = ests[1:nAP],
       covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
       invlinkGrad = "exp")
 
-  detEstimates <- unmarkedEstimate(name = "Detection",
+  detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
       estimates = ests[(nAP + 1) : nP],
       covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")

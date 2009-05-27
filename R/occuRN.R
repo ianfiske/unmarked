@@ -105,12 +105,12 @@ function(stateformula, detformula, umf)
   fmAIC <- 2 * fm$value + 2 * nP + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)
 
-  stateEstimates <- unmarkedEstimate(name = "Abundance",
+  stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
       estimates = ests[1:nOP],
       covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = "exp",
       invlinkGrad = "exp")
 
-  detEstimates <- unmarkedEstimate(name = "Detection",
+  detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
       estimates = ests[(nOP + 1) : nP],
       covMat = as.matrix(covMat[(nOP + 1) : nP, (nOP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
@@ -122,17 +122,5 @@ function(stateformula, detformula, umf)
       call = match.call(), data = umf, estimates = estimateList,
       AIC = fmAIC, hessian = fm$hessian)
 
-
-#  umfit <- unmarkedFit(fitType = "occuRN",
-#      stateformula = stateformula, detformula = detformula,
-#      data = umf, stateEstimates = stateEstimates,
-#      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
-#
-#  umfit <- unmarkedFit(fitType = "occuRN",
-#                       stateformula = stateformula, detformula = detformula,
-#                       data = umf, stateMLE = ests[1:nOP],
-#                       stateSE = ests.se[1:nOP],
-#                       detMLE = ests[(nOP + 1) : nP],
-#                       detSE = ests.se[(nOP + 1): nP], AIC = fmAIC)
   return(umfit)
 }
