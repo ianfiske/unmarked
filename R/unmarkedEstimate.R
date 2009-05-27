@@ -213,3 +213,13 @@ setMethod("names", "unmarkedEstimateList",
     function(x) {
       names(x@estimates)
     })
+
+setMethod("coef", "unmarkedEstimate",
+		function(object,...) {
+			object@estimates
+		})
+
+setMethod("vcov", "unmarkedEstimate",
+		function(object,...) {
+			object@covMat
+		})
