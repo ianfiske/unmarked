@@ -127,3 +127,58 @@ setMethod("names", "unmarkedFit",
     function(x) {
       names(x@estimates)
     })
+    
+
+#' @examples
+#' data(mallard)
+#' mallardUMF <- unMarkedFrame(mallard.y, siteCovs = mallard.site,
+#' obsCovs = mallard.obs)
+#' fm.mallard <- pcount(~ length + elev + forest, ~ ivel + date, mallardUMF)
+#'
+#' # Predict from fitted model using original data
+#' predict(fm.mallard, type="state", backTran=T)
+#' predict(fm.mallard, type="det", backTran=F)
+#' 
+#' # Create newdata with only 'length' varying, then predict and plot
+#' nd <- data.frame(length=rnorm(10), elev=1, forest=0, ivel=-2, date=3)
+#'
+#' (Elam <- predict(fm.mallard, type="state", newdata=nd))
+#' 
+#' with(data.frame(Elam), {
+#' 	plot(nd$length, Predicted, ylim=c(0, 25))
+#' 	segments(nd$length, Predicted+SE, nd$length, Predicted-SE)
+#' 	})
+#' 
+#' @exportMethod predict
+setMethod("predict", "unmarkedFit", 
+	function(object, type, newdata=NULL, backTran=TRUE, ...) {
+		if(is.null(newdata))
+			newdata <- object@data
+		stateformula <- as.formula(as.character(object@call["stateformula"]))
+		detformula <- as.formula(as.character(object@call["detformula"]))
+		cls <- class(newdata)
+		switch(cls, 
+			unMarkedFrame = {
+				designMats <- getDesign(stateformula=stateformula, 
+					detformula=detformula, newdata)
+				switch(type, 
+					state = X <- designMats$X,
+					det = X <- designMats$V)
+					},
+			data.frame = {
+				switch(type, 
+					state = X <- model.matrix(stateformula, newdata),
+					det = X <- model.matrix(detformula, newdata))
+				})
+		out <- matrix(NA, nrow(X), 2, dimnames=list(NULL, c("Predicted", "SE")))
+		for(i in 1:nrow(X)) {
+			lc <- linearComb(object, X[i,], type)
+			if(backTran)
+				lc <- backTransform(lc)
+			out[i, "Predicted"] <- lc@estimates
+			out[i, "SE"] <- SE(lc)
+			}
+		return(out)
+		}
+	)
+	
