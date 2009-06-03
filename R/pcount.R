@@ -6,8 +6,8 @@ roxygen()
 #'
 #' This function fits binomial-Poisson mixture model for spatially replicated point count data.
 #'
-#'  See \code{\link{unMarkedFrame}} for a description of how to supply by creating
-#'  and unMarkedFrame.
+#'  See \code{\link{unmarkedFrame}} for a description of how to supply by creating
+#'  and unmarkedFrame.
 #'
 #'  This function fits the latent N-mixture model for point count data
 #'  (Royle 2004, Kery and Royle 2005).
@@ -29,7 +29,7 @@ roxygen()
 #'
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
-#' @param umf an unMarkedFrame supplying data to the model.
+#' @param umf an unmarkedFrame supplying data to the model.
 #' @param K Integer upper index of integration for N-mixture.
 #' @param mixture character specifying mixture: either "P" or "NB".
 #' @return unmarkedFit object describing the model fit.
@@ -39,7 +39,7 @@ roxygen()
 #' Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.
 #' @examples
 #' data(mallard)
-#' mallardUMF <- unMarkedFrame(mallard.y, siteCovs = mallard.site,
+#' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
 #'                            obsCovs = mallard.obs)
 #' fm.mallard <- pcount(~ length + elev + forest, ~ ivel+ date + I(date^2),
 #'                   mallardUMF)

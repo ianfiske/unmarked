@@ -1,6 +1,6 @@
 \name{csvToUMF}
 \alias{csvToUMF}
-\title{Convert .CSV File to an unMarkedFrame}
+\title{Convert .CSV File to an unmarkedFrame}
 \usage{csvToUMF(filename, long=FALSE, species)}
 \description{This function converts an appropriatedly formated comma-separated
 values file (.csv) to a format usable by \emph{unmarked}'s fitting
@@ -24,7 +24,7 @@ These are in sets of J columns for each variable, e.g., var1-1 var1-2
 var1-3 var2-1 var2-2 var2-3, etc.  The column header of the first
 variable in each group must indicate the variable name.
 }}
-\value{an unMarkedFrame object}
+\value{an unmarkedFrame object}
 \keyword{utilities}
 \author{Ian Fiske \email{ianfiske@gmail.com}}
 \arguments{\item{filename}{string describing filename of file to read in}

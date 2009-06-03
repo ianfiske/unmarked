@@ -2,6 +2,7 @@
 #' @import roxygen
 roxygen()
 
+#' @nord
 genFixedNLL <- function(nll, whichFixed, fixedValues) {
   function(params) {
     params[whichFixed] <- fixedValues
@@ -11,6 +12,7 @@ genFixedNLL <- function(nll, whichFixed, fixedValues) {
 
 # nll the original negative log likelihood function
 # MLE the full vector of MLE values
+#' @nord
 profileCI <- function(nll, whichPar, MLE, interval){
   MLEnll <- nll(MLE)
   nPar <- length(MLE)
@@ -27,25 +29,33 @@ profileCI <- function(nll, whichPar, MLE, interval){
 }
 
 ## link functions and their gradients
+#' @nord
 logistic <- function(x) {
   1/(1 + exp(-x))
 }
 
+#' @nord
 logistic.grad <- function(x) {
   exp(-x)/(exp(-x)+1)^2
 }
 
+#' @nord
 log.grad <- function(x) { # duh! (but for clarity)
   1/x
 }
 
+#' @nord
 explink <- function(x) exp(x)
 
+#' @nord
 identLink <- function(x) x
+
+#' @nord
 identLinkGrad <- function(x) 1
 
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))
+#' @nord
 rowProds <-
 function(x, na.rm = FALSE)
 {
@@ -53,6 +63,7 @@ function(x, na.rm = FALSE)
 }
 
 # helper function to coerce an array of matrices to a list
+#' @nord
 arrToList <- function(x){
   nl <- list()
   for(i in 1:dim(x)[3]) {
@@ -64,18 +75,21 @@ arrToList <- function(x){
 
 # compute estimated asymptotic variances of parameter estimates
 # using the observed information matrix
+#' @nord
 sd.est <- function(fm) {
     sqrt(diag(solve(fm$hessian)))
 }
 
 # delta method for variance of proportion given variance of its logistic-
 # transformed counterpart
+#' @nord
 sd.prop <- function(est,sd.est) {
     exp(-est)/(1 + exp(-est))^2 * sd.est
 }
 
 ### track linked list of parameters using a data frame
 ### add row to linked list
+#' @nord
 addParm <- function(list.df, parm.name, parm.length) {
     if(parm.length > 0) {
         if(nrow(list.df) == 0) {
@@ -91,6 +105,7 @@ addParm <- function(list.df, parm.name, parm.length) {
     return(list.df)
 }
 
+#' @nord
 parmNames <- function(list.df) {
     npar <- list.df$end[nrow(list.df)]
     names <- character(npar)
@@ -125,14 +140,14 @@ parmNames <- function(list.df) {
 #'   var1-3 var2-1 var2-2 var2-3, etc.  The column header of the first
 #'   variable in each group must indicate the variable name.
 #' }
-#' @title Convert .CSV File to an unMarkedFrame
+#' @title Convert .CSV File to an unmarkedFrame
 #' @param filename string describing filename of file to read in
 #' @param long \code{FALSE} if file is in long format or \code{TRUE} if
 #'    file is in long format (see \emph{Details})
 #' @param species if data is in long format with multiple species, then
 #'    this can specify a particular species to extract if there is a
 #'    column named "species".
-#' @return an unMarkedFrame object
+#' @return an unmarkedFrame object
 #' @keywords utilities
 #' @examples
 #' # examine a correctly formatted long .csv
@@ -159,6 +174,7 @@ function(filename, long=FALSE, species = NULL)
 # utility function to create a variable that follows the dates as 1,2,3,...
 # site id is first column
 # julian date is second column
+#' @nord
 dateToObs <-
 function(dfin)
 {
@@ -195,6 +211,7 @@ function(dfin)
 # response, one column
 # obs vars, one per column
 #' @export
+#' @nord
 formatLong <-
 function(dfin, species = NULL)
 {
@@ -243,7 +260,7 @@ function(dfin, species = NULL)
   obsvars.veclist <- lapply(obsvars.matlist, function(x) as.vector(t(x)))
   obsvars.df <- data.frame(obsvars.veclist)
 
-  unMarkedFrame(y, obsCovs = obsvars.df)
+  unmarkedFrame(y, obsCovs = obsvars.df)
 }
 
 # column names must be
@@ -252,6 +269,7 @@ function(dfin, species = NULL)
 # site vars: namefoo, namebar, ...
 # obs vars: namefoo.1, namefoo.2, ..., namefoo.J, namebar.1, ..., namebar.J,...
 #' @export
+#' @nord
 formatWide <-
 function(dfin)
 {
@@ -288,7 +306,7 @@ function(dfin)
   obsdata.df <- data.frame(obsdata.veclist)
   sitedata$ones <- NULL
 
-  unMarkedFrame(y, siteCovs = sitedata, obsCovs = obsdata.df)
+  unmarkedFrame(y, siteCovs = sitedata, obsCovs = obsdata.df)
 }
 
 
@@ -299,6 +317,7 @@ function(dfin)
 # add sample periods of NA to years with fewer samples
 # to make balanced data... this eases future computations
 #' @export
+#' @nord
 formatMult <-
 function(df.in)
 {
@@ -338,7 +357,7 @@ function(df.in)
 
   rownames(y) <- dimnames(obsvars)[[1]]
   colnames(y) <- dimnames(obsvars)[[2]]
-	umf <- unMarkedFrame(y, obsCovs = arrToList(obsvars), primaryNum = nY)
+	umf <- unmarkedFrame(y, obsCovs = arrToList(obsvars), primaryNum = nY)
   return(umf)
 }
 
@@ -346,6 +365,7 @@ function(df.in)
 # site  | species | count
 # to
 # site | spp1 | spp2 | ...
+#' @nord
 sppLongToWide <-
 function(df.in)
 {
@@ -356,6 +376,7 @@ function(df.in)
 }
 
 # get estimated psi from rn fit
+#' @nord
 getPsi <-
 function(lam)
 {
@@ -363,6 +384,7 @@ function(lam)
 }
 
 # get estimatd p from rn fit (only for a null type model so far)
+#' @nord
 getP.bar <-
 function(lam, r)
 {
@@ -373,6 +395,7 @@ function(lam, r)
   sum(pY.k * pN.k)
 }
 
+#' @nord
 handleNA <- function(stateformula, detformula, umf) {
   y <- umf@y
   # TODO: use J <- ncol(y) here and throughout instead of wrong use of obsNum?
@@ -460,6 +483,7 @@ Corresponding site(s) in 'y' were replaced with NA: %s",
 # copies site covariate info from obsdata to sitedata
 # puts all site covariates back into obsdata
 # needed because all site vars need to be available for both state and det models
+#' @nord
 arrangeData <-
 function(data)
 {
@@ -530,6 +554,7 @@ function(data)
 }
 
 # TODO: grab siteCovs if necessary in the detection formula.
+#' @nord
 getDesign <- function(stateformula, detformula, umf) {
 
   M <- nrow(umf@y)
@@ -555,12 +580,13 @@ getDesign <- function(stateformula, detformula, umf) {
   return(list(X = X, V = V))
 }
 
-
+#' @nord
 meanstate <- function(x) {
     K <- length(x) - 1
     sum(x*(0:K))
 }
 
+#' @nord
 truncateToBinary <- function(y) {
   if(max(y, na.rm = TRUE) > 1) {
     y <- ifelse(y > 0, 1, 0)
@@ -569,6 +595,7 @@ truncateToBinary <- function(y) {
   return(y)
 }
 
+#' @nord
 getSS <- function(phi) {
 	ev.length <- nrow(phi)
 	ev <- tryCatch(eigen(t(phi))$vectors[,1],
@@ -577,6 +604,7 @@ getSS <- function(phi) {
 }
 
 #' @export
+#' @nord
 imputeMissing <- function(umf, whichCovs) {
 # impute observation covariates
 	if(!is.null(umf@obsCovs)) {

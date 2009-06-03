@@ -1,11 +1,10 @@
-\name{markovMN}
-\alias{markovMN}
+\name{umHMM}
+\alias{umHMM}
 \title{Fit the general multistate multiseason occupancy model.}
-\usage{markovMN(stateformula=~1, detformula=~1, umf, detconstraint,
-    phiconstraint, psiconstraint, K, phiMatrix=cumlogit, EM=FALSE,
-    psi.init, phiParms.init, detParms.init, get.inits=TRUE,
-    bootstrap.se=FALSE, B=50, trace=FALSE, phiMatFun=0, detVecFun,
-    n.starts=1, homo.det=FALSE, max.bad=3, min.good=1, fitStats=TRUE)}
+\usage{umHMM(stateformula=~1, detformula=~1, umf, detconstraint,
+    phiconstraint, psiconstraint, phiMat, psi.init, phiParms.init,
+    detParms.init, bootstrap.se=FALSE, B=50, starts, max.bad=3,
+    min.good=1, fit.stats=TRUE, method=BFGS, control=list())}
 \description{Estimate parameters of the general multiseason multistate occpancy model.}
 \details{Site level covariates are currently not implemented for markovMN and so stateformula is ignored.
 See \link{unmarked} for a discussion of detformula.  See \link{unmarkedFrame} for a description of how to create
@@ -35,13 +34,12 @@ which covariates are restricted to have the same effect on a given matrix parame
 \item{phiconstraint}{vector to describe phi constraints}
 \item{psiconstraint}{vector to describe psi constraints}
 \item{K}{integer maximum level of y}
-\item{phiMatrix}{character describing which phi to use}
-\item{EM}{logical specifying to use EM (TRUE) or BFGS (FALSE)}
+\item{phiMat}{character vector describing which phi specification to use (see Details)}
 \item{psi.init}{initial values for psi}
 \item{phiParms.init}{initial values for phi parameters}
 \item{detParms.init}{initial values for detection parameters}
-\item{get.inits}{logical, specifying whether or not to search for better initial values}
 \item{booststrap.se}{logical. TRUE calculates standard errors using bootstrap}
 \item{B}{number of bootstrap interations}
-\item{trace}{logical, TRUE show BFGS steps}
-\item{arDet}{TRUE chooses the autoregressive type detection structure}}
+\item{min.good}{minimum number of successful model fits before returning}
+\item{max.bad}{maximum number of unsuccessful model fits before aborting}
+\item{fit.stats}{logical indicating whether or not to return the fit statistics}}

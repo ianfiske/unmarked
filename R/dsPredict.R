@@ -8,6 +8,7 @@ roxygen()
 
 
 #' @exportMethod predict
+#' @importFrom msm deltamethod
 setMethod("predict", "umDistsampFit", 
    function(object, type=c("state", "det"), 
    link=c("log", "logit", "identity"), newdata=NULL, notconstant=NULL, 

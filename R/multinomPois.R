@@ -63,7 +63,7 @@ doublePiFun <- function(p){
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param piFun Function to define multinomial cell probabilities.
-#' @param umf unMarkedFrame supplying data.
+#' @param umf unmarkedFrame supplying data.
 #' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @keywords models
@@ -75,7 +75,7 @@ doublePiFun <- function(p){
 #' Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance and Occurrence. Journal Of Agricultural Biological And Environmental Statistics, 11(3), 249.
 #' @examples
 #' data(ovendata)
-#' ovenFrame <- unMarkedFrame(ovendata.list$data,
+#' ovenFrame <- unmarkedFrame(ovendata.list$data,
 #'                            siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])))
 #' fm1 <- multinomPois(~ ufp + trba, ~ 1, removalPiFun, ovenFrame)
 #' fm2 <- multinomPois(~ ufp, ~1, removalPiFun, ovenFrame)

@@ -5,7 +5,7 @@ roxygen()
 
 #'  This function estimates the standard occupancy model.
 #'
-#'  See \link{unMarkedFrame} for a description of how to supply data to the \command{umf}
+#'  See \link{unmarkedFrame} for a description of how to supply data to the \command{umf}
 #'  argument.
 #'
 #'  \command{occu} fits the traditional occupancy model based on the
@@ -24,7 +24,7 @@ roxygen()
 #' @title Fit the MacKenzie Occupancy Model
 #' @param stateformula right-hand side formula describing covariates of occurence.
 #' @param detformula right-hand side formula describing covariates of detection.
-#' @param umf unMarkedFrame object that supplies the data (see \link{unMarkedFrame})..
+#' @param umf unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..
 #' @param knownOcc vector of sites that are known to be occupied.
 #' @return unmarkedFit object describing the model fit.
 #' @references
@@ -33,7 +33,7 @@ roxygen()
 #' @author Ian Fiske
 #' @examples
 #' data(frogs)
-#' pferUMF <- unMarkedFrame(pfer.bin)
+#' pferUMF <- unmarkedFrame(pfer.bin)
 #' fm <- occu(~1, ~1, pferUMF)
 #' fm
 #' @keywords models

@@ -9,7 +9,7 @@ roxygen()
 #' calling data (Royle and Link 2005).  Currently, covariates can only be
 #' supplied to the detection process (as in Royle and Link 2005).
 #'
-#' See \link{unMarkedFrame} for detailed descriptions of passing data to the
+#' See \link{unmarkedFrame} for detailed descriptions of passing data to the
 #' \code{umf} argument.
 #' See \link{unmarked} for a general description of the specifying covariates to the
 #' stateformula and detformula arguments.
@@ -36,7 +36,7 @@ roxygen()
 #' @title Fit Multinomial-Multinomial Mixture Models
 #' @param stateformula formula for covariates of occurrance.
 #' @param detformula formula for covariates of detection.
-#' @param umf unMarkedFrame supplying data.
+#' @param umf unmarkedFrame supplying data.
 #' @param constraint vector to describe which detection parameters are
 #'     the same (see \emph{Details})
 #' @return still need to convert to UMfit
@@ -46,7 +46,7 @@ roxygen()
 #' Royle, J. Andrew, and William A. Link. 2005. A General Class of Multinomial Mixture Models for Anuran Calling Survey Data. Ecology 86, no. 9: 2505--2512.
 #' @examples
 #' data(gf)
-#' gfUMF <- unMarkedFrame(gf.data, obsCovs = gf.obs)
+#' gfUMF <- unmarkedFrame(gf.data, obsCovs = gf.obs)
 #' fm.mmx1 <- mnMix(~ 1, ~ samp1 + samp3 + temp, con=c(1,2,2,3,3,3), gfUMF)
 #' fm.mmx1
 #' @keywords models

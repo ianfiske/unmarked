@@ -8,19 +8,19 @@ roxygen()
 # slot fitType Name of the model that was fit.
 # @slot stateformula The abundance/occupancy formula.
 # @slot detformula The formula governing the detection process.
-# @slot data The unMarkedFrame containing the data that was fit.
+# @slot data The unmarkedFrame containing the data that was fit.
 # @slot stateMLE The MLE of the abundance/occupancy parameters
 # @slot stateSE The standard errors of the state MLE's.
 # @slot detMLE MLE of the detection parameters.
 # @slot detSE Standard errors of the detection MLE's.
 # @slot AIC The AIC of this model fit.
 # @slot negLogLike The negative log likelihood of the fitted model.
-# A Class to store fit results from unMarkedFrames.
+# A Class to store fit results from unmarkedFrames.
 #' @export
 setClass("unmarkedFit",
     representation(fitType = "character",
         call = "call",
-        data = "unMarkedFrame",
+        data = "unmarkedFrame",
         estimates = "unmarkedEstimateList",
         AIC = "numeric",
         hessian = "matrix",
@@ -131,13 +131,13 @@ setMethod("names", "unmarkedFit",
 
 #' @examples
 #' data(mallard)
-#' mallardUMF <- unMarkedFrame(mallard.y, siteCovs = mallard.site,
+#' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
 #' obsCovs = mallard.obs)
 #' fm.mallard <- pcount(~ length + elev + forest, ~ ivel + date, mallardUMF)
 #'
 #' # Predict from fitted model using original data
-#' predict(fm.mallard, type="state", backTran=T)
-#' predict(fm.mallard, type="det", backTran=F)
+#' predict(fm.mallard, type="state", backTran=TRUE)
+#' predict(fm.mallard, type="det", backTran=FALSE)
 #' 
 #' # Create newdata with only 'length' varying, then predict and plot
 #' nd <- data.frame(length=rnorm(10), elev=1, forest=0, ivel=-2, date=3)
@@ -158,7 +158,7 @@ setMethod("predict", "unmarkedFit",
 		detformula <- as.formula(as.character(object@call["detformula"]))
 		cls <- class(newdata)
 		switch(cls, 
-			unMarkedFrame = {
+			unmarkedFrame = {
 				designMats <- getDesign(stateformula=stateformula, 
 					detformula=detformula, newdata)
 				switch(type, 

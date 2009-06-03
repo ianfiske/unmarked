@@ -27,9 +27,9 @@
 #' state process.
 #'
 #' \strong{Data:} All data is passed to unMarked's estimation functions
-#'  as a formal S4 class called an unMarkedFrame.
-#' See \code{\link{unMarkedFrame}} for a detailed description of unMarkedFrames
-#' and how to create them using the convenient constructor \code{unMarkedFrame()}.
+#'  as a formal S4 class called an unmarkedFrame.
+#' See \code{\link{unmarkedFrame}} for a detailed description of unmarkedFrames
+#' and how to create them using the convenient constructor \code{unmarkedFrame()}.
 #'
 #' \strong{Model Specification:}  Most of \emph{unmarked}'s
 #' model-fitting functions allow specification of covariates for both the

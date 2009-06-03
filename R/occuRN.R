@@ -31,7 +31,7 @@ roxygen()
 #'
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
-#' @param umf unMarkedFrame supplying data to the model.
+#' @param umf unmarkedFrame supplying data to the model.
 #' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @references
@@ -40,7 +40,7 @@ roxygen()
 #' pp. 777--790.
 #' @examples
 #' data(birds)
-#' woodthrushUMF <- unMarkedFrame(woodthrush.bin)
+#' woodthrushUMF <- unmarkedFrame(woodthrush.bin)
 #' fm.wood.rn <- occuRN(~1, ~obs, woodthrushUMF)
 #' fm.wood.rn
 #' @keywords models

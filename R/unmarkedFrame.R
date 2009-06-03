@@ -1,7 +1,7 @@
 #' @include classes.R
 roxygen()
 
-validUnMarkedFrame <- function(object) {
+validunmarkedFrame <- function(object) {
   errors <- character(0)
   M <- nrow(object@y)
   if(!is.null(object@siteCovs))
@@ -29,24 +29,24 @@ validUnMarkedFrame <- function(object) {
 #' Class to hold data for analyses in unmarked.
 #'
 #' @export
-setClass("unMarkedFrame",
+setClass("unmarkedFrame",
     representation(y = "matrix",
         obsCovs = "optionalDataFrame",
         siteCovs = "optionalDataFrame",
         obsNum = "numeric",
         primaryNum = "numeric"),
-    validity = validUnMarkedFrame)
+    validity = validunmarkedFrame)
 
-#' Constructor for unMarkedFrames.
+#' Constructor for unmarkedFrames.
 #'
-#' unMarkedFrame is the S4 class that holds data structures to be passed to the model-fitting functions in unMarked.
+#' unmarkedFrame is the S4 class that holds data structures to be passed to the model-fitting functions in unMarked.
 #'
-#' An unMarkedFrame contains the observations (\code{y}), covariates measured at the observation level (\code{obsCovs}), and covariates measured at the site level (\code{siteCovs}).
+#' An unmarkedFrame contains the observations (\code{y}), covariates measured at the observation level (\code{obsCovs}), and covariates measured at the site level (\code{siteCovs}).
 #' For a data set with M sites and J observations at each site, y is an M x J matrix.
 #' \code{obsCovs} and \code{siteCovs} are both data frames (see \link{data.frame}).  \code{siteCovs} has M rows so that each row contains the covariates for the corresponding sites.
 #' \code{obsCovs} has M*obsNum rows so that each covariates is ordered by site first, then observation number.  Missing values are coded with \code{NA} in any of y, siteCovs, or obsCovs.
 #'
-#' Additionally, unMarkedFrames contain metadata, obsNum and primaryNum.  obsNum is the number of observations measured at each site. primaryNum is the number of seasons in a robust design sampling scheme.
+#' Additionally, unmarkedFrames contain metadata, obsNum and primaryNum.  obsNum is the number of observations measured at each site. primaryNum is the number of seasons in a robust design sampling scheme.
 #' Typically, these can be automatically determined by the constructor.  If not specified, obsNum is taken to be the number of columns in y and primaryNum is taken to be 1.
 #' However, for certain situations, these must be supplied.  For example, double observer sampling, y has 3 columns corresponding the observer 1, observer 2, and both, but there were only two independent observations.
 #' In this situation, y has 3 columns, but obsNum must be specified as 2.  This flexibility is currenty only used in the function \link{multinomPois}.
@@ -55,22 +55,22 @@ setClass("unMarkedFrame",
 #'
 #' All site-level covariates are automatically copied to obsCovs so that site level covariates are available at the observation level.
 #'
-#' @title Create an unMarkedFrame.
-#' @aliases unMarkedFrame obsCovs siteCovs
+#' @title Create an unmarkedFrame.
+#' @aliases unmarkedFrame obsCovs siteCovs
 #' @param y A matrix of the observed measured data.
 #' @param obsCovs Dataframe of covariates that vary within sites.
 #' @param siteCovs Dataframe of covariates that vary at the site level.
 #' @param obsNum Number of independent observations.
 #' @param primaryNum Number of primary time periods (seasons in the multiseason model).
-#' @return an unMarkedFrame object
+#' @return an unmarkedFrame object
 #' @examples
 #' data(mallard)
-#' mallardUMF <- unMarkedFrame(mallard.y, siteCovs = mallard.site,
+#' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
 #'                            obsCovs = mallard.obs)
 #' obsCovs(mallardUMF)
 #' obsCovs(mallardUMF, matrices = TRUE)
 #' @export
-unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
+unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     obsNum = ncol(y), primaryNum = NULL) {
 
   if(!is.matrix(y)) {
@@ -101,7 +101,7 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 
   if(is.null(primaryNum)) primaryNum <- 1
 
-  umf <- new("unMarkedFrame", y = y, obsCovs = obsCovs,
+  umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs,
       siteCovs = siteCovs, obsNum = obsNum,
       primaryNum = primaryNum)
 
@@ -116,7 +116,7 @@ unMarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 }
 
 #' @export
-setMethod("show", "unMarkedFrame",
+setMethod("show", "unmarkedFrame",
     function(object) {
       ## print y
       cat("Observation matrix:\n")
@@ -141,7 +141,7 @@ setMethod("show", "unMarkedFrame",
     })
 
 #' Extractor for site level covariates
-#' @param umf an unMarkedFrame
+#' @param umf an unmarkedFrame
 #' @return a data frame containing the site level covariates.
 #' @export
 siteCovs <- function(umf) {
@@ -149,7 +149,7 @@ siteCovs <- function(umf) {
 }
 
 #' Extractor for observation level covariates
-#' @param umf an unMarkedFrame
+#' @param umf an unmarkedFrame
 #' @param matrices logical indicating whether to return the M * obsNum row data frame (default)
 #'  or a list of M x obsNum matrices (matrices = TRUE).
 #' @return either a data frame (default) or a list of matrices (if matrices = TRUE).
@@ -176,9 +176,9 @@ obsCovs <- function(umf, matrices = FALSE) {
 #    })
 
 #' @export
-setMethod("summary","unMarkedFrame",
+setMethod("summary","unmarkedFrame",
     function(object,...) {
-      cat("unMarkedFrame Object\n\n")
+      cat("unmarkedFrame Object\n\n")
       cat(nrow(object@y), "sites\n")
       cat("Maximum observations per site:",object@obsNum,"\n\n")
       cat("Distribution of observations per site:")

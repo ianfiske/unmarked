@@ -34,8 +34,8 @@ pp. 777--790.}
 \keyword{models}
 \arguments{\item{stateformula}{Right-hand side formula describing covariates of abundance}
 \item{detformula}{Right-hand side formula describing covariates of detection}
-\item{umf}{unMarkedFrame supplying data to the model.}}
+\item{umf}{unmarkedFrame supplying data to the model.}}
 \examples{data(birds)
-woodthrushUMF <- unMarkedFrame(woodthrush.bin)
+woodthrushUMF <- unmarkedFrame(woodthrush.bin)
 fm.wood.rn <- occuRN(~1, ~obs, woodthrushUMF)
 fm.wood.rn}

@@ -28,6 +28,7 @@ newarea <- seq(min(linetran$area), max(linetran$area), length=20)
 # Predict density based upon fitted model and 'new' data
 (Elam.A <- predict(fmhnA.H, newdata=ndA, notconstant="area", type="state", 
 link="log"))
+
 with(Elam.A, { # Plot relationships between density and area
 plot(Predictor, Est., ylim=c(0.5, 1.2), xlab="Area", ylab="Density")
 segments(Predictor, Est.-SE, Predictor, Est.+SE)
@@ -39,6 +40,7 @@ ndH
 
 (Ep.H <- predict(fmhnA.H, newdata=ndH, notconstant="habitat", type="det", 
 link="log"))
+
 with(Ep.H, {  # Plot relationship (lack of) difference in detectability between habitat types
 bp <- barplot(Est., ylim=c(0, 15), names=Predictor, 
 ylab="Sigma (half-normal shape parameter)") 
@@ -49,6 +51,6 @@ box()
 with(Ep.H, {
 plot(function(x) unmarked:::gxhn(x, Est.[1]), 0, 25, 
 xlab="Distance (m)", ylab="Detection probability")
-plot(function(x) unmarked:::gxhn(x, Est.[2]), 0, 25, add=T, lty=2, lwd=2)
+plot(function(x) unmarked:::gxhn(x, Est.[2]), 0, 25, add=TRUE, lty=2, lwd=2)
 legend(1, 20, c("Habitat a", "Habitat b"), lty=1:2)
 })}

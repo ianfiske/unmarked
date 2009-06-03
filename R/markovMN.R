@@ -1,4 +1,6 @@
 #' @include utils.R
+#' @include unmarkedFit.R
+#' @include unmarkedEstimate.R
 roxygen()
 
 # TODO:  improve documentation!!
@@ -7,8 +9,8 @@ roxygen()
 #' Estimate parameters of the general multiseason multistate occpancy model.
 #'
 #' Site level covariates are currently not implemented for markovMN and so stateformula is ignored.
-#' See \link{unmarked} for a discussion of detformula.  See \link{unMarkedFrame} for a description of how to create
-#' an unMarkedFrame for supplying data to the argument \code{umf}.
+#' See \link{unmarked} for a discussion of detformula.  See \link{unmarkedFrame} for a description of how to create
+#' an unmarkedFrame for supplying data to the argument \code{umf}.
 #'
 #' \code{K} and \code{phiMatrix} together determine the model form.  Multiple phi matrices
 #' may be possible for each K.  Options for phi are:
@@ -31,34 +33,39 @@ roxygen()
 #' @title Fit the general multistate multiseason occupancy model.
 #' @param stateformula right-hand side formula describing covariates of occurence.
 #' @param detformula right-hand side formula describing covariates of detection.
-#' @param umf unMarkedFrame object that supplies the data (see \link{unMarkedFrame})..
+#' @param umf unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..
 #' @param detconstraint matrix to describe constraints on detection parameters
 #' @param phiconstraint vector to describe phi constraints
 #' @param psiconstraint vector to describe psi constraints
 #' @param K integer maximum level of y
-#' @param phiMatrix character describing which phi to use
-#' @param EM logical specifying to use EM (TRUE) or BFGS (FALSE)
+#' @param phiMat character vector describing which phi specification to use (see Details)
 #' @param psi.init initial values for psi
 #' @param phiParms.init initial values for phi parameters
 #' @param detParms.init initial values for detection parameters
-#' @param get.inits logical, specifying whether or not to search for better initial values
 #' @param booststrap.se logical. TRUE calculates standard errors using bootstrap
 #' @param B number of bootstrap interations
-#' @param trace logical, TRUE show BFGS steps
-#' @param arDet TRUE chooses the autoregressive type detection structure
+#' @param min.good minimum number of successful model fits before returning
+#' @param max.bad maximum number of unsuccessful model fits before aborting
+#' @param fit.stats logical indicating whether or not to return the fit statistics
 #' @useDynLib unmarked
 #' @export
-markovMN <-
+umHMM <-
   function(stateformula = ~ 1, detformula = ~ 1, umf,
            detconstraint = NULL,
-           phiconstraint = NULL, psiconstraint = NULL, K,
-           phiMatrix = "cumlogit", EM = FALSE, psi.init = NULL,
+           phiconstraint = NULL, psiconstraint = NULL,
+           phiMat, psi.init = NULL,
            phiParms.init = NULL, detParms.init = NULL,
-           get.inits = TRUE, bootstrap.se = FALSE, B = 50, trace = FALSE,
-           phiMatFun = 0, detVecFun, n.starts = 1, homo.det = FALSE,
-           max.bad = 3, min.good = 1, fitStats = TRUE)
+           bootstrap.se = FALSE, B = 50, starts ,
+           max.bad = 3, min.good = 1, fit.stats = TRUE, method = "BFGS", control=list())
 {
-  ## truncate at K
+
+	phiMat <- get(phiMat)
+	stopifnot(is(phiMat, "phiFunSpec"))
+	K <- phiMat@K
+#	nDMP.un <- phiMat@nPhiP.un
+#	phiMatFun <- phiMat@fun
+	
+	## truncate at K
   umf@y[umf@y > K] <- K
 
   ## coerce vector detcon for K = 1.
@@ -115,15 +122,22 @@ markovMN <-
   n.det <- sum(apply(y > 0, 1, any, na.rm = TRUE))
 
   fc <- match.call()
-  fc[[1]] <- as.name("markovMN.fit")
-  fc$bootstrap.se <- fc$covdata.site <- fc$covdata.obs <- fc$data <-
+  fc[[1]] <- as.name("umHMM.fit")
+  fc$bootstrap.se <- fc$covdata.site <- fc$covdata.obs <- fc$data <- fc$phiMat <- 
     fc$B <- NULL
   fc$umf <- as.name("umf")
   fc$J <- as.name("J")
   fc$detconstraint <- as.name("detconstraint")
+	fc$method <- as.name("method")
+	fc$control <- as.name("control")
 #  fc$max.bad <- as.name("max.bad")
 #  fc$min.good <- as.name("min.good")
-  fc$homo.det <- as.name("homo.det")
+#  fc$homo.det <- as.name("homo.det")
+
+	fc$K <- K
+	fc$phiMatFun <- phiMat@fun
+	fc$nPhiP.un <- phiMat@nPhiP.un
+
   fm <- eval(fc)
 
 #  markovMN.fit.args <- names(formals(markovMN.fit))
@@ -204,24 +218,21 @@ markovMN <-
     fm$convergence <- 1
   }
 
-  if(fitStats == TRUE) {
-    fitStats <- computeFitStats(detMats = fm$detMats, smooth = fm$smooth.sites, y = y, 
+  if(fit.stats) {
+    fm$fit.stats <- computeFitStats(detMats = fm$detMats, smooth = fm$smooth.sites, y = y, 
 			J.it = fm$J.it)
-    fm$fitStats <- fitStats
   }
 
   return(fm)
 }
 
 
-markovMN.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
+umHMM.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
                          detconstraint = NULL,
-                         phiconstraint = NULL, psiconstraint = NULL, J, K,
-                         phiMatrix = "cumlogit", EM = FALSE, psi.init = NULL,
+                         phiconstraint = NULL, psiconstraint = NULL, J, K, nPhiP.un,
+                         psi.init = NULL,
                          phiParms.init = NULL, detParms.init = NULL,
-                         get.inits = TRUE, trace = FALSE,
-                         phiMatFun = 0, detVecFun = NULL,
-                         homo.det = FALSE, max.bad = 3, min.good = 3)
+                         phiMatFun, max.bad = 3, min.good = 3, method, control)
 {
   y <- umf@y
 
@@ -261,7 +272,7 @@ It should have",nDMP))
   V.itjk <- V.itj %x%  diag(nDMP)
                                         #get a better line here    if(is.null(detconstraint)) detconstraint <- 1:nDMP.un
 
-  fphiMatrix <- paste("f",phiMatrix,sep="")
+  #fphiMatrix <- paste("f",phiMatrix,sep="")
   ## add "f" to fool switch because it doesn't like characters that start
   ## with numbers
 #  nPhiP.un <- switch(fphiMatrix,
@@ -275,8 +286,8 @@ It should have",nDMP))
 #                     flogit3 = 6,
 #                     flogit2 = 2,
 #                     flogit4ar = 6)
-	nPhiP.un <- switch(K,  # TODO: this is a placeholder.... not very flexible.
-			2, 6, 12)
+#	nPhiP.un <- switch(K,  # TODO: this is a placeholder.... not very flexible.
+#			2, 6, 12)
 
 #  nPhiP.un.table <- matrix(c(
 #      1, 0, 2,
@@ -370,15 +381,14 @@ It should have",nDMP))
   y.it <- matrix(t(y), nY*M, J, byrow = TRUE)
   J.it <- rowSums(!is.na(y.it))
 
-  fm <- findMLE2(y.itj=y.itj, V.itjk = V.itjk, J.it = J.it, nDMP=nDMP, nDP=nDP, nSP=nSP, nSP.un=nSP.un,
+  fm <- findMLE(y.itj=y.itj, V.itjk = V.itjk, J.it = J.it, nDMP=nDMP, nDP=nDP, nSP=nSP, nSP.un=nSP.un,
                    nPhiP=nPhiP, nP=nP, nDP.un=nDP.un,
                    nPhiP.un=nPhiP.un, H.det=H.det, H.phi=H.phi, H.psi=H.psi, K=K, M=M, J=J, nY=nY,
-                   phiMatrix=phiMatrix, EM= EM, psi.init = psi.init,
+                   psi.init = psi.init,
                    phiParms.init = phiParms.init,
-                   detParms.init = detParms.init, get.inits = get.inits,
-                   trace = trace,# arDet = arDet,
-                   phiMatFun = phiMatFun, detVecFun = detVecFun,
-                   homo.det = homo.det, max.bad = max.bad, min.good = min.good)
+                   detParms.init = detParms.init, 
+                   phiMatFun = phiMatFun, 
+                   max.bad = max.bad, min.good = min.good, method = method, control = control)
 
   phiEsts <- H.phi %*% fm$phiParms
   detEsts <- H.det %*% fm$detParms
@@ -472,72 +482,72 @@ It should have",nDMP))
        psiconstraint = psiconstraint,
        phiconstraint = phiconstraint,
        detconstraint = detconstraint,
-       phiMatrix = phiMatrix, K = K, hessian = hessian,
+       K = K, hessian = hessian,
        n = M, convergence = fm$convergence, detMats = fm$detMats,
        smooth.sites = smooth.sites, J.it = J.it)
 }
 
-
-findMLE <-
-  function(y.itj, V.itjk, J.it, nDMP, nDP, nSP, nSP.un, nPhiP, nP, nDP.un,
-           nPhiP.un, H.det, H.phi, H.psi, K, M, J, nY,
-           phiMatrix, smooth.only = FALSE, EM,
-           psi.init, phiParms.init, detParms.init, get.inits, trace,
-           arDet=0,phiMatFun = phiMatFun, detVecFun = detVecFun, homo.det,
-           min.good, max.bad)
-{
-  ncX <- ifelse(is.null(ncol(V.itjk)), 1, ncol(V.itjk))
-  x <- .C("findMLE",
-          as.integer(y.itj),
-          as.double(t(V.itjk)),
-          as.integer(t(J.it)),
-          as.integer(ncX),
-          as.integer(nDMP),
-          as.integer(nDP),
-          as.integer(nSP),
-          as.integer(nSP.un),
-          as.integer(nPhiP),
-          as.integer(nP),
-          as.integer(nDP.un),
-          as.integer(nPhiP.un),
-          as.double(H.det),
-          as.double(H.phi),
-          as.double(H.psi),
-          as.integer(K),
-          as.integer(M),
-          as.integer(J),
-          as.integer(nY),
-          nll = double(1),
-          phi = double((K + 1)^2),
-          psiParms = double(nSP),
-          detParms = double(nDP),
-          phiParms = double(nPhiP),
-          smooth = double(M*nY*(K + 1)),
-          smooth.only = as.integer(smooth.only),
-          as.character(phiMatrix),
-          hessian = double(nP^2),
-          EM = as.integer(EM),
-          as.double(psi.init),
-          as.double(phiParms.init),
-          as.double(detParms.init),
-          as.integer(get.inits),
-          as.integer(trace),
-          as.integer(homo.det),
-          as.integer(arDet),
-          convergence = integer(1),
-          as.integer(K), # replace with detfun in future.
-          as.integer(phiMatFun),
-          as.integer(min.good),
-          as.integer(max.bad),
-          detMats = double(sum(J.it)*(K+1)^2)) # store det mat for each obs
-
-  return(list(nll = x$nll, phi = matrix(x$phi,K + 1, K + 1),
-              psiParms = x$psiParms, detParms = x$detParms,
-              phiParms = x$phiParms,
-              smooth = array(x$smooth, c(K + 1, nY, M)),
-              hessian = matrix(x$hessian,nP,nP),
-              convergence = x$convergence, detMats = x$detMats))
-}
+#
+#findMLE <-
+#  function(y.itj, V.itjk, J.it, nDMP, nDP, nSP, nSP.un, nPhiP, nP, nDP.un,
+#           nPhiP.un, H.det, H.phi, H.psi, K, M, J, nY,
+#           phiMatrix, smooth.only = FALSE, EM,
+#           psi.init, phiParms.init, detParms.init, get.inits, trace,
+#           arDet=0,phiMatFun = phiMatFun, detVecFun = detVecFun, homo.det,
+#           min.good, max.bad)
+#{
+#  ncX <- ifelse(is.null(ncol(V.itjk)), 1, ncol(V.itjk))
+#  x <- .C("findMLE",
+#          as.integer(y.itj),
+#          as.double(t(V.itjk)),
+#          as.integer(t(J.it)),
+#          as.integer(ncX),
+#          as.integer(nDMP),
+#          as.integer(nDP),
+#          as.integer(nSP),
+#          as.integer(nSP.un),
+#          as.integer(nPhiP),
+#          as.integer(nP),
+#          as.integer(nDP.un),
+#          as.integer(nPhiP.un),
+#          as.double(H.det),
+#          as.double(H.phi),
+#          as.double(H.psi),
+#          as.integer(K),
+#          as.integer(M),
+#          as.integer(J),
+#          as.integer(nY),
+#          nll = double(1),
+#          phi = double((K + 1)^2),
+#          psiParms = double(nSP),
+#          detParms = double(nDP),
+#          phiParms = double(nPhiP),
+#          smooth = double(M*nY*(K + 1)),
+#          smooth.only = as.integer(smooth.only),
+#          as.character(phiMatrix),
+#          hessian = double(nP^2),
+#          EM = as.integer(EM),
+#          as.double(psi.init),
+#          as.double(phiParms.init),
+#          as.double(detParms.init),
+#          as.integer(get.inits),
+#          as.integer(trace),
+#          as.integer(homo.det),
+#          as.integer(arDet),
+#          convergence = integer(1),
+#          as.integer(K), # replace with detfun in future.
+#          as.integer(phiMatFun),
+#          as.integer(min.good),
+#          as.integer(max.bad),
+#          detMats = double(sum(J.it)*(K+1)^2)) # store det mat for each obs
+#
+#  return(list(nll = x$nll, phi = matrix(x$phi,K + 1, K + 1),
+#              psiParms = x$psiParms, detParms = x$detParms,
+#              phiParms = x$phiParms,
+#              smooth = array(x$smooth, c(K + 1, nY, M)),
+#              hessian = matrix(x$hessian,nP,nP),
+#              convergence = x$convergence, detMats = x$detMats))
+#}
 
 #profile1D.C <- function(y.itj, V.itjk, nDMP, nDP, nSP, nSP.un, nPhiP, nP, nDP.un,
 #    nPhiP.un, H.det, H.phi, H.psi, K, M, J, nY,
@@ -580,65 +590,34 @@ findMLE <-
 ##   t(matrix(x$phi, 4, 4))
 ## }
 
-
-# The R version
-findMLE2 <-
+findMLE <-
     function(y.itj, V.itjk, J.it, nDMP, nDP, nSP, nSP.un, nPhiP, nP, nDP.un,
         nPhiP.un, H.det, H.phi, H.psi, K, M, J, nY,
-        phiMatrix, smooth.only = FALSE, EM,
-        psi.init, phiParms.init, detParms.init, get.inits, trace,
-        arDet=0, phiMatFun, detVecFun, homo.det = FALSE,
-        max.bad,min.good) {
+        smooth.only = FALSE,
+        psi.init, phiParms.init, detParms.init,
+        phiMatFun, 
+        max.bad,min.good, method, control) {
 
   alpha <- array(NA, c(K + 1, nY, M))
   beta <- array(NA, c(K + 1, nY, M))
   gamma <- array(NA, c(K + 1, nY, M))
 
-  ## V.arr is array of matrices for dims: 3=i, 4=t, 5=j
-  #V.arr <- apply(V.itjk,c(1,2),function(x) x)
   V.arr <- array(t(V.itjk), c(nDP, nDMP, J, nY, M))
   V.arr <- aperm(V.arr, c(2,1,5,4,3))
 
   y.arr <- array(y.itj, c(J, nY, M))
   y.arr <- aperm(y.arr, c(3:1))
-#  library(Matrix)
-#  D <- Diagonal(M)
-  ## modifies alpha as side effect
-  ## returns negloglike
   storage.mode(J.it) <- storage.mode(y.arr) <- storage.mode(K) <- "integer"
-  #dyn.load("../../../unmarked_testing/inline_testing2.so")
-  
-  
+ 
   forward <- function(detParms, phi, psi, storeAlpha = FALSE) {
 	  
 	  negloglike <- 0
-	  ##################    version to get all detvec's at once
 	  psiSite <- matrix(psi, K + 1, M)
-	  #detVec.arr <- array(1, c(K + 1, nY, M))
-#    if(homo.det) {
-#      detVecMat <- matrix(NA,K+1,K+1)
-#      for(i in 1:(K+1)) {
-#        detVecMat[,i] <- do.call(detVecFun, list(p = detParms, y = i-1))
-#      }
-#    } else {
+
 	  mp <- array(V.itjk %*% detParms, c(nDMP, J, nY, M))
-#    }
-	  
 	  for(t in 1:nY) {
 		  storage.mode(t) <- "integer"
-#browser()
-#		.Call("setDetVecs", y.arr, detVec.arr, mp, 
-#				J.it[seq(from = t,to = length(J.it)-nY+t, by=nY)], t)
 		  detVecs <- .Call("getDetVecs", y.arr, mp, J.it[seq(from = t,to = length(J.it)-nY+t, by=nY)], t, K)
-#      for(i in 1:M) {
-#        for(j in 1:J) {
-#          if(y.arr[i,t,j] != 99) {
-#              detVec.arr[,t,i] <- detVec.arr[,t,i] *
-#                  do.call(detVecFun, list(p=mp[,j,t,i], y=y.arr[i,t,j]))
-#          }
-#        }
-#      }
-		  #psiSite <- psiSite * detVec.arr[,t,]
 		  psiSite <- psiSite * detVecs
 		  if(storeAlpha) alpha[,t,] <<- psiSite[,]
 		  if(t < nY) {
@@ -647,57 +626,27 @@ findMLE2 <-
 			  negloglike <- negloglike - sum(log(colSums(psiSite)))
 		  }
 	  }
-	  negloglike
-  
-
-
-####################
-#
-#    mp <- array(V.itjk %*% detParms, c(nDMP, J, nY, M))
-#
-#    for(i in 1:M) {
-#      psiSite <- psi
-#      for(t in 1:nY) {
-#
-#        detVec <- rep(1, K + 1)
-#        for(j in 1:J) {
-#          if(y.arr[i,t,j] != 99) {
-#            detVecObs <- do.call(detVecFun, list(p=mp[,j,t,i], y=y.arr[i,t,j]))
-#            detVec <- detVec * detVecObs
-#          }
-#        }
-#        psiSite <- psiSite * detVec
-#        if(storeAlpha) alpha[,t,i] <<- psiSite
-#        if(t < nY) {
-#          psiSite <- phi %*% psiSite
-#        } else {
-#          negloglike <- negloglike - log(sum(psiSite))
-#        }
-#
-#      }
-#    }
-#    negloglike
+		negloglike
   }
 
   backward <- function(detParams, phi, psi) {
-    for(i in 1:M) {
-      backP <- rep(1, K + 1)
-      for(t in nY:1) {
-
-        beta[, t, i] <<- backP
-
-        detVec <- rep(1, K + 1)
-        for(j in 1:J) {
-          if(y.arr[i,t,j] != 99) {
-            mp <- V.arr[,,i,t,j] %*% detParams
-            #detVecObs <- do.call(detVecFun, list(p=mp, y=y.arr[i,t,j]))
-			detVecObs <- .Call("getSingleDetVec", y.arr[i,t,j], mp, K)
-			detVec <- detVec * detVecObs
-          }
-        }
-
-        backP <- t(phi) %*% (detVec * backP)
-
+		for(i in 1:M) {
+			backP <- rep(1, K + 1)
+			for(t in nY:1) {
+				
+				beta[, t, i] <<- backP
+				
+				detVec <- rep(1, K + 1)
+				for(j in 1:J) {
+					if(y.arr[i,t,j] != 99) {
+						mp <- V.arr[,,i,t,j] %*% detParams
+						detVecObs <- .Call("getSingleDetVec", y.arr[i,t,j], mp, K)
+						detVec <- detVec * detVecObs
+					}
+				}
+				
+				backP <- t(phi) %*% (detVec * backP)
+			
       }
     }
   }
@@ -710,7 +659,6 @@ findMLE2 <-
 				  if(y.arr[i,t,j] != 99) {
 					  for(k in 0:K) {
 						  mp <- V.arr[,,i,t,j] %*% detParams
-						  #detVecObs <- do.call(detVecFun, list(p=mp, y=y.arr[i,t,j]))
 						  detMats[,k+1,j,t,i] <- .Call("getSingleDetVec", k, mp, K)
 					  }
 				  }
@@ -729,7 +677,7 @@ findMLE2 <-
 
     phi = do.call(phiMatFun, list(p=H.phi %*% params[(nSP + 1):(nSP + nPhiP)]))
     detParams = H.det %*% params[(nSP + nPhiP+1):(nSP + nDP + nPhiP)]
-    forward(detParams, phi, psi)
+    forward(detParams, phi, psi) + 0.01*sqrt(sum(params^2))
 	
   }
 
@@ -738,20 +686,93 @@ findMLE2 <-
   BF <- 0
   run <- 1
   
-  while(GF < min.good && BF < max.bad) {
-    starts <- matrix(rnorm(nP*20), 20, nP)  # sample space initially for better start
-    starts.nll <- apply(starts, 1, nll)
-    start <- starts[which.min(starts.nll),]
+	get.starts <- function() {
+		## first get initial estimate of phi assuming N = N_max
+		y <- umf@y
+		y.it <- matrix(t(y), M*nY, J, byrow=TRUE)
+		y.it <- apply(y.it, 1, max, na.rm=T)
+		y.it[is.infinite(y.it)] <- NA
+		y.it <- data.frame(year = rep(1:nY,M), y = as.factor(y.it))
+		
+		trans <- data.frame(year = numeric(0), y.from=numeric(0), y.to=numeric(0), Freq=numeric(0))
+		for(i in 1:(nY-1)) {
+			#browser()
+			y.temp <- subset(y.it, year==i | year==i+1)  ## 1,2,1,2 (odd-even)
+			y.from <- y.temp$y[row(y.temp) %% 2 == 1]
+			y.to <- y.temp$y[row(y.temp) %% 2 == 0]
+			y.tab <- table(y.from,y.to)
+			trans <- rbind(trans,cbind(year=i,as.data.frame(y.tab)))
+		}
+				
+		trans.agg <- with(trans, aggregate(Freq, list(y.from = y.from, y.to = y.to), sum))
+		trans.mat <- matrix(trans.agg$x, K+1, K+1)
+		trans.mat <- trans.mat / rowSums(trans.mat)
+		
+		trans.penalty <- function(phiParms) {
+			phiParms <- H.phi %*% phiParms
+			phi <- do.call(phiMatFun, list(p=H.phi %*% phiParms))
+			sum((phi - trans.mat)^2)
+		}
+		phi.opt <- optim(rep(0,nPhiP), trans.penalty)
+		phi.start <- phi.opt$par 
+		
+		## assuming detParams = 0, use Viterbi to segment sites into states
+		## estimate detParams given states
+		y.it.mat <- matrix(as.numeric(as.character(y.it[,2])), M, nY, byrow = TRUE)
 
-    fmList[[run]] <- optim(start, nll, method="BFGS",hessian = TRUE,
-        control=list(trace=1, maxit=400))
+		dParms.nll <- function(detParms) {
+			negloglike <- 0
+			detParms <- H.det %*% detParms
+			mp <- array(V.itjk %*% detParms, c(nDMP, J, nY, M))
+			for(t in 1:nY) {
+				storage.mode(t) <- "integer"
+				detVecs <- matrix(.Call("getDetVecs", y.arr, mp, J.it[seq(from = t,to = length(J.it)-nY+t, by=nY)], t, K),
+						K+1, M)
+				nll.t <- sum(log(detVecs[matrix(c(y.it.mat[,t] + 1, 1:M), M, 2)]), na.rm = TRUE)
+				negloglike <- negloglike - nll.t
+			}
+			negloglike
+		}
 
-	GF <- GF + 1
-	run <- run + 1  ## TODO: track bad fits.
-  }
-  
-  nlls <- sapply(fmList, function(x) x$value)
-  fm <- fmList[[which.min(nlls)]]
+		det.opt <- optim(rep(0, nDP), dParms.nll, method = "BFGS")
+		det.start <- det.opt$par
+		
+		psi.mom <- table(y.it.mat[,1])		
+		psi.mom2 <- numeric(K+1)
+		names(psi.mom2) <- 0:K
+		psi.mom2[names(psi.mom)] <- psi.mom 
+		psi.mom2 <- psi.mom2/sum(psi.mom2)
+		psi.penalty <- function(psiParms) {
+			psiParms <- c(0, H.psi %*% psiParms)
+			psi <- exp(psiParms)
+			psi <- psi/sum(psi)
+			sum((psi - psi.mom2)^2)
+		}		
+		psi.opt <- optim(rep(0,nSP), psi.penalty)
+		psi.start <- psi.opt$par
+		
+		return(c(psi.start, phi.start, det.start))
+	}
+	
+	start <- get.starts()
+	cat("Starting values found.\n")
+	
+#  while(GF < min.good && BF < max.bad) {
+#    starts <- matrix(rnorm(nP*20), 20, nP)  # sample space initially for better start
+#    starts.nll <- apply(starts, 1, nll)
+#    start <- starts[which.min(starts.nll),]
+#
+#    fmList[[run]] <- optim(start, nll, method=method,hessian = TRUE,
+#        control=control)
+#
+#		GF <- GF + 1
+#		run <- run + 1  ## TODO: track bad fits.
+#  }
+#  nlls <- sapply(fmList, function(x) x$value)
+#  fm <- fmList[[which.min(nlls)]]
+
+	fm <- optim(start, nll, method=method,hessian = TRUE,
+        control=control)
 
   mle <- fm$par
   psiParams <- c(0, H.psi %*% mle[1:nSP])
@@ -779,7 +800,7 @@ findMLE2 <-
 #  expectedDetMats <- array(expectedDetMats, c(K+1,K+1,J,nY,M))
   detMats <- getDetMats(detParams, phi, psi)
   
-  list(nll = fm$value, phi = phi,
+  list(nll = fm$value - 0.01*sqrt(sum(mle^2)), phi = phi,
       psiParms = mle[1:nSP], detParms = mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)],
       phiParms = mle[(nSP+1):(nSP + nPhiP)],
       smooth = gamma,
@@ -788,36 +809,36 @@ findMLE2 <-
 }
 
 # return (y+1)^th column of detMat
-detVecLogit4 <- function(p, y) {
-#  p1 = detPars[1]
-#  p2 = detPars[2]
-#  p3 = detPars[3]
-#  p4 = detPars[4]
-#  p5 = detPars[5]
-#  p6 = detPars[6]
-
-  switch(y+1,
-      c(1, exp(p[1])/(1 + exp(p[1])),
-          exp(p[2])/(1 + exp(p[2]) + exp(p[3])),
-          exp(p[4])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
-      c(0, 1/(1 + exp(p[1])),
-          exp(p[3])/(1 + exp(p[2]) + exp(p[3])),
-          exp(p[5])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
-      c(0, 0, 1/(1 + exp(p[2]) + exp(p[3])),
-          exp(p[6])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
-      c(0,0,0,1/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))))
-
-#  matrix(c(1, exp(p[1])/(1 + exp(p[1])),
-#      exp(p[2])/(1 + exp(p[2]) + exp(p[3])),
-#      exp(p[4])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
-#  0, 1/(1 + exp(p[1])),
-#      exp(p[3])/(1 + exp(p[2]) + exp(p[3])),
-#      exp(p[5])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
-#  0, 0, 1/(1 + exp(p[2]) + exp(p[3])),
-#      exp(p[6])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
-#  0,0,0,1/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),4,4)[,y+1]
-
-}
+#detVecLogit4 <- function(p, y) {
+##  p1 = detPars[1]
+##  p2 = detPars[2]
+##  p3 = detPars[3]
+##  p4 = detPars[4]
+##  p5 = detPars[5]
+##  p6 = detPars[6]
+#
+#  switch(y+1,
+#      c(1, exp(p[1])/(1 + exp(p[1])),
+#          exp(p[2])/(1 + exp(p[2]) + exp(p[3])),
+#          exp(p[4])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
+#      c(0, 1/(1 + exp(p[1])),
+#          exp(p[3])/(1 + exp(p[2]) + exp(p[3])),
+#          exp(p[5])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
+#      c(0, 0, 1/(1 + exp(p[2]) + exp(p[3])),
+#          exp(p[6])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),
+#      c(0,0,0,1/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))))
+#
+##  matrix(c(1, exp(p[1])/(1 + exp(p[1])),
+##      exp(p[2])/(1 + exp(p[2]) + exp(p[3])),
+##      exp(p[4])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
+##  0, 1/(1 + exp(p[1])),
+##      exp(p[3])/(1 + exp(p[2]) + exp(p[3])),
+##      exp(p[5])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
+##  0, 0, 1/(1 + exp(p[2]) + exp(p[3])),
+##      exp(p[6])/(1 + exp(p[6]) + exp(p[4]) + exp(p[5])),
+##  0,0,0,1/(1 + exp(p[6]) + exp(p[4]) + exp(p[5]))),4,4)[,y+1]
+#
+#}
 
 phiLogit2 <- function(p) {
   p0 <- p[1]
@@ -825,21 +846,21 @@ phiLogit2 <- function(p) {
   matrix(plogis(c(-p0,p0,-p1,p1)),2,2)
 }
 
-detVecLogit2 <- function(p, y) {
+#detVecLogit2 <- function(p, y) {
+#
+#	switch(y+1,
+#			c(1, exp(p[1])/(1 + exp(p[1]))),
+#			c(0, 1/(1 + exp(p[1]))))
+#}
 
-	switch(y+1,
-			c(1, exp(p[1])/(1 + exp(p[1]))),
-			c(0, 1/(1 + exp(p[1]))))
-}
 
-setClass("hmmSpec",
-		representation(phiMatFun = "function",
-				detVecFun = "function",
-				nDMP.un = "numeric",
-				nPhiP.un = "numeric"
+## fun returns t(phi)
+setClass("phiFunSpec",
+		representation(fun = "function",
+				nPhiP.un = "numeric", K = "numeric"
 ))
 
-phiLogit4 <- function(p) {
+phiLogit4fun <- function(p) {
   p0 <- p[1]
   p1 <- p[2]
   p2 <- p[3]
@@ -871,204 +892,255 @@ phiLogit4 <- function(p) {
           exp(p11)/(1 + exp(p9) + exp(p10) + exp(p11))),4,4) # TODO:  make sure this is transposed correctly
 }
 
-#' @export
-profile1D <-
-    function(stateformula = ~ 1, detformula = ~ 1, umf,
-        detconstraint = NULL,
-        phiconstraint = NULL, psiconstraint = NULL, K,
-        phiMatrix = "cumlogit",
-        phiMatFun, detVecFun, homo.det = FALSE,
-        whichVarying, parmsIn, profSeq)
+
+
+phi4RedFun <- function (p) 
 {
-  nDCP <- length(attr(terms(detformula), "term.labels")) + 1
-#  if(arDet)
-#    nDMP <- K
-#  else
-    nDMP <-  K*(K+1)/2
-
-  if(is.null(detconstraint))
-    detconstraint <- matrix(rep(1:nDMP,nDCP),nDMP, nDCP)
-  #detconstraint <- matrix(1:(nDMP*nDCP), nDMP, nDCP)
-  #################################
-
-
-  ## only do NA checking for variables being used!
-  ## create reduced detection formula from detconstraint
-  to.rm <- which(apply(detconstraint == 0, 2, all))
-  if(length(to.rm) != 0 & length(to.rm) != (ncol(detconstraint) - 1)) {
-    detformula.red <- eval(parse(text=paste("~ ",
-                paste(attr(terms(detformula), "term.labels")[-(to.rm-1)],
-                    collapse="+"))))
-  } else if(length(to.rm) == (ncol(detconstraint) - 1)) {
-    detformula.red <- ~1
-  } else {
-    detformula.red <- detformula
-  }
-
-  y <- umf@y
-  M <- nrow(y)
-  J <- umf@obsNum / umf@primaryNum
-  nY <- ncol(y)/J
-
-
-  designMats <- getDesign(stateformula = stateformula, detformula = detformula, umf)
-
-  V.itj <- designMats$V
-  nDCP <- ncol(V.itj)
-  detParms <- colnames(V.itj)
-
-  ## number of free terms in detection matrix.
-  ## these will be modeled by XDet's
-#  if(arDet)
-#    nDMP <- K
-#  else
-#    nDMP <-  K*(K+1)/2
-
-  if(nrow(detconstraint) != nDMP)
-    stop(paste("detconstraint has wrong number of rows.\n
-                It should have",nDMP))
-
-  ## for performance, remove variables eliminated by detconstraint
-  to.rm <- which(apply(detconstraint == 0, 2, all))
-  if(length(to.rm) != 0) {
-    detconstraint <- detconstraint[,-to.rm]
-    V.itj <- V.itj[,-to.rm]
-    detParms <- detParms[-to.rm]
-    nDCP <- nDCP - length(to.rm)
-  }
-  if(is.null(dim(detconstraint)))
-    detconstraint <- matrix(detconstraint,nDMP,nDCP)
-
-  ## create design matrix for each matrix parameter
-  # TODO: make this do the right thing if there are constraints.
-  V.itjk <- V.itj %x%  diag(nDMP)
-  #get a better line here    if(is.null(detconstraint)) detconstraint <- 1:nDMP.un
-
-  fphiMatrix <- paste("f",phiMatrix,sep="")
-  ## add "f" to fool switch because it doesn't like characters that start
-  ## with numbers
-  nPhiP.un.table <- matrix(c(
-          1, 0, 2,
-          2, 0, 6,  ## K=3, 0: logit3
-          3, 0, 12,  ## 0 = full mat
-          3, 1, 6,   ## 1 = small ord
-          3, 2, 10), ## 2 = ord with interecept
-      5, 3, byrow = TRUE)
-  colnames(nPhiP.un.table) <- c("K", "phiNum", "nPhiP.un")
-  nPhiP.un <- nPhiP.un.table[nPhiP.un.table[,2] == phiMatFun &
-          nPhiP.un.table[,1] == K,3]
-  nSP.un <- K                # number of parameters for psi vector of initial
-
-  if(is.null(phiconstraint)) phiconstraint <- 1:nPhiP.un
-  if(is.null(psiconstraint)) psiconstraint <- 1:nSP.un
-
-  nPhiP <- switch(fphiMatrix,
-      fcumlogit = K + 1,
-      f4state = max(phiconstraint),
-      f4stateAR = max(phiconstraint),
-      f4state4 = max(phiconstraint),
-      f3state = max(phiconstraint),
-      f2state = max(phiconstraint),
-      flogit4 = max(phiconstraint),
-      flogit3 = max(phiconstraint),
-      flogit2 = max(phiconstraint),
-      flogit4ar = max(phiconstraint))
-
-  nSP <- max(psiconstraint)
-
-  ## create linked list of parameters
-  theta.df <- data.frame(parameter = character(), start = numeric(),
-      end = numeric(), stringsAsFactors = FALSE)
-
-  theta.df <- addParm(theta.df, "phiParms", nPhiP)
-
-  ## convert from new easy-input style detcon to computational format
-  prev.col.max <- 0
-  detcon.corr <- matrix(0, nDMP, nDCP)
-  for(j in 1:nDCP) {
-    detcon.corr[,j] <- ifelse(detconstraint[,j] != 0,
-        detconstraint[,j] + prev.col.max, 0)
-    prev.col.max <- max(c(detcon.corr[,j],prev.col.max))
-  }
-  detcon.vec <- as.vector(detcon.corr)
-  nDP <- max(detcon.vec)
-  nDP.un <- length(detcon.vec)
-
-
-  H.det <- matrix(0, nDP.un, nDP)
-  for(i in 1:length(detcon.vec)){
-    H.det[i,detcon.vec[i]] <- 1
-  }
-
-  theta.df <- addParm(theta.df, "detParms", nDP)
-  nP <- nDP + nSP + nPhiP  # total number of parameters
-
-  ## construct constrain matrix for phi paramters
-  H.phi <- matrix(0, nPhiP.un, nPhiP)
-  for(i in 1:nPhiP.un){
-    H.phi[i, phiconstraint[i]] <- 1
-  }
-
-  H.psi <- matrix(0, nSP.un, nSP)
-  for(i in 1:nSP.un){
-    H.psi[i, psiconstraint[i]] <- 1
-  }
-
-  y.itj <- as.numeric(t(y))
-
-  ## reorder X.tjik to be X.itjk
-  ###   t.tjik <- rep(1:nY, each = nDMP *M*J)
-  ###   i.tjik <- rep(rep(1:M, each = nDMP), nY*J)
-  ###   j.tjik <- rep(rep(1:J, each = nDMP*M), nY)
-  ###   k.tjik <- rep(1:nDMP, M * J * nY)
-
-  ###   XDet.itjk <- XDet.tjik[order(i.tjik, t.tjik, j.tjik, k.tjik),]
-
-  ## replace NA's with 99 before passing to C++
-  ## TODO: need better missing data passing mechanism (maybe NaN of Inf?)
-  y.itj[is.na(y.itj)] <- 99
-  V.itjk[is.na(V.itjk)] <- 9999
-
-  # get ragged array indices
-  y.it <- matrix(t(y), nY*M, J, byrow = TRUE)
-  J.it <- rowSums(!is.na(y.it))
-
-
-  ncX <- ifelse(is.null(ncol(V.itjk)), 1, ncol(V.itjk))
-  lengthProfSeq <- length(profSeq)
-  x <- .C("profile1D",
-      as.integer(y.itj),
-      as.double(t(V.itjk)),
-      as.integer(t(J.it)),
-      as.integer(ncX),
-      as.integer(nDMP),
-      as.integer(nDP),
-      as.integer(nSP),
-      as.integer(nSP.un),
-      as.integer(nPhiP),
-      as.integer(nP),
-      as.integer(nDP.un),
-      as.integer(nPhiP.un),
-      as.double(H.det),
-      as.double(H.phi),
-      as.double(H.psi),
-      as.integer(K),
-      as.integer(M),
-      as.integer(J),
-      as.integer(nY),
-      as.double(parmsIn),
-      nlls = double(lengthProfSeq),
-      lengthProfSeq = as.integer(lengthProfSeq),
-      profSeq = as.double(profSeq),
-      as.integer(whichVarying),
-      as.character(phiMatrix),
-      as.integer(homo.det),
-      as.integer(0), # ardet
-      as.integer(K)) # replace with detFUn
-
-  return(cbind(vals = profSeq, nll = x$nlls))
-
+	p <- exp(-p)
+	
+	phi <- matrix(c(1, p[1] ^ (1:3),
+					p[4], 1, p[2] ^ (1:2),
+					p[5] ^ (2:1), 1, p[3],
+					p[6] ^ (3:1), 1), 4, 4)
+	
+	phi / rep(colSums(phi),each=4)
 }
+
+phi4RandFun <- function (p) 
+{
+	p <- exp(p)
+	den <- 1 + sum(p)
+	matrix(c(1,p[1],p[2],p[3])/den, 4, 4)
+}
+
+## TODO: make phi generator.
+phiGenerator <- function(K) {
+	nPhiP.un <- K*(K-1)
+	fun <- function(p) {
+		
+	}
+	phiSpec <- new("phiFunSpec", fun = fun, K = K-1, nPhiP.un = nPhiP.un)
+	return(phiSpec)
+}
+
+phi4 <- new("phiFunSpec",
+		fun = phiLogit4fun,
+		K = 3,
+		nPhiP.un = 12)
+
+phi4Red <- new("phiFunSpec",
+		fun = phi4RedFun,
+		K = 3,
+		nPhiP.un = 6) 
+		
+phi4Rand <- new("phiFunSpec",
+		fun = phi4RandFun,
+		K = 3,
+		nPhiP.un = 3)
+
+
+phi2 <- new("phiFunSpec",
+		fun = phiLogit2,
+		K = 1,
+		nPhiP.un = 2) 
+
+#profile1D <-
+#    function(stateformula = ~ 1, detformula = ~ 1, umf,
+#        detconstraint = NULL,
+#        phiconstraint = NULL, psiconstraint = NULL, K,
+#        phiMatrix = "cumlogit",
+#        phiMatFun, detVecFun, homo.det = FALSE,
+#        whichVarying, parmsIn, profSeq)
+#{
+#  nDCP <- length(attr(terms(detformula), "term.labels")) + 1
+##  if(arDet)
+##    nDMP <- K
+##  else
+#    nDMP <-  K*(K+1)/2
+#
+#  if(is.null(detconstraint))
+#    detconstraint <- matrix(rep(1:nDMP,nDCP),nDMP, nDCP)
+#  #detconstraint <- matrix(1:(nDMP*nDCP), nDMP, nDCP)
+#  #################################
+#
+#
+#  ## only do NA checking for variables being used!
+#  ## create reduced detection formula from detconstraint
+#  to.rm <- which(apply(detconstraint == 0, 2, all))
+#  if(length(to.rm) != 0 & length(to.rm) != (ncol(detconstraint) - 1)) {
+#    detformula.red <- eval(parse(text=paste("~ ",
+#                paste(attr(terms(detformula), "term.labels")[-(to.rm-1)],
+#                    collapse="+"))))
+#  } else if(length(to.rm) == (ncol(detconstraint) - 1)) {
+#    detformula.red <- ~1
+#  } else {
+#    detformula.red <- detformula
+#  }
+#
+#  y <- umf@y
+#  M <- nrow(y)
+#  J <- umf@obsNum / umf@primaryNum
+#  nY <- ncol(y)/J
+#
+#
+#  designMats <- getDesign(stateformula = stateformula, detformula = detformula, umf)
+#
+#  V.itj <- designMats$V
+#  nDCP <- ncol(V.itj)
+#  detParms <- colnames(V.itj)
+#
+#  ## number of free terms in detection matrix.
+#  ## these will be modeled by XDet's
+##  if(arDet)
+##    nDMP <- K
+##  else
+##    nDMP <-  K*(K+1)/2
+#
+#  if(nrow(detconstraint) != nDMP)
+#    stop(paste("detconstraint has wrong number of rows.\n
+#                It should have",nDMP))
+#
+#  ## for performance, remove variables eliminated by detconstraint
+#  to.rm <- which(apply(detconstraint == 0, 2, all))
+#  if(length(to.rm) != 0) {
+#    detconstraint <- detconstraint[,-to.rm]
+#    V.itj <- V.itj[,-to.rm]
+#    detParms <- detParms[-to.rm]
+#    nDCP <- nDCP - length(to.rm)
+#  }
+#  if(is.null(dim(detconstraint)))
+#    detconstraint <- matrix(detconstraint,nDMP,nDCP)
+#
+#  ## create design matrix for each matrix parameter
+#  # TODO: make this do the right thing if there are constraints.
+#  V.itjk <- V.itj %x%  diag(nDMP)
+#  #get a better line here    if(is.null(detconstraint)) detconstraint <- 1:nDMP.un
+#
+#  fphiMatrix <- paste("f",phiMatrix,sep="")
+#  ## add "f" to fool switch because it doesn't like characters that start
+#  ## with numbers
+#  nPhiP.un.table <- matrix(c(
+#          1, 0, 2,
+#          2, 0, 6,  ## K=3, 0: logit3
+#          3, 0, 12,  ## 0 = full mat
+#          3, 1, 6,   ## 1 = small ord
+#          3, 2, 10), ## 2 = ord with interecept
+#      5, 3, byrow = TRUE)
+#  colnames(nPhiP.un.table) <- c("K", "phiNum", "nPhiP.un")
+#  nPhiP.un <- nPhiP.un.table[nPhiP.un.table[,2] == phiMatFun &
+#          nPhiP.un.table[,1] == K,3]
+#  nSP.un <- K                # number of parameters for psi vector of initial
+#
+#  if(is.null(phiconstraint)) phiconstraint <- 1:nPhiP.un
+#  if(is.null(psiconstraint)) psiconstraint <- 1:nSP.un
+#
+#  nPhiP <- switch(fphiMatrix,
+#      fcumlogit = K + 1,
+#      f4state = max(phiconstraint),
+#      f4stateAR = max(phiconstraint),
+#      f4state4 = max(phiconstraint),
+#      f3state = max(phiconstraint),
+#      f2state = max(phiconstraint),
+#      flogit4 = max(phiconstraint),
+#      flogit3 = max(phiconstraint),
+#      flogit2 = max(phiconstraint),
+#      flogit4ar = max(phiconstraint))
+#
+#  nSP <- max(psiconstraint)
+#
+#  ## create linked list of parameters
+#  theta.df <- data.frame(parameter = character(), start = numeric(),
+#      end = numeric(), stringsAsFactors = FALSE)
+#
+#  theta.df <- addParm(theta.df, "phiParms", nPhiP)
+#
+#  ## convert from new easy-input style detcon to computational format
+#  prev.col.max <- 0
+#  detcon.corr <- matrix(0, nDMP, nDCP)
+#  for(j in 1:nDCP) {
+#    detcon.corr[,j] <- ifelse(detconstraint[,j] != 0,
+#        detconstraint[,j] + prev.col.max, 0)
+#    prev.col.max <- max(c(detcon.corr[,j],prev.col.max))
+#  }
+#  detcon.vec <- as.vector(detcon.corr)
+#  nDP <- max(detcon.vec)
+#  nDP.un <- length(detcon.vec)
+#
+#
+#  H.det <- matrix(0, nDP.un, nDP)
+#  for(i in 1:length(detcon.vec)){
+#    H.det[i,detcon.vec[i]] <- 1
+#  }
+#
+#  theta.df <- addParm(theta.df, "detParms", nDP)
+#  nP <- nDP + nSP + nPhiP  # total number of parameters
+#
+#  ## construct constrain matrix for phi paramters
+#  H.phi <- matrix(0, nPhiP.un, nPhiP)
+#  for(i in 1:nPhiP.un){
+#    H.phi[i, phiconstraint[i]] <- 1
+#  }
+#
+#  H.psi <- matrix(0, nSP.un, nSP)
+#  for(i in 1:nSP.un){
+#    H.psi[i, psiconstraint[i]] <- 1
+#  }
+#
+#  y.itj <- as.numeric(t(y))
+#
+#  ## reorder X.tjik to be X.itjk
+#  ###   t.tjik <- rep(1:nY, each = nDMP *M*J)
+#  ###   i.tjik <- rep(rep(1:M, each = nDMP), nY*J)
+#  ###   j.tjik <- rep(rep(1:J, each = nDMP*M), nY)
+#  ###   k.tjik <- rep(1:nDMP, M * J * nY)
+#
+#  ###   XDet.itjk <- XDet.tjik[order(i.tjik, t.tjik, j.tjik, k.tjik),]
+#
+#  ## replace NA's with 99 before passing to C++
+#  ## TODO: need better missing data passing mechanism (maybe NaN of Inf?)
+#  y.itj[is.na(y.itj)] <- 99
+#  V.itjk[is.na(V.itjk)] <- 9999
+#
+#  # get ragged array indices
+#  y.it <- matrix(t(y), nY*M, J, byrow = TRUE)
+#  J.it <- rowSums(!is.na(y.it))
+#
+#
+#  ncX <- ifelse(is.null(ncol(V.itjk)), 1, ncol(V.itjk))
+#  lengthProfSeq <- length(profSeq)
+#  x <- .C("profile1D",
+#      as.integer(y.itj),
+#      as.double(t(V.itjk)),
+#      as.integer(t(J.it)),
+#      as.integer(ncX),
+#      as.integer(nDMP),
+#      as.integer(nDP),
+#      as.integer(nSP),
+#      as.integer(nSP.un),
+#      as.integer(nPhiP),
+#      as.integer(nP),
+#      as.integer(nDP.un),
+#      as.integer(nPhiP.un),
+#      as.double(H.det),
+#      as.double(H.phi),
+#      as.double(H.psi),
+#      as.integer(K),
+#      as.integer(M),
+#      as.integer(J),
+#      as.integer(nY),
+#      as.double(parmsIn),
+#      nlls = double(lengthProfSeq),
+#      lengthProfSeq = as.integer(lengthProfSeq),
+#      profSeq = as.double(profSeq),
+#      as.integer(whichVarying),
+#      as.character(phiMatrix),
+#      as.integer(homo.det),
+#      as.integer(0), # ardet
+#      as.integer(K)) # replace with detFUn
+#
+#  return(cbind(vals = profSeq, nll = x$nlls))
+#
+#}
 
 
 computeFitStats.max <- function(detMats, smooth, y, J.it) {
@@ -1162,7 +1234,13 @@ computeFitStats <- function(detMats, smooth, y, J.it) {
 	e.counts <- apply(eo, c(1,3), sum, na.rm = TRUE)
 	
 	y.arr <- array(t(y), c(J, nY, M))
-	o.counts <- apply(y.arr, 2, table, useNA = "no")
+	o.counts <- apply(y.arr, 2, function(x) {
+				tab <- table(x, useNA = "no")
+				fulltab <- numeric(K+1)
+				names(fulltab) <- 0:K
+				fulltab[names(tab)] <- tab
+				fulltab
+			})
 	
 	X2 <- sum((e.counts - o.counts)^2 / e.counts)
 	

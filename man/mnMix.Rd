@@ -5,7 +5,7 @@
 \description{Fit latent abundance models to categorical data such as frog
 calling data (Royle and Link 2005).  Currently, covariates can only be
 supplied to the detection process (as in Royle and Link 2005).}
-\details{See \link{unMarkedFrame} for detailed descriptions of passing data to the
+\details{See \link{unmarkedFrame} for detailed descriptions of passing data to the
 \code{umf} argument.
 See \link{unmarked} for a general description of the specifying covariates to the
 stateformula and detformula arguments.
@@ -34,10 +34,10 @@ the \eqn{\beta}{beta}'s to be all equal.}
 \keyword{models}
 \arguments{\item{stateformula}{formula for covariates of occurrance.}
 \item{detformula}{formula for covariates of detection.}
-\item{umf}{unMarkedFrame supplying data.}
+\item{umf}{unmarkedFrame supplying data.}
 \item{constraint}{vector to describe which detection parameters are
 the same (see \emph{Details})}}
 \examples{data(gf)
-gfUMF <- unMarkedFrame(gf.data, obsCovs = gf.obs)
+gfUMF <- unmarkedFrame(gf.data, obsCovs = gf.obs)
 fm.mmx1 <- mnMix(~ 1, ~ samp1 + samp3 + temp, con=c(1,2,2,3,3,3), gfUMF)
 fm.mmx1}

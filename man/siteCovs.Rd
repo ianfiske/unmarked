@@ -4,4 +4,4 @@
 \usage{siteCovs(umf)}
 \description{Extractor for site level covariates}
 \value{a data frame containing the site level covariates.}
-\arguments{\item{umf}{an unMarkedFrame}}
+\arguments{\item{umf}{an unmarkedFrame}}
