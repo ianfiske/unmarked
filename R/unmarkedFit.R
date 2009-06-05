@@ -103,7 +103,7 @@ setMethod("show", "unmarkedFit",
 #' @param whichEstimate character, either "state" or "det"
 #' @return an unmarkedEstimate object
 setMethod("linearComb",
-    signature(obj = "unmarkedFit", coefficients = "numeric"),
+    signature(obj = "unmarkedFit", coefficients = "matrix"),
     function(obj, coefficients, whichEstimate) {
       stopifnot(!missing(whichEstimate))
       stopifnot(whichEstimate %in% names(obj))
@@ -117,6 +117,21 @@ setMethod("linearComb",
       linearComb(estimate, coefficients)
     })
 
+setMethod("linearComb",
+		signature(obj = "unmarkedFit", coefficients = "numeric"),
+		function(obj, coefficients, whichEstimate) {
+			stopifnot(!missing(whichEstimate))
+			stopifnot(whichEstimate %in% names(obj))
+			estimate <- obj@estimates[whichEstimate]
+#      if(whichEstimate == "det") {
+#        lc <- linearComb(obj@detEstimates, coefficients)
+#      } else {
+#        lc <- linearComb(obj@stateEstimates, coefficients)
+#      }
+#      lc
+			linearComb(estimate, coefficients)
+		})
+
 setMethod("[",
     "unmarkedFit",
     function(x, i, j, drop) {
@@ -129,7 +144,10 @@ setMethod("names", "unmarkedFit",
     })
     
 
+#' @name predict-unmarkedFit
+#' @aliases predict,unmarkedFit-method
 #' @examples
+#' 
 #' data(mallard)
 #' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
 #' obsCovs = mallard.obs)
@@ -151,34 +169,30 @@ setMethod("names", "unmarkedFit",
 #' 
 #' @exportMethod predict
 setMethod("predict", "unmarkedFit", 
-	function(object, type, newdata=NULL, backTran=TRUE, ...) {
-		if(is.null(newdata))
-			newdata <- object@data
-		stateformula <- as.formula(as.character(object@call["stateformula"]))
-		detformula <- as.formula(as.character(object@call["detformula"]))
-		cls <- class(newdata)
-		switch(cls, 
-			unmarkedFrame = {
-				designMats <- getDesign(stateformula=stateformula, 
-					detformula=detformula, newdata)
-				switch(type, 
-					state = X <- designMats$X,
-					det = X <- designMats$V)
+		function(object, type, newdata=NULL, backTran=TRUE, ...) {
+			if(is.null(newdata))
+				newdata <- object@data
+			stateformula <- as.formula(as.character(object@call["stateformula"]))
+			detformula <- as.formula(as.character(object@call["detformula"]))
+			cls <- class(newdata)
+			switch(cls, 
+					unmarkedFrame = {
+						designMats <- getDesign(stateformula=stateformula, 
+								detformula=detformula, newdata)
+						switch(type, 
+								state = X <- designMats$X,
+								det = X <- designMats$V)
 					},
-			data.frame = {
-				switch(type, 
-					state = X <- model.matrix(stateformula, newdata),
-					det = X <- model.matrix(detformula, newdata))
-				})
-		out <- matrix(NA, nrow(X), 2, dimnames=list(NULL, c("Predicted", "SE")))
-		for(i in 1:nrow(X)) {
-			lc <- linearComb(object, X[i,], type)
-			if(backTran)
-				lc <- backTransform(lc)
-			out[i, "Predicted"] <- lc@estimates
-			out[i, "SE"] <- SE(lc)
-			}
-		return(out)
+					data.frame = {
+						switch(type, 
+								state = X <- model.matrix(stateformula, newdata),
+								det = X <- model.matrix(detformula, newdata))
+					})
+			out <- matrix(NA, nrow(X), 2, dimnames=list(NULL, c("Predicted", "SE")))
+			lc <- linearComb(object, X, type)
+			if(backTran) lc <- backTransform(lc)
+			out[,1] <- coef(lc)
+			out[,2] <- SE(lc)
+			return(out)
 		}
-	)
-	
+)
