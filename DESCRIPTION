@@ -1,19 +1,19 @@
 Package: unmarked
-Version: 0.5-8
-Date: 2009-5-21
+Version: 0.5-9
+Date: 2009-6-5
 Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske
 Maintainer: Ian Fiske <ianfiske@gmail.com>
-Depends: R (>= 2.7.0), reshape (>= 0.7.4), abind (>= 1.1), roxygen,
+Depends: R (>= 2.9.0), reshape (>= 0.7.4), abind (>= 1.1), roxygen,
     methods, msm
 Description: Unmarked estimates wildlife parameters for many popular
     sampling methods including occurrence and point count data.
 License: GPL version 2 or newer
 LazyLoad: yes
 LazyData: yes
-Collate: 'classes.R' 'utils.R' 'unmarkedEstimate.R'
-    'unmarkedFrame.R' 'unmarkedFit.R' 'dsUtils.R' 'distsamp.R'
-    'dsParboot.R' 'dsPredict.R' 'markovMN.R' 'Mh.R' 'mnMix.R'
-    'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
-    'unmarked-package.R' 'unmarkedFitList.R'
+Collate: 'classes.R' 'utils.R' 'unmarkedEstimate.R' 'unmarkedFrame.R'
+    'unmarkedFit.R' 'dsUtils.R' 'distsamp.R' 'dsParboot.R'
+    'dsPredict.R' 'markovMN.R' 'Mh.R' 'mnMix.R' 'multinomPois.R'
+    'occu.R' 'occuRN.R' 'pcount.R' 'unmarkedFitList.R'
+    'unmarked-package.R'
