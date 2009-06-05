@@ -9,7 +9,9 @@ setClass("unmarkedEstimate",
         estimates = "numeric",
         covMat = "matrix",
         invlink = "character",
-        invlinkGrad = "character"),
+        invlinkGrad = "character",
+				backTransformed = "logical",
+				coefficients = "matrix"),
     validity = function(object) {
       errors <- character(0)
       if(nrow(object@covMat) != length(object@estimates)) {
@@ -21,14 +23,20 @@ setClass("unmarkedEstimate",
         TRUE
     })
 
-setClass("unmarkedEstimateLinearComb",
-    representation(originalEstimate = "unmarkedEstimate",
-        coefficients = "numeric"),
-    contains = "unmarkedEstimate")
+#setClass("unmarkedEstimateLinearComb",
+#    representation(originalEstimate = "unmarkedEstimate",
+#        coefficients = "numeric"),
+#    contains = "unmarkedEstimate")
+#
+## coefficients are now a matrix where each row is a 
+#setClass("unmarkedEstimateMultLinearCombs",
+#		representation(originalEstimate = "unmarkedEstimate",
+#				coefficients = "matrix"),
+#		contains = "unmarkedEstimate")
 
-setClass("unmarkedEstimateBackTransformed",
-    representation(transformation = "character"),
-    contains = "unmarkedEstimateLinearComb")
+#setClass("unmarkedEstimateBackTransformed",
+#    representation(transformation = "character"),
+#    contains = "unmarkedEstimateLinearComb")
 
 setClass("unmarkedEstimateList",
     representation(estimates = "list"),
@@ -71,7 +79,8 @@ unmarkedEstimateList <- function(l) {
 }
 
 #' @export
-unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, invlinkGrad) {
+unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, invlinkGrad, backTransformed = FALSE,
+		coefficients = matrix(1, 1, length(estimates))) {
 
   new("unmarkedEstimate",
       name = name,
@@ -79,7 +88,9 @@ unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, invli
       estimates = estimates,
       covMat = covMat,
       invlink = invlink,
-      invlinkGrad = invlinkGrad)
+      invlinkGrad = invlinkGrad,
+			backTransformed = backTransformed,
+			coefficients = coefficients)
 
 }
 
@@ -91,7 +102,7 @@ setMethod("show",
       Z <- ests/SEs
       p <- 2*pnorm(abs(Z), lower.tail = FALSE)
 
-      if(is(object, "unmarkedEstimateLinearComb")) {
+      if(!all(object@coefficients == 1)) {
         printRowNames <- FALSE
       } else {
         printRowNames <- TRUE
@@ -106,26 +117,26 @@ setMethod("show",
       print(outDF, row.names = printRowNames, digits = 3)
     })
 
-setMethod("show",
-    signature(object = "unmarkedEstimateLinearComb"),
-    function(object) {
-      coefTable <- data.frame(Estimate = object@originalEstimate@estimates,
-          Coefficients = object@coefficients)
-
-      callNextMethod(object)
-
-      cat("\n")
-
-      print(coefTable, digits = 3)
-
-    })
-
-setMethod("show",
-    signature(object = "unmarkedEstimateBackTransformed"),
-    function(object) {
-      callNextMethod(object)
-      cat("\nTransformation:", object@transformation,"\n")
-    })
+#setMethod("show",
+#    signature(object = "unmarkedEstimateLinearComb"),
+#    function(object) {
+#      coefTable <- data.frame(Estimate = object@originalEstimate@estimates,
+#          Coefficients = object@coefficients)
+#
+#      callNextMethod(object)
+#
+#      cat("\n")
+#
+#      print(coefTable, digits = 3)
+#
+#    })
+#
+#setMethod("show",
+#    signature(object = "unmarkedEstimateBackTransformed"),
+#    function(object) {
+#      callNextMethod(object)
+#      cat("\nTransformation:", object@transformation,"\n")
+#    })
 
 
 #' Compute linear combinations of estimates in unmarkedEstimate objects.
@@ -143,16 +154,32 @@ setMethod("linearComb",
     signature(obj = "unmarkedEstimate", coefficients = "numeric"),
     function(obj, coefficients) {
       stopifnot(length(coefficients) == length(obj@estimates))
-      e <- as.numeric(t(coefficients) %*% obj@estimates)
+      e <- as.vector(t(coefficients) %*% obj@estimates)
       v <- t(coefficients) %*% obj@covMat %*% coefficients
-      umelc <- new("unmarkedEstimateLinearComb",
+      umelc <- new("unmarkedEstimate",
           name = paste("Linear combination of",obj@name,"estimate(s)"),
           estimates = e, covMat = v,
           invlink = obj@invlink, invlinkGrad = obj@invlinkGrad,
-          originalEstimate = obj, coefficients = coefficients)
+          coefficients = t(coefficients))
       umelc
     })
 
+
+# do the right thing if a matrix of coefficients supplied
+setMethod("linearComb",
+		signature(obj = "unmarkedEstimate", coefficients = "matrix"),
+		function(obj, coefficients) {
+			stopifnot(ncol(coefficients) == length(obj@estimates))
+			e <- as.vector(coefficients %*% obj@estimates)
+			v <- coefficients %*% obj@covMat %*% t(coefficients)
+			umelc <- new("unmarkedEstimate",
+					name = paste("Linear combinations of",obj@name,"estimate(s)"),
+					short.name = obj@short.name,
+					estimates = e, covMat = v,
+					invlink = obj@invlink, invlinkGrad = obj@invlinkGrad,
+					coefficients = coefficients, backTransformed = FALSE)
+			umelc
+		})
 
 
 #' Transform an unmarkedEstimate object to it's natural scale.
@@ -165,29 +192,62 @@ setMethod("linearComb",
 #' @param unmarkedEstimate object to be transformed
 #' @return an unmarkedEstimate object representing the transformed estimate.
 #' This object has invlink and invlinkGrad slots as the identity function.
+#setMethod("backTransform",
+#    signature(obj = "unmarkedEstimate"),
+#    function(obj) {
+#      stopifnot(length(obj@estimates) == 1)
+#      e <- eval(call(obj@invlink,obj@estimates))
+#      v <- (eval(call(obj@invlinkGrad,obj@estimates)))^2 * obj@covMat
+#
+#      if(is(obj, "unmarkedEstimateLinearComb")) {
+#        coef <- obj@coefficients
+#        orig <- obj@originalEstimate
+#      } else {
+#        coef <- 1
+#        orig <- obj
+#      }
+#
+#      umebt <- new("unmarkedEstimateBackTransformed",
+#          name = paste(obj@name,"transformed to native scale"),
+#          estimates = e, covMat = v,
+#          invlink = "identity", invlinkGrad = "identity",
+#          originalEstimate = orig, coefficients = coef,
+#          transformation = obj@invlink)
+#      umebt
+#    })
+
+
+# TODO: unify unmarkedEstimateMultLinearCombs and unmarkedEstimateLinearComb
 setMethod("backTransform",
-    signature(obj = "unmarkedEstimate"),
-    function(obj) {
-      stopifnot(length(obj@estimates) == 1)
-      e <- eval(call(obj@invlink,obj@estimates))
-      v <- (eval(call(obj@invlinkGrad,obj@estimates)))^2 * obj@covMat
-
-      if(is(obj, "unmarkedEstimateLinearComb")) {
-        coef <- obj@coefficients
-        orig <- obj@originalEstimate
-      } else {
-        coef <- 1
-        orig <- obj
-      }
-
-      umebt <- new("unmarkedEstimateBackTransformed",
-          name = paste(obj@name,"transformed to native scale"),
-          estimates = e, covMat = v,
-          invlink = "identity", invlinkGrad = "identity",
-          originalEstimate = orig, coefficients = coef,
-          transformation = obj@invlink)
-      umebt
-    })
+		signature(obj = "unmarkedEstimate"),
+		function(obj) {
+			
+			stopifnot(!obj@backTransformed)
+			## In general, MV delta method is Var=J*Sigma*J^T where J is Jacobian
+			## In this case, J is diagonal with elements = gradient
+			## This reduces to scaling the rows and then columns of Sigma by the gradient
+			e <- eval(call(obj@invlink,obj@estimates))
+			grad <- eval(call(obj@invlinkGrad,obj@estimates))
+			v <- diag(grad) %*% obj@covMat %*% diag(grad) 
+			
+#			if(is(obj, "unmarkedEstimateLinearComb")) {
+				coef <- obj@coefficients
+#				orig <- obj@originalEstimate
+#			} else {
+#				coef <- 1
+#				orig <- obj
+#			}
+			
+			umebt <- new("unmarkedEstimate",
+					name = paste(obj@name,"transformed to native scale"),
+					short.name = obj@short.name,
+					estimates = e, covMat = v,
+					invlink = "identity", invlinkGrad = "identity",
+					coefficients = coef,
+					backTransformed = TRUE)
+			
+			umebt
+		})
 
 #' Compute standard error of an unmarkedEstimate object.
 #'
@@ -217,12 +277,13 @@ setMethod("names", "unmarkedEstimateList",
     })
 
 setMethod("coef", "unmarkedEstimate",
-		function(object, unique = TRUE, ...) {
+		function(object, unique.names = TRUE, ...) {
 			coefs <- object@estimates
 			names(coefs)[names(coefs) == "(Intercept)"] <- "Int"
-			if(unique) {
+			if(unique.names) {
 				names(coefs) <- paste(object@short.name, "(", names(coefs), ")", sep="")
 			}
+			if(object@backTransformed | !all(object@coefficients == 1)) names(coefs) <- NULL
 			coefs
 		})
 
