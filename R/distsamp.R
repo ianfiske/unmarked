@@ -67,24 +67,36 @@ roxygen()
 #'
 #' @exportClass umDistsampFit
 setClass("umDistsampFit",
-	representation(fitType = "character",
-		call = "call",
-		stateformula = "formula",
-		detformula = "formula",
-		data = "data.frame",
-		optout = "list",
-		keyfun = "character",
-		dist.breaks = "numeric",
-		tlength = "numeric",
-		area = "numeric",
-		survey = "character",
-		unitsIn = "character",
-		unitsOut = "character",
-		estimates = "unmarkedEstimateList",
-		AIC = "numeric",
-		hessian = "matrix",
-		negLogLike = "numeric")
-		)
+		representation(
+				optout = "list",
+				keyfun = "character",
+				dist.breaks = "numeric",
+				tlength = "numeric",
+				area = "numeric",
+				survey = "character",
+				unitsIn = "character",
+				unitsOut = "character"),
+		contains = "unmarkedFit")
+
+#setClass("umDistsampFit",
+#	representation(fitType = "character",
+#		call = "call",
+#		stateformula = "formula",
+#		detformula = "formula",
+#		data = "data.frame",
+#		optout = "list",
+#		keyfun = "character",
+#		dist.breaks = "numeric",
+#		tlength = "numeric",
+#		area = "numeric",
+#		survey = "character",
+#		unitsIn = "character",
+#		unitsOut = "character",
+#		estimates = "unmarkedEstimateList",
+#		AIC = "numeric",
+#		hessian = "matrix",
+#		negLogLike = "numeric")
+#		)
 
 
 
@@ -209,7 +221,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 	J <- ncol(Y)
 	lamParms <- colnames(Xlam)
 	detParms <- colnames(Xp)
-	altlamParms <- paste("lam", colnames(Xlam), sep="")
+	#altlamParms <- paste("lam", colnames(Xlam), sep="")
 	nAP <- length(lamParms)
 	nDP <- length(detParms)
 	nP <- nAP + nDP
@@ -310,18 +322,19 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 	ests <- fm$par
 	estsAP <- ests[1:nAP]
 	estsDP <- ests[(nAP+1):nP]
-	attr(estsAP, "altNames") <- altlamParms
-	attr(estsDP, "altNames") <- altdetParms
+#	attr(estsAP, "altNames") <- altlamParms
+#	attr(estsDP, "altNames") <- altdetParms
 	try(covMat <- solve(fm$hessian))
 	covMatAP <- covMat[1:nAP, 1:nAP, drop=F]
 	if(keyfun=="uniform")
 		covMatDP <- matrix(numeric(0), 1)
 	else
 		covMatDP <- covMat[(nAP+1):nP, (nAP+1):nP, drop=F]
-	attr(covMatAP, "altNames") <- list(altlamParms, altlamParms)
-	attr(covMatDP, "altNames") <- list(altdetParms, altdetParms)
-	attr(fm$hessian, "altNames") <- list(c(altlamParms, altdetParms), 
-			c(altlamParms, altdetParms))
+#	attr(covMatAP, "altNames") <- list(altlamParms, altlamParms)
+#	attr(covMatDP, "altNames") <- list(altdetParms, altdetParms)
+#	attr(fm$hessian, "altNames") <- list(c(altlamParms, altdetParms), 
+#			c(altlamParms, altdetParms))
+	names(estsDP) <- altdetParms 
 	fmAIC <- 2 * fm$value + 2 * nP
 	if (keyfun != "uniform") {
 		stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam", estimates = estsAP,
@@ -335,8 +348,9 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				covMat = covMatAP, invlink = "exp", invlinkGrad = "exp")
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
+	umf <- unmarkedFrame(y = Y, siteCovs = data, obsNum = ncol(Y), primaryNum = 1)
 	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
-			stateformula=stateformula, detformula=detformula, data = data, keyfun=keyfun, 
+			stateFormula=stateformula, detFormula=detformula, data = umf, keyfun=keyfun, 
 			dist.breaks=dist.breaks, tlength=tlength, area=a, survey=survey, 
 			unitsIn=unitsIn, unitsOut=unitsOut, estimates = estimateList, AIC = fmAIC, 
 			hessian = fm$hessian, negLogLike = fm$value)
@@ -372,42 +386,42 @@ setMethod("show", "umDistsampFit", function(object)
 #			standardGeneric("vcov")		})
 
 
-#' @exportMethod coef
-setMethod("coef", "umDistsampFit", function(object, type=NULL, altNames=F)
-		{
-			if(is.null(type)) {
-				eap <- object@estimates["state"]@estimates
-				edp <- NULL
-				if(object@keyfun != "uniform") edp <- object@estimates["det"]@estimates
-				e <- c(eap, edp)
-				if(altNames)
-					names(e) <- c(attr(eap, "altNames"), attr(edp, "altNames"))
-			}	else {
-				e <- object@estimates[type]@estimates
-				if(altNames)
-					names(e) <- attr(e, "altNames")
-			}
-			attr(e, "altNames") <- NULL
-			return(e)
-		})
+##' @exportMethod coef
+#setMethod("coef", "umDistsampFit", function(object, type=NULL, altNames=F)
+#		{
+#			if(is.null(type)) {
+#				eap <- object@estimates["state"]@estimates
+#				edp <- NULL
+#				if(object@keyfun != "uniform") edp <- object@estimates["det"]@estimates
+#				e <- c(eap, edp)
+#				if(altNames)
+#					names(e) <- c(attr(eap, "altNames"), attr(edp, "altNames"))
+#			}	else {
+#				e <- object@estimates[type]@estimates
+#				if(altNames)
+#					names(e) <- attr(e, "altNames")
+#			}
+#			attr(e, "altNames") <- NULL
+#			return(e)
+#		})
 
 
-#' @exportMethod vcov
-setMethod("vcov", "umDistsampFit", function(object, type=NULL, drop=F, 
-				altNames=F)
-		{
-			if(is.null(type)) {
-				vc <- solve(object@hessian)
-				if(altNames)
-					dimnames(vc) <- attr(object@hessian, "altNames")
-			} 
-			else {
-				if(!is.null(type)) {
-					vc <- object@estimates[type]@covMat
-					if(altNames)
-						dimnames(vc) <- attr(vc, "altNames")
-				}
-			}
-			attr(vc, "altNames") <- NULL
-			return(vc)
-		})      
+##' @exportMethod vcov
+#setMethod("vcov", "umDistsampFit", function(object, type=NULL, drop=F, 
+#				altNames=F)
+#		{
+#			if(is.null(type)) {
+#				vc <- solve(object@hessian)
+#				if(altNames)
+#					dimnames(vc) <- attr(object@hessian, "altNames")
+#			} 
+#			else {
+#				if(!is.null(type)) {
+#					vc <- object@estimates[type]@covMat
+#					if(altNames)
+#						dimnames(vc) <- attr(vc, "altNames")
+#				}
+#			}
+#			attr(vc, "altNames") <- NULL
+#			return(vc)
+#		})      
