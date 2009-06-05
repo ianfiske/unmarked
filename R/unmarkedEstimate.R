@@ -277,10 +277,10 @@ setMethod("names", "unmarkedEstimateList",
     })
 
 setMethod("coef", "unmarkedEstimate",
-		function(object, unique.names = TRUE, ...) {
+		function(object, altNames = TRUE, ...) {
 			coefs <- object@estimates
 			names(coefs)[names(coefs) == "(Intercept)"] <- "Int"
-			if(unique.names) {
+			if(altNames) {
 				names(coefs) <- paste(object@short.name, "(", names(coefs), ")", sep="")
 			}
 			if(object@backTransformed | !all(object@coefficients == 1)) names(coefs) <- NULL
