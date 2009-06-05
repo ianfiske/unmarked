@@ -1,7 +1,8 @@
 \name{occu}
 \alias{occu}
 \title{Fit the MacKenzie Occupancy Model}
-\usage{occu(stateformula, detformula, umf, knownOcc=numeric(0), profile=FALSE)}
+\usage{occu(stateformula, detformula, umf, knownOcc=numeric(0),
+    profile=FALSE)}
 \description{This function estimates the standard occupancy model.}
 \details{See \link{unmarkedFrame} for a description of how to supply data to the \command{umf}
 argument.

@@ -291,3 +291,40 @@ setMethod("vcov", "unmarkedEstimate",
 		function(object,...) {
 			object@covMat
 		})
+#    })
+#    
+#    
+
+
+
+
+# #' @exportMethod coef
+#setMethod("coef", "unmarkedFit", function(object, type=NULL)
+#		{
+#			if(is.null(type)) {
+#				eap <- object@estimates["state"]@estimates
+#				edp <- object@estimates["det"]@estimates
+#				e <- c(eap, edp)
+#			}	else {
+#				e <- object@estimates[type]@estimates
+#			}
+#			return(e)
+#		})
+
+
+
+
+# #' @exportMethod vcov
+#setMethod("vcov", "unmarkedFit", function(object, type=NULL, drop=F)
+#		{
+#			if(is.null(type)) {
+#				vc <- solve(object@hessian)
+#			} 
+#			else {
+#				if(!is.null(type)) {
+#					vc <- object@estimates[type]@covMat
+#				}
+#			}
+#			return(vc)
+#		})
+
