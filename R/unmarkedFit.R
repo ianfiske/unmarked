@@ -20,6 +20,8 @@ roxygen()
 setClass("unmarkedFit",
     representation(fitType = "character",
         call = "call",
+				stateFormula = "formula",
+				detFormula = "formula",
         data = "unmarkedFrame",
         estimates = "unmarkedEstimateList",
         AIC = "numeric",
@@ -29,10 +31,10 @@ setClass("unmarkedFit",
 
 
 # constructor for unmarkedFit objects
-unmarkedFit <- function(fitType, call,
+unmarkedFit <- function(fitType, call, stateFormula, detFormula,
     data, estimates, AIC, hessian, negLogLike) {
   umfit <- new("unmarkedFit", fitType = fitType,
-      call = call, data = data,
+      call = call, stateFormula = stateFormula, detFormula = detFormula, data = data,
       estimates = estimates, AIC = AIC,
       hessian = hessian, negLogLike = negLogLike)
 
@@ -196,3 +198,29 @@ setMethod("predict", "unmarkedFit",
 			return(out)
 		}
 )
+
+#' @export
+setMethod("coef", "unmarkedFit",
+		function(object, type, altNames = TRUE) {
+			if(missing(type)) {
+				co <- lapply(object@estimates@estimates, function(x) coef(x, altNames=altNames))
+				names(co) <- NULL
+				co <- unlist(co)
+			} else {
+				co <- coef(object[type], altNames=altNames)
+			}
+			co
+		})
+
+#' @export 
+setMethod("vcov", "unmarkedFit",
+		function(object, type, altNames = TRUE) {
+			if(missing(type)) {
+				v <- solve(object@hessian)
+				rownames(v) <- colnames(v) <- names(coef(object, altNames=altNames))
+			} else {
+				v <- vcov(object[type])
+				rownames(v) <- colnames(v) <- names(coef(object, type, altNames=altNames))
+			}
+			v
+		})
