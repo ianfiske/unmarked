@@ -119,7 +119,7 @@ function(stateformula, detformula, umf)
           det=detEstimates))
 
   umfit <- unmarkedFit(fitType = "occuRN",
-      call = match.call(), data = umf, estimates = estimateList,
+      call = match.call(), stateFormula = stateformula, detFormula = detformula, data = umf, estimates = estimateList,
       AIC = fmAIC, hessian = fm$hessian, negLogLike = fm$value)
 
   return(umfit)
