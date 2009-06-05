@@ -30,11 +30,11 @@ setClass("unmarkedFit",
 
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call,
-    data, estimates, AIC, hessian) {
+    data, estimates, AIC, hessian, negLogLike) {
   umfit <- new("unmarkedFit", fitType = fitType,
       call = call, data = data,
       estimates = estimates, AIC = AIC,
-      hessian = hessian)
+      hessian = hessian, negLogLike = negLogLike)
 
   return(umfit)
 }

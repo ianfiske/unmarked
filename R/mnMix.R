@@ -210,7 +210,7 @@ mnMix <-
 
   umfit <- unmarkedFit(fitType = "mnMix",
       call = match.call(), data = umf, estimates = estimateList,
-      AIC = 2 * fm$value + 2 * nP, hessian = fm$hessian)
+      AIC = 2 * fm$value + 2 * nP, hessian = fm$hessian, negLogLike = fm$value)
 
   umfit
 

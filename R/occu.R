@@ -101,7 +101,7 @@ function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
 
   umfit <- unmarkedFit(fitType = "occu",
       call = match.call(), data = umf, estimates = estimateList,
-      AIC = fmAIC, hessian = fm$hessian)
+      AIC = fmAIC, hessian = fm$hessian, negLogLike = fm$value)
 
   return(umfit)
 }
