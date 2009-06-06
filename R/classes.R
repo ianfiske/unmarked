@@ -17,6 +17,12 @@ setGeneric("SE",
       standardGeneric("SE")
     })
 
+setGeneric("plot")
+setGeneric("predict")
+setGeneric("vcov")
+setGeneric("coef")
+setGeneric("summary")
+
 #' Compute linear combinations of parameters.
 #'
 #' @aliases linearComb-methods linearComb
