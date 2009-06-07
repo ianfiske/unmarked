@@ -1,4 +1,5 @@
 \name{umDistsampFitList}
 \alias{umDistsampFitList}
-\title{umDistsampFitList}
-\usage{umDistsampFitList(fitList)}
+\title{Class to store nested umDistsampFit model fits information...}
+\description{Class to store nested umDistsampFit model fits information}
+\arguments{\item{fitList}{a (preferably named) list of nested model fits.}}

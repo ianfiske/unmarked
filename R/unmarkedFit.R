@@ -199,6 +199,11 @@ setMethod("predict", "unmarkedFit",
 		}
 )
 
+
+#' @importFrom graphics plot
+#' @importFrom stats coef vcov predict update
+
+
 #' @export
 setMethod("coef", "unmarkedFit",
 		function(object, type, altNames = TRUE) {
