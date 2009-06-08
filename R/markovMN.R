@@ -617,7 +617,8 @@ findMLE <-
 	  mp <- array(V.itjk %*% detParms, c(nDMP, J, nY, M))
 	  for(t in 1:nY) {
 		  storage.mode(t) <- "integer"
-		  detVecs <- .Call("getDetVecs", y.arr, mp, J.it[seq(from = t,to = length(J.it)-nY+t, by=nY)], t, K)
+		  detVecs <- .Call("getDetVecs", y.arr, mp, J.it[seq(from = t,to = length(J.it)-nY+t, by=nY)], t, K,
+					PACKAGE = "unmarked")
 		  psiSite <- psiSite * detVecs
 		  if(storeAlpha) alpha[,t,] <<- psiSite[,]
 		  if(t < nY) {
@@ -640,7 +641,7 @@ findMLE <-
 				for(j in 1:J) {
 					if(y.arr[i,t,j] != 99) {
 						mp <- V.arr[,,i,t,j] %*% detParams
-						detVecObs <- .Call("getSingleDetVec", y.arr[i,t,j], mp, K)
+						detVecObs <- .Call("getSingleDetVec", y.arr[i,t,j], mp, K, PACKAGE = "unmarked")
 						detVec <- detVec * detVecObs
 					}
 				}
@@ -659,7 +660,7 @@ findMLE <-
 				  if(y.arr[i,t,j] != 99) {
 					  for(k in 0:K) {
 						  mp <- V.arr[,,i,t,j] %*% detParams
-						  detMats[,k+1,j,t,i] <- .Call("getSingleDetVec", k, mp, K)
+						  detMats[,k+1,j,t,i] <- .Call("getSingleDetVec", k, mp, K, PACKAGE = "unmarked")
 					  }
 				  }
 			  }
@@ -688,7 +689,7 @@ findMLE <-
   
 	get.starts <- function() {
 		## first get initial estimate of phi assuming N = N_max
-		y <- umf@y
+		y <- matrix(y.itj, M, J*nY, byrow = TRUE)
 		y.it <- matrix(t(y), M*nY, J, byrow=TRUE)
 		y.it <- apply(y.it, 1, max, na.rm=T)
 		y.it[is.infinite(y.it)] <- NA
@@ -726,7 +727,8 @@ findMLE <-
 			mp <- array(V.itjk %*% detParms, c(nDMP, J, nY, M))
 			for(t in 1:nY) {
 				storage.mode(t) <- "integer"
-				detVecs <- matrix(.Call("getDetVecs", y.arr, mp, J.it[seq(from = t,to = length(J.it)-nY+t, by=nY)], t, K),
+				detVecs <- matrix(.Call("getDetVecs", y.arr, mp, J.it[seq(from = t,to = length(J.it)-nY+t, by=nY)], t, K, 
+								PACKAGE = "unmarked"),
 						K+1, M)
 				nll.t <- sum(log(detVecs[matrix(c(y.it.mat[,t] + 1, 1:M), M, 2)]), na.rm = TRUE)
 				negloglike <- negloglike - nll.t
