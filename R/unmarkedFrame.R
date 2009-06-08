@@ -182,7 +182,7 @@ setMethod("summary","unmarkedFrame",
       cat(nrow(object@y), "sites\n")
       cat("Maximum observations per site:",object@obsNum,"\n\n")
       cat("Distribution of observations per site:")
-      stem(rowSums(!is.na(umf@y)), scale=0.5)
+      stem(rowSums(!is.na(object@y)), scale=0.5)
       cat("Tabulation of y observations:")
       print(table(object@y, exclude=NULL))
       if(!is.null(object@siteCovs)) {
