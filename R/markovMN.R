@@ -690,6 +690,7 @@ findMLE <-
 	get.starts <- function() {
 		## first get initial estimate of phi assuming N = N_max
 		y <- matrix(y.itj, M, J*nY, byrow = TRUE)
+		y[y == 99] <- NA
 		y.it <- matrix(t(y), M*nY, J, byrow=TRUE)
 		y.it <- apply(y.it, 1, max, na.rm=T)
 		y.it[is.infinite(y.it)] <- NA
