@@ -161,7 +161,7 @@ return(out)
 
 
 
-#' setMethod parboot
+#' @exportMethod parboot
 setGeneric("parboot",
     def = function(object, ...) {
       standardGeneric("parboot")
@@ -180,7 +180,7 @@ setClass("umParboot",
         )
 
 
-# @exportMethod update
+#' @exportMethod update
 setMethod("update", "umDistsampFit", 
 	function(object, formula., ..., evaluate = TRUE) {
 		call <- object@call
