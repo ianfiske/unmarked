@@ -233,7 +233,9 @@ setMethod("coef", "unmarkedEstimate",
 
 setMethod("vcov", "unmarkedEstimate",
 		function(object,...) {
-			object@covMat
+			v <- object@covMat
+			rownames(v) <- colnames(v) <- names(coef(object))
+			v
 		})
 #    })
 #    
