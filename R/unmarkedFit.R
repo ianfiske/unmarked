@@ -105,34 +105,14 @@ setMethod("show", "unmarkedFit",
 #' @param whichEstimate character, either "state" or "det"
 #' @return an unmarkedEstimate object
 setMethod("linearComb",
-    signature(obj = "unmarkedFit", coefficients = "matrix"),
+    signature(obj = "unmarkedFit", coefficients = "matrixOrVector"),
     function(obj, coefficients, whichEstimate) {
       stopifnot(!missing(whichEstimate))
       stopifnot(whichEstimate %in% names(obj))
       estimate <- obj@estimates[whichEstimate]
-#      if(whichEstimate == "det") {
-#        lc <- linearComb(obj@detEstimates, coefficients)
-#      } else {
-#        lc <- linearComb(obj@stateEstimates, coefficients)
-#      }
-#      lc
       linearComb(estimate, coefficients)
     })
 
-setMethod("linearComb",
-		signature(obj = "unmarkedFit", coefficients = "numeric"),
-		function(obj, coefficients, whichEstimate) {
-			stopifnot(!missing(whichEstimate))
-			stopifnot(whichEstimate %in% names(obj))
-			estimate <- obj@estimates[whichEstimate]
-#      if(whichEstimate == "det") {
-#        lc <- linearComb(obj@detEstimates, coefficients)
-#      } else {
-#        lc <- linearComb(obj@stateEstimates, coefficients)
-#      }
-#      lc
-			linearComb(estimate, coefficients)
-		})
 
 setMethod("[",
     "unmarkedFit",

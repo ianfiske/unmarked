@@ -1,6 +1,8 @@
 #' @include classes.R
 roxygen()
 
+setClassUnion("matrixOrVector", c("matrix","numeric"))
+
 # Class to store actual parameter estimates
 #' @export
 setClass("unmarkedEstimate",
@@ -9,9 +11,7 @@ setClass("unmarkedEstimate",
         estimates = "numeric",
         covMat = "matrix",
         invlink = "character",
-        invlinkGrad = "character",
-				backTransformed = "logical",
-				coefficients = "matrix"),
+        invlinkGrad = "character"),
     validity = function(object) {
       errors <- character(0)
       if(nrow(object@covMat) != length(object@estimates)) {
@@ -22,6 +22,8 @@ setClass("unmarkedEstimate",
       else
         TRUE
     })
+
+
 
 #setClass("unmarkedEstimateLinearComb",
 #    representation(originalEstimate = "unmarkedEstimate",
@@ -79,8 +81,7 @@ unmarkedEstimateList <- function(l) {
 }
 
 #' @export
-unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, invlinkGrad, backTransformed = FALSE,
-		coefficients = matrix(1, 1, length(estimates))) {
+unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, invlinkGrad) {
 
   new("unmarkedEstimate",
       name = name,
@@ -88,9 +89,7 @@ unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, invli
       estimates = estimates,
       covMat = covMat,
       invlink = invlink,
-      invlinkGrad = invlinkGrad,
-			backTransformed = backTransformed,
-			coefficients = coefficients)
+      invlinkGrad = invlinkGrad)
 
 }
 
@@ -102,11 +101,8 @@ setMethod("show",
       Z <- ests/SEs
       p <- 2*pnorm(abs(Z), lower.tail = FALSE)
 
-      if(!all(object@coefficients == 1)) {
-        printRowNames <- FALSE
-      } else {
+
         printRowNames <- TRUE
-      }
 
       cat(object@name,":\n", sep="")
       outDF <- data.frame(Estimate = ests,
@@ -115,28 +111,10 @@ setMethod("show",
           "P(>|z|)" = p,
           check.names = FALSE)
       print(outDF, row.names = printRowNames, digits = 3)
+			
     })
 
-#setMethod("show",
-#    signature(object = "unmarkedEstimateLinearComb"),
-#    function(object) {
-#      coefTable <- data.frame(Estimate = object@originalEstimate@estimates,
-#          Coefficients = object@coefficients)
-#
-#      callNextMethod(object)
-#
-#      cat("\n")
-#
-#      print(coefTable, digits = 3)
-#
-#    })
-#
-#setMethod("show",
-#    signature(object = "unmarkedEstimateBackTransformed"),
-#    function(object) {
-#      callNextMethod(object)
-#      cat("\nTransformation:", object@transformation,"\n")
-#    })
+
 
 
 #' Compute linear combinations of estimates in unmarkedEstimate objects.
@@ -151,33 +129,16 @@ setMethod("show",
 #' @param coefficients vector of same length as obj
 #' @return an unmarkedEstimate object
 setMethod("linearComb",
-    signature(obj = "unmarkedEstimate", coefficients = "numeric"),
-    function(obj, coefficients) {
-      stopifnot(length(coefficients) == length(obj@estimates))
-      e <- as.vector(t(coefficients) %*% obj@estimates)
-      v <- t(coefficients) %*% obj@covMat %*% coefficients
-      umelc <- new("unmarkedEstimate",
-          name = paste("Linear combination of",obj@name,"estimate(s)"),
-          estimates = e, covMat = v,
-          invlink = obj@invlink, invlinkGrad = obj@invlinkGrad,
-          coefficients = t(coefficients))
-      umelc
-    })
-
-
-# do the right thing if a matrix of coefficients supplied
-setMethod("linearComb",
-		signature(obj = "unmarkedEstimate", coefficients = "matrix"),
+		signature(obj = "unmarkedEstimate", coefficients = "matrixOrVector"),
 		function(obj, coefficients) {
+			if(!is(coefficients, "matrix")) coefficients <- t(as.matrix(coefficients))
 			stopifnot(ncol(coefficients) == length(obj@estimates))
 			e <- as.vector(coefficients %*% obj@estimates)
 			v <- coefficients %*% obj@covMat %*% t(coefficients)
-			umelc <- new("unmarkedEstimate",
-					name = paste("Linear combinations of",obj@name,"estimate(s)"),
-					short.name = obj@short.name,
-					estimates = e, covMat = v,
-					invlink = obj@invlink, invlinkGrad = obj@invlinkGrad,
-					coefficients = coefficients, backTransformed = FALSE)
+			umelc <- new("unmarkedLinComb",
+					parentEstimate = obj,
+					estimate = e, covMat = v,
+					coefficients = coefficients)
 			umelc
 		})
 
@@ -217,36 +178,19 @@ setMethod("linearComb",
 #    })
 
 
-# TODO: unify unmarkedEstimateMultLinearCombs and unmarkedEstimateLinearComb
+# TODO: include confidence intervals b/c backtransformed intervals should perform better than transformed SEs to new intervals
+
+# backTransform is only valid for an unmarkedEstimate of length = 1.
 setMethod("backTransform",
 		signature(obj = "unmarkedEstimate"),
 		function(obj) {
 			
-			stopifnot(!obj@backTransformed)
-			## In general, MV delta method is Var=J*Sigma*J^T where J is Jacobian
-			## In this case, J is diagonal with elements = gradient
-			## This reduces to scaling the rows and then columns of Sigma by the gradient
-			e <- eval(call(obj@invlink,obj@estimates))
-			grad <- eval(call(obj@invlinkGrad,obj@estimates))
-			v <- diag(grad) %*% obj@covMat %*% diag(grad) 
-			
-#			if(is(obj, "unmarkedEstimateLinearComb")) {
-				coef <- obj@coefficients
-#				orig <- obj@originalEstimate
-#			} else {
-#				coef <- 1
-#				orig <- obj
-#			}
-			
-			umebt <- new("unmarkedEstimate",
-					name = paste(obj@name,"transformed to native scale"),
-					short.name = obj@short.name,
-					estimates = e, covMat = v,
-					invlink = "identity", invlinkGrad = "identity",
-					coefficients = coef,
-					backTransformed = TRUE)
-			
-			umebt
+			stopifnot(length(obj@estimates) == 1)
+
+			lc <- linearComb(obj, 1)
+		
+			umbt <- callGeneric(lc)						
+			umbt
 		})
 
 #' Compute standard error of an unmarkedEstimate object.
@@ -283,7 +227,7 @@ setMethod("coef", "unmarkedEstimate",
 			if(altNames) {
 				names(coefs) <- paste(object@short.name, "(", names(coefs), ")", sep="")
 			}
-			if(object@backTransformed | !all(object@coefficients == 1)) names(coefs) <- NULL
+#			if(object@backTransformed | !all(object@coefficients == 1)) names(coefs) <- NULL
 			coefs
 		})
 

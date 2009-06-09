@@ -22,6 +22,7 @@ setGeneric("predict")
 setGeneric("vcov")
 setGeneric("coef")
 setGeneric("summary")
+setGeneric("update")
 
 #' Compute linear combinations of parameters.
 #'

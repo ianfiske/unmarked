@@ -73,19 +73,19 @@ arrToList <- function(x){
   nl
 }
 
-# compute estimated asymptotic variances of parameter estimates
-# using the observed information matrix
-#' @nord
-sd.est <- function(fm) {
-    sqrt(diag(solve(fm$hessian)))
-}
+## compute estimated asymptotic variances of parameter estimates
+## using the observed information matrix
+##' @nord
+#sd.est <- function(fm) {
+#    sqrt(diag(solve(fm$hessian)))
+#}
 
-# delta method for variance of proportion given variance of its logistic-
-# transformed counterpart
-#' @nord
-sd.prop <- function(est,sd.est) {
-    exp(-est)/(1 + exp(-est))^2 * sd.est
-}
+## delta method for variance of proportion given variance of its logistic-
+## transformed counterpart
+##' @nord
+#sd.prop <- function(est,sd.est) {
+#    exp(-est)/(1 + exp(-est))^2 * sd.est
+#}
 
 ### track linked list of parameters using a data frame
 ### add row to linked list
