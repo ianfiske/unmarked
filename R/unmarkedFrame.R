@@ -117,28 +117,37 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 
 #' @export
 setMethod("show", "unmarkedFrame",
-    function(object) {
-      ## print y
-      cat("Observation matrix:\n")
-      print(object@y)
-
-      ## site covariates
-      if(!is.null(object@siteCovs)) {
-        cat("\nSite level covariates:\n")
-        print(object@siteCovs)
-      }
-
-      if(!is.null(object@obsCovs)) {
-        cat("\nWithin-site covariates:\n")
-        obsCovs <- object@obsCovs
-        M <- nrow(object@y)
-        J <- object@obsNum
-        for(i in seq(length=ncol(obsCovs))) {
-          cat("\n",colnames(obsCovs)[i],":\n", sep="")
-          print(matrix(obsCovs[,i], M, J, byrow = TRUE))
-        }
-      }
-    })
+		function(object) {
+			cat("unmarkedFrame object\n\n")
+			cat(nrow(object@y),"sites\n")
+			obsPres <- !is.null(object@obsCovs)
+			sitePres <- !is.null(object@siteCovs)
+			if(obsPres) cat("observation-level covariates present \n")
+			if(sitePres) cat("site-level covariates present\n")
+		})
+#setMethod("show", "unmarkedFrame",
+#    function(object) {
+#      ## print y
+#      cat("Observation matrix:\n")
+#      print(object@y)
+#
+#      ## site covariates
+#      if(!is.null(object@siteCovs)) {
+#        cat("\nSite level covariates:\n")
+#        print(object@siteCovs)
+#      }
+#
+#      if(!is.null(object@obsCovs)) {
+#        cat("\nWithin-site covariates:\n")
+#        obsCovs <- object@obsCovs
+#        M <- nrow(object@y)
+#        J <- object@obsNum
+#        for(i in seq(length=ncol(obsCovs))) {
+#          cat("\n",colnames(obsCovs)[i],":\n", sep="")
+#          print(matrix(obsCovs[,i], M, J, byrow = TRUE))
+#        }
+#      }
+#    })
 
 #' Extractor for site level covariates
 #' @param umf an unmarkedFrame
