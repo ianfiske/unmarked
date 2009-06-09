@@ -5,19 +5,14 @@
 roxygen()
 
 
-
-
-
-
 #' Fit the hierarchical distance sampling model
 #'
 #' This functions fits the multinomial-Poisson mixture model for line or point transect data where counts are recorded in discrete distance intervals.
 #'
 #' 
-#' @param stateformula Right-hand side formula describing covariates of abundance or density.
-#' @param stateformula Two-sided formula describing response matrix and covariates of abundance or density.
+#' @param stateformula Right-hand or 2-sided side formula describing covariates of abundance or density.
 #' @param detformula Right-hand side formula describing covariates of detection.
-#' @param data data.frame containing response and predictor variables. Each row is a transect.
+#' @param data data.frame or unmarkedFrame containing response and predictor variables. Each row is a transect.
 #' @param dist.breaks Numeric vector defining the distance intervals (in meters or km) in which observations were recorded.
 #' @param tlength Numeric vector of transect lengths in meters or km.
 #' @param keyfun One of the following detection functions: "halfnorm", "hazard", "exp", or "uniform." See details
@@ -120,8 +115,15 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 	keyfun <- match.arg(keyfun)
 	output <- match.arg(output)
 	unitsOut <- match.arg(unitsOut)
-	mf <- model.frame(stateformula, data)
-	Y <- model.response(mf)
+	if(is(data,"unmarkedFrame")) {
+		Y <- data@y
+		umf <- handleNA(stateformula, detformula, data)
+		data <- data@siteCovs
+	} else {
+		if(!is(data, "data.frame")) stop("data must either an unmarkedFrame or a data frame.")
+		mf <- model.frame(stateformula, data)
+		Y <- model.response(mf)
+	}
 	Xlam <- model.matrix(stateformula, data)
 	Xp <- model.matrix(detformula, data)
 	n <- nrow(Y)
@@ -248,7 +250,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				covMat = covMatAP, invlink = "exp", invlinkGrad = "exp")
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
-	umf <- unmarkedFrame(y = Y, siteCovs = data, obsNum = ncol(Y), primaryNum = 1)
+	if(!is(data, "unmarkedFrame")) umf <- unmarkedFrame(y = Y, siteCovs = data, obsNum = ncol(Y), primaryNum = 1)
 	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
 			stateformula=stateformula, detformula=detformula, optout=fm, 
 			data = umf, keyfun=keyfun, dist.breaks=dist.breaks, tlength=tlength, 
@@ -286,62 +288,62 @@ vIntegrate <- Vectorize(integrate, c("lower", "upper"))
 # Multinomial cell probabilities for line or point transects under half-normal model
 cp.hn <- function(d, s, survey=c("line", "point")) 
 {
-survey <- match.arg(survey)
-switch(survey, 
-line = {
-	strip.widths <- diff(d)
-	f.0 <- 2 * dnorm(0, 0, sd=s)
-	int <- 2 * (pnorm(d[-1], 0, sd=s) - pnorm(d[-length(d)], 0, sd=s))
-	cp <- int / f.0 / strip.widths 
-	},
-point = {
-	W <- max(d)
-	int <- as.numeric(vIntegrate(grhn, d[-length(d)], d[-1], sigma=s)["value",])
-	cp <- 2 / W^2 * int
-	})
-return(cp)
+	survey <- match.arg(survey)
+	switch(survey, 
+			line = {
+				strip.widths <- diff(d)
+				f.0 <- 2 * dnorm(0, 0, sd=s)
+				int <- 2 * (pnorm(d[-1], 0, sd=s) - pnorm(d[-length(d)], 0, sd=s))
+				cp <- int / f.0 / strip.widths 
+			},
+			point = {
+				W <- max(d)
+				int <- as.numeric(vIntegrate(grhn, d[-length(d)], d[-1], sigma=s)["value",])
+				cp <- 2 / W^2 * int
+			})
+	return(cp)
 }
 
 
 
 cp.exp <- function(d, rate, survey=c("line", "point")) 
 {
-survey <- match.arg(survey)
-switch(survey, 
-line = {
-	strip.widths <- diff(d)
-	f.0 <- dexp(0, rate=rate)
-	int <- pexp(d[-1], rate=rate) - pexp(d[-length(d)], rate=rate)
-	cp <- int / f.0 / strip.widths
-	},
-point = {
-	W <- max(d)
-	int <- as.numeric(vIntegrate(grexp, d[-length(d)], d[-1], 
-		rate=rate)["value",])
-	cp <- 2 / W^2 * int
-	})
-return(cp)
+	survey <- match.arg(survey)
+	switch(survey, 
+			line = {
+				strip.widths <- diff(d)
+				f.0 <- dexp(0, rate=rate)
+				int <- pexp(d[-1], rate=rate) - pexp(d[-length(d)], rate=rate)
+				cp <- int / f.0 / strip.widths
+			},
+			point = {
+				W <- max(d)
+				int <- as.numeric(vIntegrate(grexp, d[-length(d)], d[-1], 
+								rate=rate)["value",])
+				cp <- 2 / W^2 * int
+			})
+	return(cp)
 }
 
 
 
 cp.haz <- function(d, shape, scale, survey=c("line", "point"))
 {
-survey <- match.arg(survey)
-switch(survey, 
-line = {
-	strip.widths <- diff(d)
-	int <- as.numeric(vIntegrate(gxhaz, d[-length(d)], d[-1], shape=shape, 
-		scale=scale)["value",])
-	cp <- int / strip.widths
-	},
-point = {
-	W <- max(d)
-	int <- as.numeric(vIntegrate(grhaz, d[-length(d)], d[-1], shape=shape, 
-		scale=scale)["value",])
-	cp <- 2 / W^2 *int
-	})
-return(cp)
+	survey <- match.arg(survey)
+	switch(survey, 
+			line = {
+				strip.widths <- diff(d)
+				int <- as.numeric(vIntegrate(gxhaz, d[-length(d)], d[-1], shape=shape, 
+								scale=scale)["value",])
+				cp <- int / strip.widths
+			},
+			point = {
+				W <- max(d)
+				int <- as.numeric(vIntegrate(grhaz, d[-length(d)], d[-1], shape=shape, 
+								scale=scale)["value",])
+				cp <- 2 / W^2 *int
+			})
+	return(cp)
 }
 
 
@@ -351,13 +353,13 @@ return(cp)
 
 ll.halfnorm <- function(param, Y, Xlam, Xp, J, d, a, nAP, nP, survey) 
 {
-sigma <- as.numeric(exp(Xp %*% param[(nAP+1):nP]))
-lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
-pvec <- c(sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey)))
-growlam <- rep(lambda, each=J)
-datavec <- c(t(Y))
-ll <- dpois(datavec, growlam * pvec * a, log=T)
--sum(ll)
+	sigma <- as.numeric(exp(Xp %*% param[(nAP+1):nP]))
+	lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
+	pvec <- c(sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey)))
+	growlam <- rep(lambda, each=J)
+	datavec <- c(t(Y))
+	ll <- dpois(datavec, growlam * pvec * a, log=T)
+	-sum(ll)
 }
 
 
@@ -365,27 +367,27 @@ ll <- dpois(datavec, growlam * pvec * a, log=T)
 
 ll.exp <- function(param, Y, Xlam, Xp, K, J, a, d, nAP, nP, survey=survey)
 {
-rate <- as.numeric(exp(Xp %*% param[(nAP+1):nP]))
-lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
-pvec <- c(sapply(rate, function(x) cp.exp(d=d, rate=x, survey=survey)))
-growlam <- rep(lambda, each=J)
-datavec <- c(t(Y))
-ll <- dpois(datavec, growlam * pvec * a, log=T)
--sum(ll)
+	rate <- as.numeric(exp(Xp %*% param[(nAP+1):nP]))
+	lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
+	pvec <- c(sapply(rate, function(x) cp.exp(d=d, rate=x, survey=survey)))
+	growlam <- rep(lambda, each=J)
+	datavec <- c(t(Y))
+	ll <- dpois(datavec, growlam * pvec * a, log=T)
+	-sum(ll)
 }
 
 
 ll.hazard <- function(param, Y, Xlam, Xp, J, a, d, nAP, nP, survey)
 {
-shape <- as.numeric(exp(Xp %*% param[(nAP+1):(nP-1)]))
-scale <- as.numeric(exp(param[nP]))
-lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
-pvec <- c(sapply(shape, function(x) cp.haz(d=d, shape=x, scale=scale, 
-	survey=survey)))
-growlam <- rep(lambda, each=J)
-datavec <- c(t(Y))
-ll <- dpois(datavec, growlam * a * pvec, log=T)
--sum(ll)
+	shape <- as.numeric(exp(Xp %*% param[(nAP+1):(nP-1)]))
+	scale <- as.numeric(exp(param[nP]))
+	lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
+	pvec <- c(sapply(shape, function(x) cp.haz(d=d, shape=x, scale=scale, 
+								survey=survey)))
+	growlam <- rep(lambda, each=J)
+	datavec <- c(t(Y))
+	ll <- dpois(datavec, growlam * a * pvec, log=T)
+	-sum(ll)
 }
 
 
@@ -393,11 +395,11 @@ ll <- dpois(datavec, growlam * a * pvec, log=T)
 
 ll.uniform <- function(param, Y, Xlam, Xp, J, a)
 {
-lambda <- exp(Xlam %*% param)
-growlam <- rep(lambda, each=J)
-datavec <- c(t(Y))
-ll <- dpois(datavec, growlam * a, log=T)
--1*sum(ll)
+	lambda <- exp(Xlam %*% param)
+	growlam <- rep(lambda, each=J)
+	datavec <- c(t(Y))
+	ll <- dpois(datavec, growlam * a, log=T)
+	-1*sum(ll)
 }
 
 
