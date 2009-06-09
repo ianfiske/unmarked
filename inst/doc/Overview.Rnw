@@ -1,0 +1,23 @@
+% 
+\documentclass[a4paper]{article}
+\usepackage[OT1]{fontenc}
+\usepackage{Sweave}
+\begin{document}
+
+\title{Overview of Unmarked:\\
+An R Package for the Analysis of Wildlife Data}
+\author{Ian Fiske}
+
+\maketitle
+
+NOTE:  this overview is incomplete!
+
+unmarked implements 
+
+\section{Overview of unmarked}
+
+\section{Typical unmarked session}
+
+
+
+\end{document}
