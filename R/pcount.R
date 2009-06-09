@@ -139,7 +139,7 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
 #      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
 
   umfit <- unmarkedFit(fitType = "pcount",
-      call = match.call(), stateFormula = stateformula, detFormula = detformula, data = umf, estimates = estimateList,
+      call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
       AIC = fmAIC, hessian = fm$hessian, negLogLike = fm$value)
 
   return(umfit)

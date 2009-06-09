@@ -134,7 +134,7 @@ function(stateformula, detformula, piFun, umf)
           det=detEstimates))
 
   umfit <- unmarkedFit(fitType = "multinomPois",
-      call = match.call(), stateFormula = stateformula, detFormula = detformula, data = umf, estimates = estimateList,
+      call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
       AIC = fmAIC, hessian = fm$hessian, negLogLike = fm$value)
 
   return(umfit)

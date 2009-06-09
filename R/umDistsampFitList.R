@@ -102,14 +102,14 @@ seNames <- paste("SE", eNames, sep="")
 eseNames <- character(l <- length(c(eNames, seNames)))
 eseNames[seq(1, l, by=2)] <- eNames
 eseNames[seq(2, l, by=2)] <- seNames
-cNames <- c("stateFormula", "detFormula", eseNames)
+cNames <- c("stateformula", "detformula", eseNames)
 out <- data.frame(matrix(NA, ncol=length(cNames), nrow=length(fits)))
 eMat <- seMat <- matrix(NA, length(fits), length(eNames), 
    dimnames=list(names(fits), eNames))
 rownames(out) <- names(fits)
 colnames(out) <- cNames
-out$stateFormula <- sapply(fits, function(x) deparse(x@stateFormula))
-out$detFormula <- sapply(fits, function(x) deparse(x@detFormula))
+out$stateformula <- sapply(fits, function(x) deparse(x@stateformula))
+out$detformula <- sapply(fits, function(x) deparse(x@detformula))
 for(i in 1:length(eNames)) {
 	eMat[,eNames[i]] <- out[,eNames[i]] <- sapply(estList, function(x) x[eNames[i]])
 	seMat[,eNames[i]] <- out[,seNames[i]] <- sapply(seList, function(x) x[eNames[i]])

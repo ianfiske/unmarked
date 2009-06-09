@@ -20,8 +20,8 @@ roxygen()
 setClass("unmarkedFit",
     representation(fitType = "character",
         call = "call",
-				stateFormula = "formula",
-				detFormula = "formula",
+				stateformula = "formula",
+				detformula = "formula",
         data = "unmarkedFrame",
         estimates = "unmarkedEstimateList",
         AIC = "numeric",
@@ -31,10 +31,10 @@ setClass("unmarkedFit",
 
 
 # constructor for unmarkedFit objects
-unmarkedFit <- function(fitType, call, stateFormula, detFormula,
+unmarkedFit <- function(fitType, call, stateformula, detformula,
     data, estimates, AIC, hessian, negLogLike) {
   umfit <- new("unmarkedFit", fitType = fitType,
-      call = call, stateFormula = stateFormula, detFormula = detFormula, data = data,
+      call = call, stateformula = stateformula, detformula = detformula, data = data,
       estimates = estimates, AIC = AIC,
       hessian = hessian, negLogLike = negLogLike)
 

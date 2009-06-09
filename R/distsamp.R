@@ -250,7 +250,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 	}
 	umf <- unmarkedFrame(y = Y, siteCovs = data, obsNum = ncol(Y), primaryNum = 1)
 	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
-			stateFormula=stateformula, detFormula=detformula, optout=fm, 
+			stateformula=stateformula, detformula=detformula, optout=fm, 
 			data = umf, keyfun=keyfun, dist.breaks=dist.breaks, tlength=tlength, 
 			area=a, survey=survey, unitsIn=unitsIn, unitsOut=unitsOut, 
 			estimates = estimateList, AIC = fmAIC, hessian = fm$hessian, 

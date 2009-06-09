@@ -100,14 +100,14 @@ state = {
 	xpar <- paste("x", 1:length(par), sep="")
 	varcov <- vcov(object, type="state") 
 	covs <- paste("covs", 1:length(par), sep="")
-	X <- model.matrix(object@stateFormula[-2], newdata)
+	X <- model.matrix(object@stateformula[-2], newdata)
 	},
 det = {
 	par <- coef(object, type="det")
 	xpar <- paste("x", 1:length(par), sep="")
 	varcov <- vcov(object, type="det")
 	covs <- paste("covs", 1:length(par), sep="")
-	X <- model.matrix(object@detFormula, newdata)
+	X <- model.matrix(object@detformula, newdata)
 	})
 SEs <- rep(NA, nrow(X))
 switch(link, 
@@ -226,8 +226,8 @@ setMethod("parboot", "umDistsampFit", function(object, R=10, report=2,
    label=character(0), ...)  
 {
 call <- match.call()
-stateformula <- object@stateFormula
-detformula <- object@detFormula
+stateformula <- object@stateformula
+detformula <- object@detformula
 data <- object@data
 data <- data.frame(data@y, data@siteCovs)
 mf <- model.frame(stateformula, data)
