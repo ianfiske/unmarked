@@ -1,6 +1,7 @@
 \name{predict-unmarkedFit}
 \title{predict-unmarkedFit}
-\alias{predict,unmarkedFit-method}
+\alias{predict-umDistsampFit,}
+\alias{unmarkedFit-method}
 \examples{data(mallard)
 mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)

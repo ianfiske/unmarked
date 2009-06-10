@@ -8,10 +8,9 @@
 \description{Fit the hierarchical distance sampling model}
 \details{This functions fits the multinomial-Poisson mixture model for line or point transect data where counts are recorded in discrete distance intervals.}
 \keyword{models}
-\arguments{\item{stateformula}{Right-hand side formula describing covariates of abundance or density.}
-\item{stateformula}{Two-sided formula describing response matrix and covariates of abundance or density.}
+\arguments{\item{stateformula}{Right-hand or 2-sided side formula describing covariates of abundance or density.}
 \item{detformula}{Right-hand side formula describing covariates of detection.}
-\item{data}{data.frame containing response and predictor variables. Each row is a transect.}
+\item{data}{data.frame or unmarkedFrame containing response and predictor variables. Each row is a transect.}
 \item{dist.breaks}{Numeric vector defining the distance intervals (in meters or km) in which observations were recorded.}
 \item{tlength}{Numeric vector of transect lengths in meters or km.}
 \item{keyfun}{One of the following detection functions: "halfnorm", "hazard", "exp", or "uniform." See details}

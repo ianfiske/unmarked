@@ -127,7 +127,7 @@ setMethod("names", "unmarkedFit",
     
 
 #' @name predict-unmarkedFit
-#' @aliases predict,unmarkedFit-method
+#' @aliases predict-umDistsampFit, unmarkedFit-method
 #' @examples
 #' 
 #' data(mallard)
@@ -152,10 +152,11 @@ setMethod("names", "unmarkedFit",
 #' @exportMethod predict
 setMethod("predict", "unmarkedFit", 
 		function(object, type, newdata=NULL, backTran=TRUE, ...) {
+##FIXME this fails on 2-parameter detection functions such as hazard function
 			if(is.null(newdata))
 				newdata <- object@data
-			stateformula <- as.formula(as.character(object@call["stateformula"]))
-			detformula <- as.formula(as.character(object@call["detformula"]))
+			stateformula <- object@stateformula
+			detformula <- object@detformula
 			cls <- class(newdata)
 			switch(cls, 
 					unmarkedFrame = {
@@ -167,7 +168,11 @@ setMethod("predict", "unmarkedFit",
 					},
 					data.frame = {
 						switch(type, 
-								state = X <- model.matrix(stateformula, newdata),
+								state = {
+									Terms <- delete.response(terms(stateformula))
+									mf <- model.frame(Terms, newdata)
+									X <- model.matrix(Terms, mf)
+									},
 								det = X <- model.matrix(detformula, newdata))
 					})
 			out <- matrix(NA, nrow(X), 2, dimnames=list(NULL, c("Predicted", "SE")))

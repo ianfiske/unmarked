@@ -1,6 +1,9 @@
-\name{predict-umDistsampFitList}
-\title{predict-umDistsampFitList}
-\alias{predict,umDistsampFitList-method}
+\name{modSel-unmarkedFitList}
+\title{Model selection results from an unmarkedFitList...}
+\description{Model selection results from an unmarkedFitList}
+\alias{modSel}
+\alias{modSel-methods}
+\arguments{\item{object}{an object of class "umDistsampFitList"}}
 \examples{data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 
 
@@ -15,7 +18,9 @@ tlength=linetran$Length*1000, survey="line", unitsIn="m"))
 (fm3 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~area, linetran, dist.breaks=dbreaksLine, 
 tlength=linetran$Length*1000, survey="line", unitsIn="m"))
 
-fl <- dsFitList(fitList = list(Null=fm1, A.=fm2, .A=fm2))
+fl <- unmarkedFitList(fitList = list(Null=fm1, A.=fm2, .A=fm2))
 fl
 
-predict(fl)}
+(ms <- modSel(fl, nullmod=fm1))
+
+ms@Full}
