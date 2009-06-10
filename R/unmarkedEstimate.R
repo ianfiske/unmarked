@@ -181,16 +181,16 @@ setMethod("linearComb",
 # TODO: include confidence intervals b/c backtransformed intervals should perform better than transformed SEs to new intervals
 
 # backTransform is only valid for an unmarkedEstimate of length = 1.
-setMethod("backTransform",
-		signature(obj = "unmarkedEstimate"),
+# can backtranform a fit directly if it has length 1
+# o.w. give error
+setMethod("backTransform", "unmarkedEstimate",
 		function(obj) {
-			
-			stopifnot(length(obj@estimates) == 1)
-
-			lc <- linearComb(obj, 1)
-		
-			umbt <- callGeneric(lc)						
-			umbt
+			if(length(obj@estimates) == 1) {
+				lc <- linearComb(obj, 1)
+				return(backTransform(lc))
+			} else {
+				stop("Cannot directly back-transform an unmarkedEstimate with length > 1.")
+			}
 		})
 
 #' Compute standard error of an unmarkedEstimate object.
@@ -240,7 +240,19 @@ setMethod("vcov", "unmarkedEstimate",
 #    })
 #    
 #    
-
+setMethod("confint", "unmarkedEstimate", 
+		function(object, parm, level = 0.95) {
+			if(missing(parm)) parm <- 1:length(object@estimates)
+			ests <- object@estimates[parm]
+			ses <- SE(object)[parm]
+			z <- qnorm((1-level)/2, lower.tail = FALSE)
+			lower.lim <- ests - z*ses
+			upper.lim <- ests + z*ses
+			ci <- as.matrix(cbind(lower.lim, upper.lim))
+			rownames(ci) <- names(ests)
+			colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
+			ci
+		})
 
 
 

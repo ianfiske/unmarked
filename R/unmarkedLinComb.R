@@ -82,3 +82,28 @@ setMethod("vcov", "linCombOrBackTrans",
 		function(object) {
 			object@covMat
 		})
+
+setMethod("confint", "unmarkedLinComb",
+		function(object, parm, level = 0.95) {
+			if(missing(parm)) parm <- 1:length(object@estimate)
+			ests <- object@estimate[parm]
+			ses <- SE(object)[parm]
+			z <- qnorm((1-level)/2, lower.tail = FALSE)
+			lower.lim <- ests - z*ses
+			upper.lim <- ests + z*ses
+			ci <- as.matrix(cbind(lower.lim, upper.lim))
+			colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
+			ci
+		})
+
+setMethod("confint", "unmarkedBackTrans",
+		function(object, parm, level = 0.95) {
+			if(missing(parm)) parm <- 1:length(object@estimate)
+			ci.orig <- callGeneric(object@parentLinComb, parm, level)
+			invlink <- object@parentLinComb@parentEstimate@invlink
+			lower.lim <- do.call(invlink, list(ci.orig[,1]))
+			upper.lim <- do.call(invlink, list(ci.orig[,2]))
+			ci <- as.matrix(cbind(lower.lim, upper.lim))
+			colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
+			ci
+		})

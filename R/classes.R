@@ -17,12 +17,15 @@ setGeneric("SE",
       standardGeneric("SE")
     })
 
+#' @importFrom confint stats
+#' @exportMethod confint
 setGeneric("plot")
 setGeneric("predict")
 setGeneric("vcov")
 setGeneric("coef")
 setGeneric("summary")
 setGeneric("update")
+setGeneric("confint")
 
 #' Compute linear combinations of parameters.
 #'
@@ -40,7 +43,7 @@ setGeneric("linearComb",
 #' @param obj object to be transformed
 #' @exportMethod backTransform
 setGeneric("backTransform",
-    function(obj) {
+    function(obj, ...) {
       standardGeneric("backTransform")
     })
 
