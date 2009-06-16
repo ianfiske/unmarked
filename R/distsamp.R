@@ -7,103 +7,137 @@ roxygen()
 
 #' Fit the hierarchical distance sampling model
 #'
-#' This functions fits the multinomial-Poisson mixture model for line or point transect data where counts are recorded in discrete distance intervals.
+#' This functions fits the Royle et al. (2004) multinomial mixture model to line 
+#' or point transect data recorded in discrete distance intervals.
 #'
-#' 
-#' @param stateformula Right-hand or 2-sided side formula describing covariates of abundance or density.
+#' Unlike conventional distance sampling, which uses the 'conditional on 
+#' detection' likelihood formulation, this model is based upon the unconditional 
+#' likelihood and thus allows for modeling of both abundance and detection 
+#' function parameters. 
+#'
+#' The latent transect-level abundance distribution 
+#' \eqn{f(N | \mathbf{\theta})}{f(N | theta)} is currently assumed to be Poisson 
+#' with mean \eqn{\lambda}{lambda}.
+#'
+#' The detection process is modeled as multinomial: 
+#' \eqn{y_{ij} \sim Multinomial(N_i, pi_{ij})}{y_ij ~ Multinomial(N_i, pi_i1, pi_i2, ..., pi_iJ)}, 
+#' where \eqn{pi_ij} is the multinomial cell probability for transect i in 
+#' distance class j. These are computed based upon a detection function 
+#' \eqn{g(x | \mathbf{\sigma})}{g(x | sigma)}, such as the half-normal, 
+#' negative exponential, or hazard rate.  
+#'
+#' Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors 
+#' affected by transect-specific covariates using the log link.
+#'
+#' @param stateformula Right-hand or 2-sided side formula describing covariates 
+#' of abundance or density. See examples for how to specify the response matrix 
+#' in the stateformula when data is a data.frame.
 #' @param detformula Right-hand side formula describing covariates of detection.
-#' @param data data.frame or unmarkedFrame containing response and predictor variables. Each row is a transect.
-#' @param dist.breaks Numeric vector defining the distance intervals (in meters or km) in which observations were recorded.
+#' @param data data.frame or unmarkedFrame containing response and predictor 
+#' variables. The dimensions of the response matrix must be M x J, where M is 
+#' the number of transects and J is the number of distance intervals in which 
+#' observation were recorded.
+#' @param dist.breaks Numeric vector defining the distance intervals 
+#' (in meters or km) in which observations were recorded.
 #' @param tlength Numeric vector of transect lengths in meters or km.
-#' @param keyfun One of the following detection functions: "halfnorm", "hazard", "exp", or "uniform." See details
+#' @param keyfun One of the following detection functions: 
+#' "halfnorm", "hazard", "exp", or "uniform." See details.
 #' @param survey Either "line" or "point" transect.
-#' @param output Either "density" or "abund."
+#' @param output Model either "density" or "abund" 
 #' @param unitsIn Either "m" or "km" for BOTH dist.breaks and tlength
-#' @param unitsOut Units of density. Either "ha" or "kmsq."
+#' @param unitsOut Units of density. Either "ha" or "kmsq" for hectares and 
+#' square kilometers, respectively.
 #' @param starts Vector of starting values for parameters.
-#' @param method Optimization method used by optim().
-#' @param control Other arguments passed to optim().
+#' @param method Optimization method used by \code{\link{optim}}.
+#' @param control Other arguments passed to \code{\link{optim}}.
+#'
+#' @return umDistsampFit object (child class of \link{unmarkedFit)} describing the 
+#' model fit. Parameter estimates are displayed on the log-scale. 
+#' Back-transformation can be achieved via the \link{predict} or 
+#' \link{backTransform} methods.
+#'
+#' @note 
+#' The response matrix contains the counts of objects at each transect in each 
+#' distance interval. These distance intervals must correspond to the distance 
+#' break points vector dist.breaks. One cannot change dist.breaks without also 
+#' changing the response matrix (and vice versa). 
+#'
+#' Currently, transect-level abundance is assumed to be Poisson distributed 
+#' though other distributions such as the negative binomial may be added. 
+#' Goodness-of-fit can be assessed using the \code{\link{parboot}} function.  
+#'
+#' @author Richard Chandler \email{rchandler@@nrc.umass.edu}
+#'
+#' @references Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
+#' abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
+#'
+#' @seealso \code{\link{umDistsampFit}} \code{\link{unmarkedFitList}}
 #'
 #' @examples
-#' ### Line transect examples
+#' ## Line transect examples
 #' 
-#' ## Distance cut points in meters
+#' # Distance cut points in meters
 #' data(linetran)
 #' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
 #' 
-#' ## Half-normal detection function. Density output. No covariates. 
-#' ## lineDat$Length is transect lengths in km, so it has to be converted.
+#' # Half-normal detection function. Density output. No covariates. 
+#' # lineDat$Length is transect lengths in km, so it has to be converted.
 #' (fm1 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 	tlength=linetran$Length*1000, survey="line", unitsIn="m"))
-#' # backtransform covariates to original scale and use specific names.
-#' # lam(Intecept) is mean density in hectares.
-#' # p(Intercept) is the standard deviation of half-normal function in meters.
-#' exp(coef(fm1, altNames=TRUE))
-#' # variance-covariance matrix
+#' 		tlength=linetran$Length*1000, survey="line", unitsIn="m"))
+#' 
+#' coef(fm1, type="det", altNames=TRUE)
+#' backTransform(fm1, whichEstimate="det")
 #' vcov(fm1, altNames=TRUE)
+#' predict(fm1, type="state")
 #' 
-#' 
-#' ## Half-normal. Abundance output. No covariates. Note that transect length
-#' ## must be accounted for so abundance is animals per km of transect.
+#' # Half-normal. Abundance output. No covariates. Note that transect length
+#' # must be accounted for so abundance is animals per km of transect.
 #' (fm2 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 	tlength=linetran$Length*1000, output="abund", survey="line", unitsIn="m", 
-#'    unitsOut="kmsq"))
-#' exp(coef(fm2, altNames=TRUE))
+#' 		tlength=linetran$Length*1000, output="abund", survey="line", unitsIn="m", 
+#' 		unitsOut="kmsq"))
 #' 
-#' ## Halfnormal. Covariates affecting both density and and detection.  
+#' # Halfnormal. Covariates affecting both density and and detection.  
 #' (fm3.1 <- distsamp(cbind(o1,o2,o3,o4) ~ poly(area, 2) + habitat, ~habitat, 
-#'    linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
-#'    survey="line", unitsIn="m", unitsOut="ha"))
-#' exp(coef(fm3.1, altNames=TRUE))
+#' 		linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
+#' 		survey="line", unitsIn="m", unitsOut="ha"))
 #' 
-#' ## This won't run without starting values.
+#' # This won't run without starting values.
 #' (fm3.2 <- distsamp(cbind(o1,o2,o3,o4) ~ poly(area, 2) + habitat - 1, 
-#'    ~habitat - 1, linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
-#'    survey="line", unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
-#' exp(coef(fm3.2, altNames=TRUE))
+#' 		~habitat - 1, linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
+#' 		survey="line", unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
 #' 
 #' 
-#' ## Negative exponential detection function. Density output in hectares. 
+#' # Negative exponential detection function. Density output in hectares. 
 #' (fme <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 	tlength=linetran$Length*1000, key="exp", survey="line", unitsIn="m", 
+#' 		tlength=linetran$Length*1000, key="exp", survey="line", unitsIn="m", 
 #' 		starts=c(0,-1)))
-#' exp(coef(fme, altNames=TRUE))
 #' 
-#' ## Hazard-rate detection function. Density output in hectares.
-#' ## This is real slow, especially for large datasets. Needs to be improved.
+#' # Hazard-rate detection function. Density output in hectares.
+#' # This is real slow, especially for large datasets. Needs to be improved.
 #' (fmhz <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
 #' 		tlength=linetran$Length*1000, keyfun="hazard", survey="line", unitsIn="m"))
-#' exp(coef(fmhz, altNames=TRUE))
-#' plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25)
+#' 
 #' plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 #' 		xlab="Distance(m)", ylab="Detection probability")
 #' 
-#' ## Uniform detection function. Density output in hectars.
+#' # Uniform detection function. Density output in hectars.
 #' (fmu <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
 #' 		tlength=linetran$Length*1000, key="uniform", survey="line", unitsIn="m"))
-#' exp(coef(fmu, altNames=TRUE))
+#'  
+#' ## Point transect examples
 #' 
-#' 
-#' 
-#' ### Point transect examples
-#' 
-#' ## Radius cut points in meters
+#' # Radius cut points in meters
 #' data(pointtran)
 #' (dbreaksPt <- seq(0, 25, by=5))
 #' 
-#' ## Half-normal. Output is animals/point. No covariates.
+#' # Half-normal. Output is animals/point. No covariates.
 #' (fmp1 <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
 #' 		dist.breaks=dbreaksPt, survey="point", unitsIn="m"))
-#' exp(coef(fmp1, altNames=TRUE))
 #' 
-#' ## Negative exponential
+#' # Negative exponential
 #' (fmpe <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
 #' 		dist.breaks=dbreaksPt, key="exp", survey="point", output="density", 
 #' 		unitsIn="m"))
-#' exp(coef(fmpe, altNames=TRUE))
-#' 
-#' 
-#' 
 #' 
 #' @export
 #' @keywords models
@@ -401,10 +435,5 @@ ll.uniform <- function(param, Y, Xlam, Xp, J, a)
 	ll <- dpois(datavec, growlam * a, log=T)
 	-1*sum(ll)
 }
-
-
-
-
-
 
 
