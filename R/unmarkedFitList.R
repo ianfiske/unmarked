@@ -39,26 +39,25 @@ setClass("unmarkedFitList",
 unmarkedFitList <- function(fitList) {
 	umfl <- new("unmarkedFitList", fitList=fitList)
 	return(umfl)
-	}
+}
 
 ##TODO Fix predict-unmarkedFit so that it won't fail when type="det" for 2 parameter detection functions (eg distsamp(keyfun="hazard"))
 #' @exportMethod predict
 setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL, 
-	backTran=TRUE)
-{
-fitList <- object@fitList
-ese <- lapply(fitList, predict, type=type, newdata=newdata, backTran=backTran)
-E <- sapply(ese, function(x) x[,"Predicted"])
-SE <- sapply(ese, function(x) x[,"SE"])
-ic <- sapply(fitList, slot, "AIC")
-deltaic <- ic - min(ic)
-wts <- exp(-deltaic / 2)
-wts <- wts / sum(wts)
-parav <- as.numeric(E %*% wts)
-seav <- rowSums((SE + (E - parav)^2) %*% wts)
-out <- data.frame(Predicted = parav, SE = seav)
-return(out)
-})
+				backTran=TRUE) {
+			fitList <- object@fitList
+			ese <- lapply(fitList, predict, type=type, newdata=newdata, backTran=backTran)
+			E <- sapply(ese, function(x) x[,"Predicted"])
+			SE <- sapply(ese, function(x) x[,"SE"])
+			ic <- sapply(fitList, slot, "AIC")
+			deltaic <- ic - min(ic)
+			wts <- exp(-deltaic / 2)
+			wts <- wts / sum(wts)
+			parav <- as.numeric(E %*% wts)
+			seav <- rowSums((SE + (E - parav)^2) %*% wts)
+			out <- data.frame(Predicted = parav, SE = seav)
+			return(out)
+		})
 
 
 
@@ -67,7 +66,7 @@ return(out)
 
 # Condition number
 cn <- function(object) {
-   ev <- eigen(object@hessian)$value
+   ev <- eigen(hessian(object))$value
    max(ev) / min(ev)
    }
 

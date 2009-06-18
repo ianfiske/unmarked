@@ -73,6 +73,7 @@ function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
   }
 
   fm <- optim(rnorm(nP), nll, method = "BFGS", hessian = TRUE)
+	opt <- fm
   tryCatch(covMat <- solve(fm$hessian),
       error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
   ests <- fm$par
@@ -101,7 +102,7 @@ function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
 
   umfit <- unmarkedFit(fitType = "occu",
       call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
-      AIC = fmAIC, hessian = fm$hessian, negLogLike = fm$value)
+      AIC = fmAIC, opt = opt, negLogLike = fm$value)
 
   return(umfit)
 }

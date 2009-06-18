@@ -261,6 +261,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				fm <- optim(starts, ll.uniform, Y=Y, Xlam=Xlam, Xp=Xp, J=J, a=a, 
 						method=method, hessian=T, control=control, ...)
 			})
+			opt <- fm
 	ests <- fm$par
 	estsAP <- ests[1:nAP]
 	estsDP <- ests[(nAP+1):nP]
@@ -285,7 +286,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
 	if(!is(data, "unmarkedFrame")) umf <- unmarkedFrame(y = Y, siteCovs = data, obsNum = ncol(Y), primaryNum = 1)
-	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
+	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), opt = opt,
 			stateformula=stateformula, detformula=detformula, optout=fm, 
 			data = umf, keyfun=keyfun, dist.breaks=dist.breaks, tlength=tlength, 
 			area=a, survey=survey, unitsIn=unitsIn, unitsOut=unitsOut, 

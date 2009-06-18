@@ -25,18 +25,18 @@ setClass("unmarkedFit",
         data = "unmarkedFrame",
         estimates = "unmarkedEstimateList",
         AIC = "numeric",
-        hessian = "matrix",
+				opt = "list",
         negLogLike = "numeric"))
 
 
 
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, stateformula, detformula,
-    data, estimates, AIC, hessian, negLogLike) {
+    data, estimates, AIC, opt, negLogLike) {
   umfit <- new("unmarkedFit", fitType = fitType,
       call = call, stateformula = stateformula, detformula = detformula, data = data,
       estimates = estimates, AIC = AIC,
-      hessian = hessian, negLogLike = negLogLike)
+      opt = opt, negLogLike = negLogLike)
 
   return(umfit)
 }
@@ -216,11 +216,22 @@ setMethod("coef", "unmarkedFit",
 setMethod("vcov", "unmarkedFit",
 		function(object, type, altNames = TRUE) {
 			if(missing(type)) {
-				v <- solve(object@hessian)
+				v <- solve(hessian(object))
 				rownames(v) <- colnames(v) <- names(coef(object, altNames=altNames))
 			} else {
 				v <- vcov(object[type])
 				rownames(v) <- colnames(v) <- names(coef(object, type, altNames=altNames))
 			}
 			v
+		})
+
+setMethod("confint", "unmarkedFit",
+		function(object, type, parm, level = 0.95) {
+			if(missing(parm)) parm <- 1:length(object[type]@estimates) 
+			callGeneric(object[type],parm, level)
+		})
+
+setMethod("hessian", "unmarkedFit",
+		function(object) {
+			object@opt$hessian
 		})

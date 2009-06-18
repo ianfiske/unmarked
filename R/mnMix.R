@@ -161,6 +161,7 @@ mnMix <-
   }
 
   fm <- optim(rep(0,nP),nll, method = "BFGS", hessian=TRUE)
+	opt <- fm
   ests <- fm$par
   tryCatch(covMat <- solve(fm$hessian),
       error=function(e) {
@@ -210,7 +211,7 @@ mnMix <-
 
   umfit <- unmarkedFit(fitType = "mnMix",
       call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
-      AIC = 2 * fm$value + 2 * nP, hessian = fm$hessian, negLogLike = fm$value)
+      AIC = 2 * fm$value + 2 * nP, opt = opt, negLogLike = fm$value)
 
   umfit
 

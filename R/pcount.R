@@ -104,12 +104,8 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
     -sum(log(dens.i))
   }
 
-#  if(identical(mixture,"P")) {
-    fm <- optim(rep(0,nP), nll, method="BFGS", hessian = TRUE)
-#  }
-#  else if (identical(mixture,"NB")){
-#    fm <- optim(c(rep(0, nP),1), nll, method="BFGS")
-#  }
+	fm <- optim(rep(0,nP), nll, method="BFGS", hessian = TRUE)
+	opt <- fm 
 
   ests <- fm$par
   if(identical(mixture,"NB"))
@@ -140,7 +136,7 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
 
   umfit <- unmarkedFit(fitType = "pcount",
       call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
-      AIC = fmAIC, hessian = fm$hessian, negLogLike = fm$value)
+      AIC = fmAIC, opt = opt, negLogLike = fm$value)
 
   return(umfit)
 }

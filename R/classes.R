@@ -47,6 +47,8 @@ setGeneric("backTransform",
       standardGeneric("backTransform")
     })
 
+#' @exportMethod 
+setGeneric("hessian",	function(object) standardGeneric("hessian"))
 
 # TODO: make parent class unmarkedEstimate
 # TODO: make binomial detection child class
