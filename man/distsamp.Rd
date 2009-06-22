@@ -1,7 +1,7 @@
 \name{distsamp}
 \alias{distsamp}
 \title{Fit the hierarchical distance sampling model...}
-\usage{distsamp(stateformula, detformula=~1, data, dist.breaks, tlength,
+\usage{distsamp(stateformula, detformula=~1, umf, dist.breaks, tlength,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"), survey,
     output=c("density", "abund"), unitsIn, unitsOut=c("ha", "kmsq"),
     starts, method=BFGS, control=list(), ...)}
@@ -11,7 +11,7 @@ or point transect data recorded in discrete distance intervals.
 
 Unlike conventional distance sampling, which uses the 'conditional on 
 detection' likelihood formulation, this model is based upon the unconditional 
-likelihood and thus allows for modeling of both abundance and detection 
+likelihood and thus allows for modeling both abundance and detection 
 function parameters. 
 
 The latent transect-level abundance distribution 
@@ -33,7 +33,7 @@ Back-transformation can be achieved via the \link{predict} or
 \link{backTransform} methods.}
 \note{The response matrix contains the counts of objects at each transect in each 
 distance interval. These distance intervals must correspond to the distance 
-break points vector dist.breaks. One cannot change dist.breaks without also 
+break points vector dist.breaks. One must not change dist.breaks without also 
 changing the response matrix (and vice versa). 
 
 Currently, transect-level abundance is assumed to be Poisson distributed 
@@ -71,10 +71,17 @@ square kilometers, respectively.}
 data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 
 
+lengths <- linetran$Length
+
+ltUMF <- with(linetran, {
+unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4), 
+siteCovs = data.frame(Length, area, habitat))
+})
+
 # Half-normal detection function. Density output. No covariates. 
 # lineDat$Length is transect lengths in km, so it has to be converted.
-(fm1 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-tlength=linetran$Length*1000, survey="line", unitsIn="m"))
+(fm1 <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+tlength=lengths*1000, survey="line", unitsIn="m"))
 
 coef(fm1, type="det", altNames=TRUE)
 backTransform(fm1, whichEstimate="det")
@@ -83,37 +90,36 @@ predict(fm1, type="state")
 
 # Half-normal. Abundance output. No covariates. Note that transect length
 # must be accounted for so abundance is animals per km of transect.
-(fm2 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-tlength=linetran$Length*1000, output="abund", survey="line", unitsIn="m", 
+(fm2 <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+tlength=lengths*1000, output="abund", survey="line", unitsIn="m", 
 unitsOut="kmsq"))
 
 # Halfnormal. Covariates affecting both density and and detection.  
-(fm3.1 <- distsamp(cbind(o1,o2,o3,o4) ~ poly(area, 2) + habitat, ~habitat, 
-linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
+(fm3.1 <- distsamp(~ poly(area, 2) + habitat, ~habitat, 
+ltUMF, dist.breaks=dbreaksLine, tlength=lengths*1000, 
 survey="line", unitsIn="m", unitsOut="ha"))
 
 # This won't run without starting values.
-(fm3.2 <- distsamp(cbind(o1,o2,o3,o4) ~ poly(area, 2) + habitat - 1, 
-~habitat - 1, linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
+(fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1, 
+~habitat - 1, ltUMF, dist.breaks=dbreaksLine, tlength=lengths*1000, 
 survey="line", unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
 
 
 # Negative exponential detection function. Density output in hectares. 
-(fme <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-tlength=linetran$Length*1000, key="exp", survey="line", unitsIn="m", 
-starts=c(0,-1)))
+(fme <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+tlength=lengths*1000, key="exp", survey="line", unitsIn="m"))
 
 # Hazard-rate detection function. Density output in hectares.
-# This is real slow, especially for large datasets. Needs to be improved.
-(fmhz <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-tlength=linetran$Length*1000, keyfun="hazard", survey="line", unitsIn="m"))
+# This is real slow, especially for large datasets.
+(fmhz <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+tlength=lengths*1000, keyfun="hazard", survey="line", unitsIn="m"))
 
 plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 xlab="Distance(m)", ylab="Detection probability")
 
 # Uniform detection function. Density output in hectars.
-(fmu <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-tlength=linetran$Length*1000, key="uniform", survey="line", unitsIn="m"))
+(fmu <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+tlength=lengths*1000, key="uniform", survey="line", unitsIn="m"))
 
 ## Point transect examples
 
@@ -121,11 +127,16 @@ tlength=linetran$Length*1000, key="uniform", survey="line", unitsIn="m"))
 data(pointtran)
 (dbreaksPt <- seq(0, 25, by=5))
 
+ptUMF <- with(pointtran, {
+unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4, dc5), 
+siteCovs = data.frame(area, habitat))
+})
+
 # Half-normal. Output is animals/point. No covariates.
-(fmp1 <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
+(fmp1 <- distsamp(~ 1, ~1, ptUMF, 
 dist.breaks=dbreaksPt, survey="point", unitsIn="m"))
 
 # Negative exponential
-(fmpe <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
+(fmpe <- distsamp(~ 1, ~1, ptUMF, 
 dist.breaks=dbreaksPt, key="exp", survey="point", output="density", 
 unitsIn="m"))}

@@ -12,7 +12,7 @@ roxygen()
 #'
 #' Unlike conventional distance sampling, which uses the 'conditional on 
 #' detection' likelihood formulation, this model is based upon the unconditional 
-#' likelihood and thus allows for modeling of both abundance and detection 
+#' likelihood and thus allows for modeling both abundance and detection 
 #' function parameters. 
 #'
 #' The latent transect-level abundance distribution 
@@ -59,7 +59,7 @@ roxygen()
 #' @note 
 #' The response matrix contains the counts of objects at each transect in each 
 #' distance interval. These distance intervals must correspond to the distance 
-#' break points vector dist.breaks. One cannot change dist.breaks without also 
+#' break points vector dist.breaks. One must not change dist.breaks without also 
 #' changing the response matrix (and vice versa). 
 #'
 #' Currently, transect-level abundance is assumed to be Poisson distributed 
@@ -79,11 +79,18 @@ roxygen()
 #' # Distance cut points in meters
 #' data(linetran)
 #' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
+#'
+#' lengths <- linetran$Length
+#'
+#' ltUMF <- with(linetran, {
+#' 	unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4), 
+#' 		siteCovs = data.frame(Length, area, habitat))
+#' 	})
 #' 
 #' # Half-normal detection function. Density output. No covariates. 
 #' # lineDat$Length is transect lengths in km, so it has to be converted.
-#' (fm1 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 		tlength=linetran$Length*1000, survey="line", unitsIn="m"))
+#'  (fm1 <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#'  		tlength=lengths*1000, survey="line", unitsIn="m"))
 #' 
 #' coef(fm1, type="det", altNames=TRUE)
 #' backTransform(fm1, whichEstimate="det")
@@ -92,56 +99,60 @@ roxygen()
 #' 
 #' # Half-normal. Abundance output. No covariates. Note that transect length
 #' # must be accounted for so abundance is animals per km of transect.
-#' (fm2 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 		tlength=linetran$Length*1000, output="abund", survey="line", unitsIn="m", 
+#' (fm2 <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#' 		tlength=lengths*1000, output="abund", survey="line", unitsIn="m", 
 #' 		unitsOut="kmsq"))
 #' 
 #' # Halfnormal. Covariates affecting both density and and detection.  
-#' (fm3.1 <- distsamp(cbind(o1,o2,o3,o4) ~ poly(area, 2) + habitat, ~habitat, 
-#' 		linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
+#' (fm3.1 <- distsamp(~ poly(area, 2) + habitat, ~habitat, 
+#' 		ltUMF, dist.breaks=dbreaksLine, tlength=lengths*1000, 
 #' 		survey="line", unitsIn="m", unitsOut="ha"))
 #' 
 #' # This won't run without starting values.
-#' (fm3.2 <- distsamp(cbind(o1,o2,o3,o4) ~ poly(area, 2) + habitat - 1, 
-#' 		~habitat - 1, linetran, dist.breaks=dbreaksLine, tlength=linetran$Length*1000, 
+#' (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1, 
+#' 		~habitat - 1, ltUMF, dist.breaks=dbreaksLine, tlength=lengths*1000, 
 #' 		survey="line", unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
 #' 
 #' 
 #' # Negative exponential detection function. Density output in hectares. 
-#' (fme <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 		tlength=linetran$Length*1000, key="exp", survey="line", unitsIn="m", 
-#' 		starts=c(0,-1)))
+#' (fme <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#' 		tlength=lengths*1000, key="exp", survey="line", unitsIn="m"))
 #' 
 #' # Hazard-rate detection function. Density output in hectares.
-#' # This is real slow, especially for large datasets. Needs to be improved.
-#' (fmhz <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 		tlength=linetran$Length*1000, keyfun="hazard", survey="line", unitsIn="m"))
+#' # This is real slow, especially for large datasets.
+#' (fmhz <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#' 		tlength=lengths*1000, keyfun="hazard", survey="line", unitsIn="m"))
 #' 
 #' plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 #' 		xlab="Distance(m)", ylab="Detection probability")
 #' 
 #' # Uniform detection function. Density output in hectars.
-#' (fmu <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 		tlength=linetran$Length*1000, key="uniform", survey="line", unitsIn="m"))
+#' (fmu <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#' 		tlength=lengths*1000, key="uniform", survey="line", unitsIn="m"))
 #'  
 #' ## Point transect examples
 #' 
 #' # Radius cut points in meters
 #' data(pointtran)
 #' (dbreaksPt <- seq(0, 25, by=5))
+#'
+#' ptUMF <- with(pointtran, {
+#' 	unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4, dc5), 
+#' 		siteCovs = data.frame(area, habitat))
+#' 	})
 #' 
 #' # Half-normal. Output is animals/point. No covariates.
-#' (fmp1 <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
+#' (fmp1 <- distsamp(~ 1, ~1, ptUMF, 
 #' 		dist.breaks=dbreaksPt, survey="point", unitsIn="m"))
 #' 
 #' # Negative exponential
-#' (fmpe <- distsamp(cbind(o1,o2,o3,o4,o5) ~ 1, ~1, pointtran, 
+#' (fmpe <- distsamp(~ 1, ~1, ptUMF, 
 #' 		dist.breaks=dbreaksPt, key="exp", survey="point", output="density", 
 #' 		unitsIn="m"))
 #' 
 #' @export
 #' @keywords models
-distsamp <- function(stateformula, detformula=~1, data, dist.breaks, 
+distsamp <- function(stateformula, detformula=~1, umf, dist.breaks, 
 		tlength=NULL, keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
 		survey, output=c("density", "abund"), unitsIn, unitsOut=c("ha", "kmsq"), 
 		starts=NULL, method="BFGS", control=list(), ...)
@@ -149,21 +160,14 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 	keyfun <- match.arg(keyfun)
 	output <- match.arg(output)
 	unitsOut <- match.arg(unitsOut)
-	if(is(data,"unmarkedFrame")) {
-		Y <- data@y
-		umf <- handleNA(stateformula, detformula, data)
-		data <- data@siteCovs
-	} else {
-		if(!is(data, "data.frame")) stop("data must either an unmarkedFrame or a data frame.")
-		mf <- model.frame(stateformula, data)
-		Y <- model.response(mf)
-	}
-	Xlam <- model.matrix(stateformula, data)
-	Xp <- model.matrix(detformula, data)
-	n <- nrow(Y)
-	J <- ncol(Y)
-	lamParms <- colnames(Xlam)
-	detParms <- colnames(Xp)
+	y <- umf@y
+	umf <- handleNA(stateformula, detformula, umf)
+  	designMats <- getDesign(stateformula, detformula, umf)
+	X <- designMats$X; V <- designMats$V
+	M <- nrow(y)
+	J <- ncol(y)
+	lamParms <- colnames(X)
+	detParms <- colnames(V)
 	nAP <- length(lamParms)
 	nDP <- length(detParms)
 	nP <- nAP + nDP
@@ -174,28 +178,31 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 	switch(unitsIn, 
 			km = conv <- 1,
 			m = conv <- 1000)
-	if(output=="density") {
-		switch(survey, 
+	a <- obsCovs(umf)$dcArea
+	if(is.null(a)) {	
+		if(output=="density") {
+			switch(survey, 
 				line = {
 					stripwidths <- (((dist.breaks*2)[-1] - (dist.breaks*2)[-(J+1)])) / conv
 					tl <- tlength / conv
 					a <- rep(tl, each=J) * stripwidths		# km^2
-				},
+					},
 				point = {
 					W <- max(dist.breaks) / conv
 					a <- pi * W^2							# km^2
-				})
-		if(unitsOut=="ha") a <- a * 100
-	}
-	else {
-		switch(survey, 
+					})
+			if(unitsOut=="ha") a <- a * 100
+			}
+		else {
+			switch(survey, 
 				line = a <- tlength / conv, # transect length must be accounted for
 				point = a <- 1)
-	}
+			}
+		}
 	if(is.null(tlength)) tlength <- numeric(0)
 	switch(keyfun, 
 			halfnorm = { 
-				altdetParms <- paste("sigma", colnames(Xp), sep="")
+				altdetParms <- paste("sigma", colnames(V), sep="")
 				if(is.null(starts)) {
 					starts <- c(rep(0, nAP), log(max(dist.breaks)), rep(0, nDP-1))
 					names(starts) <- c(lamParms, detParms)
@@ -205,14 +212,14 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				}
 				if(!all(names(starts) %in% c(lamParms, detParms)))
 					stop("names(starts) does not agree with necessary model parameters")
-				fm <- optim(starts, ll.halfnorm, Y=Y, Xlam=Xlam, Xp=Xp, J=J, a=a, 
+				fm <- optim(starts, ll.halfnorm, Y=y, X=X, V=V, J=J, a=a, 
 						d=dist.breaks, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T,
 						control=control, ...)
 			},
 			exp = { 
-				altdetParms <- paste("rate", colnames(Xp), sep="")
+				altdetParms <- paste("rate", colnames(V), sep="")
 				if(is.null(starts)) {
-					starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-1))
+					starts <- c(rep(0, nAP), 0, rep(0, nDP-1)) # log(median(dist.breaks))
 					names(starts) <- c(lamParms, detParms)
 				}
 				else {
@@ -221,7 +228,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				}
 				if(!all(names(starts) %in% c(lamParms, detParms)))
 					stop("names(starts) does not agree with necessary model parameters")
-				fm <- optim(starts, ll.exp, Y=Y, Xlam=Xlam, Xp=Xp, J=J, d=dist.breaks, 
+				fm <- optim(starts, ll.exp, Y=y, X=X, V=V, J=J, d=dist.breaks, 
 						a=a, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T, 
 						control=control, ...)
 			},
@@ -229,7 +236,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				detParms <- c(detParms, "scale")
 				nDP <- length(detParms)
 				nP <- nAP + nDP
-				altdetParms <- c(paste("shape", colnames(Xp), sep=""), "scale")
+				altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
 				if(is.null(starts)) {
 					starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-2), 1)
 					names(starts) <- c(lamParms, detParms)
@@ -240,7 +247,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				}
 				if(!all(names(starts) %in% c(lamParms, detParms)))
 					stop("names(starts) does not agree with necessary model parameters")
-				fm <- optim(starts, ll.hazard, Y=Y, Xlam=Xlam, Xp=Xp, J=J, d=dist.breaks, 
+				fm <- optim(starts, ll.hazard, Y=y, X=X, V=V, J=J, d=dist.breaks, 
 						a=a, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T, 
 						control=control, ...)
 			}, 
@@ -258,7 +265,7 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 				}
 				if(!all(names(starts) %in% lamParms))
 					stop("names(starts) does not agree with necessary model parameters")
-				fm <- optim(starts, ll.uniform, Y=Y, Xlam=Xlam, Xp=Xp, J=J, a=a, 
+				fm <- optim(starts, ll.uniform, Y=y, X=X, V=V, J=J, a=a, 
 						method=method, hessian=T, control=control, ...)
 			})
 			opt <- fm
@@ -274,34 +281,35 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 	names(estsDP) <- altdetParms 
 	fmAIC <- 2 * fm$value + 2 * nP
 	if (keyfun != "uniform") {
-		stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam", estimates = estsAP,
-				covMat = covMatAP, invlink = "exp", invlinkGrad = "exp")
-		detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p", estimates = estsDP, 
-				covMat = covMatDP, invlink = "exp", invlinkGrad = "exp")
+		stateEstimates <- unmarkedEstimate(name = "Abundance", 
+			short.name = "lam", estimates = estsAP, covMat = covMatAP, 
+			invlink = "exp", invlinkGrad = "exp")
+		detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p", 
+			estimates = estsDP, covMat = covMatDP, invlink = "exp", 
+			invlinkGrad = "exp")
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates, 
 						det=detEstimates))
 	} else {
-		stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam", estimates = estsAP,
-				covMat = covMatAP, invlink = "exp", invlinkGrad = "exp")
+		stateEstimates <- unmarkedEstimate(name = "Abundance", 
+			short.name = "lam", estimates = estsAP, covMat = covMatAP, 
+			invlink = "exp", invlinkGrad = "exp")
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
-	if(!is(data, "unmarkedFrame")) umf <- unmarkedFrame(y = Y, siteCovs = data, obsNum = ncol(Y), primaryNum = 1)
 	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), opt = opt,
 			stateformula=stateformula, detformula=detformula, optout=fm, 
 			data = umf, keyfun=keyfun, dist.breaks=dist.breaks, tlength=tlength, 
 			area=a, survey=survey, unitsIn=unitsIn, unitsOut=unitsOut, 
-			estimates = estimateList, AIC = fmAIC, hessian = fm$hessian, 
-			negLogLike = fm$value)
+			estimates = estimateList, AIC = fmAIC, negLogLike = fm$value)
 	return(dsfit)
 }
 
 
+	  		   
 
 
 
 
-
-## Fucntions required by distsamp()
+## Functions required by distsamp()
 
 
 
@@ -309,10 +317,10 @@ distsamp <- function(stateformula, detformula=~1, data, dist.breaks,
 
 # Detection functions for perpendicular (x) and radial (r) distances
 gxhn <- function(x, sigma=1) exp(-x^2/(2 * sigma^2))
-gxexp <- function(x, rate) exp(-x / rate)
+gxexp <- function(x, rate) exp(-x / rate)                                   # Change to -rate?
 gxhaz <- function(x, shape=1, scale=1)  1 - exp(-(x/shape)^-scale)
 grhn <- function(r, sigma) exp(-r^2/(2 * sigma^2)) * r
-grexp <- function(r, rate) exp(-r / rate) * r
+grexp <- function(r, rate) exp(-r / rate) * r 								# Change to -rate?
 grhaz <- function(r, shape=1, scale=1)  (1 - exp(-(r/shape)^-scale)) * r
 
 
@@ -386,10 +394,10 @@ cp.haz <- function(d, shape, scale, survey=c("line", "point"))
 
 
 
-ll.halfnorm <- function(param, Y, Xlam, Xp, J, d, a, nAP, nP, survey) 
+ll.halfnorm <- function(param, Y, X, V, J, d, a, nAP, nP, survey) 
 {
-	sigma <- as.numeric(exp(Xp %*% param[(nAP+1):nP]))
-	lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
+	sigma <- as.numeric(exp(V %*% param[(nAP+1):nP]))
+	lambda <- as.numeric(exp(X %*% param[1:nAP]))
 	pvec <- c(sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey)))
 	growlam <- rep(lambda, each=J)
 	datavec <- c(t(Y))
@@ -400,10 +408,10 @@ ll.halfnorm <- function(param, Y, Xlam, Xp, J, d, a, nAP, nP, survey)
 
 
 
-ll.exp <- function(param, Y, Xlam, Xp, K, J, a, d, nAP, nP, survey=survey)
+ll.exp <- function(param, Y, X, V, K, J, a, d, nAP, nP, survey=survey)
 {
-	rate <- as.numeric(exp(Xp %*% param[(nAP+1):nP]))
-	lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
+	rate <- as.numeric(exp(V %*% param[(nAP+1):nP]))
+	lambda <- as.numeric(exp(X %*% param[1:nAP]))
 	pvec <- c(sapply(rate, function(x) cp.exp(d=d, rate=x, survey=survey)))
 	growlam <- rep(lambda, each=J)
 	datavec <- c(t(Y))
@@ -412,11 +420,11 @@ ll.exp <- function(param, Y, Xlam, Xp, K, J, a, d, nAP, nP, survey=survey)
 }
 
 
-ll.hazard <- function(param, Y, Xlam, Xp, J, a, d, nAP, nP, survey)
+ll.hazard <- function(param, Y, X, V, J, a, d, nAP, nP, survey)
 {
-	shape <- as.numeric(exp(Xp %*% param[(nAP+1):(nP-1)]))
+	shape <- as.numeric(exp(V %*% param[(nAP+1):(nP-1)]))
 	scale <- as.numeric(exp(param[nP]))
-	lambda <- as.numeric(exp(Xlam %*% param[1:nAP]))
+	lambda <- as.numeric(exp(X %*% param[1:nAP]))
 	pvec <- c(sapply(shape, function(x) cp.haz(d=d, shape=x, scale=scale, 
 								survey=survey)))
 	growlam <- rep(lambda, each=J)
@@ -428,9 +436,9 @@ ll.hazard <- function(param, Y, Xlam, Xp, J, a, d, nAP, nP, survey)
 
 
 
-ll.uniform <- function(param, Y, Xlam, Xp, J, a)
+ll.uniform <- function(param, Y, X, V, J, a)
 {
-	lambda <- exp(Xlam %*% param)
+	lambda <- exp(X %*% param)
 	growlam <- rep(lambda, each=J)
 	datavec <- c(t(Y))
 	ll <- dpois(datavec, growlam * a, log=T)
