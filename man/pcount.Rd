@@ -1,7 +1,7 @@
 \name{pcount}
 \alias{pcount}
 \title{Fit the N-mixture point count model...}
-\usage{pcount(stateformula, detformula, umf, K, mixture=P)}
+\usage{pcount(formula, data, K, mixture=c("P", "NB"))}
 \description{Fit the N-mixture point count model}
 \details{This function fits binomial-Poisson mixture model for spatially replicated point count data.
 
@@ -39,6 +39,5 @@ Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Count
 \examples{data(mallard)
 mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)
-fm.mallard <- pcount(~ length + elev + forest, ~ ivel+ date + I(date^2),
-mallardUMF)
+fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
 fm.mallard}

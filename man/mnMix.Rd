@@ -1,7 +1,7 @@
 \name{mnMix}
 \alias{mnMix}
 \title{Fit Multinomial-Multinomial Mixture Models}
-\usage{mnMix(stateformula=~1, detformula=~1, umf, constraint)}
+\usage{mnMix(formula, data, constraint)}
 \description{Fit latent abundance models to categorical data such as frog
 calling data (Royle and Link 2005).  Currently, covariates can only be
 supplied to the detection process (as in Royle and Link 2005).}
@@ -39,5 +39,5 @@ the \eqn{\beta}{beta}'s to be all equal.}
 the same (see \emph{Details})}}
 \examples{data(gf)
 gfUMF <- unmarkedFrame(gf.data, obsCovs = gf.obs)
-fm.mmx1 <- mnMix(~ 1, ~ samp1 + samp3 + temp, con=c(1,2,2,3,3,3), gfUMF)
+fm.mmx1 <- mnMix(~ samp1 + samp3 + temp ~ 1, con=c(1,2,2,3,3,3), gfUMF)
 fm.mmx1}

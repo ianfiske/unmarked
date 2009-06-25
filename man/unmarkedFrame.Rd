@@ -1,6 +1,6 @@
 \name{unmarkedFrame}
 \title{Create an unmarkedFrame.}
-\usage{unmarkedFrame(y, siteCovs, obsCovs, obsNum=ncol(y), primaryNum)}
+\usage{unmarkedFrame(y, siteCovs, obsCovs, obsToY, primaryNum)}
 \description{Constructor for unmarkedFrames.}
 \details{unmarkedFrame is the S4 class that holds data structures to be passed to the model-fitting functions in unMarked.
 

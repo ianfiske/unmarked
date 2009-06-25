@@ -2,8 +2,7 @@
 \alias{umHMM}
 \title{Fit the general multistate multiseason occupancy model.}
 \usage{umHMM(stateformula=~1, detformula=~1, umf, detconstraint,
-    phiconstraint, psiconstraint, phiMat, psi.init, phiParms.init,
-    detParms.init, bootstrap.se=FALSE, B=50, starts, max.bad=3,
+    phiconstraint, psiconstraint, phiMat, inits, B=0, max.bad=3,
     min.good=1, fit.stats=TRUE, method=BFGS, control=list())}
 \description{Estimate parameters of the general multiseason multistate occpancy model.}
 \details{Site level covariates are currently not implemented for markovMN and so stateformula is ignored.
@@ -35,11 +34,8 @@ which covariates are restricted to have the same effect on a given matrix parame
 \item{psiconstraint}{vector to describe psi constraints}
 \item{K}{integer maximum level of y}
 \item{phiMat}{character vector describing which phi specification to use (see Details)}
-\item{psi.init}{initial values for psi}
-\item{phiParms.init}{initial values for phi parameters}
-\item{detParms.init}{initial values for detection parameters}
-\item{booststrap.se}{logical. TRUE calculates standard errors using bootstrap}
-\item{B}{number of bootstrap interations}
+\item{inits}{optionally, initial values for parameters in the optimization}
+\item{B}{number of bootstrap interations (0 indicates none)}
 \item{min.good}{minimum number of successful model fits before returning}
 \item{max.bad}{maximum number of unsuccessful model fits before aborting}
 \item{fit.stats}{logical indicating whether or not to return the fit statistics}}

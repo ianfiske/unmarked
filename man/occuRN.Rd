@@ -1,7 +1,7 @@
 \name{occuRN}
 \alias{occuRN}
 \title{Fit the Occupancy model of Royle and Nichols...}
-\usage{occuRN(stateformula, detformula, umf)}
+\usage{occuRN(formula, data, K=25)}
 \description{Fit the Occupancy model of Royle and Nichols}
 \details{See \link{unmarked} for detailed descriptions of passing data \code{y},
 \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
@@ -37,5 +37,5 @@ pp. 777--790.}
 \item{umf}{unmarkedFrame supplying data to the model.}}
 \examples{data(birds)
 woodthrushUMF <- unmarkedFrame(woodthrush.bin)
-fm.wood.rn <- occuRN(~1, ~obs, woodthrushUMF)
+fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF)
 fm.wood.rn}
