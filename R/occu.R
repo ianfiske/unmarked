@@ -1,7 +1,7 @@
 #' @include unmarkedFit.R
 #' @include unmarkedEstimate.R
 #' @include utils.R
-roxygen()
+{}
 
 #'  This function estimates the standard occupancy model.
 #'
@@ -24,7 +24,7 @@ roxygen()
 #' @title Fit the MacKenzie Occupancy Model
 #' @param stateformula right-hand side formula describing covariates of occurence.
 #' @param detformula right-hand side formula describing covariates of detection.
-#' @param umf unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..
+#' @param data either a unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..
 #' @param knownOcc vector of sites that are known to be occupied.
 #' @return unmarkedFit object describing the model fit.
 #' @references
@@ -34,22 +34,29 @@ roxygen()
 #' @examples
 #' data(frogs)
 #' pferUMF <- unmarkedFrame(pfer.bin)
-#' fm <- occu(~1, ~1, pferUMF)
+#' fm <- occu(~ 1 ~ 1, pferUMF)
 #' fm
 #' @keywords models
 #' @export
 occu <-
-function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
+function(formula, data, knownOcc = numeric(0), profile = FALSE)
 {
-  umf <- handleNA(stateformula, detformula, umf)
-  designMats <- getDesign(stateformula, detformula, umf)
-  X <- designMats$X; V <- designMats$V
-  y <- truncateToBinary(umf@y)
+	umf <- switch(class(data),
+			data.frame = as(data, "unmarkedFrame"),
+			unmarkedFrame = data,
+			stop("Data is not a data frame or unmarkedFrame."))
+	
+	obsToY(umf) <- diag(numY(umf))  # occu functions have obs <-> y are 1-1
+	
+  designMats <- getDesign2(formula, umf)
+	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	
+  y <- truncateToBinary(y)
   J <- ncol(y)
   M <- nrow(y)
 
-  if(nrow(umf@y) != M & length(knownOcc) > 0)
-    stop("sites dropped, but knownOcc was specified.")
+#  if(nrow(umf@y) != M & length(knownOcc) > 0)
+#    stop("sites dropped, but knownOcc was specified.")
 
   occParms <- colnames(X)
   detParms <- colnames(V)
@@ -75,7 +82,7 @@ function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
   fm <- optim(rnorm(nP), nll, method = "BFGS", hessian = TRUE)
 	opt <- fm
   tryCatch(covMat <- solve(fm$hessian),
-      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
+      error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)
   names(ests) <- c(occParms, detParms)
@@ -100,6 +107,8 @@ function(stateformula, detformula, umf, knownOcc = numeric(0), profile = FALSE)
 
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
 
+	detformula <- as.formula(formula[[2]])
+	stateformula <- as.formula(paste("~",formula[3],sep=""))
   umfit <- unmarkedFit(fitType = "occu",
       call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value)

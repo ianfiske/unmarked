@@ -1,6 +1,6 @@
 #' @include classes.R
 #' @include utils.R
-roxygen()
+{}
 
 ## Take an M x J matrix of detection probabilities and return a matrix
 ## of M x J observation probs
@@ -77,22 +77,41 @@ doublePiFun <- function(p){
 #' data(ovendata)
 #' ovenFrame <- unmarkedFrame(ovendata.list$data,
 #'                            siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])))
-#' fm1 <- multinomPois(~ ufp + trba, ~ 1, removalPiFun, ovenFrame)
-#' fm2 <- multinomPois(~ ufp, ~1, removalPiFun, ovenFrame)
-#' fm3 <- multinomPois(~ trba, ~1, removalPiFun, ovenFrame)
-#' fm4 <- multinomPois(~ 1, ~1, removalPiFun, ovenFrame)
+#' fm1 <- multinomPois(~ 1 ~ ufp + trba, removalPiFun, ovenFrame)
+#' fm2 <- multinomPois(~ 1 ~ ufp, removalPiFun, ovenFrame)
+#' fm3 <- multinomPois(~ 1 ~ trba, removalPiFun, ovenFrame)
+#' fm4 <- multinomPois(~ 1 ~ 1, removalPiFun, ovenFrame)
 #' fm4
 #' fm1
 #' @export
 multinomPois <-
-function(stateformula, detformula, piFun, umf)
+function(formula, piFun, data, obsToY)
 {
 
-  umf <- handleNA(stateformula, detformula, umf)
-  designMats <- getDesign(stateformula, detformula, umf)
-  X <- designMats$X; V <- designMats$V
-  y <- umf@y
+	umf <- switch(class(data),
+			data.frame = as(data, "unmarkedFrame"),
+			unmarkedFrame = data,
+			stop("Data is not a data frame or unmarkedFrame."))
+	
+	obsToY(umf) <- switch(as.character(substitute(piFun)),
+			doublePiFun = matrix(c(1, 0, 0, 1, 1, 1), 2, 3),
+			removalPiFun = {
+				n.samples <- numY(umf)
+				mat <- matrix(1, n.samples, n.samples)
+				mat[col(mat) < row(mat)] <- 0
+				mat
+			},
+			{
+				if(is.null(obsToY(umf)) && missing(obsToY)) {
+					stop("obsToY must be supplied in data or as an argument to multinomPois() if using a non-supplied piFun.")
+				}
+			})
+	
+	designMats <- getDesign2(formula, umf)
+	X <- designMats$X; V <- designMats$V; y <- designMats$y
+  
   J <- ncol(y)
+	R <- obsNum(umf)
   M <- nrow(y)
 
   lamParms <- colnames(X)
@@ -106,7 +125,7 @@ function(stateformula, detformula, piFun, umf)
   nll <- function(parms) {
     lambda <- exp(X %*% parms[1 : nAP])
     p <- plogis(V %*% parms[(nAP + 1) : nP])
-    p.matrix <- matrix(p, M, umf@obsNum, byrow = TRUE)
+    p.matrix <- matrix(p, M, R, byrow = TRUE)
     pi <- do.call(piFun, list(p = p.matrix))
     logLikeSite <- dpois(y, matrix(lambda, M, J) * pi, log = TRUE)
     logLikeSite[navec] <- 0
@@ -134,6 +153,8 @@ function(stateformula, detformula, piFun, umf)
   estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           det=detEstimates))
 
+	detformula <- as.formula(formula[[2]])
+	stateformula <- as.formula(paste("~",formula[3],sep=""))
   umfit <- unmarkedFit(fitType = "multinomPois",
       call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value)

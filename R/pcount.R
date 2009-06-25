@@ -1,6 +1,6 @@
 #' @include classes.R
 #' @include utils.R
-roxygen()
+{}
 
 #' Fit the N-mixture point count model
 #'
@@ -41,22 +41,27 @@ roxygen()
 #' data(mallard)
 #' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
 #'                            obsCovs = mallard.obs)
-#' fm.mallard <- pcount(~ length + elev + forest, ~ ivel+ date + I(date^2),
-#'                   mallardUMF)
+#' fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
 #' fm.mallard
 #' @export
 #' @keywords models
 pcount <-
-function(stateformula, detformula, umf, K = NULL, mixture = "P")
+function(formula, data, K, mixture = c("P", "NB"))
 {
-  if ((mixture %in% c("P","NB")) == FALSE)
-    stop("Mixture familiy not recognized. Please choose 'P' or 'NB'.")
 
-  umf <- handleNA(stateformula, detformula, umf)
-  designMats <- getDesign(stateformula, detformula, umf)
-  X <- designMats$X; V <- designMats$V
-  y <- umf@y
-  J <- ncol(y)
+	mixture <- match.arg(mixture)
+	
+	umf <- switch(class(data),
+			data.frame = as(data, "unmarkedFrame"),
+			unmarkedFrame = data,
+			stop("Data is not a data frame or unmarkedFrame."))
+	
+	obsToY(umf) <- diag(numY(umf))  # pcount functions have obs <-> y are 1-1
+	
+	designMats <- getDesign2(formula, umf)
+	X <- designMats$X; V <- designMats$V; y <- designMats$y
+
+	J <- ncol(y)
   M <- nrow(y)
 
   lamParms <- colnames(X)
@@ -65,7 +70,7 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
   nAP <- ncol(X)
   nP <- nDP + nAP
 
-  if(is.null(K)) K <- max(y, na.rm = TRUE) + 20
+  if(missing(K)) K <- max(y, na.rm = TRUE) + 20
   if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
   k <- 0:K
@@ -129,11 +134,8 @@ function(stateformula, detformula, umf, K = NULL, mixture = "P")
 
   estimateList <- unmarkedEstimateList(list(state=stateEstimates, det=detEstimates))
 
-#  umfit <- unmarkedFit(fitType = "pcount",
-#      stateformula = stateformula, detformula = detformula,
-#      data = umf, stateEstimates = stateEstimates,
-#      detEstimates = detEstimates, AIC = fmAIC, hessian = fm$hessian)
-
+	detformula <- as.formula(formula[[2]])
+	stateformula <- as.formula(paste("~",formula[3],sep=""))
   umfit <- unmarkedFit(fitType = "pcount",
       call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value)

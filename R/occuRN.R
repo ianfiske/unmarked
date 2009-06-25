@@ -1,7 +1,7 @@
 #' @include unmarkedFit.R
 #' @include unmarkedEstimate.R
 #' @include utils.R
-roxygen()
+{}
 
 #' Fit the Occupancy model of Royle and Nichols
 #'
@@ -41,22 +41,28 @@ roxygen()
 #' @examples
 #' data(birds)
 #' woodthrushUMF <- unmarkedFrame(woodthrush.bin)
-#' fm.wood.rn <- occuRN(~1, ~obs, woodthrushUMF)
+#' fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF)
 #' fm.wood.rn
 #' @keywords models
 #' @export
 occuRN <-
-function(stateformula, detformula, umf)
+function(formula, data, K = 25)
 {
-  umf <- handleNA(stateformula, detformula, umf)
-  designMats <- getDesign(stateformula, detformula, umf)
-  X <- designMats$X; V <- designMats$V
+	umf <- switch(class(data),
+			data.frame = as(data, "unmarkedFrame"),
+			unmarkedFrame = data,
+			stop("Data is not a data frame or unmarkedFrame."))
+	
+	obsToY(umf) <- diag(numY(umf))  # occuRN has obs <-> y
+	
+	designMats <- getDesign2(formula, umf)
+	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	
   y <- truncateToBinary(umf@y)
 
   J <- ncol(y)
   M <- nrow(y)
-  K <- 25
-
+ 
   occParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
@@ -119,6 +125,8 @@ function(stateformula, detformula, umf)
   estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           det=detEstimates))
 
+	detformula <- as.formula(formula[[2]])
+	stateformula <- as.formula(paste("~",formula[3],sep=""))
   umfit <- unmarkedFit(fitType = "occuRN",
       call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value)

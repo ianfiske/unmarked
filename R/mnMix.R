@@ -1,7 +1,7 @@
 #' @include unmarkedEstimate.R
 #' @include unmarkedFit.R
 #' @include utils.R
-roxygen()
+{}
 
 # TODO: verify this works for K != 3.
 
@@ -47,17 +47,23 @@ roxygen()
 #' @examples
 #' data(gf)
 #' gfUMF <- unmarkedFrame(gf.data, obsCovs = gf.obs)
-#' fm.mmx1 <- mnMix(~ 1, ~ samp1 + samp3 + temp, con=c(1,2,2,3,3,3), gfUMF)
+#' fm.mmx1 <- mnMix(~ samp1 + samp3 + temp ~ 1, con=c(1,2,2,3,3,3), gfUMF)
 #' fm.mmx1
 #' @keywords models
 mnMix <-
-    function(stateformula = ~ 1, detformula = ~ 1, umf, constraint = NULL)
+    function(formula, data, constraint = NULL)
 {
 
-  umf <- handleNA(stateformula, detformula, umf)
-  designMats <- getDesign(stateformula, detformula, umf)
-  X <- designMats$X; V <- designMats$V
-  y <- umf@y
+	umf <- switch(class(data),
+			data.frame = as(data, "unmarkedFrame"),
+			unmarkedFrame = data,
+			stop("Data is not a data frame or unmarkedFrame."))
+	
+	obsToY(umf) <- diag(numY(umf))  # mnMix functions have obs <-> y are 1-1
+	
+	designMats <- getDesign2(formula, umf)
+	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	
   J <- ncol(y)
   M <- nrow(y)
   K <- max(y, na.rm = TRUE)
@@ -209,6 +215,8 @@ mnMix <-
   estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           p=pEstimates, beta = betaEstimates))
 
+	detformula <- as.formula(formula[[2]])
+	stateformula <- as.formula(paste("~",formula[3],sep=""))
   umfit <- unmarkedFit(fitType = "mnMix",
       call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
       AIC = 2 * fm$value + 2 * nP, opt = opt, negLogLike = fm$value)
