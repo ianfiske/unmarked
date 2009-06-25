@@ -1,5 +1,5 @@
 #' @import methods
-roxygen()
+{}
 
 #' @exportClass optionalDataFrame
 setClassUnion("optionalDataFrame", c("data.frame","NULL"))
@@ -17,7 +17,7 @@ setGeneric("SE",
       standardGeneric("SE")
     })
 
-#' @importFrom confint stats
+#' @importFrom stats confint
 #' @exportMethod confint
 setGeneric("plot")
 setGeneric("predict")
@@ -47,7 +47,7 @@ setGeneric("backTransform",
       standardGeneric("backTransform")
     })
 
-#' @exportMethod 
+#' @exportMethod hessian
 setGeneric("hessian",	function(object) standardGeneric("hessian"))
 
 # TODO: make parent class unmarkedEstimate
