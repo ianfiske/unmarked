@@ -89,7 +89,7 @@
 #' 
 #' # Half-normal detection function. Density output. No covariates. 
 #' # lineDat$Length is transect lengths in km, so it has to be converted.
-#'  (fm1 <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#'  (fm1 <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
 #'  		tlength=lengths*1000, survey="line", unitsIn="m"))
 #' 
 #' coef(fm1, type="det", altNames=TRUE)
@@ -99,35 +99,34 @@
 #' 
 #' # Half-normal. Abundance output. No covariates. Note that transect length
 #' # must be accounted for so abundance is animals per km of transect.
-#' (fm2 <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#' (fm2 <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
 #' 		tlength=lengths*1000, output="abund", survey="line", unitsIn="m", 
 #' 		unitsOut="kmsq"))
 #' 
 #' # Halfnormal. Covariates affecting both density and and detection.  
-#' (fm3.1 <- distsamp(~ poly(area, 2) + habitat, ~habitat, 
+#' (fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, 
 #' 		ltUMF, dist.breaks=dbreaksLine, tlength=lengths*1000, 
 #' 		survey="line", unitsIn="m", unitsOut="ha"))
 #' 
 #' # This won't run without starting values.
-#' (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1, 
-#' 		~habitat - 1, ltUMF, dist.breaks=dbreaksLine, tlength=lengths*1000, 
-#' 		survey="line", unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
-#' 
+#' (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1 ~ habitat - 1, ltUMF, 
+#' 		dist.breaks=dbreaksLine, tlength=lengths*1000, survey="line", 
+#' 		unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
 #' 
 #' # Negative exponential detection function. Density output in hectares. 
-#' (fme <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#' (fme <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
 #' 		tlength=lengths*1000, key="exp", survey="line", unitsIn="m"))
 #' 
 #' # Hazard-rate detection function. Density output in hectares.
 #' # This is real slow, especially for large datasets.
-#' (fmhz <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#' (fmhz <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
 #' 		tlength=lengths*1000, keyfun="hazard", survey="line", unitsIn="m"))
 #' 
 #' plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 #' 		xlab="Distance(m)", ylab="Detection probability")
 #' 
 #' # Uniform detection function. Density output in hectars.
-#' (fmu <- distsamp(~ 1, ~1, ltUMF, dist.breaks=dbreaksLine, 
+#' (fmu <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
 #' 		tlength=lengths*1000, key="uniform", survey="line", unitsIn="m"))
 #'  
 #' ## Point transect examples
@@ -142,28 +141,30 @@
 #' 	})
 #' 
 #' # Half-normal. Output is animals/point. No covariates.
-#' (fmp1 <- distsamp(~ 1, ~1, ptUMF, 
-#' 		dist.breaks=dbreaksPt, survey="point", unitsIn="m"))
+#' (fmp1 <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, survey="point", 
+#' 		unitsIn="m"))
 #' 
 #' # Negative exponential
-#' (fmpe <- distsamp(~ 1, ~1, ptUMF, 
-#' 		dist.breaks=dbreaksPt, key="exp", survey="point", output="density", 
-#' 		unitsIn="m"))
+#' (fmpe <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, key="exp", 
+#' 		survey="point", output="density", unitsIn="m"))
 #' 
 #' @export
 #' @keywords models
-distsamp <- function(stateformula, detformula=~1, umf, dist.breaks, 
-		tlength=NULL, keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
-		survey, output=c("density", "abund"), unitsIn, unitsOut=c("ha", "kmsq"), 
-		starts=NULL, method="BFGS", control=list(), ...)
+distsamp <- function(formula, data, dist.breaks, tlength=NULL, 
+	keyfun=c("halfnorm", "exp", "hazard", "uniform"), survey, 
+	output=c("density", "abund"), unitsIn, unitsOut=c("ha", "kmsq"), 
+	starts=NULL, method="BFGS", control=list(), ...)
 {
 	keyfun <- match.arg(keyfun)
 	output <- match.arg(output)
 	unitsOut <- match.arg(unitsOut)
-	y <- umf@y
-	umf <- handleNA(stateformula, detformula, umf)
-  	designMats <- getDesign(stateformula, detformula, umf)
-	X <- designMats$X; V <- designMats$V
+	umf <- switch(class(data),
+		data.frame = as(data, "unmarkedFrame"),
+		unmarkedFrame = data,
+		stop("Data is not a data frame or unmarkedFrame."))
+	obsToY(umf) <- matrix(1, 1, ncol(y(umf)))
+	designMats <- getDesign2(formula, umf)
+	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	M <- nrow(y)
 	J <- ncol(y)
 	lamParms <- colnames(X)
@@ -295,11 +296,13 @@ distsamp <- function(stateformula, detformula=~1, umf, dist.breaks,
 			invlink = "exp", invlinkGrad = "exp")
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
-	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), opt = opt,
-			stateformula=stateformula, detformula=detformula, optout=fm, 
-			data = umf, keyfun=keyfun, dist.breaks=dist.breaks, tlength=tlength, 
-			area=a, survey=survey, unitsIn=unitsIn, unitsOut=unitsOut, 
-			estimates = estimateList, AIC = fmAIC, negLogLike = fm$value)
+	detformula <- as.formula(formula[[2]])
+	stateformula <- as.formula(paste("~",formula[3],sep=""))
+	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
+		opt = opt, stateformula=stateformula, detformula=detformula, optout=fm, 
+		data = umf, keyfun=keyfun, dist.breaks=dist.breaks, tlength=tlength, 
+		area=a, survey=survey, unitsIn=unitsIn, unitsOut=unitsOut, 
+		estimates = estimateList, AIC = fmAIC, negLogLike = fm$value)
 	return(dsfit)
 }
 
