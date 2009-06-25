@@ -2,7 +2,7 @@
 #' @include unmarkedEstimate.R
 #' @include umDistsampFit.R
 #' @include utils.R
-roxygen()
+{}
 
 
 #' Fit the hierarchical distance sampling model
