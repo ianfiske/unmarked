@@ -1,7 +1,7 @@
 #' @include unmarkedEstimate.R
 #' @include unmarkedFrame.R
 #' @include classes.R
-roxygen()
+{}
 
 # Class to store unMarked model fit information
 #
@@ -227,6 +227,7 @@ setMethod("vcov", "unmarkedFit",
 
 setMethod("confint", "unmarkedFit",
 		function(object, type, parm, level = 0.95) {
+			if(missing(type)) stop(paste("Must specify type as one of (", paste(names(object),collapse=","),").",sep=""))
 			if(missing(parm)) parm <- 1:length(object[type]@estimates) 
 			callGeneric(object[type],parm, level)
 		})
