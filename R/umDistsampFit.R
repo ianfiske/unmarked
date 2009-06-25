@@ -1,5 +1,5 @@
 #' @include unmarkedFit.R
-roxygen()
+{}
 
 
 #' @exportClass umDistsampFit
