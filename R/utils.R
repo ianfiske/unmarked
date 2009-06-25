@@ -1,6 +1,6 @@
 #' @import reshape
 #' @import roxygen
-roxygen()
+{}
 
 #' @nord
 genFixedNLL <- function(nll, whichFixed, fixedValues) {
@@ -271,44 +271,74 @@ function(dfin, species = NULL)
 #' @export
 #' @nord
 formatWide <-
-function(dfin)
+function(dfin, sep = ".", obsToY)
 {
-  # throw placeholder into sitedata
-  sitedata <- data.frame(ones = rep(1,nrow(dfin)))
+	# escape separater if it is regexp special
+	reg.specials <- c('.', '\\', ':', '|', '(', ')', '[', '{', '^', '$', '*', '+', '?')
+	if(sep %in% reg.specials) {
+		sep.reg <- paste("\\",sep,sep="")
+	} else {
+		sep.reg <- sep
+	}
 
-  obsdata <- list()
+	dfnm <- colnames(dfin)
+
+	y <- grep(paste("^y",sep.reg,"[[:digit:]]", sep=""),dfnm)
+	J <- length(y)
+	y <- as.matrix(dfin[,y])		
+	M <- nrow(y)
 
   if(identical(tolower(colnames(dfin))[1],"site")) dfin <- dfin[,-1]
 
-  dfnm <- colnames(dfin)
-  y <- grep("^y.",dfnm)
-  J <- length(y)
-  y <- as.matrix(dfin[,y])
 
   ncols <- length(dfnm)
+	obsCovsPresent <- FALSE
+	siteCovsPresent <- FALSE
   i <- J + 1
   while(i <= ncols) {     # loop through columns
-    if(length(grep('.[[:digit:]]+$',dfnm[i]))) {  # check if this is obsdata
-      nv <- sub('.[[:digit:]]+$','',dfnm[i])
-      expr <- substitute(obsdata$newvar <- dfin[,i:(i+J-1)],
-                list(newvar=as.name(nv)))
-      eval(expr)
-      i <- i + J
+    if(!identical(grep(paste(sep.reg,"[[:digit:]]+$",sep=""),dfnm[i]),integer(0))) {  # check if this is obsdata
+      newvar.name <- sub(paste(sep.reg,"[[:digit:]]+$",sep=""),'',dfnm[i])
+			newvar <- dfin[,grep(paste(newvar.name,sep.reg,"[[:digit:]]+$",sep=""),dfnm)]
+			if(obsCovsPresent) {
+					if(ncol(newvar) != R) {
+						stop("Not all observation-level covariates have the same number of columns.")
+					} else {
+						obsCovs[newvar.name] <- as.vector(t(newvar))
+					}
+			} else {
+				obsCovsPresent <- TRUE
+				R <- ncol(newvar)
+				obsCovs <- data.frame(newvar = as.vector(t(newvar)))
+			}
+			colnames(obsCovs)[length(obsCovs)] <- newvar.name
+      i <- i + R
     }
     else {
-      sitedata <- cbind(sitedata,dfin[,i])
-      colnames(sitedata)[length(sitedata)] <- dfnm[i]
+			if(siteCovsPresent){
+				siteCovs <- cbind(siteCovs,dfin[,i])
+			} else {
+				siteCovsPresent <- TRUE
+				siteCovs <- data.frame(newvar = dfin[,i])
+			}
+      colnames(siteCovs)[length(siteCovs)] <- dfnm[i]
       i <- i + 1
     }
   }
 
-  obsdata.veclist <- lapply(obsdata, function(x) as.vector(t(x)))
-  obsdata.df <- data.frame(obsdata.veclist)
-  sitedata$ones <- NULL
+	if(!obsCovsPresent) obsCovs <- NULL
+	if(!siteCovsPresent) siteCovs <- NULL
 
-  unmarkedFrame(y, siteCovs = sitedata, obsCovs = obsdata.df)
+	## if we don't know the true obsToY yet, use R X J matrix of ones or diag if R == J
+	if(missing(obsToY)) {
+		if(identical(R,J)) {
+			obsToY <- diag(J)
+		} else {
+			obsToY <- matrix(0, R, J)
+		}
+	}
+	
+  unmarkedFrame(y = y, siteCovs = siteCovs, obsCovs = obsCovs, obsToY = obsToY)
 }
-
 
 # take a multiyear file and return correctly formated data
 # formatted as above, but with year in first column
@@ -478,82 +508,81 @@ Corresponding site(s) in 'y' were replaced with NA: %s",
 
 
 
-# function to move data around:
-# converts array obsdata to a list
-# copies site covariate info from obsdata to sitedata
-# puts all site covariates back into obsdata
-# needed because all site vars need to be available for both state and det models
-#' @nord
-arrangeData <-
-function(data)
-{
-  require(abind)
-  y <- data$y
-  sitedata <- data$covdata.site
-  obsdata <- data$covdata.obs
+## function to move data around:
+## converts array obsdata to a list
+## copies site covariate info from obsdata to sitedata
+## puts all site covariates back into obsdata
+## needed because all site vars need to be available for both state and det models
+##' @nord
+#arrangeData <-
+#function(data)
+#{
+#  require(abind)
+#  y <- data$y
+#  sitedata <- data$covdata.site
+#  obsdata <- data$covdata.obs
+#
+#  J <- ncol(y)
+#  M <- nrow(y)
+#  nSV <- length(sitedata)
+#
+#  # if not null, then just add "ones"
+#  if(!is.null(obsdata)) {
+#      if(class(obsdata) == "list") obsdata$ones <- matrix(1,M,J)
+#      if(class(obsdata) == "array") {
+#          obsdata <- abind(obsdata, ones = matrix(1,M,J))
+#      }
+#  }
+#  if(!is.null(sitedata)) sitedata <- cbind(ones = rep(1,M),sitedata)
+#
+#  # if data components are null, create as just ones
+#  if(is.null(obsdata)) obsdata <- list(ones = matrix(1,M,J))
+#  if(is.null(sitedata)) sitedata=data.frame(ones = rep(1,M))
+#
+#  # if obsdata is an array, coerce it to a list
+#  if(identical(class(obsdata),"array")) obsdata <- arrToList(obsdata)
+#  nOV <- length(obsdata)
+#
+#  # move all site data (single vectors and matrices of J repeated vectors)
+#  # in obsdata into sitedata
+#  toDel <- numeric(0)
+#  nuniq <- function(x) length(as.numeric(na.omit(unique(x)))) # lil' helper fun
+#  for(i in 1:nOV){
+#    # test for equality across rows (matrix site data)
+#    eqRow <- as.numeric(apply(as.matrix(obsdata[[i]]), 1, nuniq) == 1)
+#    isRep <- as.logical(prod(eqRow)) # make sure all rows are
+#    # move into site data if (vector) or (repeated vector as matrix)
+#    if((dim(as.matrix(obsdata[[i]]))[2] == 1) || isRep){
+#      obsdata[[i]] <- matrix(obsdata[[i]],nrow = M, ncol = J)
+#      sitedata <- cbind(sitedata,obsdata[[i]][,1])
+#      colnames(sitedata)[length(sitedata)] <- names(obsdata[i])
+#      toDel <- c(toDel,i)
+#    }
+#    # ensure that obsdata is made of matrices rather than dataframes
+#    obsdata[[i]] <- as.matrix(obsdata[[i]])
+#  }
+#  if(length(toDel) > 0) {   #obsdata[[toDel]] <- NULL # remove sitedata from obsdata
+#    for(t in toDel) {
+#      obsdata[[t]] <- NULL
+#    }
+#  }
+#  if(length(obsdata) == 0) obsdata <- list(ones = matrix(1,M,J))
+#  nSV <- length(sitedata) # update nSV
+#  nOV <- length(obsdata)
+#
+#  # make all site terms into obs terms by copying them to
+#  # obsdata (from vector to a matrix of repeated vectors)
+#  # needed if site variables are used to model detection.
+#  for(i in 1:nSV){
+#    obsdata[[nOV + i]] <- matrix(sitedata[[i]],nrow=M,ncol=J)
+#    names(obsdata)[nOV + i] <- colnames(sitedata)[i]
+#  }
+#  obsvars <- names(obsdata)
+#  nOV <- length(obsdata) # update length
+#
+#  list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
+#}
 
-  J <- ncol(y)
-  M <- nrow(y)
-  nSV <- length(sitedata)
-
-  # if not null, then just add "ones"
-  if(!is.null(obsdata)) {
-      if(class(obsdata) == "list") obsdata$ones <- matrix(1,M,J)
-      if(class(obsdata) == "array") {
-          obsdata <- abind(obsdata, ones = matrix(1,M,J))
-      }
-  }
-  if(!is.null(sitedata)) sitedata <- cbind(ones = rep(1,M),sitedata)
-
-  # if data components are null, create as just ones
-  if(is.null(obsdata)) obsdata <- list(ones = matrix(1,M,J))
-  if(is.null(sitedata)) sitedata=data.frame(ones = rep(1,M))
-
-  # if obsdata is an array, coerce it to a list
-  if(identical(class(obsdata),"array")) obsdata <- arrToList(obsdata)
-  nOV <- length(obsdata)
-
-  # move all site data (single vectors and matrices of J repeated vectors)
-  # in obsdata into sitedata
-  toDel <- numeric(0)
-  nuniq <- function(x) length(as.numeric(na.omit(unique(x)))) # lil' helper fun
-  for(i in 1:nOV){
-    # test for equality across rows (matrix site data)
-    eqRow <- as.numeric(apply(as.matrix(obsdata[[i]]), 1, nuniq) == 1)
-    isRep <- as.logical(prod(eqRow)) # make sure all rows are
-    # move into site data if (vector) or (repeated vector as matrix)
-    if((dim(as.matrix(obsdata[[i]]))[2] == 1) || isRep){
-      obsdata[[i]] <- matrix(obsdata[[i]],nrow = M, ncol = J)
-      sitedata <- cbind(sitedata,obsdata[[i]][,1])
-      colnames(sitedata)[length(sitedata)] <- names(obsdata[i])
-      toDel <- c(toDel,i)
-    }
-    # ensure that obsdata is made of matrices rather than dataframes
-    obsdata[[i]] <- as.matrix(obsdata[[i]])
-  }
-  if(length(toDel) > 0) {   #obsdata[[toDel]] <- NULL # remove sitedata from obsdata
-    for(t in toDel) {
-      obsdata[[t]] <- NULL
-    }
-  }
-  if(length(obsdata) == 0) obsdata <- list(ones = matrix(1,M,J))
-  nSV <- length(sitedata) # update nSV
-  nOV <- length(obsdata)
-
-  # make all site terms into obs terms by copying them to
-  # obsdata (from vector to a matrix of repeated vectors)
-  # needed if site variables are used to model detection.
-  for(i in 1:nSV){
-    obsdata[[nOV + i]] <- matrix(sitedata[[i]],nrow=M,ncol=J)
-    names(obsdata)[nOV + i] <- colnames(sitedata)[i]
-  }
-  obsvars <- names(obsdata)
-  nOV <- length(obsdata) # update length
-
-  list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
-}
-
-# TODO: grab siteCovs if necessary in the detection formula.
 #' @nord
 getDesign <- function(stateformula, detformula, umf) {
 
@@ -578,6 +607,94 @@ getDesign <- function(stateformula, detformula, umf) {
     colnames(X) <- "(Intercept)"
   }
   return(list(X = X, V = V))
+}
+
+getDesign2 <- function(formula, umf) {
+	
+	detformula <- as.formula(formula[[2]])
+	stateformula <- as.formula(paste("~",formula[3],sep=""))
+	detVars <- all.vars(detformula)
+	
+	M <- numSites(umf)
+	R <- obsNum(umf)
+	
+	## Compute state design matrix
+	if(is.null(siteCovs(umf))) {
+		siteCovs <- data.frame(placeHolder = rep(1, M))
+	} else {
+		siteCovs <- siteCovs(umf)
+	}
+	X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
+	X <- model.matrix(stateformula, X.mf)
+
+	## Compute detection design matrix
+	if(is.null(obsCovs(umf))) {
+		obsCovs <- data.frame(placeHolder = rep(1, M*R))
+	} else {
+		obsCovs <- obsCovs(umf)
+	}
+	
+	## add site Covariates at observation-level
+	obsCovs <- cbind(obsCovs, siteCovs[rep(1:M, each = R),])
+	
+	## add observation number if not present
+	if(!("obs" %in% names(obsCovs))) {
+		obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
+	}
+	
+	V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
+	V <- model.matrix(detformula, V.mf)
+	
+	cleaned <- handleNA2(umf, X, V)
+	
+	return(list(y = cleaned$y, X = cleaned$X, V = cleaned$V))
+}
+
+
+handleNA2 <- function(umf, X, V) {
+	obsToY <- obsToY(umf)
+	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
+	
+	J <- numY(umf)
+	R <- obsNum(umf)
+	M <- numSites(umf)
+	
+	X.long <- X[rep(1:M, each = J),]
+	X.long.na <- is.na(X.long)
+	
+	V.long.na <- apply(V, 2, function(x) {
+				x.mat <- matrix(x, M, R, byrow = TRUE)
+				x.mat <- is.na(x.mat)
+				x.mat <- x.mat %*% obsToY
+				x.long <- as.vector(t(x.mat))
+				x.long == 1
+			})
+	
+	y.long <- as.vector(t(y(umf)))
+	y.long.na <- is.na(y.long)
+	
+	covs.na <- apply(cbind(X.long.na, V.long.na), 1, any)
+	
+	## are any NA in covs not in y already?
+	y.new.na <- covs.na & !y.long.na
+	
+	if(sum(y.new.na) > 0) {
+		y.long[y.new.na] <- NA
+		warning("Some observations have been discarded because correspoding covariates were missing.")
+	}
+	
+	y <- matrix(y.long, M, J, byrow = TRUE)
+	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+	
+	num.to.remove <- sum(sites.to.remove)
+	if(num.to.remove > 0) {
+		y <- y[!sites.to.remove, ]
+		X <- X[!sites.to.remove, ]
+		V <- V[!sites.to.remove[rep(1:M, each = R)], ]
+		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
+	}
+	
+	list(y = y, X = X, V = V)
 }
 
 #' @nord
@@ -638,3 +755,47 @@ imputeMissing <- function(umf, whichCovs) {
 	# TODO: impute site covariates
 	return(umf)
 }
+
+
+#wideToUMF <- function(formula, data)
+#{
+#	detformula <- as.formula(formula[[2]])
+#	stateformula <- as.formula(paste("~",formula[3],sep=""))
+#	yVar <- all.vars(detformula)[1]
+#	detVars <- all.vars(detformula)[-1]
+#	
+#	# escape separater if it is regexp special
+#	reg.specials <- c('.', '\\', ':', '|', '(', ')', '[', '{', '^', '$', '*', '+', '?')
+#	if(sep %in% reg.specials) {
+#		sep.reg <- paste("\\",sep,sep="")
+#	} else {
+#		sep.reg <- sep
+#	}
+#	
+#	## y columns must be in format y.1, y.2, ..., y.J where sep="." here
+#	yNames <- grep(paste(yVar,sep.reg,"[[:digit:]]+$",sep=""), colnames(data), value=TRUE)
+#	timevary <- yNames
+#	
+#	## detection covs must be in format either name alone, or name.1, name.2, ..., name.Q where sep="." here
+#	detCols <- lapply(detVars, 
+#			function(x) sort(grep(paste("^",x,"(",sep.reg,"[[:digit:]]+)?$",sep=""), colnames(data), 
+#								value=TRUE)))
+#	
+#	names(detCols) <- detVars
+#	if (length(detVars) > 0) {
+#		toadd <- detVars[sapply(detCols, function(x) ifelse(length(x) > 
+#											1, TRUE, FALSE))]
+#		timevary <- as.character(c(timevary, unlist(detCols[toadd])))
+#	}
+#	dataLong <- reshape(data, timevary, direction = "long", sep = sep, 
+#			timevar = "timeINDEX", idvar = "idINDEX", ids = rownames(data))
+#	## reorder dataLong to be in site-major order
+#	dataLong <- dataLong[order(dataLong$idINDEX, dataLong$timeINDEX),]
+##	mf <- model.frame(stateformula, dataLong)
+#	browser()
+##	y <- data[,yNames]
+##	X <- model.matrix(stateformula, data)
+#	obsCovs <- model.frame(detformula, dataLong)
+#	siteCovs <- model.frame()
+##	return(list(y=y, X=X, V=V, dataLong=dataLong))
+#}
