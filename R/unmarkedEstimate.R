@@ -1,5 +1,5 @@
 #' @include classes.R
-roxygen()
+{}
 
 setClassUnion("matrixOrVector", c("matrix","numeric"))
 
@@ -22,23 +22,6 @@ setClass("unmarkedEstimate",
       else
         TRUE
     })
-
-
-
-#setClass("unmarkedEstimateLinearComb",
-#    representation(originalEstimate = "unmarkedEstimate",
-#        coefficients = "numeric"),
-#    contains = "unmarkedEstimate")
-#
-## coefficients are now a matrix where each row is a 
-#setClass("unmarkedEstimateMultLinearCombs",
-#		representation(originalEstimate = "unmarkedEstimate",
-#				coefficients = "matrix"),
-#		contains = "unmarkedEstimate")
-
-#setClass("unmarkedEstimateBackTransformed",
-#    representation(transformation = "character"),
-#    contains = "unmarkedEstimateLinearComb")
 
 setClass("unmarkedEstimateList",
     representation(estimates = "list"),
@@ -178,7 +161,6 @@ setMethod("linearComb",
 #    })
 
 
-# TODO: include confidence intervals b/c backtransformed intervals should perform better than transformed SEs to new intervals
 
 # backTransform is only valid for an unmarkedEstimate of length = 1.
 # can backtranform a fit directly if it has length 1
@@ -227,7 +209,6 @@ setMethod("coef", "unmarkedEstimate",
 			if(altNames) {
 				names(coefs) <- paste(object@short.name, "(", names(coefs), ")", sep="")
 			}
-#			if(object@backTransformed | !all(object@coefficients == 1)) names(coefs) <- NULL
 			coefs
 		})
 
@@ -237,9 +218,7 @@ setMethod("vcov", "unmarkedEstimate",
 			rownames(v) <- colnames(v) <- names(coef(object))
 			v
 		})
-#    })
-#    
-#    
+ 
 setMethod("confint", "unmarkedEstimate", 
 		function(object, parm, level = 0.95) {
 			if(missing(parm)) parm <- 1:length(object@estimates)
