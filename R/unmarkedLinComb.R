@@ -1,5 +1,5 @@
 #' @include unmarkedEstimate.R
-roxygen()
+{}
 
 setClass("unmarkedLinComb",
 		representation(parentEstimate = "unmarkedEstimate",
@@ -93,6 +93,7 @@ setMethod("confint", "unmarkedLinComb",
 			upper.lim <- ests + z*ses
 			ci <- as.matrix(cbind(lower.lim, upper.lim))
 			colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
+			rownames(ci) <- 1:nrow(ci)
 			ci
 		})
 
@@ -105,5 +106,6 @@ setMethod("confint", "unmarkedBackTrans",
 			upper.lim <- do.call(invlink, list(ci.orig[,2]))
 			ci <- as.matrix(cbind(lower.lim, upper.lim))
 			colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
+			rownames(ci) <- 1:nrow(ci)
 			ci
 		})
