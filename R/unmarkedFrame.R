@@ -1,5 +1,5 @@
 #' @include classes.R
-roxygen()
+{}
 
 validunmarkedFrame <- function(object) {
   errors <- character(0)
@@ -7,8 +7,8 @@ validunmarkedFrame <- function(object) {
   if(!is.null(object@siteCovs))
     if(nrow(object@siteCovs) != M)
       errors <- c(errors, "siteCovData does not have same size number of sites as y.")
-  if(!is.null(object@obsCovs))
-    if(nrow(object@obsCovs) != M*object@obsNum)
+  if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
+    if(nrow(object@obsCovs) != M*obsNum(object))
       errors <- c(errors, "obsCovData does not have M*obsNum rows.")
   if(length(errors) == 0)
     TRUE
@@ -20,11 +20,8 @@ validunmarkedFrame <- function(object) {
 # @slot y A matrix of the observed measured data.
 # @slot obsCovData Dataframe of covariates that vary within sites.
 # @slot siteCovData Dataframe of covariates that vary at the site level.
-# @slot obsNum Number of observations per site. For most models, this
-# can be taken to be the number of columns in y.  But this is not always
-# the case.  For example, double observer: y has 3 columns, but only 2
-# independent observations were taken at each site.
-# @slot primaryNum integer number of primary seasons for multiseason data only
+# @slot obsToY matrix that describes how the observations relate to y (see Details).
+# @slot primaryNum integer number of seasons (1 for single season).
 
 #' Class to hold data for analyses in unmarked.
 #'
@@ -33,7 +30,7 @@ setClass("unmarkedFrame",
     representation(y = "matrix",
         obsCovs = "optionalDataFrame",
         siteCovs = "optionalDataFrame",
-        obsNum = "numeric",
+        obsToY = "optionalMatrix",
         primaryNum = "numeric"),
     validity = validunmarkedFrame)
 
@@ -71,11 +68,8 @@ setClass("unmarkedFrame",
 #' obsCovs(mallardUMF, matrices = TRUE)
 #' @export
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
-    obsNum = ncol(y), primaryNum = NULL) {
+    obsToY, primaryNum = NULL) {
 
-  if(!is.matrix(y)) {
-    stop("y must be a matrix.")
-  }
   if(class(obsCovs) == "list") {
     obsVars <- names(obsCovs)
     for(i in seq(length(obsVars))) {
@@ -91,27 +85,16 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
   if(("data.frame" %in% class(y)) |
       ("cast_matrix" %in% class(y))) y <- as.matrix(y)
 
-  ## add obsCov for the observation number (sampling occasion)
-  ## name it obs
-  obs = data.frame(obs = rep(1:obsNum, nrow(y)))
-  if(!is.null(obsCovs))
-    obsCovs <- as.data.frame(cbind(obsCovs,obs))
-  else
-    obsCovs <- obs
-
   if(is.null(primaryNum)) primaryNum <- 1
-
+	
+	## if no obsToY is supplied, assume y <-> obsCov
+	#if(is.null(obsToY)) obsToY <- diag(ncol(y))  assuming the obsToY can be dangerous... keep as NULL if not supplied.
+	if(missing(obsToY)) obsToY <- NULL
+	
   umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs,
-      siteCovs = siteCovs, obsNum = obsNum,
+      siteCovs = siteCovs, obsToY = obsToY,
       primaryNum = primaryNum)
 
-  ## copy siteCovs into obsCovs
-  ## TODO: DON'T DO THIS HERE... DO IT IN getdesign() in utils.R
-#  if(!is.null(siteCovs)) {
-#    umf@obsCovs <- as.data.frame(cbind(umf@obsCovs,
-#            sapply(umf@siteCovs, rep,
-#                each = umf@obsNum)))
-#  }
   return(umf)
 }
 
@@ -122,8 +105,16 @@ setMethod("show", "unmarkedFrame",
 			cat(nrow(object@y),"sites\n")
 			obsPres <- !is.null(object@obsCovs)
 			sitePres <- !is.null(object@siteCovs)
-			if(obsPres) cat("observation-level covariates present \n")
-			if(sitePres) cat("site-level covariates present\n")
+			if(obsPres)  {
+				cat("observation-level covariates present.\n") 
+			} else {
+				cat("No observation-level covariates present.\n")
+			}
+			if(sitePres)  {
+				cat("site-level covariates present.\n")
+			} else {
+				cat("No site-level covariates present.\n")
+			}
 		})
 #setMethod("show", "unmarkedFrame",
 #    function(object) {
@@ -157,32 +148,32 @@ siteCovs <- function(umf) {
   return(umf@siteCovs)
 }
 
-#' Extractor for observation level covariates
-#' @param umf an unmarkedFrame
-#' @param matrices logical indicating whether to return the M * obsNum row data frame (default)
-#'  or a list of M x obsNum matrices (matrices = TRUE).
-#' @return either a data frame (default) or a list of matrices (if matrices = TRUE).
-#' @export
-obsCovs <- function(umf, matrices = FALSE) {
-  M <- nrow(umf@y)
-  J <- umf@obsNum
-  if(matrices) {
-    value <- list()
-    for(i in seq(length=length(umf@obsCovs))){
-      value[[i]] <- matrix(umf@obsCovs[,i], M, J, byrow = TRUE)
-    }
-    names(value) <- names(umf@obsCovs)
-  } else {
-    value <- umf@obsCovs
-  }
-  return(value)
-}
 
-##' @export
-# setGeneric("summary")
-#    function(object,...) {
-#      standardGeneric("summary")
-#    })
+#
+##' Extractor for observation level covariates
+##' @param umf an unmarkedFrame
+##' @param matrices logical indicating whether to return the M * obsNum row data frame (default)
+##'  or a list of M x obsNum matrices (matrices = TRUE).
+##' @return either a data frame (default) or a list of matrices (if matrices = TRUE).
+
+setGeneric("obsCovs", function(object,...) standardGeneric("obsCovs"))
+
+#' @export
+setMethod("obsCovs", "unmarkedFrame", 
+		function(object, matrices = FALSE) {
+			M <- numSites(object)
+			R <- obsNum(object)
+			if(matrices) {
+				value <- list()
+				for(i in seq(length=length(object@obsCovs))){
+					value[[i]] <- matrix(object@obsCovs[,i], M, R, byrow = TRUE)
+				}
+				names(value) <- names(object@obsCovs)
+			} else {
+				value <- object@obsCovs
+			}
+			return(value)
+		})
 
 #' @export
 setMethod("summary","unmarkedFrame",
@@ -203,3 +194,41 @@ setMethod("summary","unmarkedFrame",
         print(summary(object@obsCovs))
       }
     })
+
+setGeneric("obsNum", function(object) standardGeneric("obsNum"))
+
+#' @export 
+setMethod("obsNum", "unmarkedFrame", function(object) nrow(object@obsToY))
+
+setGeneric("numSites", function(object) standardGeneric("numSites"))
+
+#' @export 
+setMethod("numSites", "unmarkedFrame", function(object) nrow(object@y))
+
+setGeneric("numY", function(object) standardGeneric("numY"))
+
+#' @export 
+setMethod("numY", "unmarkedFrame", function(object) ncol(object@y))
+
+setGeneric("obsToY", function(object) standardGeneric("obsToY"))
+
+#' @export 
+setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
+
+setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
+
+#' @export 
+setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
+			object@obsToY <- value
+			object
+		})
+
+setGeneric("y", function(object) standardGeneric("y"))
+
+#' @export
+setMethod("y", "unmarkedFrame", function(object) object@y)
+
+setAs("data.frame", "unmarkedFrame", function(from) {
+			umf <- formatWide(from)
+			umf
+		})
