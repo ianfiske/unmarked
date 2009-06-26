@@ -107,10 +107,8 @@ function(formula, data, knownOcc = numeric(0), profile = FALSE)
 
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
 
-	detformula <- as.formula(formula[[2]])
-	stateformula <- as.formula(paste("~",formula[3],sep=""))
   umfit <- unmarkedFit(fitType = "occu",
-      call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
+      call = match.call(), formula = formula, data = umf, estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value)
 
   return(umfit)

@@ -51,7 +51,7 @@
 #' @param method Optimization method used by \code{\link{optim}}.
 #' @param control Other arguments passed to \code{\link{optim}}.
 #'
-#' @return umDistsampFit object (child class of \link{unmarkedFit)} describing the 
+#' @return umDistsampFit object (child class of \link{unmarkedFit}) describing the 
 #' model fit. Parameter estimates are displayed on the log-scale. 
 #' Back-transformation can be achieved via the \link{predict} or 
 #' \link{backTransform} methods.
@@ -145,7 +145,7 @@
 #' 		unitsIn="m"))
 #' 
 #' # Negative exponential
-#' (fmpe <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, key="exp", 
+#' (fmpe <- distsamp(~ 1 ~ habitat, ptUMF, dist.breaks=dbreaksPt, key="exp", 
 #' 		survey="point", output="density", unitsIn="m"))
 #' 
 #' @export
@@ -296,10 +296,9 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 			invlink = "exp", invlinkGrad = "exp")
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
-	detformula <- as.formula(formula[[2]])
-	stateformula <- as.formula(paste("~",formula[3],sep=""))
+
 	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
-		opt = opt, stateformula=stateformula, detformula=detformula, optout=fm, 
+		opt = opt, formula = formula, optout=fm, 
 		data = umf, keyfun=keyfun, dist.breaks=dist.breaks, tlength=tlength, 
 		area=a, survey=survey, unitsIn=unitsIn, unitsOut=unitsOut, 
 		estimates = estimateList, AIC = fmAIC, negLogLike = fm$value)

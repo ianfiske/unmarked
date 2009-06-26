@@ -116,29 +116,6 @@ setMethod("show", "unmarkedFrame",
 				cat("No site-level covariates present.\n")
 			}
 		})
-#setMethod("show", "unmarkedFrame",
-#    function(object) {
-#      ## print y
-#      cat("Observation matrix:\n")
-#      print(object@y)
-#
-#      ## site covariates
-#      if(!is.null(object@siteCovs)) {
-#        cat("\nSite level covariates:\n")
-#        print(object@siteCovs)
-#      }
-#
-#      if(!is.null(object@obsCovs)) {
-#        cat("\nWithin-site covariates:\n")
-#        obsCovs <- object@obsCovs
-#        M <- nrow(object@y)
-#        J <- object@obsNum
-#        for(i in seq(length=ncol(obsCovs))) {
-#          cat("\n",colnames(obsCovs)[i],":\n", sep="")
-#          print(matrix(obsCovs[,i], M, J, byrow = TRUE))
-#        }
-#      }
-#    })
 
 #' Extractor for site level covariates
 #' @param umf an unmarkedFrame
@@ -180,7 +157,7 @@ setMethod("summary","unmarkedFrame",
     function(object,...) {
       cat("unmarkedFrame Object\n\n")
       cat(nrow(object@y), "sites\n")
-      cat("Maximum observations per site:",object@obsNum,"\n\n")
+      cat("Maximum observations per site:",obsNum(object),"\n\n")
       cat("Distribution of observations per site:")
       stem(rowSums(!is.na(object@y)), scale=0.5)
       cat("Tabulation of y observations:")

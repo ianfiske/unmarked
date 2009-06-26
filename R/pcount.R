@@ -134,10 +134,8 @@ function(formula, data, K, mixture = c("P", "NB"))
 
   estimateList <- unmarkedEstimateList(list(state=stateEstimates, det=detEstimates))
 
-	detformula <- as.formula(formula[[2]])
-	stateformula <- as.formula(paste("~",formula[3],sep=""))
   umfit <- unmarkedFit(fitType = "pcount",
-      call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
+      call = match.call(), formula = formula, data = umf, estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value)
 
   return(umfit)

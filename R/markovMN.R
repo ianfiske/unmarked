@@ -99,8 +99,8 @@ umHMM <-
   }
 
   umf <- handleNA(stateformula, detformula.red, umf)
-  y <- umf@y
-  J <- umf@obsNum / umf@primaryNum
+  y <- y(umf)
+  J <- numY(umf) / umf@primaryNum
 
   M <- nrow(y)
   nY <- ncol(y)/J

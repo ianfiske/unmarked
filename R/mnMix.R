@@ -215,10 +215,8 @@ mnMix <-
   estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           p=pEstimates, beta = betaEstimates))
 
-	detformula <- as.formula(formula[[2]])
-	stateformula <- as.formula(paste("~",formula[3],sep=""))
   umfit <- unmarkedFit(fitType = "mnMix",
-      call = match.call(), stateformula = stateformula, detformula = detformula, data = umf, estimates = estimateList,
+      call = match.call(), formula = formula, data = umf, estimates = estimateList,
       AIC = 2 * fm$value + 2 * nP, opt = opt, negLogLike = fm$value)
 
   umfit

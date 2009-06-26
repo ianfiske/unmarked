@@ -20,8 +20,7 @@
 setClass("unmarkedFit",
     representation(fitType = "character",
         call = "call",
-				stateformula = "formula",
-				detformula = "formula",
+				formula = "formula",
         data = "unmarkedFrame",
         estimates = "unmarkedEstimateList",
         AIC = "numeric",
@@ -31,10 +30,10 @@ setClass("unmarkedFit",
 
 
 # constructor for unmarkedFit objects
-unmarkedFit <- function(fitType, call, stateformula, detformula,
+unmarkedFit <- function(fitType, call, formula,
     data, estimates, AIC, opt, negLogLike) {
   umfit <- new("unmarkedFit", fitType = fitType,
-      call = call, stateformula = stateformula, detformula = detformula, data = data,
+      call = call, formula = formula, data = data,
       estimates = estimates, AIC = AIC,
       opt = opt, negLogLike = negLogLike)
 
@@ -165,13 +164,13 @@ setMethod("predict", "unmarkedFit",
 ##FIXME this fails on 2-parameter detection functions such as hazard function
 			if(is.null(newdata))
 				newdata <- object@data
-			stateformula <- object@stateformula
-			detformula <- object@detformula
+			formula <- object@formula
+#			stateformula <- object@stateformula
+#			detformula <- object@detformula
 			cls <- class(newdata)
 			switch(cls, 
 					unmarkedFrame = {
-						designMats <- getDesign(stateformula=stateformula, 
-								detformula=detformula, newdata)
+						designMats <- getDesign2(formula, newdata)
 						switch(type, 
 								state = X <- designMats$X,
 								det = X <- designMats$V)
@@ -179,6 +178,8 @@ setMethod("predict", "unmarkedFit",
 					data.frame = {
 						switch(type, 
 								state = {
+									detformula <- as.formula(formula[[2]])
+									stateformula <- as.formula(paste("~",formula[3],sep=""))
 									Terms <- delete.response(terms(stateformula))
 									mf <- model.frame(Terms, newdata)
 									X <- model.matrix(Terms, mf)

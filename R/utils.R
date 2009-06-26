@@ -1,5 +1,4 @@
 #' @import reshape
-# @import roxygen
 {}
 
 #' @nord
@@ -428,7 +427,7 @@ function(lam, r)
 #' @nord
 handleNA <- function(stateformula, detformula, umf) {
   y <- umf@y
-  # TODO: use J <- ncol(y) here and throughout instead of wrong use of obsNum?
+  # TODO: use J <- ncol(y) here and throughout instead of wrong use of obsNum?  ... fixed in new version "handleNA2"
   obsNum <- umf@obsNum
   M <- nrow(y)
   siteCovs <- umf@siteCovs
