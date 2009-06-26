@@ -113,9 +113,10 @@
 #' 		dist.breaks=dbreaksLine, tlength=lengths*1000, survey="line", 
 #' 		unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
 #' 
-#' # Negative exponential detection function. Density output in hectares. 
+#' # Negative exponential detection function. This one also needs starting values.
 #' (fme <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-#' 		tlength=lengths*1000, key="exp", survey="line", unitsIn="m"))
+#' 		tlength=lengths*1000, key="exp", survey="line", unitsIn="m", 
+#'		starts=c(0,0)))
 #' 
 #' # Hazard-rate detection function. Density output in hectares.
 #' # This is real slow, especially for large datasets.
@@ -145,7 +146,7 @@
 #' 		unitsIn="m"))
 #' 
 #' # Negative exponential
-#' (fmpe <- distsamp(~ 1 ~ habitat, ptUMF, dist.breaks=dbreaksPt, key="exp", 
+#' (fmpe <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, key="exp", 
 #' 		survey="point", output="density", unitsIn="m"))
 #' 
 #' @export
@@ -177,103 +178,82 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 	if(dist.breaks[1] != 0)
 		stop("dist.breaks[1] must be 0")
 	switch(unitsIn, 
-			km = conv <- 1,
-			m = conv <- 1000)
+		km = conv <- 1,
+		m = conv <- 1000)
 	a <- obsCovs(umf)$dcArea
-	if(is.null(a)) {	
-		if(output=="density") {
-			switch(survey, 
-				line = {
-					stripwidths <- (((dist.breaks*2)[-1] - (dist.breaks*2)[-(J+1)])) / conv
-					tl <- tlength / conv
-					a <- rep(tl, each=J) * stripwidths		# km^2
-					},
-				point = {
-					W <- max(dist.breaks) / conv
-					a <- pi * W^2							# km^2
-					})
-			if(unitsOut=="ha") a <- a * 100
-			}
-		else {
-			switch(survey, 
-				line = a <- tlength / conv, # transect length must be accounted for
-				point = a <- 1)
-			}
-		}
-	if(is.null(tlength)) tlength <- numeric(0)
+	if(is.null(a))
+		a <- calcAreas(dist.breaks, tlength, output, survey, unitsIn, unitsOut)	
+	if(is.null(tlength)) 
+		tlength <- numeric(0)
 	switch(keyfun, 
-			halfnorm = { 
-				altdetParms <- paste("sigma", colnames(V), sep="")
-				if(is.null(starts)) {
-					starts <- c(rep(0, nAP), log(max(dist.breaks)), rep(0, nDP-1))
+		halfnorm = { 
+			altdetParms <- paste("sigma", colnames(V), sep="")
+			if(is.null(starts)) {
+				starts <- c(rep(0, nAP), log(max(dist.breaks)), rep(0, nDP-1))
+				names(starts) <- c(lamParms, detParms)
+			} else {
+				if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
+			}
+			if(!all(names(starts) %in% c(lamParms, detParms)))
+				stop("names(starts) does not agree with necessary model parameters")
+			fm <- optim(starts, ll.halfnorm, Y=y, X=X, V=V, J=J, a=a, 
+				d=dist.breaks, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T,
+				control=control, ...)
+		},
+		exp = { 
+			altdetParms <- paste("rate", colnames(V), sep="")
+			if(is.null(starts)) {
+				starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-1))
+				names(starts) <- c(lamParms, detParms)
+			} else {
+				if(is.null(names(starts)))
 					names(starts) <- c(lamParms, detParms)
-				}
-				else {
-					if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
-				}
-				if(!all(names(starts) %in% c(lamParms, detParms)))
-					stop("names(starts) does not agree with necessary model parameters")
-				fm <- optim(starts, ll.halfnorm, Y=y, X=X, V=V, J=J, a=a, 
-						d=dist.breaks, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T,
-						control=control, ...)
-			},
-			exp = { 
-				altdetParms <- paste("rate", colnames(V), sep="")
-				if(is.null(starts)) {
-					starts <- c(rep(0, nAP), 0, rep(0, nDP-1)) # log(median(dist.breaks))
+			}
+			if(!all(names(starts) %in% c(lamParms, detParms)))
+				stop("names(starts) does not agree with necessary model parameters")
+			fm <- optim(starts, ll.exp, Y=y, X=X, V=V, J=J, d=dist.breaks, 
+				a=a, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T, 
+				control=control, ...)
+		},
+		hazard = {	
+			detParms <- c(detParms, "scale")
+			nDP <- length(detParms)
+			nP <- nAP + nDP
+			altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
+			if(is.null(starts)) {
+				starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-2), 1)
+				names(starts) <- c(lamParms, detParms)
+			} else {
+				if(is.null(names(starts)))
 					names(starts) <- c(lamParms, detParms)
-				}
-				else {
-					if(is.null(names(starts)))
-						names(starts) <- c(lamParms, detParms)
-				}
-				if(!all(names(starts) %in% c(lamParms, detParms)))
-					stop("names(starts) does not agree with necessary model parameters")
-				fm <- optim(starts, ll.exp, Y=y, X=X, V=V, J=J, d=dist.breaks, 
-						a=a, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T, 
-						control=control, ...)
-			},
-			hazard = {	
-				detParms <- c(detParms, "scale")
-				nDP <- length(detParms)
-				nP <- nAP + nDP
-				altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
-				if(is.null(starts)) {
-					starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-2), 1)
-					names(starts) <- c(lamParms, detParms)
-				}
-				else {
-					if(is.null(names(starts)))
-						names(starts) <- c(lamParms, detParms)
-				}
-				if(!all(names(starts) %in% c(lamParms, detParms)))
-					stop("names(starts) does not agree with necessary model parameters")
-				fm <- optim(starts, ll.hazard, Y=y, X=X, V=V, J=J, d=dist.breaks, 
-						a=a, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T, 
-						control=control, ...)
-			}, 
-			uniform = {
-				detParms <- character(0)
-				altdetParms <- character(0)
-				nDP <- 0	
-				if(is.null(starts)) {
-					starts <- rep(0, length(lamParms))
+			}
+			if(!all(names(starts) %in% c(lamParms, detParms)))
+				stop("names(starts) does not agree with necessary model parameters")
+			fm <- optim(starts, ll.hazard, Y=y, X=X, V=V, J=J, d=dist.breaks, 
+				a=a, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T, 
+				control=control, ...)
+		}, 
+		uniform = {
+			detParms <- character(0)
+			altdetParms <- character(0)
+			nDP <- 0	
+			if(is.null(starts)) {
+				starts <- rep(0, length(lamParms))
+				names(starts) <- lamParms
+			} else {
+				if(is.null(names(starts)))
 					names(starts) <- lamParms
-				}
-				else {
-					if(is.null(names(starts)))
-						names(starts) <- lamParms
-				}
-				if(!all(names(starts) %in% lamParms))
-					stop("names(starts) does not agree with necessary model parameters")
-				fm <- optim(starts, ll.uniform, Y=y, X=X, V=V, J=J, a=a, 
-						method=method, hessian=T, control=control, ...)
-			})
-			opt <- fm
+			}
+			if(!all(names(starts) %in% lamParms))
+				stop("names(starts) does not agree with necessary model parameters")
+			fm <- optim(starts, ll.uniform, Y=y, X=X, V=V, J=J, a=a, 
+				method=method, hessian=T, control=control, ...)
+	})
+	opt <- fm
 	ests <- fm$par
 	estsAP <- ests[1:nAP]
 	estsDP <- ests[(nAP+1):nP]
-	try(covMat <- solve(fm$hessian))
+  	covMat <- solve(fm$hessian)
 	covMatAP <- covMat[1:nAP, 1:nAP, drop=F]
 	if(keyfun=="uniform")
 		covMatDP <- matrix(numeric(0), 1)
@@ -281,19 +261,16 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 		covMatDP <- covMat[(nAP+1):nP, (nAP+1):nP, drop=F]
 	names(estsDP) <- altdetParms 
 	fmAIC <- 2 * fm$value + 2 * nP
+	stateEstimates <- unmarkedEstimate(name = "Abundance", 
+		short.name = "lam", estimates = estsAP, covMat = covMatAP, 
+		invlink = "exp", invlinkGrad = "exp")
 	if (keyfun != "uniform") {
-		stateEstimates <- unmarkedEstimate(name = "Abundance", 
-			short.name = "lam", estimates = estsAP, covMat = covMatAP, 
-			invlink = "exp", invlinkGrad = "exp")
 		detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p", 
 			estimates = estsDP, covMat = covMatDP, invlink = "exp", 
 			invlinkGrad = "exp")
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates, 
-						det=detEstimates))
+			det=detEstimates))
 	} else {
-		stateEstimates <- unmarkedEstimate(name = "Abundance", 
-			short.name = "lam", estimates = estsAP, covMat = covMatAP, 
-			invlink = "exp", invlinkGrad = "exp")
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
 
@@ -448,3 +425,30 @@ ll.uniform <- function(param, Y, X, V, J, a)
 }
 
 
+calcAreas <- function(dist.breaks, tlength, output, survey, unitsIn, unitsOut)
+{
+	switch(unitsIn, 
+		km = conv <- 1,
+		m = conv <- 1000)
+    J <- length(dist.breaks)-1
+	switch(output, 
+		density =  {
+			switch(survey, 
+				line = {
+					stripwidths <- (((dist.breaks*2)[-1] - (dist.breaks*2)[-(J+1)])) / conv
+					tl <- tlength / conv
+					a <- rep(tl, each=J) * stripwidths		# km^2
+					},
+				point = {
+					W <- max(dist.breaks) / conv
+					a <- pi * W^2							# km^2
+					})
+			if(unitsOut=="ha") a <- a * 100
+			},
+		abund = {
+			switch(survey, 
+				line = a <- tlength / conv, # transect length must be accounted for
+				point = a <- 1)
+			})
+	return(a)
+}

@@ -161,7 +161,6 @@ setMethod("names", "unmarkedFit",
 #' @exportMethod predict
 setMethod("predict", "unmarkedFit", 
 		function(object, type, newdata=NULL, backTran=TRUE, ...) {
-##FIXME this fails on 2-parameter detection functions such as hazard function
 			if(is.null(newdata))
 				newdata <- object@data
 			formula <- object@formula

@@ -27,7 +27,7 @@ negative exponential, or hazard rate.
 
 Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors 
 affected by transect-specific covariates using the log link.}
-\value{umDistsampFit object (child class of \link{unmarkedFit)} describing the 
+\value{umDistsampFit object (child class of \link{unmarkedFit}) describing the 
 model fit. Parameter estimates are displayed on the log-scale. 
 Back-transformation can be achieved via the \link{predict} or 
 \link{backTransform} methods.}
@@ -104,9 +104,10 @@ survey="line", unitsIn="m", unitsOut="ha"))
 dist.breaks=dbreaksLine, tlength=lengths*1000, survey="line", 
 unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
 
-# Negative exponential detection function. Density output in hectares. 
+# Negative exponential detection function. This one also needs starting values.
 (fme <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-tlength=lengths*1000, key="exp", survey="line", unitsIn="m"))
+tlength=lengths*1000, key="exp", survey="line", unitsIn="m", 
+starts=c(0,0)))
 
 # Hazard-rate detection function. Density output in hectares.
 # This is real slow, especially for large datasets.
@@ -136,5 +137,5 @@ siteCovs = data.frame(area, habitat))
 unitsIn="m"))
 
 # Negative exponential
-(fmpe <- distsamp(~ 1 ~ habitat, ptUMF, dist.breaks=dbreaksPt, key="exp", 
+(fmpe <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, key="exp", 
 survey="point", output="density", unitsIn="m"))}
