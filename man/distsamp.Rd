@@ -136,5 +136,5 @@ siteCovs = data.frame(area, habitat))
 unitsIn="m"))
 
 # Negative exponential
-(fmpe <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, key="exp", 
+(fmpe <- distsamp(~ 1 ~ habitat, ptUMF, dist.breaks=dbreaksPt, key="exp", 
 survey="point", output="density", unitsIn="m"))}
