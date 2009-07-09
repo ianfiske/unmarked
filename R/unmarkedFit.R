@@ -226,10 +226,10 @@ setMethod("vcov", "unmarkedFit",
 		})
 
 setMethod("confint", "unmarkedFit",
-		function(object, type, parm, level = 0.95) {
-			if(missing(type)) stop(paste("Must specify type as one of (", paste(names(object),collapse=","),").",sep=""))
+		function(object, parm, level = 0.95, type) {
+			if(missing(type)) stop(paste("Must specify type as one of (", paste(names(object),collapse=", "),").",sep=""))
 			if(missing(parm)) parm <- 1:length(object[type]@estimates) 
-			callGeneric(object[type],parm, level)
+			callGeneric(object[type],parm = parm, level = level)
 		})
 
 setMethod("hessian", "unmarkedFit",
