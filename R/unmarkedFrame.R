@@ -30,8 +30,7 @@ setClass("unmarkedFrame",
     representation(y = "matrix",
         obsCovs = "optionalDataFrame",
         siteCovs = "optionalDataFrame",
-        obsToY = "optionalMatrix",
-        primaryNum = "numeric"),
+        obsToY = "optionalMatrix"),
     validity = validunmarkedFrame)
 
 #' Constructor for unmarkedFrames.
@@ -68,12 +67,12 @@ setClass("unmarkedFrame",
 #' obsCovs(mallardUMF, matrices = TRUE)
 #' @export
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
-    obsToY, primaryNum = NULL) {
+    obsToY) {
 
   if(class(obsCovs) == "list") {
     obsVars <- names(obsCovs)
     for(i in seq(length(obsVars))) {
-      if(class(obsCovs[[i]]) != "matrix")
+      if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
         stop("At least one element of obsCovs is not a matrix.")
       if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
         stop("At least one matrix in obsCovs has incorrect number of dimensions.")
@@ -85,15 +84,12 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
   if(("data.frame" %in% class(y)) |
       ("cast_matrix" %in% class(y))) y <- as.matrix(y)
 
-  if(is.null(primaryNum)) primaryNum <- 1
-	
 	## if no obsToY is supplied, assume y <-> obsCov
 	#if(is.null(obsToY)) obsToY <- diag(ncol(y))  assuming the obsToY can be dangerous... keep as NULL if not supplied.
 	if(missing(obsToY)) obsToY <- NULL
 	
   umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs,
-      siteCovs = siteCovs, obsToY = obsToY,
-      primaryNum = primaryNum)
+      siteCovs = siteCovs, obsToY = obsToY)
 
   return(umf)
 }
@@ -209,3 +205,36 @@ setAs("data.frame", "unmarkedFrame", function(from) {
 			umf <- formatWide(from)
 			umf
 		})
+
+
+## a class for multi-season data
+setClass("unmarkedMultFrame",
+		representation(numPrimary = "numeric"),
+		contains="unmarkedFrame")
+
+# i is the vector of sites to extract
+setMethod("[", c("unmarkedFrame","numeric"),
+		function(x, i) {  
+			y <- y(x)[i,]
+			if (length(i) == 1) {
+				y <- t(y)
+			}
+			siteCovs <- siteCovs(x)[i,]
+			obsCovs <- obsCovs(x)
+			obs.site.inds <- rep(1:numSites(x), each = obsNum(x))
+			obsCovs <- obsCovs[obs.site.inds %in% i,]
+			umf <- x
+			umf@y <- y
+			umf@siteCovs <- siteCovs
+			umf@obsCovs <- obsCovs
+			umf
+		})
+
+
+
+#setMethod("[", c("unmarkedFrame", "matrix"),
+#		function(x, i) {
+#			x <- x[unique(i[,1])]  # first subset the sites
+#			
+#						
+#		})
