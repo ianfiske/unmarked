@@ -97,20 +97,24 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 #' @export
 setMethod("show", "unmarkedFrame",
 		function(object) {
-			cat("unmarkedFrame object\n\n")
-			cat(nrow(object@y),"sites\n")
-			obsPres <- !is.null(object@obsCovs)
-			sitePres <- !is.null(object@siteCovs)
-			if(obsPres)  {
-				cat("observation-level covariates present.\n") 
+			obsCovs <- obsCovs(object)
+			siteCovs <- siteCovs(object)
+			y <- y(object)
+			colnames(y) <- paste("y",1:ncol(y),sep=".")
+			if(is.null(obsToY(object))) {
+				obsNum <- ncol(y)
 			} else {
-				cat("No observation-level covariates present.\n")
+				obsNum <- obsNum(object)
 			}
-			if(sitePres)  {
-				cat("site-level covariates present.\n")
+			if(is.null(siteCovs)) siteCovs <- matrix(0,nrow(y),0)
+			if(is.null(obsCovs)) {
+				obsCovs <- matrix(0,nrow(y),0)
 			} else {
-				cat("No site-level covariates present.\n")
+				obsCovs <- data.frame(lapply(obsCovs, function(x) matrix(x, nrow(y), obsNum,byrow=T)))
 			}
+			df <- data.frame(y, siteCovs, obsCovs)
+			cat("Data frame representation of unmarkedFrame object.\n")
+			print(df)
 		})
 
 #' Extractor for site level covariates
