@@ -73,7 +73,7 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     obsVars <- names(obsCovs)
     for(i in seq(length(obsVars))) {
       if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
-        stop("At least one element of obsCovs is not a matrix.")
+        stop("At least one element of obsCovs is not a matrix or data frame.")
       if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
         stop("At least one matrix in obsCovs has incorrect number of dimensions.")
     }
