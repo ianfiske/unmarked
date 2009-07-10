@@ -136,7 +136,7 @@ function(formula, data, K, mixture = c("P", "NB"))
 
   umfit <- unmarkedFit(fitType = "pcount",
       call = match.call(), formula = formula, data = umf, estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value)
+      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
   return(umfit)
 }

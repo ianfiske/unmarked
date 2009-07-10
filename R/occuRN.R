@@ -127,7 +127,7 @@ function(formula, data, K = 25)
 
   umfit <- unmarkedFit(fitType = "occuRN",
       call = match.call(), formula = formula, data = umf, estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value)
+      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
   return(umfit)
 }

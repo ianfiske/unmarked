@@ -184,70 +184,78 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 		a <- calcAreas(dist.breaks, tlength, output, survey, unitsIn, unitsOut)	
 	if(is.null(tlength)) 
 		tlength <- numeric(0)
-	switch(keyfun, 
-		halfnorm = { 
-			altdetParms <- paste("sigma", colnames(V), sep="")
-			if(is.null(starts)) {
-				starts <- c(rep(0, nAP), log(max(dist.breaks)), rep(0, nDP-1))
-				names(starts) <- c(lamParms, detParms)
-			} else {
-				if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
-			}
-			if(!all(names(starts) %in% c(lamParms, detParms)))
-				stop("names(starts) does not agree with necessary model parameters")
-			fm <- optim(starts, ll.halfnorm, Y=y, X=X, V=V, J=J, a=a, 
-				d=dist.breaks, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T,
-				control=control, ...)
-		},
-		exp = { 
-			altdetParms <- paste("rate", colnames(V), sep="")
-			if(is.null(starts)) {
-				starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-1))
-				names(starts) <- c(lamParms, detParms)
-			} else {
-				if(is.null(names(starts)))
+	
+	## create nll
+	switch(keyfun,
+			halfnorm = { 
+				altdetParms <- paste("sigma", colnames(V), sep="")
+				if(is.null(starts)) {
+					starts <- c(rep(0, nAP), log(max(dist.breaks)), rep(0, nDP-1))
 					names(starts) <- c(lamParms, detParms)
-			}
-			if(!all(names(starts) %in% c(lamParms, detParms)))
-				stop("names(starts) does not agree with necessary model parameters")
-			fm <- optim(starts, ll.exp, Y=y, X=X, V=V, J=J, d=dist.breaks, 
-				a=a, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T, 
-				control=control, ...)
-		},
-		hazard = {	
-			detParms <- c(detParms, "scale")
-			nDP <- length(detParms)
-			nP <- nAP + nDP
-			altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
-			if(is.null(starts)) {
-				starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-2), 1)
-				names(starts) <- c(lamParms, detParms)
-			} else {
-				if(is.null(names(starts)))
+				} else {
+					if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
+				}
+				if(!all(names(starts) %in% c(lamParms, detParms)))
+					stop("names(starts) does not agree with necessary model parameters")
+				nll <- function(params) {
+					ll.halfnorm(params, Y=y, X=X, V=V, J=J, a=a, 
+							d=dist.breaks, nAP=nAP, nP=nP, survey=survey)
+				}
+			},
+			exp = { 
+				altdetParms <- paste("rate", colnames(V), sep="")
+				if(is.null(starts)) {
+					starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-1))
 					names(starts) <- c(lamParms, detParms)
-			}
-			if(!all(names(starts) %in% c(lamParms, detParms)))
-				stop("names(starts) does not agree with necessary model parameters")
-			fm <- optim(starts, ll.hazard, Y=y, X=X, V=V, J=J, d=dist.breaks, 
-				a=a, nAP=nAP, nP=nP, survey=survey, method=method, hessian=T, 
-				control=control, ...)
-		}, 
-		uniform = {
-			detParms <- character(0)
-			altdetParms <- character(0)
-			nDP <- 0	
-			if(is.null(starts)) {
-				starts <- rep(0, length(lamParms))
-				names(starts) <- lamParms
-			} else {
-				if(is.null(names(starts)))
+				} else {
+					if(is.null(names(starts)))
+						names(starts) <- c(lamParms, detParms)
+				}
+				if(!all(names(starts) %in% c(lamParms, detParms)))
+					stop("names(starts) does not agree with necessary model parameters")
+				nll <- function(params) {
+					ll.exp(params,  Y=y, X=X, V=V, J=J, d=dist.breaks, 
+						a=a, nAP=nAP, nP=nP, survey=survey)
+				}
+			},
+			hazard = {	
+				detParms <- c(detParms, "scale")
+				nDP <- length(detParms)
+				nP <- nAP + nDP
+				altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
+				if(is.null(starts)) {
+					starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-2), 1)
+					names(starts) <- c(lamParms, detParms)
+				} else {
+					if(is.null(names(starts)))
+						names(starts) <- c(lamParms, detParms)
+				}
+				if(!all(names(starts) %in% c(lamParms, detParms)))
+					stop("names(starts) does not agree with necessary model parameters")
+				nll <- function(params) {
+					ll.hazard(params, Y=y, X=X, V=V, J=J, d=dist.breaks, 
+							a=a, nAP=nAP, nP=nP, survey=survey)
+				}
+			}, 
+			uniform = {
+				detParms <- character(0)
+				altdetParms <- character(0)
+				nDP <- 0	
+				if(is.null(starts)) {
+					starts <- rep(0, length(lamParms))
 					names(starts) <- lamParms
-			}
-			if(!all(names(starts) %in% lamParms))
-				stop("names(starts) does not agree with necessary model parameters")
-			fm <- optim(starts, ll.uniform, Y=y, X=X, V=V, J=J, a=a, 
-				method=method, hessian=T, control=control, ...)
-	})
+				} else {
+					if(is.null(names(starts)))
+						names(starts) <- lamParms
+				}
+				if(!all(names(starts) %in% lamParms))
+					stop("names(starts) does not agree with necessary model parameters")
+				nll <- function(params) {
+					ll.uniform(params, Y=y, X=X, V=V, J=J, a=a)
+				}
+			})
+	fm <- optim(starts, nll, method=method, hessian=T, control=control)
+
 	opt <- fm
 	ests <- fm$par
 	estsAP <- ests[1:nAP]
@@ -277,7 +285,7 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 		opt = opt, formula = formula, data = umf, keyfun=keyfun, 
 		dist.breaks=dist.breaks, tlength=tlength, area=a, survey=survey, 
 		unitsIn=unitsIn, unitsOut=unitsOut, estimates = estimateList, 
-		AIC = fmAIC, negLogLike = fm$value)
+		AIC = fmAIC, negLogLike = fm$value, nllFun = nll)
 	return(dsfit)
 }
 

@@ -25,17 +25,18 @@ setClass("unmarkedFit",
         estimates = "unmarkedEstimateList",
         AIC = "numeric",
 				opt = "list",
-        negLogLike = "numeric"))
+        negLogLike = "numeric",
+				nllFun = "function"))
 
 
 
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, formula,
-    data, estimates, AIC, opt, negLogLike) {
+    data, estimates, AIC, opt, negLogLike, nllFun) {
   umfit <- new("unmarkedFit", fitType = fitType,
       call = call, formula = formula, data = data,
       estimates = estimates, AIC = AIC,
-      opt = opt, negLogLike = negLogLike)
+      opt = opt, negLogLike = negLogLike, nllFun = nllFun)
 
   return(umfit)
 }
@@ -196,7 +197,7 @@ setMethod("predict", "unmarkedFit",
 
 
 #' @importFrom graphics plot
-#' @importFrom stats coef vcov predict update
+#' @importFrom stats coef vcov predict update profile
 
 
 #' @export
@@ -225,14 +226,91 @@ setMethod("vcov", "unmarkedFit",
 			v
 		})
 
+#' @export
 setMethod("confint", "unmarkedFit",
-		function(object, parm, level = 0.95, type) {
+		function(object, parm, level = 0.95, type, method = c("normal", "profile")) {
+			method <- match.arg(method)
 			if(missing(type)) stop(paste("Must specify type as one of (", paste(names(object),collapse=", "),").",sep=""))
-			if(missing(parm)) parm <- 1:length(object[type]@estimates) 
-			callGeneric(object[type],parm = parm, level = level)
+			if(missing(parm)) parm <- 1:length(object[type]@estimates)
+			if(method == "normal") {
+				callGeneric(object[type],parm = parm, level = level)
+			} else {
+				nllFun <- nllFun(object)
+				ests <- mle(object)
+				nP <- length(parm)
+				ci <- matrix(NA, nP, 2)
+
+				## create table to match parm numbers with est/parm numbers
+				types <- names(object)
+				numbertable <- data.frame(type = character(0), num = numeric(0))
+				for(i in seq(length=length(types))) {
+					length.est <- length(object[i]@estimates)
+					numbertable <- rbind(numbertable, data.frame(type = rep(types[i], length.est), num = seq(length=length.est)))
+				}
+				parm.fullnums <- which(numbertable$type == type & numbertable$num %in% parm)
+				
+				for(i in seq(length=nP)) {
+					cat("Profiling parameter",i,"of",nP,"...")
+					se <- SE(object[type])
+					whichPar <- parm.fullnums[i]
+					ci[i,] <- profileCI(nllFun, whichPar=whichPar, MLE=ests, interval=ests[whichPar] + 10*se[i]*c(-1,1), level=level)
+					cat(" done.\n")
+				}
+				rownames(ci) <- names(coef(object[type]))[parm]
+				colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
+				return(ci)
+			}
+		})
+
+#' @export
+setMethod("profile", "unmarkedFit",
+		function(fitted, type, parm, seq) {
+			stopifnot(length(parm) == 1)
+			MLE <- mle(fitted)
+			SE(fitted[type])
+			nPar <- length(mle(fitted))
+			nll <- nllFun(fitted)
+			
+			## create table to match parm numbers with est/parm numbers
+			types <- names(fitted)
+			numbertable <- data.frame(type = character(0), num = numeric(0))
+			for(i in seq(length=length(types))) {
+				length.est <- length(fitted[i]@estimates)
+				numbertable <- rbind(numbertable, data.frame(type = rep(types[i], length.est), num = seq(length=length.est)))
+			}
+			parm.fullnums <- which(numbertable$type == type & numbertable$num == parm)
+			
+			f <- function(value) {
+				fixedNLL <- genFixedNLL(nll, parm.fullnums, value)
+				mleRestricted <- optim(rep(0,nPar), fixedNLL)$value
+				mleRestricted
+			}
+			prof.out <- sapply(seq, f)
+			prof.out <- cbind(seq, prof.out)
+			new("profile", prof = prof.out)
 		})
 
 setMethod("hessian", "unmarkedFit",
 		function(object) {
 			object@opt$hessian
+		})
+
+
+setMethod
+
+setGeneric("nllFun", function(object) standardGeneric("nllFun"))
+
+#' @export 
+setMethod("nllFun", "unmarkedFit", function(object) object@nllFun)
+
+setGeneric("mle", function(object) standardGeneric("mle"))
+
+#' @export 
+setMethod("mle", "unmarkedFit", function(object) object@opt$par)
+
+setClass("profile",
+		representation(prof = "matrix"))
+setMethod("plot", c("profile", "missing"),
+		function(x) {
+			plot(x@prof[,1], x@prof[,2], type = "l")
 		})

@@ -22,8 +22,7 @@
 #'  Covariates of \eqn{\psi_i}{psi_i} and \eqn{p_{ij}}{p_ij} are modelled
 #'  using the logit link.
 #' @title Fit the MacKenzie Occupancy Model
-#' @param stateformula right-hand side formula describing covariates of occurence.
-#' @param detformula right-hand side formula describing covariates of detection.
+#' @param formula double right-hand side formula describing covariates of detection and occupancy.
 #' @param data either a unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..
 #' @param knownOcc vector of sites that are known to be occupied.
 #' @return unmarkedFit object describing the model fit.
@@ -39,14 +38,14 @@
 #' @keywords models
 #' @export
 occu <-
-function(formula, data, knownOcc = numeric(0), profile = FALSE)
+function(formula, data, knownOcc = numeric(0))
 {
 	umf <- switch(class(data),
 			data.frame = as(data, "unmarkedFrame"),
 			unmarkedFrame = data,
 			stop("Data is not a data frame or unmarkedFrame."))
 	
-	obsToY(umf) <- diag(numY(umf))  # occu functions have obs <-> y are 1-1
+	obsToY(umf) <- diag(numY(umf))  # occu functions have obs <-> y (1-1)
 	
   designMats <- getDesign2(formula, umf)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
@@ -55,10 +54,7 @@ function(formula, data, knownOcc = numeric(0), profile = FALSE)
   J <- ncol(y)
   M <- nrow(y)
 
-#  if(nrow(umf@y) != M & length(knownOcc) > 0)
-#    stop("sites dropped, but knownOcc was specified.")
-
-  occParms <- colnames(X)
+	occParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
   nOP <- ncol(X)
@@ -87,13 +83,12 @@ function(formula, data, knownOcc = numeric(0), profile = FALSE)
   fmAIC <- 2 * fm$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)
   names(ests) <- c(occParms, detParms)
 
-  if(profile) {
-    profile.matrix <- matrix(NA, nP, 2)
-    for(i in seq(length=nP)) {
-      profile.matrix[i,] <- profileCI(nll, i, ests, c(-10,10))
-          #c(ests[i] - 20*ests.se[i], ests[i] + 20*ests.se[i]))
-    }
-  }
+#  if(profile) {
+#    profile.matrix <- matrix(NA, nP, 2)
+#    for(i in seq(length=nP)) {
+#      profile.matrix[i,] <- profileCI(nll, i, ests, c(-10,10))
+#    }
+#  }
 
   state <- unmarkedEstimate(name = "Occupancy", short.name = "psi",
       estimates = ests[1:nOP],
@@ -109,7 +104,7 @@ function(formula, data, knownOcc = numeric(0), profile = FALSE)
 
   umfit <- unmarkedFit(fitType = "occu",
       call = match.call(), formula = formula, data = umf, estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value)
+      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
   return(umfit)
 }

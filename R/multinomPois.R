@@ -155,7 +155,7 @@ function(formula, piFun, data, obsToY)
 
   umfit <- unmarkedFit(fitType = "multinomPois",
       call = match.call(), formula = formula, data = umf, estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value)
+      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
   return(umfit)
 }

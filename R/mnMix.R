@@ -217,7 +217,7 @@ mnMix <-
 
   umfit <- unmarkedFit(fitType = "mnMix",
       call = match.call(), formula = formula, data = umf, estimates = estimateList,
-      AIC = 2 * fm$value + 2 * nP, opt = opt, negLogLike = fm$value)
+      AIC = 2 * fm$value + 2 * nP, opt = opt, negLogLike = fm$value, nllFun = nll)
 
   umfit
 

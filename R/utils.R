@@ -5,26 +5,32 @@
 genFixedNLL <- function(nll, whichFixed, fixedValues) {
   function(params) {
     params[whichFixed] <- fixedValues
-    do.call(nll, list(params=params))
+    do.call(nll, list(params))
   }
 }
 
 # nll the original negative log likelihood function
 # MLE the full vector of MLE values
 #' @nord
-profileCI <- function(nll, whichPar, MLE, interval){
+profileCI <- function(nll, whichPar, MLE, interval, level){
+	stopifnot(length(whichPar) == 1)
   MLEnll <- nll(MLE)
   nPar <- length(MLE)
+	chsq <- qchisq(level, 1)/2
   f <- function(value) {
     fixedNLL <- genFixedNLL(nll, whichPar, value)
-    mleRestricted <- optim(rep(0,nPar), fixedNLL)
-    MLEnll - mleRestricted$value + 1.92
+		mleRestricted <- optim(MLE, fixedNLL)$value
+    mleRestricted - MLEnll - chsq
   }
-## TODO: add some kind of try/catch block here for when interval is on boundary.
-## first bnd should be (est-5*se, est+5*se)... catch this and expand interval as necessary?
-  lower <- uniroot(f, c(interval[1],MLE[whichPar]))
-  upper <- uniroot(f, c(MLE[whichPar], interval[2]))
-  return(c(lower$root,upper$root))
+## TODO: expand interval as necessary rather than use +/- Inf?
+#  lower <- tryCatch(uniroot(f, c(interval[1],MLE[whichPar]))$root,
+#			error=function(x) -Inf)
+#  upper <- tryCatch(uniroot(f, c(MLE[whichPar], interval[2]))$root,
+#			error=function(x) Inf)
+  lower <- uniroot(f, c(interval[1],MLE[whichPar]))$root
+  upper <- uniroot(f, c(MLE[whichPar], interval[2]))$root
+	
+  return(c(lower,upper))
 }
 
 ## link functions and their gradients
@@ -386,7 +392,13 @@ function(df.in)
 
   rownames(y) <- dimnames(obsvars)[[1]]
   colnames(y) <- dimnames(obsvars)[[2]]
-	umf <- unmarkedFrame(y, obsCovs = arrToList(obsvars), primaryNum = nY)
+	y <- as.matrix(y)
+	
+	obsvars.list <- arrToList(obsvars)
+	obsvars.list <- lapply(obsvars.list, function(x) as.vector(t(x)))
+	obsvars.df <- as.data.frame(obsvars.list)
+	
+	umf <- new("unmarkedMultFrame", y = y, obsCovs = obsvars.df, numPrimary = nY)
   return(umf)
 }
 
@@ -424,86 +436,86 @@ function(lam, r)
   sum(pY.k * pN.k)
 }
 
-#' @nord
-handleNA <- function(stateformula, detformula, umf) {
-  y <- umf@y
-  # TODO: use J <- ncol(y) here and throughout instead of wrong use of obsNum?  ... fixed in new version "handleNA2"
-  obsNum <- umf@obsNum
-  M <- nrow(y)
-  siteCovs <- umf@siteCovs
-  obsCovs <- umf@obsCovs
-  umf.clean <- umf
-
-  ## set up obsCov indices
-  sites <- rep(1:M, each = obsNum)
-  obs <- rep(1:obsNum, M)
-
-  ## assume that siteCovs have already been added to obsCovs
-  X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
-  V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
-
-  if(ncol(V.mf) > 0) {
-    ## which sites have NA's in obsCovs included in detformula?
-    V.NA <- apply(is.na(V.mf), 1, any)
-    V.NA.obs <- cbind(sites[V.NA], obs[V.NA])
-    V.NA.sites <- unique(sites[V.NA])
-    umf.clean@y[V.NA.obs] <- NA
-    if(any(!is.na(y[V.NA.obs]))) {
-      warning(sprintf("NA(s) found in 'obsCovs' that were not in 'y' matrix.
-Corresponding observation(s) 'y' were replaced with NA.
-Observations removed from site(s) %s", paste(V.NA.sites,collapse=", ")))
-    }
-  }
-
-  if(ncol(X.mf) > 0) {
-    ## which sites have NA in site var included in stateformula?
-    X.NA.sites <- unique(which(apply(is.na(X.mf), 1, any)))
-    umf.clean@y[X.NA.sites,] <- NA
-    if(length(X.NA.sites) > 0) {
-      warning(sprintf("NA(s) found in 'siteCovs' that were not in 'y' matrix.
-Corresponding site(s) in 'y' were replaced with NA: %s",
-                      paste(X.NA.sites,collapse=", ")))
-    }
-  }
-
-  ## which sites have all NA's in y?
-  na.sites <- which(apply(is.na(umf.clean@y), 1, all))
-  if(length(na.sites) > 0) {
-    umf.clean@y <- umf.clean@y[-na.sites,]
-    umf.clean@siteCovs <- subset(umf.clean@siteCovs,
-                                 !seq(length=M) %in% na.sites)
-    umf.clean@obsCovs <- umf.clean@obsCovs[!(sites %in% na.sites),]
-  }
-
-  ## reorder obs within year/site so that non-NA's come first
-  ## this is needed to use ragged array style indexing
-  if(umf.clean@primaryNum > 1) {
-    J <- umf.clean@obsNum/umf.clean@primaryNum
-    for(i in 1:M) {
-      obsCovs.i <- umf.clean@obsCovs[sites == i, ]
-      for(t in 1:umf.clean@primaryNum) {
-        y.it <- umf.clean@y[i,((t-1)*J + 1 ): (t*J) ]
-        obsCovs.it <- obsCovs.i[((t-1)*J + 1 ): (t*J), ]
-
-        notNA.inds <- which(!is.na(y.it))
-        numGoods <- length(notNA.inds)
-
-        y.it[seq(length=numGoods)] <- y.it[notNA.inds]
-        if(numGoods > 0) obsCovs.it[1:numGoods,] <- obsCovs.it[notNA.inds,]
-        if(numGoods < J) {
-          y.it[(numGoods+1) : J] <-  NA
-          obsCovs.it[(numGoods+1) : J, ] <- NA
-        }
-
-        umf.clean@y[i,((t-1)*J + 1 ): (t*J) ] <- y.it
-        obsCovs.i[((t-1)*J + 1 ): (t*J), ] <- obsCovs.it
-      }
-      umf.clean@obsCovs[sites == i, ] <- obsCovs.i
-    }
-  }
-
-  return(umf.clean)
-}
+##' @nord
+#handleNA <- function(stateformula, detformula, umf) {
+#  y <- umf@y
+#  # TODO: use J <- ncol(y) here and throughout instead of wrong use of obsNum?  ... fixed in new version "handleNA2"
+#  obsNum <- umf@obsNum
+#  M <- nrow(y)
+#  siteCovs <- umf@siteCovs
+#  obsCovs <- umf@obsCovs
+#  umf.clean <- umf
+#
+#  ## set up obsCov indices
+#  sites <- rep(1:M, each = obsNum)
+#  obs <- rep(1:obsNum, M)
+#
+#  ## assume that siteCovs have already been added to obsCovs
+#  X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
+#  V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
+#
+#  if(ncol(V.mf) > 0) {
+#    ## which sites have NA's in obsCovs included in detformula?
+#    V.NA <- apply(is.na(V.mf), 1, any)
+#    V.NA.obs <- cbind(sites[V.NA], obs[V.NA])
+#    V.NA.sites <- unique(sites[V.NA])
+#    umf.clean@y[V.NA.obs] <- NA
+#    if(any(!is.na(y[V.NA.obs]))) {
+#      warning(sprintf("NA(s) found in 'obsCovs' that were not in 'y' matrix.
+#Corresponding observation(s) 'y' were replaced with NA.
+#Observations removed from site(s) %s", paste(V.NA.sites,collapse=", ")))
+#    }
+#  }
+#
+#  if(ncol(X.mf) > 0) {
+#    ## which sites have NA in site var included in stateformula?
+#    X.NA.sites <- unique(which(apply(is.na(X.mf), 1, any)))
+#    umf.clean@y[X.NA.sites,] <- NA
+#    if(length(X.NA.sites) > 0) {
+#      warning(sprintf("NA(s) found in 'siteCovs' that were not in 'y' matrix.
+#Corresponding site(s) in 'y' were replaced with NA: %s",
+#                      paste(X.NA.sites,collapse=", ")))
+#    }
+#  }
+#
+#  ## which sites have all NA's in y?
+#  na.sites <- which(apply(is.na(umf.clean@y), 1, all))
+#  if(length(na.sites) > 0) {
+#    umf.clean@y <- umf.clean@y[-na.sites,]
+#    umf.clean@siteCovs <- subset(umf.clean@siteCovs,
+#                                 !seq(length=M) %in% na.sites)
+#    umf.clean@obsCovs <- umf.clean@obsCovs[!(sites %in% na.sites),]
+#  }
+#
+#  ## reorder obs within year/site so that non-NA's come first
+#  ## this is needed to use ragged array style indexing
+#  if(umf.clean@primaryNum > 1) {
+#    J <- umf.clean@obsNum/umf.clean@primaryNum
+#    for(i in 1:M) {
+#      obsCovs.i <- umf.clean@obsCovs[sites == i, ]
+#      for(t in 1:umf.clean@primaryNum) {
+#        y.it <- umf.clean@y[i,((t-1)*J + 1 ): (t*J) ]
+#        obsCovs.it <- obsCovs.i[((t-1)*J + 1 ): (t*J), ]
+#
+#        notNA.inds <- which(!is.na(y.it))
+#        numGoods <- length(notNA.inds)
+#
+#        y.it[seq(length=numGoods)] <- y.it[notNA.inds]
+#        if(numGoods > 0) obsCovs.it[1:numGoods,] <- obsCovs.it[notNA.inds,]
+#        if(numGoods < J) {
+#          y.it[(numGoods+1) : J] <-  NA
+#          obsCovs.it[(numGoods+1) : J, ] <- NA
+#        }
+#
+#        umf.clean@y[i,((t-1)*J + 1 ): (t*J) ] <- y.it
+#        obsCovs.i[((t-1)*J + 1 ): (t*J), ] <- obsCovs.it
+#      }
+#      umf.clean@obsCovs[sites == i, ] <- obsCovs.i
+#    }
+#  }
+#
+#  return(umf.clean)
+#}
 
 
 
@@ -725,7 +737,7 @@ imputeMissing <- function(umf, whichCovs) {
 # impute observation covariates
 	if(!is.null(umf@obsCovs)) {
 		obsCovs <- umf@obsCovs
-		J <- umf@obsNum
+		J <- obsNum(umf)
 		M <- nrow(obsCovs)/J
 		obs <- obsCovs[,whichCovs]
 		whichrows <- apply(obs, 1, function(x) any(!is.na(x)))
