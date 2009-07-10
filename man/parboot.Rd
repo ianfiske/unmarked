@@ -8,8 +8,16 @@
 \item{label}{a label for the model}}
 \examples{data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 
-(fm <- distsamp(cbind(o1,o2,o3,o4) ~ area, ~habitat, linetran, 
-dist.breaks=dbreaksLine, tlength=linetran$Length*1000, survey="line", 
+
+lengths <- linetran$Length
+
+ltUMF <- with(linetran, {
+unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4), 
+siteCovs = data.frame(Length, area, habitat))
+})
+
+(fm <- distsamp(~ area ~habitat, ltUMF, 
+dist.breaks=dbreaksLine, tlength=lengths*1000, survey="line", 
 unitsIn="m"))
 
 (pb <- parboot(fm))

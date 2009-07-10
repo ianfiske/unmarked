@@ -7,8 +7,8 @@
 
 #' Fit the hierarchical distance sampling model
 #'
-#' This functions fits the Royle et al. (2004) multinomial mixture model to line 
-#' or point transect data recorded in discrete distance intervals.
+#' This functions fits the Royle et al. (2004) multinomial mixture model to 
+#' line or point transect data recorded in discrete distance intervals.
 #'
 #' Unlike conventional distance sampling, which uses the 'conditional on 
 #' detection' likelihood formulation, this model is based upon the unconditional 
@@ -28,6 +28,15 @@
 #'
 #' Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors 
 #' affected by transect-specific covariates using the log link.
+#' @note 
+#' The response matrix contains the counts of objects at each transect in each 
+#' distance interval. These distance intervals must correspond to the distance 
+#' break points vector dist.breaks. One must not change dist.breaks without also 
+#' changing the response matrix (and vice versa). 
+#'
+#' Currently, transect-level abundance is assumed to be Poisson distributed 
+#' though other distributions such as the negative binomial may be added. 
+#' Goodness-of-fit can be assessed using the \code{\link{parboot}} function.  
 #'
 #' @param stateformula Right-hand or 2-sided side formula describing covariates 
 #' of abundance or density. See examples for how to specify the response matrix 
@@ -55,16 +64,6 @@
 #' model fit. Parameter estimates are displayed on the log-scale. 
 #' Back-transformation can be achieved via the \link{predict} or 
 #' \link{backTransform} methods.
-#'
-#' @note 
-#' The response matrix contains the counts of objects at each transect in each 
-#' distance interval. These distance intervals must correspond to the distance 
-#' break points vector dist.breaks. One must not change dist.breaks without also 
-#' changing the response matrix (and vice versa). 
-#'
-#' Currently, transect-level abundance is assumed to be Poisson distributed 
-#' though other distributions such as the negative binomial may be added. 
-#' Goodness-of-fit can be assessed using the \code{\link{parboot}} function.  
 #'
 #' @author Richard Chandler \email{rchandler@@nrc.umass.edu}
 #'
@@ -275,10 +274,10 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 	}
 
 	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
-		opt = opt, formula = formula, optout=fm, 
-		data = umf, keyfun=keyfun, dist.breaks=dist.breaks, tlength=tlength, 
-		area=a, survey=survey, unitsIn=unitsIn, unitsOut=unitsOut, 
-		estimates = estimateList, AIC = fmAIC, negLogLike = fm$value)
+		opt = opt, formula = formula, data = umf, keyfun=keyfun, 
+		dist.breaks=dist.breaks, tlength=tlength, area=a, survey=survey, 
+		unitsIn=unitsIn, unitsOut=unitsOut, estimates = estimateList, 
+		AIC = fmAIC, negLogLike = fm$value)
 	return(dsfit)
 }
 
@@ -294,13 +293,33 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 
 
 
-# Detection functions for perpendicular (x) and radial (r) distances
-gxhn <- function(x, sigma=1) exp(-x^2/(2 * sigma^2))
-gxexp <- function(x, rate) exp(-x / rate)                                   # Change to -rate?
-gxhaz <- function(x, shape=1, scale=1)  1 - exp(-(x/shape)^-scale)
+#' @title Detection functions used by distsamp()
+#' @name detFuns
+#' @aliases gxhn gxexp gxhaz grhn grexp grhaz
+#' @usage gxhn(x, sigma) gxexp(x, rate) gxhaz(x, shape, scale) 
+# @usage gxexp(x, rate)
+# @usage gxhaz(x, shape, scale)
+# @usage grhn(r, sigma)
+# @usage grexp(r, rate)
+# @usage grhaz(r, shape, scale)
+#' @param x Perpendicular distance
+#' @param r Radial distance
+#' @param sigma Shape parameter of half-normal detection function
+#' @param rate Shape parameter of negative-exponential detection function
+#' @param shape Shape parameter of hazard-rate detection function
+#' @param scale Scale parameter of hazard-rate detection function
+#' @export
+gxhn <- function(x, sigma) exp(-x^2/(2 * sigma^2))
+#' @export
+gxexp <- function(x, rate) exp(-x / rate) 
+#' @export
+gxhaz <- function(x, shape, scale)  1 - exp(-(x/shape)^-scale)
+#' @export
 grhn <- function(r, sigma) exp(-r^2/(2 * sigma^2)) * r
-grexp <- function(r, rate) exp(-r / rate) * r 								# Change to -rate?
-grhaz <- function(r, shape=1, scale=1)  (1 - exp(-(r/shape)^-scale)) * r
+#' @export
+grexp <- function(r, rate) exp(-r / rate) * r
+#' @export
+grhaz <- function(r, shape, scale)  (1 - exp(-(r/shape)^-scale)) * r
 
 
 # Vectorized version of integrate()

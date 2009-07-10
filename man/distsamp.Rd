@@ -1,13 +1,14 @@
 \name{distsamp}
 \alias{distsamp}
 \title{Fit the hierarchical distance sampling model...}
-\usage{distsamp(formula, data, dist.breaks, tlength, keyfun=c("halfnorm",
-    "exp", "hazard", "uniform"), survey, output=c("density",
-    "abund"), unitsIn, unitsOut=c("ha", "kmsq"), starts,
-    method=BFGS, control=list(), ...)}
+\usage{distsamp(formula, data, dist.breaks, tlength,
+    keyfun=c("halfnorm", "exp", "hazard", "uniform"),
+    survey, output=c("density", "abund"), unitsIn,
+    unitsOut=c("ha", "kmsq"), starts, method=BFGS,
+    control=list(), ...)}
 \description{Fit the hierarchical distance sampling model}
-\details{This functions fits the Royle et al. (2004) multinomial mixture model to line 
-or point transect data recorded in discrete distance intervals.
+\details{This functions fits the Royle et al. (2004) multinomial mixture model to 
+line or point transect data recorded in discrete distance intervals.
 
 Unlike conventional distance sampling, which uses the 'conditional on 
 detection' likelihood formulation, this model is based upon the unconditional 
@@ -27,10 +28,6 @@ negative exponential, or hazard rate.
 
 Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors 
 affected by transect-specific covariates using the log link.}
-\value{umDistsampFit object (child class of \link{unmarkedFit}) describing the 
-model fit. Parameter estimates are displayed on the log-scale. 
-Back-transformation can be achieved via the \link{predict} or 
-\link{backTransform} methods.}
 \note{The response matrix contains the counts of objects at each transect in each 
 distance interval. These distance intervals must correspond to the distance 
 break points vector dist.breaks. One must not change dist.breaks without also 
@@ -39,6 +36,10 @@ changing the response matrix (and vice versa).
 Currently, transect-level abundance is assumed to be Poisson distributed 
 though other distributions such as the negative binomial may be added. 
 Goodness-of-fit can be assessed using the \code{\link{parboot}} function.}
+\value{umDistsampFit object (child class of \link{unmarkedFit}) describing the 
+model fit. Parameter estimates are displayed on the log-scale. 
+Back-transformation can be achieved via the \link{predict} or 
+\link{backTransform} methods.}
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 \references{Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
