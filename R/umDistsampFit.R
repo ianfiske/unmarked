@@ -5,7 +5,6 @@
 #' @exportClass umDistsampFit
 setClass("umDistsampFit",
 		representation(
-				optout = "list",
 				keyfun = "character",
 				dist.breaks = "numeric",
 				tlength = "numeric",
@@ -81,8 +80,16 @@ setMethod("update", "umDistsampFit",
 #' @examples
 #' data(linetran)
 #' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
-#' (fm <- distsamp(cbind(o1,o2,o3,o4) ~ area, ~habitat, linetran, 
-#'	   dist.breaks=dbreaksLine, tlength=linetran$Length*1000, survey="line", 
+#'
+#' lengths <- linetran$Length
+#'
+#' ltUMF <- with(linetran, {
+#' 	unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4), 
+#' 		siteCovs = data.frame(Length, area, habitat))
+#' 	})
+#'
+#' (fm <- distsamp(~ area ~habitat, ltUMF, 
+#'	   dist.breaks=dbreaksLine, tlength=lengths*1000, survey="line", 
 #'	   unitsIn="m"))
 #'
 #' (pb <- parboot(fm))
@@ -93,18 +100,13 @@ setMethod("parboot", "umDistsampFit", function(object, R=10, report=2,
    label=character(0), ...)  
 {
 call <- match.call()
-stateformula <- object@stateformula
-detformula <- object@detformula
-data <- object@data
-data <- data.frame(data@y, data@siteCovs)
-mf <- model.frame(stateformula, data)
-Y <- model.response(mf)
-ynames <- colnames(Y)
-yvec0 <- c(t(Y))
-Xlam <- model.matrix(stateformula, data)
-Xp <-  model.matrix(detformula, data)
-n <- nrow(Y)
-J <- ncol(Y)
+formula <- object@formula
+umf <- object@data
+designMats <- getDesign2(formula, umf)
+X <- designMats$X; V <- designMats$V; y <- designMats$y
+yvec0 <- c(t(y))
+n <- nrow(y)
+J <- ncol(y)
 ests <- coef(object, altNames=T) 
 tl <- object@tlength
 a <- object@area
@@ -112,21 +114,21 @@ aMat <- matrix(a, n, J, byrow=T)
 lam.pars0 <- coef(object, type="state")
 ppars0 <- coef(object, type="det")
 d <- object@dist.breaks
-lam0 <- as.numeric(exp(Xlam %*% lam.pars0))
+lam0 <- as.numeric(exp(X %*% lam.pars0))
 growlam0 <- rep(lam0, each=J)
 key <- object@keyfun
 survey <- object@survey
 switch(key, 
 "halfnorm" = {
-	sigma <- exp(Xp %*% ppars0)
+	sigma <- exp(V %*% ppars0)
 	p0 <- sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey))
 	},
 "exp" = {
-	rate <- exp(Xp %*% ppars0)
+	rate <- exp(V %*% ppars0)
 	p0 <- sapply(rate, function(x) cp.exp(d=d, rate=x, survey=survey))
 	},
 "hazard" = {
-	shape <- exp(Xp %*% ppars0[-length(ppars0)])
+	shape <- exp(V %*% ppars0[-length(ppars0)])
 	scale <- exp(ppars0[length(ppars0)])
 	p0 <- sapply(shape, function(x) cp.haz(d=d, shape=shape, scale=scale, 
 		survey=survey))
@@ -142,31 +144,31 @@ for(i in 1:R)
 y.sim <- matrix(NA, n, J)
 for(k in 1:n)
 	y.sim[k,] <- rpois(J, lam0[k] * p0[,k] * aMat[k,])
-simdata <- data[rownames(Y),]
-simdata[,ynames] <- y.sim
+simdata <- umf # data[rownames(y),]
+simdata@y <- y.sim
 fits[[i]] <- update(object, data=simdata, starts=as.numeric(coef(object)), ...)
 lampars.i <- coef(fits[[i]], type="state")
-lam <- as.vector(exp(Xlam %*% lampars.i))
+lam <- as.vector(exp(X %*% lampars.i))
 growlam <- rep(lam, each=J)
 ppars.i <- coef(fits[[i]], type="det")
 switch(key, 
 "halfnorm" = {
-	sigma <- exp(Xp %*% ppars.i)
+	sigma <- exp(V %*% ppars.i)
 	p <- sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey))
 	},
 "exp" = {
-	rate <- exp(Xp %*% ppars.i)
+	rate <- exp(V %*% ppars.i)
 	p <- sapply(rate, function(x) cp.exp(d=d, r=x, survey=survey))
 	},
 "hazard" = {
-	shape <- exp(Xp %*% ppars.i[-length(ppars.i)])
+	shape <- exp(V %*% ppars.i[-length(ppars.i)])
 	scale <- exp(ppars.i[length(ppars.i)])
 	p <- sapply(sigma, function(x) cp.haz(d=d, shape=shape, scale=scale, 
 		survey=survey))
 	})
 pvec <- c(p)
 expected <- growlam * a * pvec
-yvec <- c(t(simdata[,ynames]))
+yvec <- c(t(y(simdata)))
 sqrt.sim <- sqrt(yvec)
 sqrt.model <- sqrt(expected)
 SSEs[i] <- sqrt(sum((sqrt.sim - sqrt.model)^2, na.rm=T))
