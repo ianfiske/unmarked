@@ -1,9 +1,8 @@
 \name{distsamp}
 \alias{distsamp}
 \title{Fit the hierarchical distance sampling model...}
-\usage{distsamp(formula, data, dist.breaks, tlength,
-    keyfun=c("halfnorm", "exp", "hazard", "uniform"),
-    survey, output=c("density", "abund"), unitsIn,
+\usage{distsamp(formula, data, keyfun=c("halfnorm", "exp", "hazard",
+    "uniform"), output=c("density", "abund"), unitsIn,
     unitsOut=c("ha", "kmsq"), starts, method=BFGS,
     control=list(), ...)}
 \description{Fit the hierarchical distance sampling model}
@@ -75,52 +74,45 @@ data(linetran)
 lengths <- linetran$Length
 
 ltUMF <- with(linetran, {
-unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4), 
-siteCovs = data.frame(Length, area, habitat))
+unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
+siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
+tlength = lengths*1000, survey = "line", unitsIn = "m")
 })
 
 # Half-normal detection function. Density output. No covariates. 
 # lineDat$Length is transect lengths in km, so it has to be converted.
-(fm1 <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-tlength=lengths*1000, survey="line", unitsIn="m"))
+(fm1 <- distsamp(~ 1 ~ 1, ltUMF))
 
 coef(fm1, type="det", altNames=TRUE)
 backTransform(fm1, whichEstimate="det")
 vcov(fm1, altNames=TRUE)
-predict(fm1, type="state")
+confint(fm1, type = "state")
+predict(fm1, type = "state")
 
 # Half-normal. Abundance output. No covariates. Note that transect length
 # must be accounted for so abundance is animals per km of transect.
-(fm2 <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-tlength=lengths*1000, output="abund", survey="line", unitsIn="m", 
-unitsOut="kmsq"))
+(fm2 <- distsamp(~ 1 ~ 1, ltUMF, output="abund", unitsOut="kmsq"))
 
 # Halfnormal. Covariates affecting both density and and detection.  
 (fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, 
-ltUMF, dist.breaks=dbreaksLine, tlength=lengths*1000, 
-survey="line", unitsIn="m", unitsOut="ha"))
+ltUMF, unitsOut="ha"))
 
 # This won't run without starting values.
 (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1 ~ habitat - 1, ltUMF, 
-dist.breaks=dbreaksLine, tlength=lengths*1000, survey="line", 
-unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
+dist.breaks=dbreaksLine, unitsOut="ha", starts=c(1,0,0,1,2,2)))
 
-# Negative exponential detection function. This one also needs starting values.
-(fme <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-tlength=lengths*1000, key="exp", survey="line", unitsIn="m", 
-starts=c(0,0)))
+# Negative exponential detection function. This also needs starting values.
+(fme <- distsamp(~ 1 ~ 1, ltUMF, key="exp", starts=c(0,0)))
 
 # Hazard-rate detection function. Density output in hectares.
 # This is real slow, especially for large datasets.
-(fmhz <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-tlength=lengths*1000, keyfun="hazard", survey="line", unitsIn="m"))
+(fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 
 plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 xlab="Distance(m)", ylab="Detection probability")
 
 # Uniform detection function. Density output in hectars.
-(fmu <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-tlength=lengths*1000, key="uniform", survey="line", unitsIn="m"))
+(fmu <- distsamp(~ 1 ~ 1, ltUMF, key="uniform"))
 
 ## Point transect examples
 
@@ -129,14 +121,13 @@ data(pointtran)
 (dbreaksPt <- seq(0, 25, by=5))
 
 ptUMF <- with(pointtran, {
-unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4, dc5), 
-siteCovs = data.frame(area, habitat))
+unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4, dc5), 
+siteCovs = data.frame(area, habitat), 
+dist.breaks = dbreaksPt, survey = "point", unitsIn = "m")
 })
 
 # Half-normal. Output is animals/point. No covariates.
-(fmp1 <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, survey="point", 
-unitsIn="m"))
+(fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
 
 # Negative exponential
-(fmpe <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, key="exp", 
-survey="point", output="density", unitsIn="m"))}
+(fmpe <- distsamp(~ 1 ~ 1, ptUMF, key="exp", output="density"))}
