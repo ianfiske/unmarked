@@ -13,6 +13,6 @@ License: GPL version 2 or newer
 LazyLoad: yes
 LazyData: yes
 Collate: 'classes.R' 'utils.R' 'unmarkedFrame.R' 'unmarkedEstimate.R'
-    'unmarkedFit.R' 'umDistsampFit.R' 'distsamp.R' 'markovMN.R' 'Mh.R'
+    'unmarkedFit.R' 'distsamp.R' 'markovMN.R' 'Mh.R'
     'mnMix.R' 'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
     'unmarkedFitList.R' 'unmarkedLinComb.R' 'unmarked-package.R'
