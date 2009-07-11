@@ -296,8 +296,6 @@ setMethod("hessian", "unmarkedFit",
 		})
 
 
-setMethod
-
 setGeneric("nllFun", function(object) standardGeneric("nllFun"))
 
 #' @export 
