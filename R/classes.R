@@ -26,6 +26,7 @@ setGeneric("coef")
 setGeneric("summary")
 setGeneric("update")
 setGeneric("confint")
+setGeneric("profile")
 
 #' Compute linear combinations of parameters.
 #'
