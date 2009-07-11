@@ -1,6 +1,5 @@
 #' @include unmarkedFit.R
 #' @include unmarkedEstimate.R
-#' @include umDistsampFit.R
 #' @include utils.R
 {}
 
@@ -82,52 +81,45 @@
 #' lengths <- linetran$Length
 #'
 #' ltUMF <- with(linetran, {
-#' 	unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4), 
-#' 		siteCovs = data.frame(Length, area, habitat))
-#' 	})
+#' 		unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
+#' 		siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
+#'		tlength = lengths*1000, survey = "line", unitsIn = "m")
+#' 		})
 #' 
 #' # Half-normal detection function. Density output. No covariates. 
 #' # lineDat$Length is transect lengths in km, so it has to be converted.
-#'  (fm1 <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-#'  		tlength=lengths*1000, survey="line", unitsIn="m"))
+#'  (fm1 <- distsamp(~ 1 ~ 1, ltUMF))
 #' 
 #' coef(fm1, type="det", altNames=TRUE)
 #' backTransform(fm1, whichEstimate="det")
 #' vcov(fm1, altNames=TRUE)
-#' predict(fm1, type="state")
+#' confint(fm1, type = "state")
+#' predict(fm1, type = "state")
 #' 
 #' # Half-normal. Abundance output. No covariates. Note that transect length
 #' # must be accounted for so abundance is animals per km of transect.
-#' (fm2 <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-#' 		tlength=lengths*1000, output="abund", survey="line", unitsIn="m", 
-#' 		unitsOut="kmsq"))
+#' (fm2 <- distsamp(~ 1 ~ 1, ltUMF, output="abund", unitsOut="kmsq"))
 #' 
 #' # Halfnormal. Covariates affecting both density and and detection.  
 #' (fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, 
-#' 		ltUMF, dist.breaks=dbreaksLine, tlength=lengths*1000, 
-#' 		survey="line", unitsIn="m", unitsOut="ha"))
+#' 		ltUMF, unitsOut="ha"))
 #' 
 #' # This won't run without starting values.
 #' (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1 ~ habitat - 1, ltUMF, 
-#' 		dist.breaks=dbreaksLine, tlength=lengths*1000, survey="line", 
-#' 		unitsIn="m", unitsOut="ha", starts=c(1,0,0,1,2,2)))
+#' 		dist.breaks=dbreaksLine, unitsOut="ha", starts=c(1,0,0,1,2,2)))
 #' 
-#' # Negative exponential detection function. This one also needs starting values.
-#' (fme <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-#' 		tlength=lengths*1000, key="exp", survey="line", unitsIn="m", 
-#'		starts=c(0,0)))
+#' # Negative exponential detection function. This also needs starting values.
+#' (fme <- distsamp(~ 1 ~ 1, ltUMF, key="exp", starts=c(0,0)))
 #' 
 #' # Hazard-rate detection function. Density output in hectares.
 #' # This is real slow, especially for large datasets.
-#' (fmhz <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-#' 		tlength=lengths*1000, keyfun="hazard", survey="line", unitsIn="m"))
+#' (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 #' 
 #' plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 #' 		xlab="Distance(m)", ylab="Detection probability")
 #' 
 #' # Uniform detection function. Density output in hectars.
-#' (fmu <- distsamp(~ 1 ~ 1, ltUMF, dist.breaks=dbreaksLine, 
-#' 		tlength=lengths*1000, key="uniform", survey="line", unitsIn="m"))
+#' (fmu <- distsamp(~ 1 ~ 1, ltUMF, key="uniform"))
 #'  
 #' ## Point transect examples
 #' 
@@ -136,22 +128,21 @@
 #' (dbreaksPt <- seq(0, 25, by=5))
 #'
 #' ptUMF <- with(pointtran, {
-#' 	unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4, dc5), 
-#' 		siteCovs = data.frame(area, habitat))
-#' 	})
+#' 	unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4, dc5), 
+#' 		siteCovs = data.frame(area, habitat), 
+#'		dist.breaks = dbreaksPt, survey = "point", unitsIn = "m")
+#' 		})
 #' 
 #' # Half-normal. Output is animals/point. No covariates.
-#' (fmp1 <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, survey="point", 
-#' 		unitsIn="m"))
+#' (fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
 #' 
 #' # Negative exponential
-#' (fmpe <- distsamp(~ 1 ~ 1, ptUMF, dist.breaks=dbreaksPt, key="exp", 
-#' 		survey="point", output="density", unitsIn="m"))
+#' (fmpe <- distsamp(~ 1 ~ 1, ptUMF, key="exp", output="density"))
 #' 
 #' @export
 #' @keywords models
-distsamp <- function(formula, data, dist.breaks, tlength=NULL, 
-	keyfun=c("halfnorm", "exp", "hazard", "uniform"), survey, 
+distsamp <- function(formula, data, 
+	keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
 	output=c("density", "abund"), unitsIn, unitsOut=c("ha", "kmsq"), 
 	starts=NULL, method="BFGS", control=list(), ...)
 {
@@ -160,8 +151,12 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 	unitsOut <- match.arg(unitsOut)
 	umf <- switch(class(data),
 		data.frame = as(data, "unmarkedFrame"),
-		unmarkedFrame = data,
+		unmarkedFrameDS = data,
 		stop("Data is not a data frame or unmarkedFrame."))
+	dist.breaks <- umf@dist.breaks
+	tlength <- umf@tlength
+	survey <- umf@survey
+	unitsIn <- umf@unitsIn
 	obsToY(umf) <- matrix(1, 1, ncol(y(umf)))
 	designMats <- getDesign2(formula, umf)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
@@ -172,10 +167,6 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 	nAP <- length(lamParms)
 	nDP <- length(detParms)
 	nP <- nAP + nDP
-	if(J != length(dist.breaks) - 1)
-		stop("ncol(response matrix) must equal length(dist.breaks)-1")
-	if(dist.breaks[1] != 0)
-		stop("dist.breaks[1] must be 0")
 	switch(unitsIn, 
 		km = conv <- 1,
 		m = conv <- 1000)
@@ -184,78 +175,75 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 		a <- calcAreas(dist.breaks, tlength, output, survey, unitsIn, unitsOut)	
 	if(is.null(tlength)) 
 		tlength <- numeric(0)
-	
-	## create nll
 	switch(keyfun,
-			halfnorm = { 
-				altdetParms <- paste("sigma", colnames(V), sep="")
-				if(is.null(starts)) {
-					starts <- c(rep(0, nAP), log(max(dist.breaks)), rep(0, nDP-1))
-					names(starts) <- c(lamParms, detParms)
-				} else {
-					if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
+		halfnorm = { 
+			altdetParms <- paste("sigma", colnames(V), sep="")
+			if(is.null(starts)) {
+				starts <- c(rep(0, nAP), log(max(dist.breaks)), rep(0, nDP-1))
+				names(starts) <- c(lamParms, detParms)
+			} else {
+				if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
 				}
 				if(!all(names(starts) %in% c(lamParms, detParms)))
 					stop("names(starts) does not agree with necessary model parameters")
 				nll <- function(params) {
 					ll.halfnorm(params, Y=y, X=X, V=V, J=J, a=a, 
-							d=dist.breaks, nAP=nAP, nP=nP, survey=survey)
+						d=dist.breaks, nAP=nAP, nP=nP, survey=survey)
 				}
-			},
-			exp = { 
-				altdetParms <- paste("rate", colnames(V), sep="")
-				if(is.null(starts)) {
-					starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-1))
+		},
+		exp = { 
+			altdetParms <- paste("rate", colnames(V), sep="")
+			if(is.null(starts)) {
+				starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-1))
+				names(starts) <- c(lamParms, detParms)
+			} else {
+				if(is.null(names(starts)))
 					names(starts) <- c(lamParms, detParms)
-				} else {
-					if(is.null(names(starts)))
-						names(starts) <- c(lamParms, detParms)
-				}
-				if(!all(names(starts) %in% c(lamParms, detParms)))
-					stop("names(starts) does not agree with necessary model parameters")
-				nll <- function(params) {
-					ll.exp(params,  Y=y, X=X, V=V, J=J, d=dist.breaks, 
+			}
+			if(!all(names(starts) %in% c(lamParms, detParms)))
+				stop("names(starts) does not agree with necessary model parameters")
+			nll <- function(params) {
+				ll.exp(params,  Y=y, X=X, V=V, J=J, d=dist.breaks, 
+					a=a, nAP=nAP, nP=nP, survey=survey)
+			}
+		},
+		hazard = {	
+			detParms <- c(detParms, "scale")
+			nDP <- length(detParms)
+			nP <- nAP + nDP
+			altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
+			if(is.null(starts)) {
+				starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-2), 1)
+				names(starts) <- c(lamParms, detParms)
+			} else {
+				if(is.null(names(starts)))
+					names(starts) <- c(lamParms, detParms)
+			}
+			if(!all(names(starts) %in% c(lamParms, detParms)))
+				stop("names(starts) does not agree with necessary model parameters")
+			nll <- function(params) {
+				ll.hazard(params, Y=y, X=X, V=V, J=J, d=dist.breaks, 
 						a=a, nAP=nAP, nP=nP, survey=survey)
-				}
-			},
-			hazard = {	
-				detParms <- c(detParms, "scale")
-				nDP <- length(detParms)
-				nP <- nAP + nDP
-				altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
-				if(is.null(starts)) {
-					starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-2), 1)
-					names(starts) <- c(lamParms, detParms)
-				} else {
-					if(is.null(names(starts)))
-						names(starts) <- c(lamParms, detParms)
-				}
-				if(!all(names(starts) %in% c(lamParms, detParms)))
-					stop("names(starts) does not agree with necessary model parameters")
-				nll <- function(params) {
-					ll.hazard(params, Y=y, X=X, V=V, J=J, d=dist.breaks, 
-							a=a, nAP=nAP, nP=nP, survey=survey)
-				}
-			}, 
-			uniform = {
-				detParms <- character(0)
-				altdetParms <- character(0)
-				nDP <- 0	
-				if(is.null(starts)) {
-					starts <- rep(0, length(lamParms))
+			}
+		}, 
+		uniform = {
+			detParms <- character(0)
+			altdetParms <- character(0)
+			nDP <- 0	
+			if(is.null(starts)) {
+				starts <- rep(0, length(lamParms))
+				names(starts) <- lamParms
+			} else {
+				if(is.null(names(starts)))
 					names(starts) <- lamParms
-				} else {
-					if(is.null(names(starts)))
-						names(starts) <- lamParms
-				}
-				if(!all(names(starts) %in% lamParms))
-					stop("names(starts) does not agree with necessary model parameters")
-				nll <- function(params) {
-					ll.uniform(params, Y=y, X=X, V=V, J=J, a=a)
-				}
-			})
-	fm <- optim(starts, nll, method=method, hessian=T, control=control)
-
+			}
+			if(!all(names(starts) %in% lamParms))
+				stop("names(starts) does not agree with necessary model parameters")
+			nll <- function(params) {
+				ll.uniform(params, Y=y, X=X, V=V, J=J, a=a)
+			}
+		})
+	fm <- optim(starts, nll, method=method, hessian=TRUE, control=control)
 	opt <- fm
 	ests <- fm$par
 	estsAP <- ests[1:nAP]
@@ -280,8 +268,7 @@ distsamp <- function(formula, data, dist.breaks, tlength=NULL,
 	} else {
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
-
-	dsfit <- new("umDistsampFit", fitType = "distsamp", call = match.call(), 
+	dsfit <- new("unmarkedFitDS", fitType = "distsamp", call = match.call(), 
 		opt = opt, formula = formula, data = umf, keyfun=keyfun, 
 		dist.breaks=dist.breaks, tlength=tlength, area=a, survey=survey, 
 		unitsIn=unitsIn, unitsOut=unitsOut, estimates = estimateList, 

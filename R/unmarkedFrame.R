@@ -216,6 +216,41 @@ setClass("unmarkedMultFrame",
 		representation(numPrimary = "numeric"),
 		contains="unmarkedFrame")
 
+## a class for distance sampling data
+#' exportClass unmarkedFrameDS 
+setClass("unmarkedFrameDS", 
+	representation(
+		dist.breaks = "numeric",
+		tlength = "numeric",
+		survey = "character",
+		unitsIn = "character"),
+	contains = "unmarkedFrame",
+	validity = function(object) 
+		{
+			J <- numY(object)
+			db <- object@dist.breaks
+			if(J == length(db) - 1 && db[1] == 0) TRUE
+			else "ncol(y) must equal length(dist.breaks)-1 and 
+				dist.breaks[1] must equal 0"
+		})
+
+# Constructor
+#' @export unmarkedFrameDS
+unmarkedFrameDS <- function(y, siteCovs = NULL, obsCovs = NULL, 
+	dist.breaks, tlength, survey, unitsIn, obsToY)
+	{
+		if(missing(obsToY)) obsToY <- NULL
+		if(missing(tlength) & survey == "point")
+			tlength <- as.numeric(rep(NA, nrow(y)))
+  		umfds <- new("unmarkedFrameDS", y = y, obsCovs = obsCovs,
+      		siteCovs = siteCovs, dist.breaks = dist.breaks, tlength = tlength,
+			survey = survey, unitsIn = unitsIn, obsToY = obsToY)
+  		return(umfds)
+	}
+
+
+
+
 # i is the vector of sites to extract
 setMethod("[", c("unmarkedFrame","numeric"),
 		function(x, i) {  
