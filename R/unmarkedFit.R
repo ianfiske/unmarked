@@ -320,12 +320,6 @@ setMethod("plot", c("profile", "missing"),
 
 ## Distance sampling child class
 
-
-
-#' @include unmarkedFit.R
-{}
-
-
 #' @exportClass unmarkedFitDS
 setClass("unmarkedFitDS",
 		representation(
