@@ -2,9 +2,8 @@
 \alias{distsamp}
 \title{Fit the hierarchical distance sampling model...}
 \usage{distsamp(formula, data, keyfun=c("halfnorm", "exp", "hazard",
-    "uniform"), output=c("density", "abund"), unitsIn,
-    unitsOut=c("ha", "kmsq"), starts, method=BFGS,
-    control=list(), ...)}
+    "uniform"), output=c("density", "abund"), unitsOut=c("ha",
+    "kmsq"), starts, method=BFGS, control=list(), ...)}
 \description{Fit the hierarchical distance sampling model}
 \details{This functions fits the Royle et al. (2004) multinomial mixture model to 
 line or point transect data recorded in discrete distance intervals.
@@ -27,39 +26,28 @@ negative exponential, or hazard rate.
 
 Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors 
 affected by transect-specific covariates using the log link.}
-\note{The response matrix contains the counts of objects at each transect in each 
-distance interval. These distance intervals must correspond to the distance 
-break points vector dist.breaks. One must not change dist.breaks without also 
-changing the response matrix (and vice versa). 
-
-Currently, transect-level abundance is assumed to be Poisson distributed 
+\note{Currently, transect-level abundance is assumed to be Poisson distributed 
 though other distributions such as the negative binomial may be added. 
 Goodness-of-fit can be assessed using the \code{\link{parboot}} function.}
-\value{umDistsampFit object (child class of \link{unmarkedFit}) describing the 
+\value{unmarkedFitDS object (child class of \link{unmarkedFit}) describing the 
 model fit. Parameter estimates are displayed on the log-scale. 
 Back-transformation can be achieved via the \link{predict} or 
 \link{backTransform} methods.}
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 \references{Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
-\seealso{\code{\link{umDistsampFit}} \code{\link{unmarkedFitList}}}
+\seealso{\code{\link{unmarkedFitDS}} \code{\link{unmarkedFitList}} 
+\code{\link{parboot}}}
 \keyword{models}
-\arguments{\item{stateformula}{Right-hand or 2-sided side formula describing covariates 
-of abundance or density. See examples for how to specify the response matrix 
-in the stateformula when data is a data.frame.}
-\item{detformula}{Right-hand side formula describing covariates of detection.}
-\item{data}{data.frame or unmarkedFrame containing response and predictor 
-variables. The dimensions of the response matrix must be M x J, where M is 
-the number of transects and J is the number of distance intervals in which 
-observation were recorded.}
-\item{dist.breaks}{Numeric vector defining the distance intervals 
-(in meters or km) in which observations were recorded.}
-\item{tlength}{Numeric vector of transect lengths in meters or km.}
+\arguments{\item{formula}{'Two-level' right-hand formula describing state-level
+covariates followed by detection covariates. ~1 ~1 would be a null model.}
+\item{data}{object of class unmarkedFrameDS, containing response matrix, 
+covariates, distance interval cut points, survey type ("line" or "point"), 
+transect lengths (for survey = "line"), and units ("m" or "km") for cut 
+points and transect lengths. See example for set up.}
 \item{keyfun}{One of the following detection functions: 
 "halfnorm", "hazard", "exp", or "uniform." See details.}
-\item{survey}{Either "line" or "point" transect.}
 \item{output}{Model either "density" or "abund"}
-\item{unitsIn}{Either "m" or "km" for BOTH dist.breaks and tlength}
 \item{unitsOut}{Units of density. Either "ha" or "kmsq" for hectares and 
 square kilometers, respectively.}
 \item{starts}{Vector of starting values for parameters.}

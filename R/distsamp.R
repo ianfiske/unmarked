@@ -27,39 +27,29 @@
 #'
 #' Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors 
 #' affected by transect-specific covariates using the log link.
+#'
 #' @note 
-#' The response matrix contains the counts of objects at each transect in each 
-#' distance interval. These distance intervals must correspond to the distance 
-#' break points vector dist.breaks. One must not change dist.breaks without also 
-#' changing the response matrix (and vice versa). 
 #'
 #' Currently, transect-level abundance is assumed to be Poisson distributed 
 #' though other distributions such as the negative binomial may be added. 
 #' Goodness-of-fit can be assessed using the \code{\link{parboot}} function.  
 #'
-#' @param stateformula Right-hand or 2-sided side formula describing covariates 
-#' of abundance or density. See examples for how to specify the response matrix 
-#' in the stateformula when data is a data.frame.
-#' @param detformula Right-hand side formula describing covariates of detection.
-#' @param data data.frame or unmarkedFrame containing response and predictor 
-#' variables. The dimensions of the response matrix must be M x J, where M is 
-#' the number of transects and J is the number of distance intervals in which 
-#' observation were recorded.
-#' @param dist.breaks Numeric vector defining the distance intervals 
-#' (in meters or km) in which observations were recorded.
-#' @param tlength Numeric vector of transect lengths in meters or km.
+#' @param formula 'Two-level' right-hand formula describing state-level
+#' covariates followed by detection covariates. ~1 ~1 would be a null model.
+#' @param data object of class unmarkedFrameDS, containing response matrix, 
+#' covariates, distance interval cut points, survey type ("line" or "point"), 
+#' transect lengths (for survey = "line"), and units ("m" or "km") for cut 
+#' points and transect lengths. See example for set up.
 #' @param keyfun One of the following detection functions: 
 #' "halfnorm", "hazard", "exp", or "uniform." See details.
-#' @param survey Either "line" or "point" transect.
 #' @param output Model either "density" or "abund" 
-#' @param unitsIn Either "m" or "km" for BOTH dist.breaks and tlength
 #' @param unitsOut Units of density. Either "ha" or "kmsq" for hectares and 
 #' square kilometers, respectively.
 #' @param starts Vector of starting values for parameters.
 #' @param method Optimization method used by \code{\link{optim}}.
 #' @param control Other arguments passed to \code{\link{optim}}.
 #'
-#' @return umDistsampFit object (child class of \link{unmarkedFit}) describing the 
+#' @return unmarkedFitDS object (child class of \link{unmarkedFit}) describing the 
 #' model fit. Parameter estimates are displayed on the log-scale. 
 #' Back-transformation can be achieved via the \link{predict} or 
 #' \link{backTransform} methods.
@@ -69,7 +59,8 @@
 #' @references Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 #' abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
 #'
-#' @seealso \code{\link{umDistsampFit}} \code{\link{unmarkedFitList}}
+#' @seealso \code{\link{unmarkedFitDS}} \code{\link{unmarkedFitList}} 
+#' \code{\link{parboot}}
 #'
 #' @examples
 #' ## Line transect examples
@@ -143,22 +134,24 @@
 #' @keywords models
 distsamp <- function(formula, data, 
 	keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
-	output=c("density", "abund"), unitsIn, unitsOut=c("ha", "kmsq"), 
+	output=c("density", "abund"), unitsOut=c("ha", "kmsq"), 
 	starts=NULL, method="BFGS", control=list(), ...)
 {
 	keyfun <- match.arg(keyfun)
 	output <- match.arg(output)
 	unitsOut <- match.arg(unitsOut)
-	umf <- switch(class(data),
-		data.frame = as(data, "unmarkedFrame"),
-		unmarkedFrameDS = data,
-		stop("Data is not a data frame or unmarkedFrame."))
-	dist.breaks <- umf@dist.breaks
-	tlength <- umf@tlength
-	survey <- umf@survey
-	unitsIn <- umf@unitsIn
-	obsToY(umf) <- matrix(1, 1, ncol(y(umf)))
-	designMats <- getDesign2(formula, umf)
+	dist.breaks <- data@dist.breaks
+	tlength <- data@tlength
+	survey <- data@survey
+	unitsIn <- data@unitsIn
+	a <- data@distClassAreas
+	if(all(is.na(a)))
+		a <- calcAreas(dist.breaks = dist.breaks, tlength = tlength, 
+			output = output, survey = survey, unitsIn = unitsIn)
+	a <- c(t(a))
+	if(survey=="line" & unitsOut=="ha") 
+		a <- a * 100
+	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	M <- nrow(y)
 	J <- ncol(y)
@@ -167,14 +160,6 @@ distsamp <- function(formula, data,
 	nAP <- length(lamParms)
 	nDP <- length(detParms)
 	nP <- nAP + nDP
-	switch(unitsIn, 
-		km = conv <- 1,
-		m = conv <- 1000)
-	a <- obsCovs(umf)$dcArea
-	if(is.null(a))
-		a <- calcAreas(dist.breaks, tlength, output, survey, unitsIn, unitsOut)	
-	if(is.null(tlength)) 
-		tlength <- numeric(0)
 	switch(keyfun,
 		halfnorm = { 
 			altdetParms <- paste("sigma", colnames(V), sep="")
@@ -269,7 +254,7 @@ distsamp <- function(formula, data,
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
 	dsfit <- new("unmarkedFitDS", fitType = "distsamp", call = match.call(), 
-		opt = opt, formula = formula, data = umf, keyfun=keyfun, 
+		opt = opt, formula = formula, data = data, keyfun=keyfun, 
 		dist.breaks=dist.breaks, tlength=tlength, area=a, survey=survey, 
 		unitsIn=unitsIn, unitsOut=unitsOut, estimates = estimateList, 
 		AIC = fmAIC, negLogLike = fm$value, nllFun = nll)
@@ -439,30 +424,38 @@ ll.uniform <- function(param, Y, X, V, J, a)
 }
 
 
-calcAreas <- function(dist.breaks, tlength, output, survey, unitsIn, unitsOut)
+ 
+calcAreas <- function(dist.breaks, tlength, output, survey, unitsIn)
 {
-	switch(unitsIn, 
-		km = conv <- 1,
-		m = conv <- 1000)
-    J <- length(dist.breaks)-1
-	switch(output, 
-		density =  {
-			switch(survey, 
-				line = {
-					stripwidths <- (((dist.breaks*2)[-1] - (dist.breaks*2)[-(J+1)])) / conv
-					tl <- tlength / conv
-					a <- rep(tl, each=J) * stripwidths		# km^2
-					},
-				point = {
-					W <- max(dist.breaks) / conv
-					a <- pi * W^2							# km^2
-					})
-			if(unitsOut=="ha") a <- a * 100
-			},
-		abund = {
-			switch(survey, 
-				line = a <- tlength / conv, # transect length must be accounted for
-				point = a <- 1)
-			})
-	return(a)
+switch(unitsIn, 
+	km = conv <- 1,
+	m = conv <- 1000)
+J <- length(dist.breaks)-1
+switch(output, 
+	density =  {
+		switch(survey, 
+			line = {
+				stripwidths <- (((dist.breaks*2)[-1] - 
+					(dist.breaks*2)[-(J+1)])) / conv
+				tl <- tlength / conv
+				a <- rep(tl, each=J) * stripwidths				# km^2
+				a <- matrix(a, ncol=J, byrow=TRUE)
+				},
+			point = {
+				W <- max(dist.breaks) / conv
+				a <- as.matrix(pi * W^2)						# km^2
+				})
+		},
+	abund = {
+		switch(survey, 
+			line = a <- cbind(tlength / conv), # must accounted for tran. length
+			point = a <- as.matrix(1))
+		})
+return(a)
 }
+
+# db <- c(0, 1, 3, 7); tl = 1:6
+# calcAreas(db, tl, "density", "line", "km")
+# calcAreas(db, tl, "density", "point", "km")
+# calcAreas(db, tl, "abund", "point", "km")
+# calcAreas(db, tl, "abund", "line", "km")

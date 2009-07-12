@@ -21,9 +21,9 @@ setClass("unmarkedFitList",
 #' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
 #' 	obsCovs = mallard.obs)
 #' 
-#' fm1 <- pcount(~ length, ~ ivel, mallardUMF)
-#' fm2 <- pcount(~ length, ~ 1, mallardUMF)
-#' fm3 <- pcount(~ 1, ~ 1, mallardUMF)
+#' fm1 <- pcount(~ length ~ ivel, mallardUMF)
+#' fm2 <- pcount(~ length ~ 1, mallardUMF)
+#' fm3 <- pcount(~ 1 ~ 1, mallardUMF)
 #' 
 #' # Create an unmarkedFitList with a named list of models
 #' fmList <- unmarkedFitList(fitList=list(Global=fm1, Length.=fm2, Null=fm3))
@@ -140,20 +140,19 @@ seNames <- paste("SE", eNames, sep="")
 eseNames <- character(l <- length(c(eNames, seNames)))
 eseNames[seq(1, l, by=2)] <- eNames
 eseNames[seq(2, l, by=2)] <- seNames
-cNames <- c("stateformula", "detformula", eseNames)
+cNames <- c("formula", eseNames)
 out <- data.frame(matrix(NA, ncol=length(cNames), nrow=length(fits)))
 rownames(out) <- names(fits)
 colnames(out) <- cNames
 eMat <- seMat <- matrix(NA, length(fits), length(eNames), 
    dimnames=list(names(fits), eNames))
-out$stateformula <- sapply(fits, function(x) deparse(x@stateformula))
-out$detformula <- sapply(fits, function(x) deparse(x@detformula))
+out$formula <- sapply(fits, function(x) deparse(x@formula))
 for(i in 1:length(eNames)) {
 	eMat[,eNames[i]] <- out[,eNames[i]] <- sapply(estList, function(x) x[eNames[i]])
 	seMat[,eNames[i]] <- out[,seNames[i]] <- sapply(seList, function(x) x[eNames[i]])
 	}
-#out$Converge <- sapply(fits, function(x) x@optout$convergence)
-#out$CondNum <- sapply(fits, cn)
+out$Converge <- sapply(fits, function(x) x@opt$convergence)
+out$CondNum <- sapply(fits, function(x) cn(x))
 out$negLogLike <- sapply(fits, function(x) x@negLogLike)
 out$K <- sapply(fits, function(x) length(coef(x)))
 out$n <- sapply(fits, function(x) nrow(x@data@y))

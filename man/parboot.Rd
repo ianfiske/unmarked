@@ -12,7 +12,7 @@
 lengths <- linetran$Length
 
 ltUMF <- with(linetran, {
-unmarkedFrame(y = cbind(dc1, dc2, dc3, dc4), 
+unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
 siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
 tlength = lengths*1000, survey = "line", unitsIn = "m")
 })

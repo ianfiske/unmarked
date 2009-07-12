@@ -216,6 +216,8 @@ setClass("unmarkedMultFrame",
 		representation(numPrimary = "numeric"),
 		contains="unmarkedFrame")
 
+
+
 ## a class for distance sampling data
 #' exportClass unmarkedFrameDS 
 setClass("unmarkedFrameDS", 
@@ -223,7 +225,8 @@ setClass("unmarkedFrameDS",
 		dist.breaks = "numeric",
 		tlength = "numeric",
 		survey = "character",
-		unitsIn = "character"),
+		unitsIn = "character", 
+		distClassAreas = "matrix"),
 	contains = "unmarkedFrame",
 	validity = function(object) 
 		{
@@ -236,15 +239,17 @@ setClass("unmarkedFrameDS",
 
 # Constructor
 #' @export unmarkedFrameDS
-unmarkedFrameDS <- function(y, siteCovs = NULL, obsCovs = NULL, 
-	dist.breaks, tlength, survey, unitsIn, obsToY)
+unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
+	unitsIn, distClassAreas = NULL)
 	{
-		if(missing(obsToY)) obsToY <- NULL
+		if(is.null(distClassAreas))
+			distClassAreas <- matrix(NA)
 		if(missing(tlength) & survey == "point")
-			tlength <- as.numeric(rep(NA, nrow(y)))
-  		umfds <- new("unmarkedFrameDS", y = y, obsCovs = obsCovs,
+			tlength <- numeric(0)
+  		umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
       		siteCovs = siteCovs, dist.breaks = dist.breaks, tlength = tlength,
-			survey = survey, unitsIn = unitsIn, obsToY = obsToY)
+			survey = survey, unitsIn = unitsIn, distClassAreas = distClassAreas,
+			obsToY = matrix(1, 1, ncol(y)))
   		return(umfds)
 	}
 
