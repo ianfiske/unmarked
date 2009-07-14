@@ -84,7 +84,9 @@ function(formula, data, K, mixture = c("P", "NB"))
   y.ijk <- rep(y.ij, each = K + 1)
   navec <- is.na(y.ijk)
   nd <- ifelse(rowSums(y, na.rm=TRUE) == 0, 1, 0) # I(no detection at site i)
-
+	ijk <- expand.grid(k = 0:K, j = 1:J, i = 1:M)
+	ijk.to.ikj <- with(ijk, order(i, k, j)) 
+			
   nll <- function(parms){
 
     theta.i <- exp(X %*% parms[1 : nAP])
@@ -94,7 +96,7 @@ function(formula, data, K, mixture = c("P", "NB"))
 
     bin.ijk <- dbinom(y.ijk,k.ijk,p.ijk)
     bin.ijk[which(is.na(bin.ijk))] <- 1
-    bin.ik.mat <- matrix(bin.ijk, M * (K + 1), J)
+    bin.ik.mat <- matrix(bin.ijk[ijk.to.ikj], M * (K + 1), J, byrow = TRUE)
     g.ik <- rowProds(bin.ik.mat)
 
     if(identical(mixture,"P")) {
