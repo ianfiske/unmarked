@@ -1,6 +1,8 @@
 #' @include classes.R
 {}
 
+############# VALIDATION FUNCTIONS #############################################
+
 validunmarkedFrame <- function(object) {
   errors <- character(0)
   M <- nrow(object@y)
@@ -15,6 +17,8 @@ validunmarkedFrame <- function(object) {
   else
     errors
 }
+
+############ DATA CLASSES #########################################################
 
 ## not used in roxygen currently.
 # @slot y A matrix of the observed measured data.
@@ -32,6 +36,50 @@ setClass("unmarkedFrame",
         siteCovs = "optionalDataFrame",
         obsToY = "optionalMatrix"),
     validity = validunmarkedFrame)
+
+
+
+## a class for multi-season data
+setClass("unmarkedMultFrame",
+		representation(numPrimary = "numeric"),
+		contains="unmarkedFrame")
+
+
+
+## a class for distance sampling data
+#' @exportClass unmarkedFrameDS 
+setClass("unmarkedFrameDS", 
+		representation(
+				dist.breaks = "numeric",
+				tlength = "numeric",
+				survey = "character",
+				unitsIn = "character", 
+				distClassAreas = "matrix"),
+		contains = "unmarkedFrame",
+		validity = function(object) 
+		{
+			J <- numY(object)
+			db <- object@dist.breaks
+			if(J == length(db) - 1 && db[1] == 0) TRUE
+			else "ncol(y) must equal length(dist.breaks)-1 and 
+						dist.breaks[1] must equal 0"
+		})
+
+#' @export
+setClass("unmarkedFrameOccu",
+		contains = "unmarkedFrame")
+
+#' @export
+setClass("unmarkedFramePCount",
+		contains = "unmarkedFrame")
+
+#' @export
+setClass("unmarkedFrameMPois",
+		representation(samplingMethod = "character",
+				piFun = "function"),
+		contains = "unmarkedFrame")
+
+################### CONSTRUCTORS ##########################################################
 
 #' Constructor for unmarkedFrames.
 #'
@@ -94,6 +142,54 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
   return(umf)
 }
 
+
+# Constructor
+#' @export unmarkedFrameDS
+unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
+		unitsIn, distClassAreas = NULL)
+{
+	if(is.null(distClassAreas))
+		distClassAreas <- matrix(NA)
+	if(missing(tlength) & survey == "point")
+		tlength <- numeric(0)
+	umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
+			siteCovs = siteCovs, dist.breaks = dist.breaks, tlength = tlength,
+			survey = survey, unitsIn = unitsIn, distClassAreas = distClassAreas,
+			obsToY = matrix(1, 1, ncol(y)))
+	return(umfds)
+}
+
+
+#' @export
+unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL) {
+	J <- ncol(y)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+	umf <- as(umf, "unmarkedFrameOccu")
+	umf
+}
+
+
+#' @export
+unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL) {
+	J <- ncol(y)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+	umf <- as(umf, "unmarkedFramePCount")
+	umf
+}
+
+
+#' @export
+unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, piFun) {
+	if(missing(obsToY)) stop("obsToY is required for multinomial-Poisson data.")
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY)
+	umf <- as(umf, "unmarkedFrameMPois")
+	umf@piFun <- piFun
+	umf@samplingMethod <- as.character(quote(piFun))
+	umf
+}
+
+################ SHOW METHODS ###########################################################
+
 #' @export
 setMethod("show", "unmarkedFrame",
 		function(object) {
@@ -117,14 +213,18 @@ setMethod("show", "unmarkedFrame",
 			print(df)
 		})
 
+############################ EXTRACTORS #########################################################
+
 #' Extractor for site level covariates
 #' @param umf an unmarkedFrame
 #' @return a data frame containing the site level covariates.
 #' @export
-siteCovs <- function(umf) {
-  return(umf@siteCovs)
-}
+setGeneric("siteCovs", function(object,...) standardGeneric("siteCovs"))
 
+setMethod("siteCovs", "unmarkedFrame",
+		function(object) {
+			return(object@siteCovs)
+		})
 
 #
 ##' Extractor for observation level covariates
@@ -133,9 +233,9 @@ siteCovs <- function(umf) {
 ##'  or a list of M x obsNum matrices (matrices = TRUE).
 ##' @return either a data frame (default) or a list of matrices (if matrices = TRUE).
 
+#' @export
 setGeneric("obsCovs", function(object,...) standardGeneric("obsCovs"))
 
-#' @export
 setMethod("obsCovs", "unmarkedFrame", 
 		function(object, matrices = FALSE) {
 			M <- numSites(object)
@@ -151,6 +251,42 @@ setMethod("obsCovs", "unmarkedFrame",
 			}
 			return(value)
 		})
+
+#' @export 
+setGeneric("obsNum", function(object) standardGeneric("obsNum"))
+
+setMethod("obsNum", "unmarkedFrame", function(object) nrow(object@obsToY))
+
+#' @export 
+setGeneric("numSites", function(object) standardGeneric("numSites"))
+
+setMethod("numSites", "unmarkedFrame", function(object) nrow(object@y))
+
+#' @export 
+setGeneric("numY", function(object) standardGeneric("numY"))
+
+setMethod("numY", "unmarkedFrame", function(object) ncol(object@y))
+
+#' @export 
+setGeneric("obsToY", function(object) standardGeneric("obsToY"))
+
+setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
+
+#' @export 
+setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
+
+setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
+			object@obsToY <- value
+			object
+		})
+
+#' @export
+setGeneric("y", function(object) standardGeneric("y"))
+
+setMethod("y", "unmarkedFrame", function(object) object@y)
+
+
+################################### SUMMARY METHODS #############################################
 
 #' @export
 setMethod("summary","unmarkedFrame",
@@ -172,130 +308,20 @@ setMethod("summary","unmarkedFrame",
       }
     })
 
-setGeneric("obsNum", function(object) standardGeneric("obsNum"))
-
-#' @export 
-setMethod("obsNum", "unmarkedFrame", function(object) nrow(object@obsToY))
-
-setGeneric("numSites", function(object) standardGeneric("numSites"))
-
-#' @export 
-setMethod("numSites", "unmarkedFrame", function(object) nrow(object@y))
-
-setGeneric("numY", function(object) standardGeneric("numY"))
-
-#' @export 
-setMethod("numY", "unmarkedFrame", function(object) ncol(object@y))
-
-setGeneric("obsToY", function(object) standardGeneric("obsToY"))
-
-#' @export 
-setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
-
-setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
-
-#' @export 
-setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
-			object@obsToY <- value
-			object
-		})
-
-setGeneric("y", function(object) standardGeneric("y"))
-
-#' @export
-setMethod("y", "unmarkedFrame", function(object) object@y)
 
 setAs("data.frame", "unmarkedFrame", function(from) {
 			umf <- formatWide(from)
 			umf
 		})
 
-
-## a class for multi-season data
-setClass("unmarkedMultFrame",
-		representation(numPrimary = "numeric"),
-		contains="unmarkedFrame")
-
-
-
-## a class for distance sampling data
-#' @exportClass unmarkedFrameDS 
-setClass("unmarkedFrameDS", 
-	representation(
-		dist.breaks = "numeric",
-		tlength = "numeric",
-		survey = "character",
-		unitsIn = "character", 
-		distClassAreas = "matrix"),
-	contains = "unmarkedFrame",
-	validity = function(object) 
-		{
-			J <- numY(object)
-			db <- object@dist.breaks
-			if(J == length(db) - 1 && db[1] == 0) TRUE
-			else "ncol(y) must equal length(dist.breaks)-1 and 
-				dist.breaks[1] must equal 0"
-		})
-
-# Constructor
-#' @export unmarkedFrameDS
-unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
-	unitsIn, distClassAreas = NULL)
-	{
-		if(is.null(distClassAreas))
-			distClassAreas <- matrix(NA)
-		if(missing(tlength) & survey == "point")
-			tlength <- numeric(0)
-  		umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
-      		siteCovs = siteCovs, dist.breaks = dist.breaks, tlength = tlength,
-			survey = survey, unitsIn = unitsIn, distClassAreas = distClassAreas,
-			obsToY = matrix(1, 1, ncol(y)))
-  		return(umfds)
-	}
-
-#' @export
-setClass("unmarkedFrameOccu",
-		contains = "unmarkedFrame")
-
-#' @export
-unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL) {
-	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
-	umf <- as(umf, "unmarkedFrameOccu")
-	umf
-}
-
-#' @export
-setClass("unmarkedFramePCount",
-		contains = "unmarkedFrame")
-
-#' @export
-unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL) {
-	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
-	umf <- as(umf, "unmarkedFramePCount")
-	umf
-}
-
-#' @export
-setClass("unmarkedFrameMPois",
-		representation(samplingMethod = "character",
-				piFun = "function"),
-		contains = "unmarkedFrame")
-
-#' @export
-unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, piFun) {
-	if(missing(obsToY)) stop("obsToY is required for multinomial-Poisson data.")
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY)
-	umf <- as(umf, "unmarkedFrameMPois")
-	umf@piFun <- piFun
-	umf@samplingMethod <- as.character(quote(piFun))
-	umf
-}
-
+################################# PLOT METHODS ############################################
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
+
+################################# EXTRACTORS ###############################################
+
 # i is the vector of sites to extract
+#' @exportMethod "["
 setMethod("[", c("unmarkedFrame","numeric"),
 		function(x, i, j = "missing", drop = "missing") {  
 			y <- y(x)[i,]
