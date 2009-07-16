@@ -379,7 +379,7 @@ setGeneric("parboot",
 
 
 
-#' @exportClass umParboot
+#' @exportClass parbootDS
 setClass("parbootDS",
     representation(fitType = "character",
         call = "call",

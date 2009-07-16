@@ -7,6 +7,12 @@ setClassUnion("optionalDataFrame", c("data.frame","NULL"))
 #' @exportClass optionalMatrix
 setClassUnion("optionalMatrix", c("matrix","NULL"))
 
+#' @exportClass optionalNumeric
+setClassUnion("optionalNumeric", c("numeric","NULL"))
+
+#' @exportClass optionalCharacter
+setClassUnion("optionalCharacter", c("character","NULL"))
+
 #' Compute standard error of an object.
 #'
 #' @aliases SE-methods SE

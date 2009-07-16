@@ -32,9 +32,12 @@
 #' @author Ian Fiske
 #' @examples
 #' data(frogs)
-#' pferUMF <- unmarkedFrame(pfer.bin)
+#' pferUMF <- unmarkedFrameOccu(pfer.bin)
 #' fm <- occu(~ 1 ~ 1, pferUMF)
 #' fm
+#' data(spatial)
+#' frogUMF <- unmarkedFrameOccu(y, mapInfo = mapInfo(coordinates = coords, projection = "sp_mercator"))
+#' plot(frogUMF)
 #' @keywords models
 #' @export
 occu <-

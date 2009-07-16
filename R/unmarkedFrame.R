@@ -1,4 +1,5 @@
 #' @include classes.R
+#' @include mapInfo.R
 {}
 
 ############# VALIDATION FUNCTIONS #############################################
@@ -34,17 +35,14 @@ setClass("unmarkedFrame",
     representation(y = "matrix",
         obsCovs = "optionalDataFrame",
         siteCovs = "optionalDataFrame",
+				mapInfo = "optionalMapInfo",
         obsToY = "optionalMatrix"),
     validity = validunmarkedFrame)
-
-
 
 ## a class for multi-season data
 setClass("unmarkedMultFrame",
 		representation(numPrimary = "numeric"),
 		contains="unmarkedFrame")
-
-
 
 ## a class for distance sampling data
 #' @exportClass unmarkedFrameDS 
@@ -114,7 +112,7 @@ setClass("unmarkedFrameMPois",
 #' obsCovs(mallardUMF)
 #' obsCovs(mallardUMF, matrices = TRUE)
 #' @export
-unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
+unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
     obsToY) {
 
   if(class(obsCovs) == "list") {
@@ -132,12 +130,11 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
   if(("data.frame" %in% class(y)) |
       ("cast_matrix" %in% class(y))) y <- as.matrix(y)
 
-	## if no obsToY is supplied, assume y <-> obsCov
-	#if(is.null(obsToY)) obsToY <- diag(ncol(y))  assuming the obsToY can be dangerous... keep as NULL if not supplied.
 	if(missing(obsToY)) obsToY <- NULL
+	if(missing(mapInfo)) mapInfo <- NULL
 	
   umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs,
-      siteCovs = siteCovs, obsToY = obsToY)
+      siteCovs = siteCovs, mapInfo = mapInfo, obsToY = obsToY)
 
   return(umf)
 }
@@ -161,27 +158,27 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
 
 
 #' @export
-unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL) {
+unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
 	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo)
 	umf <- as(umf, "unmarkedFrameOccu")
 	umf
 }
 
 
 #' @export
-unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL) {
+unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
 	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo)
 	umf <- as(umf, "unmarkedFramePCount")
 	umf
 }
 
 
 #' @export
-unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, piFun) {
+unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, mapInfo, piFun) {
 	if(missing(obsToY)) stop("obsToY is required for multinomial-Poisson data.")
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY, mapInfo = mapInfo)
 	umf <- as(umf, "unmarkedFrameMPois")
 	umf@piFun <- piFun
 	umf@samplingMethod <- as.character(quote(piFun))
@@ -215,10 +212,10 @@ setMethod("show", "unmarkedFrame",
 
 ############################ EXTRACTORS #########################################################
 
-#' Extractor for site level covariates
-#' @param umf an unmarkedFrame
-#' @return a data frame containing the site level covariates.
-#' @export
+# Extractor for site level covariates
+# @param umf an unmarkedFrame
+# @return a data frame containing the site level covariates.
+#' @exportMethod siteCovs
 setGeneric("siteCovs", function(object,...) standardGeneric("siteCovs"))
 
 setMethod("siteCovs", "unmarkedFrame",
@@ -233,7 +230,7 @@ setMethod("siteCovs", "unmarkedFrame",
 ##'  or a list of M x obsNum matrices (matrices = TRUE).
 ##' @return either a data frame (default) or a list of matrices (if matrices = TRUE).
 
-#' @export
+#' @exportMethod obsCovs
 setGeneric("obsCovs", function(object,...) standardGeneric("obsCovs"))
 
 setMethod("obsCovs", "unmarkedFrame", 
@@ -252,27 +249,27 @@ setMethod("obsCovs", "unmarkedFrame",
 			return(value)
 		})
 
-#' @export 
+#' @exportMethod obsNum
 setGeneric("obsNum", function(object) standardGeneric("obsNum"))
 
 setMethod("obsNum", "unmarkedFrame", function(object) nrow(object@obsToY))
 
-#' @export 
+#' @exportMethod numSites
 setGeneric("numSites", function(object) standardGeneric("numSites"))
 
 setMethod("numSites", "unmarkedFrame", function(object) nrow(object@y))
 
-#' @export 
+#' @exportMethod numY
 setGeneric("numY", function(object) standardGeneric("numY"))
 
 setMethod("numY", "unmarkedFrame", function(object) ncol(object@y))
 
-#' @export 
+#' @exportMethod obsToY
 setGeneric("obsToY", function(object) standardGeneric("obsToY"))
 
 setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
 
-#' @export 
+#' @exportMethod "obsToY<-"
 setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
 
 setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
@@ -280,11 +277,24 @@ setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
 			object
 		})
 
-#' @export
+#' @exportMethod y
 setGeneric("y", function(object) standardGeneric("y"))
 
 setMethod("y", "unmarkedFrame", function(object) object@y)
 
+#' @exportMethod coordinates
+setGeneric("coordinates", function(object) standardGeneric("coordinates"))
+setMethod("coordinates", "unmarkedFrame",
+		function(object) {
+			object@mapInfo@coordinates
+		})
+
+#' @exportMethod projection
+setGeneric("projection", function(object) standardGeneric("projection"))
+setMethod("projection", "unmarkedFrame",
+		function(object) {
+			object@mapInfo@projection
+		})
 
 ################################### SUMMARY METHODS #############################################
 
@@ -309,21 +319,31 @@ setMethod("summary","unmarkedFrame",
     })
 
 
-setAs("data.frame", "unmarkedFrame", function(from) {
-			umf <- formatWide(from)
-			umf
-		})
-
 ################################# PLOT METHODS ############################################
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
+#' @importFrom mapproj mapproject
+#' @importFrom ggplot2 
+#' @export 
+setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
+		function(x) {
+			y <- y(x)
+			## get proportion of visits that were positive
+			y <- rowSums(y, na.rm = TRUE) / rowSums(!is.na(y))
+			siteCovs <- siteCovs(x)
+			coords <- coordinates(x)
+			proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
+					parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
+			qplot(x = proj$x, y = proj$y, size = y)
+		})
 
-################################# EXTRACTORS ###############################################
+
+################################# SELECTORS ###############################################
 
 # i is the vector of sites to extract
 #' @exportMethod "["
-setMethod("[", c("unmarkedFrame","numeric"),
-		function(x, i, j = "missing", drop = "missing") {  
+setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
+		function(x, i) {  
 			y <- y(x)[i,]
 			if (length(i) == 1) {
 				y <- t(y)
@@ -336,5 +356,12 @@ setMethod("[", c("unmarkedFrame","numeric"),
 			umf@y <- y
 			umf@siteCovs <- siteCovs
 			umf@obsCovs <- obsCovs
+			umf
+		})
+
+############################### COERCION ##################################################
+
+setAs("data.frame", "unmarkedFrame", function(from) {
+			umf <- formatWide(from)
 			umf
 		})

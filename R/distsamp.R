@@ -277,18 +277,18 @@ distsamp <- function(formula, data,
 #' @name detFuns
 #' @aliases gxhn gxexp gxhaz grhn grexp grhaz
 #' @usage gxhn(x, sigma) gxexp(x, rate) gxhaz(x, shape, scale) 
-# @usage gxexp(x, rate)
-# @usage gxhaz(x, shape, scale)
-# @usage grhn(r, sigma)
-# @usage grexp(r, rate)
-# @usage grhaz(r, shape, scale)
+#' @usage gxexp(x, rate)
+#' @usage gxhaz(x, shape, scale)
+#' @usage grhn(r, sigma)
+#' @usage grexp(r, rate)
+#' @usage grhaz(r, shape, scale)
 #' @param x Perpendicular distance
 #' @param r Radial distance
 #' @param sigma Shape parameter of half-normal detection function
 #' @param rate Shape parameter of negative-exponential detection function
 #' @param shape Shape parameter of hazard-rate detection function
 #' @param scale Scale parameter of hazard-rate detection function
-#' @export
+#' @export 
 gxhn <- function(x, sigma) exp(-x^2/(2 * sigma^2))
 #' @export
 gxexp <- function(x, rate) exp(-x / rate) 
