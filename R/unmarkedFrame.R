@@ -219,7 +219,7 @@ setClass("unmarkedMultFrame",
 
 
 ## a class for distance sampling data
-#' exportClass unmarkedFrameDS 
+#' @exportClass unmarkedFrameDS 
 setClass("unmarkedFrameDS", 
 	representation(
 		dist.breaks = "numeric",
@@ -253,12 +253,51 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
   		return(umfds)
 	}
 
+#' @export
+setClass("unmarkedFrameOccu",
+		contains = "unmarkedFrame")
 
+#' @export
+unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL) {
+	J <- ncol(y)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+	umf <- as(umf, "unmarkedFrameOccu")
+	umf
+}
 
+#' @export
+setClass("unmarkedFramePCount",
+		contains = "unmarkedFrame")
+
+#' @export
+unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL) {
+	J <- ncol(y)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+	umf <- as(umf, "unmarkedFramePCount")
+	umf
+}
+
+#' @export
+setClass("unmarkedFrameMPois",
+		representation(samplingMethod = "character",
+				piFun = "function"),
+		contains = "unmarkedFrame")
+
+#' @export
+unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, piFun) {
+	if(missing(obsToY)) stop("obsToY is required for multinomial-Poisson data.")
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY)
+	umf <- as(umf, "unmarkedFrameMPois")
+	umf@piFun <- piFun
+	umf@samplingMethod <- as.character(quote(piFun))
+	umf
+}
+
+# TODO:  come up with nice show/summary/plot methods for each of these data types.
 
 # i is the vector of sites to extract
 setMethod("[", c("unmarkedFrame","numeric"),
-		function(x, i) {  
+		function(x, i, j = "missing", drop = "missing") {  
 			y <- y(x)[i,]
 			if (length(i) == 1) {
 				y <- t(y)
@@ -273,12 +312,3 @@ setMethod("[", c("unmarkedFrame","numeric"),
 			umf@obsCovs <- obsCovs
 			umf
 		})
-
-
-
-#setMethod("[", c("unmarkedFrame", "matrix"),
-#		function(x, i) {
-#			x <- x[unique(i[,1])]  # first subset the sites
-#			
-#						
-#		})
