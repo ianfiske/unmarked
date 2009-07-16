@@ -85,7 +85,7 @@ doublePiFun <- function(p){
 #' fm1
 #' @export
 multinomPois <-
-function(formula, piFun, data, obsToY)
+function(formula, piFun, data) # TODO: remove piFun argument here and in examples.
 {
 
 	umf <- switch(class(data),
