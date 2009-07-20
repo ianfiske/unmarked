@@ -337,17 +337,51 @@ setMethod("summary","unmarkedFrame",
 #' @export 
 setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 		function(x) {
+			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFrameOccu object.")
 			y <- getY(x)
-			## get proportion of visits that were positive
-			y <- rowSums(y, na.rm = TRUE) / rowSums(!is.na(y))
+			## get sites w/ at least one pos
+			y <- as.factor(rowSums(y, na.rm = TRUE) > 0)
+			levels(y) <- c("non-detection", "detection")
 			siteCovs <- siteCovs(x)
 			coords <- coordinates(x)
-			proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
-					parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
-			qplot(x = proj$x, y = proj$y, size = y)
+			if(is.null(x@mapInfo@projection)) {
+				proj <- list(x = coords[,1], y = coords[,2])	
+			} else {
+				proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
+						parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
+			}
+			p <- qplot(x = proj$x, y = proj$y, colour = y, xlab = "longitude", ylab = "latitude")
+			if(!is.null(x@mapInfo@projection)) {
+				p + coord_map(project = x@mapInfo@projection)
+			} else {
+				p
+			}
 		})
 
-
+#' @importFrom mapproj mapproject
+#' @importFrom ggplot2 
+#' @export 
+setMethod("plot", c(x="unmarkedFramePCount", y="missing"),
+		function(x) {
+			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFramePCount object.")
+			y <- getY(x)
+			## plot maximums
+			y <- apply(y, 1, max, na.rm = TRUE)
+			siteCovs <- siteCovs(x)
+			coords <- coordinates(x)
+			if(is.null(x@mapInfo@projection)) {
+				proj <- list(x = coords[,1], y = coords[,2])	
+			} else {
+				proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
+					parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
+			}
+			p <- qplot(x = proj$x, y = proj$y, colour = y, xlab = "longitude", ylab = "latitude")
+			if(!is.null(x@mapInfo@projection)) {
+				p + coord_map(project = x@mapInfo@projection)
+			} else {
+				p
+			}
+		})
 ################################# SELECTORS ###############################################
 
 # i is the vector of sites to extract
