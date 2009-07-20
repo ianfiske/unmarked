@@ -40,6 +40,7 @@ setClass("unmarkedFrame",
     validity = validunmarkedFrame)
 
 ## a class for multi-season data
+#' @exportClass unmarkedMultFrame
 setClass("unmarkedMultFrame",
 		representation(numPrimary = "numeric"),
 		contains="unmarkedFrame")
@@ -192,7 +193,7 @@ setMethod("show", "unmarkedFrame",
 		function(object) {
 			obsCovs <- obsCovs(object)
 			siteCovs <- siteCovs(object)
-			y <- y(object)
+			y <- getY(object)
 			colnames(y) <- paste("y",1:ncol(y),sep=".")
 			if(is.null(obsToY(object))) {
 				obsNum <- ncol(y)
@@ -277,10 +278,10 @@ setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
 			object
 		})
 
-#' @exportMethod y
-setGeneric("y", function(object) standardGeneric("y"))
+#' @exportMethod getY
+setGeneric("getY", function(object) standardGeneric("getY"))
 
-setMethod("y", "unmarkedFrame", function(object) object@y)
+setMethod("getY", "unmarkedFrame", function(object) object@y)
 
 #' @exportMethod coordinates
 setGeneric("coordinates", function(object) standardGeneric("coordinates"))
@@ -327,7 +328,7 @@ setMethod("summary","unmarkedFrame",
 #' @export 
 setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 		function(x) {
-			y <- y(x)
+			y <- getY(x)
 			## get proportion of visits that were positive
 			y <- rowSums(y, na.rm = TRUE) / rowSums(!is.na(y))
 			siteCovs <- siteCovs(x)
@@ -344,7 +345,7 @@ setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 #' @exportMethod "["
 setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
 		function(x, i) {  
-			y <- y(x)[i,]
+			y <- getY(x)[i,]
 			if (length(i) == 1) {
 				y <- t(y)
 			}

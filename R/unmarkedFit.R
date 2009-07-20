@@ -510,7 +510,7 @@ switch(key,
 	})
 pvec <- c(p)
 expected <- growlam * a * pvec
-yvec <- c(t(y(simdata)))
+yvec <- c(t(getY(simdata)))
 sqrt.sim <- sqrt(yvec)
 sqrt.model <- sqrt(expected)
 SSEs[i] <- sqrt(sum((sqrt.sim - sqrt.model)^2, na.rm=T))
