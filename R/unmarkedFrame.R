@@ -166,6 +166,15 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
 	umf
 }
 
+#' @export
+unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, mapInfo) {
+	J <- ncol(y)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo)
+	umf <- as(umf, "unmarkedMultFrame")
+	umf@numPrimary <- numPrimary
+	umf
+}
+
 
 #' @export
 unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
