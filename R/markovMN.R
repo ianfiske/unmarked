@@ -31,8 +31,7 @@
 #' which covariates are restricted to have the same effect on a given matrix parameter.
 #'
 #' @title Fit the general multistate multiseason occupancy model.
-#' @param stateformula right-hand side formula describing covariates of occurence.
-#' @param detformula right-hand side formula describing covariates of detection.
+#' @param formula right-hand side formula describing covariates of detection.
 #' @param umf unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..
 #' @param detconstraint matrix to describe constraints on detection parameters
 #' @param phiconstraint vector to describe phi constraints
@@ -47,7 +46,7 @@
 #' @useDynLib unmarked
 #' @export
 umHMM <-
-  function(stateformula = ~ 1, detformula = ~ 1, umf,
+  function(formula = ~ 1, umf,
            detconstraint = NULL,
            phiconstraint = NULL, psiconstraint = NULL,
            phiMat, inits,
@@ -73,7 +72,7 @@ umHMM <-
   ##################################
   ## section determines appropriate default detconstraint...
   ## needs more investigation.
-  nDCP <- length(attr(terms(detformula), "term.labels")) + 1
+  nDCP <- length(attr(terms(formula), "term.labels")) + 1
 #  if(arDet)
 #    nDMP <- K
 #  else
@@ -90,17 +89,19 @@ umHMM <-
   to.rm <- which(apply(detconstraint == 0, 2, all))
   if(length(to.rm) != 0 & length(to.rm) != (ncol(detconstraint) - 1)) {
     detformula.red <- eval(parse(text=paste("~ ",
-                               paste(attr(terms(detformula), "term.labels")[-(to.rm-1)],
+                               paste(attr(terms(formula), "term.labels")[-(to.rm-1)],
                                      collapse="+"))))
   } else if(length(to.rm) == (ncol(detconstraint) - 1)) {
     detformula.red <- ~1
   } else {
-    detformula.red <- detformula
+    detformula.red <- formula
   }
 
-  umf <- handleNA(stateformula, detformula.red, umf)
-  y <- y(umf)
-  J <- numY(umf) / umf@primaryNum
+	# fix state formula to "~1"
+	formula <- as.formula(paste("~",as.character(detformula.red[2]),"~1"))
+  #umf <- handleNA2(formula, umf)
+  y <- getY(umf)
+  J <- numY(umf) / umf@numPrimary
 
   M <- nrow(y)
   nY <- ncol(y)/J
@@ -108,6 +109,7 @@ umHMM <-
 
   fc <- match.call()
   fc[[1]] <- as.name("umHMM.fit")
+	fc$formula <- as.name("formula")
   fc$bootstrap.se <- fc$covdata.site <- fc$covdata.obs <- fc$data <- fc$phiMat <- 
     fc$B <- fc$fit.stats <- NULL
   fc$umf <- as.name("umf")
@@ -157,7 +159,7 @@ umHMM <-
 						cat("Caught failed bootstrap iteration.  Seed =",sd,"\n")
 						cat(bad.boots, "bad boot iterations.\n")
 						next  ## if fit breaks, then re-enter loop
-					})  
+					})
 			
 			if(!(TRUE %in% is.nan(smooth.b[,,b]))) {
 				smooth.b[,,b] <- fm.b$smooth
@@ -211,7 +213,7 @@ umHMM <-
 }
 
 
-umHMM.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
+umHMM.fit <- function(formula = ~ 1, umf,
 		detconstraint = NULL,
 		phiconstraint = NULL, psiconstraint = NULL, J, K, nPhiP.un,
 		inits,
@@ -225,7 +227,7 @@ umHMM.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
 	
 	nY <- ncol(y)/J
 	
-	designMats <- getDesign(stateformula = stateformula, detformula = detformula, umf)
+	designMats <- getDesign2(formula = formula, umf)
 	
 	V.itj <- designMats$V
 	nDCP <- ncol(V.itj)
@@ -606,7 +608,7 @@ umHMM.fit <- function(stateformula = ~ 1, detformula = ~ 1, umf,
 			ss = ss, ess = meanstate(ss), #ess.se = ess.se,
 			smooth = smooth, projected = fm$projected,
 			#arDet = arDet,
-			detform = detformula,
+			detform = formula,
 			psiconstraint = psiconstraint,
 			phiconstraint = phiconstraint,
 			detconstraint = detconstraint,
