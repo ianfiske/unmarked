@@ -398,7 +398,7 @@ function(df.in)
 	obsvars.list <- lapply(obsvars.list, function(x) as.vector(t(x)))
 	obsvars.df <- as.data.frame(obsvars.list)
 	
-	umf <- new("unmarkedMultFrame", y = y, obsCovs = obsvars.df, numPrimary = nY)
+	umf <- unmarkedMultFrame(y = y, obsCovs = obsvars.df, numPrimary = nY)
   return(umf)
 }
 
@@ -681,7 +681,7 @@ handleNA2 <- function(umf, X, V) {
 				x.long == 1
 			})
 	
-	y.long <- as.vector(t(y(umf)))
+	y.long <- as.vector(t(getY(umf)))
 	y.long.na <- is.na(y.long)
 	
 	covs.na <- apply(cbind(X.long.na, V.long.na), 1, any)
