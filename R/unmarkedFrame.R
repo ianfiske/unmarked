@@ -25,7 +25,7 @@ validunmarkedFrame <- function(object) {
 # @slot y A matrix of the observed measured data.
 # @slot obsCovData Dataframe of covariates that vary within sites.
 # @slot siteCovData Dataframe of covariates that vary at the site level.
-# @slot obsToY matrix that describes how the observations relate to y (see Details).
+# @slot obsToY matrix that describes how the observations relate to y (see Details). -- obsNum x ncol(y)
 # @slot primaryNum integer number of seasons (1 for single season).
 
 #' Class to hold data for analyses in unmarked.
@@ -333,7 +333,7 @@ setMethod("summary","unmarkedFrame",
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
 #' @importFrom mapproj mapproject
-#' @importFrom ggplot2 
+#' @import ggplot2 
 #' @export 
 setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 		function(x) {
@@ -359,7 +359,7 @@ setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 		})
 
 #' @importFrom mapproj mapproject
-#' @importFrom ggplot2 
+#' @import ggplot2 
 #' @export 
 setMethod("plot", c(x="unmarkedFramePCount", y="missing"),
 		function(x) {
@@ -403,6 +403,45 @@ setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
 			umf
 		})
 
+## remove obs only
+setMethod("[", c("unmarkedFrame","missing", "numeric", "missing"),
+		function(x, i, j) {  
+			y <- getY(umf)
+			obsCovs <- obsCovs(umf)
+			
+			obsToY <- obsToY(umf)
+			obs.remove <- rep(TRUE, obsNum(umf))
+			obs.remove[j] <- FALSE
+			y.remove <- t(obs.remove) %*% obsToY > 0
+			y <- y[,!y.remove]
+			obsCovs <- obsCovs[rep(obs.remove, numSites(umf)),]
+			
+			umf@obsCovs <- obsCovs
+			umf@y <- y
+			umf@obsToY <- obsToY[!obs.remove,!y.remove]
+			
+			umf
+			
+		})
+
+# i is as before and j is the obsNum to remove and corresponding y's
+setMethod("[", c("unmarkedFrame","numeric", "numeric", "missing"),
+		function(x, i, j) {  
+			## first remove sites
+			umf <- x[i]
+			umf <- x[,j]
+			umf
+		})
+
+## for multframes, must remove years at a time
+setMethod("[", c("unmarkedMultFrame","missing", "numeric", "missing"),
+		function(x, i, j) {  
+			J <- obsNum(x)/x@numPrimary
+			obs <- rep(1:x@numPrimary, each = J)
+			x@numPrimary <- length(j)
+			j <- which(!is.na(match(obs,j)))
+			callNextMethod(x, i, j)
+		})
 ############################### COERCION ##################################################
 
 setAs("data.frame", "unmarkedFrame", function(from) {
