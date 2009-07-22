@@ -59,7 +59,7 @@ function(formula, data, K, mixture = c("P", "NB"))
 	obsToY(umf) <- diag(numY(umf))  # pcount functions have obs <-> y are 1-1
 	
 	designMats <- getDesign2(formula, umf)
-	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	X <- designMats$X; V <- designMats$V; y <- designMats$y; plotArea <- designMats$plotArea
 
 	J <- ncol(y)
   M <- nrow(y)
@@ -89,7 +89,7 @@ function(formula, data, K, mixture = c("P", "NB"))
 			
   nll <- function(parms){
 
-    theta.i <- exp(X %*% parms[1 : nAP])
+    theta.i <- exp(X %*% parms[1 : nAP]) * plotArea
     p.ij <- plogis(V %*% parms[(nAP + 1) : (nAP + nDP)])
     theta.ik <- rep(theta.i, each = K + 1)
     p.ijk <- rep(p.ij, each = K + 1)

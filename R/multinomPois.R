@@ -108,7 +108,7 @@ function(formula, piFun, data) # TODO: remove piFun argument here and in example
 			})
 	
 	designMats <- getDesign2(formula, umf)
-	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	X <- designMats$X; V <- designMats$V; y <- designMats$y; plotArea <- designMats$plotArea
   
   J <- ncol(y)
 	R <- obsNum(umf)
@@ -123,7 +123,7 @@ function(formula, piFun, data) # TODO: remove piFun argument here and in example
   navec <- is.na(yvec)
 
   nll <- function(parms) {
-    lambda <- exp(X %*% parms[1 : nAP])
+    lambda <- exp(X %*% parms[1 : nAP]) * plotArea
     p <- plogis(V %*% parms[(nAP + 1) : nP])
     p.matrix <- matrix(p, M, R, byrow = TRUE)
     pi <- do.call(piFun, list(p = p.matrix))
