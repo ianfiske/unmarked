@@ -4,9 +4,7 @@
 {}
 
 
-#' Fit the hierarchical distance sampling model
-#'
-#' This functions fits the Royle et al. (2004) multinomial mixture model to 
+#' Fit the hierarchical distance sampling model of Royle et al. (2004) to 
 #' line or point transect data recorded in discrete distance intervals.
 #'
 #' Unlike conventional distance sampling, which uses the 'conditional on 
@@ -69,18 +67,18 @@
 #' data(linetran)
 #' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
 #'
-#' lengths <- linetran$Length
+#' lengths <- linetran$Length * 1000
 #'
 #' ltUMF <- with(linetran, {
 #' 		unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
 #' 		siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
-#'		tlength = lengths*1000, survey = "line", unitsIn = "m")
+#'		tlength = lengths, survey = "line", unitsIn = "m")
 #' 		})
 #' 
-#' # Half-normal detection function. Density output. No covariates. 
-#' # lineDat$Length is transect lengths in km, so it has to be converted.
+#' # Half-normal detection function. Density output (on log scale). No covariates. 
 #'  (fm1 <- distsamp(~ 1 ~ 1, ltUMF))
 #' 
+#' # Some methods to use on fitted model
 #' coef(fm1, type="det", altNames=TRUE)
 #' backTransform(fm1, whichEstimate="det")
 #' vcov(fm1, altNames=TRUE)
@@ -92,27 +90,26 @@
 #' (fm2 <- distsamp(~ 1 ~ 1, ltUMF, output="abund", unitsOut="kmsq"))
 #' 
 #' # Halfnormal. Covariates affecting both density and and detection.  
-#' (fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, 
-#' 		ltUMF, unitsOut="ha"))
+#' (fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, ltUMF))
 #' 
 #' # This won't run without starting values.
 #' (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1 ~ habitat - 1, ltUMF, 
-#' 		dist.breaks=dbreaksLine, unitsOut="ha", starts=c(1,0,0,1,2,2)))
+#' 		dist.breaks=dbreaksLine, starts=c(1,0,0,1,2,2)))
 #' 
 #' # Negative exponential detection function. This also needs starting values.
-#' (fme <- distsamp(~ 1 ~ 1, ltUMF, key="exp", starts=c(0,0)))
+#' (fm4 <- distsamp(~ 1 ~ 1, ltUMF, key="exp", starts=c(0,0)))
 #' 
 #' # Hazard-rate detection function. Density output in hectares.
 #' # This is real slow, especially for large datasets.
 #' (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 #' 
-#' plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
+#' plot(function(x) gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 #' 		xlab="Distance(m)", ylab="Detection probability")
 #' 
 #' # Uniform detection function. Density output in hectars.
 #' (fmu <- distsamp(~ 1 ~ 1, ltUMF, key="uniform"))
 #'  
-#' ## Point transect examples
+#' ## Point transect example
 #' 
 #' # Radius cut points in meters
 #' data(pointtran)
@@ -124,18 +121,15 @@
 #'		dist.breaks = dbreaksPt, survey = "point", unitsIn = "m")
 #' 		})
 #' 
-#' # Half-normal. Output is animals/point. No covariates.
+#' # Half-normal. Output is animals / ha on log-scale. No covariates.
 #' (fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
-#' 
-#' # Negative exponential
-#' (fmpe <- distsamp(~ 1 ~ 1, ptUMF, key="exp", output="density"))
 #' 
 #' @export
 #' @keywords models
 distsamp <- function(formula, data, 
 	keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
-	output=c("density", "abund"), unitsOut=c("ha", "kmsq"), 
-	starts=NULL, method="BFGS", control=list(), ...)
+	output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL, 
+	method="BFGS", control=list(), ...)
 {
 	keyfun <- match.arg(keyfun)
 	output <- match.arg(output)
@@ -144,13 +138,6 @@ distsamp <- function(formula, data,
 	tlength <- data@tlength
 	survey <- data@survey
 	unitsIn <- data@unitsIn
-	a <- data@distClassAreas
-	if(all(is.na(a)))
-		a <- calcAreas(dist.breaks = dist.breaks, tlength = tlength, 
-			output = output, survey = survey, unitsIn = unitsIn)
-	a <- c(t(a))
-	if(survey=="line" & unitsOut=="ha") 
-		a <- a * 100
 	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	M <- nrow(y)
@@ -160,6 +147,12 @@ distsamp <- function(formula, data,
 	nAP <- length(lamParms)
 	nDP <- length(detParms)
 	nP <- nAP + nDP
+	a <- data@distClassAreas
+	if(all(is.na(a)))
+		a <- calcAreas(dist.breaks = dist.breaks, tlength = tlength, 
+			survey = survey, output = output, M = M, J = J, unitsIn = unitsIn,
+			unitsOut = unitsOut)
+	a <- c(t(a))
 	switch(keyfun,
 		halfnorm = { 
 			altdetParms <- paste("sigma", colnames(V), sep="")
@@ -262,8 +255,6 @@ distsamp <- function(formula, data,
 }
 
 
-	  		   
-
 
 
 
@@ -307,63 +298,61 @@ vIntegrate <- Vectorize(integrate, c("lower", "upper"))
 
 
 # Multinomial cell probabilities for line or point transects under half-normal model
-cp.hn <- function(d, s, survey=c("line", "point")) 
+cp.hn <- function(d, s, survey) 
 {
-	survey <- match.arg(survey)
 	switch(survey, 
-			line = {
-				strip.widths <- diff(d)
-				f.0 <- 2 * dnorm(0, 0, sd=s)
-				int <- 2 * (pnorm(d[-1], 0, sd=s) - pnorm(d[-length(d)], 0, sd=s))
-				cp <- int / f.0 / strip.widths 
-			},
-			point = {
-				W <- max(d)
-				int <- as.numeric(vIntegrate(grhn, d[-length(d)], d[-1], sigma=s)["value",])
-				cp <- 2 / W^2 * int
-			})
+		line = {
+			strip.widths <- diff(d)
+			f.0 <- 2 * dnorm(0, 0, sd=s)
+			int <- 2 * (pnorm(d[-1], 0, sd=s) - pnorm(d[-length(d)], 0, sd=s))
+			cp <- int / f.0 / strip.widths 
+		},
+		point = {
+			W <- max(d)
+			int <- as.numeric(vIntegrate(grhn, d[-length(d)], d[-1], 
+				sigma=s)["value",])
+			cp <- 2 / W^2 * int
+		})
 	return(cp)
 }
 
 
 
-cp.exp <- function(d, rate, survey=c("line", "point")) 
+cp.exp <- function(d, rate, survey) 
 {
-	survey <- match.arg(survey)
 	switch(survey, 
-			line = {
-				strip.widths <- diff(d)
-				f.0 <- dexp(0, rate=rate)
-				int <- pexp(d[-1], rate=rate) - pexp(d[-length(d)], rate=rate)
-				cp <- int / f.0 / strip.widths
-			},
-			point = {
-				W <- max(d)
-				int <- as.numeric(vIntegrate(grexp, d[-length(d)], d[-1], 
-								rate=rate)["value",])
-				cp <- 2 / W^2 * int
-			})
+		line = {
+			strip.widths <- diff(d)
+			f.0 <- dexp(0, rate=rate)
+			int <- pexp(d[-1], rate=rate) - pexp(d[-length(d)], rate=rate)
+			cp <- int / f.0 / strip.widths
+		},
+		point = {
+			W <- max(d)
+			int <- as.numeric(vIntegrate(grexp, d[-length(d)], d[-1], 
+				rate=rate)["value",])
+			cp <- 2 / W^2 * int
+		})
 	return(cp)
 }
 
 
 
-cp.haz <- function(d, shape, scale, survey=c("line", "point"))
+cp.haz <- function(d, shape, scale, survey)
 {
-	survey <- match.arg(survey)
 	switch(survey, 
-			line = {
-				strip.widths <- diff(d)
-				int <- as.numeric(vIntegrate(gxhaz, d[-length(d)], d[-1], shape=shape, 
-								scale=scale)["value",])
-				cp <- int / strip.widths
-			},
-			point = {
-				W <- max(d)
-				int <- as.numeric(vIntegrate(grhaz, d[-length(d)], d[-1], shape=shape, 
-								scale=scale)["value",])
-				cp <- 2 / W^2 *int
-			})
+		line = {
+			strip.widths <- diff(d)
+			int <- as.numeric(vIntegrate(gxhaz, d[-length(d)], d[-1], 
+				shape=shape, scale=scale)["value",])
+			cp <- int / strip.widths
+		},
+		point = {
+			W <- max(d)
+			int <- as.numeric(vIntegrate(grhaz, d[-length(d)], d[-1], 
+				shape=shape, scale=scale)["value",])
+			cp <- 2 / W^2 * int
+		})
 	return(cp)
 }
 
@@ -386,7 +375,7 @@ ll.halfnorm <- function(param, Y, X, V, J, d, a, nAP, nP, survey)
 
 
 
-ll.exp <- function(param, Y, X, V, K, J, a, d, nAP, nP, survey=survey)
+ll.exp <- function(param, Y, X, V, K, J, a, d, nAP, nP, survey)
 {
 	rate <- as.numeric(exp(V %*% param[(nAP+1):nP]))
 	lambda <- as.numeric(exp(X %*% param[1:nAP]))
@@ -398,13 +387,15 @@ ll.exp <- function(param, Y, X, V, K, J, a, d, nAP, nP, survey=survey)
 }
 
 
+
+
 ll.hazard <- function(param, Y, X, V, J, a, d, nAP, nP, survey)
 {
 	shape <- as.numeric(exp(V %*% param[(nAP+1):(nP-1)]))
 	scale <- as.numeric(exp(param[nP]))
 	lambda <- as.numeric(exp(X %*% param[1:nAP]))
 	pvec <- c(sapply(shape, function(x) cp.haz(d=d, shape=x, scale=scale, 
-								survey=survey)))
+		survey=survey)))
 	growlam <- rep(lambda, each=J)
 	datavec <- c(t(Y))
 	ll <- dpois(datavec, growlam * a * pvec, log=T)
@@ -424,32 +415,85 @@ ll.uniform <- function(param, Y, X, V, J, a)
 }
 
 
- 
-calcAreas <- function(dist.breaks, tlength, output, survey, unitsIn)
+#' Prepare area argument for distsamp(). This is primarily for internal use
+#' but see details. Caution should be used because the returned matrix has 
+#' different interpretations for different survey and output types.
+#'
+#' @param dist.breaks numeric vector of distance class break poings
+#' @param tlength numeric vector of transect lengths for line transects
+#' @param M number of transects
+#' @param J number of distance classes
+#' @param survey either "line" or "point"
+#' @param output either "abund" or "density"
+#' @param unitsIn either "m" or "km" for units of both dist.breaks and tlength.
+#' @param unitsOut either "ha" or "kmsq"
+#'
+#' @return An M x J numeric matrix. 
+#' 
+#' If output == "density" and survey == "line"
+#' then the values are the areas of each distance class for each transect. If
+#' output == "density" and survey == "point" then the values are the the radii
+#' of each point transect. Currently, radii cannot vary.
+#'
+#' If survey == "point" and output == "abund" a matrix of 1s is returned. If
+#' survey == "line" and output == "abund" a matrix of transect lengths is
+#' returned because transect lengths must be taken into account even for density
+#' is not of interest.
+#'
+#' @note This function might be useful if some distance classes for some 
+#' transects were not surveyed. In such a case, missing values could be added
+#' to the output of calcAreas() and the modified matrix could be supplied
+#' to distClassAreas argument of \code{\link{unmarkedFrameDS}}.
+#' 
+#' @examples
+#'
+#' data(linetran)
+#' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
+#' lengths <- linetran$Length * 1000
+#' 
+#' calcAreas(dbreaksLine, lengths, "line", "density", M=nrow(linetran), 
+#' 		J = length(dbreaksLine) - 1, "m", "ha")
+#'
+#' data(pointtran)
+#' (dbreaksPt <- seq(0, 25, by=5))
+#' 
+#' calcAreas(dbreaksPt, survey="point", output="density", M=nrow(pointtran),
+#' 		J = length(dbreaksPt) - 1, unitsIn = "m", unitsOut = "ha")
+#' 
+#' @export 
+calcAreas <- function(dist.breaks, tlength, survey, output, M, J, unitsIn, 
+	unitsOut)
 {
+if(J != length(dist.breaks) - 1)
+	stop("J must equal length(dist.breaks) - 1")
+if(!missing(tlength))
+	if(length(tlength) > 0 & length(tlength) != M)
+		stop("length(tlength) must equal M")
 switch(unitsIn, 
 	km = conv <- 1,
-	m = conv <- 1000)
-J <- length(dist.breaks)-1
-switch(output, 
-	density =  {
+	m = conv <- 1000
+	)
+switch(output, 	
+	density = {
 		switch(survey, 
 			line = {
 				stripwidths <- (((dist.breaks*2)[-1] - 
 					(dist.breaks*2)[-(J+1)])) / conv
 				tl <- tlength / conv
-				a <- rep(tl, each=J) * stripwidths				# km^2
-				a <- matrix(a, ncol=J, byrow=TRUE)
+				a <- rep(tl, each=J) * stripwidths						# km^2
+				a <- matrix(a, nrow=M, ncol=J, byrow=TRUE)
+				if(unitsOut == "ha") a <- a * 100
 				},
 			point = {
 				W <- max(dist.breaks) / conv
-				a <- as.matrix(pi * W^2)						# km^2
+				a <- matrix(rep(pi * W^2, each=J), M, J, byrow=TRUE) 	# km^2
+				if(unitsOut == "ha") a <- a * 100			
 				})
-		},
-	abund = {
+			},
+	abund = { 
 		switch(survey, 
-			line = a <- cbind(tlength / conv), # must accounted for tran. length
-			point = a <- as.matrix(1))
+			line = a <- matrix(rep(tlength, each=J), M, J, byrow=TRUE),
+			point = a <- matrix(1, M, J))
 		})
 return(a)
 }
@@ -469,10 +513,10 @@ return(a)
 #' at least 2 columns. One for distances and the other for transect names.
 #' @param distCol character, the column name containing distances
 #' @param transectNameCol character, column name containing transect names
-#' @param cutPoints numeric vector of distance interval cutpoints. Length must
+#' @param dist.breaks numeric vector of distance interval cutpoints. Length must
 #' equal J+1.
 #'
-#' @value
+#' @return
 #' An M x J data.frame containing the tabulated detections in each distance
 #' interval for each transect. Transect names will become rownames and 
 #' colnames will be y.1, y.2, ..., y.J. 
@@ -509,16 +553,16 @@ return(a)
 #' # Now you could merge yDat with transect-level covariates and 
 #' # then use unmarkedFrameDS to prepare data for distsamp
 #' @export
-formatDistData <- function(distData, distCol, transectNameCol, cutPoints)
+formatDistData <- function(distData, distCol, transectNameCol, dist.breaks)
 {
 transects <- distData[,transectNameCol]
 M <- nlevels(transects)
-J <- length(cutPoints)-1
+J <- length(dist.breaks) - 1
 y <- matrix(NA, M, J, 
 	dimnames = list(levels(transects), paste("y", 1:J, sep=".")))
 for(i in 1:M) {
 	sub <- subset(distData, transects==rownames(y)[i])
-	y[i,] <- table(cut(sub[,distCol], cutPoints, include.lowest=TRUE))
+	y[i,] <- table(cut(sub[,distCol], dist.breaks, include.lowest=TRUE))
 	}
 return(data.frame(y))
 }

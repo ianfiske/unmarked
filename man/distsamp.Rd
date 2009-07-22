@@ -1,14 +1,13 @@
 \name{distsamp}
 \alias{distsamp}
-\title{Fit the hierarchical distance sampling model...}
-\usage{distsamp(formula, data, keyfun=c("halfnorm", "exp", "hazard",
-    "uniform"), output=c("density", "abund"), unitsOut=c("ha",
-    "kmsq"), starts, method=BFGS, control=list(), ...)}
-\description{Fit the hierarchical distance sampling model}
-\details{This functions fits the Royle et al. (2004) multinomial mixture model to 
-line or point transect data recorded in discrete distance intervals.
-
-Unlike conventional distance sampling, which uses the 'conditional on 
+\title{Fit the hierarchical distance sampling model of Royle et al.}
+\usage{distsamp(formula, data, keyfun=c("halfnorm", "exp",
+    "hazard", "uniform"), output=c("density", "abund"),
+    unitsOut=c("ha", "kmsq"), starts, method=BFGS,
+    control=list(), ...)}
+\description{Fit the hierarchical distance sampling model of Royle et al. (2004) to 
+line or point transect data recorded in discrete distance intervals.}
+\details{Unlike conventional distance sampling, which uses the 'conditional on 
 detection' likelihood formulation, this model is based upon the unconditional 
 likelihood and thus allows for modeling both abundance and detection 
 function parameters. 
@@ -59,18 +58,18 @@ square kilometers, respectively.}
 data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 
 
-lengths <- linetran$Length
+lengths <- linetran$Length * 1000
 
 ltUMF <- with(linetran, {
 unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
 siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
-tlength = lengths*1000, survey = "line", unitsIn = "m")
+tlength = lengths, survey = "line", unitsIn = "m")
 })
 
-# Half-normal detection function. Density output. No covariates. 
-# lineDat$Length is transect lengths in km, so it has to be converted.
+# Half-normal detection function. Density output (on log scale). No covariates. 
 (fm1 <- distsamp(~ 1 ~ 1, ltUMF))
 
+# Some methods to use on fitted model
 coef(fm1, type="det", altNames=TRUE)
 backTransform(fm1, whichEstimate="det")
 vcov(fm1, altNames=TRUE)
@@ -82,27 +81,26 @@ predict(fm1, type = "state")
 (fm2 <- distsamp(~ 1 ~ 1, ltUMF, output="abund", unitsOut="kmsq"))
 
 # Halfnormal. Covariates affecting both density and and detection.  
-(fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, 
-ltUMF, unitsOut="ha"))
+(fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, ltUMF))
 
 # This won't run without starting values.
 (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1 ~ habitat - 1, ltUMF, 
-dist.breaks=dbreaksLine, unitsOut="ha", starts=c(1,0,0,1,2,2)))
+dist.breaks=dbreaksLine, starts=c(1,0,0,1,2,2)))
 
 # Negative exponential detection function. This also needs starting values.
-(fme <- distsamp(~ 1 ~ 1, ltUMF, key="exp", starts=c(0,0)))
+(fm4 <- distsamp(~ 1 ~ 1, ltUMF, key="exp", starts=c(0,0)))
 
 # Hazard-rate detection function. Density output in hectares.
 # This is real slow, especially for large datasets.
 (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 
-plot(function(x) unmarked:::gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
+plot(function(x) gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 xlab="Distance(m)", ylab="Detection probability")
 
 # Uniform detection function. Density output in hectars.
 (fmu <- distsamp(~ 1 ~ 1, ltUMF, key="uniform"))
 
-## Point transect examples
+## Point transect example
 
 # Radius cut points in meters
 data(pointtran)
@@ -114,8 +112,5 @@ siteCovs = data.frame(area, habitat),
 dist.breaks = dbreaksPt, survey = "point", unitsIn = "m")
 })
 
-# Half-normal. Output is animals/point. No covariates.
-(fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
-
-# Negative exponential
-(fmpe <- distsamp(~ 1 ~ 1, ptUMF, key="exp", output="density"))}
+# Half-normal. Output is animals / ha on log-scale. No covariates.
+(fmp1 <- distsamp(~ 1 ~ 1, ptUMF))}

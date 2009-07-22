@@ -1,12 +1,16 @@
 \name{formatDistData}
 \alias{formatDistData}
 \title{Convert individual-level distance data to the transect-level format required...}
-\usage{formatDistData(distData, distCol, transectNameCol, cutPoints)}
+\usage{formatDistData(distData, distCol, transectNameCol,
+    dist.breaks)}
 \description{Convert individual-level distance data to the transect-level format required 
 by distsamp()}
 \details{This function creates a site (M) by distance interval (J) response matrix
 from a data.frame containing the detection distances for each individual and
 the transect names.}
+\value{An M x J data.frame containing the tabulated detections in each distance
+interval for each transect. Transect names will become rownames and 
+colnames will be y.1, y.2, ..., y.J.}
 \note{It is very important that the factor containing transect names contains
 levels for all the transects surveyed. This includes those where birds were
 not detected. See the example for how to add levels to a factor.}
@@ -15,7 +19,7 @@ not detected. See the example for how to add levels to a factor.}
 at least 2 columns. One for distances and the other for transect names.}
 \item{distCol}{character, the column name containing distances}
 \item{transectNameCol}{character, column name containing transect names}
-\item{cutPoints}{numeric vector of distance interval cutpoints. Length must
+\item{dist.breaks}{numeric vector of distance interval cutpoints. Length must
 equal J+1.}}
 \examples{# Create a data.frame containing distances of animals detected
 # along 4 transects.
