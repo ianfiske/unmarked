@@ -35,7 +35,8 @@ setClass("unmarkedFrame",
     representation(y = "matrix",
         obsCovs = "optionalDataFrame",
         siteCovs = "optionalDataFrame",
-				mapInfo = "optionalMapInfo",
+		mapInfo = "optionalMapInfo",
+		plotArea = "numeric",
         obsToY = "optionalMatrix"),
     validity = validunmarkedFrame)
 
@@ -114,7 +115,7 @@ setClass("unmarkedFrameMPois",
 #' obsCovs(mallardUMF, matrices = TRUE)
 #' @export
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
-    obsToY) {
+    plotArea, obsToY) {
 
   if(class(obsCovs) == "list") {
     obsVars <- names(obsCovs)
@@ -133,9 +134,11 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 
 	if(missing(obsToY)) obsToY <- NULL
 	if(missing(mapInfo)) mapInfo <- NULL
+	if(missing(plotArea)) plotArea <- rep(1, nrow(y))
 	
   umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs,
-      siteCovs = siteCovs, mapInfo = mapInfo, obsToY = obsToY)
+      siteCovs = siteCovs, mapInfo = mapInfo, plotArea = plotArea, 
+	  obsToY = obsToY)
 
   return(umf)
 }
@@ -144,7 +147,7 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 # Constructor
 #' @export unmarkedFrameDS
 unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
-		unitsIn, distClassAreas = NULL)
+		unitsIn, mapInfo = NULL, distClassAreas = NULL)
 {
 	if(is.null(distClassAreas))
 		distClassAreas <- matrix(NA)
@@ -169,7 +172,8 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
 #' @export
 unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, mapInfo) {
 	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo, 
+		plotArea = plotArea)
 	umf <- as(umf, "unmarkedMultFrame")
 	umf@numPrimary <- numPrimary
 	umf
@@ -177,18 +181,19 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, ma
 
 
 #' @export
-unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
+unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo, plotArea) {
 	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo, 
+		plotArea = plotArea)
 	umf <- as(umf, "unmarkedFramePCount")
 	umf
 }
 
 
 #' @export
-unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, mapInfo, piFun) {
+unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, mapInfo, piFun, plotArea) {
 	if(missing(obsToY)) stop("obsToY is required for multinomial-Poisson data.")
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY, mapInfo = mapInfo)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY, mapInfo = mapInfo, plotArea = plotArea)
 	umf <- as(umf, "unmarkedFrameMPois")
 	umf@piFun <- piFun
 	umf@samplingMethod <- as.character(quote(piFun))
