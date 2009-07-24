@@ -407,6 +407,7 @@ function(df.in)
 # to
 # site | spp1 | spp2 | ...
 #' @nord
+#' @importFrom reshape melt cast recast
 sppLongToWide <-
 function(df.in)
 {
@@ -683,6 +684,7 @@ handleNA2 <- function(umf, X, V) {
 				x.long <- as.vector(t(x.mat))
 				x.long == 1
 			})
+	V.long.na <- apply(V.long.na, 1, any)
 	
 	y.long <- as.vector(t(getY(umf)))
 	y.long.na <- is.na(y.long)
@@ -699,18 +701,16 @@ handleNA2 <- function(umf, X, V) {
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
-	sites.to.remove <- sites.to.remove | is.na(plotArea)
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
 		y <- y[!sites.to.remove, ]
 		X <- X[!sites.to.remove, ]
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ]
-		plotArea <- plotArea[!sites.to.remove]
 		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
 	}
 	
-	list(y = y, X = X, V = V, plotArea = plotArea)
+	list(y = y, X = X, V = V, plotArea = plotArea, removed.sites = which(sites.to.remove))
 }
 
 #' @nord
