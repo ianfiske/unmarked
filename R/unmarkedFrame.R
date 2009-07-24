@@ -337,56 +337,66 @@ setMethod("summary","unmarkedFrame",
 ################################# PLOT METHODS ############################################
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
-#' @importFrom mapproj mapproject
-#' @import ggplot2 
-#' @export 
-setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
+#' @import ggplot2
+setMethod("plot", c(x="unmarkedFrame", y="missing"),
 		function(x) {
-			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFrameOccu object.")
-			y <- getY(x)
-			## get sites w/ at least one pos
-			y <- as.factor(rowSums(y, na.rm = TRUE) > 0)
-			levels(y) <- c("non-detection", "detection")
-			siteCovs <- siteCovs(x)
-			coords <- coordinates(x)
-			if(is.null(x@mapInfo@projection)) {
-				proj <- list(x = coords[,1], y = coords[,2])	
-			} else {
-				proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
-						parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
-			}
-			p <- qplot(x = proj$x, y = proj$y, colour = y, xlab = "longitude", ylab = "latitude")
-			if(!is.null(x@mapInfo@projection)) {
-				p + coord_map(project = x@mapInfo@projection)
-			} else {
-				p
-			}
+			M <- numSites(x)
+			J <- obsNum(x)
+			df <- data.frame(site = rep(1:M, each = J), obs = as.factor(rep(1:J, M)), y = as.vector(t(getY(x))))
+			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() + coord_flip()
+			g
 		})
 
-#' @importFrom mapproj mapproject
-#' @import ggplot2 
-#' @export 
-setMethod("plot", c(x="unmarkedFramePCount", y="missing"),
-		function(x) {
-			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFramePCount object.")
-			y <- getY(x)
-			## plot maximums
-			y <- apply(y, 1, max, na.rm = TRUE)
-			siteCovs <- siteCovs(x)
-			coords <- coordinates(x)
-			if(is.null(x@mapInfo@projection)) {
-				proj <- list(x = coords[,1], y = coords[,2])	
-			} else {
-				proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
-					parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
-			}
-			p <- qplot(x = proj$x, y = proj$y, colour = y, xlab = "longitude", ylab = "latitude")
-			if(!is.null(x@mapInfo@projection)) {
-				p + coord_map(project = x@mapInfo@projection)
-			} else {
-				p
-			}
-		})
+
+##' @importFrom mapproj mapproject
+##' @export 
+#setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
+#		function(x) {
+#			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFrameOccu object.")
+#			y <- getY(x)
+#			## get sites w/ at least one pos
+#			y <- as.factor(rowSums(y, na.rm = TRUE) > 0)
+#			levels(y) <- c("non-detection", "detection")
+#			siteCovs <- siteCovs(x)
+#			coords <- coordinates(x)
+#			if(is.null(x@mapInfo@projection)) {
+#				proj <- list(x = coords[,1], y = coords[,2])	
+#			} else {
+#				proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
+#						parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
+#			}
+#			p <- qplot(x = proj$x, y = proj$y, colour = y, xlab = "longitude", ylab = "latitude")
+#			if(!is.null(x@mapInfo@projection)) {
+#				p + coord_map(project = x@mapInfo@projection)
+#			} else {
+#				p
+#			}
+#		})
+#
+##' @importFrom mapproj mapproject
+##' @import ggplot2 
+##' @export 
+#setMethod("plot", c(x="unmarkedFramePCount", y="missing"),
+#		function(x) {
+#			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFramePCount object.")
+#			y <- getY(x)
+#			## plot maximums
+#			y <- apply(y, 1, max, na.rm = TRUE)
+#			siteCovs <- siteCovs(x)
+#			coords <- coordinates(x)
+#			if(is.null(x@mapInfo@projection)) {
+#				proj <- list(x = coords[,1], y = coords[,2])	
+#			} else {
+#				proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
+#					parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
+#			}
+#			p <- qplot(x = proj$x, y = proj$y, colour = y, xlab = "longitude", ylab = "latitude")
+#			if(!is.null(x@mapInfo@projection)) {
+#				p + coord_map(project = x@mapInfo@projection)
+#			} else {
+#				p
+#			}
+#		})
 ################################# SELECTORS ###############################################
 
 # i is the vector of sites to extract
@@ -411,21 +421,19 @@ setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
 ## remove obs only
 setMethod("[", c("unmarkedFrame","missing", "numeric", "missing"),
 		function(x, i, j) {  
-			y <- getY(umf)
-			obsCovs <- obsCovs(umf)
-			
-			obsToY <- obsToY(umf)
-			obs.remove <- rep(TRUE, obsNum(umf))
+			y <- getY(x)
+			obsCovs <- obsCovs(x)
+			obsToY <- obsToY(x)
+			obs.remove <- rep(TRUE, obsNum(x))
 			obs.remove[j] <- FALSE
 			y.remove <- t(obs.remove) %*% obsToY > 0
 			y <- y[,!y.remove]
-			obsCovs <- obsCovs[rep(obs.remove, numSites(umf)),]
+			obsCovs <- obsCovs[!rep(obs.remove, numSites(x)),]
+			x@obsCovs <- obsCovs
+			x@y <- y
+			x@obsToY <- obsToY[!obs.remove,!y.remove]
 			
-			umf@obsCovs <- obsCovs
-			umf@y <- y
-			umf@obsToY <- obsToY[!obs.remove,!y.remove]
-			
-			umf
+			x
 			
 		})
 
@@ -443,9 +451,11 @@ setMethod("[", c("unmarkedMultFrame","missing", "numeric", "missing"),
 		function(x, i, j) {  
 			J <- obsNum(x)/x@numPrimary
 			obs <- rep(1:x@numPrimary, each = J)
-			x@numPrimary <- length(j)
+			numPrimary <- length(j)
 			j <- which(!is.na(match(obs,j)))
-			callNextMethod(x, i, j)
+			u <- callNextMethod(x, i, j)
+			u@numPrimary <- numPrimary
+			u
 		})
 ############################### COERCION ##################################################
 
