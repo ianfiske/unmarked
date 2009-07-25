@@ -568,3 +568,39 @@ return(data.frame(y))
 }
 
 
+
+
+
+distDetProbs <- function(fit)
+{
+	formula <- fit@formula
+	umf <- fit@data
+	designMats <- getDesign2(formula, umf)
+	y <- designMats$y
+	M <- nrow(y)
+	J <- ncol(y)
+	V <- designMats$V
+	ppars <- coef(fit, type = "det")
+	d <- fit@dist.breaks
+	survey <- fit@survey
+	key <- fit@keyfun
+	switch(key, 
+		halfnorm = {
+			sigma <- exp(V %*% ppars)
+			p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
+			}, 
+		exp = {
+			rate <- exp(V %*% ppars)
+			p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
+			}, 
+		hazard = {
+			shape <- exp(V %*% ppars[-length(ppars)])
+			scale <- exp(ppars[length(ppars)])
+			p <- sapply(sigma, function(x) cp.haz(d = d, shape = shape, 
+				scale = scale, survey = survey))
+			})
+    p <- matrix(p, M, J, byrow = TRUE)
+	return(p)
+}
+
+  

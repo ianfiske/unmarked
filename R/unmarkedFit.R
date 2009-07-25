@@ -296,6 +296,33 @@ setMethod("hessian", "unmarkedFit",
 		})
 
 
+
+#' @exportMethod update
+setMethod("update", "unmarkedFit", 
+	function(object, formula., ..., evaluate = TRUE) {
+		call <- object@call
+		if (is.null(call)) 
+            stop("need an object with call slot")
+        extras <- match.call(expand.dots = FALSE)$...
+        if (!missing(formula.)) 
+            call$formula <- update.formula(formula(object), formula.)
+        if (length(extras) > 0) {
+            existing <- !is.na(match(names(extras), names(call)))
+            for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+            if (any(!existing)) {
+                call <- c(as.list(call), extras[!existing])
+                call <- as.call(call)
+            	}
+        	}
+        if (evaluate) 
+            eval(call, parent.frame())
+        else call
+		}
+	)
+
+
+
+
 setGeneric("nllFun", function(object) standardGeneric("nllFun"))
 
 #' @export 
@@ -389,28 +416,6 @@ setClass("parbootDS",
         )
 
 
-#' @exportMethod update
-setMethod("update", "unmarkedFitDS", 
-	function(object, formula., ..., evaluate = TRUE) {
-		call <- object@call
-		if (is.null(call)) 
-            stop("need an object with call slot")
-        extras <- match.call(expand.dots = FALSE)$...
-        if (!missing(formula.)) 
-            call$formula <- update.formula(formula(object), formula.)
-        if (length(extras) > 0) {
-            existing <- !is.na(match(names(extras), names(call)))
-            for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
-            if (any(!existing)) {
-                call <- c(as.list(call), extras[!existing])
-                call <- as.call(call)
-            	}
-        	}
-        if (evaluate) 
-            eval(call, parent.frame())
-        else call
-		}
-	)
 
 
 #' Evaluate goodness-of-fit for a fitted distance-sampling model
@@ -441,85 +446,45 @@ setMethod("update", "unmarkedFitDS",
 setMethod("parboot", "unmarkedFitDS", function(object, R=10, report=2, 
    label=character(0), ...)  
 {
-call <- match.call(call = sys.call(1))
-formula <- object@formula
-umf <- object@data
-designMats <- getDesign2(formula, umf)
-X <- designMats$X; V <- designMats$V; y <- designMats$y
-yvec0 <- c(t(y))
-n <- nrow(y)
-J <- ncol(y)
-ests <- coef(object, altNames=T) 
-tl <- object@tlength
-a <- object@area
-aMat <- matrix(a, n, J, byrow=T)
-lam.pars0 <- coef(object, type="state")
-ppars0 <- coef(object, type="det")
-d <- object@dist.breaks
-lam0 <- as.numeric(exp(X %*% lam.pars0))
-growlam0 <- rep(lam0, each=J)
-key <- object@keyfun
-survey <- object@survey
-switch(key, 
-"halfnorm" = {
-	sigma <- exp(V %*% ppars0)
-	p0 <- sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey))
-	},
-"exp" = {
-	rate <- exp(V %*% ppars0)
-	p0 <- sapply(rate, function(x) cp.exp(d=d, rate=x, survey=survey))
-	},
-"hazard" = {
-	shape <- exp(V %*% ppars0[-length(ppars0)])
-	scale <- exp(ppars0[length(ppars0)])
-	p0 <- sapply(shape, function(x) cp.haz(d=d, shape=shape, scale=scale, 
-		survey=survey))
+	call <- match.call(call = sys.call(1))
+	formula <- object@formula
+	umf <- object@data
+	designMats <- getDesign2(formula, umf)
+	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	M <- nrow(y)
+	J <- ncol(y)
+	yvec0 <- c(t(y))
+	ests <- as.numeric(coef(object, altNames=TRUE))
+	a <- object@area
+	aMat <- matrix(a, M, J, byrow=TRUE)
+	lam0 <- exp(X %*% coef(object, type = "state"))
+	lamvec0 <- rep(lam0, each = J) * a
+	p0 <- distDetProbs(object)
+	pvec0 <- c(t(p0))
+	expected0 <- lamvec0 * pvec0
+	rmse0 <- sqrt(sum((sqrt(yvec0) - sqrt(expected0))^2, na.rm = TRUE))
+	cat("t.star =", rmse0, "\n")
+	rmse <- numeric(R)
+	fits <- list()
+	simdata <- umf
+	for(i in 1:R) {
+		y.sim <- rpois(M*J, lamvec0 * pvec0)
+		y.sim <- matrix(y.sim, M, J, byrow = TRUE)
+		simdata@y <- y.sim
+		fits[[i]] <- update(object, data = simdata, starts = ests, ...)
+		yvec <- c(t(y.sim))
+		lam <- exp(X %*% coef(fits[[i]], type = "state"))
+		lamvec <- rep(lam0, each = J) * a
+		p <- distDetProbs(fits[[i]])
+		pvec <- c(t(p))
+		expected <- lamvec * pvec
+		rmse[i] <- sqrt(sum((sqrt(yvec) - sqrt(expected))^2, na.rm = TRUE))
+		if(R > report && i %in% seq(report, R, by=report))
+			cat(paste(round(rmse[(i-(report-1)):i], 1), collapse=", "), fill=T)
+		}
+	out <- new("parbootDS", call=call, t0 = rmse0, t.star = rmse, label = label)
+	return(out)
 	})
-p0vec <- c(p0)
-expected0 <- growlam0 * a * p0vec
-sse0 <- sqrt(sum((sqrt(yvec0) - sqrt(expected0))^2, na.rm=T))
-cat("t.star =", sse0, "\n")
-SSEs <- numeric(R)
-fits <- list()
-for(i in 1:R) 
-{
-y.sim <- matrix(NA, n, J)
-for(k in 1:n)
-	y.sim[k,] <- rpois(J, lam0[k] * p0[,k] * aMat[k,])
-simdata <- umf # data[rownames(y),]
-simdata@y <- y.sim
-fits[[i]] <- update(object, data=simdata, starts=as.numeric(coef(object)), ...)
-lampars.i <- coef(fits[[i]], type="state")
-lam <- as.vector(exp(X %*% lampars.i))
-growlam <- rep(lam, each=J)
-ppars.i <- coef(fits[[i]], type="det")
-switch(key, 
-"halfnorm" = {
-	sigma <- exp(V %*% ppars.i)
-	p <- sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey))
-	},
-"exp" = {
-	rate <- exp(V %*% ppars.i)
-	p <- sapply(rate, function(x) cp.exp(d=d, r=x, survey=survey))
-	},
-"hazard" = {
-	shape <- exp(V %*% ppars.i[-length(ppars.i)])
-	scale <- exp(ppars.i[length(ppars.i)])
-	p <- sapply(sigma, function(x) cp.haz(d=d, shape=shape, scale=scale, 
-		survey=survey))
-	})
-pvec <- c(p)
-expected <- growlam * a * pvec
-yvec <- c(t(getY(simdata)))
-sqrt.sim <- sqrt(yvec)
-sqrt.model <- sqrt(expected)
-SSEs[i] <- sqrt(sum((sqrt.sim - sqrt.model)^2, na.rm=T))
-if(R > report && i %in% seq(report, R, by=report))
-	cat(paste(round(SSEs[(i-(report-1)):i], 1), collapse=", "), fill=T)
-}
-out <- new("parbootDS", call=call, t0 = sse0, t.star = SSEs, label=label)
-return(out)
-})
 
 
 
