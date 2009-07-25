@@ -134,7 +134,7 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 
 	if(missing(obsToY)) obsToY <- NULL
 	if(missing(mapInfo)) mapInfo <- NULL
-	if(missing(plotArea) | is.null(plotArea)) plotArea <- rep(1, nrow(y))
+	if(missing(plotArea) || is.null(plotArea)) plotArea <- rep(1, nrow(y))
 	
   umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs,
       siteCovs = siteCovs, mapInfo = mapInfo, plotArea = plotArea, 
@@ -170,7 +170,7 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
 }
 
 #' @export
-unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, plotArea = NULL) {
+unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, plotArea) {
 	J <- ncol(y)
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), 
 		plotArea = plotArea)

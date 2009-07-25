@@ -673,6 +673,7 @@ handleNA2 <- function(umf, X, V) {
 	M <- numSites(umf)
 
 	plotArea <- umf@plotArea
+	plotArea.na <- is.na(plotArea)
 	
 	X.long <- X[rep(1:M, each = J),]
 	X.long.na <- is.na(X.long)
@@ -701,12 +702,14 @@ handleNA2 <- function(umf, X, V) {
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+#	sites.to.remove <- sites.to.remove | plotArea.na	# Shouldn't this line be added?
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
 		y <- y[!sites.to.remove, ]
 		X <- X[!sites.to.remove, ]
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ]
+		plotArea <- plotArea[!sites.to.remove]
 		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
 	}
 	
