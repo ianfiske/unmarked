@@ -353,11 +353,11 @@ setMethod("plot", c("profile", "missing"),
 setClass("unmarkedFitDS",
 		representation(
 				keyfun = "character",
-				dist.breaks = "numeric",
-				tlength = "numeric",
-				area = "numeric",
-				survey = "character",
-				unitsIn = "character",
+#				dist.breaks = "numeric",
+#				tlength = "numeric",
+#				area = "numeric",
+#				survey = "character",
+#				unitsIn = "character",
 				unitsOut = "character"),
 		contains = "unmarkedFit")
 
@@ -422,7 +422,7 @@ setMethod("parboot", "unmarkedFitDS", function(object, R=10, report=2,
 	J <- ncol(y)
 	yvec0 <- c(t(y))
 	ests <- as.numeric(coef(object, altNames=TRUE))
-	a <- object@data@plotArea
+	a <- umf@plotArea
 	aMat <- matrix(a, M, J, byrow=TRUE)
 	lam0 <- exp(X %*% coef(object, type = "state"))
 	lamvec0 <- rep(lam0, each = J) * a

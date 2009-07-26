@@ -245,8 +245,7 @@ distsamp <- function(formula, data,
 	}
 	dsfit <- new("unmarkedFitDS", fitType = "distsamp", call = match.call(), 
 		opt = opt, formula = formula, data = data, keyfun=keyfun, 
-		dist.breaks=dist.breaks, tlength=tlength, area=a, survey=survey, 
-		unitsIn=unitsIn, unitsOut=unitsOut, estimates = estimateList, 
+		unitsOut=unitsOut, estimates = estimateList, 
 		AIC = fmAIC, negLogLike = fm$value, nllFun = nll)
 	return(dsfit)
 }
@@ -578,8 +577,8 @@ distDetProbs <- function(fit)
 	J <- ncol(y)
 	V <- designMats$V
 	ppars <- coef(fit, type = "det")
-	d <- fit@dist.breaks
-	survey <- fit@survey
+	d <- umf@dist.breaks
+	survey <- umf@survey
 	key <- fit@keyfun
 	switch(key, 
 		halfnorm = {
