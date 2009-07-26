@@ -147,12 +147,14 @@ distsamp <- function(formula, data,
 	nAP <- length(lamParms)
 	nDP <- length(detParms)
 	nP <- nAP + nDP
-	a <- data@distClassAreas
-	if(all(is.na(a)))
+	a <- data@plotArea
+	if(all(is.na(a))) {
 		a <- calcAreas(dist.breaks = dist.breaks, tlength = tlength, 
 			survey = survey, output = output, M = M, J = J, unitsIn = unitsIn,
 			unitsOut = unitsOut)
-	a <- c(t(a))
+		a <- c(t(a))
+		}
+	data@plotArea <- a
 	switch(keyfun,
 		halfnorm = { 
 			altdetParms <- paste("sigma", colnames(V), sep="")
@@ -160,10 +162,9 @@ distsamp <- function(formula, data,
 				starts <- c(rep(0, nAP), log(max(dist.breaks)), rep(0, nDP-1))
 				names(starts) <- c(lamParms, detParms)
 			} else {
-				if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
+				if(is.null(names(starts))) names(starts) <- c(lamParms, 
+					detParms)
 				}
-				if(!all(names(starts) %in% c(lamParms, detParms)))
-					stop("names(starts) does not agree with necessary model parameters")
 				nll <- function(params) {
 					ll.halfnorm(params, Y=y, X=X, V=V, J=J, a=a, 
 						d=dist.breaks, nAP=nAP, nP=nP, survey=survey)
@@ -172,14 +173,13 @@ distsamp <- function(formula, data,
 		exp = { 
 			altdetParms <- paste("rate", colnames(V), sep="")
 			if(is.null(starts)) {
-				starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-1))
+				starts <- c(rep(0, nAP), log(median(dist.breaks)), 
+					rep(0, nDP-1))
 				names(starts) <- c(lamParms, detParms)
 			} else {
 				if(is.null(names(starts)))
 					names(starts) <- c(lamParms, detParms)
 			}
-			if(!all(names(starts) %in% c(lamParms, detParms)))
-				stop("names(starts) does not agree with necessary model parameters")
 			nll <- function(params) {
 				ll.exp(params,  Y=y, X=X, V=V, J=J, d=dist.breaks, 
 					a=a, nAP=nAP, nP=nP, survey=survey)
@@ -191,14 +191,13 @@ distsamp <- function(formula, data,
 			nP <- nAP + nDP
 			altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
 			if(is.null(starts)) {
-				starts <- c(rep(0, nAP), log(median(dist.breaks)), rep(0, nDP-2), 1)
+				starts <- c(rep(0, nAP), log(median(dist.breaks)), 
+					rep(0, nDP-2), 1)
 				names(starts) <- c(lamParms, detParms)
 			} else {
 				if(is.null(names(starts)))
 					names(starts) <- c(lamParms, detParms)
 			}
-			if(!all(names(starts) %in% c(lamParms, detParms)))
-				stop("names(starts) does not agree with necessary model parameters")
 			nll <- function(params) {
 				ll.hazard(params, Y=y, X=X, V=V, J=J, d=dist.breaks, 
 						a=a, nAP=nAP, nP=nP, survey=survey)
@@ -215,8 +214,6 @@ distsamp <- function(formula, data,
 				if(is.null(names(starts)))
 					names(starts) <- lamParms
 			}
-			if(!all(names(starts) %in% lamParms))
-				stop("names(starts) does not agree with necessary model parameters")
 			nll <- function(params) {
 				ll.uniform(params, Y=y, X=X, V=V, J=J, a=a)
 			}

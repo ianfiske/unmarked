@@ -167,6 +167,8 @@ setMethod("predict", "unmarkedFit",
 			formula <- object@formula
 #			stateformula <- object@stateformula
 #			detformula <- object@detformula
+			if(inherits(newdata, "unmarkedFrame"))
+				class(newdata) <- "unmarkedFrame"
 			cls <- class(newdata)
 			switch(cls, 
 					unmarkedFrame = {
@@ -359,41 +361,6 @@ setClass("unmarkedFitDS",
 				unitsOut = "character"),
 		contains = "unmarkedFit")
 
-##TODO add prediction of distance interval detection probabilities
-#' @name predict-unmarkedFitDS
-#' @exportMethod predict
-setMethod("predict", "unmarkedFitDS", 
-	function(object, type, newdata=NULL, backTran=TRUE, ...) {
-		if(is.null(newdata))
-			newdata <- object@data
-		formula <- object@formula
-		cls <- class(newdata)
-		switch(cls, 
-			unmarkedFrameDS = {
-				designMats <- getDesign2(formula, newdata)
-				switch(type, 
-					state = X <- designMats$X,
-					det = X <- designMats$V)
-				},
-				data.frame = {
-					switch(type, 
-						state = {
-							detformula <- as.formula(formula[[2]])
-							stateformula <- as.formula(paste("~",formula[3],sep=""))
-							Terms <- delete.response(terms(stateformula))
-							mf <- model.frame(Terms, newdata)
-							X <- model.matrix(Terms, mf)
-							},
-						det = X <- model.matrix(detformula, newdata))
-				})
-		out <- matrix(NA, nrow(X), 2, dimnames=list(NULL, c("Predicted", "SE")))
-		lc <- linearComb(object, X, type)
-		if(backTran) lc <- backTransform(lc)
-		out[,1] <- coef(lc)
-		out[,2] <- SE(lc)
-		return(out)
-	}
-)
 
 
 
@@ -407,7 +374,7 @@ setGeneric("parboot",
 
 
 #' @exportClass parbootDS
-setClass("parbootDS",
+setClass("parboot",
     representation(fitType = "character",
         call = "call",
         t0 = "numeric",
@@ -455,7 +422,7 @@ setMethod("parboot", "unmarkedFitDS", function(object, R=10, report=2,
 	J <- ncol(y)
 	yvec0 <- c(t(y))
 	ests <- as.numeric(coef(object, altNames=TRUE))
-	a <- object@area
+	a <- object@data@plotArea
 	aMat <- matrix(a, M, J, byrow=TRUE)
 	lam0 <- exp(X %*% coef(object, type = "state"))
 	lamvec0 <- rep(lam0, each = J) * a
@@ -482,7 +449,7 @@ setMethod("parboot", "unmarkedFitDS", function(object, R=10, report=2,
 		if(R > report && i %in% seq(report, R, by=report))
 			cat(paste(round(rmse[(i-(report-1)):i], 1), collapse=", "), fill=T)
 		}
-	out <- new("parbootDS", call=call, t0 = rmse0, t.star = rmse, label = label)
+	out <- new("parboot", call=call, t0 = rmse0, t.star = rmse, label = label)
 	return(out)
 	})
 
@@ -492,7 +459,7 @@ setMethod("parboot", "unmarkedFitDS", function(object, R=10, report=2,
 
 
 #' @exportMethod show
-setMethod("show", "parbootDS", function(object) 
+setMethod("show", "parboot", function(object) 
 {
 t.star <- object@t.star
 t0 <- object@t0
@@ -514,7 +481,7 @@ print(quantile(t.star, probs=c(0,2.5,25,50,75,97.5,100)/100))
 
 
 #' @exportMethod plot
-setMethod("plot", signature(x="parbootDS", y="missing"), function(x, y, ...)
+setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
 {
 op <- par(mfrow=c(1, 2))
 t.star <- x@t.star
