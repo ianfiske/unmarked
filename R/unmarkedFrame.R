@@ -207,22 +207,7 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, mapIn
 #' @export
 setMethod("show", "unmarkedFrame",
 		function(object) {
-			obsCovs <- obsCovs(object)
-			siteCovs <- siteCovs(object)
-			y <- getY(object)
-			colnames(y) <- paste("y",1:ncol(y),sep=".")
-			if(is.null(obsToY(object))) {
-				obsNum <- ncol(y)
-			} else {
-				obsNum <- obsNum(object)
-			}
-			if(is.null(siteCovs)) siteCovs <- matrix(0,nrow(y),0)
-			if(is.null(obsCovs)) {
-				obsCovs <- matrix(0,nrow(y),0)
-			} else {
-				obsCovs <- data.frame(lapply(obsCovs, function(x) matrix(x, nrow(y), obsNum,byrow=T)))
-			}
-			df <- data.frame(y, siteCovs, obsCovs)
+			df <- as(object, "data.frame")
 			cat("Data frame representation of unmarkedFrame object.\n")
 			print(df)
 		})
@@ -481,4 +466,24 @@ setMethod("[", c("unmarkedMultFrame","missing", "numeric", "missing"),
 setAs("data.frame", "unmarkedFrame", function(from) {
 			umf <- formatWide(from)
 			umf
+		})
+
+setAs("unmarkedFrame", "data.frame", function(from) {
+			obsCovs <- obsCovs(from)
+			siteCovs <- siteCovs(from)
+			y <- getY(from)
+			colnames(y) <- paste("y",1:ncol(y),sep=".")
+			if(is.null(obsToY(from))) {
+				obsNum <- ncol(y)
+			} else {
+				obsNum <- obsNum(from)
+			}
+			if(is.null(siteCovs)) siteCovs <- matrix(0,nrow(y),0)
+			if(is.null(obsCovs)) {
+				obsCovs <- matrix(0,nrow(y),0)
+			} else {
+				obsCovs <- data.frame(lapply(obsCovs, function(x) matrix(x, nrow(y), obsNum,byrow=T)))
+			}
+			df <- data.frame(y, siteCovs, obsCovs)
+			df
 		})
