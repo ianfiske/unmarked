@@ -340,16 +340,36 @@ setMethod("summary","unmarkedFrame",
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
 #' @import ggplot2
+#' @exportMethod plot
 setMethod("plot", c(x="unmarkedFrame", y="missing"),
 		function(x) {
 			M <- numSites(x)
 			J <- obsNum(x)
 			df <- data.frame(site = rep(1:M, each = J), obs = as.factor(rep(1:J, M)), y = as.vector(t(getY(x))))
+			df <- na.omit(df)
 			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() + coord_flip()
 			g
 		})
 
+setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
+		function(x) {
+			M <- numSites(x)
+			J <- obsNum(x)
+			df <- data.frame(site = rep(1:M, each = J), obs = as.factor(rep(1:J, M)), y = as.ordered(as.vector(t(getY(x)))))
+			df <- na.omit(df)
+			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() + coord_flip() + scale_fill_brewer(type="seq")
+			g
+		})
 
+setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
+		function(x) {
+			M <- numSites(x)
+			J <- obsNum(x)
+			df <- data.frame(site = rep(1:M, each = J), obs = as.factor(rep(1:J, M)), y = as.ordered(as.vector(t(getY(x)))))
+			df <- na.omit(df)
+			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() + coord_flip() + scale_fill_brewer(type="seq")
+			g
+		})
 
 #setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 #		function(x) {
