@@ -1,6 +1,3 @@
-#' @import reshape
-{}
-
 #' @nord
 genFixedNLL <- function(nll, whichFixed, fixedValues) {
   function(params) {
@@ -660,7 +657,7 @@ getDesign2 <- function(formula, umf) {
 	cleaned <- handleNA2(umf, X, V)
 	
 	return(list(y = cleaned$y, X = cleaned$X, V = cleaned$V, 
-		plotArea = cleaned$plotArea))
+		plotArea = cleaned$plotArea, removed.sites = cleaned$removed.sites))
 }
 
 
