@@ -1,7 +1,7 @@
 \name{occu}
 \alias{occu}
 \title{Fit the MacKenzie Occupancy Model}
-\usage{occu(formula, data, knownOcc=numeric(0), profile=FALSE)}
+\usage{occu(formula, data, knownOcc=numeric(0))}
 \description{This function estimates the standard occupancy model.}
 \details{See \link{unmarkedFrame} for a description of how to supply data to the \command{umf}
 argument.
@@ -24,11 +24,13 @@ using the logit link.}
 MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008) \emph{Book Name}.}
 \author{Ian Fiske}
 \keyword{models}
-\arguments{\item{stateformula}{right-hand side formula describing covariates of occurence.}
-\item{detformula}{right-hand side formula describing covariates of detection.}
+\arguments{\item{formula}{double right-hand side formula describing covariates of detection and occupancy.}
 \item{data}{either a unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..}
 \item{knownOcc}{vector of sites that are known to be occupied.}}
 \examples{data(frogs)
-pferUMF <- unmarkedFrame(pfer.bin)
+pferUMF <- unmarkedFrameOccu(pfer.bin)
 fm <- occu(~ 1 ~ 1, pferUMF)
-fm}
+fm
+data(spatial)
+frogUMF <- unmarkedFrameOccu(y, mapInfo = mapInfo(coordinates = coords, projection = "sp_mercator"))
+plot(frogUMF)}

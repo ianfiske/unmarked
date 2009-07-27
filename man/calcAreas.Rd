@@ -1,8 +1,8 @@
 \name{calcAreas}
 \alias{calcAreas}
 \title{Prepare area argument for distsamp().}
-\usage{calcAreas(dist.breaks, tlength, survey, output, M, J,
-    unitsIn, unitsOut)}
+\usage{calcAreas(dist.breaks, tlength, survey, output, M, J, unitsIn,
+    unitsOut)}
 \description{Prepare area argument for distsamp(). This is primarily for internal use
 but see details. Caution should be used because the returned matrix has 
 different interpretations for different survey and output types.}

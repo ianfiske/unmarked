@@ -36,6 +36,6 @@ pp. 777--790.}
 \item{detformula}{Right-hand side formula describing covariates of detection}
 \item{umf}{unmarkedFrame supplying data to the model.}}
 \examples{data(birds)
-woodthrushUMF <- unmarkedFrame(woodthrush.bin)
+woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
 fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF)
 fm.wood.rn}

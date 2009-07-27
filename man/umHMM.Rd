@@ -1,9 +1,9 @@
 \name{umHMM}
 \alias{umHMM}
 \title{Fit the general multistate multiseason occupancy model.}
-\usage{umHMM(stateformula=~1, detformula=~1, umf, detconstraint,
-    phiconstraint, psiconstraint, phiMat, inits, B=0, max.bad=3,
-    min.good=1, fit.stats=TRUE, method=BFGS, control=list())}
+\usage{umHMM(formula=~1, umf, detconstraint, phiconstraint, psiconstraint,
+    phiMat, inits, B=0, max.bad=3, min.good=1, fit.stats=TRUE,
+    method=BFGS, control=list())}
 \description{Estimate parameters of the general multiseason multistate occpancy model.}
 \details{Site level covariates are currently not implemented for markovMN and so stateformula is ignored.
 See \link{unmarked} for a discussion of detformula.  See \link{unmarkedFrame} for a description of how to create
@@ -26,8 +26,7 @@ Each freely varying detection parameter can be modeled as a linear function of o
 \code{detconstraint} is a matrix with number of rows equal to the detection matrix parameters and number of
 columns equal to the number of covariates (plus 1 for the intercept).  Each column is a constraint vector beginning with 1 that indicates
 which covariates are restricted to have the same effect on a given matrix parameter.}
-\arguments{\item{stateformula}{right-hand side formula describing covariates of occurence.}
-\item{detformula}{right-hand side formula describing covariates of detection.}
+\arguments{\item{formula}{right-hand side formula describing covariates of detection.}
 \item{umf}{unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..}
 \item{detconstraint}{matrix to describe constraints on detection parameters}
 \item{phiconstraint}{vector to describe phi constraints}

@@ -1,7 +1,7 @@
 \name{multinomPois}
 \alias{multinomPois}
 \title{Multinomial-Poisson Mixtures}
-\usage{multinomPois(formula, piFun, data, obsToY)}
+\usage{multinomPois(formula, piFun, data)}
 \description{Fit the multinomial-Poisson abundance mixture model.}
 \details{This function takes advantage of the closed form of the integrated
 likelihood when a latent Poisson distribution is assumed for abundance

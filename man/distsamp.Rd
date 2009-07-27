@@ -1,10 +1,9 @@
 \name{distsamp}
 \alias{distsamp}
 \title{Fit the hierarchical distance sampling model of Royle et al.}
-\usage{distsamp(formula, data, keyfun=c("halfnorm", "exp",
-    "hazard", "uniform"), output=c("density", "abund"),
-    unitsOut=c("ha", "kmsq"), starts, method=BFGS,
-    control=list(), ...)}
+\usage{distsamp(formula, data, keyfun=c("halfnorm", "exp", "hazard",
+    "uniform"), output=c("density", "abund"), unitsOut=c("ha", "kmsq"),
+    starts, method=BFGS, control=list(), ...)}
 \description{Fit the hierarchical distance sampling model of Royle et al. (2004) to 
 line or point transect data recorded in discrete distance intervals.}
 \details{Unlike conventional distance sampling, which uses the 'conditional on 

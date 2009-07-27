@@ -37,7 +37,7 @@ Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Count
 \item{K}{Integer upper index of integration for N-mixture.}
 \item{mixture}{character specifying mixture: either "P" or "NB".}}
 \examples{data(mallard)
-mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
+mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)
 fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
 fm.mallard}
