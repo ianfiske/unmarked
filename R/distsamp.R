@@ -244,7 +244,7 @@ distsamp <- function(formula, data,
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
 	dsfit <- new("unmarkedFitDS", fitType = "distsamp", call = match.call(), 
-		opt = opt, formula = formula, data = data, keyfun=keyfun, 
+		opt = opt, formula = formula, data = data, keyfun=keyfun, sitesRemoved = designMats$removed.sites, 
 		unitsOut=unitsOut, estimates = estimateList, 
 		AIC = fmAIC, negLogLike = fm$value, nllFun = nll)
 	return(dsfit)
@@ -275,17 +275,17 @@ distsamp <- function(formula, data,
 #' @param rate Shape parameter of negative-exponential detection function
 #' @param shape Shape parameter of hazard-rate detection function
 #' @param scale Scale parameter of hazard-rate detection function
-#' @export 
+#' @export gxhn
 gxhn <- function(x, sigma) exp(-x^2/(2 * sigma^2))
-#' @export
+#' @export gxexp
 gxexp <- function(x, rate) exp(-x / rate) 
-#' @export
+#' @export gxhaz
 gxhaz <- function(x, shape, scale)  1 - exp(-(x/shape)^-scale)
-#' @export
+#' @export grhn
 grhn <- function(r, sigma) exp(-r^2/(2 * sigma^2)) * r
-#' @export
+#' @export grexp
 grexp <- function(r, rate) exp(-r / rate) * r
-#' @export
+#' @export grhaz
 grhaz <- function(r, shape, scale)  (1 - exp(-(r/shape)^-scale)) * r
 
 

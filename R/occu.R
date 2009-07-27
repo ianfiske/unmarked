@@ -41,15 +41,10 @@
 #' @keywords models
 #' @export
 occu <-
-function(formula, data, knownOcc = numeric(0))
+function(formula, umf, knownOcc = numeric(0))
 {
-	umf <- switch(class(data),
-			data.frame = as(data, "unmarkedFrame"),
-			unmarkedFrame = data,
-			stop("Data is not a data frame or unmarkedFrame."))
-	
-	obsToY(umf) <- diag(numY(umf))  # occu functions have obs <-> y (1-1)
-	
+	if(!is(umf, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
+		
   designMats <- getDesign2(formula, umf)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	
@@ -106,7 +101,8 @@ function(formula, data, knownOcc = numeric(0))
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
 
   umfit <- unmarkedFit(fitType = "occu",
-      call = match.call(), formula = formula, data = umf, estimates = estimateList,
+      call = match.call(), formula = formula, data = umf, sitesRemoved = designMats$removed.sites, 
+			estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
   return(umfit)

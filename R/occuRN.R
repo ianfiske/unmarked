@@ -40,20 +40,16 @@
 #' pp. 777--790.
 #' @examples
 #' data(birds)
-#' woodthrushUMF <- unmarkedFrame(woodthrush.bin)
+#' woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
 #' fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF)
 #' fm.wood.rn
 #' @keywords models
 #' @export
 occuRN <-
-function(formula, data, K = 25)
+function(formula, umf, K = 25)
 {
-	umf <- switch(class(data),
-			data.frame = as(data, "unmarkedFrame"),
-			unmarkedFrame = data,
-			stop("Data is not a data frame or unmarkedFrame."))
+	if(!is(umf, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 	
-	obsToY(umf) <- diag(numY(umf))  # occuRN has obs <-> y
 	
 	designMats <- getDesign2(formula, umf)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
@@ -126,7 +122,8 @@ function(formula, data, K = 25)
           det=detEstimates))
 
   umfit <- unmarkedFit(fitType = "occuRN",
-      call = match.call(), formula = formula, data = umf, estimates = estimateList,
+      call = match.call(), formula = formula, data = umf, sitesRemoved = designMats$removed.sites, 
+			estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
   return(umfit)

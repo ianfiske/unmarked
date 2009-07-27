@@ -39,25 +39,20 @@
 #' Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.
 #' @examples
 #' data(mallard)
-#' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
+#' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 #'                            obsCovs = mallard.obs)
 #' fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
 #' fm.mallard
 #' @export
 #' @keywords models
 pcount <-
-function(formula, data, K, mixture = c("P", "NB"))
+function(formula, umf, K, mixture = c("P", "NB"))
 {
 
 	mixture <- match.arg(mixture)
 	
-	umf <- switch(class(data),
-			data.frame = as(data, "unmarkedFrame"),
-			unmarkedFrame = data,
-			stop("Data is not a data frame or unmarkedFrame."))
-	
-	obsToY(umf) <- diag(numY(umf))  # pcount functions have obs <-> y are 1-1
-	
+	if(!is(umf, "unmarkedFramePCount")) stop("Data is not an unmarkedFramePCount object.")
+
 	designMats <- getDesign2(formula, umf)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y; plotArea <- designMats$plotArea
 
@@ -137,7 +132,8 @@ function(formula, data, K, mixture = c("P", "NB"))
   estimateList <- unmarkedEstimateList(list(state=stateEstimates, det=detEstimates))
 
   umfit <- unmarkedFit(fitType = "pcount",
-      call = match.call(), formula = formula, data = umf, estimates = estimateList,
+      call = match.call(), formula = formula, data = umf, 
+			sitesRemoved = designMats$removed.sites, estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
   return(umfit)
