@@ -350,8 +350,7 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
 		})
 
 
-##' @importFrom mapproj mapproject
-##' @export 
+
 #setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 #		function(x) {
 #			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFrameOccu object.")
@@ -375,9 +374,7 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
 #			}
 #		})
 #
-##' @importFrom mapproj mapproject
-##' @import ggplot2 
-##' @export 
+
 #setMethod("plot", c(x="unmarkedFramePCount", y="missing"),
 #		function(x) {
 #			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFramePCount object.")
