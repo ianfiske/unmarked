@@ -22,6 +22,7 @@ setClass("unmarkedFit",
         call = "call",
 				formula = "formula",
         data = "unmarkedFrame",
+				sitesRemoved = "numeric",  # vector of indices of sites that were removed from analysis
         estimates = "unmarkedEstimateList",
         AIC = "numeric",
 				opt = "list",
@@ -32,9 +33,9 @@ setClass("unmarkedFit",
 
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, formula,
-    data, estimates, AIC, opt, negLogLike, nllFun) {
+    data, sitesRemoved, estimates, AIC, opt, negLogLike, nllFun) {
   umfit <- new("unmarkedFit", fitType = fitType,
-      call = call, formula = formula, data = data,
+      call = call, formula = formula, data = data, sitesRemoved = sitesRemoved,
       estimates = estimates, AIC = AIC,
       opt = opt, negLogLike = negLogLike, nllFun = nllFun)
 
@@ -323,6 +324,24 @@ setMethod("update", "unmarkedFit",
 	)
 
 
+setGeneric("sampleSize", function(object) standardGeneric("sampleSize"))
+
+#' @export 
+setMethod("sampleSize", "unmarkedFit",
+		function(object) {
+			data <- getData(object)
+			M <- numSites(data)
+			M <- M - length(object@sitesRemoved)
+			M
+		})
+	
+setGeneric("getData", function(object) standardGeneric("getData"))	
+
+#' @export 
+setMethod("getData", "unmarkedFit",
+		function(object) {
+			object@data
+		})
 
 
 setGeneric("nllFun", function(object) standardGeneric("nllFun"))
@@ -373,7 +392,7 @@ setGeneric("parboot",
 
 
 
-#' @exportClass parbootDS
+#' @exportClass parboot
 setClass("parboot",
     representation(fitType = "character",
         call = "call",
