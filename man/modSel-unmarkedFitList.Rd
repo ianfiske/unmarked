@@ -14,15 +14,13 @@ siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
 tlength = lengths, survey = "line", unitsIn = "m")
 })
 
-## Half-normal detection function. Density output. No covariates. 
-## lineDat$Length is transect lengths in km, so it has to be converted.
-(fm1 <- distsamp(~ 1, ~1, ltUMF))
+(fm1 <- distsamp(~ 1 ~1, ltUMF))
 
-(fm2 <- distsamp(~ area, ~1, ltUMF))
+(fm2 <- distsamp(~ area ~1, ltUMF))
 
-(fm3 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~area, ltUMF)
+(fm3 <- distsamp( ~ 1 ~area, ltUMF))
 
-fl <- unmarkedFitList(fitList = list(Null=fm1, A.=fm2, .A=fm2))
+fl <- fitList(fits = list(Null=fm1, A.=fm2, .A=fm2))
 fl
 
 (ms <- modSel(fl, nullmod=fm1))
