@@ -88,7 +88,30 @@ setMethod("show", "unmarkedFit",
 #            show(round(detDF,3))
 
       cat("\nAIC:", object@AIC,"\n")
+      
+      if(!identical(object@opt$convergence, 0L))
+    		warning("Model did not converge. Try providing starting values or
+    			increasing maxit control argment.")
+    			
     })
+    
+    
+    
+    
+#' @export
+setMethod("summary", "unmarkedFit", 
+	function(object) {
+		show(object)
+		cat("\nSample size:", sampleSize(object))
+		if(length(object@sitesRemoved) > 0)
+			cat("\nSites removed:", object@sitesRemoved)
+		cat("\noptim convergence code:", object@opt$convergence)
+		cat("\noptim iterations:", object@opt$counts[1], "\n", "\n")
+		if(!identical(object@opt$convergence, 0L))
+    		warning("Model did not converge. Try providing starting values or
+    			increasing maxit control argment.")
+})
+
 
 
 #' Compute linear combinations of estimates in unmarkedFit objects.
