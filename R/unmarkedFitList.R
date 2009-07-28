@@ -6,8 +6,8 @@ setClass("unmarkedFitList",
     representation(fitList = "list"),
     validity = function(object) {
     	fl <- object@fitList
-    	d1 <- fl[[1]]@data
-    	tests <- sapply(fl, function(x) all.equal(d1, x@data))
+    	d1 <- getData(fl[[1]])
+    	tests <- sapply(fl, function(x) all.equal(d1, getData(x)))
     	all(tests)
     	}
     )
@@ -18,15 +18,15 @@ setClass("unmarkedFitList",
 #' @examples
 #' # Fit some N-mixture models
 #' data(mallard)
-#' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
+#' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 #' 	obsCovs = mallard.obs)
 #' 
-#' fm1 <- pcount(~ length ~ ivel, mallardUMF)
-#' fm2 <- pcount(~ length ~ 1, mallardUMF)
+#' fm1 <- pcount(~ ivel ~ length, mallardUMF)
+#' fm2 <- pcount(~ ivel ~ 1, mallardUMF)
 #' fm3 <- pcount(~ 1 ~ 1, mallardUMF)
 #' 
 #' # Create an unmarkedFitList with a named list of models
-#' fmList <- unmarkedFitList(fitList=list(Global=fm1, Length.=fm2, Null=fm3))
+#' fmList <- unmarkedFitList(fitList=list(Global=fm1, ivel.=fm2, Null=fm3))
 #' fmList
 #' 
 #' # Model-averaged prediction
@@ -39,14 +39,26 @@ setClass("unmarkedFitList",
 unmarkedFitList <- function(fitList) {
 	umfl <- new("unmarkedFitList", fitList=fitList)
 	return(umfl)
-}
+	}
+	
 
-##TODO Fix predict-unmarkedFit so that it won't fail when type="det" for 2 parameter detection functions (eg distsamp(keyfun="hazard"))
+
+setMethod("summary", "unmarkedFitList", function(object) {
+	fitList <- object@fitList
+	for(i in 1:length(fitList))
+		summary(fitList[[i]])
+	})
+
+
+
+## TODO Fix predict-unmarkedFit so that it won't fail when type="det" for 2 
+## 		parameter detection functions (eg distsamp(keyfun="hazard"))
 #' @exportMethod predict
 setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL, 
 				backTran=TRUE) {
 			fitList <- object@fitList
-			ese <- lapply(fitList, predict, type=type, newdata=newdata, backTran=backTran)
+			ese <- lapply(fitList, predict, type=type, newdata=newdata, 
+				backTran=backTran)
 			E <- sapply(ese, function(x) x[,"Predicted"])
 			SE <- sapply(ese, function(x) x[,"SE"])
 			ic <- sapply(fitList, slot, "AIC")
@@ -111,17 +123,21 @@ setClass("unmarkedModSel",
 #' @examples
 #' data(linetran)
 #' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
+#' lengths <- linetran$Length * 1000
+#'
+#' ltUMF <- with(linetran, {
+#'		unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
+#'		siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
+#'		tlength = lengths, survey = "line", unitsIn = "m")
+#'		})
 #' 
 #' ## Half-normal detection function. Density output. No covariates. 
 #' ## lineDat$Length is transect lengths in km, so it has to be converted.
-#' (fm1 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 	tlength=linetran$Length*1000, survey="line", unitsIn="m"))
+#' (fm1 <- distsamp(~ 1, ~1, ltUMF))
 #'
-#' (fm2 <- distsamp(cbind(o1,o2,o3,o4) ~ area, ~1, linetran, dist.breaks=dbreaksLine, 
-#' 	tlength=linetran$Length*1000, survey="line", unitsIn="m"))
+#' (fm2 <- distsamp(~ area, ~1, ltUMF))
 #'
-#' (fm3 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~area, linetran, dist.breaks=dbreaksLine, 
-#' 	tlength=linetran$Length*1000, survey="line", unitsIn="m"))
+#' (fm3 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~area, ltUMF)
 #'
 #' fl <- unmarkedFitList(fitList = list(Null=fm1, A.=fm2, .A=fm2))
 #' fl
@@ -155,11 +171,13 @@ out$Converge <- sapply(fits, function(x) x@opt$convergence)
 out$CondNum <- sapply(fits, function(x) cn(x))
 out$negLogLike <- sapply(fits, function(x) x@negLogLike)
 out$K <- sapply(fits, function(x) length(coef(x)))
-out$n <- sapply(fits, function(x) nrow(x@data@y))
+out$n <- sapply(fits, function(x) sampleSize(x))
+if(!identical(length(table(out$n)), 1L))
+	warning("Models are not nested. AIC comparisons not valid")
 out$AIC <- sapply(fits, function(x) x@AIC)
-out$deltaAIC <- out$AIC-min(out$AIC)
-out$AICwt <- exp(-out$deltaAIC/2)
-out$AICwt <- out$AICwt/sum(out$AICwt)
+out$deltaAIC <- out$AIC - min(out$AIC)
+out$AICwt <- exp(-out$deltaAIC / 2)
+out$AICwt <- out$AICwt / sum(out$AICwt)
 out$Rsq <- NA
 if(!is.null(nullmod))
 	out$Rsq <- sapply(fits, nagR2, nullmod)
