@@ -3,9 +3,9 @@
 
 #' @export
 setClass("unmarkedFitList",
-    representation(fitList = "list"),
+    representation(fits = "list"),
     validity = function(object) {
-    	fl <- object@fitList
+    	fl <- object@fits
     	d1 <- getData(fl[[1]])
     	tests <- sapply(fl, function(x) all.equal(d1, getData(x)))
     	all(tests)
@@ -26,7 +26,7 @@ setClass("unmarkedFitList",
 #' fm3 <- pcount(~ 1 ~ 1, mallardUMF)
 #' 
 #' # Create an unmarkedFitList with a named list of models
-#' fmList <- unmarkedFitList(fitList=list(Global=fm1, ivel.=fm2, Null=fm3))
+#' fmList <- fitList(fits=list(Global=fm1, ivel.=fm2, Null=fm3))
 #' fmList
 #' 
 #' # Model-averaged prediction
@@ -36,17 +36,17 @@ setClass("unmarkedFitList",
 #' modSel(fmList, nullmod=fm3)
 #'
 #' @export
-unmarkedFitList <- function(fitList) {
-	umfl <- new("unmarkedFitList", fitList=fitList)
+fitList <- function(fits) {
+	umfl <- new("unmarkedFitList", fits=fits)
 	return(umfl)
 	}
 	
 
 
 setMethod("summary", "unmarkedFitList", function(object) {
-	fitList <- object@fitList
-	for(i in 1:length(fitList))
-		summary(fitList[[i]])
+	fits <- object@fits
+	for(i in 1:length(fits))
+		summary(fits[[i]])
 	})
 
 
@@ -56,7 +56,7 @@ setMethod("summary", "unmarkedFitList", function(object) {
 #' @exportMethod predict
 setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL, 
 				backTran=TRUE) {
-			fitList <- object@fitList
+			fitList <- object@fits
 			ese <- lapply(fitList, predict, type=type, newdata=newdata, 
 				backTran=backTran)
 			E <- sapply(ese, function(x) x[,"Predicted"])
@@ -78,21 +78,21 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
 
 # Condition number
 cn <- function(object) {
-   ev <- eigen(hessian(object))$value
-   max(ev) / min(ev)
-   }
+   	ev <- eigen(hessian(object))$value
+   	max(ev) / min(ev)
+   	}
 
 
 
 # R-squared index from Nagelkerke (1991)				  
 nagR2 <- function(fit, nullfit)
 {
-n <- nrow(fit@data@y)
-devI <- 2 * fit@negLogLike
-devN <- 2 * nullfit@negLogLike
-r2 <- 1 - exp((devI - devN) / n)
-r2max <- 1 - exp(-1 * devN / n)
-return(r2 / r2max)
+	n <- nrow(fit@data@y)
+	devI <- 2 * fit@negLogLike
+	devN <- 2 * nullfit@negLogLike
+	r2 <- 1 - exp((devI - devN) / n)
+	r2max <- 1 - exp(-1 * devN / n)
+	return(r2 / r2max)
 }
 
 
@@ -131,15 +131,13 @@ setClass("unmarkedModSel",
 #'		tlength = lengths, survey = "line", unitsIn = "m")
 #'		})
 #' 
-#' ## Half-normal detection function. Density output. No covariates. 
-#' ## lineDat$Length is transect lengths in km, so it has to be converted.
-#' (fm1 <- distsamp(~ 1, ~1, ltUMF))
+#' (fm1 <- distsamp(~ 1 ~1, ltUMF))
 #'
-#' (fm2 <- distsamp(~ area, ~1, ltUMF))
+#' (fm2 <- distsamp(~ area ~1, ltUMF))
 #'
-#' (fm3 <- distsamp(cbind(o1,o2,o3,o4) ~ 1, ~area, ltUMF)
+#' (fm3 <- distsamp( ~ 1 ~area, ltUMF))
 #'
-#' fl <- unmarkedFitList(fitList = list(Null=fm1, A.=fm2, .A=fm2))
+#' fl <- fitList(fits = list(Null=fm1, A.=fm2, .A=fm2))
 #' fl
 #'
 #' (ms <- modSel(fl, nullmod=fm1))
@@ -148,7 +146,7 @@ setClass("unmarkedModSel",
 #' @exportMethod modSel
 setMethod("modSel", "unmarkedFitList", function(object, nullmod=NULL) 
 {
-fits <- object@fitList
+fits <- object@fits
 estList <- lapply(fits, coef, altNames=T)
 seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=T))))
 eNames <- sort(unique(unlist(sapply(estList, names))))
@@ -164,8 +162,10 @@ eMat <- seMat <- matrix(NA, length(fits), length(eNames),
    dimnames=list(names(fits), eNames))
 out$formula <- sapply(fits, function(x) deparse(x@formula))
 for(i in 1:length(eNames)) {
-	eMat[,eNames[i]] <- out[,eNames[i]] <- sapply(estList, function(x) x[eNames[i]])
-	seMat[,eNames[i]] <- out[,seNames[i]] <- sapply(seList, function(x) x[eNames[i]])
+	eMat[,eNames[i]] <- out[,eNames[i]] <- sapply(estList, function(x) 
+		x[eNames[i]])
+	seMat[,eNames[i]] <- out[,seNames[i]] <- sapply(seList, function(x) 
+		x[eNames[i]])
 	}
 out$Converge <- sapply(fits, function(x) x@opt$convergence)
 out$CondNum <- sapply(fits, function(x) cn(x))
