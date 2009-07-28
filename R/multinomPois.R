@@ -153,9 +153,10 @@ function(formula, piFun, data) # TODO: remove piFun argument here and in example
   estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           det=detEstimates))
 
-  umfit <- unmarkedFit(fitType = "multinomPois",
-      call = match.call(), formula = formula, data = umf, estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
+  umfit <- unmarkedFit(fitType = "multinomPois", call = match.call(), 
+  		formula = formula, data = umf, estimates = estimateList, 
+		sitesRemoved = designMats$removed.sites, AIC = fmAIC, opt = opt, 
+		negLogLike = fm$value, nllFun = nll)
 
   return(umfit)
 }
