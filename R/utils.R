@@ -703,9 +703,9 @@ handleNA2 <- function(umf, X, V) {
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
-		y <- y[!sites.to.remove, ]
-		X <- X[!sites.to.remove, ]
-		V <- V[!sites.to.remove[rep(1:M, each = R)], ]
+		y <- y[!sites.to.remove, ,drop = FALSE]
+		X <- X[!sites.to.remove, ,drop = FALSE]
+		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
 		plotArea <- plotArea[!sites.to.remove]
 		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
 	}
