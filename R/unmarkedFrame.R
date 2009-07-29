@@ -349,10 +349,14 @@ setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
 		function(x) {
 			M <- numSites(x)
+			nY <- x@numPrimary
 			J <- obsNum(x)
+			obsNum <- J/nY
 			df <- data.frame(site = rep(1:M, each = J), obs = as.factor(rep(1:J, M)), y = as.ordered(as.vector(t(getY(x)))))
 			df <- na.omit(df)
-			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() + coord_flip() + scale_fill_brewer(type="seq")
+			yrs <- data.frame(x=rep(0,nY-1),xend=rep(M,nY-1),yrs=seq(obsNum,J-obsNum,by=obsNum)+0.5)
+			g <- ggplot(data=df) + geom_tile(aes(x = site, y = obs, fill=y)) + coord_flip() + scale_fill_brewer(type="seq") +
+					geom_segment(aes(x=x,xend=xend,y=yrs,yend=yrs),data=yrs)
 			g
 		})
 
