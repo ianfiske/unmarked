@@ -33,6 +33,7 @@ setGeneric("summary")
 setGeneric("update")
 setGeneric("confint")
 setGeneric("profile")
+setGeneric("head")
 
 #' Compute linear combinations of parameters.
 #'

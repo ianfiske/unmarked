@@ -346,6 +346,18 @@ setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 			g
 		})
 
+## this needs some work.
+setMethod("plot", c(x="unmarkedFramePCount", y="missing"),
+		function(x) {
+			## create lines for sites that have pos obs?
+			M <- numSites(x)
+			J <- obsNum(x)
+			df <- data.frame(site = rep(1:M, each = J), obs = as.factor(rep(1:J, M)), y = as.vector(t(getY(x))))
+			df <- na.omit(df)
+			g <- ggplot(aes(x = site, y = obs, colour=y,size=y), data=df) + geom_point() + coord_flip() + theme_bw() + scale_fill_gradient()
+			g
+		})
+
 setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
 		function(x) {
 			M <- numSites(x)
@@ -470,6 +482,14 @@ setMethod("[", c("unmarkedMultFrame","missing", "numeric", "missing"),
 			u@numPrimary <- numPrimary
 			u
 		})
+
+#' @importFrom utils head
+setMethod("head", "unmarkedFrame",
+		function(x, n) {
+			if(missing(n)) n <- 10
+			umf <- x[1:n,]
+			umf
+		})
 ############################### COERCION ##################################################
 
 setAs("data.frame", "unmarkedFrame", function(from) {
@@ -496,3 +516,5 @@ setAs("unmarkedFrame", "data.frame", function(from) {
 			df <- data.frame(y, siteCovs, obsCovs)
 			df
 		})
+
+
