@@ -411,6 +411,11 @@ setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
 #' @exportMethod "["
 setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
 		function(x, i) {  
+			if(any(i < 0) && any(i > 0)) stop("i must be all positive or all negative indices.")
+			if(all(i < 0)) { # if i is negative, then convert to positive
+				M <- numSites(x)
+				i <- (1:M)[i]
+			}
 			y <- getY(x)[i,]
 			if (length(i) == 1) {
 				y <- t(y)
