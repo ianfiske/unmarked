@@ -356,7 +356,7 @@ setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
 			df <- na.omit(df)
 			yrs <- data.frame(x=rep(0,nY-1),xend=rep(M,nY-1),yrs=seq(obsNum,J-obsNum,by=obsNum)+0.5)
 			g <- ggplot(data=df) + geom_tile(aes(x = site, y = obs, fill=y)) + coord_flip() + scale_fill_brewer(type="seq") +
-					geom_segment(aes(x=x,xend=xend,y=yrs,yend=yrs),data=yrs)
+					geom_segment(aes(x=x,xend=xend,y=yrs,yend=yrs),data=yrs) + theme_bw() + scale_y_discrete(breaks=seq(1,J-obsNum+1,by=obsNum))
 			g
 		})
 
