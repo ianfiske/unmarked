@@ -1,3 +1,4 @@
+importFrom(utils,head)
 import(methods)
 exportClasses(optionalDataFrame)
 exportClasses(optionalMatrix)
