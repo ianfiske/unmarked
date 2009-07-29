@@ -12,12 +12,101 @@ An R Package for the Analysis of Wildlife Data}
 
 NOTE:  this overview is incomplete!
 
-unmarked implements 
+\abstract{Unmarked aims to be a complete environment for the statistical analysis of wildlife data.  
+Currently, the focus is on 2-level hiearchical models that separately model a latent state and an observation process.
+Unmarked uses S4 classes to help the user both explore their data and analyze in a transparant manner.}
+
 
 \section{Overview of unmarked}
 
+Key features:
+
+
+models implemented:
+
+\section{Models Implemented in unmarked}
+
+
 \section{Typical unmarked session}
 
+\subsection{Data Requirements}
 
+Unmarked uses several S4 classes to represent wildlife survey data.  These are all based on a parent class called the unmarkedFrame,
+after base data type data frame.  unmarkedFrame objects hold several
+
+The only necessary data component is the observation matrix, which we call $y$ henceforth.  $y$ is an $M \times R$ matrix
+for a data set with $M$ sites and length-$R$ observation vectors per site.  Let $y_i$ denote the $i$th row of $y$, corresponding to 
+the observation vector for site $i$.
+The meaning of observation vectors varies by data
+type.  For example, in occurrence data, $R$ is the number of repeat site visits and elements of the observation vectors are the repeated sampling events at each site.  In double observer
+sampling, observatation vectors correspond to the multinomial response categories for counts for observer 1, observer 2, and both observers.
+For distance sampling, $y_i$ is the vector of counts falling into the $R$ distance classes specified by the user.
+
+unmarkedFrames also contain covariate data, measured either at the observation level or at the site level.  The slots
+obsCovs and siteCovs hold these data respectively.
+
+Automatic handling of missing data via obsToY matrix...
+
+Other data components are unique to specific types of unmarkedFrames. 
+ 
+Unmarked aims to make importing data into unmarkedFrames easy, through the use of several import functions.
+
+<<>>=
+library(unmarked)
+data(mallard)
+head(mallard.y)
+str(mallard.site)
+str(mallard.obs)
+mallardUMF <- unmarkedFramePCount(y = mallard.y, siteCovs = mallard.site, obsCovs = mallard.obs)
+head(mallardUMF)
+@
+
+unmarked can conveniently return an unmarkedFrame in data frame format by simply showing the object.
+
+<<echo=FALSE>>=
+mallardUMF
+@
+
+
+\subsection{Examining data}
+
+Plotting data is a useful first step when embarking on any statistical analysis.  
+Unmarked implements plot methods for each of the unmarkedFrame data types.
+
+<<fig=TRUE>>=
+plot(mallardUMF)
+@
+
+Unmarked also has summary methods tailored for unmarkedFrames.
+
+<<>>=
+summary(mallardUMF)
+@
+
+
+\subsection{Fitting models}
+
+Each model type has a corresponding fit function.  For example, to fit a point count model, we call pcount.
+
+<<>>=
+fm <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
+@
+
+
+\subsection{Examining model fits}
+
+Model selection, prediction, etc...
+
+\section{Future directions for unmarked development}
+
+Spatial models, bayesian implementations,...
+
+\section{Extensive Examples}
+
+\subsection{Occurrence data}
+
+\subsection{Point Count data}
+
+\subsection{Distance Data}
 
 \end{document}
