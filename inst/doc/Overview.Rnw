@@ -63,9 +63,9 @@ head(mallardUMF)
 
 unmarked can conveniently return an unmarkedFrame in data frame format by simply showing the object.
 
-<<echo=FALSE>>=
-mallardUMF
-@
+%<<echo=FALSE>>=
+%mallardUMF
+%@
 
 
 \subsection{Examining data}
@@ -73,9 +73,14 @@ mallardUMF
 Plotting data is a useful first step when embarking on any statistical analysis.  
 Unmarked implements plot methods for each of the unmarkedFrame data types.
 
-<<fig=TRUE>>=
+<<include=FALSE>>=
 plot(mallardUMF)
 @
+
+<<echo=FALSE,fig=TRUE>>=
+print(plot(mallardUMF))
+@
+
 
 Unmarked also has summary methods tailored for unmarkedFrames.
 
