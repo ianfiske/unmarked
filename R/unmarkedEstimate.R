@@ -59,6 +59,11 @@ setMethod("estimates", "unmarkedEstimate",
       object@estimates
     })
 
+setMethod("estimates", "unmarkedEstimateList",
+		function(object) {
+			object@estimates
+		})
+
 unmarkedEstimateList <- function(l) {
   new("unmarkedEstimateList", estimates = l)
 }
