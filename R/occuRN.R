@@ -31,7 +31,7 @@
 #'
 #' @param stateformula Right-hand side formula describing covariates of abundance
 #' @param detformula Right-hand side formula describing covariates of detection
-#' @param umf unmarkedFrame supplying data to the model.
+#' @param data unmarkedFrame supplying data to the model.
 #' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @references
@@ -46,15 +46,15 @@
 #' @keywords models
 #' @export
 occuRN <-
-function(formula, umf, K = 25)
+function(formula, data, K = 25)
 {
-	if(!is(umf, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
+	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 	
 	
-	designMats <- getDesign2(formula, umf)
+	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	
-  y <- truncateToBinary(umf@y)
+  y <- truncateToBinary(data@y)
 
   J <- ncol(y)
   M <- nrow(y)
@@ -122,7 +122,7 @@ function(formula, umf, K = 25)
           det=detEstimates))
 
   umfit <- unmarkedFit(fitType = "occuRN",
-      call = match.call(), formula = formula, data = umf, sitesRemoved = designMats$removed.sites, 
+      call = match.call(), formula = formula, data = data, sitesRemoved = designMats$removed.sites, 
 			estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 

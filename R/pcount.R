@@ -46,14 +46,14 @@
 #' @export
 #' @keywords models
 pcount <-
-function(formula, umf, K, mixture = c("P", "NB"))
+function(formula, data, K, mixture = c("P", "NB"), starts = NULL)
 {
 
 	mixture <- match.arg(mixture)
 	
-	if(!is(umf, "unmarkedFramePCount")) stop("Data is not an unmarkedFramePCount object.")
+	if(!is(data, "unmarkedFramePCount")) stop("Data is not an unmarkedFramePCount object.")
 
-	designMats <- getDesign2(formula, umf)
+	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y; plotArea <- designMats$plotArea
 
 	J <- ncol(y)
@@ -63,7 +63,7 @@ function(formula, umf, K, mixture = c("P", "NB"))
   detParms <- colnames(V)
   nDP <- ncol(V)
   nAP <- ncol(X)
-  nP <- nDP + nAP
+  # nP <- nDP + nAP
 
   if(missing(K)) K <- max(y, na.rm = TRUE) + 20
   if(K <= max(y, na.rm = TRUE))
@@ -106,7 +106,8 @@ function(formula, umf, K, mixture = c("P", "NB"))
     -sum(log(dens.i))
   }
 
-	fm <- optim(rep(0,nP), nll, method="BFGS", hessian = TRUE)
+  	if(is.null(starts)) starts <- rep(0, nP)
+	fm <- optim(starts, nll, method="BFGS", hessian = TRUE)
 	opt <- fm 
 
   ests <- fm$par
@@ -125,16 +126,21 @@ function(formula, umf, K, mixture = c("P", "NB"))
       invlinkGrad = "exp")
 
   detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
-      estimates = ests[(nAP + 1) : nP],
+      estimates = ests[(nAP + 1) : nP],		# alpha should be moved to stateEstimates??
       covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
   estimateList <- unmarkedEstimateList(list(state=stateEstimates, det=detEstimates))
 
-  umfit <- unmarkedFit(fitType = "pcount",
-      call = match.call(), formula = formula, data = umf, 
-			sitesRemoved = designMats$removed.sites, estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
+#  umfit <- unmarkedFit(fitType = "pcount",
+#      call = match.call(), formula = formula, data = umf, 
+#			sitesRemoved = designMats$removed.sites, estimates = estimateList,
+#      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
+	umfit <- new("unmarkedFitPCount", fitType = "pcount", call = match.call(),
+		formula = formula, data = data, sitesRemoved = designMats$removed.sites,
+		estimates = estimateList, AIC = fmAIC, opt = opt, negLogLike = fm$value,
+		nllFun = nll, K = K, mixture = mixture)
+		
   return(umfit)
 }

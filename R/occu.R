@@ -41,11 +41,11 @@
 #' @keywords models
 #' @export
 occu <-
-function(formula, umf, knownOcc = numeric(0))
+function(formula, data, knownOcc = numeric(0))
 {
-	if(!is(umf, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
+	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 		
-  designMats <- getDesign2(formula, umf)
+  designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	
   y <- truncateToBinary(y)
@@ -101,7 +101,7 @@ function(formula, umf, knownOcc = numeric(0))
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
 
   umfit <- unmarkedFit(fitType = "occu",
-      call = match.call(), formula = formula, data = umf, sitesRemoved = designMats$removed.sites, 
+      call = match.call(), formula = formula, data = data, sitesRemoved = designMats$removed.sites, 
 			estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
