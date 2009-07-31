@@ -618,7 +618,7 @@ getDesign <- function(stateformula, detformula, umf) {
   return(list(X = X, V = V))
 }
 
-getDesign2 <- function(formula, umf) {
+getDesign2 <- function(formula, umf, na.rm = TRUE) {
 	
 	detformula <- as.formula(formula[[2]])
 	stateformula <- as.formula(paste("~",formula[3],sep=""))
@@ -654,10 +654,14 @@ getDesign2 <- function(formula, umf) {
 	V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
 	V <- model.matrix(detformula, V.mf)
 	
-	cleaned <- handleNA2(umf, X, V)
+	if(na.rm)
+		out <- handleNA2(umf, X, V)
+	else
+		out <- list(y=getY(umf), X=X, V=V, plotArea=umf@plotArea, 
+			removed.sites=integer(0))
 	
-	return(list(y = cleaned$y, X = cleaned$X, V = cleaned$V, 
-		plotArea = cleaned$plotArea, removed.sites = cleaned$removed.sites))
+	return(list(y = out$y, X = out$X, V = out$V, 
+		plotArea = out$plotArea, removed.sites = out$removed.sites))
 }
 
 
@@ -670,7 +674,10 @@ handleNA2 <- function(umf, X, V) {
 	M <- numSites(umf)
 
 	plotArea <- umf@plotArea
-	plotArea.na <- is.na(plotArea)
+	if(all(is.na(plotArea))) 	# Necessary b/c distsamp calculates plot areas w/in the function when all(is.na(plotArea))
+		plotArea.na <- rep(FALSE, length(plotArea))
+	else
+		plotArea.na <- is.na(plotArea)
 	
 	X.long <- X[rep(1:M, each = J),]
 	X.long.na <- is.na(X.long)
@@ -699,7 +706,7 @@ handleNA2 <- function(umf, X, V) {
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
-#	sites.to.remove <- sites.to.remove | plotArea.na	# Shouldn't this line be added?
+	#sites.to.remove <- sites.to.remove | plotArea.na
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
