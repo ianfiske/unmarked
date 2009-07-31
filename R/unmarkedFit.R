@@ -185,40 +185,39 @@ setMethod("names", "unmarkedFit",
 #' 
 #' @exportMethod predict
 setMethod("predict", "unmarkedFit", 
-		function(object, type, newdata=NULL, backTran=TRUE, ...) {
-			if(is.null(newdata))
-				newdata <- object@data
-			formula <- object@formula
-#			stateformula <- object@stateformula
-#			detformula <- object@detformula
-			if(inherits(newdata, "unmarkedFrame"))
-				class(newdata) <- "unmarkedFrame"
-			cls <- class(newdata)
-			switch(cls, 
-					unmarkedFrame = {
-						designMats <- getDesign2(formula, newdata)
-						switch(type, 
-								state = X <- designMats$X,
-								det = X <- designMats$V)
-					},
-					data.frame = {
-						switch(type, 
-								state = {
-									detformula <- as.formula(formula[[2]])
-									stateformula <- as.formula(paste("~",formula[3],sep=""))
-									Terms <- delete.response(terms(stateformula))
-									mf <- model.frame(Terms, newdata)
-									X <- model.matrix(Terms, mf)
-									},
-								det = X <- model.matrix(detformula, newdata))
-					})
-			out <- matrix(NA, nrow(X), 2, dimnames=list(NULL, c("Predicted", "SE")))
-			lc <- linearComb(object, X, type)
-			if(backTran) lc <- backTransform(lc)
-			out[,1] <- coef(lc)
-			out[,2] <- SE(lc)
-			return(out)
-		}
+	function(object, type, newdata=NULL, backTran=TRUE, na.rm = TRUE, ...) 
+	{
+		if(is.null(newdata))
+			newdata <- object@data
+		formula <- object@formula
+		if(inherits(newdata, "unmarkedFrame"))
+			class(newdata) <- "unmarkedFrame"
+		cls <- class(newdata)
+		switch(cls, 
+			unmarkedFrame = {
+				designMats <- getDesign2(formula, newdata, na.rm = na.rm)
+					switch(type, 
+						state = X <- designMats$X,
+						det = X <- designMats$V)
+				},
+			data.frame = {
+				switch(type, 
+					state = {
+						detformula <- as.formula(formula[[2]])
+						stateformula <- as.formula(paste("~",formula[3],sep=""))
+						Terms <- delete.response(terms(stateformula))
+						mf <- model.frame(Terms, newdata)
+						X <- model.matrix(Terms, mf)
+						},
+					det = X <- model.matrix(detformula, newdata))
+				})
+		out <- matrix(NA, nrow(X), 2, dimnames=list(NULL, c("Predicted", "SE")))
+		lc <- linearComb(object, X, type)
+		if(backTran) lc <- backTransform(lc)
+		out[,1] <- coef(lc)
+		out[,2] <- SE(lc)
+		return(out)
+	}
 )
 
 
@@ -383,28 +382,151 @@ setMethod("plot", c("profile", "missing"),
 		function(x) {
 			plot(x@prof[,1], x@prof[,2], type = "l")
 		})
+
+
+
+
+ 		
 		
-		
 
+################################# CHILD CLASSES ###############################
 
-
-
-## Distance sampling child class
 
 #' @exportClass unmarkedFitDS
 setClass("unmarkedFitDS",
 		representation(
 				keyfun = "character",
-#				dist.breaks = "numeric",
-#				tlength = "numeric",
-#				area = "numeric",
-#				survey = "character",
-#				unitsIn = "character",
 				unitsOut = "character"),
 		contains = "unmarkedFit")
 
 
 
+#' @exportClass unmarkedFitPCount
+setClass("unmarkedFitPCount", 
+		representation(
+				K = "numeric",
+				mixture = "character"),
+		contains = "unmarkedFit")
+				
+				
+
+
+
+
+# Extract detection probs
+setGeneric("getP", function(object, ...) standardGeneric("getP"))
+
+
+#' @export
+setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE) 
+{
+	formula <- object@formula
+	detformula <- as.formula(formula[[2]])
+	umf <- object@data
+	designMats <- getDesign2(formula, umf, na.rm = na.rm)
+	y <- designMats$y
+	V <- designMats$V
+	M <- nrow(y)
+	J <- ncol(y)
+	ppars <- coef(object, type = "det")
+	d <- umf@dist.breaks
+	survey <- umf@survey
+	key <- object@keyfun
+	switch(key, 
+		halfnorm = {
+			sigma <- exp(V %*% ppars)
+			p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
+			}, 
+		exp = {
+			rate <- exp(V %*% ppars)
+			p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
+			}, 
+		hazard = {
+			shape <- exp(V %*% ppars[-length(ppars)])
+			scale <- exp(ppars[length(ppars)])
+			p <- sapply(sigma, function(x) cp.haz(d = d, shape = shape, 
+				scale = scale, survey = survey))
+			})
+    p <- matrix(p, M, J, byrow = TRUE)
+	return(p)
+})
+
+
+
+
+
+#' @export
+setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE) 
+{
+	formula <- object@formula
+	detformula <- as.formula(formula[[2]])
+	umf <- object@data
+	designMats <- getDesign2(formula, umf, na.rm = na.rm)
+	y <- designMats$y
+	V <- designMats$V
+	M <- nrow(y)
+	J <- ncol(y)
+    ppars <- coef(object, type = "det")
+	p <- plogis(V %*% ppars)
+	p <- matrix(p, M, J, byrow = TRUE)
+	return(p)
+})
+
+
+
+
+setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
+
+
+#' @export
+setMethod("simulate", "unmarkedFitDS", function(object, na.rm=TRUE)
+{
+	formula <- object@formula
+	umf <- object@data
+	designMats <- getDesign2(formula, umf, na.rm = na.rm)
+	y <- designMats$y
+	X <- designMats$X
+	a <- designMats$plotArea
+	M <- nrow(y)
+	J <- ncol(y)
+	lamParms <- coef(object, type = "state")
+	lam <- as.numeric(exp(X %*% lamParms))
+	lamvec <- rep(lam, each = J) * a
+	pvec <- c(t(getP(object)))
+	yvec <- rpois(M * J, lamvec * pvec)
+	y <- matrix(yvec, M, J, byrow = TRUE)
+	return(y)
+})
+
+
+#' @export
+setMethod("simulate", "unmarkedFitPCount", function(object, na.rm = TRUE)
+{
+	formula <- object@formula
+	umf <- object@data
+	designMats <- getDesign2(formula, umf, na.rm = na.rm)
+	y <- designMats$y
+	X <- designMats$X
+	a <- designMats$plotArea
+	M <- nrow(y)
+	J <- ncol(y)
+	allParms <- coef(object, altNames = FALSE)
+	lamParms <- coef(object, type = "state")
+	lam <- as.numeric(exp(X %*% lamParms))
+	lamvec <- rep(lam, each = J) * a
+	pvec <- c(t(getP(object)))
+	mix <- object@mixture
+	switch(mix, 
+		P = yvec <- rpois(M * J, lamvec * pvec),
+		NB = yvec <- rnbinom(M * J, size = exp(allParms["alpha"]), 
+			mu = lambec * pvec)
+		)
+	y <- matrix(yvec, M, J, byrow = TRUE)
+	return(y)
+})
+
+
+############################## PARAMETRIC BOOTSTRAP ###########################
 
 #' @exportMethod parboot
 setGeneric("parboot",
@@ -452,46 +574,44 @@ setClass("parboot",
 #' plot(pb)
 #'
 #' @exportMethod parboot
-setMethod("parboot", "unmarkedFitDS", function(object, R=10, report=2, 
-   label=character(0), ...)  
+setMethod("parboot", "unmarkedFit", function(object, R=10, report=2, ...)  
 {
-	call <- match.call(call = sys.call(1))
+	call <- match.call(call = sys.call(-1))
 	formula <- object@formula
 	umf <- object@data
-	designMats <- getDesign2(formula, umf)
+	designMats <- getDesign2(formula, umf, na.rm = FALSE)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	a <- designMats$plotArea
 	M <- nrow(y)
 	J <- ncol(y)
 	yvec0 <- c(t(y))
-	ests <- as.numeric(coef(object, altNames=TRUE))
-	a <- umf@plotArea
-	aMat <- matrix(a, M, J, byrow=TRUE)
-	lam0 <- exp(X %*% coef(object, type = "state"))
-	lamvec0 <- rep(lam0, each = J) * a
-	p0 <- distDetProbs(object)
+	ests <- as.numeric(coef(object, altNames = TRUE))
+	aMat <- matrix(a, M, J, byrow = TRUE)
+	state0 <- predict(object, type = "state", backTran = T, na.rm = F)[,1]
+	statevec0 <- rep(state0, each = J) * a
+	p0 <- getP(object, na.rm = FALSE)
 	pvec0 <- c(t(p0))
-	expected0 <- lamvec0 * pvec0
+	expected0 <- statevec0 * pvec0
 	rmse0 <- sqrt(sum((sqrt(yvec0) - sqrt(expected0))^2, na.rm = TRUE))
-	cat("t.star =", rmse0, "\n")
+	cat("t.star =", rmse0, "\n")      
 	rmse <- numeric(R)
 	fits <- list()
 	simdata <- umf
 	for(i in 1:R) {
-		y.sim <- rpois(M*J, lamvec0 * pvec0)
-		y.sim <- matrix(y.sim, M, J, byrow = TRUE)
+		y.sim <- simulate(object, na.rm = FALSE) 
+		yvec <- c(t(y.sim))
 		simdata@y <- y.sim
 		fits[[i]] <- update(object, data = simdata, starts = ests, ...)
-		yvec <- c(t(y.sim))
-		lam <- exp(X %*% coef(fits[[i]], type = "state"))
-		lamvec <- rep(lam0, each = J) * a
-		p <- distDetProbs(fits[[i]])
+		state <- predict(fits[[i]], type = "state", backTran = T, na.rm = F)[,1]
+		statevec <- rep(state0, each = J) * a
+		p <- getP(fits[[i]], na.rm = FALSE)
 		pvec <- c(t(p))
-		expected <- lamvec * pvec
+		expected <- statevec * pvec
 		rmse[i] <- sqrt(sum((sqrt(yvec) - sqrt(expected))^2, na.rm = TRUE))
 		if(R > report && i %in% seq(report, R, by=report))
 			cat(paste(round(rmse[(i-(report-1)):i], 1), collapse=", "), fill=T)
 		}
-	out <- new("parboot", call=call, t0 = rmse0, t.star = rmse, label = label)
+	out <- new("parboot", call=call, t0 = rmse0, t.star = rmse)
 	return(out)
 	})
 
