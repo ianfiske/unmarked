@@ -149,10 +149,13 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
 		unitsIn, mapInfo = NULL, plotArea = NULL)
 {
 	if(is.null(plotArea))
-		plotArea <- as.numeric(NA)
-	else
+		plotArea <- as.numeric(rep(NA, nrow(y)))
+	else {
 		if(is.matrix(plotArea))
 			plotArea <- c(t(plotArea))
+		else
+			stop("plotArea must be NULL or an M x J matrix of plot areas in same units as unitsOut argument to be used in distsamp")
+		}
 	if(missing(tlength) & survey == "point")
 		tlength <- numeric(0)
 	umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,

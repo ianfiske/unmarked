@@ -57,7 +57,7 @@
 #' @references Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 #' abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
 #'
-#' @seealso \code{\link{unmarkedFitDS}} \code{\link{unmarkedFitList}} 
+#' @seealso \code{\link{unmarkedFit}} \code{\link{unmarkedFitList}} 
 #' \code{\link{parboot}}
 #'
 #' @examples
@@ -138,8 +138,16 @@ distsamp <- function(formula, data,
 	tlength <- data@tlength
 	survey <- data@survey
 	unitsIn <- data@unitsIn
+	if(all(is.na(data@plotArea))) {
+		a <- calcAreas(dist.breaks = dist.breaks, tlength = tlength, 
+			survey = survey, output = output, M = numSites(data), 
+			J = ncol(getY(data)), unitsIn = unitsIn, unitsOut = unitsOut)
+		a <- c(t(a))
+		data@plotArea <- a
+		}
 	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	a <- designMats$plotArea
 	M <- nrow(y)
 	J <- ncol(y)
 	lamParms <- colnames(X)
@@ -147,14 +155,6 @@ distsamp <- function(formula, data,
 	nAP <- length(lamParms)
 	nDP <- length(detParms)
 	nP <- nAP + nDP
-	a <- data@plotArea
-	if(all(is.na(a))) {
-		a <- calcAreas(dist.breaks = dist.breaks, tlength = tlength, 
-			survey = survey, output = output, M = M, J = J, unitsIn = unitsIn,
-			unitsOut = unitsOut)
-		a <- c(t(a))
-		}
-	data@plotArea <- a
 	switch(keyfun,
 		halfnorm = { 
 			altdetParms <- paste("sigma", colnames(V), sep="")
@@ -244,9 +244,10 @@ distsamp <- function(formula, data,
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
 	dsfit <- new("unmarkedFitDS", fitType = "distsamp", call = match.call(), 
-		opt = opt, formula = formula, data = data, keyfun=keyfun, sitesRemoved = designMats$removed.sites, 
-		unitsOut=unitsOut, estimates = estimateList, 
-		AIC = fmAIC, negLogLike = fm$value, nllFun = nll)
+		opt = opt, formula = formula, data = data, keyfun=keyfun, 
+		sitesRemoved = designMats$removed.sites, unitsOut=unitsOut, 
+		estimates = estimateList, AIC = fmAIC, negLogLike = fm$value, 
+		nllFun = nll)
 	return(dsfit)
 }
 
@@ -566,37 +567,4 @@ return(data.frame(y))
 
 
 
-
-distDetProbs <- function(fit)
-{
-	formula <- fit@formula
-	umf <- fit@data
-	designMats <- getDesign2(formula, umf)
-	y <- designMats$y
-	M <- nrow(y)
-	J <- ncol(y)
-	V <- designMats$V
-	ppars <- coef(fit, type = "det")
-	d <- umf@dist.breaks
-	survey <- umf@survey
-	key <- fit@keyfun
-	switch(key, 
-		halfnorm = {
-			sigma <- exp(V %*% ppars)
-			p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
-			}, 
-		exp = {
-			rate <- exp(V %*% ppars)
-			p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
-			}, 
-		hazard = {
-			shape <- exp(V %*% ppars[-length(ppars)])
-			scale <- exp(ppars[length(ppars)])
-			p <- sapply(sigma, function(x) cp.haz(d = d, shape = shape, 
-				scale = scale, survey = survey))
-			})
-    p <- matrix(p, M, J, byrow = TRUE)
-	return(p)
-}
-
-  
+ 
