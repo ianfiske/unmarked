@@ -222,7 +222,7 @@ setMethod("predict", "unmarkedFit",
 
 
 #' @importFrom graphics plot
-#' @importFrom stats coef vcov predict update profile
+#' @importFrom stats coef vcov predict update profile simulate
 
 
 #' @export
@@ -411,7 +411,7 @@ setClass("unmarkedFitPCount",
 				
 
 
-
+############################# CHILD CLASS METHODS ##############################
 
 # Extract detection probs
 setGeneric("getP", function(object, ...) standardGeneric("getP"))
@@ -475,11 +475,12 @@ setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE)
 
 
 
-setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
+setGeneric("simulate")
 
 
 #' @export
-setMethod("simulate", "unmarkedFitDS", function(object, na.rm=TRUE)
+setMethod("simulate", "unmarkedFitDS", 
+	function(object, nsim = 1, seed = NULL, na.rm=TRUE)
 {
 	formula <- object@formula
 	umf <- object@data
@@ -493,14 +494,18 @@ setMethod("simulate", "unmarkedFitDS", function(object, na.rm=TRUE)
 	lam <- as.numeric(exp(X %*% lamParms))
 	lamvec <- rep(lam, each = J) * a
 	pvec <- c(t(getP(object)))
-	yvec <- rpois(M * J, lamvec * pvec)
-	y <- matrix(yvec, M, J, byrow = TRUE)
-	return(y)
+	yList <- list()
+	for(i in 1:nsim) {
+		yvec <- rpois(M * J, lamvec * pvec)
+		yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+		}
+	return(yList)
 })
 
 
 #' @export
-setMethod("simulate", "unmarkedFitPCount", function(object, na.rm = TRUE)
+setMethod("simulate", "unmarkedFitPCount", 
+	function(object, nsim = 1, seed = NULL, na.rm = TRUE)
 {
 	formula <- object@formula
 	umf <- object@data
@@ -516,14 +521,24 @@ setMethod("simulate", "unmarkedFitPCount", function(object, na.rm = TRUE)
 	lamvec <- rep(lam, each = J) * a
 	pvec <- c(t(getP(object)))
 	mix <- object@mixture
-	switch(mix, 
-		P = yvec <- rpois(M * J, lamvec * pvec),
-		NB = yvec <- rnbinom(M * J, size = exp(allParms["alpha"]), 
-			mu = lambec * pvec)
-		)
-	y <- matrix(yvec, M, J, byrow = TRUE)
-	return(y)
+	yList <- list()
+	for(i in 1:nsim) {
+		switch(mix, 
+			P = yvec <- rpois(M * J, lamvec * pvec),
+			NB = yvec <- rnbinom(M * J, size = exp(allParms["alpha"]), 
+				mu = lambec * pvec)
+			)
+		yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+		}
+	return(yList)
 })
+
+
+
+
+
+
+
 
 
 ############################## PARAMETRIC BOOTSTRAP ###########################
@@ -549,12 +564,11 @@ setClass("parboot",
 
 
 
-#' Evaluate goodness-of-fit for a fitted distance-sampling model
+#' Evaluate goodness-of-fit of a fitted model. 
 #'
-#' @param object a fitted model of class "umDistsampFit"
-#' @param R number of bootstrap replicates
+#' @param object a fitted model of class "unmarkedFit"
+#' @param nsim number of bootstrap replicates
 #' @param report print fit statistic every 'report' iterations during resampling
-#' @param label a label for the model
 #'
 #' @examples
 #' data(linetran)
@@ -574,7 +588,7 @@ setClass("parboot",
 #' plot(pb)
 #'
 #' @exportMethod parboot
-setMethod("parboot", "unmarkedFit", function(object, R=10, report=2, ...)  
+setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)  
 {
 	call <- match.call(call = sys.call(-1))
 	formula <- object@formula
@@ -594,11 +608,12 @@ setMethod("parboot", "unmarkedFit", function(object, R=10, report=2, ...)
 	expected0 <- statevec0 * pvec0
 	rmse0 <- sqrt(sum((sqrt(yvec0) - sqrt(expected0))^2, na.rm = TRUE))
 	cat("t.star =", rmse0, "\n")      
-	rmse <- numeric(R)
+	rmse <- numeric(nsim)
 	fits <- list()
 	simdata <- umf
-	for(i in 1:R) {
-		y.sim <- simulate(object, na.rm = FALSE) 
+	simList <- simulate(object, nsim = nsim, na.rm = FALSE)
+	for(i in 1:nsim) {
+		y.sim <- simList[[i]]
 		yvec <- c(t(y.sim))
 		simdata@y <- y.sim
 		fits[[i]] <- update(object, data = simdata, starts = ests, ...)
@@ -608,7 +623,7 @@ setMethod("parboot", "unmarkedFit", function(object, R=10, report=2, ...)
 		pvec <- c(t(p))
 		expected <- statevec * pvec
 		rmse[i] <- sqrt(sum((sqrt(yvec) - sqrt(expected))^2, na.rm = TRUE))
-		if(R > report && i %in% seq(report, R, by=report))
+		if(nsim > report && i %in% seq(report, nsim, by=report))
 			cat(paste(round(rmse[(i-(report-1)):i], 1), collapse=", "), fill=T)
 		}
 	out <- new("parboot", call=call, t0 = rmse0, t.star = rmse)
