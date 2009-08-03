@@ -524,8 +524,10 @@ setMethod("simulate", "unmarkedFitPCount",
 	for(i in 1:nsim) {
 		switch(mix, 
 			P = yvec <- rpois(M * J, lamvec * pvec),
-			NB = yvec <- rnbinom(M * J, size = exp(allParms["alpha"]), 
-				mu = lambec * pvec)
+			NB = {
+				N <- rnbinom(M * J, size = exp(allParms["alpha"]), mu = lamvec)
+				yvec <- rbinom(M * J, size = N, prob = pvec)
+				}
 			)
 		yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
 		}
