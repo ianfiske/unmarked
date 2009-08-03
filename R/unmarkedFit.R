@@ -474,10 +474,8 @@ setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE)
 
 
 
-
-setGeneric("simulate", function(object,...) {
-			standardGeneric("simulate")
-		})
+#' @importFrom stats simulate
+setGeneric("simulate")
 
 
 #' @export
