@@ -475,7 +475,9 @@ setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE)
 
 
 
-setGeneric("simulate")
+setGeneric("simulate", function(object,...) {
+			standardGeneric("simulate")
+		})
 
 
 #' @export
