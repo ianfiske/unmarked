@@ -1,7 +1,7 @@
 \name{multinomPois}
 \alias{multinomPois}
 \title{Multinomial-Poisson Mixtures}
-\usage{multinomPois(formula, piFun, data)}
+\usage{multinomPois(formula, data)}
 \description{Fit the multinomial-Poisson abundance mixture model.}
 \details{This function takes advantage of the closed form of the integrated
 likelihood when a latent Poisson distribution is assumed for abundance
@@ -25,11 +25,11 @@ Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance a
 \item{piFun}{Function to define multinomial cell probabilities.}
 \item{umf}{unmarkedFrame supplying data.}}
 \examples{data(ovendata)
-ovenFrame <- unmarkedFrame(ovendata.list$data,
-siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])))
-fm1 <- multinomPois(~ 1 ~ ufp + trba, removalPiFun, ovenFrame)
-fm2 <- multinomPois(~ 1 ~ ufp, removalPiFun, ovenFrame)
-fm3 <- multinomPois(~ 1 ~ trba, removalPiFun, ovenFrame)
-fm4 <- multinomPois(~ 1 ~ 1, removalPiFun, ovenFrame)
+ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
+siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
+fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame)
+fm2 <- multinomPois(~ 1 ~ ufp, ovenFrame)
+fm3 <- multinomPois(~ 1 ~ trba, ovenFrame)
+fm4 <- multinomPois(~ 1 ~ 1, ovenFrame)
 fm4
 fm1}

@@ -75,7 +75,7 @@ setClass("unmarkedFramePCount",
 #' @export
 setClass("unmarkedFrameMPois",
 		representation(samplingMethod = "character",
-				piFun = "function"),
+				piFun = "character"),
 		contains = "unmarkedFrame")
 
 ################### CONSTRUCTORS ##########################################################
@@ -196,12 +196,22 @@ unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo, plo
 
 
 #' @export
-unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, obsToY, mapInfo, piFun, plotArea = NULL) {
-	if(missing(obsToY)) stop("obsToY is required for multinomial-Poisson data.")
+unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY, mapInfo, piFun, plotArea = NULL) {
+	switch(type,
+			removal = {
+				obsToY <- matrix(1, ncol(y), ncol(y))
+				obsToY[col(obsToY) < row(obsToY)] <- 0
+				piFun <- "removalPiFun"
+			},
+			double = {
+				obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
+				piFun <- "doublePiFun"
+			})
+	if(missing(obsToY) && missing(type)) stop("obsToY is required for multinomial-Poisson data with no specified type.")
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY, mapInfo = mapInfo, plotArea = plotArea)
 	umf <- as(umf, "unmarkedFrameMPois")
 	umf@piFun <- piFun
-	umf@samplingMethod <- as.character(quote(piFun))
+	umf@samplingMethod <- type
 	umf
 }
 

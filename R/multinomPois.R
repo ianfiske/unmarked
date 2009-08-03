@@ -75,44 +75,29 @@ doublePiFun <- function(p){
 #' Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance and Occurrence. Journal Of Agricultural Biological And Environmental Statistics, 11(3), 249.
 #' @examples
 #' data(ovendata)
-#' ovenFrame <- unmarkedFrame(ovendata.list$data,
-#'                            siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])))
-#' fm1 <- multinomPois(~ 1 ~ ufp + trba, removalPiFun, ovenFrame)
-#' fm2 <- multinomPois(~ 1 ~ ufp, removalPiFun, ovenFrame)
-#' fm3 <- multinomPois(~ 1 ~ trba, removalPiFun, ovenFrame)
-#' fm4 <- multinomPois(~ 1 ~ 1, removalPiFun, ovenFrame)
+#' ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
+#'                            siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
+#' fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame)
+#' fm2 <- multinomPois(~ 1 ~ ufp, ovenFrame)
+#' fm3 <- multinomPois(~ 1 ~ trba, ovenFrame)
+#' fm4 <- multinomPois(~ 1 ~ 1, ovenFrame)
 #' fm4
 #' fm1
 #' @export
 multinomPois <-
-function(formula, piFun, data) # TODO: remove piFun argument here and in examples.
+function(formula, data)
 {
 
-	umf <- switch(class(data),
-			data.frame = as(data, "unmarkedFrame"),
-			unmarkedFrame = data,
-			stop("Data is not a data frame or unmarkedFrame."))
+	if(!is(data,"unmarkedFrameMPois"))
+			stop("Data is not a data frame or unmarkedFrame.")
 	
-	obsToY(umf) <- switch(as.character(substitute(piFun)),
-			doublePiFun = matrix(c(1, 0, 0, 1, 1, 1), 2, 3),
-			removalPiFun = {
-				n.samples <- numY(umf)
-				mat <- matrix(1, n.samples, n.samples)
-				mat[col(mat) < row(mat)] <- 0
-				mat
-			},
-			{
-				if(is.null(obsToY(umf)) && missing(obsToY)) {
-					stop("obsToY must be supplied in data or as an argument to multinomPois() if using a non-supplied piFun.")
-				}
-			})
-	
-	designMats <- getDesign2(formula, umf)
+	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y; plotArea <- designMats$plotArea
   
   J <- ncol(y)
-	R <- obsNum(umf)
+	R <- obsNum(data)
   M <- nrow(y)
+	piFun <- data@piFun
 
   lamParms <- colnames(X)
   detParms <- colnames(V)
@@ -154,7 +139,7 @@ function(formula, piFun, data) # TODO: remove piFun argument here and in example
           det=detEstimates))
 
   umfit <- unmarkedFit(fitType = "multinomPois", call = match.call(), 
-  		formula = formula, data = umf, estimates = estimateList, 
+  		formula = formula, data = data, estimates = estimateList, 
 		sitesRemoved = designMats$removed.sites, AIC = fmAIC, opt = opt, 
 		negLogLike = fm$value, nllFun = nll)
 
