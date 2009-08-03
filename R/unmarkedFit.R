@@ -400,7 +400,6 @@ setClass("unmarkedFitDS",
 		contains = "unmarkedFit")
 
 
-
 #' @exportClass unmarkedFitPCount
 setClass("unmarkedFitPCount", 
 		representation(
@@ -408,7 +407,9 @@ setClass("unmarkedFitPCount",
 				mixture = "character"),
 		contains = "unmarkedFit")
 				
-				
+#' @exportClass unmarkedFitOccu
+setClass("unmarkedFitOccu", 
+		contains = "unmarkedFit")			
 
 
 ############################# CHILD CLASS METHODS ##############################
@@ -472,7 +473,22 @@ setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE)
 	return(p)
 })
 
-
+#' @export
+setMethod("getP", "unmarkedFitOccu", function(object, na.rm = TRUE) 
+		{
+			formula <- object@formula
+			detformula <- as.formula(formula[[2]])
+			umf <- object@data
+			designMats <- getDesign2(formula, umf, na.rm = na.rm)
+			y <- designMats$y
+			V <- designMats$V
+			M <- nrow(y)
+			J <- ncol(y)
+			ppars <- coef(object, type = "det")
+			p <- plogis(V %*% ppars)
+			p <- matrix(p, M, J, byrow = TRUE)
+			return(p)
+		})
 
 setGeneric("simulate")
 
@@ -525,8 +541,8 @@ setMethod("simulate", "unmarkedFitPCount",
 		switch(mix, 
 			P = yvec <- rpois(M * J, lamvec * pvec),
 			NB = {
-				N <- rnbinom(M * J, size = exp(allParms["alpha"]), mu = lamvec)
-				yvec <- rbinom(M * J, size = N, prob = pvec)
+				N <- rnbinom(M, size = exp(allParms["alpha"]), mu = lam)
+				yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
 				}
 			)
 		yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
@@ -534,11 +550,29 @@ setMethod("simulate", "unmarkedFitPCount",
 	return(yList)
 })
 
-
-
-
-
-
+#' @export
+setMethod("simulate", "unmarkedFitOccu", 
+		function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+		{
+			formula <- object@formula
+			umf <- object@data
+			designMats <- getDesign2(formula, umf, na.rm = na.rm)
+			y <- designMats$y
+			X <- designMats$X
+			M <- nrow(y)
+			J <- ncol(y)
+			allParms <- coef(object, altNames = FALSE)
+			psiParms <- coef(object, type = "state")
+			psi <- as.numeric(plogis(X %*% psiParms))
+			p <- c(t(getP(object)))
+			yList <- list()
+			for(i in 1:nsim) {
+				Z <- rbinom(M, 1, psi)
+				yvec <- rep(Z, each = J)*rbinom(M * J, 1, prob = p)
+				yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+			}
+			return(yList)
+		})
 
 
 

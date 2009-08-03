@@ -35,9 +35,6 @@
 #' pferUMF <- unmarkedFrameOccu(pfer.bin)
 #' fm <- occu(~ 1 ~ 1, pferUMF)
 #' fm
-#' data(spatial)
-#' frogUMF <- unmarkedFrameOccu(y, mapInfo = mapInfo(coordinates = coords, projection = "sp_mercator"))
-#' plot(frogUMF)
 #' @keywords models
 #' @export
 occu <-
@@ -100,7 +97,7 @@ function(formula, data, knownOcc = numeric(0))
 
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
 
-  umfit <- unmarkedFit(fitType = "occu",
+  umfit <- new("unmarkedFitOccu", fitType = "occu",
       call = match.call(), formula = formula, data = data, sitesRemoved = designMats$removed.sites, 
 			estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
