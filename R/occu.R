@@ -38,7 +38,7 @@
 #' @keywords models
 #' @export
 occu <-
-function(formula, data, knownOcc = numeric(0))
+function(formula, data, knownOcc = numeric(0), starts)
 {
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 		
@@ -70,20 +70,14 @@ function(formula, data, knownOcc = numeric(0))
     -sum(loglik)
   }
 
-  fm <- optim(rnorm(nP), nll, method = "BFGS", hessian = TRUE)
+	if(missing(starts)) starts <- rnorm(nP)
+  fm <- optim(starts, nll, method = "BFGS", hessian = TRUE)
 	opt <- fm
   tryCatch(covMat <- solve(fm$hessian),
       error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)
   names(ests) <- c(occParms, detParms)
-
-#  if(profile) {
-#    profile.matrix <- matrix(NA, nP, 2)
-#    for(i in seq(length=nP)) {
-#      profile.matrix[i,] <- profileCI(nll, i, ests, c(-10,10))
-#    }
-#  }
 
   state <- unmarkedEstimate(name = "Occupancy", short.name = "psi",
       estimates = ests[1:nOP],
