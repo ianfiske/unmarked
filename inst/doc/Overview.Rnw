@@ -1,7 +1,11 @@
-% 
 \documentclass[a4paper]{article}
 \usepackage[OT1]{fontenc}
 \usepackage{Sweave}
+\usepackage{natbib}
+\bibliographystyle{plain}
+
+
+
 \begin{document}
 
 \title{Overview of Unmarked:\\
@@ -10,7 +14,7 @@ An R Package for the Analysis of Wildlife Data}
 
 \maketitle
 
-NOTE:  this overview is incomplete!
+NOTE:  this overview is a work in progress!
 
 \abstract{Unmarked aims to be a complete environment for the statistical analysis of wildlife data.  
 Currently, the focus is on 2-level hiearchical models that separately model a latent state and an observation process.
@@ -26,8 +30,24 @@ models implemented:
 
 \section{Models Implemented in unmarked}
 
+\subsection{Models for Occurrence Data}
 
-\section{Typical unmarked session}
+\citep{mackenzie_estimating_2002}
+
+\subsection{Models for Point Count Data}
+
+\citep{royle_n-mixture_2004}
+
+\subsection{Models for Distance Data}
+
+\citep{royle_modeling_2004}
+
+
+
+\subsection{Models for Arbitrary Multinomial-Poisson Data}
+
+
+\section{Unmarked Usage}
 
 \subsection{Data Requirements}
 
@@ -68,7 +88,7 @@ unmarked can conveniently return an unmarkedFrame in data frame format by simply
 %@
 
 
-\subsection{Examining data}
+\subsection{Pre-Analysis Data Exploration}
 
 Plotting data is a useful first step when embarking on any statistical analysis.  
 Unmarked implements plot methods for each of the unmarkedFrame data types.
@@ -100,7 +120,14 @@ fm <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
 
 \subsection{Examining model fits}
 
-Model selection, prediction, etc...
+\subsection{Model Selection}
+
+
+\subsubsection{Goodness-of-fit}
+
+
+\subsubsection{Prediction}
+
 
 \section{Future directions for unmarked development}
 
@@ -108,10 +135,16 @@ Spatial models, bayesian implementations,...
 
 \section{Extensive Examples}
 
-\subsection{Occurrence data}
 
-\subsection{Point Count data}
+\subsection{Occurrence Data}
+
+
+\subsection{Point Count Data}
+
 
 \subsection{Distance Data}
+
+
+\bibliography{unmarked}
 
 \end{document}
