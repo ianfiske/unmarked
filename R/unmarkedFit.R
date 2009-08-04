@@ -334,10 +334,10 @@ setMethod("update", "unmarkedFit",
 	if (!missing(formula.)) {
 		detformula <- as.formula(origFormula[[2]])
 		stateformula <- as.formula(paste("~", origFormula[3], sep=""))
-		newStateformula <- as.formula(formula.[[2]])
-		newDetformula <- as.formula(paste("~", formula.[3], sep=""))
-		upStateformula <- update.formula(stateformula, newStateformula)
+		newDetformula <- as.formula(formula.[[2]])
 		upDetformula <- update.formula(detformula, newDetformula)
+		newStateformula <- as.formula(paste("~", formula.[3], sep=""))
+		upStateformula <- update.formula(stateformula, newStateformula)
 		call$formula <- as.formula(paste(deparse(upDetformula), 
 			deparse(upStateformula)))
 		}
