@@ -43,7 +43,8 @@ setClass("unmarkedFrame",
 ## a class for multi-season data
 #' @exportClass unmarkedMultFrame
 setClass("unmarkedMultFrame",
-		representation(numPrimary = "numeric"),
+		representation(numPrimary = "numeric",
+				yearlySiteCovs = "optionalDataFrame"),  # a data frame in site-major, year-minor order describing site-level covariates
 		contains="unmarkedFrame")
 
 ## a class for distance sampling data
@@ -175,12 +176,13 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
 }
 
 #' @export
-unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, plotArea = NULL) {
+unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, yearlySiteCovs = NULL, plotArea = NULL) {
 	J <- ncol(y)
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), 
 		plotArea = plotArea)
 	umf <- as(umf, "unmarkedMultFrame")
 	umf@numPrimary <- numPrimary
+	umf@yearlySiteCovs <- yearlySiteCovs
 	umf
 }
 
