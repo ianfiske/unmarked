@@ -4,15 +4,12 @@
 #' @include markovMN.R
 {}
 
-#' Estimate parameters of the colonization-extinction model.
+#' Estimate parameters of the colonization-extinction model, including covariate-dependent rates and detection process.
 #'
+#' 
+#' 
 #'
-#' Each freely varying detection parameter can be modeled as a linear function of observation level covariates.
-#' \code{detconstraint} is a matrix with number of rows equal to the detection matrix parameters and number of
-#' columns equal to the number of covariates (plus 1 for the intercept).  Each column is a constraint vector beginning with 1 that indicates
-#' which covariates are restricted to have the same effect on a given matrix parameter.
-#'
-#' @title Fit the general multistate multiseason occupancy model.
+#' @title Fit the colonization-extinction model.
 #' @param formula double right-hand side formula describing covariates of detection and occupancy in that order.
 #' @param data unmarkedMultFrame object that supplies the data (see \link{unmarkedFrame}).
 #' @param starts optionally, initial values for parameters in the optimization.
@@ -25,6 +22,8 @@
 #' fm <- colext(~ JulianDate + I(JulianDate^2) ~ 1, umf, control = list(trace=1, maxit=1e4))
 #' fm
 #' @keywords models
+#' @references 
+#' MacKenzie, D.I. et al., 2002. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology, 83(8), 2248-2255.
 #' @useDynLib unmarked
 #' @export
 colext <-

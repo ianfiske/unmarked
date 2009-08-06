@@ -3,13 +3,13 @@
 #' @include utils.R
 {}
 
-#'  This function estimates the standard occupancy model.
+#'  This function estimates the standard occupancy model of MacKenzie et al (2002).
 #'
-#'  See \link{unmarkedFrame} for a description of how to supply data to the \command{umf}
+#'  See {\link{unmarkedFrame} for a description of how to supply data to the \code{umf}
 #'  argument.
 #'
-#'  \command{occu} fits the traditional occupancy model based on the
-#'  binomial mixture models (MacKenzie et al. 2006, Royle and Dorazio
+#'  \code{occu} fits the standard occupancy model based on zero-inflated
+#'  binomial models (MacKenzie et al. 2006, Royle and Dorazio
 #'  2008).  The occupancy state process (\eqn{z_i}) of site \eqn{i} is
 #'  modeled as
 #'
@@ -19,22 +19,44 @@
 #'
 #'  \deqn{y_{ij} \sim Bernoulli(p_{ij})}{y_ij ~ Bernoulli(p_ij)}
 #'
-#'  Covariates of \eqn{\psi_i}{psi_i} and \eqn{p_{ij}}{p_ij} are modelled
-#'  using the logit link.
+#'  Covariates of \eqn{\psi_i}{psi_i} and \eqn{p_{ij}}{p_ij} are modeled
+#'  using the logit link according to the \code{formula} argument.  The formula is a double right-hand sided formula
+#' like \code{~ detform ~ occform} where \code{detform} is a formula for the detection process and \code{occform} is a 
+#' formula for the partially observed occupancy state.  See \link{formula} for details on constructing model formulae
+#'  in \R. 
 #' @title Fit the MacKenzie Occupancy Model
-#' @param formula double right-hand side formula describing covariates of detection and occupancy.
-#' @param data either a unmarkedFrame object that supplies the data (see \link{unmarkedFrame})..
+#' @param formula double right-hand side formula describing covariates of detection and occupancy in that order.
+#' @param data an unmarkedFrameOccu object (see \link{unmarkedFrame})..
 #' @param knownOcc vector of sites that are known to be occupied.
-#' @return unmarkedFit object describing the model fit.
+#' @return unmarkedFitOccu object describing the model fit.
 #' @references
-#' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255.
+#' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255. \cr
 #' MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008) \emph{Book Name}.
 #' @author Ian Fiske
 #' @examples
 #' data(frogs)
 #' pferUMF <- unmarkedFrameOccu(pfer.bin)
-#' fm <- occu(~ 1 ~ 1, pferUMF)
+#' 
+#' # add some fake covariates for illustration
+#' siteCovs(pferUMF) <- data.frame(sitevar1 = rnorm(numSites(pferUMF)))
+#' 
+#' # observation covariates are in site-major, observation-minor order
+#' obsCovs(pferUMF) <- data.frame(obsvar1 = rnorm(numSites(pferUMF) * obsNum(pferUMF)))
+#' 
+#' fm <- occu(~ obsvar1 ~ 1, pferUMF)
 #' fm
+#' 
+#' confint(fm, type='det', method = 'normal')
+#' confint(fm, type='det', method = 'profile')
+#' 
+#' # estimate detection effect at obsvars=0.5
+#' lc <- linearComb(fm['det'],c(1,0.5))
+#' lc
+#' 
+#' # transform this to probability (0 to 1) scale and get confidence limits
+#' btlc <- backTransform(lc)
+#' btlc
+#' confint(btlc)
 #' @keywords models
 #' @export
 occu <-

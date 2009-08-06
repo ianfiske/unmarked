@@ -34,7 +34,7 @@ Back-transformation can be achieved via the \link{predict} or
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 \references{Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
-\seealso{\code{\link{unmarkedFitDS}} \code{\link{unmarkedFitList}} 
+\seealso{\code{\link{unmarkedFit}} \code{\link{unmarkedFitList}} 
 \code{\link{parboot}}}
 \keyword{models}
 \arguments{\item{formula}{'Two-level' right-hand formula describing state-level

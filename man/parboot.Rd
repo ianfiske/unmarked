@@ -1,11 +1,10 @@
 \name{parboot}
 \alias{parboot}
-\title{Evaluate goodness-of-fit for a fitted distance-sampling model...}
-\description{Evaluate goodness-of-fit for a fitted distance-sampling model}
-\arguments{\item{object}{a fitted model of class "umDistsampFit"}
-\item{R}{number of bootstrap replicates}
-\item{report}{print fit statistic every 'report' iterations during resampling}
-\item{label}{a label for the model}}
+\title{Evaluate goodness-of-fit of a fitted model.}
+\description{Evaluate goodness-of-fit of a fitted model.}
+\arguments{\item{object}{a fitted model of class "unmarkedFit"}
+\item{nsim}{number of bootstrap replicates}
+\item{report}{print fit statistic every 'report' iterations during resampling}}
 \examples{data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 
 

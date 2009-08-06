@@ -106,10 +106,11 @@ setClass("unmarkedFrameMPois",
 #' @param siteCovs Dataframe of covariates that vary at the site level.
 #' @param obsNum Number of independent observations.
 #' @param primaryNum Number of primary time periods (seasons in the multiseason model).
+#' @param obsToY
 #' @return an unmarkedFrame object
 #' @examples
 #' data(mallard)
-#' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
+#' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 #'                            obsCovs = mallard.obs)
 #' obsCovs(mallardUMF)
 #' obsCovs(mallardUMF, matrices = TRUE)
@@ -290,6 +291,13 @@ setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
 setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
 setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
 			object@obsCovs <- as.data.frame(value)
+			object
+		})
+
+#' @exportMethod "siteCovs<-"
+setGeneric("siteCovs<-", function(object, value) standardGeneric("siteCovs<-"))
+setReplaceMethod("siteCovs", "unmarkedFrame", function(object, value) {
+			object@siteCovs <- as.data.frame(value)
 			object
 		})
 

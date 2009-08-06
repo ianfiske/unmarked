@@ -1,14 +1,11 @@
 \name{colext}
 \alias{colext}
-\title{Fit the general multistate multiseason occupancy model.}
+\title{Fit the colonization-extinction model.}
 \usage{colext(formula=~1 ~ 1, data, starts, B=0, method=BFGS, control=list())}
-\description{Estimate parameters of the colonization-extinction model.}
-\details{Each freely varying detection parameter can be modeled as a linear function of observation level covariates.
-\code{detconstraint} is a matrix with number of rows equal to the detection matrix parameters and number of
-columns equal to the number of covariates (plus 1 for the intercept).  Each column is a constraint vector beginning with 1 that indicates
-which covariates are restricted to have the same effect on a given matrix parameter.}
+\description{Estimate parameters of the colonization-extinction model, including covariate-dependent rates and detection process.}
 \value{unmarkedFitColExt object describing model fit.}
 \keyword{models}
+\references{MacKenzie, D.I. et al., 2002. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology, 83(8), 2248-2255.}
 \arguments{\item{formula}{double right-hand side formula describing covariates of detection and occupancy in that order.}
 \item{data}{unmarkedMultFrame object that supplies the data (see \link{unmarkedFrame}).}
 \item{starts}{optionally, initial values for parameters in the optimization.}

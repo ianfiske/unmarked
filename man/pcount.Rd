@@ -1,7 +1,7 @@
 \name{pcount}
 \alias{pcount}
 \title{Fit the N-mixture point count model...}
-\usage{pcount(formula, data, K, mixture=c("P", "NB"))}
+\usage{pcount(formula, data, K, mixture=c("P", "NB"), starts)}
 \description{Fit the N-mixture point count model}
 \details{This function fits binomial-Poisson mixture model for spatially replicated point count data.
 

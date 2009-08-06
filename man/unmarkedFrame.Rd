@@ -25,9 +25,10 @@ All site-level covariates are automatically copied to obsCovs so that site level
 \item{obsCovs}{Dataframe of covariates that vary within sites.}
 \item{siteCovs}{Dataframe of covariates that vary at the site level.}
 \item{obsNum}{Number of independent observations.}
-\item{primaryNum}{Number of primary time periods (seasons in the multiseason model).}}
+\item{primaryNum}{Number of primary time periods (seasons in the multiseason model).}
+\item{obsToY}{}}
 \examples{data(mallard)
-mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
+mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)
 obsCovs(mallardUMF)
 obsCovs(mallardUMF, matrices = TRUE)}
