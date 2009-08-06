@@ -480,6 +480,7 @@ setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE)
 	M <- nrow(y)
 	J <- ncol(y)
     ppars <- coef(object, type = "det")
+    ppars <- ppars[names(ppars) != "p(alpha)"]
 	p <- plogis(V %*% ppars)
 	p <- matrix(p, M, J, byrow = TRUE)
 	return(p)
