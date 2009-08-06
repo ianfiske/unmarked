@@ -1,7 +1,8 @@
 \name{occu}
 \alias{occu}
 \title{Fit the MacKenzie Occupancy Model}
-\usage{occu(formula, data, knownOcc=numeric(0), starts)}
+\usage{occu(formula, data, knownOcc=numeric(0), starts, method=BFGS,
+    control=list())}
 \description{This function estimates the standard occupancy model of MacKenzie et al (2002).}
 \details{See {\link{unmarkedFrame} for a description of how to supply data to the \code{umf}
 argument.
@@ -24,12 +25,14 @@ formula for the partially observed occupancy state.  See \link{formula} for deta
 in \R.}
 \value{unmarkedFitOccu object describing the model fit.}
 \references{MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255. \cr
-MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008) \emph{Book Name}.}
+MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008).}
 \author{Ian Fiske}
 \keyword{models}
 \arguments{\item{formula}{double right-hand side formula describing covariates of detection and occupancy in that order.}
 \item{data}{an unmarkedFrameOccu object (see \link{unmarkedFrame})..}
-\item{knownOcc}{vector of sites that are known to be occupied.}}
+\item{knownOcc}{vector of sites that are known to be occupied.}
+\item{method}{Optimization method used by \code{\link{optim}}.}
+\item{control}{Other arguments passed to \code{\link{optim}}.}}
 \examples{data(frogs)
 pferUMF <- unmarkedFrameOccu(pfer.bin)
 
@@ -39,17 +42,14 @@ siteCovs(pferUMF) <- data.frame(sitevar1 = rnorm(numSites(pferUMF)))
 # observation covariates are in site-major, observation-minor order
 obsCovs(pferUMF) <- data.frame(obsvar1 = rnorm(numSites(pferUMF) * obsNum(pferUMF)))
 
-fm <- occu(~ obsvar1 ~ 1, pferUMF)
-fm
+(fm <- occu(~ obsvar1 ~ 1, pferUMF))
 
 confint(fm, type='det', method = 'normal')
 confint(fm, type='det', method = 'profile')
 
 # estimate detection effect at obsvars=0.5
-lc <- linearComb(fm['det'],c(1,0.5))
-lc
+(lc <- linearComb(fm['det'],c(1,0.5)))
 
 # transform this to probability (0 to 1) scale and get confidence limits
-btlc <- backTransform(lc)
-btlc
-confint(btlc)}
+(btlc <- backTransform(lc))
+confint(btlc, level = 0.9)}

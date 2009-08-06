@@ -32,6 +32,8 @@
 #' @param umf an unmarkedFrame supplying data to the model.
 #' @param K Integer upper index of integration for N-mixture.
 #' @param mixture character specifying mixture: either "P" or "NB".
+#' @param method Optimization method used by \code{\link{optim}}.
+#' @param control Other arguments passed to \code{\link{optim}}.
 #' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske \email{ianfiske@@gmail.com}
 #' @references Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
@@ -41,12 +43,11 @@
 #' data(mallard)
 #' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 #'                            obsCovs = mallard.obs)
-#' fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
-#' fm.mallard
+#' (fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF))
 #' @export
 #' @keywords models
 pcount <-
-function(formula, data, K, mixture = c("P", "NB"), starts = NULL)
+function(formula, data, K, mixture = c("P", "NB"), starts, method = "BFGS", control = list())
 {
 
 	mixture <- match.arg(mixture)
@@ -106,8 +107,8 @@ function(formula, data, K, mixture = c("P", "NB"), starts = NULL)
     -sum(log(dens.i))
   }
 
-  	if(is.null(starts)) starts <- rep(0, nP)
-	fm <- optim(starts, nll, method="BFGS", hessian = TRUE)
+  if(missing(starts)) starts <- rep(0, nP)
+	fm <- optim(starts, nll, method=method, hessian = TRUE, control = control)
 	opt <- fm 
 
   ests <- fm$par

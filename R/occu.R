@@ -28,10 +28,12 @@
 #' @param formula double right-hand side formula describing covariates of detection and occupancy in that order.
 #' @param data an unmarkedFrameOccu object (see \link{unmarkedFrame})..
 #' @param knownOcc vector of sites that are known to be occupied.
+#' @param method Optimization method used by \code{\link{optim}}.
+#' @param control Other arguments passed to \code{\link{optim}}.
 #' @return unmarkedFitOccu object describing the model fit.
 #' @references
 #' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255. \cr
-#' MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008) \emph{Book Name}.
+#' MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008).
 #' @author Ian Fiske
 #' @examples
 #' data(frogs)
@@ -43,24 +45,21 @@
 #' # observation covariates are in site-major, observation-minor order
 #' obsCovs(pferUMF) <- data.frame(obsvar1 = rnorm(numSites(pferUMF) * obsNum(pferUMF)))
 #' 
-#' fm <- occu(~ obsvar1 ~ 1, pferUMF)
-#' fm
+#' (fm <- occu(~ obsvar1 ~ 1, pferUMF))
 #' 
 #' confint(fm, type='det', method = 'normal')
 #' confint(fm, type='det', method = 'profile')
 #' 
 #' # estimate detection effect at obsvars=0.5
-#' lc <- linearComb(fm['det'],c(1,0.5))
-#' lc
+#' (lc <- linearComb(fm['det'],c(1,0.5)))
 #' 
 #' # transform this to probability (0 to 1) scale and get confidence limits
-#' btlc <- backTransform(lc)
-#' btlc
-#' confint(btlc)
+#' (btlc <- backTransform(lc))
+#' confint(btlc, level = 0.9)
 #' @keywords models
 #' @export
 occu <-
-function(formula, data, knownOcc = numeric(0), starts)
+function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", control = list())
 {
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 		
@@ -93,7 +92,7 @@ function(formula, data, knownOcc = numeric(0), starts)
   }
 
 	if(missing(starts)) starts <- rnorm(nP)
-  fm <- optim(starts, nll, method = "BFGS", hessian = TRUE)
+  fm <- optim(starts, nll, method = method, control = control, hessian = TRUE)
 	opt <- fm
   tryCatch(covMat <- solve(fm$hessian),
       error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))

@@ -88,7 +88,6 @@ setMethod("show",
       SEs <- SE(object)
       Z <- ests/SEs
 			p <- 2*pnorm(abs(Z), lower.tail = FALSE)
-			browser()
 			printRowNames <- 
 					!(length(ests) == 1 | identical(names(ests), "(Intercept)") | identical(names(ests), "1"))
 			

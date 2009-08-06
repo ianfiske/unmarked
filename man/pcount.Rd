@@ -1,7 +1,8 @@
 \name{pcount}
 \alias{pcount}
 \title{Fit the N-mixture point count model...}
-\usage{pcount(formula, data, K, mixture=c("P", "NB"), starts)}
+\usage{pcount(formula, data, K, mixture=c("P", "NB"), starts, method=BFGS,
+    control=list())}
 \description{Fit the N-mixture point count model}
 \details{This function fits binomial-Poisson mixture model for spatially replicated point count data.
 
@@ -35,9 +36,10 @@ Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Count
 \item{detformula}{Right-hand side formula describing covariates of detection}
 \item{umf}{an unmarkedFrame supplying data to the model.}
 \item{K}{Integer upper index of integration for N-mixture.}
-\item{mixture}{character specifying mixture: either "P" or "NB".}}
+\item{mixture}{character specifying mixture: either "P" or "NB".}
+\item{method}{Optimization method used by \code{\link{optim}}.}
+\item{control}{Other arguments passed to \code{\link{optim}}.}}
 \examples{data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)
-fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
-fm.mallard}
+(fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF))}

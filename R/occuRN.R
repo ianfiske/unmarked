@@ -29,9 +29,11 @@
 #'  Covariates of \eqn{\lambda_i}{lambda_i} are modelled with the log link
 #'  and covariates of \eqn{r_{ij}}{r_ij} are modelled with the logit link.
 #'
-#' @param stateformula Right-hand side formula describing covariates of abundance
-#' @param detformula Right-hand side formula describing covariates of detection
-#' @param data unmarkedFrame supplying data to the model.
+#' @param formula double right-hand side formula describing covariates of detection and occupancy in that order.
+#' @param data unmarkedFrameOccu supplying data to the model.
+#' @param K the upper summation index used to numerically integrate out the latent abundance.
+#' @param method Optimization method used by \code{\link{optim}}.
+#' @param control Other arguments passed to \code{\link{optim}}.
 #' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @references
@@ -41,12 +43,11 @@
 #' @examples
 #' data(birds)
 #' woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
-#' fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF)
-#' fm.wood.rn
+#' (fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF))
 #' @keywords models
 #' @export
 occuRN <-
-function(formula, data, K = 25)
+function(formula, data, K = 25, method = "BFGS", control = list())
 {
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 	
@@ -100,7 +101,7 @@ function(formula, data, K = 25)
     -sum(log(like.i))
   }
 
-  fm <- optim(rep(0, nP), nll, method = "BFGS", hessian = TRUE)
+  fm <- optim(rep(0, nP), nll, method = method, hessian = TRUE, control = control)
 	opt <- fm
   tryCatch(covMat <- solve(fm$hessian),
       error=simpleError("Hessian is not invertible.  Try using fewer covariates."))

@@ -1,7 +1,7 @@
 \name{occuRN}
 \alias{occuRN}
 \title{Fit the Occupancy model of Royle and Nichols...}
-\usage{occuRN(formula, data, K=25)}
+\usage{occuRN(formula, data, K=25, method=BFGS, control=list())}
 \description{Fit the Occupancy model of Royle and Nichols}
 \details{See \link{unmarked} for detailed descriptions of passing data \code{y},
 \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
@@ -32,10 +32,11 @@ and covariates of \eqn{r_{ij}}{r_ij} are modelled with the logit link.}
 Repeated Presence-Absence Data or Point Counts. \emph{Ecology}, 84(3)
 pp. 777--790.}
 \keyword{models}
-\arguments{\item{stateformula}{Right-hand side formula describing covariates of abundance}
-\item{detformula}{Right-hand side formula describing covariates of detection}
-\item{data}{unmarkedFrame supplying data to the model.}}
+\arguments{\item{formula}{double right-hand side formula describing covariates of detection and occupancy in that order.}
+\item{data}{unmarkedFrameOccu supplying data to the model.}
+\item{K}{the upper summation index used to numerically integrate out the latent abundance.}
+\item{method}{Optimization method used by \code{\link{optim}}.}
+\item{control}{Other arguments passed to \code{\link{optim}}.}}
 \examples{data(birds)
 woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
-fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF)
-fm.wood.rn}
+(fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF))}
