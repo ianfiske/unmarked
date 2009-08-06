@@ -286,6 +286,13 @@ setGeneric("obsToY", function(object) standardGeneric("obsToY"))
 
 setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
 
+#' @exportMethod "obsCovs<-"
+setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
+setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
+			object@obsCovs <- as.data.frame(value)
+			object
+		})
+
 #' @exportMethod "obsToY<-"
 setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
 

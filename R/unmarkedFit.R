@@ -420,6 +420,9 @@ setClass("unmarkedFitPCount",
 setClass("unmarkedFitOccu", 
 		contains = "unmarkedFit")			
 
+setClass("unmarkedFitColExt",
+		representation(phi = "matrix"),
+		contains = "unmarkedFit")
 
 ############################# CHILD CLASS METHODS ##############################
 

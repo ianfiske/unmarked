@@ -664,6 +664,54 @@ getDesign2 <- function(formula, umf, na.rm = TRUE) {
 		plotArea = out$plotArea, removed.sites = out$removed.sites))
 }
 
+# TODO: use methods so that this is for multframe
+getDesign3 <- function(formula, umf, na.rm = TRUE) {
+	
+	detformula <- as.formula(formula[[2]])
+	stateformula <- as.formula(paste("~",formula[3],sep=""))
+	detVars <- all.vars(detformula)
+	
+	M <- numSites(umf)
+	R <- obsNum(umf)
+	nY <- umf@numPrimary
+	
+	## Compute state design matrix
+	if(is.null(umf@yearlySiteCovs)) {
+		yearlySiteCovs <- data.frame(placeHolder = rep(1, M*nY))
+	} else {
+		yearlySiteCovs <- umf@yearlySiteCovs
+	}
+	X.mf <- model.frame(stateformula, yearlySiteCovs, na.action = NULL)
+	X <- model.matrix(stateformula, X.mf)
+	
+	## Compute detection design matrix
+	if(is.null(obsCovs(umf))) {
+		obsCovs <- data.frame(placeHolder = rep(1, M*R))
+	} else {
+		obsCovs <- obsCovs(umf)
+	}
+	
+	## add site Covariates at observation-level
+	obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = R),])
+	
+	## add observation number if not present
+	if(!("obs" %in% names(obsCovs))) {
+		obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
+	}
+	
+	V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
+	V <- model.matrix(detformula, V.mf)
+	
+	if(na.rm)
+		out <- handleNA2(umf, X, V)
+	else
+		out <- list(y=getY(umf), X=X, V=V, plotArea=umf@plotArea, 
+				removed.sites=integer(0))
+	
+	return(list(y = out$y, X = out$X, V = out$V, 
+					plotArea = out$plotArea, removed.sites = out$removed.sites))
+}
+
 
 handleNA2 <- function(umf, X, V) {
 	obsToY <- obsToY(umf)
@@ -719,6 +767,63 @@ handleNA2 <- function(umf, X, V) {
 	
 	list(y = y, X = X, V = V, plotArea = plotArea, removed.sites = which(sites.to.remove))
 }
+
+
+handleNA3 <- function(umf, X, V) {
+	obsToY <- obsToY(umf)
+	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
+	
+	J <- numY(umf)
+	R <- obsNum(umf)
+	M <- numSites(umf)
+	
+	plotArea <- umf@plotArea
+	if(all(is.na(plotArea))) 	# Necessary b/c distsamp calculates plot areas w/in the function when all(is.na(plotArea))
+		plotArea.na <- rep(FALSE, length(plotArea))
+	else
+		plotArea.na <- is.na(plotArea)
+	
+	X.long <- X[rep(1:(M*nY), each = J),]
+	X.long.na <- is.na(X.long)
+	
+	V.long.na <- apply(V, 2, function(x) {
+				x.mat <- matrix(x, M, R, byrow = TRUE)
+				x.mat <- is.na(x.mat)
+				x.mat <- x.mat %*% obsToY
+				x.long <- as.vector(t(x.mat))
+				x.long == 1
+			})
+	V.long.na <- apply(V.long.na, 1, any)
+	
+	y.long <- as.vector(t(getY(umf)))
+	y.long.na <- is.na(y.long)
+	
+	covs.na <- apply(cbind(X.long.na, V.long.na), 1, any)
+	
+	## are any NA in covs not in y already?
+	y.new.na <- covs.na & !y.long.na
+	
+	if(sum(y.new.na) > 0) {
+		y.long[y.new.na] <- NA
+		warning("Some observations have been discarded because correspoding covariates were missing.")
+	}
+	
+	y <- matrix(y.long, M, J, byrow = TRUE)
+	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+	#sites.to.remove <- sites.to.remove | plotArea.na
+	
+	num.to.remove <- sum(sites.to.remove)
+	if(num.to.remove > 0) {
+		y <- y[!sites.to.remove, ,drop = FALSE]
+		X <- X[!sites.to.remove, ,drop = FALSE]
+		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
+		plotArea <- plotArea[!sites.to.remove]
+		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
+	}
+	
+	list(y = y, X = X, V = V, plotArea = plotArea, removed.sites = which(sites.to.remove))
+}
+
 
 #' @nord
 meanstate <- function(x) {
