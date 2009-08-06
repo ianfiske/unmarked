@@ -87,15 +87,15 @@ setMethod("show",
       ests <- object@estimates
       SEs <- SE(object)
       Z <- ests/SEs
-      p <- 2*pnorm(abs(Z), lower.tail = FALSE)
-
-
-        printRowNames <- TRUE
-
-      cat(object@name,":\n", sep="")
-      outDF <- data.frame(Estimate = ests,
-          SE = SEs,
-          z = Z,
+			p <- 2*pnorm(abs(Z), lower.tail = FALSE)
+			
+			printRowNames <- 
+					!(length(ests) == 1 | identical(names(ests), "(Intercept)") | identical(as.numeric(names(ests)), 1))
+			
+			cat(object@name,":\n", sep="")
+			outDF <- data.frame(Estimate = ests,
+					SE = SEs,
+					z = Z,
           "P(>|z|)" = p,
           check.names = FALSE)
       print(outDF, row.names = printRowNames, digits = 3)

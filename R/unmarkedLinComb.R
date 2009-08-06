@@ -22,7 +22,7 @@ setMethod("show",
 
 			lcTable <- data.frame(Estimate = object@estimate, SE = SE(object))
 			lcTable <- cbind(lcTable, as.data.frame(object@coefficients))
-			print(lcTable, digits = 3)
+			print(lcTable, digits = 3, row.names = nrow(lcTable > 1))
 			cat("\n")
 		
 
@@ -40,7 +40,7 @@ setMethod("show",
 
 			btTable <- cbind(btTable, lcTable)
 			
-			print(btTable, digits = 3)
+			print(btTable, digits = 3, row.names = nrow(btTable > 1))
 			
       cat("\nTransformation:", object@parentLinComb@parentEstimate@invlink,"\n")
     })
