@@ -53,19 +53,20 @@ square kilometers, respectively.}
 \item{control}{Other arguments passed to \code{\link{optim}}.}}
 \examples{## Line transect examples
 
-# Distance cut points in meters
 data(linetran)
-(dbreaksLine <- c(0, 5, 10, 15, 20)) 
-
-lengths <- linetran$Length * 1000
 
 ltUMF <- with(linetran, {
 unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
-siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
-tlength = lengths, survey = "line", unitsIn = "m")
+siteCovs = data.frame(Length, area, habitat), 
+dist.breaks = c(0, 5, 10, 15, 20),
+tlength = linetran$Length * 1000, survey = "line", unitsIn = "m")
 })
 
-# Half-normal detection function. Density output (on log scale). No covariates. 
+ltUMF
+plot(ltUMF)
+barplot(ltUMF)
+
+# Half-normal detection function. Density output (log scale). No covariates. 
 (fm1 <- distsamp(~ 1 ~ 1, ltUMF))
 
 # Some methods to use on fitted model
@@ -93,6 +94,7 @@ dist.breaks=dbreaksLine, starts=c(1,0,0,1,2,2)))
 # This is real slow, especially for large datasets.
 (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 
+dev.off()
 plot(function(x) gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 xlab="Distance(m)", ylab="Detection probability")
 
@@ -101,14 +103,12 @@ xlab="Distance(m)", ylab="Detection probability")
 
 ## Point transect example
 
-# Radius cut points in meters
 data(pointtran)
-(dbreaksPt <- seq(0, 25, by=5))
 
 ptUMF <- with(pointtran, {
 unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4, dc5), 
 siteCovs = data.frame(area, habitat), 
-dist.breaks = dbreaksPt, survey = "point", unitsIn = "m")
+dist.breaks = seq(0, 25, by=5), survey = "point", unitsIn = "m")
 })
 
 # Half-normal. Output is animals / ha on log-scale. No covariates.

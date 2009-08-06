@@ -15,12 +15,12 @@ of each point transect. Currently, radii cannot vary.
 
 If survey == "point" and output == "abund" a matrix of 1s is returned. If
 survey == "line" and output == "abund" a matrix of transect lengths is
-returned because transect lengths must be taken into account even for density
+returned because transect lengths must be taken into account even if density
 is not of interest.}
 \note{This function might be useful if some distance classes for some 
 transects were not surveyed. In such a case, missing values could be added
 to the output of calcAreas() and the modified matrix could be supplied
-to distClassAreas argument of \code{\link{unmarkedFrameDS}}.}
+to the plotArea argument of unmarkedFrameDS.}
 \arguments{\item{dist.breaks}{numeric vector of distance class break poings}
 \item{tlength}{numeric vector of transect lengths for line transects}
 \item{M}{number of transects}
