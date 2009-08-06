@@ -88,9 +88,9 @@ setMethod("show",
       SEs <- SE(object)
       Z <- ests/SEs
 			p <- 2*pnorm(abs(Z), lower.tail = FALSE)
-			
+			browser()
 			printRowNames <- 
-					!(length(ests) == 1 | identical(names(ests), "(Intercept)") | identical(as.numeric(names(ests)), 1))
+					!(length(ests) == 1 | identical(names(ests), "(Intercept)") | identical(names(ests), "1"))
 			
 			cat(object@name,":\n", sep="")
 			outDF <- data.frame(Estimate = ests,
