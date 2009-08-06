@@ -6,10 +6,10 @@
 void getDetVec2(int y, double *detVec, double* mp) {
 	if(y == 0) {
 		//detVec[detVec_ind] *= 1;
-		detVec[1] *= exp(mp[0])/(1 + exp(mp[0]));
+		detVec[1] *= 1/(1 + exp(mp[0]));
 	} else {
 		detVec[0] = 0;
-		detVec[1] *= 1/(1 + exp(mp[0]));
+		detVec[1] *= exp(mp[0])/(1 + exp(mp[0]));
 	}
 }
 
