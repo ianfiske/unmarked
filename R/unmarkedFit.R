@@ -604,8 +604,7 @@ setClass("parboot",
     representation(fitType = "character",
         call = "call",
         t0 = "numeric",
-        t.star = "numeric",
-        label = "character")
+        t.star = "numeric")
         )
 
 

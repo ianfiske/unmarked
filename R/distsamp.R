@@ -63,19 +63,20 @@
 #' @examples
 #' ## Line transect examples
 #' 
-#' # Distance cut points in meters
 #' data(linetran)
-#' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
-#'
-#' lengths <- linetran$Length * 1000
 #'
 #' ltUMF <- with(linetran, {
 #' 		unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
-#' 		siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
-#'		tlength = lengths, survey = "line", unitsIn = "m")
+#' 		siteCovs = data.frame(Length, area, habitat), 
+#'		dist.breaks = c(0, 5, 10, 15, 20),
+#'		tlength = linetran$Length * 1000, survey = "line", unitsIn = "m")
 #' 		})
+#'
+#' ltUMF
+#' plot(ltUMF)
+#' barplot(ltUMF)
 #' 
-#' # Half-normal detection function. Density output (on log scale). No covariates. 
+#' # Half-normal detection function. Density output (log scale). No covariates. 
 #'  (fm1 <- distsamp(~ 1 ~ 1, ltUMF))
 #' 
 #' # Some methods to use on fitted model
@@ -103,6 +104,7 @@
 #' # This is real slow, especially for large datasets.
 #' (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 #' 
+#' dev.off()
 #' plot(function(x) gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 #' 		xlab="Distance(m)", ylab="Detection probability")
 #' 
@@ -111,14 +113,12 @@
 #'  
 #' ## Point transect example
 #' 
-#' # Radius cut points in meters
 #' data(pointtran)
-#' (dbreaksPt <- seq(0, 25, by=5))
 #'
 #' ptUMF <- with(pointtran, {
 #' 	unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4, dc5), 
 #' 		siteCovs = data.frame(area, habitat), 
-#'		dist.breaks = dbreaksPt, survey = "point", unitsIn = "m")
+#'		dist.breaks = seq(0, 25, by=5), survey = "point", unitsIn = "m")
 #' 		})
 #' 
 #' # Half-normal. Output is animals / ha on log-scale. No covariates.
@@ -434,13 +434,13 @@ ll.uniform <- function(param, Y, X, V, J, a)
 #'
 #' If survey == "point" and output == "abund" a matrix of 1s is returned. If
 #' survey == "line" and output == "abund" a matrix of transect lengths is
-#' returned because transect lengths must be taken into account even for density
+#' returned because transect lengths must be taken into account even if density
 #' is not of interest.
 #'
 #' @note This function might be useful if some distance classes for some 
 #' transects were not surveyed. In such a case, missing values could be added
 #' to the output of calcAreas() and the modified matrix could be supplied
-#' to distClassAreas argument of \code{\link{unmarkedFrameDS}}.
+#' to the plotArea argument of unmarkedFrameDS.
 #' 
 #' @examples
 #'

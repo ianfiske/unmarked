@@ -402,6 +402,79 @@ setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
 			g
 		})
 
+
+
+setMethod("plot", c(x="unmarkedFrameDS", y="missing"),
+	function(x, ...) 
+{
+	y <- getY(x)
+	M <- nrow(y)
+	J <- ncol(y)
+	tab <- table(y, useNA = "ifany")
+	lt <- length(tab)
+	laymat <- matrix(1, 5, 6)
+	laymat[,6] <- c(0, 2, 2, 2, 0)
+	layout(laymat)
+	image(1:J, 1:M, t(y)[,nrow(y):1], xaxt="n", xlab = "Distance class", 
+		ylab = "Site", ...)
+	box()
+	axis(1, at = 1:J, ...)
+	grid(J, M, lty=1)
+
+	op <- par(mai=c(0.1, 0.2, 0.1, 0.4))
+	image(1:2, 1:lt, matrix(1:lt, 1), ann=F, xaxt="n", yaxt="n", ...)
+	box()
+	if(any(is.null(names(tab))))
+		laborder <- c(lt, 1:(lt-1))
+	else
+		laborder <- 1:lt
+	axis(2, at = 1:lt, labels=paste(names(tab))[laborder], ...)
+	par(op)
+})
+
+
+
+
+setGeneric("barplot")
+
+
+#' @exportMethod barplot
+setMethod("barplot", "unmarkedFrameDS", 
+	function(height, standardize = FALSE, xlab, ylab, 
+		names.arg, ...)
+{
+	y <- getY(height)
+	M <- numSites(height)
+	d <- height@dist.breaks
+	unitsIn <- height@unitsIn
+	survey <- height@survey
+	if(standardize) {
+		switch(survey, 
+			line = {
+				strip.widths <- 2 * diff(d)
+				a <- t(sapply(height@tlength, function(x) x * 2 * diff(d)))
+				},
+			point = {
+				areas <- pi * d^2
+				a <- areas[-1] - areas[-length(areas)]
+				})
+		if(unitsIn == "m")
+			a <- a / 1e6
+		y  <- y * a		
+		if(missing(ylab)) ylab <- "Individuals / km^2"
+		}
+	else
+		if(missing(ylab)) ylab <- "Individuals"		
+	if(missing(xlab)) xlab <- paste("Distance interval", " (", unitsIn, ")", 
+		sep = "")
+	if(missing(names.arg)) names.arg <- paste(d[-length(d)], d[-1], sep="-") 
+	barplot(height = y, xlab = xlab, ylab = ylab, 
+		names.arg = names.arg, ...)
+})
+
+
+
+
 #setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 #		function(x) {
 #			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFrameOccu object.")
