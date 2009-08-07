@@ -312,19 +312,14 @@ setMethod("confint", "unmarkedFit",
 
 #' @export 
 setMethod("fitted", "unmarkedFit",
-		function(object) {
+		function(object, na.rm = FALSE) {
 			data <- object@data
-			des <- getDesign2(object@formula, data)
-			X <- des$X; V <- des$V
-			y <- getY(data)
-			M <- nrow(X)
-			J <- ncol(y)
-			obsCovs <- obsCovs(data)
-			siteCovs <- siteCovs(data)
-			state <- do.call(object['state']@invlink, list(X %*% coef(object, 'state')))  ## this parameter is E(X) for most models
-			p <- plogis(V %*% coef(object, 'det'))  ## this is P(detection | presence)
-			p <- matrix(p, M, J, byrow = TRUE)
-			fitted <- rep(state,J) * p  # this only hold true for models with E[Y] = p * E[X]
+			des <- getDesign2(object@formula, data, na.rm = na.rm)
+			X <- des$X; V <- des$V; a <- des$plotArea
+			state <- do.call(object['state']@invlink, list(X %*% coef(object, 'state')))
+			state <- as.numeric(state) * a  ## E(X) for most models
+			p <- getP(object, na.rm = na.rm) # P(detection | presence)
+			fitted <- state * p  # true for models with E[Y] = p * E[X]
 			fitted
 		})		
 
@@ -332,20 +327,17 @@ setMethod("fitted", "unmarkedFit",
 setMethod("fitted", "unmarkedFitPCount",
 		function(object, K, na.rm = FALSE) {
 			data <- object@data
-			des <- unmarked:::getDesign2(object@formula, data, na.rm = na.rm)
-			X <- des$X; V <- des$V
-			y <- getY(data)
+			des <- getDesign2(object@formula, data, na.rm = na.rm)
+			X <- des$X; V <- des$V; a <- des$plotArea
+			y <- des$y	# getY(data) ... to be consistent w/NA handling?
 			M <- nrow(X)
 			J <- ncol(y)
-			obsCovs <- obsCovs(data)
-			siteCovs <- siteCovs(data)
-			state <- exp(X %*% coef(object, 'state'))
-			p <- plogis(V %*% coef(object, 'det'))
-			p <- matrix(p, M, J, byrow = TRUE)
+			state <- exp(X %*% coef(object, 'state')) * a
+			p <- getP(object, na.rm = na.rm)
 			mix <- object@mixture
 			switch(mix,
 					P = {
-						fitted <- rep(state,J) * p 
+						fitted <- as.numeric(state) * p 
 					},
 					NB = {
 						if(missing(K)) K <- max(y, na.rm = TRUE) + 20 
@@ -481,6 +473,28 @@ setMethod("plot", c("profile", "missing"),
 setGeneric("getP", function(object, ...) standardGeneric("getP"))
 
 
+
+
+#' @export
+setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE) 
+{
+	formula <- object@formula
+	detformula <- as.formula(formula[[2]])
+	umf <- object@data
+	designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
+	y <- designMats$y
+	V <- designMats$V
+	M <- nrow(y)
+	J <- ncol(y)
+	ppars <- coef(object, type = "det")
+	p <- plogis(V %*% ppars)
+	p <- matrix(p, M, J, byrow = TRUE)
+	return(p)
+})
+
+
+
+
 #' @export
 setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE) 
 {
@@ -517,41 +531,6 @@ setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE)
 
 
 
-
-
-#' @export
-setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE) 
-{
-	formula <- object@formula
-	detformula <- as.formula(formula[[2]])
-	umf <- object@data
-	designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
-	y <- designMats$y
-	V <- designMats$V
-	M <- nrow(y)
-	J <- ncol(y)
-	ppars <- coef(object, type = "det")
-	p <- plogis(V %*% ppars)
-	p <- matrix(p, M, J, byrow = TRUE)
-	return(p)
-})
-
-#' @export
-setMethod("getP", "unmarkedFitOccu", function(object, na.rm = TRUE) 
-		{
-			formula <- object@formula
-			detformula <- as.formula(formula[[2]])
-			umf <- object@data
-			designMats <- getDesign2(formula, umf, na.rm = na.rm)
-			y <- designMats$y
-			V <- designMats$V
-			M <- nrow(y)
-			J <- ncol(y)
-			ppars <- coef(object, type = "det")
-			p <- plogis(V %*% ppars)
-			p <- matrix(p, M, J, byrow = TRUE)
-			return(p)
-		})
 
 
 #' @export
@@ -684,15 +663,11 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 	call <- match.call(call = sys.call(-1))
 	formula <- object@formula
 	umf <- object@data
-	designMats <- unmarked:::getDesign2(formula, umf, na.rm = FALSE)
-	X <- designMats$X; V <- designMats$V; y <- designMats$y
-	a <- designMats$plotArea
-	M <- nrow(y)
-	J <- ncol(y)
+	designMats <- getDesign2(formula, umf, na.rm = FALSE)
+	y <- designMats$y
 	yvec0 <- c(t(y))
 	ests <- as.numeric(coef(object, altNames = TRUE))
-	aMat <- matrix(a, M, J, byrow = TRUE)
-	expected0 <- as.vector(t(fitted(object))) 
+	expected0 <- as.vector(t(fitted(object, na.rm = FALSE))) 
 	rmse0 <- sqrt(sum((sqrt(yvec0) - sqrt(expected0))^2, na.rm = TRUE))
 	cat("t.star =", rmse0, "\n")      
 	rmse <- numeric(nsim)
@@ -704,7 +679,7 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 		yvec <- c(t(y.sim))
 		simdata@y <- y.sim
 		fits[[i]] <- update(object, data = simdata, starts = ests, se = FALSE, ...)
-		expected <- as.vector(t(fitted(fits[[i]]))) 
+		expected <- as.vector(t(fitted(fits[[i]], na.rm = FALSE))) 
 		rmse[i] <- sqrt(sum((sqrt(yvec) - sqrt(expected))^2, na.rm = TRUE))
 		if(nsim > report && i %in% seq(report, nsim, by=report))
 			cat(paste(round(rmse[(i-(report-1)):i], 1), collapse=", "), fill=T)
