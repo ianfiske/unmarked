@@ -543,6 +543,7 @@ setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
 			umf@y <- y
 			umf@siteCovs <- siteCovs
 			umf@obsCovs <- obsCovs
+			umf@plotArea <- umf@plotArea[i]
 			umf
 		})
 
