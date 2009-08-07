@@ -263,9 +263,16 @@ setMethod("coef", "unmarkedFit",
 
 #' @export 
 setMethod("vcov", "unmarkedFit",
-		function(object, type, altNames = TRUE) {
+		function(object, type, altNames = TRUE, method = "hessian") {
 			if(missing(type)) {
-				v <- solve(hessian(object))
+				switch(method,
+						hessian = v <- solve(hessian(object)),
+						nonparboot = {
+							fmList <- nonparboot(object)
+							coefs <- t(sapply(fmList, function(x) coef(x)))
+							v <- cov(coefs)
+						}
+				)
 				rownames(v) <- colnames(v) <- names(coef(object, altNames=altNames))
 			} else {
 				v <- vcov(object[type])
@@ -473,28 +480,6 @@ setMethod("plot", c("profile", "missing"),
 setGeneric("getP", function(object, ...) standardGeneric("getP"))
 
 
-
-
-#' @export
-setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE) 
-{
-	formula <- object@formula
-	detformula <- as.formula(formula[[2]])
-	umf <- object@data
-	designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
-	y <- designMats$y
-	V <- designMats$V
-	M <- nrow(y)
-	J <- ncol(y)
-	ppars <- coef(object, type = "det")
-	p <- plogis(V %*% ppars)
-	p <- matrix(p, M, J, byrow = TRUE)
-	return(p)
-})
-
-
-
-
 #' @export
 setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE) 
 {
@@ -531,6 +516,41 @@ setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE)
 
 
 
+
+
+#' @export
+setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE) 
+{
+	formula <- object@formula
+	detformula <- as.formula(formula[[2]])
+	umf <- object@data
+	designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
+	y <- designMats$y
+	V <- designMats$V
+	M <- nrow(y)
+	J <- ncol(y)
+	ppars <- coef(object, type = "det")
+	p <- plogis(V %*% ppars)
+	p <- matrix(p, M, J, byrow = TRUE)
+	return(p)
+})
+
+#' @export
+setMethod("getP", "unmarkedFitOccu", function(object, na.rm = TRUE) 
+		{
+			formula <- object@formula
+			detformula <- as.formula(formula[[2]])
+			umf <- object@data
+			designMats <- getDesign2(formula, umf, na.rm = na.rm)
+			y <- designMats$y
+			V <- designMats$V
+			M <- nrow(y)
+			J <- ncol(y)
+			ppars <- coef(object, type = "det")
+			p <- plogis(V %*% ppars)
+			p <- matrix(p, M, J, byrow = TRUE)
+			return(p)
+		})
 
 
 #' @export
@@ -695,46 +715,63 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 
 #' @exportMethod show
 setMethod("show", "parboot", function(object) 
-{
-t.star <- object@t.star
-t0 <- object@t0
-bias <- mean(t0 - t.star)
-bias.se <- sd(t0 - t.star)
-R <- length(t.star)
-p.val <- sum(abs(t.star-1) > abs(t0-1)) / (1+R)
-stats <- c("original" = t0, "bias" = bias, "Std. error" = bias.se, 
-   "p.value" = p.val)
-cat("\nCall:", deparse(object@call), fill=T)
-cat("\nBootstrap Statistics:\n")
-print(stats, digits=3)
-cat("\nt quantiles:\n")
-print(quantile(t.star, probs=c(0,2.5,25,50,75,97.5,100)/100))        
-})
+		{
+			t.star <- object@t.star
+			t0 <- object@t0
+			bias <- mean(t0 - t.star)
+			bias.se <- sd(t0 - t.star)
+			R <- length(t.star)
+			p.val <- sum(abs(t.star-1) > abs(t0-1)) / (1+R)
+			stats <- c("original" = t0, "bias" = bias, "Std. error" = bias.se, 
+					"p.value" = p.val)
+			cat("\nCall:", deparse(object@call), fill=T)
+			cat("\nBootstrap Statistics:\n")
+			print(stats, digits=3)
+			cat("\nt quantiles:\n")
+			print(quantile(t.star, probs=c(0,2.5,25,50,75,97.5,100)/100))        
+		})
 
+## nonparboot return entire list of fits... they will be processed by vcov, confint, etc.
+#' @export 
+setGeneric("nonparboot", function(object, B = 50, ...) {standardGeneric("nonparboot")})
 
-
+setMethod("nonparboot", "unmarkedFit",
+		function(object, B = 50, ...) {
+			data <- object@data
+			formula <- object@formula
+			designMats <- getDesign2(formula, data)  # bootstrap only after removing sites
+			removed.sites <- designMats$removed.sites
+			data <- data[-removed.sites,]
+			M <- numSites(data)
+			boot.iter <- function(x) {
+				sites <- sort(sample(1:M, M, replace = TRUE))
+				fm <- update(object, data = data[sites,])
+			}
+			fmList <- lapply(1:B, boot.iter)
+			fmList
+		})
 
 
 #' @exportMethod plot
 setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
-{
-op <- par(mfrow=c(1, 2))
-t.star <- x@t.star
-t0 <- x@t0
-t.t0 <- c(t.star, t0)
-bias <- mean(t0 - t.star)
-bias.se <- sd(t0 - t.star)
-R <- length(t.star)
-p.val <- sum(abs(t.star-1) > abs(t0-1)) / (1+R)
-hist(t.star, xlim=c(min(floor(t.t0)), max(ceiling(t.t0))), 
-	main=paste("P =", round(p.val, 3), "; R =", format(R)))
-rug(t.star)
-abline(v=t0, lty=2)
-qqnorm(t.star)
-qqline(t.star)
-title(outer=T, ...)
-par(op)
-})
+		{
+			op <- par(mfrow=c(1, 2))
+			t.star <- x@t.star
+			t0 <- x@t0
+			t.t0 <- c(t.star, t0)
+			bias <- mean(t0 - t.star)
+			bias.se <- sd(t0 - t.star)
+			R <- length(t.star)
+			p.val <- sum(abs(t.star-1) > abs(t0-1)) / (1+R)
+			hist(t.star, xlim=c(min(floor(t.t0)), max(ceiling(t.t0))), 
+					main=paste("P =", round(p.val, 3), "; R =", format(R)))
+			rug(t.star)
+			abline(v=t0, lty=2)
+			qqnorm(t.star)
+			qqline(t.star)
+			title(outer=T, ...)
+			par(op)
+		})
 
 
 

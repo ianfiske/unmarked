@@ -45,7 +45,7 @@
 #' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 #'                            obsCovs = mallard.obs)
 #' (fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF))
-#' (fm.mallard.nb <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mixture = "NB", mallardUMF))
+#' (fm.mallard.nb <- pcount(~ date + I(date^2) ~ length + elev, mixture = "NB", mallardUMF))
 #' @export
 #' @keywords models
 pcount <-
@@ -66,7 +66,6 @@ function(formula, data, K, mixture = c("P", "NB"), starts, method = "BFGS", cont
   detParms <- colnames(V)
   nDP <- ncol(V)
   nAP <- ncol(X)
-  # nP <- nDP + nAP
 
   if(missing(K)) K <- max(y, na.rm = TRUE) + 20
   if(K <= max(y, na.rm = TRUE))
