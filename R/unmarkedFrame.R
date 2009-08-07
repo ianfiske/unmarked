@@ -526,6 +526,7 @@ setMethod("barplot", "unmarkedFrameDS",
 #' @exportMethod "["
 setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
 		function(x, i) {  
+			if(length(i) == 0) return(x)
 			if(any(i < 0) && any(i > 0)) stop("i must be all positive or all negative indices.")
 			if(all(i < 0)) { # if i is negative, then convert to positive
 				M <- numSites(x)
