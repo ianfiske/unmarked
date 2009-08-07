@@ -45,6 +45,7 @@
 #' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 #'                            obsCovs = mallard.obs)
 #' (fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF))
+#' (fm.mallard.nb <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mixture = "NB", mallardUMF))
 #' @export
 #' @keywords models
 pcount <-
@@ -132,16 +133,18 @@ function(formula, data, K, mixture = c("P", "NB"), starts, method = "BFGS", cont
       invlinkGrad = "exp")
 
   detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
-      estimates = ests[(nAP + 1) : nP],		# alpha should be moved to stateEstimates??
-      covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
+      estimates = ests[(nAP + 1) : (nAP + nDP)],		
+      covMat = as.matrix(covMat[(nAP + 1) : (nAP + nDP), (nAP + 1) : (nAP + nDP)]), invlink = "logistic",
       invlinkGrad = "logistic.grad")
 
-  estimateList <- unmarkedEstimateList(list(state=stateEstimates, det=detEstimates))
-
-#  umfit <- unmarkedFit(fitType = "pcount",
-#      call = match.call(), formula = formula, data = umf, 
-#			sitesRemoved = designMats$removed.sites, estimates = estimateList,
-#      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
+	estimateList <- unmarkedEstimateList(list(state=stateEstimates, det=detEstimates))
+	
+	if(identical(mixture,"NB")) {
+		estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion", short.name = "alpha",
+				estimates = ests[nP],
+				covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
+				invlinkGrad = "exp")
+	}
 
 	umfit <- new("unmarkedFitPCount", fitType = "pcount", call = match.call(),
 		formula = formula, data = data, sitesRemoved = designMats$removed.sites,
