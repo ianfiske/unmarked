@@ -29,18 +29,46 @@ setClass("unmarkedFit",
         negLogLike = "numeric",
 				nllFun = "function"))
 
-
-
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, formula,
-    data, sitesRemoved, estimates, AIC, opt, negLogLike, nllFun) {
-  umfit <- new("unmarkedFit", fitType = fitType,
-      call = call, formula = formula, data = data, sitesRemoved = sitesRemoved,
-      estimates = estimates, AIC = AIC,
-      opt = opt, negLogLike = negLogLike, nllFun = nllFun)
-
-  return(umfit)
+		data, sitesRemoved, estimates, AIC, opt, negLogLike, nllFun) {
+	umfit <- new("unmarkedFit", fitType = fitType,
+			call = call, formula = formula, data = data, sitesRemoved = sitesRemoved,
+			estimates = estimates, AIC = AIC,
+			opt = opt, negLogLike = negLogLike, nllFun = nllFun)
+	
+	return(umfit)
 }
+
+################################# CHILD CLASSES ###############################
+
+
+#' @exportClass unmarkedFitDS
+setClass("unmarkedFitDS",
+		representation(
+				keyfun = "character",
+				unitsOut = "character"),
+		contains = "unmarkedFit")
+
+
+#' @exportClass unmarkedFitPCount
+setClass("unmarkedFitPCount", 
+		representation(
+				K = "numeric",
+				mixture = "character"),
+		contains = "unmarkedFit")
+
+#' @exportClass unmarkedFitOccu
+setClass("unmarkedFitOccu", 
+		contains = "unmarkedFit")			
+
+setClass("unmarkedFitColExt",
+		representation(phi = "matrix"),
+		contains = "unmarkedFit")
+
+################################################################################################
+
+
 
 # @export
 setMethod("show", "unmarkedFit",
@@ -220,11 +248,6 @@ setMethod("predict", "unmarkedFit",
 	}
 )
 
-
-#' @importFrom graphics plot
-#' @importFrom stats coef vcov predict update profile simulate
-
-
 #' @export
 setMethod("coef", "unmarkedFit",
 		function(object, type, altNames = TRUE) {
@@ -285,6 +308,58 @@ setMethod("confint", "unmarkedFit",
 				colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
 				return(ci)
 			}
+		})
+
+#' @export 
+setMethod("fitted", "unmarkedFit",
+		function(object) {
+			data <- object@data
+			des <- getDesign2(object@formula, data)
+			X <- des$X; V <- des$V
+			y <- getY(data)
+			M <- nrow(X)
+			J <- ncol(y)
+			obsCovs <- obsCovs(data)
+			siteCovs <- siteCovs(data)
+			state <- do.call(object['state']@invlink, list(X %*% coef(object, 'state')))  ## this parameter is E(X) for most models
+			p <- plogis(V %*% coef(object, 'det'))  ## this is P(detection | presence)
+			p <- matrix(p, M, J, byrow = TRUE)
+			fitted <- rep(state,J) * p  # this only hold true for models with E[Y] = p * E[X]
+			fitted
+		})		
+
+#' @export
+setMethod("fitted", "unmarkedFitPCount",
+		function(object, K, na.rm = FALSE) {
+			data <- object@data
+			des <- unmarked:::getDesign2(object@formula, data, na.rm = na.rm)
+			X <- des$X; V <- des$V
+			y <- getY(data)
+			M <- nrow(X)
+			J <- ncol(y)
+			obsCovs <- obsCovs(data)
+			siteCovs <- siteCovs(data)
+			state <- exp(X %*% coef(object, 'state'))
+			p <- plogis(V %*% coef(object, 'det'))
+			p <- matrix(p, M, J, byrow = TRUE)
+			mix <- object@mixture
+			switch(mix,
+					P = {
+						fitted <- rep(state,J) * p 
+					},
+					NB = {
+						if(missing(K)) K <- max(y, na.rm = TRUE) + 20 
+						k <- 0:K
+						k.ijk <- rep(k, M*J)
+						state.ijk <- state[rep(1:M, each = J*(K+1))]
+						alpha <- exp(coef(object['alpha']))
+						prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
+						all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk, prob.ijk)
+						prod.ijk <- unmarked:::rowProds(all)
+						fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
+						fitted <- matrix(fitted, M, J, byrow = TRUE)
+					})
+			fitted
 		})
 
 #' @export
@@ -398,31 +473,7 @@ setMethod("plot", c("profile", "missing"),
  		
 		
 
-################################# CHILD CLASSES ###############################
 
-
-#' @exportClass unmarkedFitDS
-setClass("unmarkedFitDS",
-		representation(
-				keyfun = "character",
-				unitsOut = "character"),
-		contains = "unmarkedFit")
-
-
-#' @exportClass unmarkedFitPCount
-setClass("unmarkedFitPCount", 
-		representation(
-				K = "numeric",
-				mixture = "character"),
-		contains = "unmarkedFit")
-				
-#' @exportClass unmarkedFitOccu
-setClass("unmarkedFitOccu", 
-		contains = "unmarkedFit")			
-
-setClass("unmarkedFitColExt",
-		representation(phi = "matrix"),
-		contains = "unmarkedFit")
 
 ############################# CHILD CLASS METHODS ##############################
 
@@ -474,13 +525,12 @@ setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE)
 	formula <- object@formula
 	detformula <- as.formula(formula[[2]])
 	umf <- object@data
-	designMats <- getDesign2(formula, umf, na.rm = na.rm)
+	designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
 	y <- designMats$y
 	V <- designMats$V
 	M <- nrow(y)
 	J <- ncol(y)
-    ppars <- coef(object, type = "det")
-    ppars <- ppars[names(ppars) != "p(alpha)"]
+	ppars <- coef(object, type = "det")
 	p <- plogis(V %*% ppars)
 	p <- matrix(p, M, J, byrow = TRUE)
 	return(p)
@@ -503,8 +553,6 @@ setMethod("getP", "unmarkedFitOccu", function(object, na.rm = TRUE)
 			return(p)
 		})
 
-setGeneric("simulate")
-
 
 #' @export
 setMethod("simulate", "unmarkedFitDS", 
@@ -521,7 +569,7 @@ setMethod("simulate", "unmarkedFitDS",
 	lamParms <- coef(object, type = "state")
 	lam <- as.numeric(exp(X %*% lamParms))
 	lamvec <- rep(lam, each = J) * a
-	pvec <- c(t(getP(object)))
+	pvec <- c(t(getP(object, na.rm = na.rm)))
 	yList <- list()
 	for(i in 1:nsim) {
 		yvec <- rpois(M * J, lamvec * pvec)
@@ -537,7 +585,7 @@ setMethod("simulate", "unmarkedFitPCount",
 {
 	formula <- object@formula
 	umf <- object@data
-	designMats <- getDesign2(formula, umf, na.rm = na.rm)
+	designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
 	y <- designMats$y
 	X <- designMats$X
 	a <- designMats$plotArea
@@ -547,14 +595,14 @@ setMethod("simulate", "unmarkedFitPCount",
 	lamParms <- coef(object, type = "state")
 	lam <- as.numeric(exp(X %*% lamParms))
 	lamvec <- rep(lam, each = J) * a
-	pvec <- c(t(getP(object)))
+	pvec <- c(t(getP(object, na.rm = na.rm)))
 	mix <- object@mixture
 	yList <- list()
 	for(i in 1:nsim) {
 		switch(mix, 
 			P = yvec <- rpois(M * J, lamvec * pvec),
 			NB = {
-				N <- rnbinom(M, size = exp(allParms["alpha"]), mu = lam)
+				N <- rnbinom(M, size = exp(coef(object["alpha"])), mu = lam)
 				yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
 				}
 			)
@@ -577,7 +625,7 @@ setMethod("simulate", "unmarkedFitOccu",
 			allParms <- coef(object, altNames = FALSE)
 			psiParms <- coef(object, type = "state")
 			psi <- as.numeric(plogis(X %*% psiParms))
-			p <- c(t(getP(object)))
+			p <- c(t(getP(object,na.rm = na.rm)))
 			yList <- list()
 			for(i in 1:nsim) {
 				Z <- rbinom(M, 1, psi)
@@ -598,8 +646,6 @@ setGeneric("parboot",
     })
 
 
-
-
 #' @exportClass parboot
 setClass("parboot",
     representation(fitType = "character",
@@ -607,8 +653,6 @@ setClass("parboot",
         t0 = "numeric",
         t.star = "numeric")
         )
-
-
 
 
 #' Evaluate goodness-of-fit of a fitted model. 
@@ -640,7 +684,7 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 	call <- match.call(call = sys.call(-1))
 	formula <- object@formula
 	umf <- object@data
-	designMats <- getDesign2(formula, umf, na.rm = FALSE)
+	designMats <- unmarked:::getDesign2(formula, umf, na.rm = FALSE)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	a <- designMats$plotArea
 	M <- nrow(y)
@@ -664,11 +708,7 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 		yvec <- c(t(y.sim))
 		simdata@y <- y.sim
 		fits[[i]] <- update(object, data = simdata, starts = ests, se = FALSE, ...)
-		state <- predict(fits[[i]], type = "state", backTran = T, na.rm = F)[,1]
-		statevec <- rep(state0, each = J) * a
-		p <- getP(fits[[i]], na.rm = FALSE)
-		pvec <- c(t(p))
-		expected <- statevec * pvec
+		expected <- as.vector(t(fitted(fits[[i]]))) 
 		rmse[i] <- sqrt(sum((sqrt(yvec) - sqrt(expected))^2, na.rm = TRUE))
 		if(nsim > report && i %in% seq(report, nsim, by=report))
 			cat(paste(round(rmse[(i-(report-1)):i], 1), collapse=", "), fill=T)
