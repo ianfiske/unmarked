@@ -1,7 +1,7 @@
 \name{multinomPois}
 \alias{multinomPois}
 \title{Multinomial-Poisson Mixtures}
-\usage{multinomPois(formula, data)}
+\usage{multinomPois(formula, data, method=BFGS, control=list(), se=TRUE)}
 \description{Fit the multinomial-Poisson abundance mixture model.}
 \details{This function takes advantage of the closed form of the integrated
 likelihood when a latent Poisson distribution is assumed for abundance
@@ -23,13 +23,18 @@ Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance a
 \arguments{\item{stateformula}{Right-hand side formula describing covariates of abundance}
 \item{detformula}{Right-hand side formula describing covariates of detection}
 \item{piFun}{Function to define multinomial cell probabilities.}
-\item{umf}{unmarkedFrame supplying data.}}
+\item{umf}{unmarkedFrame supplying data.}
+\item{method}{Optimization method used by \code{\link{optim}}.}
+\item{control}{Other arguments passed to \code{\link{optim}}.}
+\item{se}{logical specifying whether or not to compute standard errors.}}
 \examples{data(ovendata)
 ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
 siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
-fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame)
-fm2 <- multinomPois(~ 1 ~ ufp, ovenFrame)
-fm3 <- multinomPois(~ 1 ~ trba, ovenFrame)
-fm4 <- multinomPois(~ 1 ~ 1, ovenFrame)
-fm4
-fm1}
+(fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+(fm2 <- multinomPois(~ 1 ~ ufp, ovenFrame))
+(fm3 <- multinomPois(~ 1 ~ trba, ovenFrame))
+(fm4 <- multinomPois(~ 1 ~ 1, ovenFrame))
+fmList <- fitList(fits=list(Global=fm1, ufp=fm2, trba=fm3,Null=fm4))
+
+# Model selection
+modSel(fmList, nullmod=fm4)}

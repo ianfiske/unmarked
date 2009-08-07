@@ -2,7 +2,7 @@
 \alias{occu}
 \title{Fit the MacKenzie Occupancy Model}
 \usage{occu(formula, data, knownOcc=numeric(0), starts, method=BFGS,
-    control=list())}
+    control=list(), se=TRUE)}
 \description{This function estimates the standard occupancy model of MacKenzie et al (2002).}
 \details{See {\link{unmarkedFrame} for a description of how to supply data to the \code{umf}
 argument.
@@ -32,7 +32,8 @@ MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amster
 \item{data}{an unmarkedFrameOccu object (see \link{unmarkedFrame})..}
 \item{knownOcc}{vector of sites that are known to be occupied.}
 \item{method}{Optimization method used by \code{\link{optim}}.}
-\item{control}{Other arguments passed to \code{\link{optim}}.}}
+\item{control}{Other arguments passed to \code{\link{optim}}.}
+\item{se}{logical specifying whether or not to compute standard errors.}}
 \examples{data(frogs)
 pferUMF <- unmarkedFrameOccu(pfer.bin)
 

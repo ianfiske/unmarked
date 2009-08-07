@@ -22,6 +22,7 @@
 #' @param B number of bootstrap interations (the default 0 indicates no bootstrapping).
 #' @param method Optimization method used by \code{\link{optim}}.
 #' @param control Other arguments passed to \code{\link{optim}}.
+#' @param se logical specifying whether or not to compute standard errors.
 #' @return unmarkedFitColExt object describing model fit.
 #' @examples
 #' data(frogs)
@@ -35,7 +36,7 @@
 #' @useDynLib unmarked
 #' @export
 colext <-
-		function(formula = ~ 1 ~ 1, data,	starts,	B = 0, method = "BFGS", control=list())
+		function(formula = ~ 1 ~ 1, data,	starts,	B = 0, method = "BFGS", control=list(), se = TRUE)
 {
 	
 	K <- 1
@@ -59,6 +60,7 @@ colext <-
 	fc$J <- as.name("J")
 	fc$method <- as.name("method")
 	fc$control <- as.name("control")
+	fc$getHessian <- as.name("se")
 	if(!missing(starts)) fc$inits <- starts
 	
 	fm <- eval(fc)
@@ -139,8 +141,12 @@ colext <-
 	opt <- fm$opt
 	nP <- fm$nP;	M <- fm$M; nDP <- fm$nDP; nPhiP <- fm$nPhiP
 	
-	tryCatch(covMat <- solve(opt$hessian),
-			error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	if(se) {
+		tryCatch(covMat <- solve(opt$hessian),
+				error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	} else {
+		covMat <- matrix(NA, nP, nP)
+	}
 	ests <- opt$par
 	names(ests) <- fm$mle$names
 	fmAIC <- 2 * opt$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)

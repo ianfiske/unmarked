@@ -64,6 +64,9 @@ doublePiFun <- function(p){
 #' @param detformula Right-hand side formula describing covariates of detection
 #' @param piFun Function to define multinomial cell probabilities.
 #' @param umf unmarkedFrame supplying data.
+#' @param method Optimization method used by \code{\link{optim}}.
+#' @param control Other arguments passed to \code{\link{optim}}.
+#' @param se logical specifying whether or not to compute standard errors.
 #' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @keywords models
@@ -77,15 +80,17 @@ doublePiFun <- function(p){
 #' data(ovendata)
 #' ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
 #'                            siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
-#' fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame)
-#' fm2 <- multinomPois(~ 1 ~ ufp, ovenFrame)
-#' fm3 <- multinomPois(~ 1 ~ trba, ovenFrame)
-#' fm4 <- multinomPois(~ 1 ~ 1, ovenFrame)
-#' fm4
-#' fm1
+#' (fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+#' (fm2 <- multinomPois(~ 1 ~ ufp, ovenFrame))
+#' (fm3 <- multinomPois(~ 1 ~ trba, ovenFrame))
+#' (fm4 <- multinomPois(~ 1 ~ 1, ovenFrame))
+#' fmList <- fitList(fits=list(Global=fm1, ufp=fm2, trba=fm3,Null=fm4))
+#' 
+#' # Model selection
+#' modSel(fmList, nullmod=fm4)
 #' @export
 multinomPois <-
-function(formula, data)
+function(formula, data, method = "BFGS", control = list(), se = TRUE)
 {
 
 	if(!is(data,"unmarkedFrameMPois"))
@@ -117,10 +122,14 @@ function(formula, data)
     -sum(logLikeSite)
   }
 
-  fm <- optim(rep(0, nP), nll, method = "BFGS", hessian = TRUE)
+  fm <- optim(rep(0, nP), nll, method = method, hessian = se, control = control)
 	opt <- fm
-  tryCatch(covMat <- solve(fm$hessian),
-      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	if(se) {
+		tryCatch(covMat <- solve(fm$hessian),
+				error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	} else {
+		covMat <- matrix(NA, nP, nP)
+	}
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP
   names(ests) <- c(lamParms, detParms)

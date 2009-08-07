@@ -46,7 +46,7 @@
 #' @param starts Vector of starting values for parameters.
 #' @param method Optimization method used by \code{\link{optim}}.
 #' @param control Other arguments passed to \code{\link{optim}}.
-#'
+#' @param se logical specifying whether or not to compute standard errors.
 #' @return unmarkedFitDS object (child class of \link{unmarkedFit}) describing the 
 #' model fit. Parameter estimates are displayed on the log-scale. 
 #' Back-transformation can be achieved via the \link{predict} or 
@@ -129,7 +129,7 @@
 distsamp <- function(formula, data, 
 	keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
 	output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL, 
-	method="BFGS", control=list(), ...)
+	method="BFGS", control=list(), se = TRUE, ...)
 {
 	keyfun <- match.arg(keyfun)
 	output <- match.arg(output)
@@ -218,12 +218,17 @@ distsamp <- function(formula, data,
 				ll.uniform(params, Y=y, X=X, V=V, J=J, a=a)
 			}
 		})
-	fm <- optim(starts, nll, method=method, hessian=TRUE, control=control)
+	fm <- optim(starts, nll, method=method, hessian=se, control=control)
 	opt <- fm
 	ests <- fm$par
 	estsAP <- ests[1:nAP]
 	estsDP <- ests[(nAP+1):nP]
-  	covMat <- solve(fm$hessian)
+	if(se) {
+		tryCatch(covMat <- solve(fm$hessian),
+				error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	} else {
+		covMat <- matrix(NA, nP, nP)
+	}
 	covMatAP <- covMat[1:nAP, 1:nAP, drop=F]
 	if(keyfun=="uniform")
 		covMatDP <- matrix(numeric(0), 1)

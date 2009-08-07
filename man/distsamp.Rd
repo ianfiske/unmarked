@@ -3,7 +3,7 @@
 \title{Fit the hierarchical distance sampling model of Royle et al.}
 \usage{distsamp(formula, data, keyfun=c("halfnorm", "exp", "hazard",
     "uniform"), output=c("density", "abund"), unitsOut=c("ha", "kmsq"),
-    starts, method=BFGS, control=list(), ...)}
+    starts, method=BFGS, control=list(), se=TRUE, ...)}
 \description{Fit the hierarchical distance sampling model of Royle et al. (2004) to 
 line or point transect data recorded in discrete distance intervals.}
 \details{Unlike conventional distance sampling, which uses the 'conditional on 
@@ -50,7 +50,8 @@ points and transect lengths. See example for set up.}
 square kilometers, respectively.}
 \item{starts}{Vector of starting values for parameters.}
 \item{method}{Optimization method used by \code{\link{optim}}.}
-\item{control}{Other arguments passed to \code{\link{optim}}.}}
+\item{control}{Other arguments passed to \code{\link{optim}}.}
+\item{se}{logical specifying whether or not to compute standard errors.}}
 \examples{## Line transect examples
 
 data(linetran)

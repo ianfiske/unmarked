@@ -1,7 +1,8 @@
 \name{colext}
 \alias{colext}
 \title{Fit the colonization-extinction model.}
-\usage{colext(formula=~1 ~ 1, data, starts, B=0, method=BFGS, control=list())}
+\usage{colext(formula=~1 ~ 1, data, starts, B=0, method=BFGS, control=list(),
+    se=TRUE)}
 \description{Estimate parameters of the colonization-extinction model, including covariate-dependent rates and detection process.}
 \details{This function fits the colonization-extinction model of MacKenziet et al (2003).  The colonization and extinction rates
 can be modeled with covariates that vary yearly at each site using a logit link.  These covariates
@@ -19,7 +20,8 @@ MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amster
 \item{starts}{optionally, initial values for parameters in the optimization.}
 \item{B}{number of bootstrap interations (the default 0 indicates no bootstrapping).}
 \item{method}{Optimization method used by \code{\link{optim}}.}
-\item{control}{Other arguments passed to \code{\link{optim}}.}}
+\item{control}{Other arguments passed to \code{\link{optim}}.}
+\item{se}{logical specifying whether or not to compute standard errors.}}
 \examples{data(frogs)
 umf <- formatMult(masspcru)
 obsCovs(umf) <- scale(obsCovs(umf))

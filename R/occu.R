@@ -30,6 +30,7 @@
 #' @param knownOcc vector of sites that are known to be occupied.
 #' @param method Optimization method used by \code{\link{optim}}.
 #' @param control Other arguments passed to \code{\link{optim}}.
+#' @param se logical specifying whether or not to compute standard errors.
 #' @return unmarkedFitOccu object describing the model fit.
 #' @references
 #' MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255. \cr
@@ -59,7 +60,7 @@
 #' @keywords models
 #' @export
 occu <-
-function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", control = list())
+function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", control = list(), se = TRUE)
 {
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 		
@@ -92,10 +93,14 @@ function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", control 
   }
 
 	if(missing(starts)) starts <- rnorm(nP)
-  fm <- optim(starts, nll, method = method, control = control, hessian = TRUE)
+  fm <- optim(starts, nll, method = method, control = control, hessian = se)
 	opt <- fm
-  tryCatch(covMat <- solve(fm$hessian),
+  if(se) {
+		tryCatch(covMat <- solve(fm$hessian),
       error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	} else {
+		covMat <- matrix(NA, nP, nP)
+	}
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)
   names(ests) <- c(occParms, detParms)

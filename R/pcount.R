@@ -34,6 +34,7 @@
 #' @param mixture character specifying mixture: either "P" or "NB".
 #' @param method Optimization method used by \code{\link{optim}}.
 #' @param control Other arguments passed to \code{\link{optim}}.
+#' @param se logical specifying whether or not to compute standard errors.
 #' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske \email{ianfiske@@gmail.com}
 #' @references Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
@@ -47,7 +48,7 @@
 #' @export
 #' @keywords models
 pcount <-
-function(formula, data, K, mixture = c("P", "NB"), starts, method = "BFGS", control = list())
+function(formula, data, K, mixture = c("P", "NB"), starts, method = "BFGS", control = list(), se = TRUE)
 {
 
 	mixture <- match.arg(mixture)
@@ -108,7 +109,7 @@ function(formula, data, K, mixture = c("P", "NB"), starts, method = "BFGS", cont
   }
 
   if(missing(starts)) starts <- rep(0, nP)
-	fm <- optim(starts, nll, method=method, hessian = TRUE, control = control)
+	fm <- optim(starts, nll, method=method, hessian = se, control = control)
 	opt <- fm 
 
   ests <- fm$par
@@ -117,9 +118,13 @@ function(formula, data, K, mixture = c("P", "NB"), starts, method = "BFGS", cont
   else
      {nbParm <- character(0)}
   names(ests) <- c(lamParms, detParms, nbParm)
-  tryCatch(covMat <- solve(fm$hessian),
-      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
-  fmAIC <- 2 * fm$value + 2 * nP
+	if(se) {
+		tryCatch(covMat <- solve(fm$hessian),
+				error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	} else {
+		covMat <- matrix(NA, nP, nP)
+	}
+	fmAIC <- 2 * fm$value + 2 * nP
 
   stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
       estimates = ests[1:nAP],

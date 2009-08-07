@@ -34,6 +34,7 @@
 #' @param K the upper summation index used to numerically integrate out the latent abundance.
 #' @param method Optimization method used by \code{\link{optim}}.
 #' @param control Other arguments passed to \code{\link{optim}}.
+#' @param se logical specifying whether or not to compute standard errors.
 #' @return unmarkedFit object describing the model fit.
 #' @author Ian Fiske
 #' @references
@@ -47,7 +48,7 @@
 #' @keywords models
 #' @export
 occuRN <-
-function(formula, data, K = 25, method = "BFGS", control = list())
+function(formula, data, K = 25, method = "BFGS", control = list(), se = TRUE)
 {
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 	
@@ -101,10 +102,14 @@ function(formula, data, K = 25, method = "BFGS", control = list())
     -sum(log(like.i))
   }
 
-  fm <- optim(rep(0, nP), nll, method = method, hessian = TRUE, control = control)
+  fm <- optim(rep(0, nP), nll, method = method, hessian = se, control = control)
 	opt <- fm
-  tryCatch(covMat <- solve(fm$hessian),
-      error=simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	if(se) {
+		tryCatch(covMat <- solve(fm$hessian),
+				error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+	} else {
+		covMat <- matrix(NA, nP, nP)
+	}
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)

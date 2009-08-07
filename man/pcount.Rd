@@ -2,7 +2,7 @@
 \alias{pcount}
 \title{Fit the N-mixture point count model...}
 \usage{pcount(formula, data, K, mixture=c("P", "NB"), starts, method=BFGS,
-    control=list())}
+    control=list(), se=TRUE)}
 \description{Fit the N-mixture point count model}
 \details{This function fits binomial-Poisson mixture model for spatially replicated point count data.
 
@@ -38,7 +38,8 @@ Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Count
 \item{K}{Integer upper index of integration for N-mixture.}
 \item{mixture}{character specifying mixture: either "P" or "NB".}
 \item{method}{Optimization method used by \code{\link{optim}}.}
-\item{control}{Other arguments passed to \code{\link{optim}}.}}
+\item{control}{Other arguments passed to \code{\link{optim}}.}
+\item{se}{logical specifying whether or not to compute standard errors.}}
 \examples{data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)

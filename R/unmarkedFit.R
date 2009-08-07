@@ -663,7 +663,7 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 		y.sim <- simList[[i]]
 		yvec <- c(t(y.sim))
 		simdata@y <- y.sim
-		fits[[i]] <- update(object, data = simdata, starts = ests, ...)
+		fits[[i]] <- update(object, data = simdata, starts = ests, se = FALSE, ...)
 		state <- predict(fits[[i]], type = "state", backTran = T, na.rm = F)[,1]
 		statevec <- rep(state0, each = J) * a
 		p <- getP(fits[[i]], na.rm = FALSE)

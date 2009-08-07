@@ -434,7 +434,7 @@ setMethod("plot", c(x="unmarkedFrameDS", y="missing"),
 
 
 
-
+#' @importFrom graphics barplot
 setGeneric("barplot")
 
 
