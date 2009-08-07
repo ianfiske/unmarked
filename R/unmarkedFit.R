@@ -692,11 +692,7 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 	yvec0 <- c(t(y))
 	ests <- as.numeric(coef(object, altNames = TRUE))
 	aMat <- matrix(a, M, J, byrow = TRUE)
-	state0 <- predict(object, type = "state", backTran = T, na.rm = F)[,1]
-	statevec0 <- rep(state0, each = J) * a
-	p0 <- getP(object, na.rm = FALSE)
-	pvec0 <- c(t(p0))
-	expected0 <- statevec0 * pvec0
+	expected0 <- as.vector(t(fitted(object))) 
 	rmse0 <- sqrt(sum((sqrt(yvec0) - sqrt(expected0))^2, na.rm = TRUE))
 	cat("t.star =", rmse0, "\n")      
 	rmse <- numeric(nsim)
