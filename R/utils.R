@@ -290,8 +290,10 @@ function(dfin, sep = ".", obsToY)
 	y <- as.matrix(dfin[,y])		
 	M <- nrow(y)
 
-  if(identical(tolower(colnames(dfin))[1],"site")) dfin <- dfin[,-1]
-
+  if(identical(tolower(colnames(dfin))[1],"site")) {
+		dfin <- dfin[,-1]
+		dfnm <- dfnm[-1]
+	}
 
   ncols <- length(dfnm)
 	obsCovsPresent <- FALSE
