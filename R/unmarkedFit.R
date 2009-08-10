@@ -154,14 +154,14 @@ setMethod("summary", "unmarkedFit",
 #' @aliases linearComb,unmarkedFit-method
 #' @param obj an unmarkedFit object
 #' @param coefficients vector of same length as obj
-#' @param whichEstimate character, either "state" or "det"
+#' @param type character, either "state" or "det"
 #' @return an unmarkedEstimate object
 setMethod("linearComb",
     signature(obj = "unmarkedFit", coefficients = "matrixOrVector"),
-    function(obj, coefficients, whichEstimate) {
-      stopifnot(!missing(whichEstimate))
-      stopifnot(whichEstimate %in% names(obj))
-      estimate <- obj@estimates[whichEstimate]
+    function(obj, coefficients, type) {
+      stopifnot(!missing(type))
+      stopifnot(type %in% names(obj))
+      estimate <- obj@estimates[type]
       linearComb(estimate, coefficients)
     })
 
