@@ -354,7 +354,7 @@ setMethod("fitted", "unmarkedFitPCount",
 						alpha <- exp(coef(object['alpha']))
 						prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
 						all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk, prob.ijk)
-						prod.ijk <- unmarked:::rowProds(all)
+						prod.ijk <- rowProds(all)
 						fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
 						fitted <- matrix(fitted, M, J, byrow = TRUE)
 					})
@@ -467,8 +467,31 @@ setMethod("plot", c("profile", "missing"),
 		})
 
 
+## TODO: Should we have a method to return predicted values on link scale?
+##			This would allow for more meaningful residual vs. prediction plots
 
-
+# setGeneric("residuals")
+#
+##' @export
+#setMethod("residuals", "unmarkedFit", function(object, ...)
+#	{
+#		y <- getY(object@data)
+#		e <- fitted(object, na.rm = FALSE)	 
+#		r <- y - e
+#		return(r)
+#	})
+#
+#
+#setMethod("plot", c(x = "unmarkedFit", y = "missing"), 
+#	function(x, y, ...)
+#{
+#	r <- residuals(x)
+#	e <- fitted(x, na.rm = FALSE)
+#	plot(e, r, ylab = "Residuals", xlab = "Predicted values")
+#	abline(h = 0, lty = 3, col = "gray")
+#})
+	
+	
  		
 		
 
@@ -478,6 +501,28 @@ setMethod("plot", c("profile", "missing"),
 
 # Extract detection probs
 setGeneric("getP", function(object, ...) standardGeneric("getP"))
+
+
+
+
+#' @export
+setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE) 
+	{
+		formula <- object@formula
+		detformula <- as.formula(formula[[2]])
+		umf <- object@data
+		designMats <- getDesign2(formula, umf, na.rm = na.rm)
+		y <- designMats$y
+		V <- designMats$V
+		M <- nrow(y)
+		J <- ncol(y)
+		ppars <- coef(object, type = "det")
+		p <- plogis(V %*% ppars)
+		p <- matrix(p, M, J, byrow = TRUE)
+		return(p)
+	})
+
+
 
 
 #' @export
@@ -516,41 +561,6 @@ setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE)
 
 
 
-
-
-#' @export
-setMethod("getP", "unmarkedFitPCount", function(object, na.rm = TRUE) 
-{
-	formula <- object@formula
-	detformula <- as.formula(formula[[2]])
-	umf <- object@data
-	designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
-	y <- designMats$y
-	V <- designMats$V
-	M <- nrow(y)
-	J <- ncol(y)
-	ppars <- coef(object, type = "det")
-	p <- plogis(V %*% ppars)
-	p <- matrix(p, M, J, byrow = TRUE)
-	return(p)
-})
-
-#' @export
-setMethod("getP", "unmarkedFitOccu", function(object, na.rm = TRUE) 
-		{
-			formula <- object@formula
-			detformula <- as.formula(formula[[2]])
-			umf <- object@data
-			designMats <- getDesign2(formula, umf, na.rm = na.rm)
-			y <- designMats$y
-			V <- designMats$V
-			M <- nrow(y)
-			J <- ncol(y)
-			ppars <- coef(object, type = "det")
-			p <- plogis(V %*% ppars)
-			p <- matrix(p, M, J, byrow = TRUE)
-			return(p)
-		})
 
 
 #' @export
@@ -706,7 +716,7 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 		}
 	out <- new("parboot", call=call, t0 = rmse0, t.star = rmse)
 	return(out)
-	})
+})
 
 
 
