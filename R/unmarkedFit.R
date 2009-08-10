@@ -467,29 +467,27 @@ setMethod("plot", c("profile", "missing"),
 		})
 
 
-## TODO: Should we have a method to return predicted values on link scale?
-##			This would allow for more meaningful residual vs. prediction plots
 
-# setGeneric("residuals")
-#
-##' @export
-#setMethod("residuals", "unmarkedFit", function(object, ...)
-#	{
-#		y <- getY(object@data)
-#		e <- fitted(object, na.rm = FALSE)	 
-#		r <- y - e
-#		return(r)
-#	})
-#
-#
-#setMethod("plot", c(x = "unmarkedFit", y = "missing"), 
-#	function(x, y, ...)
-#{
-#	r <- residuals(x)
-#	e <- fitted(x, na.rm = FALSE)
-#	plot(e, r, ylab = "Residuals", xlab = "Predicted values")
-#	abline(h = 0, lty = 3, col = "gray")
-#})
+setGeneric("residuals")
+
+#' @export
+setMethod("residuals", "unmarkedFit", function(object, ...)
+	{
+		y <- getY(object@data)
+		e <- fitted(object, na.rm = FALSE)	 
+		r <- y - e
+		return(r)
+	})
+
+
+setMethod("plot", c(x = "unmarkedFit", y = "missing"), 
+	function(x, y, ...)
+{
+	r <- residuals(x)
+	e <- fitted(x, na.rm = FALSE)
+	plot(e, r, ylab = "Residuals", xlab = "Predicted values")
+	abline(h = 0, lty = 3, col = "gray")
+})
 	
 	
  		
