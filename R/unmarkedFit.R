@@ -467,9 +467,6 @@ setMethod("plot", c("profile", "missing"),
 		})
 
 
-
-setGeneric("residuals")
-
 #' @export
 setMethod("residuals", "unmarkedFit", function(object, ...)
 	{
