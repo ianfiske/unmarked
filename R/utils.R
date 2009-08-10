@@ -149,28 +149,30 @@ parmNames <- function(list.df) {
 #' @param species if data is in long format with multiple species, then
 #'    this can specify a particular species to extract if there is a
 #'    column named "species".
+#' @param type specific type of unmarkedFrame.
+#' @param ... further arguments to be passed to the unmarkedFrame constructor.
 #' @return an unmarkedFrame object
 #' @keywords utilities
 #' @examples
 #' # examine a correctly formatted long .csv
-#' read.csv(system.file("csv","frog2001pcru.csv", package="unmarked"))
+#' head(read.csv(system.file("csv","frog2001pcru.csv", package="unmarked")))
 #'
 #' # examine a correctly formatted wide .csv
-#' read.csv(system.file("csv","widewt.csv", package="unmarked"))
+#' head(read.csv(system.file("csv","widewt.csv", package="unmarked")))
 #'
 #' # convert them!
-#' dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE)
-#' dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"), long = TRUE)
-#' dat3 <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"), long = FALSE)
+#' dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
+#' dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
+#' dat3 <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"), long = FALSE, type = "unmarkedFrameOccu")
 #' @author Ian Fiske \email{ianfiske@@gmail.com}
 #' @export
 csvToUMF <-
-function(filename, long=FALSE, species = NULL)
+function(filename, long=FALSE, type, species = NULL, ...)
 {
   dfin <- read.csv(filename)
 
-  if(long == TRUE) return(formatLong(dfin, species))
-  else return(formatWide(dfin))
+  if(long == TRUE) return(formatLong(dfin, species, type = type, ...))
+  else return(formatWide(dfin, type = type, ...))
 }
 
 # utility function to create a variable that follows the dates as 1,2,3,...
@@ -215,7 +217,7 @@ function(dfin)
 #' @export
 #' @nord
 formatLong <-
-function(dfin, species = NULL)
+function(dfin, species = NULL, type)
 {
 
   ## copy dates to last column so that they are also a covdata var
@@ -262,7 +264,7 @@ function(dfin, species = NULL)
   obsvars.veclist <- lapply(obsvars.matlist, function(x) as.vector(t(x)))
   obsvars.df <- data.frame(obsvars.veclist)
 
-  unmarkedFrame(y, obsCovs = obsvars.df)
+	do.call(type, list(y = y, obsCovs = obsvars.df))
 }
 
 # column names must be
@@ -273,7 +275,7 @@ function(dfin, species = NULL)
 #' @export
 #' @nord
 formatWide <-
-function(dfin, sep = ".", obsToY)
+function(dfin, sep = ".", obsToY, type, ...)
 {
 	# escape separater if it is regexp special
 	reg.specials <- c('.', '\\', ':', '|', '(', ')', '[', '{', '^', '$', '*', '+', '?')
@@ -341,7 +343,7 @@ function(dfin, sep = ".", obsToY)
 		}
 	}
 	
-  unmarkedFrame(y = y, siteCovs = siteCovs, obsCovs = obsCovs, obsToY = obsToY)
+	do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsCovs, ...))
 }
 
 # take a multiyear file and return correctly formated data
