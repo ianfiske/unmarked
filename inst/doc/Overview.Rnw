@@ -25,14 +25,15 @@ Unmarked uses S4 classes to help the user both explore their data and analyze in
 
 
 
-\begin{table}
-\begin{tabular}{cccc}
+\begin{table} \footnotesize
+\begin{tabular}{c|ccc}
 Model & Fitting Function & Data & Citation \\ \hline
 Occupancy & occu & unmarkedFrameOccu & \citep{mackenzie_estimating_2002} \\
 Royle-Nichols & occuRN & unmarkedFrameOccu & \citep{royle_estimating_2003} \\
 Point Count & pcount & unmarkedFramePCount & \citep{royle_n-mixture_2004} \\
 Distance & distsamp & unmarkedFrameDS & \citep{royle_modeling_2004} \\
-Arbitrary & multinomial-Poisson & unmarkedFrameMPois & \citep{royle_generalized_2004}
+Arbitrary multinomial-Poisson & multinomPois & unmarkedFrameMPois & \citep{royle_generalized_2004} \\
+Colonization-extinction & colext & unmarkedMultFrame & \citep{mackenzie_estimating_2003}
 \end{tabular}
 \caption{Models handled by unmarked.}
 \label{tab:models}
@@ -41,24 +42,88 @@ Arbitrary & multinomial-Poisson & unmarkedFrameMPois & \citep{royle_generalized_
 
 \section{Typical unmarked session}
 
+The first step is to import the data into R.  This can be accomplished with either a call to the 
+ appropriate type of unmarkedFrame:
 
 <<>>=
 library(unmarked)
-data(frogs)
-str(pfer.data)
-pfer.obs <- apply(pfer.data, 3, as.data.frame)
-pfer.obs <- lapply(pfer.obs, scale)
-pfer <- unmarkedFrameOccu(y = pfer.bin, obsCovs = pfer.obs)
-summary(pfer)
-fm.pfer <- occu(~ MinAfterSunset + Temperature + I(Temperature^2) ~ 1, pfer)
-summary(fm.pfer)
-pfer.pb <- parboot(fm.pfer)
-plot(pfer.pb)
-vcov(fm.pfer, method = "hessian")
-#vcov(fm.pfer, method = "nonparboot")
+wt <- read.csv(system.file("csv","widewt.csv", package="unmarked"))
+head(wt)
+y <- wt[,2:4]
+siteCovs <-  wt[,c("elev", "forest", "length")]
+obsCovs <- reshape(wt[,c("date.1", "date.2", "date.3",  "ivel.1",  "ivel.2", "ivel.3")], varying=1:6, direction="long")
+obsCovs <- obsCovs[order(obsCovs$id, obsCovs$time),c(2:3)]
+wt <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+summary(wt)
+@
+
+or by using the convenience function csvToUMF:
+
+<<>>=
+wt <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"), long = FALSE, type = "unmarkedFrameOccu")
+@
+
+Because unmarkedFrames store data in a balanced manner.  So if not all sites have
+the same numbers of observations, then manual importation of data in long format
+can be tricky.  csvToUMF seemlessly handles this situation.
+
+<<>>=
+pcru <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
+summary(pcru)
 @
 
 
+
+To help stabilize the numerical optimization algorithm, we recommend standardizing the covariates.
+
+<<>>=
+	obsCovs(pcru) <- scale(obsCovs(pcru))
+@
+
+
+Occupancy models can then be fit with the occu() function:
+
+<<fig=TRUE>>=
+	fm.pcru <- occu(~ MinAfterSunset + Temperature + I(Temperature^2) ~ 1, pcru)
+	summary(fm.pcru)
+	plot(fm.pcru)
+@
+
+Here, we have specified that the detection process is modeled with the covarites for MinAfterSunset and a quadratic model
+for Temperature.  No covariates are specified for occupancy here.  See ?occu for more details.
+			
+Unmarked fitting functions return unmarkedFit objects which can be queried to investigate the model fit.  Variables can
+be back-transformed to the unconstrained scale using backTransform.  Standard errors are computed using the delta method.    
+
+<<>>=
+backTransform(fm.pcru, 'state')
+@
+
+Because the detection component was modeled with covariates, covariate coefficients must be specified to back-transform.
+Here, we request the probability of detection given a site is occupied and all covariates are set to 0.
+
+<<>>=
+backTransform(linearComb(fm.pcru, type = 'det', coefficients = c(1,0,0,0)))
+@
+
+Confidence intervals are requested with confint, using either the asymptotic normal approximation or profiling.
+
+
+<<>>=
+confint(fm.pcru, type='det')
+confint(fm.pcru, type='det', method = "profile")
+@
+
+
+Parametric
+bootstrapping can be used to check the adequacy of model fit.
+
+<<fig=TRUE>>=
+	pcru.pb <- parboot(fm.pcru)
+	plot(pcru.pb)
+@
+
+This example show a clear lack of fit.
 
 \bibliography{unmarked}
 
