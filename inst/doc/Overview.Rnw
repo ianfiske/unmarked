@@ -4,13 +4,13 @@
 \usepackage{natbib}
 \bibliographystyle{plain}
 
+\title{Overview of Unmarked:\\
+An R Package for the Analysis of Wildlife Data}
+\author{Ian Fiske}
 
 
 \begin{document}
 
-\title{Overview of Unmarked:\\
-An R Package for the Analysis of Wildlife Data}
-\author{Ian Fiske}
 
 \maketitle
 
@@ -23,126 +23,41 @@ Unmarked uses S4 classes to help the user both explore their data and analyze in
 
 \section{Overview of unmarked}
 
-Key features:
 
 
-models implemented:
-
-\section{Models Implemented in unmarked}
-
-\subsection{Models for Occurrence Data}
-
-\citep{mackenzie_estimating_2002}
-
-\subsection{Models for Point Count Data}
-
-\citep{royle_n-mixture_2004}
-
-\subsection{Models for Distance Data}
-
-\citep{royle_modeling_2004}
+\begin{table}
+\begin{tabular}{cccc}
+Model & Fitting Function & Data & Citation \\ \hline
+Occupancy & occu & unmarkedFrameOccu & \citep{mackenzie_estimating_2002} \\
+Royle-Nichols & occuRN & unmarkedFrameOccu & \citep{royle_estimating_2003} \\
+Point Count & pcount & unmarkedFramePCount & \citep{royle_n-mixture_2004} \\
+Distance & distsamp & unmarkedFrameDS & \citep{royle_modeling_2004} \\
+Arbitrary & multinomial-Poisson & unmarkedFrameMPois & \citep{royle_generalized_2004}
+\end{tabular}
+\caption{Models handled by unmarked.}
+\label{tab:models}
+\end{table}
 
 
+\section{Typical unmarked session}
 
-\subsection{Models for Arbitrary Multinomial-Poisson Data}
-
-
-\section{Unmarked Usage}
-
-\subsection{Data Requirements}
-
-Unmarked uses several S4 classes to represent wildlife survey data.  These are all based on a parent class called the unmarkedFrame,
-after base data type data frame.  unmarkedFrame objects hold several
-
-The only necessary data component is the observation matrix, which we call $y$ henceforth.  $y$ is an $M \times R$ matrix
-for a data set with $M$ sites and length-$R$ observation vectors per site.  Let $y_i$ denote the $i$th row of $y$, corresponding to 
-the observation vector for site $i$.
-The meaning of observation vectors varies by data
-type.  For example, in occurrence data, $R$ is the number of repeat site visits and elements of the observation vectors are the repeated sampling events at each site.  In double observer
-sampling, observatation vectors correspond to the multinomial response categories for counts for observer 1, observer 2, and both observers.
-For distance sampling, $y_i$ is the vector of counts falling into the $R$ distance classes specified by the user.
-
-unmarkedFrames also contain covariate data, measured either at the observation level or at the site level.  The slots
-obsCovs and siteCovs hold these data respectively.
-
-Automatic handling of missing data via obsToY matrix...
-
-Other data components are unique to specific types of unmarkedFrames. 
- 
-Unmarked aims to make importing data into unmarkedFrames easy, through the use of several import functions.
 
 <<>>=
 library(unmarked)
-data(mallard)
-head(mallard.y)
-str(mallard.site)
-str(mallard.obs)
-mallardUMF <- unmarkedFramePCount(y = mallard.y, siteCovs = mallard.site, obsCovs = mallard.obs)
-head(mallardUMF)
+data(frogs)
+str(pfer.data)
+pfer.obs <- apply(pfer.data, 3, as.data.frame)
+pfer.obs <- lapply(pfer.obs, scale)
+pfer <- unmarkedFrameOccu(y = pfer.bin, obsCovs = pfer.obs)
+summary(pfer)
+fm.pfer <- occu(~ MinAfterSunset + Temperature + I(Temperature^2) ~ 1, pfer)
+summary(fm.pfer)
+pfer.pb <- parboot(fm.pfer)
+plot(pfer.pb)
+vcov(fm.pfer, method = "hessian")
+#vcov(fm.pfer, method = "nonparboot")
 @
 
-unmarked can conveniently return an unmarkedFrame in data frame format by simply showing the object.
-
-%<<echo=FALSE>>=
-%mallardUMF
-%@
-
-
-\subsection{Pre-Analysis Data Exploration}
-
-Plotting data is a useful first step when embarking on any statistical analysis.  
-Unmarked implements plot methods for each of the unmarkedFrame data types.
-
-<<include=FALSE>>=
-plot(mallardUMF)
-@
-
-<<echo=FALSE,fig=TRUE>>=
-print(plot(mallardUMF))
-@
-
-
-Unmarked also has summary methods tailored for unmarkedFrames.
-
-<<>>=
-summary(mallardUMF)
-@
-
-
-\subsection{Fitting models}
-
-Each model type has a corresponding fit function.  For example, to fit a point count model, we call pcount.
-
-<<>>=
-fm <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
-@
-
-
-\subsection{Examining model fits}
-
-\subsection{Model Selection}
-
-
-\subsubsection{Goodness-of-fit}
-
-
-\subsubsection{Prediction}
-
-
-\section{Future directions for unmarked development}
-
-Spatial models, bayesian implementations,...
-
-\section{Extensive Examples}
-
-
-\subsection{Occurrence Data}
-
-
-\subsection{Point Count Data}
-
-
-\subsection{Distance Data}
 
 
 \bibliography{unmarked}
