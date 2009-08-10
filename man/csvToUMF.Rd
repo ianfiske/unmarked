@@ -1,7 +1,7 @@
 \name{csvToUMF}
 \alias{csvToUMF}
 \title{Convert .CSV File to an unmarkedFrame}
-\usage{csvToUMF(filename, long=FALSE, species)}
+\usage{csvToUMF(filename, long=FALSE, type, species, ...)}
 \description{This function converts an appropriatedly formated comma-separated
 values file (.csv) to a format usable by \emph{unmarked}'s fitting
 functions (see \emph{Details}).}
@@ -32,14 +32,16 @@ variable in each group must indicate the variable name.
 file is in long format (see \emph{Details})}
 \item{species}{if data is in long format with multiple species, then
 this can specify a particular species to extract if there is a
-column named "species".}}
+column named "species".}
+\item{type}{specific type of unmarkedFrame.}
+\item{...}{further arguments to be passed to the unmarkedFrame constructor.}}
 \examples{# examine a correctly formatted long .csv
-read.csv(system.file("csv","frog2001pcru.csv", package="unmarked"))
+head(read.csv(system.file("csv","frog2001pcru.csv", package="unmarked")))
 
 # examine a correctly formatted wide .csv
-read.csv(system.file("csv","widewt.csv", package="unmarked"))
+head(read.csv(system.file("csv","widewt.csv", package="unmarked")))
 
 # convert them!
-dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE)
-dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"), long = TRUE)
-dat3 <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"), long = FALSE)}
+dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
+dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
+dat3 <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"), long = FALSE, type = "unmarkedFrameOccu")}

@@ -10,4 +10,4 @@ quantities of interest from a fitted model or to test a hypothesis.}
 \value{an unmarkedEstimate object}
 \arguments{\item{obj}{an unmarkedFit object}
 \item{coefficients}{vector of same length as obj}
-\item{whichEstimate}{character, either "state" or "det"}}
+\item{type}{character, either "state" or "det"}}

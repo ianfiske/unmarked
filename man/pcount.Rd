@@ -43,4 +43,5 @@ Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Count
 \examples{data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)
-(fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF))}
+(fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF))
+(fm.mallard.nb <- pcount(~ date + I(date^2) ~ length + elev, mixture = "NB", mallardUMF))}
