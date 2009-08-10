@@ -335,9 +335,9 @@ setMethod("summary","unmarkedFrame",
     function(object,...) {
       cat("unmarkedFrame Object\n\n")
       cat(nrow(object@y), "sites\n")
-      cat("Maximum observations per site:",obsNum(object),"\n\n")
-      cat("Distribution of observations per site:")
-      stem(rowSums(!is.na(object@y)), scale=0.5)
+      cat("Maximum number of observations per site:",obsNum(object),"\n")
+			mean.obs <- mean(rowSums(!is.na(getY(object))))
+			cat("Mean number of observationsobservations per site:",round(mean.obs,2),"\n\n")
       cat("Tabulation of y observations:")
       print(table(object@y, exclude=NULL))
       if(!is.null(object@siteCovs)) {
