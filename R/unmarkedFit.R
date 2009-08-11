@@ -361,6 +361,59 @@ setMethod("fitted", "unmarkedFitPCount",
 			fitted
 		})
 
+setMethod("fitted", "unmarkedFitColExt", 
+		function(object, na.rm = FALSE) {
+			data <- object@data
+			M <- numSites(data)
+			nY <- data@numPrimary
+			J <- obsNum(data)/nY
+			psi <- plogis(coef(object, 'psi'))
+			detParms <- coef(object, 'det')
+			colParms <- coef(object, 'col')
+			extParms <- coef(object, 'ext')
+			designMats <- unmarked:::getDesign3(formula = object@formula, object@data)
+			V.itj <- designMats$V; X.it <- designMats$X
+			
+			
+			detP <- plogis(V.itj %*% detParms)
+			colP <- plogis(X.it  %*% colParms)
+			extP <- plogis(X.it %*% extParms)
+			
+			detP <- array(detP, c(J, nY, M))
+			colP <- matrix(colP, M, nY, byrow = TRUE)
+			extP <- matrix(extP, M, nY, byrow = TRUE)
+			
+			## create transition matrices (phi^T)
+			phis <- array(NA,c(2,2,nY-1,M)) #array of phis for each
+			for(i in 1:M) {
+				for(t in 1:(nY-1)) {
+					phis[,,t,i] <- matrix(c(1-colP[i,t], colP[i,t], extP[i,t], 1-extP[i,t])) 
+				}
+			}
+			
+			## first compute latent probs
+			x <- array(NA, c(2, nY, M))
+			x[,1,] <- rep(c(1-psi,psi), M)
+			for(i in 1:M) {
+				for(t in 2:nY) {
+					x[,t,i] <- (phis[,,t-1,i] %*% x[,t-1,i])
+				}
+			}
+
+			## then compute obs probs
+			fitted <- array(NA, c(J, nY, M))
+			for(i in 1:M) {
+				for(t in 1:nY) {
+					for(j in 1:J) {
+						fitted[j,t,i] <- (x[,t,i] %*% matrix(c(1, 1 - detP[j,t,i], 0, detP[j,t,i]), 2, 2))[2]
+					}
+				}
+			}	
+				
+			return(matrix(fitted, M, J*nY, byrow = TRUE))
+			
+		})
+
 #' @export
 setMethod("profile", "unmarkedFit",
 		function(fitted, type, parm, seq) {
@@ -640,7 +693,66 @@ setMethod("simulate", "unmarkedFitOccu",
 		})
 
 
+setMethod("simulate", "unmarkedFitColExt",
+		function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
+			data <- object@data
+			M <- numSites(data)
+			nY <- data@numPrimary
+			J <- obsNum(data)/nY
+			psi <- plogis(coef(object, 'psi'))
+			detParms <- coef(object, 'det')
+			colParms <- coef(object, 'col')
+			extParms <- coef(object, 'ext')
+			designMats <- unmarked:::getDesign3(formula = object@formula, object@data)
+			V.itj <- designMats$V; X.it <- designMats$X
 
+
+			detP <- plogis(V.itj %*% detParms)
+			colP <- plogis(X.it  %*% colParms)
+			extP <- plogis(X.it %*% extParms)
+			
+			detP <- array(detP, c(J, nY, M))
+			detP <- aperm(detP, c(3, 1, 2))
+			colP <- matrix(colP, M, nY, byrow = TRUE)
+			extP <- matrix(extP, M, nY, byrow = TRUE)
+			
+			simList <- list()
+			for(s in 1:nsim) {
+				## generate first year's data
+				x <- matrix(0, M, nY)
+				x[,1] <- rbinom(M, 1, psi) 
+				
+				## create transition matrices (phi^T)
+				phis <- array(NA,c(2,2,nY-1,M)) #array of phis for each
+				for(i in 1:M) {
+					for(t in 1:(nY-1)) {
+						phis[,,t,i] <- matrix(c(1-colP[i,t], colP[i,t], extP[i,t], 1-extP[i,t])) 
+					}
+				}
+				
+				## generate latent years 2:T
+				for(i in 1:M) {
+					for(t in 2:nY) {
+						x[i,t] <- rbinom(1, 1, phis[2,x[i,t-1]+1,t-1,i])
+					}
+				}
+				
+				## generate observations
+				y <- array(NA, c(M, J, nY))
+				for(t in 1:nY) {
+					y[,,t] <- rbinom(M*J, 1, x[,t]*detP[,,t])
+				}
+				
+				y.mat <- y[,,1]
+				for(i in 2:dim(y)[3]) {
+					y.mat <- cbind(y.mat,y[,,i])
+				}
+				simList[[s]] <- y.mat
+			}
+			
+			return(simList)
+			
+		})
 ############################## PARAMETRIC BOOTSTRAP ###########################
 
 #' @exportMethod parboot

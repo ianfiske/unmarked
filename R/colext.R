@@ -61,7 +61,12 @@ colext <-
 	fc$method <- as.name("method")
 	fc$control <- as.name("control")
 	fc$getHessian <- as.name("se")
-	if(!missing(starts)) fc$inits <- starts
+	fc$se <- NULL
+	if(missing(starts)) {
+		fc$starts <- NULL
+	} else {
+		fc$starts <- eval(starts)
+	}
 	
 	fm <- eval(fc)
 	
@@ -91,7 +96,7 @@ colext <-
 			data.b@obsCovs <- data.b@obsCovs[obsCovsInd.b,]
 			fc$data <- quote(data.b)
 			fc$getHessian <- FALSE
-			fc$inits <- fm$mle$value
+			fc$starts <- fm$mle$value
 			fc$wts <- sites.wts
 			
 			fm.b <- tryCatch(eval(fc),
@@ -189,7 +194,7 @@ colext <-
 
 
 colext.fit <- function(formula, data,		J,
-		inits, method, control, getHessian = TRUE, wts)
+		starts=NULL, method, control, getHessian = TRUE, wts)
 {
 	K <- 1
 	
@@ -282,8 +287,8 @@ colext.fit <- function(formula, data,		J,
 		forward(detParams, phis, psi) + 0.01*sqrt(sum(params^2))
 	}
 	
-	start <- rnorm(nP)
-	fm <- optim(start, nll, method=method,hessian = getHessian,	control=control)
+	if(is.null(starts)) starts <- rnorm(nP)
+	fm <- optim(starts, nll, method=method,hessian = getHessian,	control=control)
 	
 	mle <- fm$par
 	parm.names <- c("", colextParms, colextParms, detParms)
