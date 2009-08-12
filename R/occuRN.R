@@ -48,7 +48,7 @@
 #' @keywords models
 #' @export
 occuRN <-
-function(formula, data, K = 25, method = "BFGS", control = list(), se = TRUE)
+function(formula, data, K = 25, starts, method = "BFGS", control = list(), se = TRUE)
 {
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 	
@@ -102,7 +102,8 @@ function(formula, data, K = 25, method = "BFGS", control = list(), se = TRUE)
     -sum(log(like.i))
   }
 
-  fm <- optim(rep(0, nP), nll, method = method, hessian = se, control = control)
+	if(missing(starts)) starts <- rep(0, nP) 
+  fm <- optim(starts, nll, method = method, hessian = se, control = control)
 	opt <- fm
 	if(se) {
 		tryCatch(covMat <- solve(fm$hessian),
@@ -127,7 +128,7 @@ function(formula, data, K = 25, method = "BFGS", control = list(), se = TRUE)
   estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           det=detEstimates))
 
-  umfit <- unmarkedFit(fitType = "occuRN",
+  umfit <- new("unmarkedFitOccuRN", fitType = "occuRN",
       call = match.call(), formula = formula, data = data, sitesRemoved = designMats$removed.sites, 
 			estimates = estimateList,
       AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)

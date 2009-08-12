@@ -62,6 +62,9 @@ setClass("unmarkedFitPCount",
 setClass("unmarkedFitOccu", 
 		contains = "unmarkedFit")			
 
+setClass("unmarkedFitOccuRN", 
+		contains = "unmarkedFit")			
+
 setClass("unmarkedFitColExt",
 		representation(phi = "matrix"),
 		contains = "unmarkedFit")
@@ -360,6 +363,26 @@ setMethod("fitted", "unmarkedFitPCount",
 					})
 			fitted
 		})
+
+setMethod("fitted", "unmarkedFitOccuRN", 
+		function(object, K, na.rm = FALSE) {
+			data <- object@data
+			des <- getDesign2(object@formula, data, na.rm = na.rm)
+			X <- des$X; V <- des$V; a <- des$plotArea
+			y <- des$y	# getY(data) ... to be consistent w/NA handling?
+			M <- nrow(X)
+			J <- ncol(y)
+			lam <- exp(X %*% coef(object, 'state')) * a
+			r <- plogis(V %*% coef(object, 'det'))
+			if(missing(K)) K <- max(y, na.rm = TRUE) + 20 
+			
+			lam <- rep(lam, each = J)
+			
+			fitted <- 1 - exp(-lam*r) ## analytical integration.
+			
+			return(matrix(fitted, M, J, byrow = TRUE))
+		})
+
 
 setMethod("fitted", "unmarkedFitColExt", 
 		function(object, na.rm = FALSE) {
@@ -696,9 +719,6 @@ setMethod("simulate", "unmarkedFitOccu",
 setMethod("simulate", "unmarkedFitColExt",
 		function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
 			data <- object@data
-			M <- numSites(data)
-			nY <- data@numPrimary
-			J <- obsNum(data)/nY
 			psi <- plogis(coef(object, 'psi'))
 			detParms <- coef(object, 'det')
 			colParms <- coef(object, 'col')
@@ -706,6 +726,9 @@ setMethod("simulate", "unmarkedFitColExt",
 			designMats <- unmarked:::getDesign3(formula = object@formula, object@data)
 			V.itj <- designMats$V; X.it <- designMats$X
 
+			M <- nrow(X.it)
+			nY <- data@numPrimary
+			J <- obsNum(data)/nY
 
 			detP <- plogis(V.itj %*% detParms)
 			colP <- plogis(X.it  %*% colParms)
@@ -752,6 +775,36 @@ setMethod("simulate", "unmarkedFitColExt",
 			
 			return(simList)
 			
+		})
+		
+		
+setMethod("simulate", "unmarkedFitOccuRN",
+		function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
+			formula <- object@formula
+			umf <- object@data
+			designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
+			y <- designMats$y; X <- designMats$X; V <- designMats$V
+			M <- nrow(y)
+			J <- ncol(y)
+			
+			detParms <- coef(object, 'det')
+			r.ij <- plogis(V %*% detParms)
+			r <- matrix(r.ij, M, J, byrow = TRUE)
+			
+			lamParms <- coef(object, 'state')
+			lambda <- exp(X %*% lamParms)
+
+			simList <- list()
+			for(s in 1:nsim) {
+				N.i <- rpois(M, lambda)
+				N.ij <- rep(N.i, each = J)
+				y <- matrix(NA, M, J)
+				for(i in 1:J) {
+					y[,i] <- rbinom(M, N.i, r[,i])
+				}
+				simList[[s]] <- ifelse(y > 0, 1, 0)
+			}
+			return(simList)
 		})
 ############################## PARAMETRIC BOOTSTRAP ###########################
 
