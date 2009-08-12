@@ -874,7 +874,7 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 	call <- match.call(call = sys.call(-1))
 	formula <- object@formula
 	umf <- object@data
-	designMats <- getDesign2(formula, umf, na.rm = FALSE)
+	designMats <- unmarked:::getDesign2(formula, umf, na.rm = FALSE)
 	y <- designMats$y
 	yvec0 <- c(t(y))
 	ests <- as.numeric(coef(object, altNames = TRUE))
@@ -887,10 +887,11 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 	simList <- simulate(object, nsim = nsim, na.rm = FALSE)
 	for(i in 1:nsim) {
 		y.sim <- simList[[i]]
+		is.na(y.sim) <- is.na(y)
 		yvec <- c(t(y.sim))
 		simdata@y <- y.sim
 		fits[[i]] <- update(object, data = simdata, starts = ests, se = FALSE, ...)
-		expected <- as.vector(t(fitted(fits[[i]], na.rm = FALSE))) 
+		expected <- as.vector(t(fitted(fits[[i]], na.rm = FALSE)))
 		rmse[i] <- sqrt(sum((sqrt(yvec) - sqrt(expected))^2, na.rm = TRUE))
 		if(nsim > report && i %in% seq(report, nsim, by=report))
 			cat(paste(round(rmse[(i-(report-1)):i], 1), collapse=", "), fill=T)
