@@ -265,6 +265,7 @@ setMethod("coef", "unmarkedFit",
 			co
 		})
 
+
 #' @export 
 setMethod("vcov", "unmarkedFit",
 		function(object, type, altNames = TRUE, method = "hessian") {
@@ -283,6 +284,11 @@ setMethod("vcov", "unmarkedFit",
 				rownames(v) <- colnames(v) <- names(coef(object, type, altNames=altNames))
 			}
 			v
+		})
+
+setMethod("SE", "unmarkedFit", 
+		function(obj) {
+			sqrt(diag(vcov(obj)))
 		})
 
 #' @export

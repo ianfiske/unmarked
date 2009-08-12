@@ -191,8 +191,8 @@ setMethod("backTransform", "unmarkedEstimate",
 setMethod("SE",
     signature(obj = "unmarkedEstimate"),
     function(obj) {
-      sqrt(diag(obj@covMat))
-    })
+			sqrt(diag(vcov(obj)))
+		})
 
 
 setMethod("[",
