@@ -60,6 +60,7 @@ setClass("unmarkedFitPCount",
 
 #' @exportClass unmarkedFitOccu
 setClass("unmarkedFitOccu", 
+		representation(knownOcc = "numeric"),
 		contains = "unmarkedFit")			
 
 setClass("unmarkedFitOccuRN", 
@@ -332,6 +333,19 @@ setMethod("fitted", "unmarkedFit",
 			fitted <- state * p  # true for models with E[Y] = p * E[X]
 			fitted
 		})		
+
+setMethod("fitted", "unmarkedFitOccu",
+		function(object, na.rm = FALSE) {
+			data <- object@data
+			des <- getDesign2(object@formula, data, na.rm = na.rm)
+			X <- des$X; V <- des$V; a <- des$plotArea
+			state <- plogis(X %*% coef(object, 'state'))
+			state <- as.numeric(state)  ## E(X) for most models
+			state[object@knownOcc] <- 1
+			p <- getP(object, na.rm = na.rm) # P(detection | presence)
+			fitted <- state * p  # true for models with E[Y] = p * E[X]
+			fitted
+		})
 
 #' @export
 setMethod("fitted", "unmarkedFitPCount",
@@ -709,6 +723,7 @@ setMethod("simulate", "unmarkedFitOccu",
 			yList <- list()
 			for(i in 1:nsim) {
 				Z <- rbinom(M, 1, psi)
+				Z[object@knownOcc] <- 1
 				yvec <- rep(Z, each = J)*rbinom(M * J, 1, prob = p)
 				yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
 			}

@@ -120,7 +120,7 @@ function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", control 
   umfit <- new("unmarkedFitOccu", fitType = "occu",
       call = match.call(), formula = formula, data = data, sitesRemoved = designMats$removed.sites, 
 			estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
+      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll, knownOcc = knownOcc)
 
   return(umfit)
 }
