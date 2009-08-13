@@ -153,13 +153,14 @@ umHMM <-
 			fc$inits <- fm$mle$value
 			fc$wts <- sites.wts
 			
-			tryCatch(fm.b <- eval(fc),
+			fm.b <- tryCatch(eval(fc),
 					error = function(x) {
-						bad.boots <- bad.boots + 1
+						bad.boots <<- bad.boots + 1
 						cat("Caught failed bootstrap iteration.  Seed =",sd,"\n")
 						cat(bad.boots, "bad boot iterations.\n")
-						next  ## if fit breaks, then re-enter loop
+						0  ## if fit breaks, then re-enter loop
 					})
+			if(identical(fm.b, 0)) next
 			
 			if(!(TRUE %in% is.nan(smooth.b[,,b]))) {
 				smooth.b[,,b] <- fm.b$smooth
@@ -219,17 +220,14 @@ umHMM.fit <- function(formula = ~ 1, umf,
 		inits,
 		phiMatFun, max.bad = 3, min.good = 3, method, control, getHessian = TRUE, wts)
 {
-	y <- umf@y
-		
-	M <- nrow(y)
-	
-	if(missing(wts)) wts <- rep(1, M)
-	
-	nY <- ncol(y)/J
 	
 	designMats <- getDesign2(formula = formula, umf)
-	
 	V.itj <- designMats$V
+	y <- designMats$y
+	M <- nrow(y)
+	nY <- ncol(y)/J
+	if(missing(wts)) wts <- rep(1, M)
+	
 	nDCP <- ncol(V.itj)
 	detParms <- colnames(V.itj)
 	
@@ -509,9 +507,19 @@ umHMM.fit <- function(formula = ~ 1, umf,
 #  nlls <- sapply(fmList, function(x) x$value)
 #  fm <- fmList[[which.min(nlls)]]
 	
-	fm <- tryCatch(optim(start, nll, method=method,hessian = getHessian,
-					control=control),
-			error = function(x) simpleError("optim hit error."))
+#	num.tries <- 0
+#	while(num.tries < 3) {
+#		fm <- tryCatch(optim(start, nll, method=method,hessian = getHessian,
+#					control=control),
+#				error = function(x) {
+#					num.tries <- num.tries + 1
+#					start <- start + 0.1*rnorm(length(start))
+#					simpleError("optim hit error.")
+#				})
+#		if(!identical(as.character(fm), "Error: optim hit error.\n")) break
+#	}
+#	if(identical(as.character(fm),"Error: optim hit error.\n")) stop("optim hit error.")
+	fm <- optim(start, nll, method=method,hessian = getHessian,	control=control)
 	opt<-fm
 	
 	mle <- fm$par
@@ -525,7 +533,7 @@ umHMM.fit <- function(formula = ~ 1, umf,
 	
 	## smoothing
 	forward(detParams, phi, psi, storeAlpha = TRUE)
-	backward(detParams, phi, psi)
+	backward(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phi, psi)
 	beta[,,1]
 	for(i in 1:M) {
 		for(t in 1:nY) {
@@ -537,7 +545,9 @@ umHMM.fit <- function(formula = ~ 1, umf,
 #  mp <- array(V.itjk %*% detParams, c(nDMP, J, nY, M))
 #  expectedDetMats <- .Call("getDetMats", y.arr, mp, K)
 #  expectedDetMats <- array(expectedDetMats, c(K+1,K+1,J,nY,M))
-	detMats <- getDetMats(detParams, phi, psi)
+	detMats <- getDetMats(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phi, psi)
+	
+	## call viterbi here using detMats
 	
 	## compute the projected trajectory
 	projected <- matrix(NA, K + 1, nY)
@@ -830,4 +840,17 @@ computeFitStats <- function(detMats, smooth, y, J.it) {
 	X2 <- sum((e.counts - o.counts)^2 / e.counts)
 	
 	list(e.counts = e.counts, o.counts = o.counts, chisq = X2)
+}
+
+viterbi <- function(y.site) {
+	delta <- psi.v <- q.star <- matrix(NA, K+1, nY)
+		
+	## initialize
+	for (i in 1:(K + 1)) {
+		b.i1 <- rep(1, K + 1) 
+		for (j in 1:J) {
+			b.i1 <- b.i1 * detMats[,y.arr[i,1,j]+1,j,i,1]
+		}
+		delta[i,1] <- b.i1 * psi
+	}
 }

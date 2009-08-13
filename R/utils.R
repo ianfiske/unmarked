@@ -346,12 +346,23 @@ function(dfin, sep = ".", obsToY, type, ...)
 	do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsCovs, ...))
 }
 
-# take a multiyear file and return correctly formated data
-# formatted as above, but with year in first column
-# col1 = year, c2 = site, c3 = juliandate or sample number
-# c4 = y, c5 - cX = covariates
-# add sample periods of NA to years with fewer samples
-# to make balanced data... this eases future computations
+
+#' This convenience function converts multi-year data in long format to unmarkedMultFrame Object.  See Details for more information.
+#' 
+#' \code{df.in} is a data frame with columns formatted as follows:
+#' 
+#' Column 1 = year number \cr
+#' Column 2 = site name or number \cr
+#' Column 3 = julian date or chronological sample number during year \cr
+#' Column 4 = observations (y) \cr
+#' Column 5 -- Final Column = covariates 
+#' 
+#' Note that if the data is already in wide format, it may be easier to create an unmarkedMultFrame object
+#' directly with a call to \code{\link{unmarkedMultFrame}}.
+#' 
+#' @title Create unmarkedMultFrame from Long Format Data Frame 
+#' @param df.in a data.frame appropriately formatted (see Details).
+#' @return unmarkedMultFrame object
 #' @export
 #' @nord
 formatMult <-
@@ -399,7 +410,50 @@ function(df.in)
 	obsvars.list <- lapply(obsvars.list, function(x) as.vector(t(x)))
 	obsvars.df <- as.data.frame(obsvars.list)
 	
-	umf <- unmarkedMultFrame(y = y, obsCovs = obsvars.df, numPrimary = nY)
+	## check for siteCovs
+	obsNum <- ncol(y)
+	M <- nrow(y)
+	site.inds <- matrix(1:(M*obsNum), M, obsNum, byrow = TRUE)
+	siteCovs <- sapply(obsvars.df, function(x) {
+				obsmat <- matrix(x, M, obsNum, byrow = TRUE)
+				l.u <- apply(obsmat, 1, function(y) {
+							row.u <- unique(y)
+							length(row.u[!is.na(row.u)])
+						})
+				if(all(l.u %in% 0:1)) {  ## if there are 0 or 1 unique vals per row, we have a sitecov
+					u <- apply(obsmat, 1, function(y) {
+								row.u <- unique(y)
+								if(!all(is.na(row.u)))  ## only remove NAs if there are some non-NAs.
+									row.u <- row.u[!is.na(row.u)]
+								row.u
+							})
+					u
+				} 
+			})
+	siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
+	if(nrow(siteCovs) == 0) siteCovs <- NULL
+	
+	yearlySiteCovs <- sapply(obsvars.df, function(x) {
+				obsmat <- matrix(x, M*nY, obsNum/nY, byrow = TRUE)
+				l.u <- apply(obsmat, 1, function(y) {
+							row.u <- unique(y)
+							length(row.u[!is.na(row.u)])
+						})
+				if(all(l.u %in% 0:1)) {  ## if there are 0 or 1 unique vals per row, we have a sitecov
+					u <- apply(obsmat, 1, function(y) {
+								row.u <- unique(y)
+								if(!all(is.na(row.u)))  ## only remove NAs if there are some non-NAs.
+									row.u <- row.u[!is.na(row.u)]
+								row.u
+							})
+					u
+				}
+			})
+	yearlySiteCovs <- as.data.frame(siteCovs[!sapply(yearlySiteCovs, is.null)])
+	if(nrow(yearlySiteCovs) == 0) yearlySiteCovs <- NULL
+	
+	umf <- unmarkedMultFrame(y = y, siteCovs = siteCovs, obsCovs = obsvars.df, yearlySiteCovs = yearlySiteCovs,
+			numPrimary = nY)
   return(umf)
 }
 

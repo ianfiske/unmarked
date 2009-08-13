@@ -32,6 +32,7 @@
 #' @param formula double right-hand side formula describing covariates of detection and occupancy in that order.
 #' @param data unmarkedFrameOccu supplying data to the model.
 #' @param K the upper summation index used to numerically integrate out the latent abundance.
+#' @param starts initial values for the optimization.
 #' @param method Optimization method used by \code{\link{optim}}.
 #' @param control Other arguments passed to \code{\link{optim}}.
 #' @param se logical specifying whether or not to compute standard errors.
