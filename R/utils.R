@@ -739,6 +739,12 @@ getDesign3 <- function(formula, umf, na.rm = TRUE) {
 	} else {
 		yearlySiteCovs <- umf@yearlySiteCovs
 	}
+	## in order to drop factor levels that only appear in last year,
+	## replace last year with NAs and use drop=TRUE
+	yearlySiteCovs[seq(nY,M*nY,by=nY),] <- NA
+	yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, function(x) {
+						x[,drop = TRUE]
+					}))
 	X.mf <- model.frame(stateformula, yearlySiteCovs, na.action = NULL)
 	X <- model.matrix(stateformula, X.mf)
 	
@@ -761,7 +767,7 @@ getDesign3 <- function(formula, umf, na.rm = TRUE) {
 	V <- model.matrix(detformula, V.mf)
 	
 	if(na.rm)
-		out <- handleNA2(umf, X, V)
+		out <- handleNA3(umf, X, V)
 	else
 		out <- list(y=getY(umf), X=X, V=V, plotArea=umf@plotArea, 
 				removed.sites=integer(0))
@@ -831,9 +837,10 @@ handleNA3 <- function(umf, X, V) {
 	obsToY <- obsToY(umf)
 	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
 	
-	J <- numY(umf)
 	R <- obsNum(umf)
 	M <- numSites(umf)
+	nY <- umf@numPrimary
+	J <- numY(umf) / nY
 	
 	plotArea <- umf@plotArea
 	if(all(is.na(plotArea))) 	# Necessary b/c distsamp calculates plot areas w/in the function when all(is.na(plotArea))
@@ -841,8 +848,9 @@ handleNA3 <- function(umf, X, V) {
 	else
 		plotArea.na <- is.na(plotArea)
 	
-	X.long <- X[rep(1:(M*nY), each = J),]
-	X.long.na <- is.na(X.long)
+	X.na <- is.na(X)
+	X.na[seq(nY,M*nY,by=nY),] <- FALSE  ## final years are unimportant (not used).
+	X.long.na <- X.na[rep(1:(M*nY), each = J),]
 	
 	V.long.na <- apply(V, 2, function(x) {
 				x.mat <- matrix(x, M, R, byrow = TRUE)
@@ -866,14 +874,14 @@ handleNA3 <- function(umf, X, V) {
 		warning("Some observations have been discarded because correspoding covariates were missing.")
 	}
 	
-	y <- matrix(y.long, M, J, byrow = TRUE)
+	y <- matrix(y.long, M, numY(umf), byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
 	#sites.to.remove <- sites.to.remove | plotArea.na
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
 		y <- y[!sites.to.remove, ,drop = FALSE]
-		X <- X[!sites.to.remove, ,drop = FALSE]
+		X <- X[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
 		plotArea <- plotArea[!sites.to.remove]
 		warning(paste(num.to.remove,"sites have been discarded because of missing data."))

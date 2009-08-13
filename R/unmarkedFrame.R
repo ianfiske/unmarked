@@ -264,6 +264,14 @@ setMethod("siteCovs", "unmarkedFrame",
 			return(object@siteCovs)
 		})
 
+#' @exportMethod yearlySiteCovs
+setGeneric("yearlySiteCovs", function(object,...) standardGeneric("yearlySiteCovs"))
+
+setMethod("yearlySiteCovs", "unmarkedMultFrame",
+		function(object) {
+			return(object@yearlySiteCovs)
+		})
+
 #
 ##' Extractor for observation level covariates
 ##' @param umf an unmarkedFrame
@@ -324,6 +332,20 @@ setReplaceMethod("siteCovs", "unmarkedFrame", function(object, value) {
 			object
 		})
 
+#' @exportMethod "obsCovs<-"
+setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
+setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
+			object@obsCovs <- as.data.frame(value)
+			object
+		})
+
+#' @exportMethod "yearlySiteCovs<-"
+setGeneric("yearlySiteCovs<-", function(object, value) standardGeneric("yearlySiteCovs<-"))
+setReplaceMethod("yearlySiteCovs", "unmarkedMultFrame", function(object, value) {
+			object@yearlySiteCovs <- as.data.frame(value)
+			object
+		})
+
 #' @exportMethod "obsToY<-"
 setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
 
@@ -331,6 +353,7 @@ setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
 			object@obsToY <- value
 			object
 		})
+
 
 #' @exportMethod getY
 setGeneric("getY", function(object) standardGeneric("getY"))
@@ -360,7 +383,7 @@ setMethod("summary","unmarkedFrame",
       cat(nrow(object@y), "sites\n")
       cat("Maximum number of observations per site:",obsNum(object),"\n")
 			mean.obs <- mean(rowSums(!is.na(getY(object))))
-			cat("Mean number of observationsobservations per site:",round(mean.obs,2),"\n\n")
+			cat("Mean number of observations per site:",round(mean.obs,2),"\n\n")
       cat("Tabulation of y observations:")
       print(table(object@y, exclude=NULL))
       if(!is.null(object@siteCovs)) {

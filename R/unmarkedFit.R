@@ -67,7 +67,8 @@ setClass("unmarkedFitOccuRN",
 		contains = "unmarkedFit")			
 
 setClass("unmarkedFitColExt",
-		representation(phi = "matrix"),
+		representation(phi = "matrix",
+				projected = "matrix"),
 		contains = "unmarkedFit")
 
 ################################################################################################

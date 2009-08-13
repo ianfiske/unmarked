@@ -30,7 +30,12 @@
 #' data(frogs)
 #' umf <- formatMult(masspcru)
 #' obsCovs(umf) <- scale(obsCovs(umf))
+#' ## constant transition rates
 #' (fm <- colext(~ JulianDate + I(JulianDate^2) ~ 1, umf, control = list(trace=1, maxit=1e4)))
+#' 
+#' ## try yearly transition rates
+#' yearlySiteCovs(umf) <- data.frame(year = factor(rep(1:7, numSites(umf))))
+#' (fm.yearly <- colext(~ JulianDate + I(JulianDate^2) ~ year, umf, control = list(trace=1, maxit=1e4)))
 #' @keywords models
 #' @references 
 #' MacKenzie, D.I. et al. (2002) Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology, 83(8), 2248-2255. \cr
@@ -189,7 +194,7 @@ colext <-
 	umfit <- new("unmarkedFitColExt", fitType = "colext",
 			call = match.call(), formula = formula, data = data, sitesRemoved = fm$designMats$removed.sites, 
 			estimates = estimateList,
-			AIC = fmAIC, opt = opt, negLogLike = opt$value, nllFun = fm$nll)
+			AIC = fmAIC, opt = opt, negLogLike = opt$value, nllFun = fm$nll, projected = fm$projected)
 	
 	return(umfit)
 }
@@ -291,14 +296,33 @@ colext.fit <- function(formula, data,		J,
 	
 	if(is.null(starts)) starts <- rnorm(nP)
 	fm <- optim(starts, nll, method=method,hessian = getHessian,	control=control)
-	
 	mle <- fm$par
+	psi <- plogis(mle[1]) 
+	colParams <- mle[2:(1+nPhiP)]
+	extParams <- mle[(2 + nPhiP) : (1 + 2*nPhiP)]
+	
+	## computed projected estimates
+	phis[,1,,] <- plogis(X %*% colParams)
+	phis[,2,,] <- plogis(X %*% -extParams)
+	
+	projected <- array(NA, c(2, nY, M))
+	projected[,1,] <- c(1-psi,psi)
+	for(i in 1:M) {
+		for(t in 2:nY) {
+			projected[,t,i] <- phis[,,t-1,i] %*% projected[,t-1,i]
+		}
+	}
+	projected.mean <- apply(projected, 1:2, mean)
+	rownames(projected.mean) <- c("unoccupied","occupied")
+	colnames(projected.mean) <- 1:nY
+	
 	parm.names <- c("", colextParms, colextParms, detParms)
 	mle.df <- data.frame(names = parm.names, value = mle)
 	rownames(mle.df) <- paste(c("psi", rep("col", nPhiP), rep("ext", nPhiP), rep("det", nDP)),
 			c("",1:nPhiP,1:nPhiP, 1:nDP))
 	
-	list(mle = mle.df, opt=fm, nP = nP, M = M, nDP = nDP, nPhiP = nPhiP, nllFun = nll, designMats = designMats)
+	list(mle = mle.df, opt=fm, nP = nP, M = M, nDP = nDP, nPhiP = nPhiP, nllFun = nll, designMats = designMats,
+			projected = projected.mean)
 }
 
 

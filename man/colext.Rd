@@ -27,4 +27,9 @@ MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amster
 \examples{data(frogs)
 umf <- formatMult(masspcru)
 obsCovs(umf) <- scale(obsCovs(umf))
-(fm <- colext(~ JulianDate + I(JulianDate^2) ~ 1, umf, control = list(trace=1, maxit=1e4)))}
+## constant transition rates
+(fm <- colext(~ JulianDate + I(JulianDate^2) ~ 1, umf, control = list(trace=1, maxit=1e4)))
+
+## try yearly transition rates
+yearlySiteCovs(umf) <- data.frame(year = factor(rep(1:7, numSites(umf))))
+(fm.yearly <- colext(~ JulianDate + I(JulianDate^2) ~ year, umf, control = list(trace=1, maxit=1e4)))}
