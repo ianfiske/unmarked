@@ -65,12 +65,17 @@ function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", control 
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 		
   designMats <- getDesign2(formula, data)
-	X <- designMats$X; V <- designMats$V; y <- designMats$y
-	
+	X <- designMats$X; V <- designMats$V; y <- designMats$y; removed <- designMats$removed.sites
+
   y <- truncateToBinary(y)
   J <- ncol(y)
   M <- nrow(y)
 
+	## convert knownOcc to logical so we can subset correctly to handle NAs.
+	knownOccLog <- rep(FALSE, numSites(data))
+	knownOccLog[knownOcc] <- TRUE
+	knownOccLog <- knownOccLog[-removed]
+	
 	occParms <- colnames(X)
   detParms <- colnames(V)
   nDP <- ncol(V)
@@ -83,7 +88,7 @@ function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", control 
 
   nll <- function(params) {
     psi <- plogis(X %*% params[1 : nOP])
-    psi[knownOcc] <- 1
+    psi[knownOccLog] <- 1
     pvec <- plogis(V %*% params[(nOP + 1) : nP])
     cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
     cp[navec] <- 1  # so that NA's don't modify likelihood
@@ -120,7 +125,7 @@ function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", control 
   umfit <- new("unmarkedFitOccu", fitType = "occu",
       call = match.call(), formula = formula, data = data, sitesRemoved = designMats$removed.sites, 
 			estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll, knownOcc = knownOcc)
+      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll, knownOcc = knownOccLog)
 
   return(umfit)
 }

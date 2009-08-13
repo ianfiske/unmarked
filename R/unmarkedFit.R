@@ -60,7 +60,7 @@ setClass("unmarkedFitPCount",
 
 #' @exportClass unmarkedFitOccu
 setClass("unmarkedFitOccu", 
-		representation(knownOcc = "numeric"),
+		representation(knownOcc = "logical"),
 		contains = "unmarkedFit")			
 
 setClass("unmarkedFitOccuRN", 
