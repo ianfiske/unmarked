@@ -701,8 +701,12 @@ getDesign2 <- function(formula, umf, na.rm = TRUE) {
 		obsCovs <- obsCovs(umf)
 	}
 	
+	## Record future column names for obsCovs
+	colNames <- c(colnames(obsCovs), colnames(siteCovs))
+	
 	## add site Covariates at observation-level
 	obsCovs <- cbind(obsCovs, siteCovs[rep(1:M, each = R),])
+	colnames(obsCovs) <- colNames
 	
 	## add observation number if not present
 	if(!("obs" %in% names(obsCovs))) {
