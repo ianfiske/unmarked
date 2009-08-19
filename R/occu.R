@@ -5,8 +5,7 @@
 
 #'  This function estimates the standard occupancy model of MacKenzie et al (2002).
 #'
-#'  See {\link{unmarkedFrame} for a description of how to supply data to the \code{umf}
-#'  argument.
+#'  See \link{unmarkedFrame} for a description of how to supply data to the \code{data} argument.
 #'
 #'  \code{occu} fits the standard occupancy model based on zero-inflated
 #'  binomial models (MacKenzie et al. 2006, Royle and Dorazio

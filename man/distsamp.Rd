@@ -1,9 +1,10 @@
 \name{distsamp}
 \alias{distsamp}
 \title{Fit the hierarchical distance sampling model of Royle et al.}
-\usage{distsamp(formula, data, keyfun=c("halfnorm", "exp", "hazard",
-    "uniform"), output=c("density", "abund"), unitsOut=c("ha", "kmsq"),
-    starts, method=BFGS, control=list(), se=TRUE, ...)}
+\usage{distsamp(formula, data, keyfun=c("halfnorm", "exp",
+    "hazard", "uniform"), output=c("density", "abund"),
+    unitsOut=c("ha", "kmsq"), starts, method=BFGS,
+    control=list(), se=TRUE, ...)}
 \description{Fit the hierarchical distance sampling model of Royle et al. (2004) to 
 line or point transect data recorded in discrete distance intervals.}
 \details{Unlike conventional distance sampling, which uses the 'conditional on 
@@ -34,7 +35,7 @@ Back-transformation can be achieved via the \link{predict} or
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 \references{Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
-\seealso{\code{\link{unmarkedFit}} \code{\link{unmarkedFitList}} 
+\seealso{\code{\link{unmarkedFit-class}} \code{\link{fitList}} 
 \code{\link{parboot}}}
 \keyword{models}
 \arguments{\item{formula}{'Two-level' right-hand formula describing state-level
@@ -95,7 +96,6 @@ dist.breaks=dbreaksLine, starts=c(1,0,0,1,2,2)))
 # This is real slow, especially for large datasets.
 (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 
-dev.off()
 plot(function(x) gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 xlab="Distance(m)", ylab="Detection probability")
 

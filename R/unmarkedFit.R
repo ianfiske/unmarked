@@ -3,19 +3,6 @@
 #' @include classes.R
 {}
 
-# Class to store unMarked model fit information
-#
-# slot fitType Name of the model that was fit.
-# @slot stateformula The abundance/occupancy formula.
-# @slot detformula The formula governing the detection process.
-# @slot data The unmarkedFrame containing the data that was fit.
-# @slot stateMLE The MLE of the abundance/occupancy parameters
-# @slot stateSE The standard errors of the state MLE's.
-# @slot detMLE MLE of the detection parameters.
-# @slot detSE Standard errors of the detection MLE's.
-# @slot AIC The AIC of this model fit.
-# @slot negLogLike The negative log likelihood of the fitted model.
-# A Class to store fit results from unmarkedFrames.
 #' @export
 setClass("unmarkedFit",
     representation(fitType = "character",
@@ -198,7 +185,7 @@ setMethod("names", "unmarkedFit",
 #' @examples
 #' 
 #' data(mallard)
-#' mallardUMF <- unmarkedFrame(mallard.y, siteCovs = mallard.site,
+#' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 #' obsCovs = mallard.obs)
 #' fm.mallard <- pcount(~ length + elev + forest, ~ ivel + date, mallardUMF)
 #'
@@ -913,8 +900,8 @@ setMethod("show", "parboot", function(object)
 			t0 <- object@t0
 			bias <- mean(t0 - t.star)
 			bias.se <- sd(t0 - t.star)
-			R <- length(t.star)
-			p.val <- sum(abs(t.star-1) > abs(t0-1)) / (1+R)
+			nsim <- length(t.star)
+			p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
 			stats <- c("original" = t0, "bias" = bias, "Std. error" = bias.se, 
 					"p.value" = p.val)
 			cat("\nCall:", deparse(object@call), fill=T)
@@ -954,10 +941,10 @@ setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
 			t.t0 <- c(t.star, t0)
 			bias <- mean(t0 - t.star)
 			bias.se <- sd(t0 - t.star)
-			R <- length(t.star)
-			p.val <- sum(abs(t.star-1) > abs(t0-1)) / (1+R)
+			nsim <- length(t.star)
+			p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
 			hist(t.star, xlim=c(min(floor(t.t0)), max(ceiling(t.t0))), 
-					main=paste("P =", round(p.val, 3), "; R =", format(R)))
+				main=paste("P =", round(p.val, 3), "; nsim =", format(nsim)))
 			rug(t.star)
 			abline(v=t0, lty=2)
 			qqnorm(t.star)

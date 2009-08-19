@@ -1,7 +1,8 @@
 \name{formatDistData}
 \alias{formatDistData}
 \title{Convert individual-level distance data to the transect-level format required...}
-\usage{formatDistData(distData, distCol, transectNameCol, dist.breaks)}
+\usage{formatDistData(distData, distCol, transectNameCol,
+    dist.breaks)}
 \description{Convert individual-level distance data to the transect-level format required 
 by distsamp()}
 \details{This function creates a site (M) by distance interval (J) response matrix

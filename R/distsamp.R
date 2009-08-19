@@ -57,7 +57,7 @@
 #' @references Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 #' abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
 #'
-#' @seealso \code{\link{unmarkedFit}} \code{\link{unmarkedFitList}} 
+#' @seealso \code{\link{unmarkedFit}} \code{\link{fitList}} 
 #' \code{\link{parboot}}
 #'
 #' @examples
@@ -104,7 +104,6 @@
 #' # This is real slow, especially for large datasets.
 #' (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 #' 
-#' dev.off()
 #' plot(function(x) gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
 #' 		xlab="Distance(m)", ylab="Detection probability")
 #' 
@@ -116,7 +115,7 @@
 #' data(pointtran)
 #'
 #' ptUMF <- with(pointtran, {
-#' 	unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4, dc5), 
+#' 		unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4, dc5), 
 #' 		siteCovs = data.frame(area, habitat), 
 #'		dist.breaks = seq(0, 25, by=5), survey = "point", unitsIn = "m")
 #' 		})
@@ -268,13 +267,13 @@ distsamp <- function(formula, data,
 
 #' @title Detection functions used by distsamp()
 #' @name detFuns
-#' @aliases gxhn gxexp gxhaz grhn grexp grhaz
-#' @usage gxhn(x, sigma) gxexp(x, rate) gxhaz(x, shape, scale) 
-#' @usage gxexp(x, rate)
-#' @usage gxhaz(x, shape, scale)
-#' @usage grhn(r, sigma)
-#' @usage grexp(r, rate)
-#' @usage grhaz(r, shape, scale)
+#' @aliases detFuns
+#' @aliases gxhn 
+#' @aliases gxexp 
+#' @aliases gxhaz 
+#' @aliases grhn 
+#' @aliases grexp 
+#' @aliases grhaz
 #' @param x Perpendicular distance
 #' @param r Radial distance
 #' @param sigma Shape parameter of half-normal detection function

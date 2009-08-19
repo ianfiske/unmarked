@@ -458,6 +458,7 @@ setMethod("plot", c(x="unmarkedFrameDS", y="missing"),
 	J <- ncol(y)
 	tab <- table(y, useNA = "ifany")
 	lt <- length(tab)
+	op <- par(no.readonly = TRUE)
 	laymat <- matrix(1, 5, 6)
 	laymat[,6] <- c(0, 2, 2, 2, 0)
 	layout(laymat)
@@ -467,8 +468,9 @@ setMethod("plot", c(x="unmarkedFrameDS", y="missing"),
 	axis(1, at = 1:J, ...)
 	grid(J, M, lty=1)
 
-	op <- par(mai=c(0.1, 0.2, 0.1, 0.4))
-	image(1:2, 1:lt, matrix(1:lt, 1), ann=F, xaxt="n", yaxt="n", ...)
+	par(mai=c(0.1, 0.2, 0.4, 0.4))
+	image(1:2, 1:lt, matrix(1:lt, 1), ann=F, xaxt="n", yaxt="n", las=3, 
+		main = "Legend", ...)
 	box()
 	if(any(is.null(names(tab))))
 		laborder <- c(lt, 1:(lt-1))
@@ -511,11 +513,11 @@ setMethod("barplot", "unmarkedFrameDS",
 		}
 	else
 		if(missing(ylab)) ylab <- "Individuals"		
-	if(missing(xlab)) xlab <- paste("Distance interval", " (", unitsIn, ")", 
-		sep = "")
-	if(missing(names.arg)) names.arg <- paste(d[-length(d)], d[-1], sep="-") 
-	barplot(height = y, xlab = xlab, ylab = ylab, 
-		names.arg = names.arg, ...)
+	if(missing(xlab)) 
+		xlab <- paste("Distance interval", " (", unitsIn, ")", sep = "")
+	if(missing(names.arg)) 
+		names.arg <- paste(d[-length(d)], d[-1], sep="-") 
+	barplot(height = y, xlab = xlab, ylab = ylab, names.arg = names.arg, ...)
 })
 
 
