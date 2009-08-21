@@ -451,33 +451,46 @@ setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
 
 
 setMethod("plot", c(x="unmarkedFrameDS", y="missing"),
-	function(x, ...) 
+	function (x, y, col=terrain.colors, addgrid = FALSE, ...) 
 {
-	y <- getY(x)
-	M <- nrow(y)
-	J <- ncol(y)
-	tab <- table(y, useNA = "ifany")
-	lt <- length(tab)
-	op <- par(no.readonly = TRUE)
-	laymat <- matrix(1, 5, 6)
-	laymat[,6] <- c(0, 2, 2, 2, 0)
-	layout(laymat)
-	image(1:J, 1:M, t(y)[,nrow(y):1], xaxt="n", xlab = "Distance class", 
-		ylab = "Site", ...)
-	box()
-	axis(1, at = 1:J, ...)
-	grid(J, M, lty=1)
-
-	par(mai=c(0.1, 0.2, 0.4, 0.4))
-	image(1:2, 1:lt, matrix(1:lt, 1), ann=F, xaxt="n", yaxt="n", las=3, 
-		main = "Legend", ...)
-	box()
-	if(any(is.null(names(tab))))
-		laborder <- c(lt, 1:(lt-1))
-	else
-		laborder <- 1:lt
-	axis(2, at = 1:lt, labels=paste(names(tab))[laborder], ...)
-	par(op)
+    y <- getY(x)
+    M <- nrow(y)
+    J <- ncol(y)
+    tab <- table(y, useNA = "ifany")
+    vals <- as.numeric(names(tab))
+    ymax <- max(y, na.rm=T)
+    lt <- length(tab)
+    op <- par(no.readonly = TRUE)
+    laymat <- matrix(1, 5, 6)
+    laymat[, 6] <- c(0, 2, 2, 2, 0)
+    layout(laymat)
+    color <- do.call(col, list(n=ymax))#[vals[-1]]
+    color <- color[!is.na(color)]
+    z <- t(y)
+    z[!is.na(z)] <- 0
+	z[is.na(z)] <- 1
+    image(1:J, 1:M, z, col = c(gray(0.5), gray(0)), xlab = "Distance class", 
+		xaxt = "n", ylab = "Site")
+    image(1:J, 1:M, t(y), col=color, add=T, zlim = c(1, lt), ...)
+    box()
+    axis(1, at = 1:J, ...)
+	if(addgrid)
+		grid(J, M, lty = 1)
+    par(mai = c(0.1, 0.2, 0.4, 0.4))
+    zv <- vals
+    zv[!is.na(zv)] <- 0
+    zv[is.na(zv)] <- 1
+    image(1:2, 1:lt, matrix(zv, 1), col = c(gray(0.5), gray(0)), xaxt = "n", 
+		yaxt = "n", main = "Legend")
+    image(1:2, 1:lt, matrix(vals, 1), col=color, add = T, zlim = c(1, lt), 
+		...)
+    box()
+    if (any(is.null(names(tab)))) 
+        laborder <- c(lt, 1:(lt - 1))
+    else laborder <- 1:lt
+    axis(2, at = 1:lt, labels = paste(names(tab))[laborder], las=1,
+        ...)
+    par(op)
 })
 
 
