@@ -210,6 +210,8 @@ setMethod("predict", "unmarkedFit",
 		if(is.null(newdata))
 			newdata <- object@data
 		formula <- object@formula
+		detformula <- as.formula(formula[[2]])
+		stateformula <- as.formula(paste("~",formula[3],sep=""))
 		if(inherits(newdata, "unmarkedFrame"))
 			class(newdata) <- "unmarkedFrame"
 		cls <- class(newdata)
@@ -223,8 +225,6 @@ setMethod("predict", "unmarkedFit",
 			data.frame = {
 				switch(type, 
 					state = {
-						detformula <- as.formula(formula[[2]])
-						stateformula <- as.formula(paste("~",formula[3],sep=""))
 						Terms <- delete.response(terms(stateformula))
 						mf <- model.frame(Terms, newdata)
 						X <- model.matrix(Terms, mf)
