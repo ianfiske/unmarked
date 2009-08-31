@@ -49,8 +49,8 @@
 #' @param se logical specifying whether or not to compute standard errors.
 #' @return unmarkedFitDS object (child class of \link{unmarkedFit}) describing the 
 #' model fit. Parameter estimates are displayed on the log-scale. 
-#' Back-transformation can be achieved via the \link{predict} or 
-#' \link{backTransform} methods.
+#' Back-transformation can be achieved via the \code{predict} or 
+#' \code{backTransform} methods.
 #'
 #' @author Richard Chandler \email{rchandler@@nrc.umass.edu}
 #'

@@ -4,7 +4,7 @@
 \usage{unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs,
     plotArea)}
 \description{This function constructs an unmarkedMultFrame object.}
-\details{unmarkedMultFrame objects are used in the fitting functions \code{\link{colext}} and \code{\link{hmm}}.
+\details{unmarkedMultFrame objects are used in the fitting functions \code{\link{colext}} and \code{hmm}.
 
 For a study with \emph{M} sites, \emph{T} years, and a maximum of \emph{J} observations per site-year, the data
 are shaped as follows.  \code{y} is an \eqn{M \times TJ}{M by TJ} matrix, with each row corresponding to a site.

@@ -31,11 +31,11 @@ Goodness-of-fit can be assessed using the \code{\link{parboot}} function.}
 \value{unmarkedFitDS object (child class of \link{unmarkedFit}) describing the 
 model fit. Parameter estimates are displayed on the log-scale. 
 Back-transformation can be achieved via the \link{predict} or 
-\link{backTransform} methods.}
+\code{backTransform} methods.}
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 \references{Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
-\seealso{\code{\link{unmarkedFit-class}} \code{\link{fitList}} 
+\seealso{\code{\link{unmarkedFit}} \code{\link{fitList}} 
 \code{\link{parboot}}}
 \keyword{models}
 \arguments{\item{formula}{'Two-level' right-hand formula describing state-level
