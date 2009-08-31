@@ -377,24 +377,53 @@ setMethod("projection", "unmarkedFrame",
 ################################### SUMMARY METHODS #############################################
 
 #' @export
-setMethod("summary","unmarkedFrame",
-    function(object,...) {
-      cat("unmarkedFrame Object\n\n")
-      cat(nrow(object@y), "sites\n")
-      cat("Maximum number of observations per site:",obsNum(object),"\n")
+setMethod("summary", "unmarkedFrame",
+	function(object,...) {
+		cat("unmarkedFrame Object\n\n")
+		cat(nrow(object@y), "sites\n")
+		cat("Maximum number of observations per site:",obsNum(object),"\n")
 			mean.obs <- mean(rowSums(!is.na(getY(object))))
-			cat("Mean number of observations per site:",round(mean.obs,2),"\n\n")
-      cat("Tabulation of y observations:")
-      print(table(object@y, exclude=NULL))
-      if(!is.null(object@siteCovs)) {
-        cat("\nSite-level covariates:\n")
-        print(summary(object@siteCovs))
-      }
-      if(!is.null(object@obsCovs)) {
-        cat("\nObservation-level covariates:\n")
-        print(summary(object@obsCovs))
-      }
-    })
+		cat("Mean number of observations per site:",round(mean.obs,2),"\n\n")
+		cat("Sites with at least one detection:", 
+			sum(apply(getY(object), 1, function(x) any(x>0))), "\n")
+		cat("Tabulation of y observations:")
+		print(table(object@y, exclude=NULL))
+		if(!is.null(object@siteCovs)) {
+			cat("\nSite-level covariates:\n")
+			print(summary(object@siteCovs))
+			}
+		if(!is.null(object@obsCovs)) {
+			cat("\nObservation-level covariates:\n")
+			print(summary(object@obsCovs))
+			}
+	})
+
+	
+#' @export	
+setMethod("summary", "unmarkedFrameDS", 
+	function(object, ...) 
+{
+	cat("unmarkedFrameDS Object\n\n")
+	cat(object@survey, "-transect survey design", "\n", sep="")
+	cat(paste("Distance class cutpoints (", object@unitsIn, "): ", sep=""), 
+		object@dist.breaks, "\n")
+	cat("plot area information supplied? :", !all(is.na(object@plotArea)), "\n\n")
+	cat(nrow(object@y), "sites\n")
+	cat("Maximum number of distance classes per site:", ncol(getY(object)), "\n")
+		mean.dc <- mean(rowSums(!is.na(getY(object))))
+	cat("Mean number of distance classes per site:", round(mean.dc, 2), "\n\n")
+	cat("Sites with at least one detection:", 
+		sum(apply(getY(object), 1, function(x) any(x>0))), "\n")
+	cat("Tabulation of y observations:")
+	print(table(object@y, exclude=NULL))
+	if(!is.null(object@siteCovs)) {
+		cat("\nSite-level covariates:\n")
+		print(summary(object@siteCovs))
+		}
+	if(!is.null(object@obsCovs)) {
+		warning("Observation-level covariates cannot be used by distsamp()")
+		}
+})
 
 
 ################################# PLOT METHODS ############################################
@@ -453,44 +482,43 @@ setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
 setMethod("plot", c(x="unmarkedFrameDS", y="missing"),
 	function (x, y, col=terrain.colors, addgrid = FALSE, ...) 
 {
-    y <- getY(x)
-    M <- nrow(y)
-    J <- ncol(y)
-    tab <- table(y, useNA = "ifany")
-    vals <- as.numeric(names(tab))
-    ymax <- max(y, na.rm=T)
-    lt <- length(tab)
-    op <- par(no.readonly = TRUE)
-    laymat <- matrix(1, 5, 6)
-    laymat[, 6] <- c(0, 2, 2, 2, 0)
-    layout(laymat)
-    color <- do.call(col, list(n=ymax))#[vals[-1]]
-    color <- color[!is.na(color)]
-    z <- t(y)
-    z[!is.na(z)] <- 0
+	y <- getY(x)
+	M <- nrow(y)
+	J <- ncol(y)
+	tab <- table(y, useNA = "ifany")
+	vals <- as.numeric(names(tab))
+	ymax <- max(y, na.rm=T)
+	lt <- length(tab)
+	op <- par(no.readonly = TRUE)
+	laymat <- matrix(1, 5, 6)
+	laymat[, 6] <- c(0, 2, 2, 2, 0)
+	layout(laymat)
+	color <- do.call(col, list(n=ymax))#[vals[-1]]
+	color <- color[!is.na(color)]
+	z <- t(y)
+	z[!is.na(z)] <- 0
 	z[is.na(z)] <- 1
-    image(1:J, 1:M, z, col = c(gray(0.5), gray(0)), xlab = "Distance class", 
+	image(1:J, 1:M, z, col = c(gray(0.5), gray(0)), xlab = "Distance class", 
 		xaxt = "n", ylab = "Site")
-    image(1:J, 1:M, t(y), col=color, add=T, zlim = c(1, lt), ...)
-    box()
-    axis(1, at = 1:J, ...)
+	image(1:J, 1:M, t(y), col=color, add=T, zlim = c(1, lt), ...)
+	box()
+	axis(1, at = 1:J, ...)
 	if(addgrid)
 		grid(J, M, lty = 1)
-    par(mai = c(0.1, 0.2, 0.4, 0.4))
-    zv <- vals
-    zv[!is.na(zv)] <- 0
-    zv[is.na(zv)] <- 1
-    image(1:2, 1:lt, matrix(zv, 1), col = c(gray(0.5), gray(0)), xaxt = "n", 
+	par(mai = c(0.1, 0.2, 0.4, 0.4))
+	zv <- vals
+	zv[!is.na(zv)] <- 0
+	zv[is.na(zv)] <- 1
+	image(1:2, 1:lt, matrix(zv, 1), col = c(gray(0.5), gray(0)), xaxt = "n", 
 		yaxt = "n", main = "Legend")
-    image(1:2, 1:lt, matrix(vals, 1), col=color, add = T, zlim = c(1, lt), 
+	image(1:2, 1:lt, matrix(vals, 1), col=color, add = T, zlim = c(1, lt), 
 		...)
-    box()
-    if (any(is.null(names(tab)))) 
-        laborder <- c(lt, 1:(lt - 1))
-    else laborder <- 1:lt
-    axis(2, at = 1:lt, labels = paste(names(tab))[laborder], las=1,
-        ...)
-    par(op)
+	box()
+	if (any(is.null(names(tab)))) 
+		laborder <- c(lt, 1:(lt - 1))
+	else laborder <- 1:lt
+	axis(2, at = 1:lt, labels = paste(names(tab))[laborder], las=1, ...)
+	par(op)
 })
 
 
