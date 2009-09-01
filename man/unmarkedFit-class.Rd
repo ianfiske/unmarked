@@ -1,7 +1,12 @@
 \name{unmarkedFit-class}
 \Rdversion{1.1}
 \docType{class}
-\alias{unmarkedFit}
+\alias{unmarkedFit-class}
+\alias{coef, unmarkedFit-method}
+\alias{summary, unmarkedFit-method}
+\alias{confint, unmarkedFit-method}
+\alias{fitted, unmarkedFit-method}
+
 
 \title{Class "unmarkedFit" }
 \description{ Contains fitted model information }
