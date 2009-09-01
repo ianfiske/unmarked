@@ -68,5 +68,5 @@ mixture models for anuran calling survey data. \emph{Ecology}, \bold{86}(9),
 pp. 2505--2512.}
 \alias{unmarked}
 \docType{package}
-\author{Ian Fiske \email{ijfiske@ncsu.edu} and Richard Chandler \email{rchandler@nrc.edu}}
+\author{Ian Fiske \email{ijfiske@ncsu.edu} and Richard Chandler \email{rchandler@nrc.umass.edu}}
 \keyword{package}

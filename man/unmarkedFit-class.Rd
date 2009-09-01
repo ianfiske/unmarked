@@ -2,14 +2,25 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{unmarkedFit-class}
+\alias{unmarkedFitOccu-class}
+\alias{"[", unmarkedFit-method}
+\alias{backTransform, unmarkedFit-method}
 \alias{coef, unmarkedFit-method}
-\alias{summary, unmarkedFit-method}
 \alias{confint, unmarkedFit-method}
 \alias{fitted, unmarkedFit-method}
-
+\alias{getData, unmarkedFit-method}
+\alias{getP, unmarkedFit-method}
+\alias{hessian, unmarkedFit-method}
+\alias{parboot, unmarkedFit-method}
+\alias{plot, unmarkedFit-method}
+\alias{residuals, unmarkedFit-method}
+\alias{summary, unmarkedFit-method}
+\alias{update, unmarkedFit-method}
+\alias{vcov, unmarkedFit-method}
 
 \title{Class "unmarkedFit" }
-\description{ Contains fitted model information }
+\description{ Contains fitted model information which can be manipulated or 
+extracted using the methods described below. }
 \section{Slots}{
 	 \describe{
     \item{\code{fitType}:}{Object of class \code{"character"} }
