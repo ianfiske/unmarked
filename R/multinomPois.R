@@ -88,39 +88,39 @@ doublePiFun <- function(p){
 #' modSel(fmList, nullmod=fm4)
 #' @export
 multinomPois <-
-function(formula, data, method = "BFGS", control = list(), se = TRUE)
+function(formula, data, starts, method = "BFGS", control = list(), se = TRUE)
 {
+	if(!is(data, "unmarkedFrameMPois"))
+		stop("Data is not a data frame or unmarkedFrame.")
 
-	if(!is(data,"unmarkedFrameMPois"))
-			stop("Data is not a data frame or unmarkedFrame.")
-	
 	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y; plotArea <- designMats$plotArea
   
-  J <- ncol(y)
+	J <- ncol(y)
 	R <- obsNum(data)
-  M <- nrow(y)
+	M <- nrow(y)
 	piFun <- data@piFun
 
-  lamParms <- colnames(X)
-  detParms <- colnames(V)
-  nDP <- ncol(V)
-  nAP <- ncol(X)
-  nP <- nDP + nAP
-  yvec <- as.numeric(y)
-  navec <- is.na(yvec)
+	lamParms <- colnames(X)
+	detParms <- colnames(V)
+	nDP <- ncol(V)
+	nAP <- ncol(X)
+	nP <- nDP + nAP
+	yvec <- as.numeric(y)
+	navec <- is.na(yvec)
 
-  nll <- function(parms) {
-    lambda <- exp(X %*% parms[1 : nAP]) * plotArea
-    p <- plogis(V %*% parms[(nAP + 1) : nP])
-    p.matrix <- matrix(p, M, R, byrow = TRUE)
-    pi <- do.call(piFun, list(p = p.matrix))
-    logLikeSite <- dpois(y, matrix(lambda, M, J) * pi, log = TRUE)
-    logLikeSite[navec] <- 0
-    -sum(logLikeSite)
-  }
-
-  fm <- optim(rep(0, nP), nll, method = method, hessian = se, control = control)
+	nll <- function(parms) {
+		lambda <- exp(X %*% parms[1 : nAP]) * plotArea
+		p <- plogis(V %*% parms[(nAP + 1) : nP])
+		p.matrix <- matrix(p, M, R, byrow = TRUE)
+		pi <- do.call(piFun, list(p = p.matrix))
+		logLikeSite <- dpois(y, matrix(lambda, M, J) * pi, log = TRUE)
+		logLikeSite[navec] <- 0
+		-sum(logLikeSite)
+	}
+	if(missing(starts))
+		starts <- rep(0, nP)
+	fm <- optim(starts, nll, method = method, hessian = se, control = control)
 	opt <- fm
 	if(se) {
 		tryCatch(covMat <- solve(fm$hessian),
@@ -128,27 +128,27 @@ function(formula, data, method = "BFGS", control = list(), se = TRUE)
 	} else {
 		covMat <- matrix(NA, nP, nP)
 	}
-  ests <- fm$par
-  fmAIC <- 2 * fm$value + 2 * nP
-  names(ests) <- c(lamParms, detParms)
+	ests <- fm$par
+	fmAIC <- 2 * fm$value + 2 * nP
+	names(ests) <- c(lamParms, detParms)
 
-  stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
-      estimates = ests[1:nAP],
-      covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
-      invlinkGrad = "exp")
+	stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
+		estimates = ests[1:nAP],
+		covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
+		invlinkGrad = "exp")
 
-  detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
-      estimates = ests[(nAP + 1) : nP],
-      covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), invlink = "logistic",
-      invlinkGrad = "logistic.grad")
+	detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
+		estimates = ests[(nAP + 1) : nP],
+		covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]), 
+		invlink = "logistic", invlinkGrad = "logistic.grad")
 
-  estimateList <- unmarkedEstimateList(list(state=stateEstimates,
-          det=detEstimates))
+	estimateList <- unmarkedEstimateList(list(state=stateEstimates,
+		det=detEstimates))
 
-  umfit <- unmarkedFit(fitType = "multinomPois", call = match.call(), 
-  		formula = formula, data = data, estimates = estimateList, 
-		sitesRemoved = designMats$removed.sites, AIC = fmAIC, opt = opt, 
-		negLogLike = fm$value, nllFun = nll)
+	umfit <- new("unmarkedFitMPois", fitType = "multinomPois", 
+		call = match.call(), formula = formula, data = data, 
+		estimates = estimateList, sitesRemoved = designMats$removed.sites, 
+		AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
 
-  return(umfit)
+	return(umfit)
 }

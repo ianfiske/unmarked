@@ -50,9 +50,15 @@ setClass("unmarkedFitOccu",
 		representation(knownOcc = "logical"),
 		contains = "unmarkedFit")			
 
+#' @exportClass unmarkedFitMPois
+setClass("unmarkedFitMPois", 
+		contains = "unmarkedFit")			
+
+# @exportClass unmarkedFitOccuRN
 setClass("unmarkedFitOccuRN", 
 		contains = "unmarkedFit")			
 
+# @exportClass unmarkedFitColExt
 setClass("unmarkedFitColExt",
 		representation(phi = "matrix",
 				projected = "matrix"),
@@ -642,6 +648,30 @@ setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE)
 
 
 
+
+#' @export
+setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE) 
+	{
+		formula <- object@formula
+		detformula <- as.formula(formula[[2]])
+		piFun <- object@data@piFun
+		umf <- object@data
+		designMats <- getDesign2(formula, umf, na.rm = na.rm)
+		y <- designMats$y
+		V <- designMats$V
+		M <- nrow(y)
+		J <- ncol(y)
+		ppars <- coef(object, type = "det")
+		p <- plogis(V %*% ppars)
+		p <- matrix(p, M, J, byrow = TRUE)
+		pi <- do.call(piFun, list(p = p))
+		return(pi)
+	})
+
+
+
+
+
 #' @export
 setMethod("simulate", "unmarkedFitDS", 
 	function(object, nsim = 1, seed = NULL, na.rm=TRUE)
@@ -658,12 +688,12 @@ setMethod("simulate", "unmarkedFitDS",
 	lam <- as.numeric(exp(X %*% lamParms))
 	lamvec <- rep(lam, each = J) * a
 	pvec <- c(t(getP(object, na.rm = na.rm)))
-	yList <- list()
+	simList <- list()
 	for(i in 1:nsim) {
 		yvec <- rpois(M * J, lamvec * pvec)
-		yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+		simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
 		}
-	return(yList)
+	return(simList)
 })
 
 
@@ -685,7 +715,7 @@ setMethod("simulate", "unmarkedFitPCount",
 	lamvec <- rep(lam, each = J) * a
 	pvec <- c(t(getP(object, na.rm = na.rm)))
 	mix <- object@mixture
-	yList <- list()
+	simList <- list()
 	for(i in 1:nsim) {
 		switch(mix, 
 			P = yvec <- rpois(M * J, lamvec * pvec),
@@ -694,10 +724,39 @@ setMethod("simulate", "unmarkedFitPCount",
 				yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
 				}
 			)
-		yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+		simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
 		}
-	return(yList)
+	return(simList)
 })
+
+
+
+#' @export
+setMethod("simulate", "unmarkedFitMPois", 
+	function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+	formula <- object@formula
+	umf <- object@data
+	designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
+	y <- designMats$y
+	X <- designMats$X
+	a <- designMats$plotArea
+	M <- nrow(y)
+	J <- ncol(y)
+	lamParms <- coef(object, type = "state")
+	lam <- as.numeric(exp(X %*% lamParms))
+	lamvec <- rep(lam, each = J) * a
+	pivec <- as.vector(t(getP(object, na.rm = na.rm)))
+	simList <- list()
+	for(i in 1:nsim) {
+		yvec <- rpois(M * J, lamvec * pivec)
+		simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+		}
+	return(simList)
+})
+
+
+
 
 #' @export
 setMethod("simulate", "unmarkedFitOccu", 
@@ -714,14 +773,14 @@ setMethod("simulate", "unmarkedFitOccu",
 			psiParms <- coef(object, type = "state")
 			psi <- as.numeric(plogis(X %*% psiParms))
 			p <- c(t(getP(object,na.rm = na.rm)))
-			yList <- list()
+			simList <- list()
 			for(i in 1:nsim) {
 				Z <- rbinom(M, 1, psi)
 				Z[object@knownOcc] <- 1
 				yvec <- rep(Z, each = J)*rbinom(M * J, 1, prob = p)
-				yList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+				simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
 			}
-			return(yList)
+			return(simList)
 		})
 
 
