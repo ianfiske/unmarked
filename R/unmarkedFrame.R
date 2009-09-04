@@ -523,9 +523,6 @@ setMethod("plot", c(x="unmarkedFrameDS", y="missing"),
 
 
 
-#' @importFrom graphics barplot
-setGeneric("barplot")
-
 
 #' @exportMethod barplot
 setMethod("barplot", "unmarkedFrameDS", 
@@ -716,5 +713,71 @@ setAs("unmarkedFrame", "data.frame", function(from) {
 			df <- data.frame(y, siteCovs, obsCovs)
 			df
 		})
+		
+		
+		
 
 
+######################### Power analysis methods ##############################
+
+
+
+setGeneric("powerAnalysis", function(formula, data, coefs, nsim, ...) 
+	standardGeneric("powerAnalysis"))
+
+
+#' @export
+setMethod("powerAnalysis", 
+	c("formula", "unmarkedFramePCount", "numeric", "numeric"),
+	function(formula, data, coefs, nsim, sig.level=0.05, mixture="P", 
+		report=FALSE, ...) 
+	{
+	    mixture <- match.arg(mixture)
+    	if (!is(data, "unmarkedFramePCount")) 
+        	stop("Data is not an unmarkedFramePCount object.")
+    	designMats <- unmarked:::getDesign2(formula, data, na.rm=FALSE)
+    	X <- designMats$X
+    	V <- designMats$V
+    	y <- designMats$y
+#		y[] <- NA	# Safety
+		plotArea <- designMats$plotArea
+    	J <- ncol(y)
+    	M <- nrow(y)
+   	    nDP <- ncol(V)
+	    nAP <- ncol(X)
+	    nP <- nAP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
+        lamParms <- coefs[(nDP+1):(nDP+nAP)]
+    	detParms <- coefs[1:nDP]
+		lambda <- exp(X %*% lamParms) * plotArea
+		p <- plogis(V %*% detParms)
+		umf <- data
+		fits <- list()
+		for(i in 1:nsim) {
+			if(report)
+				cat("sim", i, fill=T)
+			switch(mixture, 
+				P = {
+					N <- rpois(M, lambda = lambda)
+					N <- rep(N, each=J)
+					},
+				NB = {
+					N <- rnbinom(M, mu = lambda, coefs[nP])
+					N <- rep(N, each=J)
+					}
+				)
+			yvec <- rbinom(M*J, N, p)
+			umf@y <- matrix(yvec, M, J, byrow=TRUE)
+			fits[[i]] <- pcount(formula, umf, mixture=mixture, ...)
+			}
+		cis <- lapply(fits, function(x) 
+			rbind(confint(x, type = "state", level = 1-sig.level), 
+				confint(x, type = "det", level = 1-sig.level)))
+	 	tests <- sapply(cis, function(x) x[,1] <= 0 & 0 <= x[,2])
+	 	test <- 1 - rowSums(tests) / ncol(tests)
+	 	names(test) <- names(coef(fits[[1]], altNames=TRUE))
+	 	return(list(call = match.call(call = sys.call(-1)), sites = M, 
+		 	occasions = J, sig.level = sig.level, coefs = coefs, nsim = nsim, 
+			power=test))
+	})
+			
+		
