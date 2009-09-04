@@ -24,7 +24,7 @@ setGeneric("SE",
     })
 
 #' @importFrom stats confint fitted coef vcov predict update profile simulate residuals
-#' @importFrom graphics plot
+#' @importFrom graphics plot barplot
 
 #' @exportMethod confint
 setGeneric("plot")
@@ -39,6 +39,7 @@ setGeneric("head")
 setGeneric("fitted")
 setGeneric("simulate")
 setGeneric("residuals")
+setGeneric("barplot")
 
 
 #' Compute linear combinations of parameters.
