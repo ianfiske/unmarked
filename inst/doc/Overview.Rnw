@@ -3,6 +3,7 @@
 \usepackage{Sweave}
 \usepackage{natbib}
 \bibliographystyle{plain}
+%%\VignetteIndexEntry{Overview}
 
 \title{Overview of Unmarked:\\
 An R Package for the Analysis of Wildlife Data}

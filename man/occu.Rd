@@ -30,6 +30,7 @@ MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amster
 \arguments{\item{formula}{double right-hand side formula describing covariates of detection and occupancy in that order.}
 \item{data}{an unmarkedFrameOccu object (see \link{unmarkedFrame})..}
 \item{knownOcc}{vector of sites that are known to be occupied.}
+\item{starts}{vector of parameter starting values.}
 \item{method}{Optimization method used by \code{\link{optim}}.}
 \item{control}{Other arguments passed to \code{\link{optim}}.}
 \item{se}{logical specifying whether or not to compute standard errors.}}

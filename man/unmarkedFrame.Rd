@@ -24,11 +24,15 @@ All site-level covariates are automatically copied to obsCovs so that site level
 \arguments{\item{y}{A matrix of the observed measured data.}
 \item{obsCovs}{Dataframe of covariates that vary within sites.}
 \item{siteCovs}{Dataframe of covariates that vary at the site level.}
-\item{obsNum}{Number of independent observations.}
-\item{primaryNum}{Number of primary time periods (seasons in the multiseason model).}
-\item{obsToY}{}}
+\item{obsToY}{}
+\item{mapInfo}{}
+\item{plotArea}{Vector of length M of plot areas. If specified, density rather 
+than abundance will be modeled...for abundance models. Ignored by occupancy 
+models.}
+}
 \examples{data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
-obsCovs = mallard.obs)
+	obsCovs = mallard.obs)
 obsCovs(mallardUMF)
-obsCovs(mallardUMF, matrices = TRUE)}
+obsCovs(mallardUMF, matrices = TRUE)
+}

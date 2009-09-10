@@ -4,7 +4,7 @@
 distsamp <- function(formula, data, 
 	keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
 	output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL, 
-	method="BFGS", control=list(), se = TRUE, ...)
+	method="BFGS", control=list(), se = TRUE)
 {
 	keyfun <- match.arg(keyfun)
 	output <- match.arg(output)

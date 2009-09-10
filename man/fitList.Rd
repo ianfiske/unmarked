@@ -3,6 +3,9 @@
 \title{constructor of unmarkedFitList objects...}
 \usage{fitList(fits)}
 \description{constructor of unmarkedFitList objects}
+\arguments{
+\item{fits}{A (preferrably named) list of fitted models}
+}
 \examples{# Fit some N-mixture models
 data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,

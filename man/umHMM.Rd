@@ -31,10 +31,13 @@ which covariates are restricted to have the same effect on a given matrix parame
 \item{detconstraint}{matrix to describe constraints on detection parameters}
 \item{phiconstraint}{vector to describe phi constraints}
 \item{psiconstraint}{vector to describe psi constraints}
-\item{K}{integer maximum level of y}
+#\item{K}{integer maximum level of y}
 \item{phiMat}{character vector describing which phi specification to use (see Details)}
 \item{inits}{optionally, initial values for parameters in the optimization}
 \item{B}{number of bootstrap interations (0 indicates none)}
 \item{min.good}{minimum number of successful model fits before returning}
 \item{max.bad}{maximum number of unsuccessful model fits before aborting}
-\item{fit.stats}{logical indicating whether or not to return the fit statistics}}
+\item{fit.stats}{logical indicating whether or not to return the fit statistics}
+\item{method}{Optimization method used by \code{\link{optim}}.}
+\item{control}{Other arguments passed to \code{\link{optim}}.}
+}

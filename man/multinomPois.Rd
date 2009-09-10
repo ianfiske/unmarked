@@ -1,7 +1,8 @@
 \name{multinomPois}
 \alias{multinomPois}
 \title{Multinomial-Poisson Mixtures}
-\usage{multinomPois(formula, data, method=BFGS, control=list(), se=TRUE)}
+\usage{multinomPois(formula, data, starts, method = "BFGS", control = list(), 
+	se = TRUE)}
 \description{Fit the multinomial-Poisson abundance mixture model.}
 \details{This function takes advantage of the closed form of the integrated
 likelihood when a latent Poisson distribution is assumed for abundance
@@ -18,10 +19,10 @@ are supplied as example cell probability functions.}
 \references{Royle, J. A., Dawson, D., & Bates, S. (2004). Modeling abundance effects in distance sampling. Ecology, 85(6), 1591-1597. \cr
 Royle, J. A. (2004). Generalized estimators of avian abundance from count survey data. Animal Biodiversity and Conservation, 27(1), 375-386. \cr
 Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance and Occurrence. Journal Of Agricultural Biological And Environmental Statistics, 11(3), 249.}
-\arguments{\item{stateformula}{Right-hand side formula describing covariates of abundance}
-\item{detformula}{Right-hand side formula describing covariates of detection}
-\item{piFun}{Function to define multinomial cell probabilities.}
-\item{umf}{unmarkedFrame supplying data.}
+\arguments{
+\item{formula}{double right-hand side formula for detection and abundance 
+covariates, in that order.}
+\item{data}{unmarkedFrame supplying data.}
 \item{method}{Optimization method used by \code{\link{optim}}.}
 \item{control}{Other arguments passed to \code{\link{optim}}.}
 \item{se}{logical specifying whether or not to compute standard errors.}}

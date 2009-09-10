@@ -32,9 +32,10 @@ the \eqn{\beta}{beta}'s to be all equal.}
 \author{Ian Fiske \email{ianfiske@gmail.com}}
 \references{Royle, J. Andrew, and William A. Link. 2005. A General Class of Multinomial Mixture Models for Anuran Calling Survey Data. Ecology 86, no. 9: 2505--2512.}
 \keyword{models}
-\arguments{\item{stateformula}{formula for covariates of occurrance.}
-\item{detformula}{formula for covariates of detection.}
-\item{umf}{unmarkedFrame supplying data.}
+\arguments{
+\item{formula}{double right-hand side formula for detection and abundance 
+covariates, in that order.}
+\item{data}{unmarkedFrame supplying data.}
 \item{constraint}{vector to describe which detection parameters are
 the same (see \emph{Details})}}
 \examples{data(gf)
