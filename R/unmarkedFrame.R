@@ -1,6 +1,3 @@
-#' @include classes.R
-#' @include mapInfo.R
-{}
 
 ############# VALIDATION FUNCTIONS #############################################
 
@@ -21,16 +18,7 @@ validunmarkedFrame <- function(object) {
 
 ############ DATA CLASSES #########################################################
 
-## not used in roxygen currently.
-# @slot y A matrix of the observed measured data.
-# @slot obsCovData Dataframe of covariates that vary within sites.
-# @slot siteCovData Dataframe of covariates that vary at the site level.
-# @slot obsToY matrix that describes how the observations relate to y (see Details). -- obsNum x ncol(y)
-# @slot primaryNum integer number of seasons (1 for single season).
-
-#' Class to hold data for analyses in unmarked.
-#'
-#' @export
+# Class to hold data for analyses in unmarked.
 setClass("unmarkedFrame",
     representation(y = "matrix",
         obsCovs = "optionalDataFrame",
@@ -41,14 +29,13 @@ setClass("unmarkedFrame",
     validity = validunmarkedFrame)
 
 ## a class for multi-season data
-#' @exportClass unmarkedMultFrame
+
 setClass("unmarkedMultFrame",
 		representation(numPrimary = "numeric",
 				yearlySiteCovs = "optionalDataFrame"),  # a data frame in site-major, year-minor order describing site-level covariates
 		contains="unmarkedFrame")
 
 ## a class for distance sampling data
-#' @exportClass unmarkedFrameDS 
 setClass("unmarkedFrameDS", 
 		representation(
 				dist.breaks = "numeric",
@@ -65,15 +52,15 @@ setClass("unmarkedFrameDS",
 						dist.breaks[1] must equal 0"
 		})
 
-#' @export
+
 setClass("unmarkedFrameOccu",
 		contains = "unmarkedFrame")
 
-#' @export
+
 setClass("unmarkedFramePCount",
 		contains = "unmarkedFrame")
 
-#' @export
+
 setClass("unmarkedFrameMPois",
 		representation(samplingMethod = "character",
 				piFun = "character"),
@@ -81,40 +68,7 @@ setClass("unmarkedFrameMPois",
 
 ################### CONSTRUCTORS ##########################################################
 
-#' Constructor for unmarkedFrames.
-#'
-#' unmarkedFrame is the S4 class that holds data structures to be passed to the model-fitting functions in unMarked.
-#'
-#' An unmarkedFrame contains the observations (\code{y}), covariates measured at the observation level (\code{obsCovs}), and covariates measured at the site level (\code{siteCovs}).
-#' For a data set with M sites and J observations at each site, y is an M x J matrix.
-#' \code{obsCovs} and \code{siteCovs} are both data frames (see \link{data.frame}).  \code{siteCovs} has M rows so that each row contains the covariates for the corresponding sites.
-#' \code{obsCovs} has M*obsNum rows so that each covariates is ordered by site first, then observation number.  Missing values are coded with \code{NA} in any of y, siteCovs, or obsCovs.
-#'
-#' Additionally, unmarkedFrames contain metadata, obsNum and primaryNum.  obsNum is the number of observations measured at each site. primaryNum is the number of seasons in a robust design sampling scheme.
-#' Typically, these can be automatically determined by the constructor.  If not specified, obsNum is taken to be the number of columns in y and primaryNum is taken to be 1.
-#' However, for certain situations, these must be supplied.  For example, double observer sampling, y has 3 columns corresponding the observer 1, observer 2, and both, but there were only two independent observations.
-#' In this situation, y has 3 columns, but obsNum must be specified as 2.  This flexibility is currenty only used in the function \link{multinomPois}.
-#'
-#' For convenience, \code{obsCovs} can be a list of M x obsNum matrices, with each one corresponding to an observation level covariate.
-#'
-#' All site-level covariates are automatically copied to obsCovs so that site level covariates are available at the observation level.
-#'
-#' @title Create an unmarkedFrame.
-#' @aliases unmarkedFrame obsCovs siteCovs
-#' @param y A matrix of the observed measured data.
-#' @param obsCovs Dataframe of covariates that vary within sites.
-#' @param siteCovs Dataframe of covariates that vary at the site level.
-#' @param obsNum Number of independent observations.
-#' @param primaryNum Number of primary time periods (seasons in the multiseason model).
-#' @param obsToY
-#' @return an unmarkedFrame object
-#' @examples
-#' data(mallard)
-#' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
-#'                            obsCovs = mallard.obs)
-#' obsCovs(mallardUMF)
-#' obsCovs(mallardUMF, matrices = TRUE)
-#' @export
+# Constructor for unmarkedFrames.
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
     plotArea, obsToY) {
 
@@ -145,8 +99,6 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 }
 
 
-# Constructor
-#' @export unmarkedFrameDS
 unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
 		unitsIn, mapInfo = NULL, plotArea = NULL)
 {
@@ -168,7 +120,7 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
 }
 
 
-#' @export
+
 unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
 	J <- ncol(y)
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo)
@@ -176,30 +128,7 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
 	umf
 }
 
-#' This function constructs an unmarkedMultFrame object.
-#' 
-#' unmarkedMultFrame objects are used in the fitting functions \code{\link{colext}} and \code{\link{hmm}}.
-#' 
-#' For a study with \emph{M} sites, \emph{T} years, and a maximum of \emph{J} observations per site-year, the data
-#' are shaped as follows.  \code{y} is an \eqn{M \times TJ}{M by TJ} matrix, with each row corresponding to a site.
-#'   \code{siteCovs} is a data frame with \eqn{M} rows.
-#' \code{yearlySiteCovs} is a data frame with \eqn{MT} rows which are in site-major, year-minor order.
-#' \code{obsCovs} is a data frame with \eqn{MTJ} rows, which are ordered by site-year-observation, so that a 
-#' column of \code{obsCovs} corresponds to \command{as.vector(t(y))}, element-by-element.  
-#' The number of years must be specified in \code{numPrimary}.
-#' 
-#' If the data are in long format, the convenience function \code{\link{formatMult}} is useful for creating
-#' the unmarkedMultFrame.
-#' 
-#' @title Create an unmarkedMultFrame.
-#' @param y A matrix of the observed data.
-#' @param siteCovs Data frame of covariates that vary at the site level.
-#' @param obsCovs Data frame of covariates that vary within site-year-observation level.
-#' @param numPrimary Number of primary time periods (seasons in the multiseason model).
-#' @param yearlySiteCovs Data frame containing covariates at the site-year level.
-#' @param plotArea optional vector of plot areas.
-#' @return an unmarkedFrame object
-#' @export
+# This function constructs an unmarkedMultFrame object.
 unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, yearlySiteCovs = NULL, plotArea = NULL) {
 	J <- ncol(y)
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), 
@@ -211,7 +140,7 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, ye
 }
 
 
-#' @export
+
 unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo, plotArea = NULL) {
 	J <- ncol(y)
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo, 
@@ -221,7 +150,7 @@ unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo, plo
 }
 
 
-#' @export
+
 unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY, mapInfo, piFun, plotArea = NULL) {
 	switch(type,
 			removal = {
@@ -243,7 +172,7 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 
 ################ SHOW METHODS ###########################################################
 
-#' @export
+
 setMethod("show", "unmarkedFrame",
 		function(object) {
 			df <- as(object, "data.frame")
@@ -256,7 +185,6 @@ setMethod("show", "unmarkedFrame",
 # Extractor for site level covariates
 # @param umf an unmarkedFrame
 # @return a data frame containing the site level covariates.
-#' @exportMethod siteCovs
 setGeneric("siteCovs", function(object,...) standardGeneric("siteCovs"))
 
 setMethod("siteCovs", "unmarkedFrame",
@@ -264,7 +192,7 @@ setMethod("siteCovs", "unmarkedFrame",
 			return(object@siteCovs)
 		})
 
-#' @exportMethod yearlySiteCovs
+
 setGeneric("yearlySiteCovs", function(object,...) standardGeneric("yearlySiteCovs"))
 
 setMethod("yearlySiteCovs", "unmarkedMultFrame",
@@ -272,14 +200,6 @@ setMethod("yearlySiteCovs", "unmarkedMultFrame",
 			return(object@yearlySiteCovs)
 		})
 
-#
-##' Extractor for observation level covariates
-##' @param umf an unmarkedFrame
-##' @param matrices logical indicating whether to return the M * obsNum row data frame (default)
-##'  or a list of M x obsNum matrices (matrices = TRUE).
-##' @return either a data frame (default) or a list of matrices (if matrices = TRUE).
-
-#' @exportMethod obsCovs
 setGeneric("obsCovs", function(object,...) standardGeneric("obsCovs"))
 
 setMethod("obsCovs", "unmarkedFrame", 
@@ -298,55 +218,55 @@ setMethod("obsCovs", "unmarkedFrame",
 			return(value)
 		})
 
-#' @exportMethod obsNum
+
 setGeneric("obsNum", function(object) standardGeneric("obsNum"))
 
 setMethod("obsNum", "unmarkedFrame", function(object) nrow(object@obsToY))
 
-#' @exportMethod numSites
+
 setGeneric("numSites", function(object) standardGeneric("numSites"))
 
 setMethod("numSites", "unmarkedFrame", function(object) nrow(object@y))
 
-#' @exportMethod numY
+
 setGeneric("numY", function(object) standardGeneric("numY"))
 
 setMethod("numY", "unmarkedFrame", function(object) ncol(object@y))
 
-#' @exportMethod obsToY
+
 setGeneric("obsToY", function(object) standardGeneric("obsToY"))
 
 setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
 
-#' @exportMethod "obsCovs<-"
+
 setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
 setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
 			object@obsCovs <- as.data.frame(value)
 			object
 		})
 
-#' @exportMethod "siteCovs<-"
+
 setGeneric("siteCovs<-", function(object, value) standardGeneric("siteCovs<-"))
 setReplaceMethod("siteCovs", "unmarkedFrame", function(object, value) {
 			object@siteCovs <- as.data.frame(value)
 			object
 		})
 
-#' @exportMethod "obsCovs<-"
+
 setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
 setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
 			object@obsCovs <- as.data.frame(value)
 			object
 		})
 
-#' @exportMethod "yearlySiteCovs<-"
+
 setGeneric("yearlySiteCovs<-", function(object, value) standardGeneric("yearlySiteCovs<-"))
 setReplaceMethod("yearlySiteCovs", "unmarkedMultFrame", function(object, value) {
 			object@yearlySiteCovs <- as.data.frame(value)
 			object
 		})
 
-#' @exportMethod "obsToY<-"
+
 setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
 
 setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
@@ -355,19 +275,19 @@ setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
 		})
 
 
-#' @exportMethod getY
+
 setGeneric("getY", function(object) standardGeneric("getY"))
 
 setMethod("getY", "unmarkedFrame", function(object) object@y)
 
-#' @exportMethod coordinates
+
 setGeneric("coordinates", function(object) standardGeneric("coordinates"))
 setMethod("coordinates", "unmarkedFrame",
 		function(object) {
 			object@mapInfo@coordinates
 		})
 
-#' @exportMethod projection
+
 setGeneric("projection", function(object) standardGeneric("projection"))
 setMethod("projection", "unmarkedFrame",
 		function(object) {
@@ -376,7 +296,7 @@ setMethod("projection", "unmarkedFrame",
 
 ################################### SUMMARY METHODS #############################################
 
-#' @export
+
 setMethod("summary", "unmarkedFrame",
 	function(object,...) {
 		cat("unmarkedFrame Object\n\n")
@@ -399,7 +319,7 @@ setMethod("summary", "unmarkedFrame",
 	})
 
 	
-#' @export	
+
 setMethod("summary", "unmarkedFrameDS", 
 	function(object, ...) 
 {
@@ -429,8 +349,6 @@ setMethod("summary", "unmarkedFrameDS",
 ################################# PLOT METHODS ############################################
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
-#' @import ggplot2
-#' @exportMethod plot
 setMethod("plot", c(x="unmarkedFrame", y="missing"),
 		function(x) {
 			M <- numSites(x)
@@ -524,7 +442,7 @@ setMethod("plot", c(x="unmarkedFrameDS", y="missing"),
 
 
 
-#' @exportMethod barplot
+
 setMethod("barplot", "unmarkedFrameDS", 
 	function(height, standardize = FALSE, xlab, ylab, 
 		names.arg, ...)
@@ -609,7 +527,7 @@ setMethod("barplot", "unmarkedFrameDS",
 ################################# SELECTORS ###############################################
 
 # i is the vector of sites to extract
-#' @exportMethod "["
+
 setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
 		function(x, i) {  
 			if(length(i) == 0) return(x)
@@ -680,7 +598,7 @@ setMethod("[", c("unmarkedMultFrame","missing", "numeric", "missing"),
 			u
 		})
 
-#' @importFrom utils head
+
 setMethod("head", "unmarkedFrame",
 		function(x, n) {
 			if(missing(n)) n <- 10
@@ -726,7 +644,7 @@ setGeneric("powerAnalysis", function(formula, data, coefs, nsim, ...)
 	standardGeneric("powerAnalysis"))
 
 
-#' @export
+
 setMethod("powerAnalysis", 
 	c("formula", "unmarkedFramePCount", "numeric", "numeric"),
 	function(formula, data, coefs, nsim, sig.level=0.05, mixture="P", 

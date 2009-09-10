@@ -1,27 +1,6 @@
 # TODO:  update Mh so that it is in the flavor of unmarked.
 
-#' Fits model Mh - closed population model with heterogeneity
-#'
-#' This fits the logit-normal version of Model Mh in which the logit of
-#' individual detection probability is assumed to have a normal distribution with
-#' parameters  mu and sigma. These parameters and the unobserved number of
-#' individuals, n0, are estimated by integrated likelihood.
-#'
-#' @title Fit model Mh.
-#' @param nx the detection frequency vector, of length J where J is the number of sample occasions
-#' @return optim output for now
-#' @references
-#' Coull and Agresit (1999) Dorazio and Royle (2003)
-#' @author
-#' Andy Royle \email{aroyle@@usgs.gov}
-#' @examples
-#' nx<-c(34, 16, 10, 4, 2, 2,0,0,0,0,0,0,0,0)
-#' Mh(nx)
-#' @keywords models
-#' @export
-#' @note
-#' Assumes balanced data right now.
-#' this will be the engine for a poisson reg model for spec richness
+# Fits model Mh - closed population model with heterogeneity
 Mh <- function(nx) {
 
   nind<-sum(nx)

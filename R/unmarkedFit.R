@@ -1,9 +1,3 @@
-#' @include unmarkedEstimate.R
-#' @include unmarkedFrame.R
-#' @include classes.R
-{}
-
-#' @export
 setClass("unmarkedFit",
     representation(fitType = "character",
         call = "call",
@@ -30,7 +24,6 @@ unmarkedFit <- function(fitType, call, formula,
 ################################# CHILD CLASSES ###############################
 
 
-#' @exportClass unmarkedFitDS
 setClass("unmarkedFitDS",
 		representation(
 				keyfun = "character",
@@ -38,27 +31,26 @@ setClass("unmarkedFitDS",
 		contains = "unmarkedFit")
 
 
-#' @exportClass unmarkedFitPCount
 setClass("unmarkedFitPCount", 
 		representation(
 				K = "numeric",
 				mixture = "character"),
 		contains = "unmarkedFit")
 
-#' @exportClass unmarkedFitOccu
+
 setClass("unmarkedFitOccu", 
 		representation(knownOcc = "logical"),
 		contains = "unmarkedFit")			
 
-#' @exportClass unmarkedFitMPois
+
 setClass("unmarkedFitMPois", 
 		contains = "unmarkedFit")			
 
-# @exportClass unmarkedFitOccuRN
+
 setClass("unmarkedFitOccuRN", 
 		contains = "unmarkedFit")			
 
-# @exportClass unmarkedFitColExt
+
 setClass("unmarkedFitColExt",
 		representation(phi = "matrix",
 				projected = "matrix"),
@@ -68,7 +60,6 @@ setClass("unmarkedFitColExt",
 
 
 
-# @export
 setMethod("show", "unmarkedFit",
     function(object) {
       cat("\nCall:\n")
@@ -124,7 +115,6 @@ setMethod("show", "unmarkedFit",
     
     
     
-#' @export
 setMethod("summary", "unmarkedFit", 
 	function(object) {
 		show(object)
@@ -140,20 +130,8 @@ setMethod("summary", "unmarkedFit",
 
 
 
-#' Compute linear combinations of estimates in unmarkedFit objects.
-#'
-#' This function computes the linear combination of parameter estimates in
-#' \code{obj} given by the coefficient vector.  The user must
-#' specify whether the detection or state covariates should be considered via the
-#' \code{whichEstimate} argument.  This may be useful to estimate
-#' quantities of interest from a fitted model or to test a hypothesis.
-#'
-#' @name linearComb-unmarkedFit
-#' @aliases linearComb,unmarkedFit-method
-#' @param obj an unmarkedFit object
-#' @param coefficients vector of same length as obj
-#' @param type character, either "state" or "det"
-#' @return an unmarkedEstimate object
+# Compute linear combinations of estimates in unmarkedFit objects.
+
 setMethod("linearComb",
     signature(obj = "unmarkedFit", coefficients = "matrixOrVector"),
     function(obj, coefficients, type) {
@@ -186,30 +164,7 @@ setMethod("names", "unmarkedFit",
     })
     
 
-#' @name predict-unmarkedFit
-#' @aliases predict-umDistsampFit, unmarkedFit-method
-#' @examples
-#' 
-#' data(mallard)
-#' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
-#' obsCovs = mallard.obs)
-#' fm.mallard <- pcount(~ length + elev + forest, ~ ivel + date, mallardUMF)
-#'
-#' # Predict from fitted model using original data
-#' predict(fm.mallard, type="state", backTran=TRUE)
-#' predict(fm.mallard, type="det", backTran=FALSE)
-#' 
-#' # Create newdata with only 'length' varying, then predict and plot
-#' nd <- data.frame(length=rnorm(10), elev=1, forest=0, ivel=-2, date=3)
-#'
-#' (Elam <- predict(fm.mallard, type="state", newdata=nd))
-#' 
-#' with(data.frame(Elam), {
-#' 	plot(nd$length, Predicted, ylim=c(0, 25))
-#' 	segments(nd$length, Predicted+SE, nd$length, Predicted-SE)
-#' 	})
-#' 
-#' @exportMethod predict
+# Prediction
 setMethod("predict", "unmarkedFit", 
 	function(object, type, newdata=NULL, backTran=TRUE, na.rm = TRUE, ...) 
 	{
@@ -246,7 +201,6 @@ setMethod("predict", "unmarkedFit",
 	}
 )
 
-#' @export
 setMethod("coef", "unmarkedFit",
 		function(object, type, altNames = TRUE) {
 			if(missing(type)) {
@@ -260,7 +214,7 @@ setMethod("coef", "unmarkedFit",
 		})
 
 
-#' @export 
+
 setMethod("vcov", "unmarkedFit",
 		function(object, type, altNames = TRUE, method = "hessian") {
 			if(missing(type)) {
@@ -285,7 +239,8 @@ setMethod("SE", "unmarkedFit",
 			sqrt(diag(vcov(obj)))
 		})
 
-#' @export
+
+
 setMethod("confint", "unmarkedFit",
 		function(object, parm, level = 0.95, type, method = c("normal", "profile")) {
 			method <- match.arg(method)
@@ -321,7 +276,8 @@ setMethod("confint", "unmarkedFit",
 			}
 		})
 
-#' @export 
+
+
 setMethod("fitted", "unmarkedFit",
 		function(object, na.rm = FALSE) {
 			data <- object@data
@@ -333,6 +289,8 @@ setMethod("fitted", "unmarkedFit",
 			fitted <- state * p  # true for models with E[Y] = p * E[X]
 			fitted
 		})		
+
+
 
 setMethod("fitted", "unmarkedFitOccu",
 		function(object, na.rm = FALSE) {
@@ -347,7 +305,8 @@ setMethod("fitted", "unmarkedFitOccu",
 			fitted
 		})
 
-#' @export
+
+
 setMethod("fitted", "unmarkedFitPCount",
 		function(object, K, na.rm = FALSE) {
 			data <- object@data
@@ -377,6 +336,8 @@ setMethod("fitted", "unmarkedFitPCount",
 					})
 			fitted
 		})
+
+
 
 setMethod("fitted", "unmarkedFitOccuRN", 
 		function(object, K, na.rm = FALSE) {
@@ -451,7 +412,8 @@ setMethod("fitted", "unmarkedFitColExt",
 			
 		})
 
-#' @export
+
+
 setMethod("profile", "unmarkedFit",
 		function(fitted, type, parm, seq) {
 			stopifnot(length(parm) == 1)
@@ -486,7 +448,7 @@ setMethod("hessian", "unmarkedFit",
 
 
 
-#' @exportMethod update
+
 setMethod("update", "unmarkedFit", 
 	function(object, formula., ..., evaluate = TRUE) 
 {
@@ -521,7 +483,6 @@ setMethod("update", "unmarkedFit",
 
 setGeneric("sampleSize", function(object) standardGeneric("sampleSize"))
 
-#' @export 
 setMethod("sampleSize", "unmarkedFit",
 		function(object) {
 			data <- getData(object)
@@ -532,7 +493,6 @@ setMethod("sampleSize", "unmarkedFit",
 	
 setGeneric("getData", function(object) standardGeneric("getData"))	
 
-#' @export 
 setMethod("getData", "unmarkedFit",
 		function(object) {
 			object@data
@@ -541,23 +501,21 @@ setMethod("getData", "unmarkedFit",
 
 setGeneric("nllFun", function(object) standardGeneric("nllFun"))
 
-#' @export 
 setMethod("nllFun", "unmarkedFit", function(object) object@nllFun)
 
 setGeneric("mle", function(object) standardGeneric("mle"))
 
-#' @export 
 setMethod("mle", "unmarkedFit", function(object) object@opt$par)
 
 setClass("profile",
 		representation(prof = "matrix"))
+
 setMethod("plot", c("profile", "missing"),
 		function(x) {
 			plot(x@prof[,1], x@prof[,2], type = "l")
 		})
 
 
-#' @export
 setMethod("residuals", "unmarkedFit", function(object, ...)
 	{
 		y <- getY(object@data)
@@ -588,9 +546,6 @@ setMethod("plot", c(x = "unmarkedFit", y = "missing"),
 setGeneric("getP", function(object, ...) standardGeneric("getP"))
 
 
-
-
-#' @export
 setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE) 
 	{
 		formula <- object@formula
@@ -610,7 +565,6 @@ setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE)
 
 
 
-#' @export
 setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE) 
 {
 	formula <- object@formula
@@ -649,7 +603,6 @@ setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE)
 
 
 
-#' @export
 setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE) 
 	{
 		formula <- object@formula
@@ -672,7 +625,6 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
 
 
 
-#' @export
 setMethod("simulate", "unmarkedFitDS", 
 	function(object, nsim = 1, seed = NULL, na.rm=TRUE)
 {
@@ -697,7 +649,8 @@ setMethod("simulate", "unmarkedFitDS",
 })
 
 
-#' @export
+
+
 setMethod("simulate", "unmarkedFitPCount", 
 	function(object, nsim = 1, seed = NULL, na.rm = TRUE)
 {
@@ -731,7 +684,6 @@ setMethod("simulate", "unmarkedFitPCount",
 
 
 
-#' @export
 setMethod("simulate", "unmarkedFitMPois", 
 	function(object, nsim = 1, seed = NULL, na.rm = TRUE)
 {
@@ -758,7 +710,6 @@ setMethod("simulate", "unmarkedFitMPois",
 
 
 
-#' @export
 setMethod("simulate", "unmarkedFitOccu", 
 		function(object, nsim = 1, seed = NULL, na.rm = TRUE)
 		{
@@ -846,6 +797,8 @@ setMethod("simulate", "unmarkedFitColExt",
 		})
 		
 		
+
+
 setMethod("simulate", "unmarkedFitOccuRN",
 		function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
 			formula <- object@formula
@@ -874,16 +827,17 @@ setMethod("simulate", "unmarkedFitOccuRN",
 			}
 			return(simList)
 		})
+
+
+
 ############################## PARAMETRIC BOOTSTRAP ###########################
 
-#' @exportMethod parboot
 setGeneric("parboot",
     def = function(object, ...) {
       standardGeneric("parboot")
     })
 
 
-#' @exportClass parboot
 setClass("parboot",
     representation(fitType = "character",
         call = "call",
@@ -892,30 +846,7 @@ setClass("parboot",
         )
 
 
-#' Evaluate goodness-of-fit of a fitted model. 
-#'
-#' @param object a fitted model of class "unmarkedFit"
-#' @param nsim number of bootstrap replicates
-#' @param report print fit statistic every 'report' iterations during resampling
-#'
-#' @examples
-#' data(linetran)
-#' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
-#'
-#' lengths <- linetran$Length
-#'
-#' ltUMF <- with(linetran, {
-#' 	unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
-#' 		siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
-#' 		tlength = lengths*1000, survey = "line", unitsIn = "m")
-#' 	})
-#'
-#' (fm <- distsamp(~ area ~habitat, ltUMF))
-#'
-#' (pb <- parboot(fm))
-#' plot(pb)
-#'
-#' @exportMethod parboot
+# Evaluate goodness-of-fit of a fitted model. 
 setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)  
 {
 	call <- match.call(call = sys.call(-1))
@@ -952,7 +883,6 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 
 
 
-#' @exportMethod show
 setMethod("show", "parboot", function(object) 
 		{
 			t.star <- object@t.star
@@ -971,7 +901,6 @@ setMethod("show", "parboot", function(object)
 		})
 
 ## nonparboot return entire list of fits... they will be processed by vcov, confint, etc.
-#' @export 
 setGeneric("nonparboot", function(object, B = 50, ...) {standardGeneric("nonparboot")})
 
 setMethod("nonparboot", "unmarkedFit",
@@ -991,7 +920,6 @@ setMethod("nonparboot", "unmarkedFit",
 		})
 
 
-#' @exportMethod plot
 setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
 		{
 			op <- par(mfrow=c(1, 2))

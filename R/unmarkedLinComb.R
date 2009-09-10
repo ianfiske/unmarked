@@ -1,5 +1,3 @@
-#' @include unmarkedEstimate.R
-{}
 
 setClass("unmarkedLinComb",
 		representation(parentEstimate = "unmarkedEstimate",

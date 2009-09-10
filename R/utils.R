@@ -1,4 +1,4 @@
-#' @nord
+
 genFixedNLL <- function(nll, whichFixed, fixedValues) {
   function(params) {
     params[whichFixed] <- fixedValues
@@ -8,7 +8,6 @@ genFixedNLL <- function(nll, whichFixed, fixedValues) {
 
 # nll the original negative log likelihood function
 # MLE the full vector of MLE values
-#' @nord
 profileCI <- function(nll, whichPar, MLE, interval, level){
 	stopifnot(length(whichPar) == 1)
   MLEnll <- nll(MLE)
@@ -31,33 +30,32 @@ profileCI <- function(nll, whichPar, MLE, interval, level){
 }
 
 ## link functions and their gradients
-#' @nord
 logistic <- function(x) {
   1/(1 + exp(-x))
 }
 
-#' @nord
+
 logistic.grad <- function(x) {
   exp(-x)/(exp(-x)+1)^2
 }
 
-#' @nord
+
 log.grad <- function(x) { # duh! (but for clarity)
   1/x
 }
 
-#' @nord
+
 explink <- function(x) exp(x)
 
-#' @nord
+
 identLink <- function(x) x
 
-#' @nord
+
 identLinkGrad <- function(x) 1
 
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))
-#' @nord
+
 rowProds <-
 function(x, na.rm = FALSE)
 {
@@ -65,7 +63,7 @@ function(x, na.rm = FALSE)
 }
 
 # helper function to coerce an array of matrices to a list
-#' @nord
+
 arrToList <- function(x){
   nl <- list()
   for(i in 1:dim(x)[3]) {
@@ -77,7 +75,7 @@ arrToList <- function(x){
 
 ## compute estimated asymptotic variances of parameter estimates
 ## using the observed information matrix
-##' @nord
+
 #sd.est <- function(fm) {
 #    sqrt(diag(solve(fm$hessian)))
 #}
@@ -91,7 +89,7 @@ arrToList <- function(x){
 
 ### track linked list of parameters using a data frame
 ### add row to linked list
-#' @nord
+
 addParm <- function(list.df, parm.name, parm.length) {
     if(parm.length > 0) {
         if(nrow(list.df) == 0) {
@@ -107,7 +105,7 @@ addParm <- function(list.df, parm.name, parm.length) {
     return(list.df)
 }
 
-#' @nord
+
 parmNames <- function(list.df) {
     npar <- list.df$end[nrow(list.df)]
     names <- character(npar)
@@ -119,53 +117,9 @@ parmNames <- function(list.df) {
 }
 
 
-#' This function converts an appropriatedly formated comma-separated
-#' values file (.csv) to a format usable by \emph{unmarked}'s fitting
-#' functions (see \emph{Details}).
-#'
-#'   This function provides a quick way to take a .csv file with headers
-#' named as described below and provides the data required and returns of
-#' data in the format required by the model-fitting functions in
-#' \code{\link{unmarked}}.  The .csv file can be in one of 2 formats: long or
-#' wide.  See the first 2 lines of the \emph{examples} for what these
-#' formats look like.
-#'
-#' The .csv file is formatted as follows:
-#' \itemize{
-#'   \item col 1 is site labels.
-#'   \item if data is in long format, col 2 is date of observation.
-#'   \item next J columns are the observations (y) - counts or 0/1's.
-#'   \item next is a series of columns for the site variables (one column
-#'     per variable).  The column header is the variable name.
-#'   \item next is a series of columns for the observation-level variables.
-#'   These are in sets of J columns for each variable, e.g., var1-1 var1-2
-#'   var1-3 var2-1 var2-2 var2-3, etc.  The column header of the first
-#'   variable in each group must indicate the variable name.
-#' }
-#' @title Convert .CSV File to an unmarkedFrame
-#' @param filename string describing filename of file to read in
-#' @param long \code{FALSE} if file is in long format or \code{TRUE} if
-#'    file is in long format (see \emph{Details})
-#' @param species if data is in long format with multiple species, then
-#'    this can specify a particular species to extract if there is a
-#'    column named "species".
-#' @param type specific type of unmarkedFrame.
-#' @param ... further arguments to be passed to the unmarkedFrame constructor.
-#' @return an unmarkedFrame object
-#' @keywords utilities
-#' @examples
-#' # examine a correctly formatted long .csv
-#' head(read.csv(system.file("csv","frog2001pcru.csv", package="unmarked")))
-#'
-#' # examine a correctly formatted wide .csv
-#' head(read.csv(system.file("csv","widewt.csv", package="unmarked")))
-#'
-#' # convert them!
-#' dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
-#' dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
-#' dat3 <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"), long = FALSE, type = "unmarkedFrameOccu")
-#' @author Ian Fiske \email{ianfiske@@gmail.com}
-#' @export
+# This function converts an appropriatedly formated comma-separated
+# values file (.csv) to a format usable by \emph{unmarked}'s fitting
+# functions (see \emph{Details}).
 csvToUMF <-
 function(filename, long=FALSE, type, species = NULL, ...)
 {
@@ -178,7 +132,7 @@ function(filename, long=FALSE, type, species = NULL, ...)
 # utility function to create a variable that follows the dates as 1,2,3,...
 # site id is first column
 # julian date is second column
-#' @nord
+
 dateToObs <-
 function(dfin)
 {
@@ -214,8 +168,6 @@ function(dfin)
 # date, one column
 # response, one column
 # obs vars, one per column
-#' @export
-#' @nord
 formatLong <-
 function(dfin, species = NULL, type)
 {
@@ -272,8 +224,7 @@ function(dfin, species = NULL, type)
 # response: y.1, y.2, ..., y.J
 # site vars: namefoo, namebar, ...
 # obs vars: namefoo.1, namefoo.2, ..., namefoo.J, namebar.1, ..., namebar.J,...
-#' @export
-#' @nord
+
 formatWide <-
 function(dfin, sep = ".", obsToY, type, ...)
 {
@@ -347,24 +298,8 @@ function(dfin, sep = ".", obsToY, type, ...)
 }
 
 
-#' This convenience function converts multi-year data in long format to unmarkedMultFrame Object.  See Details for more information.
-#' 
-#' \code{df.in} is a data frame with columns formatted as follows:
-#' 
-#' Column 1 = year number \cr
-#' Column 2 = site name or number \cr
-#' Column 3 = julian date or chronological sample number during year \cr
-#' Column 4 = observations (y) \cr
-#' Column 5 -- Final Column = covariates 
-#' 
-#' Note that if the data is already in wide format, it may be easier to create an unmarkedMultFrame object
-#' directly with a call to \code{\link{unmarkedMultFrame}}.
-#' 
-#' @title Create unmarkedMultFrame from Long Format Data Frame 
-#' @param df.in a data.frame appropriately formatted (see Details).
-#' @return unmarkedMultFrame object
-#' @export
-#' @nord
+# This convenience function converts multi-year data in long format to unmarkedMultFrame Object.  See Details for more information.
+
 formatMult <-
 function(df.in)
 {
@@ -461,8 +396,7 @@ function(df.in)
 # site  | species | count
 # to
 # site | spp1 | spp2 | ...
-#' @nord
-#' @importFrom reshape melt cast recast
+
 sppLongToWide <-
 function(df.in)
 {
@@ -473,7 +407,7 @@ function(df.in)
 }
 
 # get estimated psi from rn fit
-#' @nord
+
 getPsi <-
 function(lam)
 {
@@ -481,7 +415,7 @@ function(lam)
 }
 
 # get estimatd p from rn fit (only for a null type model so far)
-#' @nord
+
 getP.bar <-
 function(lam, r)
 {
@@ -492,7 +426,7 @@ function(lam, r)
   sum(pY.k * pN.k)
 }
 
-##' @nord
+
 #handleNA <- function(stateformula, detformula, umf) {
 #  y <- umf@y
 #  # TODO: use J <- ncol(y) here and throughout instead of wrong use of obsNum?  ... fixed in new version "handleNA2"
@@ -650,7 +584,7 @@ function(lam, r)
 #  list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
 #}
 
-#' @nord
+
 getDesign <- function(stateformula, detformula, umf) {
 
   M <- nrow(umf@y)
@@ -895,13 +829,13 @@ handleNA3 <- function(umf, X, V) {
 }
 
 
-#' @nord
+
 meanstate <- function(x) {
     K <- length(x) - 1
     sum(x*(0:K))
 }
 
-#' @nord
+
 truncateToBinary <- function(y) {
   if(max(y, na.rm = TRUE) > 1) {
     y <- ifelse(y > 0, 1, 0)
@@ -910,7 +844,7 @@ truncateToBinary <- function(y) {
   return(y)
 }
 
-#' @nord
+
 getSS <- function(phi) {
 	ev.length <- nrow(phi)
 	ev <- tryCatch(eigen(t(phi))$vectors[,1],
@@ -918,8 +852,6 @@ getSS <- function(phi) {
 	ev/sum(ev)
 }
 
-#' @export
-#' @nord
 imputeMissing <- function(umf, whichCovs) {
 # impute observation covariates
 	if(!is.null(umf@obsCovs)) {

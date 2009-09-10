@@ -1,10 +1,7 @@
-#' @include classes.R
-{}
 
 setClassUnion("matrixOrVector", c("matrix","numeric"))
 
 # Class to store actual parameter estimates
-#' @export
 setClass("unmarkedEstimate",
     representation(name = "character",
 				short.name = "character",
@@ -48,7 +45,8 @@ setMethod("show", "unmarkedEstimateList",
       }
     })
 
-#' @export
+
+
 setGeneric("estimates",
     function(object) {
       standardGeneric("estimates")
@@ -68,7 +66,8 @@ unmarkedEstimateList <- function(l) {
   new("unmarkedEstimateList", estimates = l)
 }
 
-#' @export
+
+
 unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, invlinkGrad) {
 
   new("unmarkedEstimate",
@@ -104,17 +103,8 @@ setMethod("show",
 
 
 
-#' Compute linear combinations of estimates in unmarkedEstimate objects.
-#'
-#' This function computes the linear combination of parameter estimates in
-#' \code{obj} given by the coefficient vector.  This may be useful to estimate
-#' quantities of interest from a fitted model or to test a hypothesis.
-#'
-#' @name linearComb-unmarkedEstimate
-#' @aliases linearComb,unmarkedEstimate-method
-#' @param obj an unmarkedEstimate object
-#' @param coefficients vector of same length as obj
-#' @return an unmarkedEstimate object
+# Compute linear combinations of estimates in unmarkedEstimate objects.
+
 setMethod("linearComb",
 		signature(obj = "unmarkedEstimate", coefficients = "matrixOrVector"),
 		function(obj, coefficients) {
@@ -130,16 +120,7 @@ setMethod("linearComb",
 		})
 
 
-#' Transform an unmarkedEstimate object to it's natural scale.
-#'
-#' The transformation is determined by the invlink and invlinkGrad slots
-#' in \code{obj}.  These slots specify the name of a one-to-one function and
-#' its gradient respectively.  The delta method is used to compute the transformed
-#' estimate.
-#'
-#' @param unmarkedEstimate object to be transformed
-#' @return an unmarkedEstimate object representing the transformed estimate.
-#' This object has invlink and invlinkGrad slots as the identity function.
+# Transform an unmarkedEstimate object to it's natural scale.
 #setMethod("backTransform",
 #    signature(obj = "unmarkedEstimate"),
 #    function(obj) {
@@ -179,15 +160,8 @@ setMethod("backTransform", "unmarkedEstimate",
 			}
 		})
 
-#' Compute standard error of an unmarkedEstimate object.
-#'
-#' This function computes the large-sample standard error from the inverse of the
-#' hessian matrix.
-#'
-#' @name SE-unmarkedEstimate
-#' @aliases SE,unmarkedEstimate-method
-#' @param obj unmarkedEstimate whose standard error is returned
-#' @return vector of the standard error(s) of estimates in obj
+# Compute standard error of an unmarkedEstimate object.
+
 setMethod("SE",
     signature(obj = "unmarkedEstimate"),
     function(obj) {

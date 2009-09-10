@@ -1,32 +1,21 @@
-#' @import methods
-{}
 
-#' @exportClass optionalDataFrame
 setClassUnion("optionalDataFrame", c("data.frame","NULL"))
 
-#' @exportClass optionalMatrix
+
 setClassUnion("optionalMatrix", c("matrix","NULL"))
 
-#' @exportClass optionalNumeric
+
 setClassUnion("optionalNumeric", c("numeric","NULL"))
 
-#' @exportClass optionalCharacter
+
 setClassUnion("optionalCharacter", c("character","NULL"))
 
-#' Compute standard error of an object.
-#'
-#' @aliases SE-methods SE
-#' @param obj object whose standard error is computed.
-#' @exportMethod SE
+# Compute standard error of an object.
 setGeneric("SE",
     def = function(obj) {
       standardGeneric("SE")
     })
 
-#' @importFrom stats confint fitted coef vcov predict update profile simulate residuals
-#' @importFrom graphics plot barplot
-
-#' @exportMethod confint
 setGeneric("plot")
 setGeneric("predict")
 setGeneric("vcov")
@@ -42,27 +31,19 @@ setGeneric("residuals")
 setGeneric("barplot")
 
 
-#' Compute linear combinations of parameters.
-#'
-#' @aliases linearComb-methods linearComb
-#' @seealso \code{\link{linearComb,unmarkedFit-method}}, \code{link{linearComb,unmarkedEstimate-method}}
-#' @exportMethod linearComb
+# Compute linear combinations of parameters.
 setGeneric("linearComb",
     function(obj, coefficients, ...) {
       standardGeneric("linearComb")
     })
 
-#' Transform an object to it's natural scale.
-#'
-#' @aliases backTransform-methods
-#' @param obj object to be transformed
-#' @exportMethod backTransform
+# Transform an object to it's natural scale.
 setGeneric("backTransform",
     function(obj, ...) {
       standardGeneric("backTransform")
     })
 
-#' @exportMethod hessian
+
 setGeneric("hessian",	function(object) standardGeneric("hessian"))
 
 # TODO: make parent class unmarkedEstimate

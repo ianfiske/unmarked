@@ -1,53 +1,6 @@
-#' @include unmarkedFit.R
-#' @include unmarkedEstimate.R
-#' @include utils.R
-{}
 
-#' Fit the Occupancy model of Royle and Nichols
-#'
-#'  See \link{unmarked} for detailed descriptions of passing data \code{y},
-#'  \code{covdata.site}, and \code{covdata.obs}, and specifying covariates
-#'  with \code{stateformula} and \code{detformula}.
-#'
-#'  This function fits the latent abundance mixture model described in
-#'  Royle and Nichols (2003).
-#'
-#'  The latent abundance of site \eqn{i} is modelled as Poisson:
-#'
-#'  \deqn{N_i \sim Poisson(\lambda_i)}{N_i ~ Poisson(lambda_i)}
-#'
-#'  The detection of a single individual in site \eqn{i} during sample
-#'  \eqn{j} is modelled as Bernoulli:
-#'
-#'  \deqn{w_{ij} \sim Bernoulli(r_{ij})}{w_ij ~ Bernoulli(r_ij)}.
-#'
-#'  Thus, the detection probability for a single site is linked to the
-#'  detection probability for an individual by
-#'
-#'  \deqn{p_{ij} = 1 - (1 - r_{ij}) ^ {N_i}}{p_ij = 1 - (1 - r_ij) ^ N_i}
-#'
-#'  Covariates of \eqn{\lambda_i}{lambda_i} are modelled with the log link
-#'  and covariates of \eqn{r_{ij}}{r_ij} are modelled with the logit link.
-#'
-#' @param formula double right-hand side formula describing covariates of detection and occupancy in that order.
-#' @param data unmarkedFrameOccu supplying data to the model.
-#' @param K the upper summation index used to numerically integrate out the latent abundance.
-#' @param starts initial values for the optimization.
-#' @param method Optimization method used by \code{\link{optim}}.
-#' @param control Other arguments passed to \code{\link{optim}}.
-#' @param se logical specifying whether or not to compute standard errors.
-#' @return unmarkedFit object describing the model fit.
-#' @author Ian Fiske
-#' @references
-#' Royle, J. A. and Nichols, J. D. (2003) Estimating Abundance from
-#' Repeated Presence-Absence Data or Point Counts. \emph{Ecology}, 84(3)
-#' pp. 777--790.
-#' @examples
-#' data(birds)
-#' woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
-#' (fm.wood.rn <- occuRN(~ obs ~ 1, woodthrushUMF))
-#' @keywords models
-#' @export
+# Fit the Occupancy model of Royle and Nichols
+
 occuRN <-
 function(formula, data, K = 25, starts, method = "BFGS", control = list(), se = TRUE)
 {

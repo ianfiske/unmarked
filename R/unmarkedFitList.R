@@ -1,7 +1,3 @@
-#' @include unmarkedFit.R
-{}
-
-#' @export
 setClass("unmarkedFitList",
     representation(fits = "list"),
     validity = function(object) {
@@ -13,29 +9,7 @@ setClass("unmarkedFitList",
     )
 
 
-#' constructor of unmarkedFitList objects
-#'
-#' @examples
-#' # Fit some N-mixture models
-#' data(mallard)
-#' mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
-#' 	obsCovs = mallard.obs)
-#' 
-#' fm1 <- pcount(~ ivel ~ length, mallardUMF)
-#' fm2 <- pcount(~ ivel ~ 1, mallardUMF)
-#' fm3 <- pcount(~ 1 ~ 1, mallardUMF)
-#' 
-#' # Create an unmarkedFitList with a named list of models
-#' fmList <- fitList(fits=list(Global=fm1, ivel.=fm2, Null=fm3))
-#' fmList
-#' 
-#' # Model-averaged prediction
-#' predict(fmList, type="state")
-#' 
-#' # Model selection
-#' modSel(fmList, nullmod=fm3)
-#'
-#' @export
+# constructor of unmarkedFitList objects
 fitList <- function(fits) {
 	umfl <- new("unmarkedFitList", fits=fits)
 	return(umfl)
@@ -51,9 +25,6 @@ setMethod("summary", "unmarkedFitList", function(object) {
 
 
 
-## TODO Fix predict-unmarkedFit so that it won't fail when type="det" for 2 
-## 		parameter detection functions (eg distsamp(keyfun="hazard"))
-#' @exportMethod predict
 setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL, 
 				backTran=TRUE) {
 			fitList <- object@fits
@@ -97,14 +68,12 @@ nagR2 <- function(fit, nullfit)
 
 
 
-#' @exportMethod modSel
 setGeneric("modSel",
 		def = function(object, ...) {
 			standardGeneric("modSel")
 			}
 		)
 
-#' @export
 setClass("unmarkedModSel", 
 	representation(
 		Estimates = "matrix", 
@@ -115,83 +84,54 @@ setClass("unmarkedModSel",
 	
 
 
-#' Model selection results from an unmarkedFitList
-#'
-#' @name modSel-unmarkedFitList
-#' @aliases modSel modSel-methods
-#' @param object an object of class "umDistsampFitList"
-#' @examples
-#' data(linetran)
-#' (dbreaksLine <- c(0, 5, 10, 15, 20)) 
-#' lengths <- linetran$Length * 1000
-#'
-#' ltUMF <- with(linetran, {
-#'		unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
-#'		siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
-#'		tlength = lengths, survey = "line", unitsIn = "m")
-#'		})
-#' 
-#' (fm1 <- distsamp(~ 1 ~1, ltUMF))
-#'
-#' (fm2 <- distsamp(~ area ~1, ltUMF))
-#'
-#' (fm3 <- distsamp( ~ 1 ~area, ltUMF))
-#'
-#' fl <- fitList(fits = list(Null=fm1, A.=fm2, .A=fm2))
-#' fl
-#'
-#' (ms <- modSel(fl, nullmod=fm1))
-#'
-#' ms@@Full
-#' @exportMethod modSel
-setMethod("modSel", "unmarkedFitList", function(object, nullmod=NULL) 
+# Model selection results from an unmarkedFitList
+setMethod("modSel", "unmarkedFitList", 
+	function(object, nullmod=NULL) 
 {
-fits <- object@fits
-estList <- lapply(fits, coef, altNames=T)
-seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=T))))
-eNames <- sort(unique(unlist(sapply(estList, names))))
-seNames <- paste("SE", eNames, sep="")
-eseNames <- character(l <- length(c(eNames, seNames)))
-eseNames[seq(1, l, by=2)] <- eNames
-eseNames[seq(2, l, by=2)] <- seNames
-cNames <- c("formula", eseNames)
-out <- data.frame(matrix(NA, ncol=length(cNames), nrow=length(fits)))
-rownames(out) <- names(fits)
-colnames(out) <- cNames
-eMat <- seMat <- matrix(NA, length(fits), length(eNames), 
-   dimnames=list(names(fits), eNames))
-out$formula <- sapply(fits, function(x) deparse(x@formula))
-for(i in 1:length(eNames)) {
-	eMat[,eNames[i]] <- out[,eNames[i]] <- sapply(estList, function(x) 
-		x[eNames[i]])
-	seMat[,eNames[i]] <- out[,seNames[i]] <- sapply(seList, function(x) 
-		x[eNames[i]])
-	}
-out$Converge <- sapply(fits, function(x) x@opt$convergence)
-out$CondNum <- sapply(fits, function(x) cn(x))
-out$negLogLike <- sapply(fits, function(x) x@negLogLike)
-out$K <- sapply(fits, function(x) length(coef(x)))
-out$n <- sapply(fits, function(x) sampleSize(x))
-if(!identical(length(table(out$n)), 1L))
-	warning("Models are not nested. AIC comparisons not valid")
-out$AIC <- sapply(fits, function(x) x@AIC)
-out$deltaAIC <- out$AIC - min(out$AIC)
-out$AICwt <- exp(-out$deltaAIC / 2)
-out$AICwt <- out$AICwt / sum(out$AICwt)
-out$Rsq <- NA
-if(!is.null(nullmod))
-	out$Rsq <- sapply(fits, nagR2, nullmod)
-out <- out[order(out$AIC),]
-out$AICwtCum <- cumsum(out$AICwt)
-msout <- new("unmarkedModSel", Estimates = eMat, SE = seMat, Full = out)
-return(msout)
+	fits <- object@fits
+	estList <- lapply(fits, coef, altNames=T)
+	seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=T))))
+	eNames <- sort(unique(unlist(sapply(estList, names))))
+	seNames <- paste("SE", eNames, sep="")
+	eseNames <- character(l <- length(c(eNames, seNames)))
+	eseNames[seq(1, l, by=2)] <- eNames
+	eseNames[seq(2, l, by=2)] <- seNames
+	cNames <- c("formula", eseNames)
+	out <- data.frame(matrix(NA, ncol=length(cNames), nrow=length(fits)))
+	rownames(out) <- names(fits)
+	colnames(out) <- cNames
+	eMat <- seMat <- matrix(NA, length(fits), length(eNames), 
+		dimnames=list(names(fits), eNames))
+	out$formula <- sapply(fits, function(x) deparse(x@formula))
+	for(i in 1:length(eNames)) {
+		eMat[,eNames[i]] <- out[,eNames[i]] <- sapply(estList, function(x) 
+			x[eNames[i]])
+		seMat[,eNames[i]] <- out[,seNames[i]] <- sapply(seList, function(x) 
+			x[eNames[i]])
+		}
+	out$Converge <- sapply(fits, function(x) x@opt$convergence)
+	out$CondNum <- sapply(fits, function(x) cn(x))
+	out$negLogLike <- sapply(fits, function(x) x@negLogLike)
+	out$K <- sapply(fits, function(x) length(coef(x)))
+	out$n <- sapply(fits, function(x) sampleSize(x))
+	if(!identical(length(table(out$n)), 1L))
+		warning("Models are not nested. AIC comparisons not valid")
+	out$AIC <- sapply(fits, function(x) x@AIC)
+	out$deltaAIC <- out$AIC - min(out$AIC)
+	out$AICwt <- exp(-out$deltaAIC / 2)
+	out$AICwt <- out$AICwt / sum(out$AICwt)
+	out$Rsq <- NA
+	if(!is.null(nullmod))
+		out$Rsq <- sapply(fits, nagR2, nullmod)
+	out <- out[order(out$AIC),]
+	out$AICwtCum <- cumsum(out$AICwt)
+	msout <- new("unmarkedModSel", Estimates = eMat, SE = seMat, Full = out)
+	return(msout)
 })
 
 
 
 
-
-#' @exportMethod show
 setMethod("show", "unmarkedModSel", 
 	function(object) {
 		out <- object@Full[,c("n", "K", "AIC", "deltaAIC", "AICwt", "Rsq", 
