@@ -22,7 +22,7 @@ siteCovs, or obsCovs.
 Additionally, unmarkedFrames contain metadata: obsToY, plotArea, mapInfo. 
 ObsToY is a matrix describing relationship between response matrix and 
 observation-level covariates. Generally this does not need to be supplied by
-the user; however, it may be needed when using \link{\code{multinomPois}}. For
+the user; however, it may be needed when using \code{\link{multinomPois}}. For
 example, double observer sampling, y has 3 columns corresponding the observer 1,
 observer 2, and both, but there were only two independent observations.
 In this situation, y has 3 columns, but obsToY must be specified.
