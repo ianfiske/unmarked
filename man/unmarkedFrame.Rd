@@ -3,8 +3,21 @@
 \alias{unmarkedFrame}
 \alias{obsCovs}
 \alias{siteCovs}
-\usage{unmarkedFrame(y, siteCovs, obsCovs, obsToY, mapInfo, plotArea)}
+\usage{unmarkedFrame(y, siteCovs=NULL, obsCovs=NULL, mapInfo, plotArea, obsToY)}
 \description{Constructor for unmarkedFrames.}
+\arguments{
+\item{y}{A matrix of the observed measured data.}
+\item{siteCovs}{\code{\link{data.frame}} of covariates that vary at the site 
+level.}
+\item{obsCovs}{list of \code{\link{data.frame}}s of covariates that vary within
+sites.}
+\item{obsToY}{optional matrix specifying relationship between observation-level
+covariates and response matrix}
+\item{mapInfo}{geographic coordinate information}
+\item{plotArea}{Vector of length M of plot areas. If specified, density rather 
+than abundance will be modeled...for abundance models. Ignored by occupancy 
+models.}
+}
 \details{unmarkedFrame is the S4 class that holds data structures to be passed 
 to the model-fitting functions in unmarked.
 
@@ -37,18 +50,6 @@ All site-level covariates are automatically copied to obsCovs so that site level
  covariates are available at the observation level.
  }
 \value{an unmarkedFrame object, see \code{\link{unmarkedFrame-class}}}
-\arguments{
-\item{y}{A matrix of the observed measured data.}
-\item{obsCovs}{list of \code{\link{data.frame}}s of covariates that vary within
-sites.}
-\item{siteCovs}{\code{\link{data.frame}} of covariates that vary at the site level.}
-\item{obsToY}{optional matrix specifying relationship between observation-level
-covariates and response matrix}
-\item{mapInfo}{geographic coordinate information}
-\item{plotArea}{Vector of length M of plot areas. If specified, density rather 
-than abundance will be modeled...for abundance models. Ignored by occupancy 
-models.}
-}
 \examples{
 
 # Set up data for pcount()

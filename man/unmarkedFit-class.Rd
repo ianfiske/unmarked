@@ -2,7 +2,6 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{unmarkedFit-class}
-\alias{unmarkedFitOccu-class}
 \alias{"[", unmarkedFit-method}
 \alias{backTransform, unmarkedFit-method}
 \alias{coef, unmarkedFit-method}

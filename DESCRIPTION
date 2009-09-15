@@ -1,12 +1,12 @@
 Package: unmarked
-Version: 0.6-1
-Date: 2009-9-10
+Version: 0.6-2
+Date: 2009-9-15
 Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske, Richard Chandler
 Maintainer: Ian Fiske <ianfiske@gmail.com>
-Depends: R (>= 2.9.0), methods, ggplot2
-Imports: stats, reshape, mapproj
+Depends: R (>= 2.9.0), methods, reshape
+Imports: stats, reshape, mapproj, utils
 Description: Unmarked estimates wildlife parameters for many popular
     sampling methods including occurrence, point count, and distance
     data using hierarchical models.
