@@ -16,7 +16,7 @@ validunmarkedFrame <- function(object) {
     errors
 }
 
-############ DATA CLASSES #########################################################
+############ DATA CLASSES ######################################################
 
 # Class to hold data for analyses in unmarked.
 setClass("unmarkedFrame",
@@ -66,7 +66,7 @@ setClass("unmarkedFrameMPois",
 				piFun = "character"),
 		contains = "unmarkedFrame")
 
-################### CONSTRUCTORS ##########################################################
+################### CONSTRUCTORS ###############################################
 
 # Constructor for unmarkedFrames.
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
@@ -170,7 +170,7 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 	umf
 }
 
-################ SHOW METHODS ###########################################################
+################ SHOW METHODS ##################################################
 
 
 setMethod("show", "unmarkedFrame",
@@ -180,28 +180,23 @@ setMethod("show", "unmarkedFrame",
 			print(df)
 		})
 
-############################ EXTRACTORS #########################################################
+############################ EXTRACTORS ########################################
 
 # Extractor for site level covariates
-# @param umf an unmarkedFrame
-# @return a data frame containing the site level covariates.
 setGeneric("siteCovs", function(object,...) standardGeneric("siteCovs"))
-
 setMethod("siteCovs", "unmarkedFrame",
 		function(object) {
 			return(object@siteCovs)
 		})
 
-
-setGeneric("yearlySiteCovs", function(object,...) standardGeneric("yearlySiteCovs"))
-
+setGeneric("yearlySiteCovs", 
+	function(object,...) standardGeneric("yearlySiteCovs"))
 setMethod("yearlySiteCovs", "unmarkedMultFrame",
 		function(object) {
 			return(object@yearlySiteCovs)
 		})
 
 setGeneric("obsCovs", function(object,...) standardGeneric("obsCovs"))
-
 setMethod("obsCovs", "unmarkedFrame", 
 		function(object, matrices = FALSE) {
 			M <- numSites(object)
@@ -220,22 +215,18 @@ setMethod("obsCovs", "unmarkedFrame",
 
 
 setGeneric("obsNum", function(object) standardGeneric("obsNum"))
-
 setMethod("obsNum", "unmarkedFrame", function(object) nrow(object@obsToY))
 
 
 setGeneric("numSites", function(object) standardGeneric("numSites"))
-
 setMethod("numSites", "unmarkedFrame", function(object) nrow(object@y))
 
 
 setGeneric("numY", function(object) standardGeneric("numY"))
-
 setMethod("numY", "unmarkedFrame", function(object) ncol(object@y))
 
 
 setGeneric("obsToY", function(object) standardGeneric("obsToY"))
-
 setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
 
 
@@ -260,7 +251,8 @@ setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
 		})
 
 
-setGeneric("yearlySiteCovs<-", function(object, value) standardGeneric("yearlySiteCovs<-"))
+setGeneric("yearlySiteCovs<-", 
+	function(object, value) standardGeneric("yearlySiteCovs<-"))
 setReplaceMethod("yearlySiteCovs", "unmarkedMultFrame", function(object, value) {
 			object@yearlySiteCovs <- as.data.frame(value)
 			object
@@ -268,7 +260,6 @@ setReplaceMethod("yearlySiteCovs", "unmarkedMultFrame", function(object, value) 
 
 
 setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
-
 setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
 			object@obsToY <- value
 			object
@@ -277,7 +268,6 @@ setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
 
 
 setGeneric("getY", function(object) standardGeneric("getY"))
-
 setMethod("getY", "unmarkedFrame", function(object) object@y)
 
 
@@ -294,7 +284,7 @@ setMethod("projection", "unmarkedFrame",
 			object@mapInfo@projection
 		})
 
-################################### SUMMARY METHODS #############################################
+################################### SUMMARY METHODS ############################
 
 
 setMethod("summary", "unmarkedFrame",
@@ -303,9 +293,10 @@ setMethod("summary", "unmarkedFrame",
 		cat(nrow(object@y), "sites\n")
 		cat("Maximum number of observations per site:",obsNum(object),"\n")
 			mean.obs <- mean(rowSums(!is.na(getY(object))))
-		cat("Mean number of observations per site:",round(mean.obs,2),"\n\n")
+		cat("Mean number of observations per site:",round(mean.obs,2),"\n")
 		cat("Sites with at least one detection:", 
-			sum(apply(getY(object), 1, function(x) any(x>0))), "\n")
+			sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))), 
+				"\n\n")
 		cat("Tabulation of y observations:")
 		print(table(object@y, exclude=NULL))
 		if(!is.null(object@siteCovs)) {
@@ -331,9 +322,9 @@ setMethod("summary", "unmarkedFrameDS",
 	cat(nrow(object@y), "sites\n")
 	cat("Maximum number of distance classes per site:", ncol(getY(object)), "\n")
 		mean.dc <- mean(rowSums(!is.na(getY(object))))
-	cat("Mean number of distance classes per site:", round(mean.dc, 2), "\n\n")
+	cat("Mean number of distance classes per site:", round(mean.dc, 2), "\n")
 	cat("Sites with at least one detection:", 
-		sum(apply(getY(object), 1, function(x) any(x>0))), "\n")
+		sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))), "\n\n")
 	cat("Tabulation of y observations:")
 	print(table(object@y, exclude=NULL))
 	if(!is.null(object@siteCovs)) {
@@ -346,16 +337,18 @@ setMethod("summary", "unmarkedFrameDS",
 })
 
 
-################################# PLOT METHODS ############################################
+################################# PLOT METHODS #################################
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
 setMethod("plot", c(x="unmarkedFrame", y="missing"),
 		function(x) {
 			M <- numSites(x)
 			J <- obsNum(x)
-			df <- data.frame(site = rep(1:M, each = J), obs = as.factor(rep(1:J, M)), y = as.vector(t(getY(x))))
+			df <- data.frame(site = rep(1:M, each = J), 
+				obs = as.factor(rep(1:J, M)), y = as.vector(t(getY(x))))
 			df <- na.omit(df)
-			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() + coord_flip()
+			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() +
+				coord_flip()
 			g
 		})
 
@@ -363,9 +356,12 @@ setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
 		function(x) {
 			M <- numSites(x)
 			J <- obsNum(x)
-			df <- data.frame(site = rep(1:M, each = J), obs = as.factor(rep(1:J, M)), y = as.ordered(as.vector(t(getY(x)))))
+			df <- data.frame(site = rep(1:M, each = J), 
+				obs = as.factor(rep(1:J, M)), 
+				y = as.ordered(as.vector(t(getY(x)))))
 			df <- na.omit(df)
-			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() + coord_flip() + scale_fill_brewer(type="seq")
+			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() +
+				coord_flip() + scale_fill_brewer(type="seq")
 			g
 		})
 
@@ -524,42 +520,43 @@ setMethod("barplot", "unmarkedFrameDS",
 #				p
 #			}
 #		})
-################################# SELECTORS ###############################################
+################################# SELECTORS ####################################
 
 # i is the vector of sites to extract
 
-setMethod("[", c("unmarkedFrame","numeric", "missing", "missing"),
-		function(x, i) {  
-			if(length(i) == 0) return(x)
-			if(any(i < 0) && any(i > 0)) stop("i must be all positive or all negative indices.")
-			if(all(i < 0)) { # if i is negative, then convert to positive
-				M <- numSites(x)
-				i <- (1:M)[i]
+setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
+	function(x, i) {  
+		if(length(i) == 0) return(x)
+		if(any(i < 0) && any(i > 0)) 
+			stop("i must be all positive or all negative indices.")
+		if(all(i < 0)) { # if i is negative, then convert to positive
+			M <- numSites(x)
+			i <- (1:M)[i]
 			}
-			y <- getY(x)[i,]
-			if (length(i) == 1) {
-				y <- t(y)
+		y <- getY(x)[i,]
+		if (length(i) == 1) {
+			y <- t(y)
 			}
-			siteCovNames <- colnames(siteCovs(x))
-			siteCovs <- as.data.frame(siteCovs(x)[i,])
-			colnames(siteCovs) <- siteCovNames
-			obsCovs <- obsCovs(x)
-			obsCovsNames <- colnames(obsCovs(x))
-			R <- obsNum(x)
-			obs.site.inds <- rep(1:numSites(x), each = R)
-			obs.site.sel <- rep(i, each = R)
-			obsCovs <- as.data.frame(obsCovs[match(obs.site.sel,obs.site.inds),])
-			colnames(obsCovs) <- obsCovsNames
-			umf <- x
-			umf@y <- y
-			umf@siteCovs <- siteCovs
-			umf@obsCovs <- obsCovs
-			umf@plotArea <- umf@plotArea[i]
-			umf
-		})
+		siteCovNames <- colnames(siteCovs(x))
+		siteCovs <- as.data.frame(siteCovs(x)[i,])
+		colnames(siteCovs) <- siteCovNames
+		obsCovs <- obsCovs(x)
+		obsCovsNames <- colnames(obsCovs(x))
+		R <- obsNum(x)
+		obs.site.inds <- rep(1:numSites(x), each = R)
+		obs.site.sel <- rep(i, each = R)
+		obsCovs <- as.data.frame(obsCovs[match(obs.site.sel,obs.site.inds),])
+		colnames(obsCovs) <- obsCovsNames
+		umf <- x
+		umf@y <- y
+		umf@siteCovs <- siteCovs
+		umf@obsCovs <- obsCovs
+		umf@plotArea <- umf@plotArea[i]
+		umf
+	})
 
 ## remove obs only
-setMethod("[", c("unmarkedFrame","missing", "numeric", "missing"),
+setMethod("[", c("unmarkedFrame", "missing", "numeric", "missing"),
 		function(x, i, j) {  
 			y <- getY(x)
 			obsCovs <- obsCovs(x)
@@ -567,11 +564,11 @@ setMethod("[", c("unmarkedFrame","missing", "numeric", "missing"),
 			obs.remove <- rep(TRUE, obsNum(x))
 			obs.remove[j] <- FALSE
 			y.remove <- t(obs.remove) %*% obsToY > 0
-			y <- y[,!y.remove]
+			y <- y[,!y.remove, drop=FALSE]
 			obsCovs <- obsCovs[!rep(obs.remove, numSites(x)),]
 			x@obsCovs <- obsCovs
 			x@y <- y
-			x@obsToY <- obsToY[!obs.remove,!y.remove]
+			x@obsToY <- obsToY[!obs.remove,!y.remove, drop=FALSE]
 			
 			x
 			
@@ -581,8 +578,8 @@ setMethod("[", c("unmarkedFrame","missing", "numeric", "missing"),
 setMethod("[", c("unmarkedFrame","numeric", "numeric", "missing"),
 		function(x, i, j) {  
 			## first remove sites
-			umf <- x[i]
-			umf <- x[,j]
+			umf <- x[i,]
+			umf <- umf[,j]
 			umf
 		})
 
@@ -605,7 +602,8 @@ setMethod("head", "unmarkedFrame",
 			umf <- x[1:n,]
 			umf
 		})
-############################### COERCION ##################################################
+		
+############################### COERCION #######################################
 
 setAs("data.frame", "unmarkedFrame", function(from) {
 			umf <- formatWide(from)
