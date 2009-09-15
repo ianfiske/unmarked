@@ -113,6 +113,8 @@ siteCovs(mallardUMF)
 
 mallardUMF[1:5,]	# First 5 rows in wide format
 
+mallard[,1:2]		# First 2 observations
+
 
 
 }
