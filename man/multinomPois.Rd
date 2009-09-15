@@ -23,9 +23,11 @@ Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance a
 \item{formula}{double right-hand side formula for detection and abundance 
 covariates, in that order.}
 \item{data}{unmarkedFrame supplying data.}
+\item{starts}{vector of starting values.}
 \item{method}{Optimization method used by \code{\link{optim}}.}
 \item{control}{Other arguments passed to \code{\link{optim}}.}
-\item{se}{logical specifying whether or not to compute standard errors.}}
+\item{se}{logical specifying whether or not to compute standard errors.}
+}
 \examples{data(ovendata)
 ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
 siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")

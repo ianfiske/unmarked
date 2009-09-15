@@ -4,6 +4,17 @@
 \usage{pcount(formula, data, K, mixture=c("P", "NB"), starts, method=BFGS,
     control=list(), se=TRUE)}
 \description{Fit the N-mixture point count model}
+\arguments{
+\item{formula}{Double right-hand side formula describing covariates of 
+detection and abundance, in that order}
+\item{data}{an unmarkedFramePCount object supplying data to the model.}
+\item{K}{Integer upper index of integration for N-mixture.}
+\item{mixture}{character specifying mixture: either "P" or "NB".}
+\item{starts}{vector of starting values}
+\item{method}{Optimization method used by \code{\link{optim}}.}
+\item{control}{Other arguments passed to \code{\link{optim}}.}
+\item{se}{logical specifying whether or not to compute standard errors.}
+}
 \details{This function fits binomial-Poisson mixture model for spatially replicated point count data.
 
 See \code{\link{unmarkedFrame}} for a description of how to supply by creating
@@ -32,14 +43,6 @@ covariates of \eqn{p_{ij}}{p_ij} use the logit link.}
 
 Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.}
 \keyword{models}
-\arguments{\item{stateformula}{Right-hand side formula describing covariates of abundance}
-\item{detformula}{Right-hand side formula describing covariates of detection}
-\item{umf}{an unmarkedFrame supplying data to the model.}
-\item{K}{Integer upper index of integration for N-mixture.}
-\item{mixture}{character specifying mixture: either "P" or "NB".}
-\item{method}{Optimization method used by \code{\link{optim}}.}
-\item{control}{Other arguments passed to \code{\link{optim}}.}
-\item{se}{logical specifying whether or not to compute standard errors.}}
 \examples{data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)
