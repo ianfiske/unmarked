@@ -121,15 +121,19 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
 
 
 
-unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) {
+unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) 
+{
 	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), 
+		mapInfo = mapInfo)
 	umf <- as(umf, "unmarkedFrameOccu")
 	umf
 }
 
 # This function constructs an unmarkedMultFrame object.
-unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, yearlySiteCovs = NULL, plotArea = NULL) {
+unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
+	yearlySiteCovs = NULL, plotArea = NULL) 
+{
 	J <- ncol(y)
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), 
 		plotArea = plotArea)
@@ -141,17 +145,21 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary, ye
 
 
 
-unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo, plotArea = NULL) {
+unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
+ 	plotArea = NULL) 
+{
 	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), mapInfo = mapInfo, 
-		plotArea = plotArea)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), 
+		mapInfo = mapInfo, plotArea = plotArea)
 	umf <- as(umf, "unmarkedFramePCount")
 	umf
 }
 
 
 
-unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY, mapInfo, piFun, plotArea = NULL) {
+unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY, 
+	mapInfo, piFun, plotArea = NULL) 
+{
 	if(!missing(type)) {
 		switch(type,
 			removal = {
@@ -432,7 +440,7 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
 	box()
 	axis(1, at = 1:J, ...)
 	if(addgrid)
-		grid(J, M, lty = 1)
+		grid(J, M, lty = 1, lwd=0.1)
 	par(mai = c(0.1, 0.2, 0.4, 0.4))
 	zv <- vals
 	zv[!is.na(zv)] <- 0
@@ -448,7 +456,6 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
 	axis(2, at = 1:lt, labels = paste(names(tab))[laborder], las=1, ...)
 	par(op)
 })
-
 
 
 
@@ -579,11 +586,10 @@ setMethod("[", c("unmarkedFrame", "missing", "numeric", "missing"),
 			obs.remove[j] <- FALSE
 			y.remove <- t(obs.remove) %*% obsToY > 0
 			y <- y[,!y.remove, drop=FALSE]
-			obsCovs <- obsCovs[!rep(obs.remove, numSites(x)),]
+			obsCovs <- obsCovs[!rep(obs.remove, numSites(x)),, drop=FALSE]
 			x@obsCovs <- obsCovs
 			x@y <- y
 			x@obsToY <- obsToY[!obs.remove,!y.remove, drop=FALSE]
-			
 			x
 			
 		})
@@ -598,7 +604,7 @@ setMethod("[", c("unmarkedFrame","numeric", "numeric", "missing"),
 		})
 
 ## for multframes, must remove years at a time
-setMethod("[", c("unmarkedMultFrame","missing", "numeric", "missing"),
+setMethod("[", c("unmarkedMultFrame", "missing", "numeric", "missing"),
 		function(x, i, j) {  
 			J <- obsNum(x)/x@numPrimary
 			obs <- rep(1:x@numPrimary, each = J)
