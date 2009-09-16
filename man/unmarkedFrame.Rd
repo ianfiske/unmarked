@@ -1,8 +1,10 @@
 \name{unmarkedFrame}
 \title{Create an unmarkedFrame, or one of its child classes.}
 \alias{unmarkedFrame}
-\alias{obsCovs}
-\alias{siteCovs}
+\alias{unmarkedFrameOccu}
+\alias{unmarkedFramePCount}
+\alias{unmarkedFrameDS}
+\alias{unmarkedFrameMPois}
 \usage{unmarkedFrame(y, siteCovs=NULL, obsCovs=NULL, mapInfo, plotArea, obsToY)}
 \description{Constructor for unmarkedFrames.}
 \arguments{

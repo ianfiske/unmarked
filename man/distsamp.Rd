@@ -6,14 +6,15 @@
     unitsOut=c("ha", "kmsq"), starts, method=BFGS,
     control=list(), se=TRUE)}
 
-\description{Fit the hierarchical distance sampling model of Royle et al. (2004)
-to line or point transect data recorded in discrete distance intervals.}
-
+\description{
+Fit the hierarchical distance sampling model of Royle et al. (2004)
+to line or point transect data recorded in discrete distance intervals.
+}
 
 \arguments{
-\item{formula}{'Two-level' right-hand formula describing state-level
-covariates followed by detection covariates. ~1 ~1 would be a null model.}
-\item{data}{object of class unmarkedFrameDS, containing response matrix, 
+\item{formula}{Double right-hand formula describing detection
+covariates followed by abundance covariates. ~1 ~1 would be a null model.}
+\item{data}{object of class \code{unmarkedFrameDS}, containing response matrix, 
 covariates, distance interval cut points, survey type ("line" or "point"), 
 transect lengths (for survey = "line"), and units ("m" or "km") for cut 
 points and transect lengths. See example for set up.}
@@ -28,9 +29,8 @@ square kilometers, respectively.}
 \item{se}{logical specifying whether or not to compute standard errors.}
 }
 
-
-
-\details{Unlike conventional distance sampling, which uses the 'conditional on 
+\details{
+Unlike conventional distance sampling, which uses the 'conditional on 
 detection' likelihood formulation, this model is based upon the unconditional 
 likelihood and thus allows for modeling both abundance and detection 
 function parameters. 
@@ -53,9 +53,9 @@ affected by transect-specific covariates using the log link.}
 though other distributions such as the negative binomial may be added. 
 Goodness-of-fit can be assessed using the \code{\link{parboot}} function.}
 
-\value{unmarkedFitDS object (child class of \link{unmarkedFit-class}) 
+\value{unmarkedFitDS object (child class of \code{\link{unmarkedFit-class}}) 
 describing the model fit. Parameter estimates are displayed on the log-scale. 
-Back-transformation can be achieved via the \link{predict} or 
+Back-transformation can be achieved via the \code{\link{predict}} or 
 \code{backTransform} methods.}
 
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
@@ -100,7 +100,7 @@ predict(fm1, type = "state")
 # Halfnormal. Covariates affecting both density and and detection.  
 (fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, ltUMF))
 
-# This won't run without starting values.
+# This fails without starting values...in this example at least.
 (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1 ~ habitat - 1, ltUMF, 
 	starts=c(1,0,0,1,2,2)))
 

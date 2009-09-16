@@ -26,7 +26,7 @@ probability and abundance (Royle and Nichols 2003).
 (Royle 2004, Kery and Royle 2005).  \command{\link{mnMix}} fits the
 multinomial mixture model to categorical observations (Royle and Link
 2005).  \command{\link{distsamp}} fits the distsance sampling model of 
-Royle et al. (2004b) to distance data recorded in discrete intervals. All of 
+Royle et al. (2004) to distance data recorded in discrete intervals. All of 
 these functions allow the user to specify covariates that affect the detection
 process and several also allow covariates for the state process.
 
@@ -63,10 +63,10 @@ Royle, J. A. and Nichols, J. D. (2003) Estimating Abundance from
 Repeated Presence-Absence Data or Point Counts. \emph{Ecology}, 84(3)
 pp. 777--790.
 
-Royle, J. A. (2004a) N-Mixture Models for Estimating Population Size from
+Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from
 Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 
-Royle, J. A., D. K. Dawson, and S. Bates (2004b) Modeling 
+Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
 
 Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from

@@ -1,10 +1,19 @@
 \name{formatDistData}
 \alias{formatDistData}
-\title{Convert individual-level distance data to the transect-level format required...}
-\usage{formatDistData(distData, distCol, transectNameCol,
-    dist.breaks)}
-\description{Convert individual-level distance data to the transect-level format required 
-by distsamp()}
+\title{Convert individual-level distance data to the transect-level format 
+required by distsamp}
+\usage{formatDistData(distData, distCol, transectNameCol, dist.breaks)}
+\description{Convert individual-level distance data to the transect-level 
+format required by \code{\link{distsamp}}
+}
+\arguments{
+\item{distData}{data.frame where each row is a detected individual.
+Must have at least 2 columns. One for distances and the other for transect names.}
+\item{distCol}{character, the column name containing distances}
+\item{transectNameCol}{character, column name containing transect names}
+\item{dist.breaks}{numeric vector of distance interval cutpoints. Length must
+equal J+1.}
+}
 \details{This function creates a site (M) by distance interval (J) response matrix
 from a data.frame containing the detection distances for each individual and
 the transect names.}
@@ -12,19 +21,13 @@ the transect names.}
 interval for each transect. Transect names will become rownames and 
 colnames will be y.1, y.2, ..., y.J.}
 \note{It is very important that the factor containing transect names contains
-levels for all the transects surveyed. This includes those where birds were
-not detected. See the example for how to add levels to a factor.}
-\seealso{unmarkedFrameDS distsamp}
-\arguments{\item{distData}{data.frame where each row is a detected individual. Must have
-at least 2 columns. One for distances and the other for transect names.}
-\item{distCol}{character, the column name containing distances}
-\item{transectNameCol}{character, column name containing transect names}
-\item{dist.breaks}{numeric vector of distance interval cutpoints. Length must
-equal J+1.}}
-\examples{# Create a data.frame containing distances of animals detected
+levels for all the transects surveyed. This includes those where no individuals 
+were detected. See the example for how to add levels to a factor.}
+\seealso{\code{\link{distsamp}}, \code{\link{unmarkedFrame}}}
+\examples{
+# Create a data.frame containing distances of animals detected
 # along 4 transects.
-dat <- data.frame(transect=gl(4,5, labels=letters[1:4]), 
-distance=rpois(20, 10))
+dat <- data.frame(transect=gl(4,5, labels=letters[1:4]), distance=rpois(20, 10))
 dat
 
 # Look at your transect names.

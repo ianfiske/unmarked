@@ -16,6 +16,12 @@
 \alias{summary, unmarkedFit-method}
 \alias{update, unmarkedFit-method}
 \alias{vcov, unmarkedFit-method}
+\alias{getP}
+\alias{getData}
+\alias{hessian}
+\alias{sampleSize}
+\alias{SE}
+
 
 \title{Class "unmarkedFit" }
 \description{ Contains fitted model information which can be manipulated or 
@@ -36,29 +42,49 @@ extracted using the methods described below. }
 }
 \section{Methods}{
   \describe{
-    \item{[}{\code{signature(x = "unmarkedFit", i = "ANY", j = "ANY", drop = "ANY")}: extract either 'det' or 'state' coefficient information }
-    \item{backTransform}{\code{signature(obj = "unmarkedFit")}: back-transform parameters to original scale when no covariate effects are modeled }
-    \item{coef}{\code{signature(object = "unmarkedFit")}: returns parameter estimates. type can be 'state' or 'det'. If altNames=T estimate names are more specific. }
-    \item{confint}{\code{signature(object = "unmarkedFit")}: Returns confidence intervals. Must specify type and method (either "normal" or "profile") }
-    \item{fitted}{\code{signature(object = "unmarkedFit")}: returns expected values of Y }
+    \item{[}{\code{signature(x = "unmarkedFit", i = "ANY", j = "ANY", 
+		drop = "ANY")}: extract either 'det' or 'state' coefficient information }
+    \item{backTransform}{\code{signature(obj = "unmarkedFit")}: back-transform
+		parameters to original scale when no covariate effects are modeled }
+    \item{coef}{\code{signature(object = "unmarkedFit")}: returns parameter 
+		estimates. type can be 'state' or 'det'. If altNames=T estimate names 
+		are more specific. }
+    \item{confint}{\code{signature(object = "unmarkedFit")}: Returns confidence
+		intervals. Must specify type and method (either "normal" or "profile") }
+    \item{fitted}{\code{signature(object = "unmarkedFit")}: returns expected
+		values of Y }
     \item{getData}{\code{signature(object = "unmarkedFit")}: extracts data }
-    \item{getP}{\code{signature(object = "unmarkedFit")}: calculates and extracts expected detection probabilities }
-    \item{hessian}{\code{signature(object = "unmarkedFit")}: Returns hessian matrix }
-    \item{linearComb}{\code{signature(obj = "unmarkedFit", coefficients = "matrixOrVector")}: Returns estimate and SE on original scale when covariates are present }
+    \item{getP}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
+		expected detection probabilities }
+    \item{hessian}{\code{signature(object = "unmarkedFit")}: Returns hessian 
+		matrix }
+    \item{linearComb}{\code{signature(obj = "unmarkedFit", 
+		coefficients = "matrixOrVector")}: Returns estimate and SE on original 
+		scale when covariates are present }
     \item{mle}{\code{signature(object = "unmarkedFit")}: Same as coef(fit)? }
     \item{names}{\code{signature(x = "unmarkedFit")}: Names of parameter levels }
-    \item{nllFun}{\code{signature(object = "unmarkedFit")}: returns negative log-likelihood used to estimate parameters }
-    \item{parboot}{\code{signature(object = "unmarkedFit")}: Parametric bootstrapping method to assess goodness-of-fit }
-    \item{plot}{\code{signature(x = "unmarkedFit", y = "missing")}: Plots expected vs. observed values }
-    \item{predict}{\code{signature(object = "unmarkedFit")}: Returns predictions and standard errors for original data or for covariates in a new data.frame }
-    \item{profile}{\code{signature(fitted = "unmarkedFit")}: used by confint method='profile' }
+    \item{nllFun}{\code{signature(object = "unmarkedFit")}: returns negative 
+		log-likelihood used to estimate parameters }
+    \item{parboot}{\code{signature(object = "unmarkedFit")}: Parametric 
+		bootstrapping method to assess goodness-of-fit }
+    \item{plot}{\code{signature(x = "unmarkedFit", y = "missing")}: Plots 
+		expected vs. observed values }
+    \item{predict}{\code{signature(object = "unmarkedFit")}: Returns predictions 
+		and standard errors for original data or for covariates in a new 
+		data.frame }
+    \item{profile}{\code{signature(fitted = "unmarkedFit")}: used by confint 
+		method='profile' }
     \item{residuals}{\code{signature(object = "unmarkedFit")}: returns residuals }
-    \item{sampleSize}{\code{signature(object = "unmarkedFit")}: returns number of sites in sample }
+    \item{sampleSize}{\code{signature(object = "unmarkedFit")}: returns number 
+		of sites in sample }
     \item{SE}{\code{signature(obj = "unmarkedFit")}: returns standard errors }
     \item{show}{\code{signature(object = "unmarkedFit")}: concise results }
-    \item{summary}{\code{signature(object = "unmarkedFit")}: results with more details }
-    \item{update}{\code{signature(object = "unmarkedFit")}: refit model with changes to one or more arguments }
-    \item{vcov}{\code{signature(object = "unmarkedFit")}: returns variance-covariance matrix }
+    \item{summary}{\code{signature(object = "unmarkedFit")}: results with more 
+		details }
+    \item{update}{\code{signature(object = "unmarkedFit")}: refit model with 
+		changes to one or more arguments }
+    \item{vcov}{\code{signature(object = "unmarkedFit")}: returns 
+		variance-covariance matrix }
 	 }
 }
 \note{ This is a superclass with child classes for each fit type }

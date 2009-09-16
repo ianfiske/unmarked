@@ -86,7 +86,7 @@ mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 
 
 # Vizualize it
-plot(mallardUMF, addgrid=F, col=heat.colors)
+plot(mallardUMF, addgrid=FALSE, col=heat.colors)
 
 mallardUMF
 
