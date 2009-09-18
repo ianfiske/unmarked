@@ -800,15 +800,20 @@ computeFitStats <- function(detMats, smooth, y, J.it) {
 	list(e.counts = e.counts, o.counts = o.counts, chisq = X2)
 }
 
-viterbi <- function(y.site) {
-	delta <- psi.v <- q.star <- matrix(NA, K+1, nY)
-		
-	## initialize
-	for (i in 1:(K + 1)) {
-		b.i1 <- rep(1, K + 1) 
-		for (j in 1:J) {
-			b.i1 <- b.i1 * detMats[,y.arr[i,1,j]+1,j,i,1]
-		}
-		delta[i,1] <- b.i1 * psi
-	}
-}
+
+## This was giving warning in R CMD check about lack of visible binding for
+## K, ny, J, detMats, y.arr, psi [rbchan]
+
+
+#viterbi <- function(y.site) {
+#	delta <- psi.v <- q.star <- matrix(NA, K+1, nY)
+#		
+#	## initialize
+#	for (i in 1:(K + 1)) {
+#		b.i1 <- rep(1, K + 1) 
+#		for (j in 1:J) {
+#			b.i1 <- b.i1 * detMats[,y.arr[i,1,j]+1,j,i,1]
+#		}
+#		delta[i,1] <- b.i1 * psi
+#	}
+#}
