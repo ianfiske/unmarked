@@ -6,7 +6,8 @@ Title: Models for Data from Unmarked Animals
 Author: Ian Fiske, Richard Chandler
 Maintainer: Ian Fiske <ianfiske@gmail.com>
 Depends: R (>= 2.9.0), methods, reshape
-Imports: stats, mapproj, utils
+Imports: graphics, stats, utils
+Suggests: mapproj
 Description: Unmarked estimates wildlife parameters for many popular
     sampling methods including occurrence, point count, and distance
     data using hierarchical models.
