@@ -425,18 +425,23 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
 	tab <- table(y, useNA = "ifany")
 	vals <- as.numeric(names(tab))
 	ymax <- max(y, na.rm=T)
+	ncolors <- ymax + ifelse(any(vals==0), 1, 0)
 	lt <- length(tab)
 	op <- par(no.readonly = TRUE)
-	laymat <- matrix(1, 5, 6)
-	laymat[, 6] <- c(0, 2, 2, 2, 0)
+	laymat <- matrix(1, 5, 8)
+	laymat[, 8] <- c(0, 2, 2, 2, 0)
 	layout(laymat)
-	color <- do.call(col, list(n=lt-1))#[vals[-1]]
-	color <- color[!is.na(color)]
+	if(is.function(col)) 
+		color <- do.call(col, list(n=ncolors))
+	else 
+		color <- col
+	color[which(vals==0)] <- zeroNAcolors[1]
 	z <- t(y)
 	z[!is.na(z)] <- 0
 	z[is.na(z)] <- 1
-	image(1:J, 1:M, z, col = zeroNAcolors, xaxt = "n", xlab=xlab, ylab = ylab)
-	image(1:J, 1:M, t(y), col=color, add=T, zlim = c(1, ymax), ...)
+	image(1:J, 1:M, z, col=zeroNAcolors, xaxt="n", xlab=xlab, ylab=ylab,
+		...)
+	image(1:J, 1:M, t(y), col=color, add=T)
 	box()
 	axis(1, at = 1:J, ...)
 	if(addgrid)
@@ -445,10 +450,9 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
 	zv <- vals
 	zv[!is.na(zv)] <- 0
 	zv[is.na(zv)] <- 1
-	image(1:2, 1:lt, matrix(zv, 1), col = zeroNAcolors, xaxt = "n", 
+	image(1:2, 1:lt, matrix(zv, 1), col=zeroNAcolors, xaxt = "n", 
 		yaxt = "n", main = "Legend")
-	image(1:2, 1:lt, matrix(vals, 1), col=color, add = T, zlim = c(1, ymax), 
-		...)
+	image(1:2, 1:lt, matrix(vals, 1), col=color, add=T)
 	box()
 	if (any(is.null(names(tab)))) 
 		laborder <- c(lt, 1:(lt - 1))
