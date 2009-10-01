@@ -5,7 +5,6 @@
 \alias{"[", unmarkedFit-method}
 \alias{backTransform, unmarkedFit-method}
 \alias{coef, unmarkedFit-method}
-\alias{confint, unmarkedFit-method}
 \alias{fitted, unmarkedFit-method}
 \alias{getData, unmarkedFit-method}
 \alias{getP, unmarkedFit-method}
@@ -21,7 +20,6 @@
 \alias{hessian}
 \alias{sampleSize}
 \alias{SE}
-
 
 \title{Class "unmarkedFit" }
 \description{ Contains fitted model information which can be manipulated or 
