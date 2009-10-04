@@ -2,9 +2,6 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{unmarkedFrame-class}
-\alias{[,unmarkedFrame,numeric,missing,missing-method}
-\alias{[,unmarkedFrame,numeric,numeric,missing-method}
-\alias{[,unmarkedFrame,missing,numeric,missing-method}
 \alias{coordinates,unmarkedFrame-method}
 \alias{getY,unmarkedFrame-method}
 \alias{numSites,unmarkedFrame-method}
