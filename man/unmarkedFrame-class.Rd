@@ -17,7 +17,11 @@
 \alias{siteCovs,unmarkedFrame-method}
 \alias{siteCovs<-,unmarkedFrame-method}
 \alias{summary,unmarkedFrame-method}
-
+\alias{unmarkedFrameOccu-class}
+\alias{unmarkedFrameMPois-class}
+\alias{unmarkedFramePCount-class}
+\alias{unmarkedFrameDS-class}
+\alias{unmarkedMultFrame-class}
 \title{Class "unmarkedFrame-class" }
 \description{Methods for manipulating, summarizing and viewing unmarkedFrames}
 \section{Objects from the Class}{

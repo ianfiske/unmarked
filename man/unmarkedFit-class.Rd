@@ -19,6 +19,10 @@
 \alias{hessian}
 \alias{sampleSize}
 \alias{SE}
+\alias{unmarkedFitOccu-class}
+\alias{unmarkedFitPCount-class}
+\alias{unmarkedFitDS-class}
+\alias{unmarkedFitMPois-class}
 
 \title{Class "unmarkedFit" }
 \description{ Contains fitted model information which can be manipulated or 
