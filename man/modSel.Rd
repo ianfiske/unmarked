@@ -1,10 +1,17 @@
-\name{modSel-unmarkedFitList}
-\title{Model selection results from an unmarkedFitList...}
+\name{modSel}
+\title{Model selection results from an unmarkedFitList}
 \description{Model selection results from an unmarkedFitList}
 \alias{modSel}
 \alias{modSel-methods}
-\arguments{\item{object}{an object of class "umDistsampFitList"}}
-\examples{data(linetran)
+\alias{unmarkedModSel-class}
+\arguments{
+	\item{object}{an object of class "unmarkedFitList" created by the function
+		\code{\link{fitList}}}
+	\item{nullmod}{optional object storing results of null model. Only used in
+		calculation of Nagelkerke's R-squared index}
+	}
+\examples{
+data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 
 lengths <- linetran$Length * 1000
 

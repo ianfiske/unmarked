@@ -1,5 +1,6 @@
 \name{fitList}
 \alias{fitList}
+\alias{unmarkedFitList-class}
 \title{constructor of unmarkedFitList objects...}
 \usage{fitList(fits)}
 \description{constructor of unmarkedFitList objects}
