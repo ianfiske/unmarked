@@ -27,6 +27,7 @@
 \alias{siteCovs}
 \alias{siteCovs<-}
 \alias{summary,unmarkedFrame-method}
+\alias{summary,unmarkedFrameDS-method}
 \alias{unmarkedFrameOccu-class}
 \alias{unmarkedFrameMPois-class}
 \alias{unmarkedFramePCount-class}

@@ -1,6 +1,7 @@
 \name{parboot}
 \alias{parboot}
 \alias{parboot-class}
+\alias{show,parboot-method}
 \title{Evaluate goodness-of-fit of a fitted model.}
 \description{Evaluate goodness-of-fit of a fitted model.}
 \arguments{

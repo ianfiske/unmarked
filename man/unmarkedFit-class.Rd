@@ -2,18 +2,16 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{unmarkedFit-class}
-\alias{backTransform, unmarkedFit-method}
-\alias{coef, unmarkedFit-method}
-\alias{fitted, unmarkedFit-method}
-\alias{getData, unmarkedFit-method}
-\alias{getP, unmarkedFit-method}
-\alias{hessian, unmarkedFit-method}
-\alias{parboot, unmarkedFit-method}
-\alias{plot, unmarkedFit-method}
-\alias{residuals, unmarkedFit-method}
-\alias{summary, unmarkedFit-method}
-\alias{update, unmarkedFit-method}
-\alias{vcov, unmarkedFit-method}
+\alias{show,unmarkedFit-method}
+\alias{summary,unmarkedFit-method}
+\alias{getData,unmarkedFit-method}
+\alias{hessian,unmarkedFit-method}
+\alias{parboot,unmarkedFit-method}
+\alias{plot,unmarkedFit-method}
+\alias{residuals,unmarkedFit-method}
+\alias{summary,unmarkedFit-method}
+\alias{update,unmarkedFit-method}
+\alias{vcov,unmarkedFit-method}
 \alias{getP}
 \alias{getData}
 \alias{hessian}
