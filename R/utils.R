@@ -367,8 +367,12 @@ function(df.in)
 			})
 	siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
 	if(nrow(siteCovs) == 0) siteCovs <- NULL
-	
-	yearlySiteCovs <- sapply(obsvars.df, function(x) {
+  
+  ## only check non-sitecovs
+  obsvars.df2 <- as.data.frame(obsvars.df[, !(names(obsvars.df) %in% names(siteCovs))])
+  names(obsvars.df2) <- names(obsvars.df)[!(names(obsvars.df) %in% names(siteCovs))]
+  
+	yearlySiteCovs <- sapply(obsvars.df2, function(x) {
 				obsmat <- matrix(x, M*nY, obsNum/nY, byrow = TRUE)
 				l.u <- apply(obsmat, 1, function(y) {
 							row.u <- unique(y)
@@ -683,9 +687,20 @@ getDesign3 <- function(formula, umf, na.rm = TRUE) {
 	yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, function(x) {
 						x[,drop = TRUE]
 					}))
-	X.mf <- model.frame(stateformula, yearlySiteCovs, na.action = NULL)
+	## add siteCovs in so they can be used as well
+  if(!is.null(umf@siteCovs)) {
+    sC <- umf@siteCovs[rep(1:M, each = nY),,drop=FALSE]
+    yearlySiteCovs <- cbind(yearlySiteCovs, sC)
+  }
+  X.mf <- model.frame(stateformula, yearlySiteCovs, na.action = NULL)
 	X <- model.matrix(stateformula, X.mf)
 	
+#  ## impute missing yearlySiteCovs across years as average
+#  X <- t(apply(X, 1, function(x) {
+#            out <- x
+#            out[is.na(x)] <- mean(x)
+#          }))
+  
 	## Compute detection design matrix
 	if(is.null(obsCovs(umf))) {
 		obsCovs <- data.frame(placeHolder = rep(1, M*R))
