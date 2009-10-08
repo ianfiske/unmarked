@@ -156,7 +156,7 @@ setMethod("backTransform", "unmarkedEstimate",
 				lc <- linearComb(obj, 1)
 				return(backTransform(lc))
 			} else {
-				stop("Cannot directly back-transform an unmarkedEstimate with length > 1.")
+				stop("Cannot directly back-transform an unmarkedEstimate with length > 1.\nUse linearComb() and then backTransform() the resulting scalar linear combination.")
 			}
 		})
 
