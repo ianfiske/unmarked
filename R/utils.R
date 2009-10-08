@@ -384,7 +384,7 @@ function(df.in)
 					u
 				}
 			})
-	yearlySiteCovs <- as.data.frame(siteCovs[!sapply(yearlySiteCovs, is.null)])
+	yearlySiteCovs <- as.data.frame(yearlySiteCovs[!sapply(yearlySiteCovs, is.null)])
 	if(nrow(yearlySiteCovs) == 0) yearlySiteCovs <- NULL
 	
 	umf <- unmarkedMultFrame(y = y, siteCovs = siteCovs, obsCovs = obsvars.df, yearlySiteCovs = yearlySiteCovs,
