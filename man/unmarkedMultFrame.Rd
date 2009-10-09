@@ -1,5 +1,7 @@
 \name{unmarkedMultFrame}
 \alias{unmarkedMultFrame}
+\alias{yearlySiteCovs,unmarkedMultFrame-method}
+\alias{yearlySiteCovs<-,unmarkedMultFrame-method}
 \title{Create an unmarkedMultFrame.}
 \usage{unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs,
     plotArea)}

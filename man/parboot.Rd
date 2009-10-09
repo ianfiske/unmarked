@@ -2,6 +2,7 @@
 \alias{parboot}
 \alias{parboot-class}
 \alias{show,parboot-method}
+\alias{plot,parboot,missing-method}
 \title{Evaluate goodness-of-fit of a fitted model.}
 \description{Evaluate goodness-of-fit of a fitted model.}
 \arguments{

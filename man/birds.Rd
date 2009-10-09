@@ -26,6 +26,5 @@ These data come from ...
 %}
 \examples{
 data(birds)
-## maybe str(catbird) ; plot(catbird) ...
 }
 \keyword{datasets}

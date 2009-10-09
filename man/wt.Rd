@@ -5,9 +5,9 @@
 \alias{wt.obs}
 \alias{widewt}
 \docType{data}
-\title{ ~~ data name/kind ... ~~}
+\title{Willow tit (Poecile montanus) occurence data}
 \description{
-  ~~ A concise (1-5 lines) description of the dataset. ~~
+Data from 237 plots surveyed on 3 occasions.
 }
 \usage{data(wt)}
 \format{

@@ -2,10 +2,12 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{unmarkedFrame-class}
+\alias{barplot,unmarkedFrameDS-method}
 \alias{coordinates,unmarkedFrame-method}
 \alias{coordinates}
 \alias{coords}
 \alias{getY,unmarkedFrame-method}
+\alias{head,unmarkedFrame-method}
 \alias{numSites,unmarkedFrame-method}
 \alias{numY,unmarkedFrame-method}
 \alias{obsCovs,unmarkedFrame-method}
@@ -21,18 +23,16 @@
 \alias{plot,unmarkedFrame,missing-method}
 \alias{projection,unmarkedFrame-method}
 \alias{projection}
-\alias{show,unmarkedFrame-method}
 \alias{siteCovs,unmarkedFrame-method}
 \alias{siteCovs<-,unmarkedFrame-method}
 \alias{siteCovs}
 \alias{siteCovs<-}
-\alias{summary,unmarkedFrame-method}
-\alias{summary,unmarkedFrameDS-method}
 \alias{unmarkedFrameOccu-class}
 \alias{unmarkedFrameMPois-class}
 \alias{unmarkedFramePCount-class}
 \alias{unmarkedFrameDS-class}
 \alias{unmarkedMultFrame-class}
+
 \title{Class "unmarkedFrame-class" }
 \description{Methods for manipulating, summarizing and viewing unmarkedFrames}
 \section{Objects from the Class}{
