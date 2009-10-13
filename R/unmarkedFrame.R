@@ -663,14 +663,11 @@ setAs("unmarkedFrame", "data.frame", function(from) {
 
 
 
-setGeneric("powerAnalysis", function(formula, data, coefs, nsim, ...) 
+setGeneric("powerAnalysis", function(formula, data, coefs, ...) 
 	standardGeneric("powerAnalysis"))
 
-
-
-setMethod("powerAnalysis", 
-	c("formula", "unmarkedFramePCount", "numeric", "numeric"),
-	function(formula, data, coefs, nsim, sig.level=0.05, mixture="P", 
+setMethod("powerAnalysis", c("formula", "unmarkedFramePCount", "numeric"),
+	function(formula, data, coefs, nsim=1, sig.level=0.05, mixture="P", 
 		report=FALSE, ...) 
 	{
 	    mixture <- match.arg(mixture)

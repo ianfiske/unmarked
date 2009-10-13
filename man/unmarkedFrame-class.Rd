@@ -6,9 +6,13 @@
 \alias{coordinates,unmarkedFrame-method}
 \alias{coordinates}
 \alias{coords}
+\alias{getY}
 \alias{getY,unmarkedFrame-method}
 \alias{head,unmarkedFrame-method}
+\alias{mapInfo}
+\alias{numSites}
 \alias{numSites,unmarkedFrame-method}
+\alias{numY}
 \alias{numY,unmarkedFrame-method}
 \alias{obsCovs,unmarkedFrame-method}
 \alias{obsCovs<-,unmarkedFrame-method}
@@ -21,6 +25,8 @@
 \alias{obsToY}
 \alias{obsToY<-}
 \alias{plot,unmarkedFrame,missing-method}
+\alias{powerAnalysis}
+\alias{powerAnalysis,formula,unmarkedFramePCount,numeric-method}
 \alias{projection,unmarkedFrame-method}
 \alias{projection}
 \alias{siteCovs,unmarkedFrame-method}

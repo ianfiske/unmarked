@@ -1,9 +1,8 @@
 \name{unmarkedEstimate-class}
 \Rdversion{1.1}
 \docType{class}
+\alias{unmarkedEstimate}
 \alias{unmarkedEstimate-class}
-\alias{show,unmarkedEstimate-method}
-
 \title{Class "unmarkedEstimate"}
 \description{Contains parameter estimates, covariance matrix, and metadata}
 \section{Objects from the Class}{

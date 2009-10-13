@@ -1,5 +1,6 @@
 \name{linearComb-methods}
 \docType{methods}
+\alias{linearComb}
 \alias{linearComb-methods}
 \alias{linearComb,unmarkedEstimate,matrixOrVector-method}
 \alias{linearComb,unmarkedFit,matrixOrVector-method}
