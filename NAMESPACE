@@ -6,7 +6,7 @@ importFrom(utils, head)
 importFrom(reshape, melt, cast, recast)
 
 # Fitting functions
-export(occu, occuRN, pcount, multinomPois, distsamp, mnMix, colext, umHMM, Mh)
+export(occu, occuRN, pcount, multinomPois, distsamp, mnMix, colext, umHMM)
 export(removalPiFun, doublePiFun)
 
 # S4 classes ... do all these need to be exported?

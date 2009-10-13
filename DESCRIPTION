@@ -1,5 +1,5 @@
 Package: unmarked
-Version: 0.6-6
+Version: 0.6-7
 Date: 2009-10-06
 Type: Package
 Title: Models for Data from Unmarked Animals
@@ -16,5 +16,5 @@ LazyLoad: yes
 LazyData: yes
 Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'unmarkedFit.R' 'utils.R' 'markovMN.R' 'colext.R' 'distsamp.R'
-    'Mh.R' 'mnMix.R' 'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
+    'mnMix.R' 'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
     'unmarkedFitList.R' 'unmarkedLinComb.R'
