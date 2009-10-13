@@ -664,8 +664,8 @@ setMethod("simulate", "unmarkedFitPCount",
 	J <- ncol(y)
 	allParms <- coef(object, altNames = FALSE)
 	lamParms <- coef(object, type = "state")
-	lam <- as.numeric(exp(X %*% lamParms))
-	lamvec <- rep(lam, each = J) * a
+	lam <- as.numeric(exp(X %*% lamParms)) * a
+	lamvec <- rep(lam, each = J)
 	pvec <- c(t(getP(object, na.rm = na.rm)))
 	mix <- object@mixture
 	simList <- list()
