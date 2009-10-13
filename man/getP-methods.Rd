@@ -1,5 +1,6 @@
 \name{getP-methods}
 \docType{methods}
+\alias{getP}
 \alias{getP-methods}
 \alias{getP,unmarkedFit-method}
 \alias{getP,unmarkedFitDS-method}
@@ -11,11 +12,8 @@ matrix of detection probabilities.
 }
 \section{Methods}{
 \describe{
-
 \item{object = "unmarkedFit"}{A fitted model object}
-
 \item{object = "unmarkedFitDS"}{A fitted model object}
-
 \item{object = "unmarkedFitMPois"}{A fitted model object}
 }}
 \keyword{methods}

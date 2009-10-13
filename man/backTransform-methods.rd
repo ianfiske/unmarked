@@ -10,9 +10,9 @@
 \description{Methods for function \code{backTransform} in Package `unmarked'. 
 	This converts from link-scale to original-scale}
 \usage{
-	\S4method{backTransform}{unmarkedFit}(obj, whichEstimate)
-	\S4method{backTransform}{unmarkedEstimate}(obj)
-	}
+\S4method{backTransform}{unmarkedFit}(obj, whichEstimate)
+\S4method{backTransform}{unmarkedEstimate}(obj)
+}
 \arguments{
 	\item{obj}{Object of appropriate S4 class}
 	\item{whichEstimate}{Either 'state' or 'det'}

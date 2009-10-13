@@ -15,7 +15,6 @@
 \alias{SE,unmarkedFit-method}
 \alias{update,unmarkedFit-method}
 \alias{vcov,unmarkedFit-method}
-\alias{getP}
 \alias{getData}
 \alias{hessian}
 \alias{sampleSize,unmarkedFit-method}

@@ -8,6 +8,16 @@
 \description{
 Extract coefficients
 }
+\usage{
+\S4method{coef}{unmarkedFit}(object, type, altNames = TRUE)
+\S4method{coef}{unmarkedEstimate}(object)
+\S4method{coef}{linCombOrBackTrans}(object)
+}
+\arguments{
+\item{object}{Object of appropriate S4 class}
+\item{type}{Either 'state' or 'det'}
+\item{altNames}{Return specific names for parameter estimates?}
+}
 \section{Methods}{
 \describe{
 
@@ -17,5 +27,6 @@ Extract coefficients
 
 \item{object = "unmarkedFit"}{Fitted model}
 }}
+\value{A named numeric vector of parameter estimates.}
 \keyword{methods}
 
