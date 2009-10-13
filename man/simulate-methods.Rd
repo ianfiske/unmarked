@@ -1,12 +1,12 @@
 \name{simulate-methods}
 \docType{methods}
 \alias{simulate-methods}
-\alias{simulate,unmarkedFitColExt-method}
-\alias{simulate,unmarkedFitDS-method}
-\alias{simulate,unmarkedFitMPois-method}
-\alias{simulate,unmarkedFitOccu-method}
-\alias{simulate,unmarkedFitOccuRN-method}
-\alias{simulate,unmarkedFitPCount-method}
+%%\alias{simulate,unmarkedFitColExt-method}
+%%\alias{simulate,unmarkedFitDS-method}
+%%\alias{simulate,unmarkedFitMPois-method}
+%%\alias{simulate,unmarkedFitOccu-method}
+%%\alias{simulate,unmarkedFitOccuRN-method}
+%%\alias{simulate,unmarkedFitPCount-method}
 \title{Methods for Function simulate in Package `unmarked'}
 \description{
 Simulate data from a fitted model.

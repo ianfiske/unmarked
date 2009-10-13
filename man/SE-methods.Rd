@@ -2,9 +2,9 @@
 \docType{methods}
 \alias{SE}
 \alias{SE-methods}
-\alias{SE,linCombOrBackTrans-method}
-\alias{SE,unmarkedEstimate-method}
-\alias{SE,unmarkedFit-method}
+%%\alias{SE,linCombOrBackTrans-method}
+%%\alias{SE,unmarkedEstimate-method}
+%%\alias{SE,unmarkedFit-method}
 \title{Methods for Function SE in Package `unmarked'}
 \description{Extract standard errors of parameter estimates from a fitted model.}
 \section{Methods}{

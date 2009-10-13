@@ -2,27 +2,27 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{unmarkedFit-class}
-\alias{getData,unmarkedFit-method}
-\alias{hessian,unmarkedFit-method}
+\alias{getData}
+%%\alias{getData,unmarkedFit-method}
+\alias{hessian}
+%%\alias{hessian,unmarkedFit-method}
 \alias{mle}
-\alias{mle,unmarkedFit-method}
-\alias{names,unmarkedFit-method}
+%%\alias{mle,unmarkedFit-method}
+%%\alias{names,unmarkedFit-method}
 \alias{nllFun}
-\alias{nllFun,unmarkedFit-method}
+%%\alias{nllFun,unmarkedFit-method}
 \alias{parboot,unmarkedFit-method}
 \alias{plot,unmarkedFit,missing-method}
-\alias{predict,unmarkedFit-method}
+%%\alias{predict,unmarkedFit-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{update,unmarkedFit-method}
-\alias{getData}
-\alias{hessian}
 \alias{sampleSize}
-\alias{sampleSize,unmarkedFit-method}
-\alias{unmarkedFitOccu-class}
-\alias{unmarkedFitPCount-class}
-\alias{unmarkedFitDS-class}
-\alias{unmarkedFitMPois-class}
+%%\alias{sampleSize,unmarkedFit-method}
+%%\alias{unmarkedFitOccu-class}
+%%\alias{unmarkedFitPCount-class}
+%%\alias{unmarkedFitDS-class}
+%%\alias{unmarkedFitMPois-class}
 
 \title{Class "unmarkedFit" }
 \description{ Contains fitted model information which can be manipulated or 

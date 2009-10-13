@@ -1,9 +1,9 @@
 \name{coef-methods}
 \docType{methods}
 \alias{coef-methods}
-\alias{coef,linCombOrBackTrans-method}
-\alias{coef,unmarkedEstimate-method}
-\alias{coef,unmarkedFit-method}
+%%\alias{coef,linCombOrBackTrans-method}
+%%\alias{coef,unmarkedEstimate-method}
+%%\alias{coef,unmarkedFit-method}
 \title{Methods for Function coef in Package `unmarked'}
 \description{
 Extract coefficients

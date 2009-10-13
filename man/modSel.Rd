@@ -3,8 +3,6 @@
 \description{Model selection results from an unmarkedFitList}
 \alias{modSel}
 \alias{modSel-methods}
-\alias{unmarkedModSel-class}
-\alias{show,unmarkedModSel-method}
 \arguments{
 	\item{object}{an object of class "unmarkedFitList" created by the function
 		\code{\link{fitList}}}
@@ -17,10 +15,10 @@ data(linetran)
 lengths <- linetran$Length * 1000
 
 ltUMF <- with(linetran, {
-unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
-siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
-tlength = lengths, survey = "line", unitsIn = "m")
-})
+	unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
+	siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
+	tlength = lengths, survey = "line", unitsIn = "m")
+	})
 
 (fm1 <- distsamp(~ 1 ~1, ltUMF))
 
@@ -33,4 +31,5 @@ fl
 
 (ms <- modSel(fl, nullmod=fm1))
 
-ms@Full}
+ms@Full
+}

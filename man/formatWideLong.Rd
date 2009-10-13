@@ -22,29 +22,13 @@ formatLong(dfin, species = NULL, type)
   \item{obsToY}{Optional matrix specifying relationship between covariate
   	column structure and response matrix structure.
 }
-  \item{type}{
-%%     ~~Describe \code{type} here~~
+  \item{type}{Type of unmarkedFrame to create?
 }
-  \item{species}{
-%%     ~~Describe \code{species} here~~
+  \item{species}{Character name of species response column
 }
-  \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
+  \item{\dots}{Further arguments}
 }
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\note{
-%%  ~~further notes~~
-}
+\value{A data.frame}
 
 \seealso{
 \code{\link{csvToUMF}}

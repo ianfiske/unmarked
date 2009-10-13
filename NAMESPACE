@@ -9,7 +9,7 @@ importFrom(reshape, melt, cast, recast)
 export(occu, occuRN, pcount, multinomPois, distsamp, mnMix, colext, umHMM, Mh)
 export(removalPiFun, doublePiFun)
 
-# S4 classes
+# S4 classes ... do all these need to be exported?
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS, unmarkedFitPCount,
 	unmarkedFitMPois, unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount, 
 	unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame, 
