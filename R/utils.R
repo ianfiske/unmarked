@@ -944,3 +944,21 @@ imputeMissing <- function(umf, whichCovs) {
 #	siteCovs <- model.frame()
 ##	return(list(y=y, X=X, V=V, dataLong=dataLong))
 #}
+
+
+
+
+lambda2psi <- function(lambda)
+{
+if(any(lambda < 0))
+	stop("lambda must be >= 0")
+as.numeric(1 - exp(-lambda))
+}
+
+#psi2lambda <- function(psi)
+#{
+#if(any(0 > psi | psi > 1))
+#	stop("psi must be in [0, 1]")
+#as.numeric(-log(1 - psi))
+#}
+

@@ -63,8 +63,9 @@ Back-transformation can be achieved via the \code{\link{predict}} or
 \references{Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
 
-\seealso{\code{\link{unmarkedFit-class}} \code{\link{fitList}} 
-	\code{\link{formatDistData}} \code{\link{parboot}} \code{\link{calcAreas}}
+\seealso{\code{\link{unmarkedFit-class}} \code{\link{fitList}}, 
+	\code{\link{formatDistData}}, \code{\link{parboot}}, \code{\link{calcAreas}},
+	\code{\link{sight2perpdist}}
 	}
 
 

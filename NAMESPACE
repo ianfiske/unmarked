@@ -31,5 +31,6 @@ export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame, unmarkedFrameOccu,
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
 
 # Misc
-export(imputeMissing, gxhn, gxexp, gxhaz, grhn, grexp, grhaz, calcAreas)
+export(imputeMissing, gxhn, gxexp, gxhaz, grhn, grexp, grhaz, calcAreas,
+	sight2perpdist, lambda2psi)
 useDynLib(unmarked)
