@@ -45,6 +45,14 @@ setMethod("show", "unmarkedEstimateList",
       }
     })
 
+setMethod("summary", "unmarkedEstimateList",
+    function(object) {
+      for(est in object@estimates) {
+        summary(est)
+        cat("\n")
+      }
+    })
+
 
 
 setGeneric("estimates",
@@ -101,6 +109,26 @@ setMethod("show",
     })
 
 
+
+setMethod("summary", signature(object = "unmarkedEstimate"), 
+	function(object) 
+{
+	ests <- object@estimates
+	SEs <- SE(object)
+    Z <- ests/SEs
+	p <- 2*pnorm(abs(Z), lower.tail = FALSE)
+	printRowNames <- 
+		!(length(ests) == 1 | identical(names(ests), "(Intercept)") | identical(names(ests), "1"))
+	invlink <- object@invlink
+	link <- switch(invlink, 
+		exp = "log",
+		logistic = "logit")
+	cat(object@name, " (", link, "-scale)", ":\n", sep="")
+	outDF <- data.frame(Estimate = ests, SE = SEs, z = Z, "P(>|z|)" = p,
+		check.names = FALSE)
+	print(outDF, row.names = printRowNames, digits = 3)
+})
+	
 
 
 # Compute linear combinations of estimates in unmarkedEstimate objects.

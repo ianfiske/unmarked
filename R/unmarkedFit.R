@@ -56,69 +56,33 @@ setClass("unmarkedFitColExt",
 				projected = "matrix"),
 		contains = "unmarkedFit")
 
-################################################################################################
+################################################################################
 
 
 
 setMethod("show", "unmarkedFit",
     function(object) {
       cat("\nCall:\n")
-#      cat(object@fitType,"(stateformula = ~ ",
-#          as.character(object@stateformula)[2],
-#          ", detformula = ~ ",
-#          as.character(object@detformula)[2],")\n\n", sep = "")
       print(object@call)
-
       cat("\n")
-
       show(object@estimates)
-
-      #      show(object@stateEstimates)
-#
-#      cat("\n")
-#
-#      show(object@detEstimates)
-
-#            stateEsts <- object@stateEstimates@estimates
-#            stateSE <- SE()
-#            stateZ <- stateEsts/stateSE
-#            stateP <- 2*pnorm(abs(stateZ), lower.tail = FALSE)
-#
-#
-#            detEsts <- object@detEstimates@estimates
-#            detSE <- standardError(object@detEstimates)
-#            detZ <- detEsts/detSE
-#            detP <- 2*pnorm(abs(detZ), lower.tail = FALSE)
-
-#            cat("\nState coefficients:\n")
-#            stateDF <- data.frame(Estimate = stateEsts,
-#                                  SE = stateSE,
-#                                  z = stateZ,
-#                                  "p-val" = stateP)
-#            show(round(stateDF,3))
-#
-#            cat("\nDetection coefficients:\n")
-#            detDF <- data.frame(Estimate = detEsts,
-#                                  SE = detSE,
-#                                  z = detZ,
-#                                  p.val = detP)
-#            show(round(detDF,3))
-
       cat("\nAIC:", object@AIC,"\n")
-      
       if(!identical(object@opt$convergence, 0L))
     		warning("Model did not converge. Try providing starting values or
     			increasing maxit control argment.")
-    			
     })
     
     
     
     
 setMethod("summary", "unmarkedFit", 
-	function(object) {
-		show(object)
-		cat("\nSample size:", sampleSize(object))
+	function(object) 
+{
+      	cat("\nCall:\n")
+		print(object@call)
+		cat("\n")
+        summary(object@estimates)      	
+		cat("Sample size:", sampleSize(object))
 		if(length(object@sitesRemoved) > 0)
 			cat("\nSites removed:", object@sitesRemoved)
 		cat("\noptim convergence code:", object@opt$convergence)
@@ -242,39 +206,39 @@ setMethod("SE", "unmarkedFit",
 
 
 setMethod("confint", "unmarkedFit",
-		function(object, parm, level = 0.95, type, method = c("normal", "profile")) {
-			method <- match.arg(method)
-			if(missing(type)) stop(paste("Must specify type as one of (", paste(names(object),collapse=", "),").",sep=""))
-			if(missing(parm)) parm <- 1:length(object[type]@estimates)
-			if(method == "normal") {
-				callGeneric(object[type],parm = parm, level = level)
-			} else {
-				nllFun <- nllFun(object)
-				ests <- mle(object)
-				nP <- length(parm)
-				ci <- matrix(NA, nP, 2)
-
-				## create table to match parm numbers with est/parm numbers
-				types <- names(object)
-				numbertable <- data.frame(type = character(0), num = numeric(0))
-				for(i in seq(length=length(types))) {
-					length.est <- length(object[i]@estimates)
-					numbertable <- rbind(numbertable, data.frame(type = rep(types[i], length.est), num = seq(length=length.est)))
-				}
-				parm.fullnums <- which(numbertable$type == type & numbertable$num %in% parm)
-				
-				for(i in seq(length=nP)) {
-					cat("Profiling parameter",i,"of",nP,"...")
-					se <- SE(object[type])
-					whichPar <- parm.fullnums[i]
-					ci[i,] <- profileCI(nllFun, whichPar=whichPar, MLE=ests, interval=ests[whichPar] + 10*se[i]*c(-1,1), level=level)
-					cat(" done.\n")
-				}
-				rownames(ci) <- names(coef(object[type]))[parm]
-				colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
-				return(ci)
+	function(object, parm, level = 0.95, type, method = c("normal", "profile")) {
+		method <- match.arg(method)
+		if(missing(type)) stop(paste("Must specify type as one of (", paste(names(object),collapse=", "),").",sep=""))
+		if(missing(parm)) parm <- 1:length(object[type]@estimates)
+		if(method == "normal") {
+			callGeneric(object[type],parm = parm, level = level)
+		} else {
+			nllFun <- nllFun(object)
+			ests <- mle(object)
+			nP <- length(parm)
+			ci <- matrix(NA, nP, 2)
+    
+			## create table to match parm numbers with est/parm numbers
+			types <- names(object)
+			numbertable <- data.frame(type = character(0), num = numeric(0))
+			for(i in seq(length=length(types))) {
+				length.est <- length(object[i]@estimates)
+				numbertable <- rbind(numbertable, data.frame(type = rep(types[i], length.est), num = seq(length=length.est)))
 			}
-		})
+			parm.fullnums <- which(numbertable$type == type & numbertable$num %in% parm)
+				
+			for(i in seq(length=nP)) {
+				cat("Profiling parameter",i,"of",nP,"...")
+				se <- SE(object[type])
+				whichPar <- parm.fullnums[i]
+				ci[i,] <- profileCI(nllFun, whichPar=whichPar, MLE=ests, interval=ests[whichPar] + 10*se[i]*c(-1,1), level=level)
+				cat(" done.\n")
+				}
+			rownames(ci) <- names(coef(object[type]))[parm]
+			colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
+			return(ci)
+			}
+	})
 
 
 

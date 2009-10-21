@@ -77,8 +77,10 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
 		covMat <- matrix(NA, nP, nP)
 	}
 	fmAIC <- 2 * fm$value + 2 * nP
-
-	stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
+	
+	stateName <- ifelse(all(data@plotArea == 1), "Abundance", "Density")
+	
+	stateEstimates <- unmarkedEstimate(name = stateName, short.name = "lam",
 		estimates = ests[1:nAP], covMat = as.matrix(covMat[1:nAP,1:nAP]), 
 		invlink = "exp", invlinkGrad = "exp")
 

@@ -111,7 +111,10 @@ distsamp <- function(formula, data,
 		covMatDP <- covMat[(nAP+1):nP, (nAP+1):nP, drop=F]
 	names(estsDP) <- altdetParms 
 	fmAIC <- 2 * fm$value + 2 * nP
-	stateEstimates <- unmarkedEstimate(name = "Abundance", 
+	stateName <- switch(output, 
+		abund = "Abundance",
+		density = "Density")
+	stateEstimates <- unmarkedEstimate(name = stateName, 
 		short.name = "lam", estimates = estsAP, covMat = covMatAP, 
 		invlink = "exp", invlinkGrad = "exp")
 	if (keyfun != "uniform") {

@@ -79,7 +79,9 @@ function(formula, data, starts, method = "BFGS", control = list(), se = TRUE)
 	fmAIC <- 2 * fm$value + 2 * nP
 	names(ests) <- c(lamParms, detParms)
 
-	stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
+	stateName <- ifelse(all(data@plotArea == 1), "Abundance", "Density")
+	
+	stateEstimates <- unmarkedEstimate(name = stateName, short.name = "lambda",
 		estimates = ests[1:nAP],
 		covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
 		invlinkGrad = "exp")
