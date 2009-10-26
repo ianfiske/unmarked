@@ -48,8 +48,7 @@ distsamp <- function(formula, data,
 		exp = { 
 			altdetParms <- paste("rate", colnames(V), sep="")
 			if(is.null(starts)) {
-				starts <- c(rep(0, nAP), log(median(dist.breaks)), 
-					rep(0, nDP-1))
+				starts <- c(rep(0, nAP), 0, rep(0, nDP-1))
 				names(starts) <- c(lamParms, detParms)
 			} else {
 				if(is.null(names(starts)))
@@ -61,17 +60,16 @@ distsamp <- function(formula, data,
 			}
 		},
 		hazard = {	
-			detParms <- c(detParms, "scale")
 			nDP <- length(detParms)
-			nP <- nAP + nDP
-			altdetParms <- c(paste("shape", colnames(V), sep=""), "scale")
+			nP <- nAP + nDP + 1
+			altdetParms <- paste("shape", colnames(V), sep="")
 			if(is.null(starts)) {
 				starts <- c(rep(0, nAP), log(median(dist.breaks)), 
-					rep(0, nDP-2), 1)
-				names(starts) <- c(lamParms, detParms)
+					rep(0, nDP-1), 1)
+				names(starts) <- c(lamParms, detParms, "scale")
 			} else {
 				if(is.null(names(starts)))
-					names(starts) <- c(lamParms, detParms)
+					names(starts) <- c(lamParms, detParms, "scale")
 			}
 			nll <- function(params) {
 				ll.hazard(params, Y=y, X=X, V=V, J=J, d=dist.breaks, 
@@ -96,18 +94,25 @@ distsamp <- function(formula, data,
 	fm <- optim(starts, nll, method=method, hessian=se, control=control)
 	opt <- fm
 	ests <- fm$par
-	estsAP <- ests[1:nAP]
-	estsDP <- ests[(nAP+1):nP]
 	if(se) {
 		tryCatch(covMat <- solve(fm$hessian),
 				error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
 	} else {
 		covMat <- matrix(NA, nP, nP)
 	}
+	estsAP <- ests[1:nAP]
+	if(keyfun == "hazard") {
+		estsDP <- ests[(nAP+1):(nP-1)]
+		estsScale <- ests[nP]
+		}
+	else 
+		estsDP <- ests[(nAP+1):nP]
 	covMatAP <- covMat[1:nAP, 1:nAP, drop=F]
-	if(keyfun=="uniform")
-		covMatDP <- matrix(numeric(0), 1)
-	else
+	if(keyfun=="hazard") {
+		covMatDP <- covMat[(nAP+1):(nP-1), (nAP+1):(nP-1), drop=F]
+		covMatScale <- covMat[nP, nP, drop=F]
+		}
+	else if(keyfun!="uniform")
 		covMatDP <- covMat[(nAP+1):nP, (nAP+1):nP, drop=F]
 	names(estsDP) <- altdetParms 
 	fmAIC <- 2 * fm$value + 2 * nP
@@ -121,8 +126,16 @@ distsamp <- function(formula, data,
 		detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p", 
 			estimates = estsDP, covMat = covMatDP, invlink = "exp", 
 			invlinkGrad = "exp")
-		estimateList <- unmarkedEstimateList(list(state=stateEstimates, 
-			det=detEstimates))
+		if(keyfun != "hazard")
+			estimateList <- unmarkedEstimateList(list(state=stateEstimates, 
+				det=detEstimates))
+		else {
+			scaleEstimates <- unmarkedEstimate(name = "Detection(scale)", 
+				short.name = "p", estimates = estsScale, 
+				covMat = covMatScale, invlink = "exp", invlinkGrad = "exp")
+			estimateList <- unmarkedEstimateList(list(state=stateEstimates, 
+				det=detEstimates, scale=scaleEstimates))
+			}			
 	} else {
 		estimateList <- unmarkedEstimateList(list(state=stateEstimates))
 	}
