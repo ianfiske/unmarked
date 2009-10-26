@@ -30,6 +30,10 @@ obsCovs(umf) <- scale(obsCovs(umf))
 ## constant transition rates
 (fm <- colext(~ JulianDate + I(JulianDate^2) ~ 1, umf, control = list(trace=1, maxit=1e4)))
 
+\dontrun{
 ## try yearly transition rates
 yearlySiteCovs(umf) <- data.frame(year = factor(rep(1:7, numSites(umf))))
-(fm.yearly <- colext(~ JulianDate + I(JulianDate^2) ~ year, umf, control = list(trace=1, maxit=1e4)))}
+(fm.yearly <- colext(~ JulianDate + I(JulianDate^2) ~ year, umf, 
+	control = list(trace=1, maxit=1e4)))
+}
+}
