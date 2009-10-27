@@ -579,9 +579,9 @@ setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE)
 			p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
 			}, 
 		hazard = {
-			shape <- exp(V %*% ppars[-length(ppars)])
-			scale <- exp(ppars[length(ppars)])
-			p <- sapply(sigma, function(x) cp.haz(d = d, shape = shape, 
+			shape <- exp(V %*% ppars)
+			scale <- exp(coef(object, type="scale"))
+			p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
 				scale = scale, survey = survey))
 			})
     p <- matrix(p, M, J, byrow = TRUE)
