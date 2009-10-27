@@ -31,7 +31,6 @@ which covariates are restricted to have the same effect on a given matrix parame
 \item{detconstraint}{matrix to describe constraints on detection parameters}
 \item{phiconstraint}{vector to describe phi constraints}
 \item{psiconstraint}{vector to describe psi constraints}
-#\item{K}{integer maximum level of y}
 \item{phiMat}{character vector describing which phi specification to use (see Details)}
 \item{inits}{optionally, initial values for parameters in the optimization}
 \item{B}{number of bootstrap interations (0 indicates none)}

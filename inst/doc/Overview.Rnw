@@ -116,15 +116,14 @@ confint(fm.pcru, type='det', method = "profile")
 @
 
 
-Parametric
-bootstrapping can be used to check the adequacy of model fit.
+Parametric bootstrapping can be used to check the adequacy of model fit.
 
 <<fig=TRUE>>=
-	pcru.pb <- parboot(fm.pcru)
+	pcru.pb <- parboot(fm.pcru, nsim=50, report=5)
 	plot(pcru.pb)
 @
 
-This example show a clear lack of fit.
+This example suggests an adequate fit.
 
 \bibliography{unmarked}
 

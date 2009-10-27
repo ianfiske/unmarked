@@ -168,7 +168,8 @@ setMethod("predict", "unmarkedFit",
 setMethod("coef", "unmarkedFit",
 		function(object, type, altNames = TRUE) {
 			if(missing(type)) {
-				co <- lapply(object@estimates@estimates, function(x) coef(x, altNames=altNames))
+				co <- lapply(object@estimates@estimates, 
+					function(x) coef(x, altNames=altNames))
 				names(co) <- NULL
 				co <- unlist(co)
 			} else {
@@ -223,15 +224,18 @@ setMethod("confint", "unmarkedFit",
 			numbertable <- data.frame(type = character(0), num = numeric(0))
 			for(i in seq(length=length(types))) {
 				length.est <- length(object[i]@estimates)
-				numbertable <- rbind(numbertable, data.frame(type = rep(types[i], length.est), num = seq(length=length.est)))
+				numbertable <- rbind(numbertable, data.frame(type = 
+					rep(types[i], length.est), num = seq(length=length.est)))
 			}
-			parm.fullnums <- which(numbertable$type == type & numbertable$num %in% parm)
+			parm.fullnums <- which(numbertable$type == type & 
+				numbertable$num %in% parm)
 				
 			for(i in seq(length=nP)) {
 				cat("Profiling parameter",i,"of",nP,"...")
 				se <- SE(object[type])
 				whichPar <- parm.fullnums[i]
-				ci[i,] <- profileCI(nllFun, whichPar=whichPar, MLE=ests, interval=ests[whichPar] + 10*se[i]*c(-1,1), level=level)
+				ci[i,] <- profileCI(nllFun, whichPar=whichPar, MLE=ests, 
+					interval=ests[whichPar] + 10*se[i]*c(-1,1), level=level)
 				cat(" done.\n")
 				}
 			rownames(ci) <- names(coef(object[type]))[parm]
@@ -247,7 +251,8 @@ setMethod("fitted", "unmarkedFit",
 			data <- object@data
 			des <- getDesign2(object@formula, data, na.rm = na.rm)
 			X <- des$X; V <- des$V; a <- des$plotArea
-			state <- do.call(object['state']@invlink, list(X %*% coef(object, 'state')))
+			state <- do.call(object['state']@invlink, 
+				list(X %*% coef(object, 'state')))
 			state <- as.numeric(state) * a  ## E(X) for most models
 			p <- getP(object, na.rm = na.rm) # P(detection | presence)
 			fitted <- state * p  # true for models with E[Y] = p * E[X]
@@ -309,6 +314,7 @@ setMethod("fitted", "unmarkedFitOccuRN",
 			des <- getDesign2(object@formula, data, na.rm = na.rm)
 			X <- des$X; V <- des$V; a <- des$plotArea
 			y <- des$y	# getY(data) ... to be consistent w/NA handling?
+			y <- truncateToBinary(y)
 			M <- nrow(X)
 			J <- ncol(y)
 			lam <- exp(X %*% coef(object, 'state')) * a
@@ -333,9 +339,9 @@ setMethod("fitted", "unmarkedFitColExt",
 			detParms <- coef(object, 'det')
 			colParms <- coef(object, 'col')
 			extParms <- coef(object, 'ext')
-			designMats <- unmarked:::getDesign3(formula = object@formula, object@data)
+			designMats <- unmarked:::getDesign3(formula = object@formula, 
+				object@data)
 			V.itj <- designMats$V; X.it <- designMats$X
-			
 			
 			detP <- plogis(V.itj %*% detParms)
 			colP <- plogis(X.it  %*% colParms)
@@ -349,7 +355,8 @@ setMethod("fitted", "unmarkedFitColExt",
 			phis <- array(NA,c(2,2,nY-1,M)) #array of phis for each
 			for(i in 1:M) {
 				for(t in 1:(nY-1)) {
-					phis[,,t,i] <- matrix(c(1-colP[i,t], colP[i,t], extP[i,t], 1-extP[i,t])) 
+					phis[,,t,i] <- matrix(c(1-colP[i,t], colP[i,t], 
+						extP[i,t], 1-extP[i,t])) 
 				}
 			}
 			
@@ -391,9 +398,12 @@ setMethod("profile", "unmarkedFit",
 			numbertable <- data.frame(type = character(0), num = numeric(0))
 			for(i in seq(length=length(types))) {
 				length.est <- length(fitted[i]@estimates)
-				numbertable <- rbind(numbertable, data.frame(type = rep(types[i], length.est), num = seq(length=length.est)))
+				numbertable <- rbind(numbertable, 
+				data.frame(type = rep(types[i], length.est), 
+				num = seq(length=length.est)))
 			}
-			parm.fullnums <- which(numbertable$type == type & numbertable$num == parm)
+			parm.fullnums <- which(numbertable$type == type & 
+				numbertable$num == parm)
 			
 			f <- function(value) {
 				fixedNLL <- genFixedNLL(nll, parm.fullnums, value)
@@ -446,7 +456,6 @@ setMethod("update", "unmarkedFit",
 
 
 setGeneric("sampleSize", function(object) standardGeneric("sampleSize"))
-
 setMethod("sampleSize", "unmarkedFit",
 		function(object) {
 			data <- getData(object)
@@ -456,7 +465,6 @@ setMethod("sampleSize", "unmarkedFit",
 		})
 	
 setGeneric("getData", function(object) standardGeneric("getData"))	
-
 setMethod("getData", "unmarkedFit",
 		function(object) {
 			object@data
@@ -464,15 +472,13 @@ setMethod("getData", "unmarkedFit",
 
 
 setGeneric("nllFun", function(object) standardGeneric("nllFun"))
-
 setMethod("nllFun", "unmarkedFit", function(object) object@nllFun)
 
 setGeneric("mle", function(object) standardGeneric("mle"))
-
 setMethod("mle", "unmarkedFit", function(object) object@opt$par)
 
-setClass("profile",
-		representation(prof = "matrix"))
+setClass("profile", representation(prof = "matrix"))
+
 
 setMethod("plot", c("profile", "missing"),
 		function(x) {
@@ -487,6 +493,26 @@ setMethod("residuals", "unmarkedFit", function(object, ...)
 		r <- y - e
 		return(r)
 	})
+	
+setMethod("residuals", "unmarkedFitOccu", function(object, ...)
+	{
+		y <- getY(object@data)
+		y <- truncateToBinary(y)
+		e <- fitted(object, na.rm = FALSE)	 
+		r <- y - e
+		return(r)
+	})
+	
+setMethod("residuals", "unmarkedFitOccuRN", function(object, ...)
+	{
+		y <- getY(object@data)
+		y <- truncateToBinary(y)
+		e <- fitted(object, na.rm = FALSE)	 
+		r <- y - e
+		return(r)
+	})
+
+
 
 
 setMethod("plot", c(x = "unmarkedFit", y = "missing"), 
@@ -818,11 +844,13 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 	umf <- object@data
 	designMats <- unmarked:::getDesign2(formula, umf, na.rm = FALSE)
 	y <- designMats$y
+	if(class(object) %in% c("unmarkedFitOccu", "unmarkedFitOccuRN"))
+		y <- truncateToBinary(y)
 	yvec0 <- c(t(y))
 	ests <- as.numeric(coef(object, altNames = TRUE))
 	expected0 <- as.vector(t(fitted(object, na.rm = FALSE))) 
 	rmse0 <- sqrt(sum((sqrt(yvec0) - sqrt(expected0))^2, na.rm = TRUE))
-	cat("t.star =", rmse0, "\n")      
+	cat("t0 =", rmse0, "\n")      
 	rmse <- numeric(nsim)
 	fits <- list()
 	simdata <- umf
@@ -832,7 +860,7 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 		is.na(y.sim) <- is.na(y)
 		yvec <- c(t(y.sim))
 		simdata@y <- y.sim
-		fits[[i]] <- update(object, data = simdata, starts = ests, se = FALSE, ...)
+		fits[[i]] <- update(object, data = simdata, starts = ests, se = F, ...)
 		expected <- as.vector(t(fitted(fits[[i]], na.rm = FALSE)))
 		rmse[i] <- sqrt(sum((sqrt(yvec) - sqrt(expected))^2, na.rm = TRUE))
 		if(nsim > report && i %in% seq(report, nsim, by=report))
@@ -863,6 +891,7 @@ setMethod("show", "parboot", function(object)
 			cat("\nt quantiles:\n")
 			print(quantile(t.star, probs=c(0,2.5,25,50,75,97.5,100)/100))        
 		})
+
 
 ## nonparboot return entire list of fits... they will be processed by vcov, confint, etc.
 setGeneric("nonparboot", function(object, B = 50, ...) {standardGeneric("nonparboot")})
@@ -895,10 +924,11 @@ setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
 			nsim <- length(t.star)
 			p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
 			hist(t.star, xlim=c(min(floor(t.t0)), max(ceiling(t.t0))), 
-				main=paste("P =", round(p.val, 3), "; nsim =", format(nsim)))
+				main=paste("P =", round(p.val, 3), "; nsim =", format(nsim)), 
+				xlab="t*")
 			rug(t.star)
 			abline(v=t0, lty=2)
-			qqnorm(t.star)
+			qqnorm(t.star, ylab="t*")
 			qqline(t.star)
 			title(outer=T, ...)
 			par(op)
