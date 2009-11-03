@@ -12,15 +12,16 @@
 Methods for bracket extraction \code{[} in Package `unmarked'
 }
 \usage{
-\S4method{[}{unmarkedEstimateList,ANY,ANY,ANY}(object, i)
-\S4method{[}{unmarkedFit,ANY,ANY,ANY}(object, i)
-\S4method{[}{unmarkedFrame,numeric,numeric,missing}(object, i, j)
-\S4method{[}{unmarkedMultFrame,missing,numeric,missing}(object, j)
+\S4method{[}{unmarkedEstimateList,ANY,ANY,ANY}(x, i, j, drop)
+\S4method{[}{unmarkedFit,ANY,ANY,ANY}(x, i, j, drop)
+\S4method{[}{unmarkedFrame,numeric,numeric,missing}(x, i, j)
+\S4method{[}{unmarkedMultFrame,missing,numeric,missing}(x, i, j)
 }
 \arguments{
-	\item{object}{Object of appropriate S4 class}
+	\item{x}{Object of appropriate S4 class}
 	\item{i}{Row numbers}
 	\item{j}{Observation numbers (eg occasions, distance classes, etc...)}
+	\item{drop}{Not currently used}
 	}
 \section{Methods}{
 \describe{

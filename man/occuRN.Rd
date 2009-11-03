@@ -1,7 +1,7 @@
 \name{occuRN}
 \alias{occuRN}
 \title{Fit the Occupancy model of Royle and Nichols...}
-\usage{occuRN(formula, data, K=25, starts, method=BFGS, control=list(),
+\usage{occuRN(formula, data, K=25, starts, method="BFGS", control=list(),
     se=TRUE)}
 \description{Fit the Occupancy model of Royle and Nichols}
 \details{See \link{unmarked} for detailed descriptions of passing data \code{y},

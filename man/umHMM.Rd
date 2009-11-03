@@ -3,7 +3,7 @@
 \title{Fit the general multistate multiseason occupancy model.}
 \usage{umHMM(formula=~1, umf, detconstraint, phiconstraint, psiconstraint,
     phiMat, inits, B=0, max.bad=3, min.good=1, fit.stats=TRUE,
-    method=BFGS, control=list())}
+    method="BFGS", control=list())}
 \description{Estimate parameters of the general multiseason multistate occpancy model.}
 \details{Site level covariates are currently not implemented for markovMN and so stateformula is ignored.
 See \link{unmarked} for a discussion of detformula.  See \link{unmarkedFrame} for a description of how to create

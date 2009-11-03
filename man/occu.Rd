@@ -1,7 +1,7 @@
 \name{occu}
 \alias{occu}
 \title{Fit the MacKenzie Occupancy Model}
-\usage{occu(formula, data, knownOcc=numeric(0), starts, method=BFGS,
+\usage{occu(formula, data, knownOcc=numeric(0), starts, method="BFGS",
     control=list(), se=TRUE)}
 \description{This function estimates the standard occupancy model of MacKenzie et al (2002).}
 \details{See \link{unmarkedFrame} for a description of how to supply data to the \code{umf}
