@@ -1,7 +1,7 @@
 \name{colext}
 \alias{colext}
 \title{Fit the colonization-extinction model.}
-\usage{colext(formula=~1 ~ 1, data, starts, B=0, method=BFGS, control=list(),
+\usage{colext(formula=~1 ~ 1, data, starts, B=0, method="BFGS", control=list(),
     se=TRUE)}
 \description{Estimate parameters of the colonization-extinction model, including covariate-dependent rates and detection process.}
 \details{This function fits the colonization-extinction model of MacKenzie et al (2003).  The colonization and extinction rates

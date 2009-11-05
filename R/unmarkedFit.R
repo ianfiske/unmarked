@@ -48,7 +48,11 @@ setClass("unmarkedFitMPois",
 
 
 setClass("unmarkedFitOccuRN", 
-		contains = "unmarkedFit")			
+		contains = "unmarkedFit")
+		
+setClass("unmarkedFitMNmix",
+		representation(constraint = "numeric"),
+		contains = "unmarkedFit")					
 
 
 setClass("unmarkedFitColExt",
@@ -277,34 +281,34 @@ setMethod("fitted", "unmarkedFitOccu",
 
 
 setMethod("fitted", "unmarkedFitPCount",
-		function(object, K, na.rm = FALSE) {
-			data <- object@data
-			des <- getDesign2(object@formula, data, na.rm = na.rm)
-			X <- des$X; V <- des$V; a <- des$plotArea
-			y <- des$y	# getY(data) ... to be consistent w/NA handling?
-			M <- nrow(X)
-			J <- ncol(y)
-			state <- exp(X %*% coef(object, 'state')) * a
-			p <- getP(object, na.rm = na.rm)
-			mix <- object@mixture
-			switch(mix,
-					P = {
-						fitted <- as.numeric(state) * p 
-					},
-					NB = {
-						if(missing(K)) K <- max(y, na.rm = TRUE) + 20 
-						k <- 0:K
-						k.ijk <- rep(k, M*J)
-						state.ijk <- state[rep(1:M, each = J*(K+1))]
-						alpha <- exp(coef(object['alpha']))
-						prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
-						all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk, prob.ijk)
-						prod.ijk <- rowProds(all)
-						fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
-						fitted <- matrix(fitted, M, J, byrow = TRUE)
-					})
-			fitted
-		})
+	function(object, K, na.rm = FALSE) {
+		data <- object@data
+		des <- getDesign2(object@formula, data, na.rm = na.rm)
+		X <- des$X; V <- des$V; a <- des$plotArea
+		y <- des$y	# getY(data) ... to be consistent w/NA handling?
+		M <- nrow(X)
+		J <- ncol(y)
+		state <- exp(X %*% coef(object, 'state')) * a
+		p <- getP(object, na.rm = na.rm)
+		mix <- object@mixture
+		switch(mix,
+			P = {
+				fitted <- as.numeric(state) * p 
+			},
+			NB = {
+				if(missing(K)) K <- max(y, na.rm = TRUE) + 20 
+				k <- 0:K
+				k.ijk <- rep(k, M*J)
+				state.ijk <- state[rep(1:M, each = J*(K+1))]
+				alpha <- exp(coef(object['alpha']))
+				prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
+				all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk, prob.ijk)
+				prod.ijk <- rowProds(all)
+				fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
+				fitted <- matrix(fitted, M, J, byrow = TRUE)
+			})
+		fitted
+	})
 
 
 
@@ -327,6 +331,20 @@ setMethod("fitted", "unmarkedFitOccuRN",
 			
 			return(matrix(fitted, M, J, byrow = TRUE))
 		})
+		
+#setMethod("fitted", "unmarkedFitMNmix",
+#	function(object, na.rm = FALSE) {
+#		data <- getData(object)
+#		des <- getDesign2(object@formula, data, na.rm = na.rm)
+#		X <- des$X; V <- des$V; a <- des$plotArea				
+#		y <- des$y	# getY(data) ... to be consistent w/NA handling?
+#		M <- nrow(X)
+#		J <- ncol(y)
+#		psi <- plogis(coef(object, type = 'state'))
+#		psi <- c(1-psi, psi)
+#		p <- getP(object, na.rm = na.rm) 	# Not yet written
+#		## Needs to be finished
+#	})
 
 
 setMethod("fitted", "unmarkedFitColExt", 
@@ -525,7 +543,25 @@ setMethod("plot", c(x = "unmarkedFit", y = "missing"),
 })
 	
 	
- 		
+
+## Need to decide how to plot histogram of actual distances over dist.breaks xlim
+#setMethod("barplot", "unmarkedFitDS", 
+#	function(height, ...)
+#{
+#	ymat <- getY(getData(height))
+#	y <- colSums(ymat) / sum(ymat)
+#	key <- height@keyfun
+#	dbreaks <- getData(height)@dist.breaks
+#	switch(key, 
+#		halfnorm = {
+#			sigma <- exp(coef(height, type="det"))
+#			if(length(sigma) > 1)
+#				stop("This method only works when there are no detection covars")
+#			plot(function(x) 2 * dnorm(x, mean=0, sd=sigma), min(dbreaks), 
+#				max(dbreaks))
+#			}
+#		)
+#})
 		
 
 

@@ -62,8 +62,9 @@ setClass("unmarkedFramePCount",
 
 
 setClass("unmarkedFrameMPois",
-		representation(samplingMethod = "character",
-				piFun = "character"),
+		representation(
+			samplingMethod = "character",
+			piFun = "character"),
 		contains = "unmarkedFrame")
 
 ################### CONSTRUCTORS ###############################################
@@ -175,6 +176,7 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 	else {
 		if(missing(obsToY)) 
 			stop("obsToY is required for multinomial-Poisson data with no specified type.")
+		type <- "userDefined"
 		}
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY, 
 		mapInfo = mapInfo, plotArea = plotArea)

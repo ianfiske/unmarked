@@ -152,8 +152,8 @@ mnMix <-
 
   stateEstimates <- unmarkedEstimate(name = "State", short.name = "N",
       estimates = ests[(nDP + 1) : nP],
-      covMat = as.matrix(covMat[(nDP + 1) : nP,(nDP + 1) : nP]), invlink = "baselinelogistic",
-      invlinkGrad = "baselinelogistic.grad")
+      covMat = as.matrix(covMat[(nDP + 1) : nP,(nDP + 1) : nP]), 
+		invlink = "logistic", invlinkGrad = "logistic.grad")
 
   pEstimates <- unmarkedEstimate(name = "Detection-p", short.name = "p",
       estimates = c(alphas,bs),
@@ -169,8 +169,10 @@ mnMix <-
 
   estimateList <- unmarkedEstimateList(list(state=stateEstimates,
           p=pEstimates, beta = betaEstimates))
+          
+  if(is.null(constraint)) constraint <- 1:K          
 
-  umfit <- unmarkedFit(fitType = "mnMix",
+  umfit <- new("unmarkedFitMNmix", fitType = "mnMix", constraint = constraint,
       call = match.call(), formula = formula, data = umf, 
 	  estimates = estimateList, AIC = 2 * fm$value + 2 * nP, opt = opt, 
 	  negLogLike = fm$value, nllFun = nll, 
