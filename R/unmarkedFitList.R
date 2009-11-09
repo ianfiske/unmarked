@@ -10,7 +10,17 @@ setClass("unmarkedFitList",
 
 
 # constructor of unmarkedFitList objects
-fitList <- function(fits) {
+fitList <- function(..., fits) {
+	if(missing(fits)) {
+		fits <- list(...)
+		isList <- sapply(fits, function(x) is.list(x))
+		if(sum(isList) > 1)
+			stop("Specify nested models as named objects, or use fits = 'mylist'")
+		if(isList[1L]) {
+			warning("If supplying a list of fits, use fits = 'mylist'")
+			fits <- fits[[1L]] 	# This is allowed for back-compatability.
+			}
+		}	
 	umfl <- new("unmarkedFitList", fits=fits)
 	return(umfl)
 	}
@@ -26,21 +36,26 @@ setMethod("summary", "unmarkedFitList", function(object) {
 
 
 setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL, 
-				backTran=TRUE) {
-			fitList <- object@fits
-			ese <- lapply(fitList, predict, type=type, newdata=newdata, 
-				backTran=backTran)
-			E <- sapply(ese, function(x) x[,"Predicted"])
-			SE <- sapply(ese, function(x) x[,"SE"])
-			ic <- sapply(fitList, slot, "AIC")
-			deltaic <- ic - min(ic)
-			wts <- exp(-deltaic / 2)
-			wts <- wts / sum(wts)
-			parav <- as.numeric(E %*% wts)
-			seav <- as.numeric((SE + (E - parav)^2) %*% wts) # Double check this
-			out <- data.frame(Predicted = parav, SE = seav)
-			return(out)
-		})
+	backTransform = TRUE, appendData = FALSE) {
+		fitList <- object@fits
+		ese <- lapply(fitList, predict, type = type, newdata = newdata, 
+			backTransform = backTransform)
+		E <- sapply(ese, function(x) x[,"Predicted"])
+		SE <- sapply(ese, function(x) x[,"SE"])
+		ic <- sapply(fitList, slot, "AIC")
+		deltaic <- ic - min(ic)
+		wts <- exp(-deltaic / 2)
+		wts <- wts / sum(wts)
+		parav <- as.numeric(E %*% wts)
+		seav <- as.numeric((SE + (E - parav)^2) %*% wts) # Double check this
+		out <- data.frame(Predicted = parav, SE = seav)
+		if(appendData) {
+			if(missing(newdata))
+				newdata <- getData(object@fits[[1]])
+			out <- data.frame(out, newdata)
+			}
+		return(out)
+	})
 
 
 
@@ -58,7 +73,7 @@ cn <- function(object) {
 # R-squared index from Nagelkerke (1991)				  
 nagR2 <- function(fit, nullfit)
 {
-	n <- nrow(fit@data@y)
+	n <- sampleSize(fit)
 	devI <- 2 * fit@negLogLike
 	devN <- 2 * nullfit@negLogLike
 	r2 <- 1 - exp((devI - devN) / n)

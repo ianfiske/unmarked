@@ -134,13 +134,14 @@ setMethod("names", "unmarkedFit",
 
 # Prediction
 setMethod("predict", "unmarkedFit", 
-	function(object, type, newdata=NULL, backTran=TRUE, na.rm = TRUE, ...) 
+	function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
+		appendData = FALSE, ...) 
 	{
-		if(is.null(newdata))
-			newdata <- object@data
+		if(missing(newdata) || is.null(newdata))
+			newdata <- getData(object)
 		formula <- object@formula
 		detformula <- as.formula(formula[[2]])
-		stateformula <- as.formula(paste("~",formula[3],sep=""))
+		stateformula <- as.formula(paste("~", formula[3], sep=""))
 		if(inherits(newdata, "unmarkedFrame"))
 			class(newdata) <- "unmarkedFrame"
 		cls <- class(newdata)
@@ -160,11 +161,14 @@ setMethod("predict", "unmarkedFit",
 						},
 					det = X <- model.matrix(detformula, newdata))
 				})
-		out <- matrix(NA, nrow(X), 2, dimnames=list(NULL, c("Predicted", "SE")))
+		out <- data.frame(matrix(NA, nrow(X), 2, 
+			dimnames=list(NULL, c("Predicted", "SE"))))
 		lc <- linearComb(object, X, type)
-		if(backTran) lc <- backTransform(lc)
-		out[,1] <- coef(lc)
-		out[,2] <- SE(lc)
+		if(backTransform) lc <- backTransform(lc)
+		out$Predicted <- coef(lc)
+		out$SE <- SE(lc)
+		if(appendData)
+			out <- data.frame(out, newdata)
 		return(out)
 	}
 )
@@ -951,7 +955,7 @@ setMethod("nonparboot", "unmarkedFit",
 
 setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
 		{
-			op <- par(mfrow=c(1, 2))
+#			op <- par(mfrow=c(1, 2))
 			t.star <- x@t.star
 			t0 <- x@t0
 			t.t0 <- c(t.star, t0)
@@ -960,14 +964,14 @@ setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
 			nsim <- length(t.star)
 			p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
 			hist(t.star, xlim=c(min(floor(t.t0)), max(ceiling(t.t0))), 
-				main=paste("P =", round(p.val, 3), "; nsim =", format(nsim)), 
+				main=paste("P =", round(p.val, 4), "; nsim =", format(nsim)), 
 				xlab="t*")
 			rug(t.star)
 			abline(v=t0, lty=2)
-			qqnorm(t.star, ylab="t*")
-			qqline(t.star)
-			title(outer=T, ...)
-			par(op)
+#			qqnorm(t.star, ylab="t*")
+#			qqline(t.star)
+#			title(outer=T, ...)
+#			par(op)
 		})
 
 
