@@ -1,26 +1,26 @@
 \name{gf}
+\alias{gf}
 \alias{gf.data}
 \alias{gf.obs}
 \docType{data}
-\title{ ~~ data name/kind ... ~~}
+\title{ Green frog count index data}
 \description{
-  ~~ A concise (1-5 lines) description of the dataset. ~~
+Multinomial count index data.
 }
 \usage{data(gf)}
 \format{
- describe data format.
-}
-\details{
-  ~~ If necessary, more details than the description above ~~
-}
-\source{
-  ~~ reference to a publication or URL from which the data were obtained ~~
+A list with 2 components
+	\describe{
+	\item{gf.data}{220 x 3 matrix of count indices}
+	\item{gf.obs}{list of covariates}
+	}
 }
 \references{
-  ~~ possibly secondary sources and usages ~~
-}
+Royle, J. Andrew, and William A. Link. 2005. A General Class of Multinomial
+ Mixture Models for Anuran Calling Survey Data. Ecology 86, no. 9: 2505--2512.}
 \examples{
 data(gf)
-## maybe str(gf.data) ; plot(gf.data) ...
+str(gf.data)
+str(gf.obs)
 }
 \keyword{datasets}

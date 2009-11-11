@@ -1,10 +1,10 @@
 \name{backTransform-methods}
 \docType{methods}
-%%\alias{backTransform}
+\alias{backTransform}
 \alias{backTransform-methods}
-%%\alias{backTransform,unmarkedEstimate-method}
-%%\alias{backTransform,unmarkedFit-method}
-%%\alias{backTransform,unmarkedLinComb-method}
+\alias{backTransform,unmarkedEstimate-method}
+\alias{backTransform,unmarkedFit-method}
+\alias{backTransform,unmarkedLinComb-method}
 
 \title{Methods for Function backTransform in Package `unmarked'}
 \description{Methods for function \code{backTransform} in Package `unmarked'. 

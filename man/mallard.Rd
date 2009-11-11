@@ -3,25 +3,27 @@
 \alias{mallard.obs}
 \alias{mallard.site}
 \docType{data}
-\title{ ~~ data name/kind ... ~~}
+\title{Mallard count data}
 \description{
-  ~~ A concise (1-5 lines) description of the dataset. ~~
+Mallard repeated count data and covariates
 }
 \usage{data(mallard)}
 \format{
-  describe data format.
-}
-\details{
-  ~~ If necessary, more details than the description above ~~
-}
-\source{
-  ~~ reference to a publication or URL from which the data were obtained ~~
+A list with 3 components
+	\describe{
+	\item{mallard.y}{response matrix}
+	\item{mallard.site}{site-specific covariates}
+	\item{mallard.obs}{survey-specific covariates}
+	}
 }
 \references{
-  ~~ possibly secondary sources and usages ~~
-}
+Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated
+ Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), 
+ pp. 1450--1461.}
 \examples{
 data(mallard)
-## maybe str(mallard.y) ; plot(mallard.y) ...
+str(mallard.y)
+str(mallard.site)
+str(mallard.obs)
 }
 \keyword{datasets}

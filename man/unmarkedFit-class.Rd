@@ -3,32 +3,33 @@
 \docType{class}
 \alias{unmarkedFit-class}
 \alias{getData}
-%%\alias{getData,unmarkedFit-method}
+\alias{getData,unmarkedFit-method}
 \alias{hessian}
-%%\alias{hessian,unmarkedFit-method}
+\alias{hessian,unmarkedFit-method}
 \alias{mle}
-%%\alias{mle,unmarkedFit-method}
-%%\alias{names,unmarkedFit-method}
+\alias{mle,unmarkedFit-method}
+\alias{names,unmarkedFit-method}
 \alias{nllFun}
-%%\alias{nllFun,unmarkedFit-method}
+\alias{nllFun,unmarkedFit-method}
 \alias{parboot,unmarkedFit-method}
 \alias{plot,unmarkedFit,missing-method}
-%%\alias{predict,unmarkedFit-method}
+\alias{predict,unmarkedFit-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{update,unmarkedFit-method}
 \alias{sampleSize}
-%%\alias{sampleSize,unmarkedFit-method}
-%%\alias{unmarkedFitOccu-class}
-%%\alias{unmarkedFitPCount-class}
-%%\alias{unmarkedFitDS-class}
-%%\alias{unmarkedFitMPois-class}
+\alias{sampleSize,unmarkedFit-method}
+\alias{unmarkedFitOccu-class}
+\alias{unmarkedFitPCount-class}
+\alias{unmarkedFitDS-class}
+\alias{unmarkedFitMPois-class}
 
 \title{Class "unmarkedFit" }
-\description{ Contains fitted model information which can be manipulated or 
-extracted using the methods described below. }
+\description{Contains fitted model information which can be manipulated or 
+extracted using the methods described below.
+}
 \section{Slots}{
-	 \describe{
+	\describe{
     \item{\code{fitType}:}{Object of class \code{"character"} }
     \item{\code{call}:}{Object of class \code{"call"} }
     \item{\code{formula}:}{Object of class \code{"formula"} }
@@ -36,9 +37,16 @@ extracted using the methods described below. }
     \item{\code{sitesRemoved}:}{Object of class \code{"numeric"} }
     \item{\code{estimates}:}{Object of class \code{"unmarkedEstimateList"} }
     \item{\code{AIC}:}{Object of class \code{"numeric"} }
-    \item{\code{opt}:}{Object of class \code{"list"} containing results from \code{\link{optim}} }
+    \item{\code{opt}:}{Object of class \code{"list"} containing results from 
+		\code{\link{optim}} }
     \item{\code{negLogLike}:}{Object of class \code{"numeric"} }
     \item{\code{nllFun}:}{Object of class \code{"function"} }
+    \item{\code{knownOcc}:}{unmarkedFitOccu only: sites known to be occupied}
+    \item{\code{K}:}{unmarkedFitPCount only: upper bound used in integration}
+    \item{\code{mixture}:}{unmarkedFitPCount only: Mixing distribution}
+    \item{\code{keyfun}:}{unmarkedFitDS only: detection function used by 
+		\link{distsamp}}
+	\item{\code{unitsOut}:}{unmarkedFitDS only: density units}	 
   }
 }
 \section{Methods}{
@@ -103,7 +111,9 @@ ovenFrame <- unmarkedFrameMPois(y = ovendata.list$data,
 
 # Apply a bunch of methods to the fitted model
 
+names(fm1)
 fm1['state']
+fm1['det']
 
 backTransform(fm1, whichEstimate ='det')
 

@@ -15,6 +15,7 @@ appropriate function (piFun) argument.  \link{removalPiFun} and \link{doublePiFu
 are supplied as example cell probability functions.}
 \value{unmarkedFit object describing the model fit.}
 \author{Ian Fiske}
+\seealso{\link{piFuns}}
 \keyword{models}
 \references{Royle, J. A., Dawson, D., & Bates, S. (2004). Modeling abundance effects in distance sampling. Ecology, 85(6), 1591-1597. \cr
 Royle, J. A. (2004). Generalized estimators of avian abundance from count survey data. Animal Biodiversity and Conservation, 27(1), 375-386. \cr

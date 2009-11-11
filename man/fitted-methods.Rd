@@ -1,11 +1,11 @@
 \name{fitted-methods}
 \docType{methods}
 \alias{fitted-methods}
-%%\alias{fitted,unmarkedFit-method}
-%%\alias{fitted,unmarkedFitColExt-method}
-%%\alias{fitted,unmarkedFitOccu-method}
-%%\alias{fitted,unmarkedFitOccuRN-method}
-%%\alias{fitted,unmarkedFitPCount-method}
+\alias{fitted,unmarkedFit-method}
+\alias{fitted,unmarkedFitColExt-method}
+\alias{fitted,unmarkedFitOccu-method}
+\alias{fitted,unmarkedFitOccuRN-method}
+\alias{fitted,unmarkedFitPCount-method}
 \title{Methods for Function fitted in Package `unmarked'}
 \description{Extracted fitted values from a fitted model.
 }

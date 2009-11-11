@@ -1,9 +1,9 @@
 \name{vcov-methods}
 \docType{methods}
 \alias{vcov-methods}
-%%\alias{vcov,linCombOrBackTrans-method}
-%%\alias{vcov,unmarkedEstimate-method}
-%%\alias{vcov,unmarkedFit-method}
+\alias{vcov,linCombOrBackTrans-method}
+\alias{vcov,unmarkedEstimate-method}
+\alias{vcov,unmarkedFit-method}
 \title{Methods for Function vcov in Package `unmarked'}
 \description{Extract variance-covariance matrix from a fitted model.}
 \section{Methods}{

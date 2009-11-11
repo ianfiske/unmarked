@@ -1,12 +1,12 @@
 \name{[-methods}
 \docType{methods}
 \alias{[-methods}
-%%\alias{[,unmarkedEstimateList,ANY,ANY,ANY-method}
-%%\alias{[,unmarkedFit,ANY,ANY,ANY-method}
-%%\alias{[,unmarkedFrame,missing,numeric,missing-method}
-%%\alias{[,unmarkedFrame,numeric,missing,missing-method}
-%%\alias{[,unmarkedFrame,numeric,numeric,missing-method}
-%%\alias{[,unmarkedMultFrame,missing,numeric,missing-method}
+\alias{[,unmarkedEstimateList,ANY,ANY,ANY-method}
+\alias{[,unmarkedFit,ANY,ANY,ANY-method}
+\alias{[,unmarkedFrame,missing,numeric,missing-method}
+\alias{[,unmarkedFrame,numeric,missing,missing-method}
+\alias{[,unmarkedFrame,numeric,numeric,missing-method}
+\alias{[,unmarkedMultFrame,missing,numeric,missing-method}
 \title{Methods for bracket extraction [ in Package `unmarked'}
 \description{
 Methods for bracket extraction \code{[} in Package `unmarked'

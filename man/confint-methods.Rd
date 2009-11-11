@@ -1,10 +1,10 @@
 \name{confint-methods}
 \docType{methods}
 \alias{confint-methods}
-%%\alias{confint,unmarkedBackTrans-method}
-%%\alias{confint,unmarkedEstimate-method}
-%%\alias{confint,unmarkedFit-method}
-%%\alias{confint,unmarkedLinComb-method}
+\alias{confint,unmarkedBackTrans-method}
+\alias{confint,unmarkedEstimate-method}
+\alias{confint,unmarkedFit-method}
+\alias{confint,unmarkedLinComb-method}
 \title{Methods for Function confint in Package `unmarked'}
 \description{
 Methods for function \code{confint} in Package `unmarked'

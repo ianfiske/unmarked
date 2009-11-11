@@ -108,8 +108,9 @@ predict(fm1, type = "state")
 # Negative exponential detection function. This also needs starting values.
 (fm4 <- distsamp(~ 1 ~ 1, ltUMF, key="exp", starts=c(0,0)))
 
+
 # Hazard-rate detection function. Density output in hectares.
-# This is real slow, especially for large datasets.
+# This is slow, especially for large datasets.
 (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 
 # Plot detection function
