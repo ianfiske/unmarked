@@ -10,6 +10,8 @@ validunmarkedFrame <- function(object) {
   if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
     if(nrow(object@obsCovs) != M*obsNum(object))
       errors <- c(errors, "obsCovData does not have M*obsNum rows.")
+  if(any(object@plotArea < 0))
+    errors <- c(errors, "plotArea cannot contain negative values.")	
   if(length(errors) == 0)
     TRUE
   else
