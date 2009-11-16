@@ -2,20 +2,21 @@
 ############# VALIDATION FUNCTIONS #############################################
 
 validunmarkedFrame <- function(object) {
-  errors <- character(0)
-  M <- nrow(object@y)
-  if(!is.null(object@siteCovs))
-    if(nrow(object@siteCovs) != M)
-      errors <- c(errors, "siteCovData does not have same size number of sites as y.")
-  if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
-    if(nrow(object@obsCovs) != M*obsNum(object))
-      errors <- c(errors, "obsCovData does not have M*obsNum rows.")
-  if(any(object@plotArea < 0))
-    errors <- c(errors, "plotArea cannot contain negative values.")	
-  if(length(errors) == 0)
-    TRUE
-  else
-    errors
+	errors <- character(0)
+	M <- nrow(object@y)
+	if(!is.null(object@siteCovs))
+		if(nrow(object@siteCovs) != M)
+			errors <- c(errors, 
+				"siteCovData does not have same size number of sites as y.")
+	if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
+		if(nrow(object@obsCovs) != M*obsNum(object))
+			errors <- c(errors, "obsCovData does not have M*obsNum rows.")
+	if(!all(is.na(object@plotArea)) &  any(object@plotArea < 0))
+		errors <- c(errors, "plotArea cannot contain negative values.")	
+	if(length(errors) == 0)
+		TRUE
+	else
+		errors
 }
 
 ############ DATA CLASSES ######################################################

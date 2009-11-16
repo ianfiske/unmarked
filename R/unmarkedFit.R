@@ -650,7 +650,23 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
 		pi <- do.call(piFun, list(p = p))
 		return(pi)
 	})
-
+	
+	
+setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
+	{
+		formula <- object@formula
+		detformula <- as.formula(formula[[2]])
+		data <- getData(object)	
+		designMats <- unmarked:::getDesign3(formula = formula, data, na.rm = na.rm)
+		y <- designMats$y
+		M <- nrow(y)
+		J <- ncol(y)
+		V.itjk <- designMats$V
+		ppars <- coef(object, type="det") 
+		p <- plogis(V.itjk %*% ppars)	
+		p <- matrix(p, M, J, byrow = TRUE)
+		return(p)
+	})
 
 
 
@@ -773,9 +789,9 @@ setMethod("simulate", "unmarkedFitColExt",
 			colParms <- coef(object, 'col')
 			extParms <- coef(object, 'ext')
 			designMats <- unmarked:::getDesign3(formula = object@formula, object@data)
-			V.itj <- designMats$V; X.it <- designMats$X
+			V.itj <- designMats$V; X.it <- designMats$X; y <- designMats$y
 
-			M <- nrow(X.it)
+			M <- nrow(y)	# M <- nrow(X.it)
 			nY <- data@numPrimary
 			J <- obsNum(data)/nY
 
@@ -882,9 +898,14 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 	call <- match.call(call = sys.call(-1))
 	formula <- object@formula
 	umf <- object@data
-	designMats <- unmarked:::getDesign2(formula, umf, na.rm = FALSE)
+	dataClass <- class(umf)
+	if(dataClass[1] == "unmarkedMultFrame")
+		designMats <- getDesign3(formula, umf, na.rm = FALSE)
+	else	
+		designMats <- getDesign2(formula, umf, na.rm = FALSE)
 	y <- designMats$y
-	if(class(object) %in% c("unmarkedFitOccu", "unmarkedFitOccuRN"))
+	if(class(object) %in% c("unmarkedFitOccu", "unmarkedFitOccuRN", 
+		"unmarkedFitColExt"))
 		y <- truncateToBinary(y)
 	yvec0 <- c(t(y))
 	ests <- as.numeric(coef(object, altNames = TRUE))
