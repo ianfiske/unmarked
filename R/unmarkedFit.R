@@ -549,23 +549,31 @@ setMethod("plot", c(x = "unmarkedFit", y = "missing"),
 	
 
 ## Need to decide how to plot histogram of actual distances over dist.breaks xlim
-#setMethod("barplot", "unmarkedFitDS", 
-#	function(height, ...)
-#{
-#	ymat <- getY(getData(height))
-#	y <- colSums(ymat) / sum(ymat)
-#	key <- height@keyfun
-#	dbreaks <- getData(height)@dist.breaks
-#	switch(key, 
-#		halfnorm = {
-#			sigma <- exp(coef(height, type="det"))
-#			if(length(sigma) > 1)
-#				stop("This method only works when there are no detection covars")
-#			plot(function(x) 2 * dnorm(x, mean=0, sd=sigma), min(dbreaks), 
-#				max(dbreaks))
-#			}
-#		)
-#})
+setMethod("hist", "unmarkedFitDS", 
+	function(x, lwd=1, lty=1, ...)
+{
+	ymat <- getY(getData(x))
+	dbreaks <- getData(x)@dist.breaks
+	nb <- length(dbreaks)
+ 	mids <- (dbreaks[-1] - dbreaks[-nb]) / 2 + dbreaks[-nb]
+    dists <- unlist(mapply(rep, mids, each=colSums(ymat)))
+	h <- hist(dists, plot=F, breaks=dbreaks)
+	key <- x@keyfun
+	switch(key, 
+		halfnorm = {
+			sigma <- exp(coef(x, type="det"))
+			if(length(sigma) > 1)
+				stop("This method only works when there are no detection covars")
+			if(x@data@survey == "point")
+				stop("Method not written for point transect data")
+			int <- 2 * integrate(dnorm, dbreaks[1], dbreaks[nb], sd=sigma)$value
+			h$density <- h$density * int
+			plot(h, freq=F, ...)
+			plot(function(x) 2 * dnorm(x, mean=0, sd=sigma), min(dbreaks), 
+				max(dbreaks), add=T, lwd=lwd, lty=lty)
+			}
+		)
+})
 		
 
 

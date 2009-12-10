@@ -469,39 +469,16 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
 
 
 
-#setMethod("barplot", "unmarkedFrameDS", 
-#	function(height, standardize = FALSE, xlab, ylab, 
-#		names.arg, ...)
-#{
-#	y <- getY(height)
-#	M <- numSites(height)
-#	d <- height@dist.breaks
-#	unitsIn <- height@unitsIn
-#	survey <- height@survey
-#	if(standardize) {
-#		switch(survey, 
-#			line = {
-#				strip.widths <- 2 * diff(d)
-#				a <- t(sapply(height@tlength, function(x) x * 2 * diff(d)))
-#				},
-#			point = {
-#				areas <- pi * d^2
-#				a <- areas[-1] - areas[-length(areas)]
-#				})
-#		if(unitsIn == "m")
-#			a <- a / 1e6
-#		y  <- y * a		
-#		if(missing(ylab)) ylab <- "Individuals / km^2"
-#		}
-#	else
-#		if(missing(ylab)) ylab <- "Individuals"		
-#	if(missing(xlab)) 
-#		xlab <- paste("Distance interval", " (", unitsIn, ")", sep = "")
-#	if(missing(names.arg)) 
-#		names.arg <- paste(d[-length(d)], d[-1], sep="-") 
-#	barplot(height = y, xlab = xlab, ylab = ylab, names.arg = names.arg, ...)
-#})
-
+setMethod("hist", "unmarkedFrameDS",
+	function(x, ...)
+{
+	y <- getY(x)
+	dbreaks <- x@dist.breaks
+	nb <- length(dbreaks)
+ 	mids <- (dbreaks[-1] - dbreaks[-nb]) / 2 + dbreaks[-nb]
+    distances <- unlist(mapply(rep, mids, each=colSums(y)))
+	hist(distances, breaks=dbreaks, ...)
+})
 
 
 

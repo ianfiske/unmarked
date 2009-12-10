@@ -158,6 +158,9 @@ grhn <- function(r, sigma) exp(-r^2/(2 * sigma^2)) * r
 grexp <- function(r, rate) exp(-r / rate) * r
 grhaz <- function(r, shape, scale)  (1 - exp(-(r/shape)^-scale)) * r
 
+dxhn <- function(x, sigma) 
+	gxhn(x=x, sigma=sigma) / integrate(gxhn, 0, Inf, sigma=sigma)$value
+
 
 # Vectorized version of integrate()
 vIntegrate <- Vectorize(integrate, c("lower", "upper"))

@@ -1,7 +1,7 @@
 # Methods needed from other packages
 importFrom(stats, confint, fitted, coef, vcov, predict, update, profile, 
 	simulate, residuals)
-importFrom(graphics, plot)
+importFrom(graphics, plot, hist)
 importFrom(utils, head)
 importFrom(reshape, melt, cast, recast)
 
@@ -19,9 +19,9 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS, unmarkedFitPCount,
 exportMethods(backTransform, coef, confint, coordinates, fitted, 
 	getData, getP, getY, head, hessian, linearComb, mle, modSel, nllFun, 
 	numSites, numY, obsCovs, obsNum, "obsCovs<-", obsToY, "obsToY<-", parboot,
-	plot, predict, profile, projection, powerAnalysis, residuals, sampleSize, 
-	SE, show, simulate, siteCovs, "siteCovs<-", summary, update, vcov, 
-	yearlySiteCovs, "yearlySiteCovs<-", "[")
+	plot, hist, predict, profile, projection, powerAnalysis, residuals, 
+	sampleSize, SE, show, simulate, siteCovs, "siteCovs<-", summary, update, 
+	vcov, yearlySiteCovs, "yearlySiteCovs<-", "[")
 
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame, unmarkedFrameOccu,

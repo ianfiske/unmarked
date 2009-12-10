@@ -82,6 +82,7 @@ ltUMF <- with(linetran, {
 
 ltUMF
 plot(ltUMF, addgrid=TRUE)
+hist(ltUMF)
 
 # Half-normal detection function. Density output (log scale). No covariates. 
 (fm1 <- distsamp(~ 1 ~ 1, ltUMF))
@@ -92,6 +93,7 @@ backTransform(fm1, whichEstimate="det")
 vcov(fm1, altNames=TRUE)
 confint(fm1, type = "state")
 predict(fm1, type = "state")
+hist(fm1)	# This only works when there are no detection covariates
 
 # Half-normal. Abundance output. No covariates. Note that transect length
 # must be accounted for so abundance is animals per km of transect.
