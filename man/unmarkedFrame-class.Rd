@@ -2,7 +2,6 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{unmarkedFrame-class}
-\alias{barplot,unmarkedFrameDS-method}
 \alias{coordinates,unmarkedFrame-method}
 \alias{coordinates}
 \alias{coords}

@@ -22,6 +22,7 @@ distsamp <- function(formula, data,
 		}
 	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
+	yvec <- as.numeric(t(y))
 	a <- designMats$plotArea
 	M <- nrow(y)
 	J <- ncol(y)
@@ -41,7 +42,7 @@ distsamp <- function(formula, data,
 					detParms)
 				}
 				nll <- function(params) {
-					ll.halfnorm(params, Y=y, X=X, V=V, J=J, a=a, 
+					ll.halfnorm(params, yvec=yvec, X=X, V=V, J=J, a=a, 
 						d=dist.breaks, nAP=nAP, nP=nP, survey=survey)
 				}
 		},
@@ -55,7 +56,7 @@ distsamp <- function(formula, data,
 					names(starts) <- c(lamParms, detParms)
 			}
 			nll <- function(params) {
-				ll.exp(params,  Y=y, X=X, V=V, J=J, d=dist.breaks, 
+				ll.exp(params,  yvec=yvec, X=X, V=V, J=J, d=dist.breaks, 
 					a=a, nAP=nAP, nP=nP, survey=survey)
 			}
 		},
@@ -72,7 +73,7 @@ distsamp <- function(formula, data,
 					names(starts) <- c(lamParms, detParms, "scale")
 			}
 			nll <- function(params) {
-				ll.hazard(params, Y=y, X=X, V=V, J=J, d=dist.breaks, 
+				ll.hazard(params, yvec=yvec, X=X, V=V, J=J, d=dist.breaks, 
 						a=a, nAP=nAP, nP=nP, survey=survey)
 			}
 		}, 
@@ -88,7 +89,7 @@ distsamp <- function(formula, data,
 					names(starts) <- lamParms
 			}
 			nll <- function(params) {
-				ll.uniform(params, Y=y, X=X, V=V, J=J, a=a)
+				ll.uniform(params, yvec=yvec, X=X, V=V, J=J, a=a)
 			}
 		})
 	fm <- optim(starts, nll, method=method, hessian=se, control=control)
@@ -226,35 +227,33 @@ cp.haz <- function(d, shape, scale, survey)
 
 # Likelihood functions
 
-ll.halfnorm <- function(param, Y, X, V, J, d, a, nAP, nP, survey) 
+ll.halfnorm <- function(param, yvec, X, V, J, d, a, nAP, nP, survey) 
 {
 	sigma <- as.numeric(exp(V %*% param[(nAP+1):nP]))
 	lambda <- as.numeric(exp(X %*% param[1:nAP]))
 	pvec <- c(sapply(sigma, function(x) cp.hn(d=d, s=x, survey=survey)))
 	growlam <- rep(lambda, each=J)
-	datavec <- c(t(Y))
-	ll <- dpois(datavec, growlam * pvec * a, log=T)
+	ll <- dpois(yvec, growlam * pvec * a, log=T)
 	-sum(ll)
 }
 
 
 
 
-ll.exp <- function(param, Y, X, V, K, J, a, d, nAP, nP, survey)
+ll.exp <- function(param, yvec, X, V, K, J, a, d, nAP, nP, survey)
 {
 	rate <- as.numeric(exp(V %*% param[(nAP+1):nP]))
 	lambda <- as.numeric(exp(X %*% param[1:nAP]))
 	pvec <- c(sapply(rate, function(x) cp.exp(d=d, rate=x, survey=survey)))
 	growlam <- rep(lambda, each=J)
-	datavec <- c(t(Y))
-	ll <- dpois(datavec, growlam * pvec * a, log=T)
+	ll <- dpois(yvec, growlam * pvec * a, log=T)
 	-sum(ll)
 }
 
 
 
 
-ll.hazard <- function(param, Y, X, V, J, a, d, nAP, nP, survey)
+ll.hazard <- function(param, yvec, X, V, J, a, d, nAP, nP, survey)
 {
 	shape <- as.numeric(exp(V %*% param[(nAP+1):(nP-1)]))
 	scale <- as.numeric(exp(param[nP]))
@@ -262,20 +261,18 @@ ll.hazard <- function(param, Y, X, V, J, a, d, nAP, nP, survey)
 	pvec <- c(sapply(shape, function(x) cp.haz(d=d, shape=x, scale=scale, 
 		survey=survey)))
 	growlam <- rep(lambda, each=J)
-	datavec <- c(t(Y))
-	ll <- dpois(datavec, growlam * a * pvec, log=T)
+	ll <- dpois(yvec, growlam * a * pvec, log=T)
 	-sum(ll)
 }
 
 
 
 
-ll.uniform <- function(param, Y, X, V, J, a)
+ll.uniform <- function(param, yvec, X, V, J, a)
 {
 	lambda <- exp(X %*% param)
 	growlam <- rep(lambda, each=J)
-	datavec <- c(t(Y))
-	ll <- dpois(datavec, growlam * a, log=T)
+	ll <- dpois(yvec, growlam * a, log=T)
 	-1*sum(ll)
 }
 

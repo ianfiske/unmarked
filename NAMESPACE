@@ -1,7 +1,7 @@
 # Methods needed from other packages
 importFrom(stats, confint, fitted, coef, vcov, predict, update, profile, 
 	simulate, residuals)
-importFrom(graphics, plot, barplot)
+importFrom(graphics, plot)
 importFrom(utils, head)
 importFrom(reshape, melt, cast, recast)
 
@@ -16,7 +16,7 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS, unmarkedFitPCount,
 	unmarkedEstimate, unmarkedFitList, unmarkedModSel)
 
 # Methods
-exportMethods(backTransform, barplot, coef, confint, coordinates, fitted, 
+exportMethods(backTransform, coef, confint, coordinates, fitted, 
 	getData, getP, getY, head, hessian, linearComb, mle, modSel, nllFun, 
 	numSites, numY, obsCovs, obsNum, "obsCovs<-", obsToY, "obsToY<-", parboot,
 	plot, predict, profile, projection, powerAnalysis, residuals, sampleSize, 

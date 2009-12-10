@@ -82,7 +82,6 @@ ltUMF <- with(linetran, {
 
 ltUMF
 plot(ltUMF, addgrid=TRUE)
-barplot(ltUMF)
 
 # Half-normal detection function. Density output (log scale). No covariates. 
 (fm1 <- distsamp(~ 1 ~ 1, ltUMF))

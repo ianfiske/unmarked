@@ -28,7 +28,7 @@ setGeneric("head")
 setGeneric("fitted")
 setGeneric("simulate")
 setGeneric("residuals")
-setGeneric("barplot")
+#setGeneric("barplot")
 
 
 # Compute linear combinations of parameters.

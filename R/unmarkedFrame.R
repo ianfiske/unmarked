@@ -11,7 +11,7 @@ validunmarkedFrame <- function(object) {
 	if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
 		if(nrow(object@obsCovs) != M*obsNum(object))
 			errors <- c(errors, "obsCovData does not have M*obsNum rows.")
-	if(!all(is.na(object@plotArea)) &  any(object@plotArea < 0))
+	if(!all(is.na(object@plotArea)) & any(object@plotArea < 0))
 		errors <- c(errors, "plotArea cannot contain negative values.")	
 	if(length(errors) == 0)
 		TRUE
@@ -469,38 +469,38 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
 
 
 
-setMethod("barplot", "unmarkedFrameDS", 
-	function(height, standardize = FALSE, xlab, ylab, 
-		names.arg, ...)
-{
-	y <- getY(height)
-	M <- numSites(height)
-	d <- height@dist.breaks
-	unitsIn <- height@unitsIn
-	survey <- height@survey
-	if(standardize) {
-		switch(survey, 
-			line = {
-				strip.widths <- 2 * diff(d)
-				a <- t(sapply(height@tlength, function(x) x * 2 * diff(d)))
-				},
-			point = {
-				areas <- pi * d^2
-				a <- areas[-1] - areas[-length(areas)]
-				})
-		if(unitsIn == "m")
-			a <- a / 1e6
-		y  <- y * a		
-		if(missing(ylab)) ylab <- "Individuals / km^2"
-		}
-	else
-		if(missing(ylab)) ylab <- "Individuals"		
-	if(missing(xlab)) 
-		xlab <- paste("Distance interval", " (", unitsIn, ")", sep = "")
-	if(missing(names.arg)) 
-		names.arg <- paste(d[-length(d)], d[-1], sep="-") 
-	barplot(height = y, xlab = xlab, ylab = ylab, names.arg = names.arg, ...)
-})
+#setMethod("barplot", "unmarkedFrameDS", 
+#	function(height, standardize = FALSE, xlab, ylab, 
+#		names.arg, ...)
+#{
+#	y <- getY(height)
+#	M <- numSites(height)
+#	d <- height@dist.breaks
+#	unitsIn <- height@unitsIn
+#	survey <- height@survey
+#	if(standardize) {
+#		switch(survey, 
+#			line = {
+#				strip.widths <- 2 * diff(d)
+#				a <- t(sapply(height@tlength, function(x) x * 2 * diff(d)))
+#				},
+#			point = {
+#				areas <- pi * d^2
+#				a <- areas[-1] - areas[-length(areas)]
+#				})
+#		if(unitsIn == "m")
+#			a <- a / 1e6
+#		y  <- y * a		
+#		if(missing(ylab)) ylab <- "Individuals / km^2"
+#		}
+#	else
+#		if(missing(ylab)) ylab <- "Individuals"		
+#	if(missing(xlab)) 
+#		xlab <- paste("Distance interval", " (", unitsIn, ")", sep = "")
+#	if(missing(names.arg)) 
+#		names.arg <- paste(d[-length(d)], d[-1], sep="-") 
+#	barplot(height = y, xlab = xlab, ylab = ylab, names.arg = names.arg, ...)
+#})
 
 
 
