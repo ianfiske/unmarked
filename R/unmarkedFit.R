@@ -548,7 +548,7 @@ setMethod("plot", c(x = "unmarkedFit", y = "missing"),
 	
 	
 
-## Need to decide how to plot histogram of actual distances over dist.breaks xlim
+
 setMethod("hist", "unmarkedFitDS", 
 	function(x, lwd=1, lty=1, ...)
 {
@@ -556,22 +556,80 @@ setMethod("hist", "unmarkedFitDS",
 	dbreaks <- getData(x)@dist.breaks
 	nb <- length(dbreaks)
  	mids <- (dbreaks[-1] - dbreaks[-nb]) / 2 + dbreaks[-nb]
-    dists <- unlist(mapply(rep, mids, each=colSums(ymat)))
-	h <- hist(dists, plot=F, breaks=dbreaks)
+    distances <- unlist(mapply(rep, mids, each=colSums(ymat)))
+	h <- hist(distances, plot=F, breaks=dbreaks)
 	key <- x@keyfun
+	survey <- x@data@survey
 	switch(key, 
 		halfnorm = {
 			sigma <- exp(coef(x, type="det"))
 			if(length(sigma) > 1)
 				stop("This method only works when there are no detection covars")
-			if(x@data@survey == "point")
-				stop("Method not written for point transect data")
-			int <- 2 * integrate(dnorm, dbreaks[1], dbreaks[nb], sd=sigma)$value
-			h$density <- h$density * int
-			plot(h, freq=F, ...)
-			plot(function(x) 2 * dnorm(x, mean=0, sd=sigma), min(dbreaks), 
-				max(dbreaks), add=T, lwd=lwd, lty=lty)
-			}
+			switch(survey, 
+				line = {
+					int <- 2 * integrate(dnorm, dbreaks[1], dbreaks[nb], 
+						sd=sigma)$value
+					h$density <- h$density * int
+					plot(h, freq=F, ...)
+					plot(function(x) 2 * dnorm(x, mean=0, sd=sigma), 
+						min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+					},
+				point = {
+					int <- integrate(drhn, dbreaks[1], dbreaks[nb], 
+						sigma=sigma)$value
+					h$density <- h$density * int
+					plot(h, freq=F, ...)
+					plot(function(r) drhn(r, sigma=sigma), 
+						min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+					})
+				},
+		exp = {		# This doesn't work on example fm4
+			rate <- exp(coef(x, type="det"))
+			if(length(rate) > 1)
+				stop("This method only works when there are no detection covars")
+			switch(survey,
+				line = {
+					int <- integrate(dxexp, dbreaks[1], dbreaks[nb], 
+						rate=rate)$value
+					h$density <- h$density * int
+					plot(h, freq=F, ...)
+					plot(function(x) dxexp(x, rate=rate), min(dbreaks), 
+						max(dbreaks), add=T, lwd=lwd, lty=lty)
+					},
+				point = {
+					int <- integrate(drexp, dbreaks[1], dbreaks[nb], 
+						rate=rate)$value
+					h$density <- h$density * int
+					plot(h, freq=F, ...)
+					plot(function(r) drexp(r, rate=rate), min(dbreaks), 
+						max(dbreaks), add=T, lwd=lwd, lty=lty)
+					})
+				},
+		hazard = {
+			shape <- exp(coef(x, type="det"))
+			scale <- exp(coef(x, type="scale"))
+			if(length(shape) > 1)
+				stop("This method only works when there are no detection covars")
+			switch(survey, 
+				line = {
+					int <- integrate(dxhaz, dbreaks[1], dbreaks[nb], 
+						shape=shape, scale=scale)$value
+					h$density <- h$density * int
+					plot(h, freq=F, ...)
+					plot(function(x) dxhaz(x, shape=shape, scale=scale), 
+						min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+					},
+				point = {
+					int <- integrate(drexp, dbreaks[1], dbreaks[nb], 
+						rate=rate)$value
+					h$density <- h$density * int
+					plot(h, freq=F, ...)
+					plot(function(r) drhaz(r, shape=shape, scale=scale), 
+						min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+					})
+				},
+			
+					
 		)
 })
 		

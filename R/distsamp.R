@@ -160,6 +160,20 @@ grhaz <- function(r, shape, scale)  (1 - exp(-(r/shape)^-scale)) * r
 
 dxhn <- function(x, sigma) 
 	gxhn(x=x, sigma=sigma) / integrate(gxhn, 0, Inf, sigma=sigma)$value
+drhn <- function(r, sigma) 
+	grhn(r=r, sigma=sigma) / integrate(grhn, 0, Inf, sigma=sigma)$value
+dxexp <- function(x, rate) 
+	gxexp(x=x, rate=rate) / integrate(gxexp, 0, Inf, rate=rate)$value
+drexp <- function(r, rate) 
+	grexp(r=r, rate=rate) / integrate(grexp, 0, Inf, rate=rate)$value
+dxhaz <- function(x, shape, scale)
+	gxhaz(x=x, shape=shape, scale=scale) / integrate(gxhaz, 0, Inf, 
+		shape=shape, scale=scale)$value
+drhaz <- function(r, shape, scale)
+	grhaz(r=r, shape=shape, scale=scale) / integrate(grhaz, 0, Inf, 
+		shape=shape, scale=scale)$value
+		
+
 
 
 # Vectorized version of integrate()
@@ -192,9 +206,11 @@ cp.exp <- function(d, rate, survey)
 	switch(survey, 
 		line = {
 			strip.widths <- diff(d)
-			f.0 <- dexp(0, rate=rate)
-			int <- pexp(d[-1], rate=rate) - pexp(d[-length(d)], rate=rate)
-			cp <- int / f.0 / strip.widths
+#			f.0 <- dexp(0, rate=rate)
+#			int <- pexp(d[-1], rate=rate) - pexp(d[-length(d)], rate=rate)
+			int <- as.numeric(vIntegrate(gxexp, d[-length(d)], d[-1],
+				rate=rate)["value",])
+			cp <- int / strip.widths
 		},
 		point = {
 			W <- max(d)
