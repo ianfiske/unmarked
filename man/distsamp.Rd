@@ -81,7 +81,6 @@ ltUMF <- with(linetran, {
 	})
 
 ltUMF
-plot(ltUMF, addgrid=TRUE)
 hist(ltUMF)
 
 # Half-normal detection function. Density output (log scale). No covariates. 
@@ -106,17 +105,22 @@ hist(fm1)	# This only works when there are no detection covariates
 (fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1 ~ habitat - 1, ltUMF, 
 	starts=c(1,0,0,1,2,2)))
 
-# Negative exponential detection function. This also needs starting values.
-(fm4 <- distsamp(~ 1 ~ 1, ltUMF, key="exp", starts=c(0,0)))
+# Negative exponential detection function.
+(fm4 <- distsamp(~ 1 ~ 1, ltUMF, key="exp"))
+hist(fm4, col="blue", ylim=c(0, 0.1), xlab="Distance (m)")
 
 
 # Hazard-rate detection function. Density output in hectares.
 # This is slow, especially for large datasets.
 (fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
+hist(fmhz)
 
-# Plot detection function
-plot(function(x) gxhaz(x, shape=8.38, scale=1.37), 0, 25, 
-	xlab="Distance(m)", ylab="Detection probability")
+
+# Plot detection function.
+fmhz.shape <- exp(coef(fmhz, type="det"))
+fmhz.scale <- exp(coef(fmhz, type="scale"))
+plot(function(x) gxhaz(x, shape=fmhz.shape, scale=fmhz.scale), 0, 25, 
+	xlab="Distance (m)", ylab="Detection probability")
 
 # Uniform detection function. Density output in hectars.
 (fmu <- distsamp(~ 1 ~ 1, ltUMF, key="uniform"))
@@ -133,6 +137,7 @@ ptUMF <- with(pointtran, {
 
 # Half-normal. Output is animals / ha on log-scale. No covariates.
 (fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
+hist(fmp1, ylim=c(0, 0.07))
 
 }
 
