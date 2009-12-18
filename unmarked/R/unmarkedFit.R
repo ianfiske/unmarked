@@ -27,7 +27,8 @@ unmarkedFit <- function(fitType, call, formula,
 setClass("unmarkedFitDS",
 		representation(
 				keyfun = "character",
-				unitsOut = "character"),
+				unitsOut = "character",
+                output = "character"),
 		contains = "unmarkedFit")
 
 
@@ -95,6 +96,23 @@ setMethod("summary", "unmarkedFit",
     		warning("Model did not converge. Try providing starting values or
     			increasing maxit control argment.")
 })
+
+
+
+setMethod("summary", "unmarkedFitDS",
+  function(object)
+{
+callNextMethod()
+cat("Survey design: ", object@data@survey, "-transect", sep="")
+cat("\nDetection function:", object@keyfun)
+output <- object@output
+if(output == "abund" & length(table(object@data@tlength)) > 1)
+    output <- "Abundance standardized by transect length"
+cat("\nResponse:", output)    
+cat("\nUnitsIn:", object@data@unitsIn)
+cat("\nUnitsOut:", object@unitsOut, "\n\n")
+})
+  
 
 
 

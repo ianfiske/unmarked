@@ -20,6 +20,8 @@ distsamp <- function(formula, data,
 		a <- c(t(a))
 		data@plotArea <- a
 		}
+    if(output == "abund" & length(table(tlength)) > 1)
+        warning("Response is individuals per unit transect length")		
 	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	yvec <- as.numeric(t(y))
@@ -144,7 +146,7 @@ distsamp <- function(formula, data,
 		opt = opt, formula = formula, data = data, keyfun=keyfun, 
 		sitesRemoved = designMats$removed.sites, unitsOut=unitsOut, 
 		estimates = estimateList, AIC = fmAIC, negLogLike = fm$value, 
-		nllFun = nll)
+		nllFun = nll, output=output)
 	return(dsfit)
 }
 

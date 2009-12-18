@@ -87,6 +87,7 @@ hist(ltUMF)
 (fm1 <- distsamp(~ 1 ~ 1, ltUMF))
 
 # Some methods to use on fitted model
+summary(fm1)
 coef(fm1, type="det", altNames=TRUE)
 backTransform(fm1, whichEstimate="det")
 vcov(fm1, altNames=TRUE)
