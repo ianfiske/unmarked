@@ -5,7 +5,7 @@
 \docType{data}
 \title{ Green frog count index data}
 \description{
-Multinomial count index data.
+Multinomial calling index data.
 }
 \usage{data(gf)}
 \format{

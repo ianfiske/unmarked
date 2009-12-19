@@ -1,4 +1,5 @@
 \name{mallard}
+\alias{mallard}
 \alias{mallard.y}
 \alias{mallard.obs}
 \alias{mallard.site}

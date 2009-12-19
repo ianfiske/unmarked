@@ -1,4 +1,5 @@
 \name{frogs}
+\alias{frogs}
 \alias{pcru.data}
 \alias{pcru.bin}
 \alias{pcru.y}
@@ -7,27 +8,41 @@
 \alias{pfer.y}
 \alias{frog2001pfer}
 \alias{frog2001pcru}
-\alias{delaware_bfow_2001-2006}
+%\alias{delaware_bfow_2001-2006}
 \docType{data}
-\title{ 2001 Delaware NAAMP Data }
+\title{ 2001 Delaware North American Amphibian Monitoring Program Data }
 \description{
-  ~~ A concise (1-5 lines) description of the dataset. ~~
+frogs contains NAAMP data for Pseudacris feriarum (pfer) and Pseudacris
+crucifer (pcru) in 2001.
 }
 \usage{data(frogs)}
 \format{
-  describe format.
+	\describe{
+	\item{pcru.y}{matrix of observed calling indices for pcru}
+	\item{pcru.bin}{matrix of detections for pcru}
+	\item{pcru.data}{array of covariates measured at the
+	  observation-level for pcru}
+	\item{pfer.y}{matrix of observed calling indices for pfer}
+	\item{pfer.bin}{matrix of detections for pfer}
+	\item{pfer.data}{array of covariates measured at the
+	  observation-level for pfer}
+	}
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+The rows of pcru.y, pcru.bin, pfer.y, and pfer.bin correspond to sites
+and columns correspond to visits to each site.  The first 2 dimensions
+of pfer.data and pcru.data are matrices of covariates that correspond to
+the observation matrices (sites \eqn{\times} observation), with the 3rd
+dimension corresponding to separate covariates.
 }
 \source{
-  ~~ reference to a publication or URL from which the data were obtained ~~
+https://www.pwrc.usgs.gov/naamp/
 }
 \references{
-  ~~ possibly secondary sources and usages ~~
+Mossman MJ, Weir LA. North American Amphibian Monitoring Program (NAAMP). Amphibian Declines: the conservation status of United States species. University of California Press, Berkeley, California, USA. 2005:307-313.
 }
 \examples{
 data(frogs)
-## maybe str(pcru.data) ; plot(pcru.data) ...
+str(pcru.data)
 }
 \keyword{datasets}

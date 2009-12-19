@@ -87,7 +87,6 @@ summary(ovenFrame)
 
 
 # Set up data for colext()	
-data(frogs)
 frogUMF <- formatMult(masspcru)	
 summary(frogUMF)
 
