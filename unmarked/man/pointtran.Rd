@@ -13,10 +13,10 @@ Response matrix of animals detected in five distance classes plus two covariates
   A data frame with 30 observations on the following 7 variables.
   \describe{
     \item{\code{dc1}}{Counts in distance class 1 [0-5 m)}
-    \item{\code{dc2}}{Counts in distance class 1 [5-10 m)}
-    \item{\code{dc3}}{Counts in distance class 1 [10-15 m)}
-    \item{\code{dc4}}{Counts in distance class 1 [15-20 m)}
-    \item{\code{dc5}}{Counts in distance class 1 [20-25 m)}
+    \item{\code{dc2}}{Counts in distance class 2 [5-10 m)}
+    \item{\code{dc3}}{Counts in distance class 3 [10-15 m)}
+    \item{\code{dc4}}{Counts in distance class 4 [15-20 m)}
+    \item{\code{dc5}}{Counts in distance class 5 [20-25 m)}
     \item{\code{area}}{a numeric vector}
     \item{\code{habitat}}{a factor with levels \code{A} \code{B} \code{C}}
   }

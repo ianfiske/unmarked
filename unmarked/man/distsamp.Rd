@@ -49,10 +49,6 @@ negative exponential, or hazard rate.
 Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors 
 affected by transect-specific covariates using the log link.}
 
-\note{Currently, transect-level abundance is assumed to be Poisson distributed 
-though other distributions such as the negative binomial may be added. 
-Goodness-of-fit can be assessed using the \code{\link{parboot}} function.}
-
 \value{unmarkedFitDS object (child class of \code{\link{unmarkedFit-class}}) 
 describing the model fit. Parameter estimates are displayed on the log-scale. 
 Back-transformation can be achieved via the \code{\link{predict}} or 
@@ -65,7 +61,7 @@ abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
 
 \seealso{\code{\link{unmarkedFit-class}} \code{\link{fitList}}, 
 	\code{\link{formatDistData}}, \code{\link{parboot}}, \code{\link{calcAreas}},
-	\code{\link{sight2perpdist}}
+	\code{\link{sight2perpdist}}, \code{\link{detFuns}},
 	}
 
 
@@ -81,6 +77,7 @@ ltUMF <- with(linetran, {
 	})
 
 ltUMF
+summary(ltUMF)
 hist(ltUMF)
 
 # Half-normal detection function. Density output (log scale). No covariates. 
@@ -97,23 +94,17 @@ hist(fm1)	# This only works when there are no detection covariates
 
 # Half-normal. Abundance output. No covariates. Note that transect length
 # must be accounted for so abundance is animals per km of transect.
-(fm2 <- distsamp(~ 1 ~ 1, ltUMF, output="abund", unitsOut="kmsq"))
+summary(fm2 <- distsamp(~ 1 ~ 1, ltUMF, output="abund", unitsOut="kmsq"))
 
 # Halfnormal. Covariates affecting both density and and detection.  
-(fm3.1 <- distsamp(~ poly(area, 2) + habitat ~ habitat, ltUMF))
-
-# This fails without starting values...in this example at least.
-(fm3.2 <- distsamp(~ poly(area, 2) + habitat - 1 ~ habitat - 1, ltUMF, 
-	starts=c(1,0,0,1,2,2)))
+(fm3 <- distsamp(~ poly(area, 2) + habitat ~ habitat, ltUMF))
 
 # Negative exponential detection function.
 (fm4 <- distsamp(~ 1 ~ 1, ltUMF, key="exp"))
 hist(fm4, col="blue", ylim=c(0, 0.1), xlab="Distance (m)")
 
-
 # Hazard-rate detection function. Density output in hectares.
-# This is slow, especially for large datasets.
-(fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
+summary(fmhz <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 hist(fmhz)
 
 
@@ -137,7 +128,7 @@ ptUMF <- with(pointtran, {
 	})
 
 # Half-normal. Output is animals / ha on log-scale. No covariates.
-(fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
+summary(fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
 hist(fmp1, ylim=c(0, 0.07))
 
 }

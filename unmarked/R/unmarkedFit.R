@@ -646,8 +646,18 @@ setMethod("hist", "unmarkedFitDS",
 						min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
 					})
 				},
-			
-					
+		uniform = {
+			switch(survey, 
+				line = {
+					plot(h, freq=F, ...)
+					abline(h=1/max(dbreaks), lwd=lwd, lty=lty)
+					},
+				point = {
+					plot(h, freq=F, ...)
+					plot(function(r) (pi*r^2) / (pi*max(dbreaks)^2), 
+						min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+					}
+				)}
 		)
 })
 		

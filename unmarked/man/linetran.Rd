@@ -13,13 +13,13 @@ Response matrix of animals detected in four distance classes plus transect
 \format{
   A data frame with 12 observations on the following 7 variables.
   \describe{
-    \item{\code{dc1}}{Counts in distance class 1 (0-5 m)}
-    \item{\code{dc2}}{Counts in distance class 1 (0-5 m)}
-    \item{\code{dc3}}{Counts in distance class 1 (0-5 m)}
-    \item{\code{dc4}}{Counts in distance class 1 (0-5 m)}
+    \item{\code{dc1}}{Counts in distance class 1 [0-5 m)}
+    \item{\code{dc2}}{Counts in distance class 2 [5-10 m)}
+    \item{\code{dc3}}{Counts in distance class 3 [10-15 m)}
+    \item{\code{dc4}}{Counts in distance class 4 [15-20 m)}
     \item{\code{Length}}{Transect lengths in km}
     \item{\code{area}}{Numeric covariate}
-    \item{\code{habitat}}{a factor with levels \code{A} \code{B}}
+    \item{\code{habitat}}{a factor with levels \code{A} and \code{B}}
   }
 }
 \examples{
