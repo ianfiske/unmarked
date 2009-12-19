@@ -127,7 +127,7 @@ setMethod("modSel", "unmarkedFitList",
 	out$Converge <- sapply(fits, function(x) x@opt$convergence)
 	out$CondNum <- sapply(fits, function(x) cn(x))
 	out$negLogLike <- sapply(fits, function(x) x@negLogLike)
-	out$K <- sapply(fits, function(x) length(coef(x)))
+	out$nPars <- sapply(fits, function(x) length(coef(x)))
 	out$n <- sapply(fits, function(x) sampleSize(x))
 	if(!identical(length(table(out$n)), 1L))
 		warning("Models are not nested. AIC comparisons not valid")
@@ -139,7 +139,7 @@ setMethod("modSel", "unmarkedFitList",
 	if(!is.null(nullmod))
 		out$Rsq <- sapply(fits, nagR2, nullmod)
 	out <- out[order(out$AIC),]
-	out$AICwtCum <- cumsum(out$AICwt)
+	out$cumltvAICwt <- cumsum(out$AICwt)
 	msout <- new("unmarkedModSel", Estimates = eMat, SE = seMat, Full = out)
 	return(msout)
 })
@@ -149,8 +149,8 @@ setMethod("modSel", "unmarkedFitList",
 
 setMethod("show", "unmarkedModSel", 
 	function(object) {
-		out <- object@Full[,c("n", "K", "AIC", "deltaAIC", "AICwt", "Rsq", 
-			"AICwtCum")]
+		out <- object@Full[,c("n", "nPars", "AIC", "deltaAIC", "AICwt", "Rsq", 
+			"cumltvAICwt")]
 		print(out, digits=5)
 		})
 	

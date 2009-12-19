@@ -15,8 +15,9 @@ A S4 object with the following slots
 	\item{Estimates}{Matrix containing parameter estimates for each model}
 	\item{SE}{Matrix containing standard errors for model parameters}
 	\item{Full}{data.frame with formula, estimates, standard errors and model 
-		selection information. Rsq is Nagelkerke's (1991) R-squared index, which
-		is only defined when the nullmod argument is specified. }
+		selection information. Converge is optim convergence code. CondNum is
+		model condition number. Rsq is Nagelkerke's (1991) R-squared index, which
+		is only returned when the nullmod argument is specified. }
 }
 \references{Nagelkerke, N.J.D. (2004) A Note on a General Definition of the 
 	Coefficient of Determination. \emph{Biometrika} 78, pp. 691-692.}
