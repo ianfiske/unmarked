@@ -8,6 +8,7 @@
 \alias{getY}
 \alias{getY,unmarkedFrame-method}
 \alias{head,unmarkedFrame-method}
+\alias{hist,unmarkedFrameDS-method}
 \alias{mapInfo}
 \alias{numSites}
 \alias{numSites,unmarkedFrame-method}

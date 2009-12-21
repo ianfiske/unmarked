@@ -3,6 +3,7 @@
 \description{Model selection results from an unmarkedFitList}
 \alias{modSel}
 \alias{modSel-methods}
+\alias{unmarkedModSel-class}
 \arguments{
 	\item{object}{an object of class "unmarkedFitList" created by the function
 		\code{\link{fitList}}}

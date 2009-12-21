@@ -6,6 +6,7 @@
 \alias{getData,unmarkedFit-method}
 \alias{hessian}
 \alias{hessian,unmarkedFit-method}
+\alias{hist,unmarkedFitDS-method}
 \alias{mle}
 \alias{mle,unmarkedFit-method}
 \alias{names,unmarkedFit-method}
