@@ -15,7 +15,7 @@ modeled as
 
 The observation process is modeled as
 
-\deqn{y_{ij} \sim Bernoulli(p_{ij})}{y_ij ~ Bernoulli(p_ij)}
+\deqn{y_{ij}|z_i \sim Bernoulli(z_i p_{ij})}{y_ij | z_i ~ Bernoulli(z_i  * p_ij)}
 
 Covariates of \eqn{\psi_i}{psi_i} and \eqn{p_{ij}}{p_ij} are modeled
 using the logit link according to the \code{formula} argument.  The formula is a double right-hand sided formula
@@ -23,7 +23,11 @@ like \code{~ detform ~ occform} where \code{detform} is a formula for the detect
 formula for the partially observed occupancy state.  See \link{formula} for details on constructing model formulae
 in \R.}
 \value{unmarkedFitOccu object describing the model fit.}
-\references{MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege, J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology 83, no. 8 (2002): 2248-2255. \cr
+\references{MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
+  J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates
+  When Detection Probabilities Are Less Than One. Ecology 83, no. 8
+  (2002): 2248-2255.
+  
 MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008).}
 \author{Ian Fiske}
 \keyword{models}
