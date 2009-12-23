@@ -1,14 +1,14 @@
 setClass("unmarkedFit",
-    representation(fitType = "character",
-        call = "call",
-				formula = "formula",
-        data = "unmarkedFrame",
-				sitesRemoved = "numeric",  # vector of indices of sites that were removed from analysis
-        estimates = "unmarkedEstimateList",
-        AIC = "numeric",
-				opt = "list",
-        negLogLike = "numeric",
-				nllFun = "function"))
+         representation(fitType = "character",
+                        call = "call",
+                        formula = "formula",
+                        data = "unmarkedFrame",
+                        sitesRemoved = "numeric",  # vector of indices of sites that were removed from analysis
+                        estimates = "unmarkedEstimateList",
+                        AIC = "numeric",
+                        opt = "list",
+                        negLogLike = "numeric",
+                        nllFun = "function"))
 
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, formula,
@@ -55,15 +55,16 @@ setClass("unmarkedFitMNmix",
 		representation(constraint = "numeric"),
 		contains = "unmarkedFit")					
 
-
 setClass("unmarkedFitColExt",
 		representation(phi = "matrix",
-				projected = "matrix"),
+                               psiformula = "formula",
+                               gamformula = "formula",
+                               epsformula = "formula",
+                               detformula = "formula",
+                               projected = "matrix"),
 		contains = "unmarkedFit")
 
 ################################################################################
-
-
 
 setMethod("show", "unmarkedFit",
     function(object) {

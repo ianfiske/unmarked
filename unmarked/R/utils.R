@@ -667,34 +667,50 @@ getDesign2 <- function(formula, umf, na.rm = TRUE) {
 # TODO: use methods so that this is for multframe
 getDesign3 <- function(formula, umf, na.rm = TRUE) {
 	
-	detformula <- as.formula(formula[[2]])
-	stateformula <- as.formula(paste("~",formula[3],sep=""))
-	detVars <- all.vars(detformula)
-	
-	M <- numSites(umf)
-	R <- obsNum(umf)
-	nY <- umf@numPrimary
-	
-	## Compute state design matrix
-	if(is.null(umf@yearlySiteCovs)) {
-		yearlySiteCovs <- data.frame(placeHolder = rep(1, M*nY))
-	} else {
-		yearlySiteCovs <- umf@yearlySiteCovs
-	}
-	## in order to drop factor levels that only appear in last year,
-	## replace last year with NAs and use drop=TRUE
-	yearlySiteCovs[seq(nY,M*nY,by=nY),] <- NA
-	yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, function(x) {
-						x[,drop = TRUE]
-					}))
-	## add siteCovs in so they can be used as well
+#	detformula <- as.formula(formula[[2]])
+#	stateformula <- as.formula(paste("~",formula[3],sep=""))
+  detformula <- formula$pformula
+  psiformula <- formula$psiformula
+  gamformula <- formula$gammaformula
+  epsformula <- formula$epsilonformula
+  
+  detVars <- all.vars(detformula)
+  
+  M <- numSites(umf)
+  R <- obsNum(umf)
+  nY <- umf@numPrimary
+  
+  ## Compute phi design matrices
+  if(is.null(umf@yearlySiteCovs)) {
+    yearlySiteCovs <- data.frame(placeHolder = rep(1, M*nY))
+  } else {
+    yearlySiteCovs <- umf@yearlySiteCovs
+  }
+  ## in order to drop factor levels that only appear in last year,
+  ## replace last year with NAs and use drop=TRUE
+  yearlySiteCovs[seq(nY,M*nY,by=nY),] <- NA
+  yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, function(x) {
+    x[,drop = TRUE]
+  }))
+  ## add siteCovs in so they can be used as well
   if(!is.null(umf@siteCovs)) {
     sC <- umf@siteCovs[rep(1:M, each = nY),,drop=FALSE]
     yearlySiteCovs <- cbind(yearlySiteCovs, sC)
   }
-  X.mf <- model.frame(stateformula, yearlySiteCovs, na.action = NULL)
-	X <- model.matrix(stateformula, X.mf)
-	
+  X.mf.gam <- model.frame(gamformula, yearlySiteCovs, na.action = NULL)
+  X.gam <- model.matrix(gamformula, X.mf.gam)
+  X.mf.eps <- model.frame(epsformula, yearlySiteCovs, na.action = NULL)
+  X.eps <- model.matrix(epsformula, X.mf.gam)
+  
+  ## Compute site-level design matrix for psi
+  if(is.null(siteCovs(umf))) {
+    siteCovs <- data.frame(placeHolder = rep(1, M))
+  } else {
+    siteCovs <- siteCovs(umf)
+  }
+  W.mf <- model.frame(psiformula, siteCovs, na.action = NULL)
+  W <- model.matrix(psiformula, W.mf)
+
 #  ## impute missing yearlySiteCovs across years as average
 #  X <- t(apply(X, 1, function(x) {
 #            out <- x
@@ -708,8 +724,9 @@ getDesign3 <- function(formula, umf, na.rm = TRUE) {
 		obsCovs <- obsCovs(umf)
 	}
 	
-	## add site Covariates at observation-level
-	obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = R),])
+	## add site and yearlysite covariates at observation-level
+	obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = R),],
+                         siteCovs[rep(1:M, each = R), ])
 	
 	## add observation number if not present
 	if(!("obs" %in% names(obsCovs))) {
@@ -720,13 +737,15 @@ getDesign3 <- function(formula, umf, na.rm = TRUE) {
 	V <- model.matrix(detformula, V.mf)
 	
 	if(na.rm)
-		out <- handleNA3(umf, X, V)
+		out <- handleNA3(umf, X.gam, X.eps, W, V)
 	else
-		out <- list(y=getY(umf), X=X, V=V, plotArea=umf@plotArea, 
+		out <- list(y=getY(umf), X.gam=X.gam, X.eps=X.eps,
+                            W=W,V=V, plotArea=umf@plotArea, 
 				removed.sites=integer(0))
 	
-	return(list(y = out$y, X = out$X, V = out$V, 
-					plotArea = out$plotArea, removed.sites = out$removed.sites))
+	return(list(y = out$y, X.eps = out$X.eps, X.gam = out$X.eps,
+                    W = out$W, V = out$V, plotArea = out$plotArea,
+                    removed.sites = out$removed.sites))
 }
 
 
@@ -786,7 +805,7 @@ handleNA2 <- function(umf, X, V) {
 }
 
 
-handleNA3 <- function(umf, X, V) {
+handleNA3 <- function(umf, X.gam, X.eps, W, V) {
 	obsToY <- obsToY(umf)
 	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
 	
@@ -795,6 +814,9 @@ handleNA3 <- function(umf, X, V) {
 	nY <- umf@numPrimary
 	J <- numY(umf) / nY
 	
+        ## treat both X's and W together
+        X <- cbind(X.gam, X.eps, W[rep(1:M, each = nY), ])
+
 	plotArea <- umf@plotArea
 	if(all(is.na(plotArea))) 	# Necessary b/c distsamp calculates plot areas w/in the function when all(is.na(plotArea))
 		plotArea.na <- rep(FALSE, length(plotArea))
@@ -834,22 +856,22 @@ handleNA3 <- function(umf, X, V) {
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
 		y <- y[!sites.to.remove, ,drop = FALSE]
-		X <- X[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
+		X.gam <- X.gam[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
+                X.eps <- X.eps[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
+                W <- X[!sites.to.remove, drop = FALSE]
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
 		plotArea <- plotArea[!sites.to.remove]
 		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
 	}
-	
-	list(y = y, X = X, V = V, plotArea = plotArea, removed.sites = which(sites.to.remove))
+	list(y = y, X.gam = X.gam, X.eps = X.eps, W = W,
+             V = V, plotArea = plotArea,
+             removed.sites = which(sites.to.remove))
 }
-
-
 
 meanstate <- function(x) {
     K <- length(x) - 1
     sum(x*(0:K))
 }
-
 
 truncateToBinary <- function(y) {
   if(max(y, na.rm = TRUE) > 1) {
