@@ -889,38 +889,40 @@ getSS <- function(phi) {
 	ev/sum(ev)
 }
 
-imputeMissing <- function(umf, whichCovs) {
-# impute observation covariates
-	if(!is.null(umf@obsCovs)) {
-		obsCovs <- umf@obsCovs
-		J <- obsNum(umf)
-		M <- nrow(obsCovs)/J
-		obs <- obsCovs[,whichCovs]
-		whichrows <- apply(obs, 1, function(x) any(!is.na(x)))
-		if(sum(whichrows) == 0) return(obsCovs)
-		whichels <- matrix(whichrows, M, J, byrow = TRUE)
-		for(i in seq(length=length(whichCovs))) {
-			obs.i <- obs[,i]
-			obs.i.mat <- matrix(obs.i, M, J, byrow = TRUE) # get ith obsvar
-			obs.i.missing <- is.na(obs.i.mat) & whichels
-			obs.i.imputed <- obs.i.mat
-			for(j in 1:M) {
-				for(k in 1:J) {
-					if(obs.i.missing[j,k])
-						if(all(is.na(obs.i.mat[j,]))) {
-							obs.i.imputed[j,k] <- mean(obs.i.mat[,k], na.rm = T)
-						} else {
-							obs.i.imputed[j,k] <- mean(c(mean(obs.i.mat[j,],na.rm = T),
-											mean(obs.i.mat[,k], na.rm = T)))
-						}
-				}
-			}
-			obsCovs[,i] <- as.numeric(t(obs.i.imputed))
-		}
-		umf@obsCovs <- obsCovs
-	}
-	# TODO: impute site covariates
-	return(umf)
+imputeMissing <- function(umf, whichCovs = seq(length=ncol(obsCovs(umf)))) {
+  
+  
+  ## impute observation covariates
+  if(!is.null(umf@obsCovs)) {
+    obsCovs <- umf@obsCovs
+    J <- obsNum(umf)
+    M <- nrow(obsCovs)/J
+    obs <- as.matrix(obsCovs[,whichCovs])
+    whichrows <- apply(obs, 1, function(x) any(!is.na(x)))
+    if(sum(whichrows) == 0) return(obsCovs)
+    whichels <- matrix(whichrows, M, J, byrow = TRUE)
+    for(i in seq(length=length(whichCovs))) {
+      obs.i <- obs[,i]
+      obs.i.mat <- matrix(obs.i, M, J, byrow = TRUE) # get ith obsvar
+      obs.i.missing <- is.na(obs.i.mat) & !whichels
+      obs.i.imputed <- obs.i.mat
+      for(j in 1:M) {
+        for(k in 1:J) {
+          if(obs.i.missing[j,k])
+            if(all(is.na(obs.i.mat[j,]))) {
+              obs.i.imputed[j,k] <- mean(obs.i.mat[,k], na.rm = T)
+            } else {
+              obs.i.imputed[j,k] <- mean(c(mean(obs.i.mat[j,],na.rm = T),
+                                           mean(obs.i.mat[,k], na.rm = T)))
+            }
+        }
+      }
+      obsCovs[,whichCovs[i]] <- as.numeric(t(obs.i.imputed))
+    }
+    umf@obsCovs <- obsCovs
+  }
+                                        # TODO: impute site covariates
+  return(umf)
 }
 
 
