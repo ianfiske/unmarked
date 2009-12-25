@@ -1,6 +1,7 @@
 \name{unmarkedFit-class}
 \Rdversion{1.1}
 \docType{class}
+\alias{unmarkedFit}
 \alias{unmarkedFit-class}
 \alias{getData}
 \alias{getData,unmarkedFit-method}
