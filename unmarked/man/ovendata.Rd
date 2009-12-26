@@ -6,7 +6,7 @@
 Removal data for the Ovenbird
 }
 \description{
-Removal sampling data collected for the Ovenbird (Seiurus aurocapillus).
+Removal sampling data collected for the Ovenbird (\emph{Seiurus aurocapillus}).
 }
 \usage{data(ovendata)}
 \format{
