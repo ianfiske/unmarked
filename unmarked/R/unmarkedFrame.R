@@ -359,114 +359,22 @@ setMethod("summary", "unmarkedFrameDS",
 ################################# PLOT METHODS #################################
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
-#setMethod("plot", c(x="unmarkedFrame", y="missing"),
-#		function(x) {
-#			M <- numSites(x)
-#			J <- obsNum(x)
-#			df <- data.frame(site = rep(1:M, each = J), 
-#				obs = as.factor(rep(1:J, M)), y = as.vector(t(getY(x))))
-#			df <- na.omit(df)
-#			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() +
-#				coord_flip()
-#			g
-#		})
-#
-#setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
-#		function(x) {
-#			M <- numSites(x)
-#			J <- obsNum(x)
-#			df <- data.frame(site = rep(1:M, each = J), 
-#				obs = as.factor(rep(1:J, M)), 
-#				y = as.ordered(as.vector(t(getY(x)))))
-#			df <- na.omit(df)
-#			g <- ggplot(aes(x = site, y = obs, fill=y), data=df) + geom_tile() +
-#				coord_flip() + scale_fill_brewer(type="seq")
-#			g
-#		})
-#
-## this needs some work.
-#setMethod("plot", c(x="unmarkedFramePCount", y="missing"),
-#		function(x) {
-#			## create lines for sites that have pos obs?
-#			M <- numSites(x)
-#			J <- obsNum(x)
-#			df <- data.frame(site = rep(1:M, each = J), 
-#				obs = as.factor(rep(1:J, M)), y = as.vector(t(getY(x))))
-#			df <- na.omit(df)
-#			g <- ggplot(aes(x = site, y = obs, colour=y,size=y), data=df) +
-#				geom_point() + coord_flip() + theme_bw() + scale_fill_gradient()
-#			g
-#		})
-#
-#setMethod("plot", c(x="unmarkedMultFrame", y="missing"),
-#		function(x) {
-#			M <- numSites(x)
-#			nY <- x@numPrimary
-#			J <- obsNum(x)
-#			obsNum <- J/nY
-#			df <- data.frame(site = rep(1:M, each = J), 
-#				obs = as.factor(rep(1:J, M)), 
-#				y = as.ordered(as.vector(t(getY(x)))))
-#			df <- na.omit(df)
-#			yrs <- data.frame(x=rep(0,nY-1), xend=rep(M,nY-1), 
-#				yrs=seq(obsNum, J-obsNum,by=obsNum)+0.5)
-#			g <- ggplot(data=df) + geom_tile(aes(x = site, y = obs, fill=y)) +
-#				coord_flip() + scale_fill_brewer(type="seq") +
-#				geom_segment(aes(x=x,xend=xend,y=yrs,yend=yrs),data=yrs) +
-#				theme_bw() + scale_y_discrete(breaks=seq(1,J-obsNum+1,by=obsNum))
-#			g
-#		})
-
-
-
 setMethod("plot", c(x="unmarkedFrame", y="missing"),
-	# plt <- 
-	function (x, y, col=terrain.colors, zeroNAcolors=c(gray(0.5), gray(0)),
-		xlab="Observation", ylab="Site", addgrid = FALSE, ...) 
+	function (x, y, panels = 1, ...)
 {
 	y <- getY(x)
 	M <- nrow(y)
 	J <- ncol(y)
-	tab <- table(y, useNA = "ifany")
-	vals <- as.numeric(names(tab))
-	ymax <- max(y, na.rm=T)
-	ncolors <- ymax + ifelse(any(vals==0), 1, 0)
-	lt <- length(tab)
-	op <- par(no.readonly = TRUE)
-	laymat <- matrix(1, 5, 8)
-	laymat[, 8] <- c(0, 2, 2, 2, 0)
-	layout(laymat)
-	if(is.function(col)) 
-		color <- do.call(col, list(n=ncolors))
-	else 
-		color <- col
-	color[which(vals==0)] <- zeroNAcolors[1]
-	z <- t(y)
-	z[!is.na(z)] <- 0
-	z[is.na(z)] <- 1
-	image(1:J, 1:M, z, col=zeroNAcolors, xaxt="n", xlab=xlab, ylab=ylab,
-		...)
-	image(1:J, 1:M, t(y), col=color, add=T)
-	box()
-	axis(1, at = 1:J, ...)
-	if(addgrid)
-		grid(J, M, lty = 1, lwd=0.1)
-	par(mai = c(0.1, 0.2, 0.4, 0.4))
-	zv <- vals
-	zv[!is.na(zv)] <- 0
-	zv[is.na(zv)] <- 1
-	image(1:2, 1:lt, matrix(zv, 1), col=zeroNAcolors, xaxt = "n", 
-		yaxt = "n", main = "Legend")
-	image(1:2, 1:lt, matrix(vals, 1), col=color, add=T)
-	box()
-	if (any(is.null(names(tab)))) 
-		laborder <- c(lt, 1:(lt - 1))
-	else laborder <- 1:lt
-	axis(2, at = 1:lt, labels = paste(names(tab))[laborder], las=1, ...)
-	par(op)
-})
-
-
+        y <- as.data.frame(y)
+        colnames(y) <- paste("obs",1:J)
+        y$site <- 1:M
+        sites.per.panel <- M/panels
+        y$group <- as.factor(round(seq(1,panels,length=M)))
+        y2 <- melt(y, #measure.var = c("V1", "V2", "V3"),
+                   id.var=c("site","group"))
+        levelplot(value ~ variable*site | group, y2,
+                  scales=list(relation="free", x=list(labels=1:J)), ...)
+      })
 
 
 setMethod("hist", "unmarkedFrameDS",
