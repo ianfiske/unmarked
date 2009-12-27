@@ -78,7 +78,10 @@ Objects can be created by calls to the constructor function
     \item{obsToY}{\code{signature(object = "unmarkedFrame")}:  }
     \item{obsToY<-}{\code{signature(object = "unmarkedFrame")}: ... }
     \item{plot}{\code{signature(x = "unmarkedFrame", y = "missing")}: visualize 
-		response variable }
+      response variable.
+
+    Takes additional argument \code{panels} which specifies how many
+    panels data should be split over.}
     \item{projection}{\code{signature(object = "unmarkedFrame")}: extract 
 		projection information }
     \item{show}{\code{signature(object = "unmarkedFrame")}: view data as 
