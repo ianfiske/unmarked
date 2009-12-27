@@ -208,23 +208,24 @@ setMethod("coef", "unmarkedFit",
 
 
 setMethod("vcov", "unmarkedFit",
-		function(object, type, altNames = TRUE, method = "hessian") {
-			if(missing(type)) {
-				switch(method,
-						hessian = v <- solve(hessian(object)),
-						nonparboot = {
-							fmList <- nonparboot(object)
-							coefs <- t(sapply(fmList, function(x) coef(x)))
-							v <- cov(coefs)
-						}
-				)
-				rownames(v) <- colnames(v) <- names(coef(object, altNames=altNames))
-			} else {
-				v <- vcov(object[type])
-				rownames(v) <- colnames(v) <- names(coef(object, type, altNames=altNames))
-			}
-			v
-		})
+function(object, type, altNames = TRUE, method = "hessian") {
+  if(is.null(object@opt$hessian)) stop("Hessian was not computed for this model.")
+  if(missing(type)) {
+    switch(method,
+           hessian = v <- solve(hessian(object)),
+           nonparboot = {
+             fmList <- nonparboot(object)
+             coefs <- t(sapply(fmList, function(x) coef(x)))
+             v <- cov(coefs)
+           }
+           )
+    rownames(v) <- colnames(v) <- names(coef(object, altNames=altNames))
+  } else {
+    v <- vcov(object[type])
+    rownames(v) <- colnames(v) <- names(coef(object, type, altNames=altNames))
+  }
+  v
+})
 
 setMethod("SE", "unmarkedFit", 
 		function(obj) {
