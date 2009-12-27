@@ -40,7 +40,7 @@ MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amster
 \item{se}{logical specifying whether or not to compute standard errors.}}
 \examples{data(frogs)
 pferUMF <- unmarkedFrameOccu(pfer.bin)
-
+plot(pferUMF, panels=4)
 # add some fake covariates for illustration
 siteCovs(pferUMF) <- data.frame(sitevar1 = rnorm(numSites(pferUMF)))
 
