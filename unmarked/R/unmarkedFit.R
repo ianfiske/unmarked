@@ -376,17 +376,26 @@ setMethod("fitted", "unmarkedFitColExt",
 			M <- numSites(data)
 			nY <- data@numPrimary
 			J <- obsNum(data)/nY
-			psi <- plogis(coef(object, 'psi'))
+			psiParms <- coef(object, 'psi')
 			detParms <- coef(object, 'det')
 			colParms <- coef(object, 'col')
 			extParms <- coef(object, 'ext')
-			designMats <- unmarked:::getDesign3(formula = object@formula, 
+                        formulaList <- list(psiformula=object@psiformula,
+                                            gammaformula=object@gamformula,
+                                            epsilonformula=object@epsformula,
+                                            pformula=object@detformula)
+			designMats <- getDesign3(formula = formulaList,
 				object@data)
-			V.itj <- designMats$V; X.it <- designMats$X
+			designMats <- getDesign3(formula = formulaList, object@data)
+                        V.itj <- designMats$V
+                        X.it.gam <- designMats$X.gam
+                        X.it.eps <- designMats$X.eps
+                        W.i <- designMats$W
 			
+                        psiP <- plogis(W.i %*% psiParms)
 			detP <- plogis(V.itj %*% detParms)
-			colP <- plogis(X.it  %*% colParms)
-			extP <- plogis(X.it %*% extParms)
+			colP <- plogis(X.it.gam  %*% colParms)
+			extP <- plogis(X.it.eps %*% extParms)
 			
 			detP <- array(detP, c(J, nY, M))
 			colP <- matrix(colP, M, nY, byrow = TRUE)
@@ -403,7 +412,8 @@ setMethod("fitted", "unmarkedFitColExt",
 			
 			## first compute latent probs
 			x <- array(NA, c(2, nY, M))
-			x[,1,] <- rep(c(1-psi,psi), M)
+                        x[1,1,] <- 1-psiP
+                        x[2,1,] <- psiP
 			for(i in 1:M) {
 				for(t in 2:nY) {
 					x[,t,i] <- (phis[,,t-1,i] %*% x[,t-1,i])
@@ -879,20 +889,29 @@ setMethod("simulate", "unmarkedFitOccu",
 setMethod("simulate", "unmarkedFitColExt",
 		function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
 			data <- object@data
-			psi <- plogis(coef(object, 'psi'))
+                        psiParms <- coef(object, 'psi')
 			detParms <- coef(object, 'det')
 			colParms <- coef(object, 'col')
 			extParms <- coef(object, 'ext')
-			designMats <- unmarked:::getDesign3(formula = object@formula, object@data)
-			V.itj <- designMats$V; X.it <- designMats$X; y <- designMats$y
+                        formulaList <- list(psiformula=object@psiformula,
+                                            gammaformula=object@gamformula,
+                                            epsilonformula=object@epsformula,
+                                            pformula=object@detformula)
+			designMats <- getDesign3(formula = formulaList, object@data)
+                        V.itj <- designMats$V
+                        X.it.gam <- designMats$X.gam
+                        X.it.eps <- designMats$X.eps
+                        W.i <- designMats$W
+                        y <- designMats$y
 
 			M <- nrow(y)	# M <- nrow(X.it)
 			nY <- data@numPrimary
 			J <- obsNum(data)/nY
 
+                        psiP <- plogis(W.i %*% psiParms)
 			detP <- plogis(V.itj %*% detParms)
-			colP <- plogis(X.it  %*% colParms)
-			extP <- plogis(X.it %*% extParms)
+			colP <- plogis(X.it.gam  %*% colParms)
+			extP <- plogis(X.it.eps %*% extParms)
 			
 			detP <- array(detP, c(J, nY, M))
 			detP <- aperm(detP, c(3, 1, 2))
@@ -903,7 +922,7 @@ setMethod("simulate", "unmarkedFitColExt",
 			for(s in 1:nsim) {
 				## generate first year's data
 				x <- matrix(0, M, nY)
-				x[,1] <- rbinom(M, 1, psi) 
+				x[,1] <- rbinom(M, 1, psiP) 
 				
 				## create transition matrices (phi^T)
 				phis <- array(NA,c(2,2,nY-1,M)) #array of phis for each
@@ -994,9 +1013,13 @@ setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)
 	formula <- object@formula
 	umf <- object@data
 	dataClass <- class(umf)
-	if(dataClass[1] == "unmarkedMultFrame")
-		designMats <- getDesign3(formula, umf, na.rm = FALSE)
-	else	
+	if(dataClass[1] == "unmarkedMultFrame") {
+                        formulaList <- list(psiformula=object@psiformula,
+                                            gammaformula=object@gamformula,
+                                            epsilonformula=object@epsformula,
+                                            pformula=object@detformula)
+		designMats <- getDesign3(formulaList, umf, na.rm = FALSE)
+	} else	
 		designMats <- getDesign2(formula, umf, na.rm = FALSE)
 	y <- designMats$y
 	if(class(object) %in% c("unmarkedFitOccu", "unmarkedFitOccuRN", 
