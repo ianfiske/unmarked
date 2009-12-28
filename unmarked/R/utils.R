@@ -700,7 +700,7 @@ getDesign3 <- function(formula, umf, na.rm = TRUE) {
   X.mf.gam <- model.frame(gamformula, yearlySiteCovs, na.action = NULL)
   X.gam <- model.matrix(gamformula, X.mf.gam)
   X.mf.eps <- model.frame(epsformula, yearlySiteCovs, na.action = NULL)
-  X.eps <- model.matrix(epsformula, X.mf.gam)
+  X.eps <- model.matrix(epsformula, X.mf.eps)
   
   ## Compute site-level design matrix for psi
   if(is.null(siteCovs(umf))) {
@@ -743,7 +743,7 @@ getDesign3 <- function(formula, umf, na.rm = TRUE) {
                             W=W,V=V, plotArea=umf@plotArea, 
 				removed.sites=integer(0))
 	
-	return(list(y = out$y, X.eps = out$X.eps, X.gam = out$X.eps,
+	return(list(y = out$y, X.eps = out$X.eps, X.gam = out$X.gam,
                     W = out$W, V = out$V, plotArea = out$plotArea,
                     removed.sites = out$removed.sites))
 }
