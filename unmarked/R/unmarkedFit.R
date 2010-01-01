@@ -72,7 +72,7 @@ setMethod("show", "unmarkedFit",
       print(object@call)
       cat("\n")
       show(object@estimates)
-      cat("\nAIC:", object@AIC,"\n")
+      cat("AIC:", object@AIC,"\n")
       if(!identical(object@opt$convergence, 0L))
     		warning("Model did not converge. Try providing starting values or
     			increasing maxit control argment.")
@@ -88,7 +88,8 @@ setMethod("summary", "unmarkedFit",
 		print(object@call)
 		cat("\n")
         summary(object@estimates)      	
-		cat("Sample size:", sampleSize(object))
+      	cat("AIC:", object@AIC,"\n")
+	  	cat("Sample size:", sampleSize(object))
 		if(length(object@sitesRemoved) > 0)
 			cat("\nSites removed:", object@sitesRemoved)
 		cat("\noptim convergence code:", object@opt$convergence)
