@@ -151,46 +151,48 @@ setMethod("names", "unmarkedFit",
       names(x@estimates)
     })
     
-
 # Prediction
+# TODO: make predict method for colext.
 setMethod("predict", "unmarkedFit", 
-	function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
-		appendData = FALSE, ...) 
-	{
-		if(missing(newdata) || is.null(newdata))
-			newdata <- getData(object)
-		formula <- object@formula
-		detformula <- as.formula(formula[[2]])
-		stateformula <- as.formula(paste("~", formula[3], sep=""))
-		if(inherits(newdata, "unmarkedFrame"))
-			class(newdata) <- "unmarkedFrame"
-		cls <- class(newdata)
-		switch(cls, 
-			unmarkedFrame = {
-				designMats <- getDesign2(formula, newdata, na.rm = na.rm)
-					switch(type, 
-						state = X <- designMats$X,
-						det = X <- designMats$V)
-				},
-			data.frame = {
-				switch(type, 
-					state = {
-						Terms <- delete.response(terms(stateformula))
-						mf <- model.frame(Terms, newdata)
-						X <- model.matrix(Terms, mf)
-						},
-					det = X <- model.matrix(detformula, newdata))
-				})
-		out <- data.frame(matrix(NA, nrow(X), 2, 
-			dimnames=list(NULL, c("Predicted", "SE"))))
-		lc <- linearComb(object, X, type)
-		if(backTransform) lc <- backTransform(lc)
-		out$Predicted <- coef(lc)
-		out$SE <- SE(lc)
-		if(appendData)
-			out <- data.frame(out, newdata)
-		return(out)
-	}
+function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
+         appendData = FALSE, ...) 
+  {
+    if(class(object) == "unmarkedFitColExt")
+      stop("predict is not implemented for colext yet.")
+    if(missing(newdata) || is.null(newdata))
+      newdata <- getData(object)
+    formula <- object@formula
+    detformula <- as.formula(formula[[2]])
+    stateformula <- as.formula(paste("~", formula[3], sep=""))
+    if(inherits(newdata, "unmarkedFrame"))
+      class(newdata) <- "unmarkedFrame"
+    cls <- class(newdata)
+    switch(cls, 
+           unmarkedFrame = {
+             designMats <- getDesign2(formula, newdata, na.rm = na.rm)
+             switch(type, 
+                    state = X <- designMats$X,
+                    det = X <- designMats$V)
+           },
+           data.frame = {
+             switch(type, 
+                    state = {
+                      Terms <- delete.response(terms(stateformula))
+                      mf <- model.frame(Terms, newdata)
+                      X <- model.matrix(Terms, mf)
+                    },
+                    det = X <- model.matrix(detformula, newdata))
+           })
+    out <- data.frame(matrix(NA, nrow(X), 2, 
+                             dimnames=list(NULL, c("Predicted", "SE"))))
+    lc <- linearComb(object, X, type)
+    if(backTransform) lc <- backTransform(lc)
+    out$Predicted <- coef(lc)
+    out$SE <- SE(lc)
+    if(appendData)
+      out <- data.frame(out, newdata)
+    return(out)
+  }
 )
 
 setMethod("coef", "unmarkedFit",
@@ -761,18 +763,19 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
 	
 setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
 	{
-		formula <- object@formula
-		detformula <- as.formula(formula[[2]])
-		data <- getData(object)	
-		designMats <- unmarked:::getDesign3(formula = formula, data, na.rm = na.rm)
-		y <- designMats$y
-		M <- nrow(y)
-		J <- ncol(y)
-		V.itjk <- designMats$V
-		ppars <- coef(object, type="det") 
-		p <- plogis(V.itjk %*% ppars)	
-		p <- matrix(p, M, J, byrow = TRUE)
-		return(p)
+          stop("getP is not yet implemented for colext fits.")
+### 		formula <- object@formula
+### 		detformula <- as.formula(formula[[2]])
+### 		data <- getData(object)	
+### 		designMats <- unmarked:::getDesign3(formula = formula, data, na.rm = na.rm)
+### 		y <- designMats$y
+### 		M <- nrow(y)
+### 		J <- ncol(y)
+### 		V.itjk <- designMats$V
+### 		ppars <- coef(object, type="det") 
+### 		p <- plogis(V.itjk %*% ppars)	
+### 		p <- matrix(p, M, J, byrow = TRUE)
+### 		return(p)
 	})
 
 
