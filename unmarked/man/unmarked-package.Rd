@@ -23,9 +23,7 @@ fits occurrence models with no linkage between abundance and detection
 presence/absence data by exploiting the link between detection
 probability and abundance (Royle and Nichols 2003).
 \command{\link{pcount}} fits N-mixture models for repeated count data
-(Royle 2004, Kery and Royle 2005).  \command{\link{mnMix}} fits the
-multinomial mixture model to categorical observations (Royle and Link
-2005).  \command{\link{distsamp}} fits the distsance sampling model of 
+(Royle 2004, Kery and Royle 2005).  \command{\link{distsamp}} fits the distsance sampling model of 
 Royle et al. (2004) to distance data recorded in discrete intervals. All of 
 these functions allow the user to specify covariates that affect the detection
 process and several also allow covariates for the state process.
