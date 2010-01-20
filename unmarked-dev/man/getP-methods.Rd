@@ -5,6 +5,7 @@
 \alias{getP,unmarkedFit-method}
 \alias{getP,unmarkedFitDS-method}
 \alias{getP,unmarkedFitMPois-method}
+\alias{getP,unmarkedFitColExt-method}
 \title{Methods for Function getP in Package `unmarked'}
 \description{
 Methods for function \code{getP} in Package `unmarked'. These methods return a 

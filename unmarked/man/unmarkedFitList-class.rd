@@ -4,6 +4,7 @@
 \alias{unmarkedFitList-class}
 \alias{modSel,unmarkedFitList-method}
 \alias{predict,unmarkedFitList-method}
+\alias{summary,unmarkedFitList-method}
 
 \title{Class "unmarkedFitList"}
 \description{Class to hold multiple nested fitted models from one of 

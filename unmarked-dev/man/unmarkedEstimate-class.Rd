@@ -3,6 +3,7 @@
 \docType{class}
 \alias{unmarkedEstimate}
 \alias{unmarkedEstimate-class}
+\alias{names,unmarkedFit-method}  
 \title{Class "unmarkedEstimate"}
 \description{Contains parameter estimates, covariance matrix, and metadata}
 \section{Objects from the Class}{

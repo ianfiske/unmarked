@@ -18,6 +18,8 @@
 \alias{predict,unmarkedFit-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
+\alias{residuals,unmarkedFitOccu-method}
+\alias{residuals,unmarkedFitOccuRN-method}
 \alias{update,unmarkedFit-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
@@ -25,6 +27,10 @@
 \alias{unmarkedFitPCount-class}
 \alias{unmarkedFitDS-class}
 \alias{unmarkedFitMPois-class}
+\alias{plot,profile,missing-method}
+\alias{show,unmarkedFit-method}
+\alias{summary,unmarkedFit-method}
+\alias{summary,unmarkedFitDS-method}
 
 \title{Class "unmarkedFit" }
 \description{Contains fitted model information which can be manipulated or 
