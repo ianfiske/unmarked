@@ -123,3 +123,23 @@ setMethod("confint", "unmarkedBackTrans",
             if(nrow(ci) == 1) rownames(ci) <- ""
             ci
           })
+
+setAs("unmarkedBackTrans", "data.frame",
+      def=function(from) {
+        lcTable <- data.frame(LinComb = from@parentLinComb@estimate)
+        df.coefs <- as.data.frame(from@parentLinComb@coefficients)
+        colnames(df.coefs) <- names(from@parentLinComb@parentEstimate@estimates)
+        lcTable <- cbind(lcTable, df.coefs)
+        btTable <- data.frame(Estimate = from@estimate, SE = SE(from))
+        btTable <- cbind(btTable, lcTable)
+        btTable
+      })
+
+setAs("unmarkedLinComb", "data.frame",
+      def=function(from) {
+        df.coefs <- as.data.frame(from@coefficients)
+        colnames(df.coefs) <- names(from@parentEstimate@estimates)
+        lcTable <- data.frame(Estimate = from@estimate, SE = SE(from))
+        lcTable <- cbind(lcTable, df.coefs)
+        lcTable
+      })
