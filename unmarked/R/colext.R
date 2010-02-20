@@ -294,6 +294,16 @@ colext.fit <- function(formula, data, J,
   rownames(projected.mean) <- c("unoccupied","occupied")
   colnames(projected.mean) <- 1:nY
   
+  ## smoothing
+  forward(detParams, phi, psi, storeAlpha = TRUE)
+  backward(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phi, psi)
+  beta[,,1]
+  for(i in 1:M) {
+    for(t in 1:nY) {
+      gamma[,t,i] <- alpha[,t,i] * beta[,t,i] / sum(alpha[,t,i] * beta[,t,i])
+    }
+  }
+
   parm.names <- c(psiParms, gamParms, epsParms, detParms)
   mle.df <- data.frame(names = parm.names, value = mle)
   rownames(mle.df) <- paste(c(rep("psi", nSP), rep("col", nGP), rep("ext", nEP), rep("det", nDP)),
