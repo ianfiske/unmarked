@@ -13,7 +13,29 @@ Convert a data.frame between wide and long formats.
 formatWide(dfin, sep = ".", obsToY, type, ...)
 formatLong(dfin, species = NULL, type)
 }
+\details{
+  In order for these functions to work, the columns of \code{dfin} need to be in the
+  correct order.  \code{formatLong} requires that the columns are in the
+  following scheme:
+  \enumerate{
+    \item site name or number.
+    \item date or observation number.
+    \item response variable (detections, counts, etc).
+    \item The remaining columns are observation-level covariates.
+  }
 
+  \code{formatWide} requires particular names for the columns.
+  The column order for \code{formatWide} is
+  \enumerate{
+    \item (optional) site name, named \dQuote{site}.
+    \item response, named \dQuote{y.1}, \dQuote{y.2}, \ldots, \dQuote{y.J}.
+    \item columns of site-level covariates, each with a relevant name per column.
+    \item groups of columns of observation-level covariates, each group
+  having the name form \dQuote{someObsCov.1}, \dQuote{someObsCov.2},
+  \ldots, 
+  \dQuote{someObsCov.J}.
+  }
+}
 \arguments{
   \item{dfin}{A data.frame to be reformatted.
 }
