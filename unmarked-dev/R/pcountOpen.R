@@ -321,53 +321,53 @@ return(umfit)
 
                                                        
 
-# Simulate	
-set.seed(1)
-M <- 50
-T <- 5
-veght <- rnorm(M)
-isolation <- matrix(rnorm(M*T), M, T)
-date <- matrix(rnorm(M*T, 1), M, T)
-lambda <- exp(-1 + 0.5*veght)
-y <- p <- N <- gamma <- matrix(NA, M, T)
-S <- G <- matrix(NA, M, T-1)
-gamma[] <- exp(-1 + -1*isolation)
-N[,1] <- rpois(M, lambda)
-for(t in 1:(T-1)) {
-	S[,t] <- rbinom(M, N[,t], 0.8)
-	G[,t] <- rpois(M, gamma[,t])
-	N[,t+1] <- S[,t] + G[,t]
-	}
-p[] <- plogis(-1 + 1*date)
-y[] <- rbinom(M*T, N, p)
-#y[1, 1:2] <- NA
-#isolation[1, 1:2] <- NA
-#date[1, 1:2] <- NA
-dat <- data.frame(veght)
+## # Simulate	
+## set.seed(1)
+## M <- 50
+## T <- 5
+## veght <- rnorm(M)
+## isolation <- matrix(rnorm(M*T), M, T)
+## date <- matrix(rnorm(M*T, 1), M, T)
+## lambda <- exp(-1 + 0.5*veght)
+## y <- p <- N <- gamma <- matrix(NA, M, T)
+## S <- G <- matrix(NA, M, T-1)
+## gamma[] <- exp(-1 + -1*isolation)
+## N[,1] <- rpois(M, lambda)
+## for(t in 1:(T-1)) {
+## 	S[,t] <- rbinom(M, N[,t], 0.8)
+## 	G[,t] <- rpois(M, gamma[,t])
+## 	N[,t+1] <- S[,t] + G[,t]
+## 	}
+## p[] <- plogis(-1 + 1*date)
+## y[] <- rbinom(M*T, N, p)
+## #y[1, 1:2] <- NA
+## #isolation[1, 1:2] <- NA
+## #date[1, 1:2] <- NA
+## dat <- data.frame(veght)
 
 
 
-# Prepare data                               
-umf <- unmarkedFramePCountOpen(y = y, siteCovs = dat, 
-	obsCovs = list(isolation=isolation, date=date))
+## # Prepare data                               
+## umf <- unmarkedFramePCountOpen(y = y, siteCovs = dat, 
+## 	obsCovs = list(isolation=isolation, date=date))
 
-umf
-#plot(umf)
-summary(umf)
+## umf
+## #plot(umf)
+## summary(umf)
 
 
-# Fit some models
-system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))
-backTransform(m1, "lambda")
-backTransform(m1, "gamma")
-backTransform(m1, "omega")
-backTransform(m1, "det")
+## # Fit some models
+## system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))
+## backTransform(m1, "lambda")
+## backTransform(m1, "gamma")
+## backTransform(m1, "omega")
+## backTransform(m1, "det")
 
-# Real slow
-system.time(m2 <- pcountOpen(~veght, ~isolation, ~1, ~date, umf, K=10, se=F,
-	control=list(maxit=20, trace=T), starts=c(-1, 0.5, -1, -1, 1.5, -1, 1)))
+## # Real slow
+## system.time(m2 <- pcountOpen(~veght, ~isolation, ~1, ~date, umf, K=10, se=F,
+## 	control=list(maxit=20, trace=T), starts=c(-1, 0.5, -1, -1, 1.5, -1, 1)))
 
-#debugonce(pcountOpen)
+## #debugonce(pcountOpen)
 
 
 
