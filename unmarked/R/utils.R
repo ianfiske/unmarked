@@ -172,6 +172,8 @@ formatLong <-
 function(dfin, species = NULL, type)
 {
 
+  if(missing(type)) stop("type must be supplied")
+
   ## copy dates to last column so that they are also a covdata var
   nc <- ncol(dfin)
   dfin[[nc+1]] <- dfin[[2]]
