@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 0.8-1
-Date: 2009-12-23
+Version: 0.9.0
+Date: 2010-02-22
 Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske, Richard Chandler
@@ -17,4 +17,4 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'unmarkedFit.R' 'utils.R' 'colext.R' 'distsamp.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
     'unmarkedFitList.R' 'unmarkedLinComb.R'
-URL: http://r-forge.r-project.org/projects/unmarked/
+URL: http://github.com/ianfiske/unmarked
