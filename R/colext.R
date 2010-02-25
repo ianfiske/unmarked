@@ -1,6 +1,6 @@
 colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
                    epsilonformula = ~ 1, pformula = ~ 1,
-                   data, starts, B = 0, method = "BFGS", control=list(),
+                   data, starts, method = "BFGS", control=list(),
                    se = TRUE)
 {
   
@@ -37,78 +37,6 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
   }
   
   fm <- eval(fc)
-  
-  if(B > 0) {  # find bootstrap SEs?
-    
-    smooth.b <- projected.b <- array(NA, c(K + 1, nY, B))
-    psi.b <- matrix(NA, B, K + 1)
-    phi.b <- array(NA, c(K+1,K+1,B))
-    ss.b <- matrix(NA, B, K + 1)
-    mle.b <- matrix(NA, B, nrow(fm$mle))
-    
-    obsCovs.siteInd <- matrix(1:(M*J*nY),M,J*nY,byrow=T)
-    
-    b <- 1
-    sd <- 0
-    bad.boots <- 0
-    while(b <= B) {
-      sd <- sd + 1
-      set.seed(sd)
-      samp <- sort(sample(1:M, M, replace = TRUE))
-      sites.unique <- unique(samp)
-      sites.wts <- table(samp)
-      
-      data.b <- data
-      data.b@y <- data@y[sites.unique,]
-      obsCovsInd.b <- as.vector(t(obsCovs.siteInd[sites.unique,]))
-      data.b@obsCovs <- data.b@obsCovs[obsCovsInd.b,]
-      fc$data <- quote(data.b)
-      fc$getHessian <- FALSE
-      fc$starts <- fm$mle$value
-      fc$wts <- sites.wts
-      
-      fm.b <- tryCatch(eval(fc),
-                       error = function(x) {
-                         bad.boots <<- bad.boots + 1
-                         cat("Caught failed bootstrap iteration.  Seed =",sd,"\n")
-                         cat(bad.boots, "bad boot iterations.\n")
-                         0  ## if fit breaks, then re-enter loop
-                       })
-      if(identical(fm.b, 0)) next
-      
-      if(!(TRUE %in% is.nan(smooth.b[,,b]))) {
-        smooth.b[,,b] <- fm.b$smooth
-      } else {
-        cat("smooth.b contained NaN.\n")
-      }
-      psi.b[b,] <- fm.b$psi
-      phi.b[,,b] <- fm.b$phi
-      mle.b[b,] <- fm.b$mle$value
-      ss.b[b,] <- fm.b$ss
-      projected.b[,,b] <- fm.b$projected
-      
-      cat(paste("Bootstrap iteration",b,"completed.\n"))
-      b <- b + 1
-    }
-    
-    mle.var <- apply(mle.b, 2, var)
-    smooth.var <- apply(smooth.b, 1:2, var)
-    projected.var <- apply(projected.b, 1:2, var)
-    phi.var <- apply(phi.b, 1:2, var)
-    
-    ## also get the time-series style covariances for K=1 only.
-    if(identical(K,1)) {
-      smooth.mat <- t(smooth.b[2,,])
-      fm$smooth.covmat <- cov(smooth.mat, use="complete.obs")
-      fm$smooth.cormat <- cor(smooth.mat, use="complete.obs")
-    }
-    
-    fm$smooth.var <- smooth.var
-    fm$projected.var <- projected.var
-    fm$mle.var <- mle.var
-    fm$phi.var <- phi.var
-    
-  }
   
   fm$n.det <- n.det
   opt <- fm$opt
