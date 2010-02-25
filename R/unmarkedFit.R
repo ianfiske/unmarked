@@ -537,15 +537,15 @@ setMethod("mle", "unmarkedFit", function(object) object@opt$par)
 
 setClass("profile", representation(prof = "matrix"))
 
-setGeneric("getSmoothed", function(object, mean=TRUE) standardGeneric("getSmoothed"))
-setMethod("getSmoothed","unmarkedFitColExt",
+setGeneric("smoothed", function(object, mean=TRUE) standardGeneric("smoothed"))
+setMethod("smoothed","unmarkedFitColExt",
 function(object, mean) {
   if(mean) object@smoothed.mean
   else object@smoothed
 })
 
-setGeneric("getProjected", function(object, mean=TRUE) standardGeneric("getProjected"))
-setMethod("getProjected","unmarkedFitColExt",
+setGeneric("projected", function(object, mean=TRUE) standardGeneric("projected"))
+setMethod("projected","unmarkedFitColExt",
 function(object, mean) {
   if(mean) object@projected.mean
   else object@projected

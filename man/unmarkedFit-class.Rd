@@ -31,10 +31,10 @@
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}
 \alias{summary,unmarkedFitDS-method}
-\alias{getSmoothed}
-\alias{getSmoothed,unmarkedFitColExt-method}
-\alias{getProjected}
-\alias{getProjected,unmarkedFitColExt-method}
+\alias{smoothed}
+\alias{smoothed,unmarkedFitColExt-method}
+\alias{projected}
+\alias{projected,unmarkedFitColExt-method}
 
 \title{Class "unmarkedFit" }
 \description{Contains fitted model information which can be manipulated or 
@@ -106,11 +106,11 @@ extracted using the methods described below.
 		changes to one or more arguments }
     \item{vcov}{\code{signature(object = "unmarkedFit")}: returns 
       variance-covariance matrix }
-    \item{getSmoothed}{\code{signature(object="unmarkedFitColExt")}:
+    \item{smoothed}{\code{signature(object="unmarkedFitColExt")}:
       Returns the smoothed trajectory from a colonization-extinction
       model fit.  Takes additional logical argument mean which specifies
     whether or not to return the average over sites.} 
-    \item{getProjected}{\code{signature(object="unmarkedFitColExt")}:
+    \item{projected}{\code{signature(object="unmarkedFitColExt")}:
       Returns the projected trajectory from a colonization-extinction
       model fit.  Takes additional logical argument mean which specifies
     whether or not to return the average over sites.} 
