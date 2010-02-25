@@ -61,7 +61,10 @@ setClass("unmarkedFitColExt",
                                gamformula = "formula",
                                epsformula = "formula",
                                detformula = "formula",
-                               projected = "matrix"),
+                               projected = "array",
+                               projected.mean = "matrix",
+                               smoothed = "array",
+                               smoothed.mean = "matrix"),
 		contains = "unmarkedFit")
 
 ################################################################################

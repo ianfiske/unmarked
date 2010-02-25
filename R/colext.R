@@ -161,7 +161,9 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
                detformula = pformula,
                data = data, sitesRemoved = fm$designMats$removed.sites, 
                estimates = estimateList,
-               AIC = fmAIC, opt = opt, negLogLike = opt$value, nllFun = fm$nll, projected = fm$projected)
+               AIC = fmAIC, opt = opt, negLogLike = opt$value, nllFun = fm$nll,
+               projected = fm$projected, projected.mean = fm$projected.mean,
+               smoothed = fm$smoothed, smoothed.mean = fm$smoothed.mean)
   
   return(umfit)
 }
@@ -325,6 +327,9 @@ colext.fit <- function(formula, data, J,
       gamma[,t,i] <- alpha[,t,i] * beta[,t,i] / sum(alpha[,t,i] * beta[,t,i])
     }
   }
+  smoothed.mean <- apply(gamma, 1:2, mean)
+  rownames(smoothed.mean) <- c("unoccupied","occupied")
+  colnames(smoothed.mean) <- 1:nY
 
   parm.names <- c(psiParms, gamParms, epsParms, detParms)
   mle.df <- data.frame(names = parm.names, value = mle)
@@ -334,5 +339,6 @@ colext.fit <- function(formula, data, J,
   list(mle = mle.df, opt=fm, nP = nP, M = M, nDP = nDP, nGP = nGP,
        nEP = nEP, nSP = nSP,
        nllFun = nll, designMats = designMats,
-       projected = projected.mean)
+       projected = projected, projected.mean = projected.mean, smoothed = gamma,
+       smoothed.mean = smoothed.mean)
 }
