@@ -251,14 +251,14 @@ colext.fit <- function(formula, data, J,
   
   backward <- function(detParams, phis) {
     beta <- array(NA, c(K + 1, nY, M))
-    for(i in 1:M) {
+    for (i in 1:M) {
       backP <- rep(1, K + 1)
-      for(t in nY:1) {
+      for (t in nY:1) {
 
         beta[, t, i] <- backP
 
         detVec <- rep(1, K + 1)
-        for(j in 1:J) {
+        for (j in 1:J) {
           if(y.arr[i,t,j] != 99) {
             mp <- V.arr[,,i,t,j] %*% detParams
             detVecObs <- .Call("getSingleDetVec", y.arr[i,t,j], mp, K, PACKAGE = "unmarked")
@@ -266,8 +266,7 @@ colext.fit <- function(formula, data, J,
           }
         }
         
-        ## For t=1, what does this do and what should it do?!
-        backP <- t(phis[,,t-1,i]) %*% (detVec * backP)
+        if (t > 1) backP <- t(phis[,,t-1,i]) %*% (detVec * backP)
       }
     }
     return(beta)
@@ -319,9 +318,8 @@ colext.fit <- function(formula, data, J,
   
   ## smoothing
   forward(detParams, phis, psis, storeAlpha = TRUE)
-  beta <- backward(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phis)
+  beta <- backward(detParams, phis)
   gamma <- array(NA, c(K + 1, nY, M))
-  beta[,,1]
   for(i in 1:M) {
     for(t in 1:nY) {
       gamma[,t,i] <- alpha[,t,i] * beta[,t,i] / sum(alpha[,t,i] * beta[,t,i])
