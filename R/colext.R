@@ -250,6 +250,28 @@ colext.fit <- function(formula, data, J,
     negloglike
   }
   
+  backward <- function(detParams, phis, psis) {
+    for(i in 1:M) {
+      backP <- rep(1, K + 1)
+      for(t in nY:1) {
+
+        beta[, t, i] <<- backP
+
+        detVec <- rep(1, K + 1)
+        for(j in 1:J) {
+          if(y.arr[i,t,j] != 99) {
+            mp <- V.arr[,,i,t,j] %*% detParams
+            detVecObs <- .Call("getSingleDetVec", y.arr[i,t,j], mp, K, PACKAGE = "unmarked")
+            detVec <- detVec * detVecObs
+          }
+        }
+        
+        ## For t=1, what does this do and what should it do?!
+        backP <- t(phis[,,t-1,i]) %*% (detVec * backP)
+      }
+    }
+  }
+
   X.gam <- X.it.gam %x% c(-1,1)
   X.eps <- X.it.eps %x% c(-1,1)
   phis <- array(NA,c(2,2,nY-1,M))
