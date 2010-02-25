@@ -290,6 +290,15 @@ setGeneric("getY", function(object) standardGeneric("getY"))
 setMethod("getY", "unmarkedFrame", function(object) object@y)
 
 
+setGeneric("plotArea", function(object) standardGeneric("plotArea"))
+setMethod("plotArea", "unmarkedFrame", function(object) object@plotArea)
+setGeneric("plotArea<-", function(object, value) standardGeneric("plotArea<-"))
+setReplaceMethod("plotArea", "unmarkedFrame", function(object, value) {
+			object@plotArea <- value
+			object
+		})
+
+
 setGeneric("coordinates", function(object) standardGeneric("coordinates"))
 setMethod("coordinates", "unmarkedFrame",
 		function(object) {

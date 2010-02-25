@@ -24,6 +24,10 @@
 \alias{obsToY<-,unmarkedFrame-method}
 \alias{obsToY}
 \alias{obsToY<-}
+\alias{plotArea}
+\alias{plotArea<-}
+\alias{plotArea,unmarkedFrame-method}
+\alias{plotArea<-,unmarkedFrame-method}
 \alias{plot,unmarkedFrame,missing-method}
 \alias{powerAnalysis}
 \alias{powerAnalysis,formula,unmarkedFramePCount,numeric-method}
@@ -80,6 +84,8 @@ Objects can be created by calls to the constructor function
 		observations }
     \item{obsToY}{\code{signature(object = "unmarkedFrame")}:  }
     \item{obsToY<-}{\code{signature(object = "unmarkedFrame")}: ... }
+    \item{plotArea}{\code{signature(object = "unmarkedFrame")}:  }
+    \item{plotArea<-}{\code{signature(object = "unmarkedFrame")}: ... }
     \item{plot}{\code{signature(x = "unmarkedFrame", y = "missing")}: visualize 
       response variable.
 
