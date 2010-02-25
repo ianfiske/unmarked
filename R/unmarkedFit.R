@@ -537,6 +537,19 @@ setMethod("mle", "unmarkedFit", function(object) object@opt$par)
 
 setClass("profile", representation(prof = "matrix"))
 
+setGeneric("getSmoothed", function(object, mean=TRUE) standardGeneric("getSmoothed"))
+setMethod("getSmoothed","unmarkedFitColExt",
+function(object, mean) {
+  if(mean) object@smoothed.mean
+  else object@smoothed
+})
+
+setGeneric("getProjected", function(object, mean=TRUE) standardGeneric("getProjected"))
+setMethod("getProjected","unmarkedFitColExt",
+function(object, mean) {
+  if(mean) object@projected.mean
+  else object@projected
+})
 
 setMethod("plot", c("profile", "missing"),
 		function(x) {
