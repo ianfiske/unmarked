@@ -295,8 +295,8 @@ colext.fit <- function(formula, data, J,
   colnames(projected.mean) <- 1:nY
   
   ## smoothing
-  forward(detParams, phi, psi, storeAlpha = TRUE)
-  backward(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phi, psi)
+  forward(detParams, phis, psis, storeAlpha = TRUE)
+  backward(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phis, psis)
   beta[,,1]
   for(i in 1:M) {
     for(t in 1:nY) {
