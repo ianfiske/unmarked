@@ -218,8 +218,6 @@ colext.fit <- function(formula, data, J,
   y.it <- matrix(t(y), nY*M, J, byrow = TRUE)
   J.it <- rowSums(!is.na(y.it))
   
-  alpha <- array(NA, c(K + 1, nY, M))
-  
   V.arr <- array(t(V.itjk), c(nDP, nDMP, J, nY, M))
   V.arr <- aperm(V.arr, c(2,1,5,4,3))
   
@@ -227,6 +225,7 @@ colext.fit <- function(formula, data, J,
   y.arr <- aperm(y.arr, c(3:1))
   storage.mode(J.it) <- storage.mode(y.arr) <- storage.mode(K) <- "integer"
   
+  alpha <- array(NA, c(K + 1, nY, M))
   forward <- function(detParms, phis, psis, storeAlpha = FALSE) {
     
     negloglike <- 0
@@ -250,12 +249,13 @@ colext.fit <- function(formula, data, J,
     negloglike
   }
   
-  backward <- function(detParams, phis, psis) {
+  backward <- function(detParams, phis) {
+    beta <- array(NA, c(K + 1, nY, M))
     for(i in 1:M) {
       backP <- rep(1, K + 1)
       for(t in nY:1) {
 
-        beta[, t, i] <<- backP
+        beta[, t, i] <- backP
 
         detVec <- rep(1, K + 1)
         for(j in 1:J) {
@@ -270,6 +270,7 @@ colext.fit <- function(formula, data, J,
         backP <- t(phis[,,t-1,i]) %*% (detVec * backP)
       }
     }
+    return(beta)
   }
 
   X.gam <- X.it.gam %x% c(-1,1)
@@ -318,7 +319,8 @@ colext.fit <- function(formula, data, J,
   
   ## smoothing
   forward(detParams, phis, psis, storeAlpha = TRUE)
-  backward(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phis, psis)
+  beta <- backward(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phis)
+  gamma <- array(NA, c(K + 1, nY, M))
   beta[,,1]
   for(i in 1:M) {
     for(t in 1:nY) {
