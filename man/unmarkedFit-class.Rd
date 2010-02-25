@@ -31,6 +31,10 @@
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}
 \alias{summary,unmarkedFitDS-method}
+\alias{getSmoothed}
+\alias{getSmoothed,unmarkedFitColExt-method}
+\alias{getProjected}
+\alias{getProjected,unmarkedFitColExt-method}
 
 \title{Class "unmarkedFit" }
 \description{Contains fitted model information which can be manipulated or 
@@ -101,7 +105,15 @@ extracted using the methods described below.
     \item{update}{\code{signature(object = "unmarkedFit")}: refit model with 
 		changes to one or more arguments }
     \item{vcov}{\code{signature(object = "unmarkedFit")}: returns 
-		variance-covariance matrix }
+      variance-covariance matrix }
+    \item{getSmoothed}{\code{signature(object="unmarkedFitColExt")}:
+      Returns the smoothed trajectory from a colonization-extinction
+      model fit.  Takes additional logical argument mean which specifies
+    whether or not to return the average over sites.} 
+    \item{getProjected}{\code{signature(object="unmarkedFitColExt")}:
+      Returns the projected trajectory from a colonization-extinction
+      model fit.  Takes additional logical argument mean which specifies
+    whether or not to return the average over sites.} 
 	 }
 }
 \note{ This is a superclass with child classes for each fit type }
