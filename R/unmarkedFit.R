@@ -1093,24 +1093,6 @@ setMethod("show", "parboot", function(object)
 		})
 
 
-## nonparboot return entire list of fits... they will be processed by vcov, confint, etc.
-setGeneric("nonparboot", function(object, B = 50, ...) {standardGeneric("nonparboot")})
-
-setMethod("nonparboot", "unmarkedFit",
-		function(object, B = 50, ...) {
-			data <- object@data
-			formula <- object@formula
-			designMats <- getDesign2(formula, data)  # bootstrap only after removing sites
-			removed.sites <- designMats$removed.sites
-			data <- data[-removed.sites,]
-			M <- numSites(data)
-			boot.iter <- function(x) {
-				sites <- sort(sample(1:M, M, replace = TRUE))
-				fm <- update(object, data = data[sites,])
-			}
-			fmList <- lapply(1:B, boot.iter)
-			fmList
-		})
 
 
 setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
@@ -1135,5 +1117,47 @@ setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
 		})
 
 
-
+############################### Nonparametric bootstrapping ###########################
 		
+## nonparboot return entire list of fits... they will be processed by vcov, confint, etc.
+setGeneric("nonparboot", function(object, B = 50, ...) {standardGeneric("nonparboot")})
+
+setMethod("nonparboot", "unmarkedFit",
+function(object, B = 50, ...) {
+  data <- object@data
+  formula <- object@formula
+  designMats <- getDesign2(formula, data)  # bootstrap only after removing sites
+  removed.sites <- designMats$removed.sites
+  data <- data[-removed.sites,]
+  M <- numSites(data)
+  boot.iter <- function(x) {
+    sites <- sort(sample(1:M, M, replace = TRUE))
+    fm <- update(object, data = data[sites,])
+  }
+  fmList <- lapply(1:B, boot.iter)
+  fmList
+})
+
+setMethod("nonparboot", "unmarkedFitOccu",
+function(object, B = 50, ...) {
+  data <- object@data
+  formula <- object@formula
+  designMats <- getDesign2(formula, data)  # bootstrap only after removing sites
+  removed.sites <- designMats$removed.sites
+  data <- data[-removed.sites,]
+  y <- getY(object@data)
+  M <- numSites(data)
+  boot.iter <- function(x) {
+    sites <- sort(sample(1:M, M, replace = TRUE))
+    data.b <- data[sites,]
+    obs.per.site <- apply(getY(data.b), 1, function(row) {
+      which(!is.na(row))
+    })
+    obs <- lapply(obs.per.site, function(obs) sample(obs, replace = TRUE))
+    data.b <- data.b[obs]
+    fm <- update(object, data = data[sites,])
+  }
+  fm.boots <- lapply(1:B, boot.iter)
+  
+  
+})
