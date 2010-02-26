@@ -464,13 +464,11 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 		siteCovNames <- colnames(siteCovs(x))
 		siteCovs <- as.data.frame(siteCovs(x)[i,])
 		colnames(siteCovs) <- siteCovNames
-		obsCovs <- obsCovs(x)
-		obsCovsNames <- colnames(obsCovs(x))
 		R <- obsNum(x)
+		obsCovs <- obsCovs(x)
 		obs.site.inds <- rep(1:numSites(x), each = R)
 		obs.site.sel <- rep(i, each = R)
-		obsCovs <- as.data.frame(obsCovs[match(obs.site.sel,obs.site.inds),])
-		colnames(obsCovs) <- obsCovsNames
+		obsCovs <- obsCovs[obs.site.inds %in% obs.site.sel,, drop = FALSE]
 		umf <- x
 		umf@y <- y
 		umf@siteCovs <- siteCovs
