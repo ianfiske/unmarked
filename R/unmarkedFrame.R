@@ -450,11 +450,12 @@ setMethod("hist", "unmarkedFrameDS",
 
 setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 	function(x, i) {  
+          M <- numSites(x)
+
 		if(length(i) == 0) return(x)
 		if(any(i < 0) && any(i > 0)) 
 			stop("i must be all positive or all negative indices.")
 		if(all(i < 0)) { # if i is negative, then convert to positive
-			M <- numSites(x)
 			i <- (1:M)[i]
 			}
 		y <- getY(x)[i,]
@@ -462,11 +463,14 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 			y <- t(y)
 			}
 		siteCovs <- siteCovs(x)[i, , drop = FALSE]
-		obsCovs <- obsCovs(x)
 		R <- obsNum(x)
-		obs.site.inds <- rep(1:numSites(x), each = R)
-		obs.site.sel <- rep(i, each = R)
-		obsCovs <- obsCovs[obs.site.inds %in% obs.site.sel, , drop = FALSE]
+		obsCovs <- cbind(.site=rep(1:M, each = R), obsCovs(x))
+
+                obsCovs <- ldply(i, function(site) {
+                  subset(obsCovs, .site == site)
+                })
+                obsCovs$.site <- NULL
+
 		umf <- x
 		umf@y <- y
 		umf@siteCovs <- siteCovs
