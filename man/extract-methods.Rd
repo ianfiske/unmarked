@@ -7,6 +7,7 @@
 \alias{[,unmarkedFrame,numeric,missing,missing-method}
 \alias{[,unmarkedFrame,numeric,numeric,missing-method}
 \alias{[,unmarkedMultFrame,missing,numeric,missing-method}
+\alias{[,unmarkedFrame,list,missing,missing-method}
 \title{Methods for bracket extraction [ in Package `unmarked'}
 \description{
 Methods for bracket extraction \code{[} in Package `unmarked'
@@ -45,6 +46,9 @@ Methods for bracket extraction \code{[} in Package `unmarked'
 
 \item{x = "unmarkedMultFrame", i = "missing", j = "numeric", drop = "missing"}{
 	Extract primary sampling periods from an unmarkedMultFrame}
+
+\item{x = "unmarkedFrame", i = "list", j = "missing", drop = "missing"}{ 
+	List is the index of observations to subset for each site. }
 }}
 \examples{
 
