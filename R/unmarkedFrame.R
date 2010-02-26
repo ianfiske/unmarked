@@ -452,31 +452,35 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 	function(x, i) {  
           M <- numSites(x)
 
-		if(length(i) == 0) return(x)
-		if(any(i < 0) && any(i > 0)) 
-			stop("i must be all positive or all negative indices.")
-		if(all(i < 0)) { # if i is negative, then convert to positive
-			i <- (1:M)[i]
-			}
-		y <- getY(x)[i,]
-		if (length(i) == 1) {
-			y <- t(y)
-			}
-		siteCovs <- siteCovs(x)[i, , drop = FALSE]
-		R <- obsNum(x)
-		obsCovs <- cbind(.site=rep(1:M, each = R), obsCovs(x))
-
-                obsCovs <- ldply(i, function(site) {
-                  subset(obsCovs, .site == site)
-                })
-                obsCovs$.site <- NULL
-
-		umf <- x
-		umf@y <- y
-		umf@siteCovs <- siteCovs
-		umf@obsCovs <- obsCovs
-		umf@plotArea <- umf@plotArea[i]
-		umf
+          if(length(i) == 0) return(x)
+          if(any(i < 0) && any(i > 0)) 
+            stop("i must be all positive or all negative indices.")
+          if(all(i < 0)) { # if i is negative, then convert to positive
+            i <- (1:M)[i]
+          }
+          y <- getY(x)[i,]
+          if (length(i) == 1) {
+            y <- t(y)
+          }
+          siteCovs <- siteCovs(x)
+          obsCovs <- obsCovs(x)
+          if (!is.null(siteCovs)) {
+            siteCovs <- siteCovs(x)[i, , drop = FALSE]
+          }
+          if (!is.null(obsCovs)) {
+            R <- obsNum(x)
+            obsCovs <- cbind(.site=rep(1:M, each = R), obsCovs(x))
+            obsCovs <- ldply(i, function(site) {
+              subset(obsCovs, .site == site)
+            })
+            obsCovs$.site <- NULL
+          }
+          umf <- x
+          umf@y <- y
+          umf@siteCovs <- siteCovs
+          umf@obsCovs <- obsCovs
+          umf@plotArea <- umf@plotArea[i]
+          umf
 	})
 
 ## remove obs only
