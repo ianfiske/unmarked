@@ -7,6 +7,7 @@ setClass("unmarkedEstimate",
 				short.name = "character",
         estimates = "numeric",
         covMat = "matrix",
+                   covMatBS = "optionalMatrix",
         invlink = "character",
         invlinkGrad = "character"),
     validity = function(object) {
@@ -52,8 +53,6 @@ setMethod("summary", "unmarkedEstimateList",
         cat("\n")
       }
     })
-
-
 
 setGeneric("estimates",
     function(object) {

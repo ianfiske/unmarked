@@ -8,7 +8,8 @@ setClass("unmarkedFit",
                         AIC = "numeric",
                         opt = "list",
                         negLogLike = "numeric",
-                        nllFun = "function"))
+                        nllFun = "function",
+                        bootstrapSamples = "optionalList")) # list of bootstrap sample fits
 
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, formula,
@@ -96,10 +97,11 @@ setMethod("summary", "unmarkedFit",
 		if(length(object@sitesRemoved) > 0)
 			cat("\nSites removed:", object@sitesRemoved)
 		cat("\noptim convergence code:", object@opt$convergence)
-		cat("\noptim iterations:", object@opt$counts[1], "\n", "\n")
+		cat("\noptim iterations:", object@opt$counts[1], "\n")
 		if(!identical(object@opt$convergence, 0L))
     		warning("Model did not converge. Try providing starting values or
     			increasing maxit control argment.")
+        cat("Bootstrap iterations:", length(object@bootstrapSamples), "\n\n")
 })
 
 
@@ -212,25 +214,26 @@ setMethod("coef", "unmarkedFit",
 		})
 
 
-
 setMethod("vcov", "unmarkedFit",
-function(object, type, altNames = TRUE, method = "hessian") {
-  if(is.null(object@opt$hessian)) stop("Hessian was not computed for this model.")
-  if(missing(type)) {
-    switch(method,
-           hessian = v <- solve(hessian(object)),
+function (object, type, altNames = TRUE, method = "hessian", ...) {
+  method <- match.arg(method, c("hessian", "nonparboot"))
+    switch (method,
+           hessian = {
+               if (is.null(object@opt$hessian)) stop("Hessian was not computed for this model.")
+               v <- solve(hessian(object))
+             },
            nonparboot = {
-             fmList <- nonparboot(object)
-             coefs <- t(sapply(fmList, function(x) coef(x)))
+             object <- nonparboot(object,...)
+             coefs <- t(sapply(object@bootstrapSamples, function (x) coef(x)))
              v <- cov(coefs)
-           }
-           )
+           })
     rownames(v) <- colnames(v) <- names(coef(object, altNames=altNames))
+  if (missing(type)) {
+    return (v)
   } else {
-    v <- vcov(object[type])
-    rownames(v) <- colnames(v) <- names(coef(object, type, altNames=altNames))
+    inds <- .estimateInds(object)[[type]]
+    return (v[inds, inds, drop = FALSE])
   }
-  v
 })
 
 setMethod("SE", "unmarkedFit", 
@@ -1120,44 +1123,128 @@ setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
 ############################### Nonparametric bootstrapping ###########################
 		
 ## nonparboot return entire list of fits... they will be processed by vcov, confint, etc.
-setGeneric("nonparboot", function(object, B = 50, ...) {standardGeneric("nonparboot")})
+setGeneric("nonparboot", function(object, B = 0, ...) {standardGeneric("nonparboot")})
+
 
 setMethod("nonparboot", "unmarkedFit",
-function(object, B = 50, ...) {
-  data <- object@data
-  formula <- object@formula
-  designMats <- getDesign2(formula, data)  # bootstrap only after removing sites
-  removed.sites <- designMats$removed.sites
-  data <- data[-removed.sites,]
-  M <- numSites(data)
-  boot.iter <- function(x) {
-    sites <- sort(sample(1:M, M, replace = TRUE))
-    fm <- update(object, data = data[sites,])
+function(object, B = 0, keepOldSamples = TRUE, bsType, ...) {
+  bsType <- match.arg(bsType, c("site", "both"))
+  if (identical(B, 0) && !is.null(object@bootstrapSamples)) {
+    return(object)
   }
-  fmList <- lapply(1:B, boot.iter)
-  fmList
-})
-
-setMethod("nonparboot", "unmarkedFitOccu",
-function(object, B = 50, ...) {
+  if (B <= 0 && is.null(object@bootstrapSamples)) {
+    stop("B must be greater than 0 when fit has no bootstrap samples.")
+  }
   data <- object@data
   formula <- object@formula
   designMats <- getDesign2(formula, data)  # bootstrap only after removing sites
   removed.sites <- designMats$removed.sites
   data <- data[-removed.sites,]
-  y <- getY(object@data)
+  y <- getY(data)
+  colnames(y) <- NULL
+  data@y <- y
   M <- numSites(data)
   boot.iter <- function(x) {
     sites <- sort(sample(1:M, M, replace = TRUE))
     data.b <- data[sites,]
-    obs.per.site <- apply(getY(data.b), 1, function(row) {
-      which(!is.na(row))
-    })
-    obs <- lapply(obs.per.site, function(obs) sample(obs, replace = TRUE))
-    data.b <- data.b[obs]
-    fm <- update(object, data = data[sites,])
+    y <- getY(data.b)
+    if (bsType == "both") {
+      obs.per.site <- alply(y, 1, function(row) {
+        which(!is.na(row))
+      })
+      obs <- lapply(obs.per.site, function(obs) sample(obs, replace = TRUE))
+      data.b <- data.b[obs]
+    }
+    fm <- update(object, data = data.b)
   }
-  fm.boots <- lapply(1:B, boot.iter)
-  
-  
+  if (keepOldSamples) {
+    object@bootstrapSamples <- c(object@bootstrapSamples, lapply(1:B, boot.iter))
+  } else {
+    object@bootstrapSamples <- lapply(1:B, boot.iter)
+  }
+  object
 })
+
+
+setMethod("nonparboot", "unmarkedFitOccu",
+function(object, B = 0, keepOldSamples = TRUE, ...) {
+  callNextMethod(object, B = B, keepOldSamples = keepOldSamples, bsType = "both")
+})
+
+setMethod("nonparboot", "unmarkedFitPCount",
+function(object, B = 0, keepOldSamples = TRUE, ...) {
+  callNextMethod(object, B = B, keepOldSamples = keepOldSamples, bsType = "both")
+})
+
+setMethod("nonparboot", "unmarkedFitMPois",
+function(object, B = 0, keepOldSamples = TRUE, ...) {
+  callNextMethod(object, B = B, keepOldSamples = keepOldSamples, bsType = "site")
+})
+
+setMethod("nonparboot", "unmarkedFitDS",
+function(object, B = 0, keepOldSamples = TRUE, ...) {
+  callNextMethod(object, B = B, keepOldSamples = keepOldSamples, bsType = "site")
+})
+
+setMethod("nonparboot", "unmarkedFitOccuRN",
+function(object, B = 0, keepOldSamples = TRUE, ...) {
+  callNextMethod(object, B = B, keepOldSamples = keepOldSamples, bsType = "both")
+})
+
+setMethod("nonparboot", "unmarkedFitColExt",
+function(object, B = 0, keepOldSamples = TRUE, ...) {
+  stop("nonparboot is not yet implemented for colext fits.")
+  if (identical(B, 0) && !is.null(object@bootstrapSamples)) {
+    return(object)
+  }
+  if (B <= 0 && is.null(object@bootstrapSamples)) {
+    stop("B must be greater than 0 when fit has no bootstrap samples.")
+  }
+  data <- object@data
+  formula <- object@formula
+  designMats <- getDesign3(formula, data)  # bootstrap only after removing sites
+  removed.sites <- designMats$removed.sites
+  data <- data[-removed.sites,]
+  y <- getY(data)
+  colnames(y) <- NULL
+  data@y <- y
+  M <- numSites(data)
+  boot.iter <- function(x) {
+    sites <- sort(sample(1:M, M, replace = TRUE))
+    data.b <- data[sites,]
+    y <- getY(data.b)
+    fm <- update(object, data = data.b)
+  }
+  if (keepOldSamples) {
+    object@bootstrapSamples <- c(object@bootstrapSamples, lapply(1:B, boot.iter))
+  } else {
+    object@bootstrapSamples <- lapply(1:B, boot.iter)
+  }
+  object
+})
+
+################################# Helper functions #############################
+
+## A helper function to return a list of indices for each estimate type
+## 
+
+
+.estimateInds <- function(umf) {
+## get length of each estimate
+estimateLengths <- sapply(umf@estimates@estimates, function(est) {
+  length(coef(est))
+})
+## recurse function to generate list of indices
+estimateInds <- function(type) {
+  if(type==1) {
+    return(list(seq(length=estimateLengths[1])))
+  } else {
+    prev.list <- estimateInds(type-1)
+    prev.max <- max(prev.list[[type-1]])
+    return(c(prev.list, list(seq(prev.max+1, prev.max+estimateLengths[type]))))
+  }
+}
+retlist <- estimateInds(length(estimateLengths))
+names(retlist) <- names(umf)
+retlist
+}
