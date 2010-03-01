@@ -9,7 +9,8 @@ setClass("unmarkedFit",
                         opt = "list",
                         negLogLike = "numeric",
                         nllFun = "function",
-                        bootstrapSamples = "optionalList")) # list of bootstrap sample fits
+                        bootstrapSamples = "optionalList",
+                        covMatBS = "optionalMatrix")) # list of bootstrap sample fits
 
                                         # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, formula,
@@ -219,13 +220,16 @@ setMethod("vcov", "unmarkedFit",
             method <- match.arg(method, c("hessian", "nonparboot"))
             switch (method,
                     hessian = {
-                      if (is.null(object@opt$hessian)) stop("Hessian was not computed for this model.")
+                      if (is.null(object@opt$hessian)) {
+                        stop("Hessian was not computed for this model.")
+                      }
                       v <- solve(hessian(object))
                     },
                     nonparboot = {
-                      object <- nonparboot(object,...)
-                      coefs <- t(sapply(object@bootstrapSamples, function (x) coef(x)))
-                      v <- cov(coefs)
+                      if (is.null(object@bootstrapSamples)) {
+                        stop("No bootstrap samples have been drawn.  Use nonparboot first.")
+                      }
+                      v <- object@covMatBS
                     })
             rownames(v) <- colnames(v) <- names(coef(object, altNames=altNames))
             if (missing(type)) {
@@ -1162,9 +1166,16 @@ setMethod("nonparboot", "unmarkedFit",
             } else {
               object@bootstrapSamples <- lapply(1:B, boot.iter)
             }
+            coefs <- t(sapply(object@bootstrapSamples, function(x) coef(x)))
+            v <- cov(coefs)
+            object@covMatBS <- v
+            inds <- .estimateInds(object)
+            for (est in names(inds)) {
+              v.est <- v[inds[[est]], inds[[est]], drop = FALSE]
+              object@estimates@estimates[[est]]@covMatBS <- v.est
+            }
             object
           })
-
 
 setMethod("nonparboot", "unmarkedFitOccu",
           function(object, B = 0, keepOldSamples = TRUE, ...) {
