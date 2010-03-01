@@ -241,8 +241,9 @@ setMethod("vcov", "unmarkedFit",
           })
 
 setMethod("SE", "unmarkedFit", 
-          function(obj) {
-            sqrt(diag(vcov(obj)))
+          function(obj,...) {
+            v <- vcov(obj,...)
+            sqrt(diag(v))
           })
 
 

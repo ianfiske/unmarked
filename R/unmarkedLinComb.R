@@ -3,12 +3,14 @@ setClass("unmarkedLinComb",
          representation(parentEstimate = "unmarkedEstimate",
                         estimate = "numeric",
                         covMat = "matrix",
+                        covMatBS = "optionalMatrix",
                         coefficients = "matrix"))
 
 setClass("unmarkedBackTrans",
          representation(parentLinComb = "unmarkedLinComb",
                         estimate = "numeric",
-                        covMat = "matrix"))
+                        covMat = "matrix",
+                        covMatBS = "optionalMatrix"))
 
 setClassUnion("linCombOrBackTrans", c("unmarkedLinComb", "unmarkedBackTrans"))
 
@@ -74,15 +76,26 @@ setMethod("backTransform",
               v <- grad^2 * obj@covMat
             }
             
+            if (!is.null(obj@covMatBS)) {
+              if(length(obj@estimate) > 1) {
+                v.bs <- diag(grad) %*% obj@covMatBS %*% diag(grad)
+              } else {
+                v.bs <- grad^2 * obj@covMatBS
+              }
+            } else {
+              v.bs <- NULL
+            }
+
             umbt <- new("unmarkedBackTrans", parentLinComb = obj,
-                        estimate = e, covMat = v)
+                        estimate = e, covMat = v, covMatBS = v.bs)
             umbt
           })
 
 
 setMethod("SE", "linCombOrBackTrans",
-          function(obj) {
-            sqrt(diag(obj@covMat))
+          function(obj, ...) {
+            v <- vcov(obj, ...)
+            sqrt(diag(v))
           })
 
 setMethod("coef", "linCombOrBackTrans",
@@ -91,8 +104,11 @@ setMethod("coef", "linCombOrBackTrans",
           })
 
 setMethod("vcov", "linCombOrBackTrans",
-          function(object) {
-            object@covMat
+          function(object, method="hessian") {
+            method <- match.arg(method, c("hessian", "nonparboot"))
+            switch(method,
+                   hessian = return(object@covMat),
+                   nonparboot = return(object@covMatBS))
           })
 
 setMethod("confint", "unmarkedLinComb",

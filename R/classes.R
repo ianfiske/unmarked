@@ -13,7 +13,7 @@ setClassUnion("optionalList", c("list","NULL"))
 
 # Compute standard error of an object.
 setGeneric("SE",
-    def = function(obj) {
+    def = function(obj, ...) {
       standardGeneric("SE")
     })
 
