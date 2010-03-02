@@ -66,7 +66,9 @@ setClass("unmarkedFitColExt",
                         projected = "array",
                         projected.mean = "matrix",
                         smoothed = "array",
-                        smoothed.mean = "matrix"),
+                        smoothed.mean = "matrix",
+                        projected.mean.bsse = "optionalMatrix",
+                        smoothed.mean.bsse = "optionalMatrix"),
          contains = "unmarkedFit")
 
 ################################################################################
@@ -1205,7 +1207,6 @@ setMethod("nonparboot", "unmarkedFitOccuRN",
 
 setMethod("nonparboot", "unmarkedFitColExt",
           function(object, B = 0, keepOldSamples = TRUE, ...) {
-            stop("nonparboot is not yet implemented for colext fits.")
             if (identical(B, 0) && !is.null(object@bootstrapSamples)) {
               return(object)
             }
@@ -1213,8 +1214,15 @@ setMethod("nonparboot", "unmarkedFitColExt",
               stop("B must be greater than 0 when fit has no bootstrap samples.")
             }
             data <- object@data
-            formula <- object@formula
-            designMats <- getDesign3(formula, data)  # bootstrap only after removing sites
+            psiParms <- coef(object, 'psi')
+            detParms <- coef(object, 'det')
+            colParms <- coef(object, 'col')
+            extParms <- coef(object, 'ext')
+            formulaList <- list(psiformula=object@psiformula,
+                                gammaformula=object@gamformula,
+                                epsilonformula=object@epsformula,
+                                pformula=object@detformula)
+            designMats <- getDesign3(formula = formulaList, object@data)   # bootstrap only after removing sites
             removed.sites <- designMats$removed.sites
             data <- data[-removed.sites,]
             y <- getY(data)
@@ -1232,6 +1240,22 @@ setMethod("nonparboot", "unmarkedFitColExt",
             } else {
               object@bootstrapSamples <- lapply(1:B, boot.iter)
             }
+            coefs <- t(sapply(object@bootstrapSamples, function(x) coef(x)))
+            v <- cov(coefs)
+            object@covMatBS <- v
+            inds <- .estimateInds(object)
+            for (est in names(inds)) {
+              v.est <- v[inds[[est]], inds[[est]], drop = FALSE]
+              object@estimates@estimates[[est]]@covMatBS <- v.est
+            }
+            smoothed.occ <- t(sapply(object@bootstrapSamples, function(x) x@smoothed.mean[1,]))
+            smoothed.unocc <- t(sapply(object@bootstrapSamples, function(x) x@smoothed.mean[2,]))
+            object@smoothed.mean.bsse <- rbind(sqrt(diag(cov(smoothed.occ))),
+                                               sqrt(diag(cov(smoothed.unocc))))
+            projected.occ <- t(sapply(object@bootstrapSamples, function(x) x@projected.mean[1,]))
+            projected.unocc <- t(sapply(object@bootstrapSamples, function(x) x@projected.mean[2,]))
+            object@projected.mean.bsse <- rbind(sqrt(diag(cov(projected.occ))),
+                                               sqrt(diag(cov(projected.unocc))))
             object
           })
 
