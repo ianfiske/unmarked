@@ -40,13 +40,31 @@ get bootstrap estimates of standard errors.
   bootstrap samples for a pcount fits. }
 }}
 \details{
+
   Calling \code{nonparboot} on an unmarkedFit returns the original
-  unmarkedFit containing the bootstrap samples.  Subsequent calls to
-  \code{vcov} with the argument \code{method="nonparboot"} will
-  then use these bootstrap samples.
+  unmarkedFit, with the bootstrap samples added on.  Then subsequent
+  calls to \code{\link{vcov}} with the argument
+  \code{method="nonparboot"} will use these bootstrap samples.
+  Additionally, standard errors of derived estimates from either
+  \code{\link{linearComb}} or \code{\link{backTransform}} can be
+  instructed to use bootstrap samples by providing the argument
+  \code{method = "nonparboot"}.
+
 }
 \examples{
+data(ovendata)
+ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
+siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
+(fm <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+fm <- nonparboot(fm, B = 20) # should use larger B in real life.
+vcov(fm, method = "hessian")
+vcov(fm, method = "nonparboot")
+avg.abundance <- backTransform(linearComb(fm, type = "state", coefficients = c(1, 0, 0)))
 
+## Bootstrap sample information propagates through to derived quantities.
+vcov(avg.abundance, method = "hessian")
+vcov(avg.abundance, method = "nonparboot")
+SE(avg.abundance, method = "nonparboot")
 }
 \keyword{methods}
 
