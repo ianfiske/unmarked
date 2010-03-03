@@ -23,14 +23,22 @@ visits).  These covariates are specified by the first part of the
 \code{formula} argument and the data is supplied via the usual
 \code{obsCovs} slot.
 
-See \code{\link{unmarkedMultFrame}} and \code{\link{formatMult}} for
-more information on supplying the data.}
-
+The projected and smoothed trajectories (Weir et al 2009) can be
+obtained from the \code{smoothed.mean} and \code{projected.mean} slots
+(see examples).
+}
+\seealso{\code{\link{nonparboot}}, \code{\link{unmarkedMultFrame}}, and \code{\link{formatMult}}}
 \value{unmarkedFitColExt object describing model fit.}
 \keyword{models}
 \references{MacKenzie, D.I. et al. (2002) Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology, 83(8), 2248-2255.
 
-MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008).}
+MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.Amsterdam: Academic Press.
+
+Weir L. A., Fiske I. J., Royle J. (2009) Trends in Anuran Occupancy from
+Northeastern States of the North American Amphibian Monitoring
+Program. Herpetological Conservation and Biology. 4(3):389-402.
+
+}
 \arguments{\item{psiformula}{Right-hand sided formula for the initial
     probability of occupancy at each site.}
   \item{gammaformula}{Right-hand sided formula for colonization probability.}
@@ -50,6 +58,16 @@ gammaformula = ~ 1,
 epsilonformula = ~ 1,
 pformula = ~ JulianDate + I(JulianDate^2), umf, control = list(trace=1, maxit=1e4)))
 
+## get the trajectory estimates
+fm@smoothed.mean
+fm@projected.mean
+
+\dontrun{
+## Find bootstrap standard errors for smoothed trajectory
+fm <- nonparboot(fm, B = 100)  # This takes a while!
+fm@smoothed.mean.bsse
+}
+
 \dontrun{
 ## try yearly transition rates
 yearlySiteCovs(umf) <- data.frame(year = factor(rep(1:7, numSites(umf))))
@@ -59,4 +77,5 @@ epsilonformula = ~ year,
 pformula = ~ JulianDate + I(JulianDate^2), umf, 
 	control = list(trace=1, maxit=1e4)))
 }
+
 }

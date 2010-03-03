@@ -1,4 +1,3 @@
-
 setClassUnion("optionalDataFrame", c("data.frame","NULL"))
 
 
@@ -10,9 +9,11 @@ setClassUnion("optionalNumeric", c("numeric","NULL"))
 
 setClassUnion("optionalCharacter", c("character","NULL"))
 
+setClassUnion("optionalList", c("list","NULL"))
+
 # Compute standard error of an object.
 setGeneric("SE",
-    def = function(obj) {
+    def = function(obj, ...) {
       standardGeneric("SE")
     })
 
