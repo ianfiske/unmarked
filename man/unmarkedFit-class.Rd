@@ -21,6 +21,7 @@
 \alias{residuals,unmarkedFitOccu-method}
 \alias{residuals,unmarkedFitOccuRN-method}
 \alias{update,unmarkedFit-method}
+\alias{update,unmarkedFitColExt-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}

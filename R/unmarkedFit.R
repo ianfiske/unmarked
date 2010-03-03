@@ -489,8 +489,6 @@ setMethod("hessian", "unmarkedFit",
           })
 
 
-
-
 setMethod("update", "unmarkedFit", 
           function(object, formula., ..., evaluate = TRUE) 
           {
@@ -522,6 +520,26 @@ setMethod("update", "unmarkedFit",
             else call
           })
 
+
+setMethod("update", "unmarkedFitColExt", 
+          function(object, ..., evaluate = TRUE) 
+          {
+            call <- object@call
+            if (is.null(call)) 
+              stop("need an object with call slot")
+            extras <- match.call(expand.dots = FALSE)$...
+            if (length(extras) > 0) {
+              existing <- !is.na(match(names(extras), names(call)))
+              for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+              if (any(!existing)) {
+                call <- c(as.list(call), extras[!existing])
+                call <- as.call(call)
+              }
+            }
+            if (evaluate) 
+              eval(call, parent.frame())
+            else call
+          })
 
 setGeneric("sampleSize", function(object) standardGeneric("sampleSize"))
 setMethod("sampleSize", "unmarkedFit",
@@ -1151,7 +1169,7 @@ setMethod("nonparboot", "unmarkedFit",
             colnames(y) <- NULL
             data@y <- y
             M <- numSites(data)
-            boot.iter <- function(x) {
+            boot.iter <- function() {
               sites <- sort(sample(1:M, M, replace = TRUE))
               data.b <- data[sites,]
               y <- getY(data.b)
@@ -1162,13 +1180,14 @@ setMethod("nonparboot", "unmarkedFit",
                 obs <- lapply(obs.per.site, function(obs) sample(obs, replace = TRUE))
                 data.b <- data.b[obs]
               }
-              fm <- update(object, data = data.b)
+              fm <- update(object, data = data.b, se = FALSE)
+              return(fm)
             }
-            if (keepOldSamples) {
-              object@bootstrapSamples <- c(object@bootstrapSamples, lapply(1:B, boot.iter))
-            } else {
-              object@bootstrapSamples <- lapply(1:B, boot.iter)
-            }
+            if (!keepOldSamples) {
+              object@bootstrapSamples <- NULL
+            }               
+            object@bootstrapSamples <- c(object@bootstrapSamples,
+                                         replicate(B, boot.iter(), simplify = FALSE))
             coefs <- t(sapply(object@bootstrapSamples, function(x) coef(x)))
             v <- cov(coefs)
             object@covMatBS <- v
@@ -1229,17 +1248,18 @@ setMethod("nonparboot", "unmarkedFitColExt",
             colnames(y) <- NULL
             data@y <- y
             M <- numSites(data)
-            boot.iter <- function(x) {
+            boot.iter <- function() {
               sites <- sort(sample(1:M, M, replace = TRUE))
               data.b <- data[sites,]
               y <- getY(data.b)
-              fm <- update(object, data = data.b)
+              fm <- update(object, data = data.b, se = FALSE)
+              return(fm)
             }
-            if (keepOldSamples) {
-              object@bootstrapSamples <- c(object@bootstrapSamples, lapply(1:B, boot.iter))
-            } else {
-              object@bootstrapSamples <- lapply(1:B, boot.iter)
-            }
+            if (!keepOldSamples) {
+              object@bootstrapSamples <- NULL
+            }               
+            object@bootstrapSamples <- c(object@bootstrapSamples,
+                                         replicate(B, boot.iter(), simplify = FALSE))
             coefs <- t(sapply(object@bootstrapSamples, function(x) coef(x)))
             v <- cov(coefs)
             object@covMatBS <- v
