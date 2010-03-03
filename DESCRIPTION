@@ -1,5 +1,5 @@
 Package: unmarked
-Version: 0.9.0
+Version: 0.8.3
 Date: 2010-02-22
 Type: Package
 Title: Models for Data from Unmarked Animals
@@ -17,4 +17,5 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'unmarkedFit.R' 'utils.R' 'colext.R' 'distsamp.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
     'unmarkedFitList.R' 'unmarkedLinComb.R'
+Encoding: UTF-8
 URL: http://github.com/ianfiske/unmarked
