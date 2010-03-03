@@ -6,8 +6,8 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9.0\cr
-Date: \tab 2010-02-22\cr
+Version: \tab 0.8-3\cr
+Date: \tab 2010-03-02\cr
 License: \tab GPL (>= 2)\cr
 LazyLoad: \tab yes\cr
 LazyData: \tab yes\cr
