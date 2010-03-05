@@ -1,0 +1,6 @@
+Unmarked is an R package for analyzing ecological data arising from several popular sampling techniques.  The sampling methods include point counts, occurrence sampling, distance sampling, removal, double observer, and many others.  Unmarked uses hierarchical models to incorporate covariates of both the level of the latent abundance (or occupancy) and imperfect detection process.
+
+The latest stable version of unmarked can be downloaded from CRAN with the R command
+> install.packages("unmarked")
+
+Support is provided through the unmarked google group at http://groups.google.com/group/unmarked.
