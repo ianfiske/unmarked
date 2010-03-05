@@ -59,8 +59,8 @@ epsilonformula = ~ 1,
 pformula = ~ JulianDate + I(JulianDate^2), umf, control = list(trace=1, maxit=1e4)))
 
 ## get the trajectory estimates
-fm@smoothed.mean
-fm@projected.mean
+smoothed(fm)
+projected(fm)
 
 \dontrun{
 ## Find bootstrap standard errors for smoothed trajectory
