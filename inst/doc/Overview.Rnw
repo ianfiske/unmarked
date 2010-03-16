@@ -132,7 +132,7 @@ A predict method also exists.
 
 <<>>=
 newData <- data.frame(MinAfterSunset = 0, Temperature = -2:2)
-head(predict(fm2, type = 'det', newdata = newData, appendData = TRUE))
+predict(fm2, type = 'det', newdata = newData, appendData = TRUE)
 @
 
 
@@ -150,8 +150,8 @@ organinzing models using the fitList function.
 
 <<>>=
 fms <- fitList(Null = fm1, TimeTemp = fm2)
-modSel(fms, nullmod=fm1)
-head(predict(fms, type='det', newdata = newData, appendData = TRUE))
+modSel(fms, nullmod="Null")
+predict(fms, type='det', newdata = newData, appendData = TRUE)
 @
 
 
