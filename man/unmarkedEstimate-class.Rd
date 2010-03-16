@@ -18,6 +18,7 @@ Creating these objects is done internally not by users.
 		abbreviated parameter names}
     \item{\code{estimates}:}{Object of class \code{"numeric"}}
     \item{\code{covMat}:}{Object of class \code{"matrix"}}
+    \item{\code{covMatBS}:}{Object of class \code{"matrix"}}
     \item{\code{invlink}:}{Object of class \code{"character"}}
     \item{\code{invlinkGrad}:}{Object of class \code{"character"}}
   }

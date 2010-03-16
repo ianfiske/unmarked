@@ -1,6 +1,6 @@
 colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
                    epsilonformula = ~ 1, pformula = ~ 1,
-                   data, starts, B = 0, method = "BFGS", control=list(),
+                   data, starts, method = "BFGS", control=list(),
                    se = TRUE)
 {
   
@@ -37,78 +37,6 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
   }
   
   fm <- eval(fc)
-  
-  if(B > 0) {  # find bootstrap SEs?
-    
-    smooth.b <- projected.b <- array(NA, c(K + 1, nY, B))
-    psi.b <- matrix(NA, B, K + 1)
-    phi.b <- array(NA, c(K+1,K+1,B))
-    ss.b <- matrix(NA, B, K + 1)
-    mle.b <- matrix(NA, B, nrow(fm$mle))
-    
-    obsCovs.siteInd <- matrix(1:(M*J*nY),M,J*nY,byrow=T)
-    
-    b <- 1
-    sd <- 0
-    bad.boots <- 0
-    while(b <= B) {
-      sd <- sd + 1
-      set.seed(sd)
-      samp <- sort(sample(1:M, M, replace = TRUE))
-      sites.unique <- unique(samp)
-      sites.wts <- table(samp)
-      
-      data.b <- data
-      data.b@y <- data@y[sites.unique,]
-      obsCovsInd.b <- as.vector(t(obsCovs.siteInd[sites.unique,]))
-      data.b@obsCovs <- data.b@obsCovs[obsCovsInd.b,]
-      fc$data <- quote(data.b)
-      fc$getHessian <- FALSE
-      fc$starts <- fm$mle$value
-      fc$wts <- sites.wts
-      
-      fm.b <- tryCatch(eval(fc),
-                       error = function(x) {
-                         bad.boots <<- bad.boots + 1
-                         cat("Caught failed bootstrap iteration.  Seed =",sd,"\n")
-                         cat(bad.boots, "bad boot iterations.\n")
-                         0  ## if fit breaks, then re-enter loop
-                       })
-      if(identical(fm.b, 0)) next
-      
-      if(!(TRUE %in% is.nan(smooth.b[,,b]))) {
-        smooth.b[,,b] <- fm.b$smooth
-      } else {
-        cat("smooth.b contained NaN.\n")
-      }
-      psi.b[b,] <- fm.b$psi
-      phi.b[,,b] <- fm.b$phi
-      mle.b[b,] <- fm.b$mle$value
-      ss.b[b,] <- fm.b$ss
-      projected.b[,,b] <- fm.b$projected
-      
-      cat(paste("Bootstrap iteration",b,"completed.\n"))
-      b <- b + 1
-    }
-    
-    mle.var <- apply(mle.b, 2, var)
-    smooth.var <- apply(smooth.b, 1:2, var)
-    projected.var <- apply(projected.b, 1:2, var)
-    phi.var <- apply(phi.b, 1:2, var)
-    
-    ## also get the time-series style covariances for K=1 only.
-    if(identical(K,1)) {
-      smooth.mat <- t(smooth.b[2,,])
-      fm$smooth.covmat <- cov(smooth.mat, use="complete.obs")
-      fm$smooth.cormat <- cor(smooth.mat, use="complete.obs")
-    }
-    
-    fm$smooth.var <- smooth.var
-    fm$projected.var <- projected.var
-    fm$mle.var <- mle.var
-    fm$phi.var <- phi.var
-    
-  }
   
   fm$n.det <- n.det
   opt <- fm$opt
@@ -161,7 +89,9 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
                detformula = pformula,
                data = data, sitesRemoved = fm$designMats$removed.sites, 
                estimates = estimateList,
-               AIC = fmAIC, opt = opt, negLogLike = opt$value, nllFun = fm$nll, projected = fm$projected)
+               AIC = fmAIC, opt = opt, negLogLike = opt$value, nllFun = fm$nll,
+               projected = fm$projected, projected.mean = fm$projected.mean,
+               smoothed = fm$smoothed, smoothed.mean = fm$smoothed.mean)
   
   return(umfit)
 }
@@ -218,8 +148,6 @@ colext.fit <- function(formula, data, J,
   y.it <- matrix(t(y), nY*M, J, byrow = TRUE)
   J.it <- rowSums(!is.na(y.it))
   
-  alpha <- array(NA, c(K + 1, nY, M))
-  
   V.arr <- array(t(V.itjk), c(nDP, nDMP, J, nY, M))
   V.arr <- aperm(V.arr, c(2,1,5,4,3))
   
@@ -227,6 +155,7 @@ colext.fit <- function(formula, data, J,
   y.arr <- aperm(y.arr, c(3:1))
   storage.mode(J.it) <- storage.mode(y.arr) <- storage.mode(K) <- "integer"
   
+  alpha <- array(NA, c(K + 1, nY, M))
   forward <- function(detParms, phis, psis, storeAlpha = FALSE) {
     
     negloglike <- 0
@@ -250,6 +179,29 @@ colext.fit <- function(formula, data, J,
     negloglike
   }
   
+  backward <- function(detParams, phis) {
+    beta <- array(NA, c(K + 1, nY, M))
+    for (i in 1:M) {
+      backP <- rep(1, K + 1)
+      for (t in nY:1) {
+
+        beta[, t, i] <- backP
+
+        detVec <- rep(1, K + 1)
+        for (j in 1:J) {
+          if(y.arr[i,t,j] != 99) {
+            mp <- V.arr[,,i,t,j] %*% detParams
+            detVecObs <- .Call("getSingleDetVec", y.arr[i,t,j], mp, K, PACKAGE = "unmarked")
+            detVec <- detVec * detVecObs
+          }
+        }
+        
+        if (t > 1) backP <- t(phis[,,t-1,i]) %*% (detVec * backP)
+      }
+    }
+    return(beta)
+  }
+
   X.gam <- X.it.gam %x% c(-1,1)
   X.eps <- X.it.eps %x% c(-1,1)
   phis <- array(NA,c(2,2,nY-1,M))
@@ -295,14 +247,17 @@ colext.fit <- function(formula, data, J,
   colnames(projected.mean) <- 1:nY
   
   ## smoothing
-  forward(detParams, phi, psi, storeAlpha = TRUE)
-  backward(mle[(nSP + nPhiP+1):(nSP + nDP + nPhiP)], phi, psi)
-  beta[,,1]
+  forward(detParams, phis, psis, storeAlpha = TRUE)
+  beta <- backward(detParams, phis)
+  gamma <- array(NA, c(K + 1, nY, M))
   for(i in 1:M) {
     for(t in 1:nY) {
       gamma[,t,i] <- alpha[,t,i] * beta[,t,i] / sum(alpha[,t,i] * beta[,t,i])
     }
   }
+  smoothed.mean <- apply(gamma, 1:2, mean)
+  rownames(smoothed.mean) <- c("unoccupied","occupied")
+  colnames(smoothed.mean) <- 1:nY
 
   parm.names <- c(psiParms, gamParms, epsParms, detParms)
   mle.df <- data.frame(names = parm.names, value = mle)
@@ -312,5 +267,6 @@ colext.fit <- function(formula, data, J,
   list(mle = mle.df, opt=fm, nP = nP, M = M, nDP = nDP, nGP = nGP,
        nEP = nEP, nSP = nSP,
        nllFun = nll, designMats = designMats,
-       projected = projected.mean)
+       projected = projected, projected.mean = projected.mean, smoothed = gamma,
+       smoothed.mean = smoothed.mean)
 }

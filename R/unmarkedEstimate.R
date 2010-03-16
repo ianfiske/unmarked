@@ -7,6 +7,7 @@ setClass("unmarkedEstimate",
 				short.name = "character",
         estimates = "numeric",
         covMat = "matrix",
+                   covMatBS = "optionalMatrix",
         invlink = "character",
         invlinkGrad = "character"),
     validity = function(object) {
@@ -52,8 +53,6 @@ setMethod("summary", "unmarkedEstimateList",
         cat("\n")
       }
     })
-
-
 
 setGeneric("estimates",
     function(object) {
@@ -140,9 +139,14 @@ setMethod("linearComb",
 			stopifnot(ncol(coefficients) == length(obj@estimates))
 			e <- as.vector(coefficients %*% obj@estimates)
 			v <- coefficients %*% obj@covMat %*% t(coefficients)
+                        if (!is.null(obj@covMatBS)) {
+                          v.bs <- coefficients %*% obj@covMatBS %*% t(coefficients)
+                        } else {
+                          v.bs <- NULL
+                        }
 			umelc <- new("unmarkedLinComb",
 					parentEstimate = obj,
-					estimate = e, covMat = v,
+					estimate = e, covMat = v, covMatBS = v.bs,
 					coefficients = coefficients)
 			umelc
 		})

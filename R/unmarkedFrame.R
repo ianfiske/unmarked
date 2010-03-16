@@ -290,6 +290,15 @@ setGeneric("getY", function(object) standardGeneric("getY"))
 setMethod("getY", "unmarkedFrame", function(object) object@y)
 
 
+setGeneric("plotArea", function(object) standardGeneric("plotArea"))
+setMethod("plotArea", "unmarkedFrame", function(object) object@plotArea)
+setGeneric("plotArea<-", function(object, value) standardGeneric("plotArea<-"))
+setReplaceMethod("plotArea", "unmarkedFrame", function(object, value) {
+			object@plotArea <- value
+			object
+		})
+
+
 setGeneric("coordinates", function(object) standardGeneric("coordinates"))
 setMethod("coordinates", "unmarkedFrame",
 		function(object) {
@@ -441,33 +450,37 @@ setMethod("hist", "unmarkedFrameDS",
 
 setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 	function(x, i) {  
-		if(length(i) == 0) return(x)
-		if(any(i < 0) && any(i > 0)) 
-			stop("i must be all positive or all negative indices.")
-		if(all(i < 0)) { # if i is negative, then convert to positive
-			M <- numSites(x)
-			i <- (1:M)[i]
-			}
-		y <- getY(x)[i,]
-		if (length(i) == 1) {
-			y <- t(y)
-			}
-		siteCovNames <- colnames(siteCovs(x))
-		siteCovs <- as.data.frame(siteCovs(x)[i,])
-		colnames(siteCovs) <- siteCovNames
-		obsCovs <- obsCovs(x)
-		obsCovsNames <- colnames(obsCovs(x))
-		R <- obsNum(x)
-		obs.site.inds <- rep(1:numSites(x), each = R)
-		obs.site.sel <- rep(i, each = R)
-		obsCovs <- as.data.frame(obsCovs[match(obs.site.sel,obs.site.inds),])
-		colnames(obsCovs) <- obsCovsNames
-		umf <- x
-		umf@y <- y
-		umf@siteCovs <- siteCovs
-		umf@obsCovs <- obsCovs
-		umf@plotArea <- umf@plotArea[i]
-		umf
+          M <- numSites(x)
+
+          if(length(i) == 0) return(x)
+          if(any(i < 0) && any(i > 0)) 
+            stop("i must be all positive or all negative indices.")
+          if(all(i < 0)) { # if i is negative, then convert to positive
+            i <- (1:M)[i]
+          }
+          y <- getY(x)[i,]
+          if (length(i) == 1) {
+            y <- t(y)
+          }
+          siteCovs <- siteCovs(x)
+          obsCovs <- obsCovs(x)
+          if (!is.null(siteCovs)) {
+            siteCovs <- siteCovs(x)[i, , drop = FALSE]
+          }
+          if (!is.null(obsCovs)) {
+            R <- obsNum(x)
+            obsCovs <- cbind(.site=rep(1:M, each = R), obsCovs(x))
+            obsCovs <- ldply(i, function(site) {
+              subset(obsCovs, .site == site)
+            })
+            obsCovs$.site <- NULL
+          }
+          umf <- x
+          umf@y <- y
+          umf@siteCovs <- siteCovs
+          umf@obsCovs <- obsCovs
+          umf@plotArea <- umf@plotArea[i]
+          umf
 	})
 
 ## remove obs only
@@ -496,6 +509,46 @@ setMethod("[", c("unmarkedFrame","numeric", "numeric", "missing"),
 			umf <- umf[,j]
 			umf
 		})
+
+
+### list is a ragged array of indices (y's) to include for each site.
+### Typically useful for multilevel boostrapping.
+setMethod("[", c("unmarkedFrame","list", "missing", "missing"),
+function(x, i) {  
+  m <- numSites(x)
+  J <- R <- obsNum(x)
+  o2y <- obsToY(x)
+  if (!identical(o2y, diag(R))) stop("Ragged subsetting of unmarkedFrames is only valid for diagonal obsToY.")
+  J <- ncol(o2y)
+  if (m != length(i)) stop("list length must be same as number of sites.")
+  siteCovs <- siteCovs(x)
+  y <- cbind(.site=1:m, getY(x))
+  obsCovs <- cbind(.site=rep(1:m, each=R), obsCovs(x))
+
+  obsCovs <- ddply(obsCovs, ~.site, function(df) {
+    site <- df$.site[1]
+    obs <- i[[site]]
+    if (length(obs) > R) stop("All elements of list must be less than or equal to R.")
+    obs <- c(obs, rep(NA, R-length(obs)))
+    df[obs,]
+  })
+  obsCovs$.site <- NULL
+
+  y <- apply(y, 1, function(row) {
+    site <- row[1]
+    row <- row[-1]
+    obs <- i[[site]]
+    obs <- c(obs, rep(NA, R-length(obs)))
+    row[obs]
+  })
+
+  obsCovs(x) <- obsCovs
+  x@y <- t(y)
+  x
+})
+
+
+
 
 ## for multframes, must remove years at a time
 setMethod("[", c("unmarkedMultFrame", "missing", "numeric", "missing"),

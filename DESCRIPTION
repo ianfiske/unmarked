@@ -1,6 +1,5 @@
 Package: unmarked
-Version: 0.9.0
-Date: 2010-02-22
+Version: 0.8-3
 Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske, Richard Chandler
@@ -10,11 +9,12 @@ Imports: graphics, stats, utils
 Description: Unmarked estimates wildlife parameters for many popular
     sampling methods including occurrence, point count, and distance
     data using hierarchical models.
-License: GPL version 2 or newer
+License: GPL (>=3)
 LazyLoad: yes
 LazyData: yes
 Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'unmarkedFit.R' 'utils.R' 'colext.R' 'distsamp.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
     'unmarkedFitList.R' 'unmarkedLinComb.R'
-URL: http://github.com/ianfiske/unmarked
+Encoding: UTF-8
+URL: http://groups.google.com/group/unmarked, http://github.com/ianfiske/unmarked
