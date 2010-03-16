@@ -1,6 +1,6 @@
 # Methods needed from other packages
 importFrom(stats, confint, fitted, coef, vcov, predict, update, profile, 
-	simulate, residuals)
+	simulate, residuals, deviance)
 importFrom(graphics, plot, hist)
 importFrom(utils, head)
 importFrom(reshape, melt, cast, recast)
