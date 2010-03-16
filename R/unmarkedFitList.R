@@ -158,13 +158,18 @@ setMethod("modSel", "unmarkedFitList",
 
 
 
-setMethod("show", "unmarkedModSel", 
-	function(object) {
-		out <- object@Full[,c("n", "nPars", "AIC", "deltaAIC", "AICwt", "Rsq", 
-			"cumltvAICwt")]
-		print(out, digits=5)
-		})
+setMethod("show", "unmarkedModSel", function(object) {
+  out <- as(object, "data.frame")
+  print(out, digits=5)
+})
 	
 
-
-
+setAs("unmarkedModSel", "data.frame", function(from) {
+  out <- from@Full[,c("n", "nPars", "AIC", "deltaAIC", "AICwt", "Rsq", 
+			"cumltvAICwt")]
+  out$model <- rownames(out)
+  rownames(out) <- NULL
+  nc <- ncol(out)
+  out <- out[, c(nc, 1 : (nc - 1))]
+  out
+})
