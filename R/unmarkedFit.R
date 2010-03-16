@@ -611,6 +611,9 @@ setMethod("residuals", "unmarkedFitOccuRN", function(object, ...)
             return(r)
           })
 
+setMethod("deviance", "unmarkedFit", function(object, ...)
+	sum(residuals(object)^2, na.rm=TRUE))
+  	 
 
 
 
@@ -763,20 +766,21 @@ setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE)
             survey <- umf@survey
             key <- object@keyfun
             switch(key, 
-                   halfnorm = {
-                     sigma <- exp(V %*% ppars)
-                     p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
-                   }, 
-                   exp = {
-                     rate <- exp(V %*% ppars)
-                     p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
-                   }, 
-                   hazard = {
-                     shape <- exp(V %*% ppars)
-                     scale <- exp(coef(object, type="scale"))
-                     p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
-                                                           scale = scale, survey = survey))
-                   })
+                halfnorm = {
+                	sigma <- exp(V %*% ppars)
+                    p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
+                   	}, 
+                exp = {
+                    rate <- exp(V %*% ppars)
+                    p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
+                   	}, 
+                hazard = {
+                    shape <- exp(V %*% ppars)
+                    scale <- exp(coef(object, type="scale"))
+                    p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
+                    	scale = scale, survey = survey))
+                   	},
+				uniform = p <-1)
             p <- matrix(p, M, J, byrow = TRUE)
             return(p)
           })
