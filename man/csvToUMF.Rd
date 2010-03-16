@@ -42,6 +42,10 @@ head(read.csv(system.file("csv","frog2001pcru.csv", package="unmarked")))
 head(read.csv(system.file("csv","widewt.csv", package="unmarked")))
 
 # convert them!
-dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
-dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
-dat3 <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"), long = FALSE, type = "unmarkedFrameOccu")}
+dat1 <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"),
+                 long = TRUE, type = "unmarkedFrameOccu")
+dat2 <- csvToUMF(system.file("csv","frog2001pfer.csv", package="unmarked"),
+                 long = TRUE, type = "unmarkedFrameOccu")
+dat3 <- csvToUMF(system.file("csv","widewt.csv", package="unmarked"),
+                 long = FALSE, type = "unmarkedFrameOccu")
+}

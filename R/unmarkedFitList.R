@@ -103,6 +103,9 @@ setClass("unmarkedModSel",
 setMethod("modSel", "unmarkedFitList", 
 	function(object, nullmod=NULL) 
 {
+	if (!is.character(nullmod) && !is.null(nullmod)) {
+		stop("nullmod must be character name of null model fit in the fitlist.")
+		}
 	fits <- object@fits
 	estList <- lapply(fits, coef, altNames=T)
 	seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=T))))
@@ -117,7 +120,11 @@ setMethod("modSel", "unmarkedFitList",
 	colnames(out) <- cNames
 	eMat <- seMat <- matrix(NA, length(fits), length(eNames), 
 		dimnames=list(names(fits), eNames))
-	out$formula <- sapply(fits, function(x) deparse(x@formula))
+	out$formula <- sapply(fits, function(x) {
+          f <- as.character(x@formula)
+          f <- paste(f[2], "~", f[3])
+          f
+        })
 	for(i in 1:length(eNames)) {
 		eMat[,eNames[i]] <- out[,eNames[i]] <- sapply(estList, function(x) 
 			x[eNames[i]])
@@ -136,8 +143,13 @@ setMethod("modSel", "unmarkedFitList",
 	out$AICwt <- exp(-out$deltaAIC / 2)
 	out$AICwt <- out$AICwt / sum(out$AICwt)
 	out$Rsq <- NA
-	if(!is.null(nullmod))
-		out$Rsq <- sapply(fits, nagR2, nullmod)
+	if(!is.null(nullmod)) {
+          if (is.na(match(nullmod, names(fits)))) {
+            stop(paste("No fit named", nullmod, "was found in fits."))
+          }
+          nullmod <- fits[[nullmod]]
+          out$Rsq <- sapply(fits, nagR2, nullmod)
+        }
 	out <- out[order(out$AIC),]
 	out$cumltvAICwt <- cumsum(out$AICwt)
 	msout <- new("unmarkedModSel", Estimates = eMat, SE = seMat, Full = out)
@@ -147,13 +159,18 @@ setMethod("modSel", "unmarkedFitList",
 
 
 
-setMethod("show", "unmarkedModSel", 
-	function(object) {
-		out <- object@Full[,c("n", "nPars", "AIC", "deltaAIC", "AICwt", "Rsq", 
-			"cumltvAICwt")]
-		print(out, digits=5)
-		})
+setMethod("show", "unmarkedModSel", function(object) {
+  out <- as(object, "data.frame")
+  print(out, digits=5)
+})
 	
 
-
-
+setAs("unmarkedModSel", "data.frame", function(from) {
+  out <- from@Full[,c("n", "nPars", "AIC", "deltaAIC", "AICwt", "Rsq", 
+			"cumltvAICwt")]
+  out$model <- rownames(out)
+  rownames(out) <- NULL
+  nc <- ncol(out)
+  out <- out[, c(nc, 1 : (nc - 1))]
+  out
+})

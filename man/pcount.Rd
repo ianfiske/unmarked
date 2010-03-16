@@ -21,7 +21,7 @@ See \code{\link{unmarkedFrame}} for a description of how to supply by creating
 and unmarkedFrame.
 
 This function fits the latent N-mixture model for point count data
-(Royle 2004, Kery and Royle 2005).
+(Royle 2004, Kéry et al 2005).
 
 The latent abundance distribution, \eqn{f(N | \mathbf{\theta})}{f(N |
 theta)} can be set as either a Poisson or a negative binomial random
@@ -41,7 +41,7 @@ covariates of \eqn{p_{ij}}{p_ij} use the logit link.}
 \author{Ian Fiske \email{ianfiske@gmail.com}}
 \references{Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 
-Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.}
+Kéry, M., Royle, J. A., and Schmid, H. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.}
 \keyword{models}
 \examples{data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,

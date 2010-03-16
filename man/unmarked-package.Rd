@@ -6,8 +6,8 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9.0\cr
-Date: \tab 2010-02-22\cr
+Version: \tab 0.8-3\cr
+Date: \tab 2010-03-02\cr
 License: \tab GPL (>= 2)\cr
 LazyLoad: \tab yes\cr
 LazyData: \tab yes\cr
@@ -23,7 +23,7 @@ fits occurrence models with no linkage between abundance and detection
 presence/absence data by exploiting the link between detection
 probability and abundance (Royle and Nichols 2003).
 \command{\link{pcount}} fits N-mixture models for repeated count data
-(Royle 2004, Kery and Royle 2005).  \command{\link{distsamp}} fits the distsance sampling model of 
+(Royle 2004, Kéry et al 2005).  \command{\link{distsamp}} fits the distsance sampling model of 
 Royle et al. (2004) to distance data recorded in discrete intervals. All of 
 these functions allow the user to specify covariates that affect the detection
 process and several also allow covariates for the state process.
@@ -67,7 +67,7 @@ Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
 
-Kery, M. and Royle, J. A. (2005) Modeling Avaian Abundance from
+Kéry, M., Royle, J. A., and Schmid, H. (2005) Modeling Avaian Abundance from
 Replicated Counts Using Binomial Mixture Models. \emph{Ecological
 Applications} 15(4), pp. 1450--1461.
 

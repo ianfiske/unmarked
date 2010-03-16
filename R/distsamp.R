@@ -368,4 +368,3 @@ if(any(0 > sightangle | sightangle > 180))
 	stop("sightangle must be degrees in [0, 180]")
 sightdist * sin(sightangle * pi / 180)
 }
- 
