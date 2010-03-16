@@ -1,12 +1,15 @@
 \name{detFuns}
-\title{Detection functions used by distsamp}
+\title{Detection functions used by distsamp, and associated density functions}
 \usage{
 gxhn(x, sigma)
 gxexp(x, rate)
 gxhaz(x, shape, scale)
-grhn(r, sigma)
-grexp(r, rate)
-grhaz(r, shape, scale)
+dxhn(x, sigma)
+dxexp(x, rate)
+dxhaz(x, shape, scale)
+drhn(r, sigma)
+drexp(r, rate)
+drhaz(r, shape, scale)
 }
 \alias{detFuns}
 \alias{gxhn}
