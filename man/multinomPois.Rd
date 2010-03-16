@@ -40,7 +40,8 @@ siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
 (fm2 <- multinomPois(~ 1 ~ ufp, ovenFrame))
 (fm3 <- multinomPois(~ 1 ~ trba, ovenFrame))
 (fm4 <- multinomPois(~ 1 ~ 1, ovenFrame))
-fmList <- fitList(fits=list(Global=fm1, ufp=fm2, trba=fm3,Null=fm4))
+fmList <- fitList(Global=fm1, ufp=fm2, trba=fm3, Null=fm4)
 
 # Model selection
-modSel(fmList, nullmod="Null")}
+modSel(fmList, nullmod="Null")
+}

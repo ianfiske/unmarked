@@ -22,7 +22,7 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData, getP,
 	predict, profile, projection, powerAnalysis, residuals, sampleSize, SE, 
 	show, simulate, siteCovs, "siteCovs<-", summary, update, vcov, 
 	yearlySiteCovs, "yearlySiteCovs<-", "[", smoothed, projected, plotArea, 
-	"plotArea<-", nonparboot)
+	"plotArea<-", nonparboot, deviance)
 
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame, unmarkedFrameOccu,
