@@ -7,10 +7,12 @@
 \alias{show,unmarkedModSel-method}
 \arguments{
 	\item{object}{an object of class "unmarkedFitList" created by the function
-		\code{\link{fitList}}}
-	\item{nullmod}{optional object storing results of null model. Only used in
-		calculation of Nagelkerke's R-squared index}
-	}
+	  \code{\link{fitList}}.}
+	\item{nullmod}{optional character naming which model in the
+	\code{fitList} contains results from the null model. Only used in
+		calculation of Nagelkerke's R-squared index.
+	      }
+}
 \value{
 A S4 object with the following slots
 
