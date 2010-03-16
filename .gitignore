@@ -1,4 +1,3 @@
 *.so
 *.o
-Rplots.pdf
-Overview.pdf
+*.pdf
