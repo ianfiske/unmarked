@@ -30,5 +30,5 @@ fmList <- fitList(fits = models)
 predict(fmList, type="state")
 
 # Model selection
-modSel(fmList, nullmod=fm3)
+modSel(fmList, nullmod="Null")
 }

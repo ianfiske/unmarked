@@ -150,7 +150,7 @@ organinzing models using the fitList function.
 
 <<>>=
 fms <- fitList(Null = fm1, TimeTemp = fm2)
-modSel(fms, nullmod=fm1)
+modSel(fms, nullmod="Null")
 head(predict(fms, type='det', newdata = newData, appendData = TRUE))
 @
 

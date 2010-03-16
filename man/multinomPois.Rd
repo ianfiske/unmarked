@@ -43,4 +43,4 @@ siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
 fmList <- fitList(fits=list(Global=fm1, ufp=fm2, trba=fm3,Null=fm4))
 
 # Model selection
-modSel(fmList, nullmod=fm4)}
+modSel(fmList, nullmod="Null")}

@@ -42,7 +42,7 @@ fm3 <- distsamp( ~ 1 ~area, ltUMF)
 fl <- fitList(Null=fm1, A.=fm2, .A=fm2)
 fl
 
-(ms <- modSel(fl, nullmod=fm1))
+(ms <- modSel(fl, nullmod="Null"))
 
 ms@Estimates
 ms@SE
