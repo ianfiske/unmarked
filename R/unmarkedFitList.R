@@ -142,6 +142,7 @@ setMethod("modSel", "unmarkedFitList",
 	out$deltaAIC <- out$AIC - min(out$AIC)
 	out$AICwt <- exp(-out$deltaAIC / 2)
 	out$AICwt <- out$AICwt / sum(out$AICwt)
+        out$Rsq <- NA
 	if(!is.null(nullmod)) {
           if (is.na(match(nullmod, names(fits)))) {
             stop(paste("No fit named", nullmod, "was found in fits."))
