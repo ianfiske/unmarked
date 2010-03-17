@@ -26,12 +26,12 @@ options(continue=" ")
 
 \maketitle
 
-\abstract{Distance-sampling is a common wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function distsamp implements the multinomial-Poisson mixture model of Royle et. al (2004), which was developed to overcome this limitation. This model requires that line or point transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, assess goodness-of-fit, and manipulate results.  }
+\abstract{Distance-sampling is a common wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function distsamp implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line or point transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, assess goodness-of-fit, and manipulate results. It does not cover the statistical theory and assumptions underlying distance-sampling, which the user is expected to be familiar with. }
 
 
 \section{Introduction}
 
-In distance sampling, the study design (line- or point-transect), distance class break points, transect lengths, and units of measurement need to be accounted for in the analysis. Unmarked uses an S4 class called unmarkedFrameDS to store data and metadata in a way that allows for easy data manipulation, summarization, and model specification. \citep{royle_generalized_2004}
+In distance sampling, the study design (line- or point-transect), distance class break points, transect lengths, and units of measurement need to be accounted for in the analysis. Unmarked uses an S4 class called unmarkedFrameDS to store data and metadata in a way that allows for easy data manipulation, summarization, and model specification.
 
 
 \section{Importing, formatting, and summarizing data}
@@ -55,10 +55,10 @@ Suppose there also exists transect-specific covariate data.
 
 <<>>=
 (covs <- data.frame(canopyHt = c(5, 8, 3, 2, 4, 7, 5), 
-	habitat = c('A','A','A','A','B','B','B')))
+	habitat = c('A','A','A','A','B','B','B'), row.names=letters[1:7]))
 @
 
-These data can now organized along with the associated metadata using the function unmarkedFrameDS. 
+These data can now be organized along with the associated metadata using the function unmarkedFrameDS. 
 
 
 <<>>=
@@ -77,25 +77,91 @@ summary(umf)
 hist(umf)
 @
 
-\section{Model fitting, selection and evaluation}
+\section{Model fitting}
 
-Now that we have put our data into an object of class unmarkedFrameDS, we are ready to fit some models with distsamp. The first argument is a formula which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the data, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the keyfun argument. The output can be changed from "density", to "abund" with the output argument. Note, however, that when line transect lenghs differ, they must be accounted for so abundance is actually animals per unit transect length. When modeling density, the output units can be changed from "ha" to "kmsq" using the unitsOut argument. 
+Now that we have put our data into an object of class unmarkedFrameDS, we are ready to fit some models with distsamp. The first argument is a formula which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the data, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the keyfun argument. The response can be changed from "density", to "abund" with the output argument. Note, however, that when line transect lenghs differ, they must be accounted for so abundance is actually animals per unit transect length. When modeling density, the output units can be changed from "ha" to "kmsq" using the unitsOut argument. distsamp also includes the arguments starts, method, and control, which are common to all unmarked fitting functions.
+
+Below are a series of models that demonstrate distsamp's arguments and defaults.
 
 <<>>=
-hn_Null <- distsamp(~1~1, umf)
+hn_Null <- distsamp(~1~1, umf)	# Same as:
+hn_Null <- distsamp(~1~1, umf, keyfun="halfnorm", output="density", 
+	unitsOut="ha")
 haz_Null <- distsamp(~1~1, umf, keyfun="hazard")
-(hn_Hab.Ht <- distsamp(~canopyHt ~habitat, umf))
+hn_Hab.Ht <- distsamp(~canopyHt ~habitat, umf)
 @
 
-To rank models based upon AIC, we can use the function modSel after organzing them with the fitList function.
+Once a model has been fit, there are several methods to display results. 
+
+<<fig=TRUE>>=
+haz_Null
+summary(haz_Null)
+hist(haz_Null)
+@
+
+The hist method only works for when no covariates affect the detection process, but see below for plotting covariate effects. The summary method reminds us that parameter estimates are on the natural log scale. Back-transforming them to the original scale and obtaining a standard error via the delta method is easily accomplished:
 
 <<>>=
-mods <- fitList(hn_Null, haz_Null, hn_Hab.Ht)
-modSel(mods)
+names(haz_Null)
+backTransform(haz_Null, whichEstimate="state")
+backTransform(haz_Null, whichEstimate="det")
+backTransform(haz_Null, whichEstimate="scale")
 @
 
-Because parameter estimates are on the log-scale, we need to back-transform them to 
+When covariates are present, backTransform in conjunction with linearComb can be used to for a single covariate combination. A predict method exits as well, which is especially useful when multiple covariate combinations are of interest. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
 
+
+<<>>=
+(habConstant <- data.frame(canopyHt = seq(2, 8, length=25), 
+	habitat=factor("A", levels=c("A", "B"))))
+(htConstant <- data.frame(canopyHt = 5, 
+	habitat=factor(c("A", "B"))))
+(Elambda <- predict(hn_Hab.Ht, type="state", newdata=htConstant, 
+	appendData=TRUE))
+head(Esigma <- predict(hn_Hab.Ht, type="det", newdata=habConstant, 
+	appendData=TRUE))
+@
+
+
+Now we can plot.
+
+
+<<fig=TRUE>>=
+x11(width=6, height=4)
+par(mfrow=c(1, 2))
+with(Elambda, {
+	x <- barplot(Predicted, names=habitat, xlab="Habitat", 
+		ylab="Density (animals/ha)", ylim=c(0, 25))
+	arrows(x, Predicted, x, Predicted+SE, code=3, angle=90, length=0.05)
+	box()
+	})
+with(Esigma, {
+	plot(canopyHt, Predicted, type="l", xlab="Canopy height", 
+		ylab="Half-normal shape parameter (SD)", ylim=c(5, 15))
+	lines(canopyHt, Predicted+SE, lty=2)		
+	lines(canopyHt, Predicted-SE, lty=2)
+	})			
+
+@
+
+
+
+Several options exists to look at detection function itself, instead of it's parameters.
+
+<<fig=TRUE>>=
+x11(width=6, height=4)
+par(mfrow=c(1, 2))
+plot(function(x) gxhn(x, sigma=8.7), 0, 20, xlab="Distance (m)", 
+	ylab="Detection probability at 2m canopy ht.")
+hist(hn_Null, xlab="Distance (m)", ylab="Density", main="", ylim=c(0, 0.1))
+plot(function(x) dxhn(x, sigma=8.7), 0, 20, add=TRUE, col="blue")
+plot(function(x) dxhn(x, sigma=10.2), 0, 20, add=TRUE, col="green")
+legend('topright', c("CanHt=2", "Null", "CanHt=8"), 
+	col=c("blue", "black", "green"), lty=1, cex=0.7)
+@
+
+
+Model selection and evaluating model fit can be accomplished in the same manner as for all unmarked models.
 
 
 \bibliography{distsamp}
