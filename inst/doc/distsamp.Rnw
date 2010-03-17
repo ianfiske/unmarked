@@ -1,0 +1,104 @@
+<<echo=false>>=
+options(width=70)
+options(continue=" ")
+@
+
+\documentclass[a4paper]{article}
+\usepackage[OT1]{fontenc}
+\usepackage{Sweave}
+\usepackage{natbib}
+\usepackage{fullpage}
+\bibliographystyle{plain}
+
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=2em}
+\fvset{listparameters={\setlength{\topsep}{0pt}}}
+\renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+
+%%\VignetteIndexEntry{Distsamp}
+
+\title{Distance-sampling analysis in unmarked}
+\author{Richard Chandler}
+
+
+\begin{document}
+
+\maketitle
+
+\abstract{Distance-sampling is a common wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function distsamp implements the multinomial-Poisson mixture model of Royle et. al (2004), which was developed to overcome this limitation. This model requires that line or point transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, assess goodness-of-fit, and manipulate results.  }
+
+
+\section{Introduction}
+
+In distance sampling, the study design (line- or point-transect), distance class break points, transect lengths, and units of measurement need to be accounted for in the analysis. Unmarked uses an S4 class called unmarkedFrameDS to store data and metadata in a way that allows for easy data manipulation, summarization, and model specification. \citep{royle_generalized_2004}
+
+
+\section{Importing, formatting, and summarizing data}
+
+The first step is to import the data into R. The simplest option is to use the read.csv function to import a .csv file that has been formatted so that each row represents a transect and columns describe either the number of individuals detected in each distance interval or transect-specific covariates. Alternatively, if data were not recorded in discrete distance intervals, a .csv file could be imported that contains a row for each individual detected and columns for the distances and transect names. This could then be converted to transect-level data using the function formatDistData. For example, 
+
+<<>>=
+library(unmarked)
+dists <- read.csv(system.file("csv", "distdata.csv", package="unmarkedDev"))
+dists
+levels(dists$transect) <- c(levels(dists$transect), "g")
+levels(dists$transect)
+yDat <- formatDistData(dists, distCol="distance", 
+	transectNameCol="transect", dist.breaks=c(0, 5, 10, 15, 20)) 
+yDat
+@
+
+Here we have crated an object called yDat that contains counts for each transect (row) in each distance interval (columns). Note the method used to include transect "g", which was surveyd but where no individuals were detected. It is important that all survyed transects are included in the analysis.
+
+Suppose there also exists transect-specific covariate data. 
+
+<<>>=
+(covs <- data.frame(canopyHt = c(5, 8, 3, 2, 4, 7, 5), 
+	habitat = c('A','A','A','A','B','B','B')))
+@
+
+These data can now organized along with the associated metadata using the function unmarkedFrameDS. 
+
+
+<<>>=
+umf <- unmarkedFrameDS(y=as.matrix(yDat), siteCovs=covs, survey="line", 
+	dist.breaks=c(0, 5, 10, 15, 20), tlength=rep(100, 7),
+	unitsIn="m")	
+@
+
+Note that there is no obsCovs argument, meaning that distance-interval-level covariates cannot be included in the analysis. The call to unmarkedFrameDS indicates that the data were collected on seven line transects, each 100 meters long, and detections were tabulated into distance intervals defined by the dist.breaks cutpoints. It is important that both transect lengths and distance break points are provided in the same units specified by unitsIn.
+
+We can look at these data, summarize them, and plot them usng a variety of methods.
+
+<<fig=TRUE>>=
+umf
+summary(umf)
+hist(umf)
+@
+
+\section{Model fitting, selection and evaluation}
+
+Now that we have put our data into an object of class unmarkedFrameDS, we are ready to fit some models with distsamp. The first argument is a formula which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the data, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the keyfun argument. The output can be changed from "density", to "abund" with the output argument. Note, however, that when line transect lenghs differ, they must be accounted for so abundance is actually animals per unit transect length. When modeling density, the output units can be changed from "ha" to "kmsq" using the unitsOut argument. 
+
+<<>>=
+hn_Null <- distsamp(~1~1, umf)
+haz_Null <- distsamp(~1~1, umf, keyfun="hazard")
+(hn_Hab.Ht <- distsamp(~canopyHt ~habitat, umf))
+@
+
+To rank models based upon AIC, we can use the function modSel after organzing them with the fitList function.
+
+<<>>=
+mods <- fitList(hn_Null, haz_Null, hn_Hab.Ht)
+modSel(mods)
+@
+
+Because parameter estimates are on the log-scale, we need to back-transform them to 
+
+
+
+\bibliography{distsamp}
+
+
+\end{document}
