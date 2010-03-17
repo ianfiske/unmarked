@@ -611,11 +611,6 @@ setMethod("residuals", "unmarkedFitOccuRN", function(object, ...)
             return(r)
           })
 
-setMethod("deviance", "unmarkedFit", function(object, ...)
-	sum(residuals(object)^2, na.rm=TRUE))
-  	 
-
-
 
 setMethod("plot", c(x = "unmarkedFit", y = "missing"), 
           function(x, y, ...)

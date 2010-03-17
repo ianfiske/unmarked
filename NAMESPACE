@@ -1,6 +1,6 @@
 # Methods needed from other packages
 importFrom(stats, confint, fitted, coef, vcov, predict, update, profile, 
-	simulate, residuals, deviance)
+	simulate, residuals)
 importFrom(graphics, plot, hist)
 importFrom(utils, head)
 importFrom(reshape, melt, cast, recast)
@@ -22,7 +22,7 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData, getP,
 	predict, profile, projection, powerAnalysis, residuals, sampleSize, SE, 
 	show, simulate, siteCovs, "siteCovs<-", summary, update, vcov, 
 	yearlySiteCovs, "yearlySiteCovs<-", "[", smoothed, projected, plotArea, 
-	"plotArea<-", nonparboot, deviance)
+	"plotArea<-", nonparboot)
 
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame, unmarkedFrameOccu,
