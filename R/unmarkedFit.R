@@ -504,8 +504,9 @@ setMethod("update", "unmarkedFit",
               upDetformula <- update.formula(detformula, newDetformula)
               newStateformula <- as.formula(paste("~", formula.[3], sep=""))
               upStateformula <- update.formula(stateformula, newStateformula)
-              call$formula <- as.formula(paste(deparse(upDetformula), 
-                                               deparse(upStateformula)))
+              call$formula <- as.formula(paste(
+			  	deparse(upDetformula, width=500), 
+                deparse(upStateformula, width=500)))
             }
             if (length(extras) > 0) {
               existing <- !is.na(match(names(extras), names(call)))
@@ -1112,7 +1113,7 @@ setMethod("show", "parboot", function(object)
             p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
             stats <- c("original" = t0, "bias" = bias, "Std. error" = bias.se, 
                        "p.value" = p.val)
-            cat("\nCall:", deparse(object@call), fill=T)
+            cat("\nCall:", deparse(object@call, width=500), fill=T)
             cat("\nBootstrap Statistics:\n")
             print(stats, digits=3)
             cat("\nt quantiles:\n")
