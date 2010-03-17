@@ -29,7 +29,6 @@ setGeneric("head")
 setGeneric("fitted")
 setGeneric("simulate")
 setGeneric("residuals")
-setGeneric("deviance")
 setGeneric("hist")
 
 
