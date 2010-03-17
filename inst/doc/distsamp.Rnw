@@ -71,7 +71,7 @@ Note that there is no obsCovs argument, meaning that distance-interval-level cov
 
 We can look at these data, summarize them, and plot them usng a variety of methods.
 
-<<fig=TRUE>>=
+<<fig=TRUE,width=3,height=3>>=
 umf
 summary(umf)
 hist(umf)
@@ -93,7 +93,7 @@ hn_Hab.Ht <- distsamp(~canopyHt ~habitat, umf)
 
 Once a model has been fit, there are several methods to display results. 
 
-<<fig=TRUE>>=
+<<fig=TRUE,width=3,height=3>>=
 haz_Null
 summary(haz_Null)
 hist(haz_Null)
@@ -126,8 +126,7 @@ head(Esigma <- predict(hn_Hab.Ht, type="det", newdata=habConstant,
 Now we can plot.
 
 
-<<fig=TRUE>>=
-x11(width=6, height=4)
+<<fig=TRUE,width=6,height=3>>=
 par(mfrow=c(1, 2))
 with(Elambda, {
 	x <- barplot(Predicted, names=habitat, xlab="Habitat", 
@@ -148,8 +147,7 @@ with(Esigma, {
 
 Several options exists to look at detection function itself, instead of it's parameters.
 
-<<fig=TRUE>>=
-x11(width=6, height=4)
+<<fig=TRUE,width=6,height=3>>=
 par(mfrow=c(1, 2))
 plot(function(x) gxhn(x, sigma=8.7), 0, 20, xlab="Distance (m)", 
 	ylab="Detection probability at 2m canopy ht.")
@@ -157,7 +155,7 @@ hist(hn_Null, xlab="Distance (m)", ylab="Density", main="", ylim=c(0, 0.1))
 plot(function(x) dxhn(x, sigma=8.7), 0, 20, add=TRUE, col="blue")
 plot(function(x) dxhn(x, sigma=10.2), 0, 20, add=TRUE, col="green")
 legend('topright', c("CanHt=2", "Null", "CanHt=8"), 
-	col=c("blue", "black", "green"), lty=1, cex=0.7)
+	col=c("blue", "black", "green"), lty=1, cex=0.5)
 @
 
 
