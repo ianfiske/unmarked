@@ -981,10 +981,31 @@ if(any(lambda < 0))
 as.numeric(1 - exp(-lambda))
 }
 
-#psi2lambda <- function(psi)
-#{
-#if(any(0 > psi | psi > 1))
-#	stop("psi must be in [0, 1]")
-#as.numeric(-log(1 - psi))
-#}
+
+# Convert individual-level distance data to the transect-level format required by distsamp()
+
+formatDistData <- function(distData, distCol, transectNameCol, dist.breaks)
+{
+transects <- distData[,transectNameCol]
+M <- nlevels(transects)
+J <- length(dist.breaks) - 1
+y <- matrix(NA, M, J, 
+	dimnames = list(levels(transects), paste("y", 1:J, sep=".")))
+for(i in 1:M) {
+	sub <- subset(distData, transects==rownames(y)[i])
+	y[i,] <- table(cut(sub[,distCol], dist.breaks, include.lowest=TRUE))
+	}
+return(data.frame(y))
+}
+
+
+
+## Sight distance to perpendicular distance
+
+sight2perpdist <- function(sightdist, sightangle) 
+{
+if(any(0 > sightangle | sightangle > 180))
+	stop("sightangle must be degrees in [0, 180]")
+sightdist * sin(sightangle * pi / 180)
+}
 
