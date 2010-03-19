@@ -26,18 +26,38 @@ options(continue=" ")
 
 \begin{document}
 
+\SweaveOpts{eps=FALSE,pdf=TRUE}
 \newcommand{\code}[1]{\texttt{\small{#1}}}
 \newcommand{\package}[1]{\textsf{\small{#1}}}
 
 \maketitle
 
-\abstract{Distance-sampling is a wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line or point transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results in package \package{unmarked}. It does not cover the statistical theory and assumptions underlying distance-sampling, which the user is expected to be familiar with. }
-
+\abstract{Distance-sampling is a wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line- or point-transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results in package \package{unmarked}. It does not cover the statistical theory and assumptions underlying distance-sampling, which the user is expected to be familiar with. }
 
 \section{Introduction}
 
-In distance sampling, the study design (line- or point-transect), distance class break points, transect lengths, and units of measurement need to be accounted for in the analysis. Package \package{unmarked} uses an S4 class called \code{unmarkedFrameDS} to store data and metadata in a way that allows for easy data manipulation, summarization, and model specification.
-                              
+Spatial variation in density is common to virtually all wildlife populations, and describing this variation is a central objective of much research. To accurately estimate and model density, it is often necessary to account for individuals present but not detected. Distance from observer is a ubiquitous source of variation in detection probability, and thus distance-sampling has become a commonly used survey methodology. Numerous options exist for analyzing distance-sampling data, but here the focus is on the model of Royle et al. \citep{royle_distsamp_2004}, which assumes that multiple transects have been surveyed and distance data are recorded in discrete intervals. The details of the model formulation are as follows: 
+
+The latent transect-level abundance distribution is currently assumed to be 
+
+\begin{equation}
+  \label{eq:1}
+  N_{i}\sim{Poisson}(\lambda)
+  \quad  i=1,\dots,M\
+\end{equation}
+
+The detection process is modeled as 
+
+\begin{equation}
+  \label{eq:2}
+  y_{ij}\sim{Multinomial}(N_{i}, \pi_{ij})
+  \quad  i=1,\dots,M\;j=1,\dots,J
+\end{equation}
+
+where $\bm{\pi_{ij}}$ is the multinomial cell probability for transect $i$ in distance class $j$. These are computed by integrating a detection function such as the half-normal (with shape parameter $\bm{\sigma}$) over each distance interval.
+
+Parameters $\bm{\lambda}$ and $\bm{\sigma}$ can be vectors affected by transect-specific covariates using the log link.
+
 \section{Importing, formatting, and summarizing data}
 
 The first step is to import the data into R. The simplest option is to use the \code{read.csv} function to import a .csv file that has been formatted so that each row represents a transect, and columns describe either the number of individuals detected in each distance interval or transect-specific covariates. Alternatively, if data were not recorded in discrete distance intervals, a .csv file could be imported that contains a row for each individual detected and columns for the distances and transect names. This could then be converted to transect-level data using the function \code{formatDistData}. For example, 
@@ -62,8 +82,7 @@ Suppose there also exists transect-specific covariate data.
 	habitat = c('A','A','A','A','B','B','B'), row.names=letters[1:7]))
 @
 
-These data can now be organized along with the associated metadata using the function \code{unmarkedFrameDS}. 
-
+The function \code{unmarkedFrameDS} can now be used to organize these data along their metadata (study design (line- or point-transect), distance class break points, transect lengths, and units of measurement) into an object to be used as the \code{data} argument in \code{distsamp}. By organizing the data this way, the user does not need to repetitively specify these arguments during each call to \code{distsamp}, thereby reducing the potential for errors and facilitating data summary and manipulation.
 
 <<>>=
 umf <- unmarkedFrameDS(y=as.matrix(yDat), siteCovs=covs, survey="line", 
@@ -80,7 +99,6 @@ umf
 summary(umf)
 hist(umf, xlab="distance (m)", main="", cex.lab=0.8, cex.axis=0.8)
 @
-
 \begin{figure}[tb]
   \centering
   \includegraphics{distsamp-umfhist}
@@ -122,7 +140,6 @@ backTransform(linearComb(hn_Hab.Ht['det'], c(0, 5)))
 
 Note that when covariates are present, \code{backTransform} in conjunction with \code{linearComb} can be used for a single covariate combination. A \code{predict} method exits as well, which is especially useful when multiple covariate combinations are of interest. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
 
-
 <<>>=
 (habConstant <- data.frame(canopyHt = seq(2, 8, length=20), 
 	habitat=factor("A", levels=c("A", "B"))))
@@ -134,11 +151,9 @@ head(Esigma <- predict(hn_Hab.Ht, type="det", newdata=habConstant,
 	appendData=TRUE))
 @
 
+Once predictions have been made for the new data, plotting is straight-forward. Figure~\ref{fig:predplot}a, shows density as a function of habitat type, and Figure~\ref{fig:predplot}b shows that $\bm{\sigma}$ is not related to canopy height.
 
-Once predictions have been made for the new data, plotting is straight-forward. Figure x, shows density as a function of habitat type, and fig xb shows that $\bm{\sigma}$ is not related to canopy height.
-
-
-<<fig=TRUE,width=6,height=3>>=
+<<predplot,fig=TRUE,include=FALSE,width=6,height=3>>=
 par(mfrow=c(1, 2))
 with(Elambda, {
 	x <- barplot(Predicted, names=habitat, xlab="Habitat", 
@@ -156,30 +171,36 @@ with(Esigma, {
 	lines(canopyHt, Predicted-SE, lty=2)
 	})			
 @
+\begin{figure}[tb]
+  \centering
+  \includegraphics{distsamp-predplot}
+  \caption{Predicted covariate relatonships.}
+  \label{fig:predplot}
+\end{figure}
 
-
-
-Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do the latter, we can plug predicted values of $\bm{\sigma}$ at given covariate values into the \code{gxhn} function. For instance, to plot the half-normal function at a canopy height of 2m, $\bm{\sigma}$ can be set to 10.8, the predicted value shown above. The available detection functions are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the distance histogram, using a similar approach with the \code{hist} method for \code{unmarkedFitDS} objcets.
-
-
-<<fig=TRUE,width=6,height=3>>=
+<<detplot,fig=TRUE,include=FALSE,width=6,height=3>>=
 par(mfrow=c(1, 2))
 plot(function(x) gxhn(x, sigma=10.8), 0, 20, xlab="Distance (m)", 
-	ylab="Detection probability at 2m canopy ht.", cex=0.7, cex.lab=0.7,
+	ylab="Detection prob. at 2m canopy ht.", cex.lab=0.7,
     cex.axis=0.7, las=1)
 hist(hn_Null, xlab="Distance (m)", ylab="Probability density", main="", 
     ylim=c(0, 0.1), cex.lab=0.7, cex.axis=0.7, las=1)
-plot(function(x) dxhn(x, sigma=8.7), 0, 20, add=TRUE, col="blue")
-plot(function(x) dxhn(x, sigma=10.2), 0, 20, add=TRUE, col="green")
-legend('topright', c("CanHt=2", "Null", "CanHt=8"), 
-	col=c("blue", "black", "green"), lty=1, cex=0.5)
+plot(function(x) dxhn(x, sigma=10.8), 0, 20, add=TRUE, col="blue")
+plot(function(x) dxhn(x, sigma=9.9), 0, 20, add=TRUE, col="green")
+legend('topright', c("Canopy ht. = 2m", "Null", "Canopy ht. = 8m"), 
+	col=c("blue", "black", "green"), lty=1, cex=0.4)
 @
 
+Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do the latter, we can plug predicted values of $\bm{\sigma}$ at given covariate values into the \code{gxhn} function. For instance, to plot the half-normal function at a canopy height of 2m, $\bm{\sigma}$ can be set to 10.8, the predicted value shown above (Figure~\ref{fig:detplot}). The available detection functions are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the distance histogram, using a similar approach with the \code{hist} method for \code{unmarkedFitDS} objcets.
 
-This document has emphasized methods tailored to distance-sampling analysis; however, it is important to realize that the more general methods available in package \package{unmarked} can be applied to distsamp related objects. For example, model selection and model fit evaluation can be accomplished using the same methods, \code{modSel} and \code{parboot}, common to all unmarked models.
+\begin{figure}[tb]
+  \centering
+  \includegraphics{distsamp-detplot}
+  \caption{Detection and probability density functions.}
+  \label{fig:detplot}
+\end{figure}
 
+This document has emphasized methods tailored to distance-sampling analysis; however, the more general methods available in package \package{unmarked} can also be applied to distsamp related objects. For example, model selection and model fit evaluation can be accomplished using the \code{modSel} and \code{parboot} methods.
 
 \bibliography{unmarked}
-
-
 \end{document}

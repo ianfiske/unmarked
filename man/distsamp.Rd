@@ -50,9 +50,7 @@ Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors
 affected by transect-specific covariates using the log link.}
 
 \value{unmarkedFitDS object (child class of \code{\link{unmarkedFit-class}}) 
-describing the model fit. Parameter estimates are displayed on the log-scale. 
-Back-transformation can be achieved via the \code{\link{predict}} or 
-\code{backTransform} methods.}
+describing the model fit.}
 
 \note{You cannot use obsCovs.}
 
@@ -62,8 +60,9 @@ Back-transformation can be achieved via the \code{\link{predict}} or
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
 
 \seealso{\code{\link{unmarkedFit-class}} \code{\link{fitList}}, 
-	\code{\link{formatDistData}}, \code{\link{parboot}}, \code{\link{calcAreas}},
-	\code{\link{sight2perpdist}}, \code{\link{detFuns}},
+	\code{\link{formatDistData}}, \code{\link{parboot}}, 
+    \code{\link{calcAreas}}, \code{\link{sight2perpdist}}, 
+    \code{\link{detFuns}}. Also look at vignette("distsamp").
 	}
 
 
@@ -88,9 +87,9 @@ hist(ltUMF)
 
 # Some methods to use on fitted model
 summary(fm1)
-backTransform(fm1, whichEstimate="state") 	# animals / ha
-exp(coef(fm1, type="state", altNames=TRUE)) # same 
-backTransform(fm1, whichEstimate="det") # half-normal SD
+backTransform(fm1, whichEstimate="state")       # animals / ha
+exp(coef(fm1, type="state", altNames=TRUE))     # same 
+backTransform(fm1, whichEstimate="det")         # half-normal SD
 vcov(fm1, altNames=TRUE)
 confint(fm1, type = "state")
 hist(fm1, xlab="Distance (m)")	# Only works when there are no detection covars
@@ -105,7 +104,7 @@ hist(fm1, xlab="Distance (m)")	# Only works when there are no detection covars
 # Negative exponential detection function.
 (fm4 <- distsamp(~ 1 ~ 1, ltUMF, key="exp"))
 
-# Hazard-rate detection function. Density output in hectares.
+# Hazard-rate detection function.
 (fm5 <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 
 # Plot detection function.
@@ -114,7 +113,7 @@ fmhz.scale <- exp(coef(fm5, type="scale"))
 plot(function(x) gxhaz(x, shape=fmhz.shape, scale=fmhz.scale), 0, 25, 
 	xlab="Distance (m)", ylab="Detection probability")
 
-# Uniform detection function. Density output in hectars.
+# Uniform detection function.
 (fm6 <- distsamp(~ 1 ~ 1, ltUMF, key="uniform"))
 
 
@@ -128,7 +127,7 @@ ptUMF <- with(pointtran, {
 	dist.breaks = seq(0, 25, by=5), survey = "point", unitsIn = "m")
 	})
 
-# Half-normal. Output is animals / ha on log-scale. No covariates.
+# Half-normal.
 (fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
 hist(fmp1, ylim=c(0, 0.07), xlab="Distance (m)")
 
