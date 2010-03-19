@@ -5,8 +5,8 @@ options(continue=" ")
 
 \documentclass[a4paper]{article}
 \usepackage[OT1]{fontenc}
-\usepackage{Sweave}
 \usepackage{natbib}
+\usepackage[nogin]{Sweave}
 \usepackage{fullpage}
 \bibliographystyle{plain}
 
@@ -19,28 +19,31 @@ options(continue=" ")
 %%\VignetteIndexEntry{Distsamp}
 
 \title{Distance-sampling analysis in unmarked}
-\author{Richard Chandler}
+\author{Richard Chandler\\Department of Natural Resources Conservation\\%
+  University of Massachusetts Amherst}
 
 
 \begin{document}
 
+\newcommand{\code}[1]{\texttt{\small{#1}}}
+\newcommand{\package}[1]{\textsf{\small{#1}}}
+
 \maketitle
 
-\abstract{Distance-sampling is a common wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function distsamp implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line or point transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, assess goodness-of-fit, and manipulate results. It does not cover the statistical theory and assumptions underlying distance-sampling, which the user is expected to be familiar with. }
+\abstract{Distance-sampling is a common wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line or point transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results. It does not cover the statistical theory and assumptions underlying distance-sampling, which the user is expected to be familiar with. }
 
 
 \section{Introduction}
 
-In distance sampling, the study design (line- or point-transect), distance class break points, transect lengths, and units of measurement need to be accounted for in the analysis. Unmarked uses an S4 class called unmarkedFrameDS to store data and metadata in a way that allows for easy data manipulation, summarization, and model specification.
-
-
+In distance sampling, the study design (line- or point-transect), distance class break points, transect lengths, and units of measurement need to be accounted for in the analysis. Package \package{unmarked} uses an S4 class called \code{unmarkedFrameDS} to store data and metadata in a way that allows for easy data manipulation, summarization, and model specification.
+                              
 \section{Importing, formatting, and summarizing data}
 
-The first step is to import the data into R. The simplest option is to use the read.csv function to import a .csv file that has been formatted so that each row represents a transect and columns describe either the number of individuals detected in each distance interval or transect-specific covariates. Alternatively, if data were not recorded in discrete distance intervals, a .csv file could be imported that contains a row for each individual detected and columns for the distances and transect names. This could then be converted to transect-level data using the function formatDistData. For example, 
+The first step is to import the data into R. The simplest option is to use the \code{read.csv} function to import a .csv file that has been formatted so that each row represents a transect and columns describe either the number of individuals detected in each distance interval or transect-specific covariates. Alternatively, if data were not recorded in discrete distance intervals, a .csv file could be imported that contains a row for each individual detected and columns for the distances and transect names. This could then be converted to transect-level data using the function \code{formatDistData}. For example, 
 
 <<>>=
 library(unmarked)
-dists <- read.csv(system.file("csv", "distdata.csv", package="unmarkedDev"))
+dists <- read.csv(system.file("csv", "distdata.csv", package="unmarked"))
 dists
 levels(dists$transect) <- c(levels(dists$transect), "g")
 levels(dists$transect)
@@ -49,7 +52,7 @@ yDat <- formatDistData(dists, distCol="distance",
 yDat
 @
 
-Here we have crated an object called yDat that contains counts for each transect (row) in each distance interval (columns). Note the method used to include transect "g", which was surveyd but where no individuals were detected. It is important that all survyed transects are included in the analysis.
+Here we have created an object called yDat that contains counts for each transect (row) in each distance interval (columns). Note the method used to include transect "g", which was surveyd but where no individuals were detected. It is important that all survyed transects are included in the analysis.
 
 Suppose there also exists transect-specific covariate data. 
 
@@ -58,7 +61,7 @@ Suppose there also exists transect-specific covariate data.
 	habitat = c('A','A','A','A','B','B','B'), row.names=letters[1:7]))
 @
 
-These data can now be organized along with the associated metadata using the function unmarkedFrameDS. 
+These data can now be organized along with the associated metadata using the function \code{unmarkedFrameDS}. 
 
 
 <<>>=
@@ -67,19 +70,26 @@ umf <- unmarkedFrameDS(y=as.matrix(yDat), siteCovs=covs, survey="line",
 	unitsIn="m")	
 @
 
-Note that there is no obsCovs argument, meaning that distance-interval-level covariates cannot be included in the analysis. The call to unmarkedFrameDS indicates that the data were collected on seven line transects, each 100 meters long, and detections were tabulated into distance intervals defined by the dist.breaks cutpoints. It is important that both transect lengths and distance break points are provided in the same units specified by unitsIn.
+Note that there is no \code{obsCovs} argument, meaning that distance-interval-level covariates cannot be included in the analysis. The call to \code{unmarkedFrameDS} indicates that the data were collected on seven line transects, each 100 meters long, and detections were tabulated into distance intervals defined by the \code{dist.breaks} cutpoints. It is important that both transect lengths and distance break points are provided in the same units specified by \code{unitsIn}.
 
 We can look at these data, summarize them, and plot them usng a variety of methods.
 
-<<fig=TRUE,width=3,height=3>>=
+<<umfhist,fig=TRUE,include=FALSE,width=4,height=4>>=
 umf
 summary(umf)
-hist(umf)
+hist(umf, xlab="distance (m)", main="", cex=0.7, cex.lab=0.7, cex.axis=0.7)
 @
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics{distsamp-umfhist}
+  \caption{Histogram of detection distances.}
+  \label{fig:umfhist}
+\end{figure}
 
 \section{Model fitting}
 
-Now that we have put our data into an object of class unmarkedFrameDS, we are ready to fit some models with distsamp. The first argument is a formula which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the data, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the keyfun argument. The response can be changed from "density", to "abund" with the output argument. Note, however, that when line transect lenghs differ, they must be accounted for so abundance is actually animals per unit transect length. When modeling density, the output units can be changed from "ha" to "kmsq" using the unitsOut argument. distsamp also includes the arguments starts, method, and control, which are common to all unmarked fitting functions.
+Now that we have put our data into an object of class \code{unmarkedFrameDS}, we are ready to fit some models with distsamp. The first argument is a formula which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the data, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the keyfun argument. The response can be changed from "density", to "abund" with the output argument. Note, however, that when line transect lenghs differ, they must be accounted for so abundance is actually animals per unit transect length. When modeling density, the output units can be changed from "ha" to "kmsq" using the unitsOut argument. distsamp also includes the arguments starts, method, and control, which are common to all unmarked fitting functions.
 
 Below are a series of models that demonstrate distsamp's arguments and defaults.
 
@@ -93,22 +103,22 @@ hn_Hab.Ht <- distsamp(~canopyHt ~habitat, umf)
 
 Once a model has been fit, there are several methods to display results. 
 
-<<fig=TRUE,width=3,height=3>>=
+<<>>=
 haz_Null
 summary(haz_Null)
-hist(haz_Null)
 @
 
-The hist method only works for when no covariates affect the detection process, but see below for plotting covariate effects. The summary method reminds us that parameter estimates are on the natural log scale. Back-transforming them to the original scale and obtaining a standard error via the delta method is easily accomplished:
+The summary method reminds us that parameter estimates are on the natural log scale. Back-transforming them to the original scale and obtaining a standard error via the delta method is easily accomplished:
 
 <<>>=
 names(haz_Null)
 backTransform(haz_Null, whichEstimate="state")
 backTransform(haz_Null, whichEstimate="det")
 backTransform(haz_Null, whichEstimate="scale")
+backTransform(linearComb(hn_Hab.Ht['det'], c(0, 5)))
 @
 
-When covariates are present, backTransform in conjunction with linearComb can be used to for a single covariate combination. A predict method exits as well, which is especially useful when multiple covariate combinations are of interest. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
+Note that when covariates are present, backTransform in conjunction with linearComb can be used to for a single covariate combination. A predict method exits as well, which is especially useful when multiple covariate combinations are of interest. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
 
 
 <<>>=
@@ -130,17 +140,19 @@ Now we can plot.
 par(mfrow=c(1, 2))
 with(Elambda, {
 	x <- barplot(Predicted, names=habitat, xlab="Habitat", 
-		ylab="Density (animals/ha)", ylim=c(0, 25))
+		ylab="Density (animals / ha)", ylim=c(0, 25), cex.names=0.7, 
+        cex.lab=0.7, cex.axis=0.7)
 	arrows(x, Predicted, x, Predicted+SE, code=3, angle=90, length=0.05)
 	box()
 	})
 with(Esigma, {
 	plot(canopyHt, Predicted, type="l", xlab="Canopy height", 
-		ylab="Half-normal shape parameter (SD)", ylim=c(5, 15))
+		ylab=expression(paste("Half-normal shape parameter (", sigma, ")", 
+        sep="")), ylim=c(0, 20), cex=0.7, cex.lab=0.7,
+    cex.axis=0.7)
 	lines(canopyHt, Predicted+SE, lty=2)		
 	lines(canopyHt, Predicted-SE, lty=2)
 	})			
-
 @
 
 
@@ -150,8 +162,10 @@ Several options exists to look at detection function itself, instead of it's par
 <<fig=TRUE,width=6,height=3>>=
 par(mfrow=c(1, 2))
 plot(function(x) gxhn(x, sigma=8.7), 0, 20, xlab="Distance (m)", 
-	ylab="Detection probability at 2m canopy ht.")
-hist(hn_Null, xlab="Distance (m)", ylab="Density", main="", ylim=c(0, 0.1))
+	ylab="Detection probability at 2m canopy ht.", cex=0.7, cex.lab=0.7,
+    cex.axis=0.7)
+hist(hn_Null, xlab="Distance (m)", ylab="Density", main="", ylim=c(0, 0.1),
+    cex=0.7, cex.lab=0.7, cex.axis=0.7)
 plot(function(x) dxhn(x, sigma=8.7), 0, 20, add=TRUE, col="blue")
 plot(function(x) dxhn(x, sigma=10.2), 0, 20, add=TRUE, col="green")
 legend('topright', c("CanHt=2", "Null", "CanHt=8"), 
