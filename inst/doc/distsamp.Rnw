@@ -31,7 +31,7 @@ options(continue=" ")
 
 \maketitle
 
-\abstract{Distance-sampling is a common wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line or point transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results. It does not cover the statistical theory and assumptions underlying distance-sampling, which the user is expected to be familiar with. }
+\abstract{Distance-sampling is a wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line or point transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results in package \package{unmarked}. It does not cover the statistical theory and assumptions underlying distance-sampling, which the user is expected to be familiar with. }
 
 
 \section{Introduction}
@@ -40,12 +40,12 @@ In distance sampling, the study design (line- or point-transect), distance class
                               
 \section{Importing, formatting, and summarizing data}
 
-The first step is to import the data into R. The simplest option is to use the \code{read.csv} function to import a .csv file that has been formatted so that each row represents a transect and columns describe either the number of individuals detected in each distance interval or transect-specific covariates. Alternatively, if data were not recorded in discrete distance intervals, a .csv file could be imported that contains a row for each individual detected and columns for the distances and transect names. This could then be converted to transect-level data using the function \code{formatDistData}. For example, 
+The first step is to import the data into R. The simplest option is to use the \code{read.csv} function to import a .csv file that has been formatted so that each row represents a transect, and columns describe either the number of individuals detected in each distance interval or transect-specific covariates. Alternatively, if data were not recorded in discrete distance intervals, a .csv file could be imported that contains a row for each individual detected and columns for the distances and transect names. This could then be converted to transect-level data using the function \code{formatDistData}. For example, 
 
 <<>>=
 library(unmarked)
 dists <- read.csv(system.file("csv", "distdata.csv", package="unmarked"))
-dists
+head(dists, 10)
 levels(dists$transect) <- c(levels(dists$transect), "g")
 levels(dists$transect)
 yDat <- formatDistData(dists, distCol="distance", 
@@ -90,26 +90,27 @@ hist(umf, xlab="distance (m)", main="", cex.lab=0.8, cex.axis=0.8)
 
 \section{Model fitting}
 
-Now that we have put our data into an object of class \code{unmarkedFrameDS}, we are ready to fit some models with distsamp. The first argument is a formula which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the data, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the keyfun argument. The response can be changed from "density", to "abund" with the output argument. Note, however, that when line transect lenghs differ, they must be accounted for so abundance is actually animals per unit transect length. When modeling density, the output units can be changed from "ha" to "kmsq" using the unitsOut argument. distsamp also includes the arguments starts, method, and control, which are common to all unmarked fitting functions.
+Now that we have put our data into an object of class \code{unmarkedFrameDS}, we are ready to fit some models with \code{distsamp}. The first argument is a \code{formula} which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the \code{data}, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the \code{keyfun} argument. The response can be changed from "density", to "abund" with the \code{output} argument. Note, however, that when line transect lenghs differ, they must be accounted for so abundance is actually animals per unit transect length. When modeling density, the output units can be changed from "ha" to "kmsq" using the \code{unitsOut} argument. \code{distsamp} also includes the arguments \code{starts}, \code{method}, and \code{control}, which are common to all unmarked fitting functions.
 
-Below are a series of models that demonstrate distsamp's arguments and defaults.
+Below are a series of models that demonstrate \code{distsamp}'s arguments and defaults.
 
 <<>>=
-hn_Null <- distsamp(~1~1, umf)	# Same as:
+hn_Null <- distsamp(~1~1, umf)
 hn_Null <- distsamp(~1~1, umf, keyfun="halfnorm", output="density", 
 	unitsOut="ha")
 haz_Null <- distsamp(~1~1, umf, keyfun="hazard")
 hn_Hab.Ht <- distsamp(~canopyHt ~habitat, umf)
 @
 
-Once a model has been fit, there are several methods to display results. 
+The first two models are the same, a null half-normal detection function with density returned in animals / ha (on the log-scale). The third model uses the hazard-rate detection function, and the fourth model includes covariates affecting the Poisson mean ($\bm{\lambda}$) and the half-normal shape parameter ($\bm{\sigma}$).
+
+Once a model has been fit, typing it's name will display parameter estimate information and AIC. A summary method shows extra details including the scale on which parameters were estimated and convergence results. 
 
 <<>>=
-haz_Null
 summary(haz_Null)
 @
 
-The summary method reminds us that parameter estimates are on the natural log scale. Back-transforming them to the original scale and obtaining a standard error via the delta method is easily accomplished:
+Back-transforming estimates to the original scale and obtaining standard errors via the delta method is easily accomplished:
 
 <<>>=
 names(haz_Null)
@@ -119,7 +120,7 @@ backTransform(haz_Null, whichEstimate="scale")
 backTransform(linearComb(hn_Hab.Ht['det'], c(0, 5)))
 @
 
-Note that when covariates are present, \code{backTransform} in conjunction with \code{linearComb} can be used for a single covariate combination. A predict method exits as well, which is especially useful when multiple covariate combinations are of interest. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
+Note that when covariates are present, \code{backTransform} in conjunction with \code{linearComb} can be used for a single covariate combination. A \code{predict} method exits as well, which is especially useful when multiple covariate combinations are of interest. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
 
 
 <<>>=
@@ -134,7 +135,7 @@ head(Esigma <- predict(hn_Hab.Ht, type="det", newdata=habConstant,
 @
 
 
-Once predictions have been made for the new data, plotting is straight-forward. Figure x, shows density as a function of habitat type, and fig xb shows how the half-normal shape parameter varies with canopy height.
+Once predictions have been made for the new data, plotting is straight-forward. Figure x, shows density as a function of habitat type, and fig xb shows that $\bm{\sigma}$ is not related to canopy height.
 
 
 <<fig=TRUE,width=6,height=3>>=
@@ -158,16 +159,16 @@ with(Esigma, {
 
 
 
-Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do this, we can use predicted values of $\bm{\sigma}$ at given covariate values in the \code{gxhn} function. The detection functions themselves are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the histogram, using a similar approach with the \code{hist} method for \code{unmarkedFitDS} objcets.
+Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do the latter, we can plug predicted values of $\bm{\sigma}$ at given covariate values into the \code{gxhn} function. For instance, to plot the half-normal function at a canopy height of 2m, $\bm{\sigma}$ can be set to 10.8, the predicted value shown above. The available detection functions are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the distance histogram, using a similar approach with the \code{hist} method for \code{unmarkedFitDS} objcets.
 
 
 <<fig=TRUE,width=6,height=3>>=
 par(mfrow=c(1, 2))
-plot(function(x) gxhn(x, sigma=8.7), 0, 20, xlab="Distance (m)", 
+plot(function(x) gxhn(x, sigma=10.8), 0, 20, xlab="Distance (m)", 
 	ylab="Detection probability at 2m canopy ht.", cex=0.7, cex.lab=0.7,
-    cex.axis=0.7, las=3)
-hist(hn_Null, xlab="Distance (m)", ylab="Density", main="", ylim=c(0, 0.1),
-    cex=0.7, cex.lab=0.7, cex.axis=0.7, las=3)
+    cex.axis=0.7, las=1)
+hist(hn_Null, xlab="Distance (m)", ylab="Probability density", main="", 
+    ylim=c(0, 0.1), cex.lab=0.7, cex.axis=0.7, las=1)
 plot(function(x) dxhn(x, sigma=8.7), 0, 20, add=TRUE, col="blue")
 plot(function(x) dxhn(x, sigma=10.2), 0, 20, add=TRUE, col="green")
 legend('topright', c("CanHt=2", "Null", "CanHt=8"), 
