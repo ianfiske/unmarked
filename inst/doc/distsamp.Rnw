@@ -5,8 +5,9 @@ options(continue=" ")
 
 \documentclass[a4paper]{article}
 \usepackage[OT1]{fontenc}
-\usepackage{natbib}
 \usepackage[nogin]{Sweave}
+\usepackage{bm}
+\usepackage{natbib}
 \usepackage{fullpage}
 \bibliographystyle{plain}
 
@@ -77,7 +78,7 @@ We can look at these data, summarize them, and plot them usng a variety of metho
 <<umfhist,fig=TRUE,include=FALSE,width=4,height=4>>=
 umf
 summary(umf)
-hist(umf, xlab="distance (m)", main="", cex=0.7, cex.lab=0.7, cex.axis=0.7)
+hist(umf, xlab="distance (m)", main="", cex.lab=0.8, cex.axis=0.8)
 @
 
 \begin{figure}[tb]
@@ -118,11 +119,11 @@ backTransform(haz_Null, whichEstimate="scale")
 backTransform(linearComb(hn_Hab.Ht['det'], c(0, 5)))
 @
 
-Note that when covariates are present, backTransform in conjunction with linearComb can be used to for a single covariate combination. A predict method exits as well, which is especially useful when multiple covariate combinations are of interest. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
+Note that when covariates are present, \code{backTransform} in conjunction with \code{linearComb} can be used for a single covariate combination. A predict method exits as well, which is especially useful when multiple covariate combinations are of interest. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
 
 
 <<>>=
-(habConstant <- data.frame(canopyHt = seq(2, 8, length=25), 
+(habConstant <- data.frame(canopyHt = seq(2, 8, length=20), 
 	habitat=factor("A", levels=c("A", "B"))))
 (htConstant <- data.frame(canopyHt = 5, 
 	habitat=factor(c("A", "B"))))
@@ -133,7 +134,7 @@ head(Esigma <- predict(hn_Hab.Ht, type="det", newdata=habConstant,
 @
 
 
-Now we can plot.
+Once predictions have been made for the new data, plotting is straight-forward. Figure x, shows density as a function of habitat type, and fig xb shows how the half-normal shape parameter varies with canopy height.
 
 
 <<fig=TRUE,width=6,height=3>>=
@@ -157,15 +158,16 @@ with(Esigma, {
 
 
 
-Several options exists to look at detection function itself, instead of it's parameters.
+Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do this, we can use predicted values of $\bm{\sigma}$ at given covariate values in the \code{gxhn} function. The detection functions themselves are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the histogram, using a similar approach with the \code{hist} method for \code{unmarkedFitDS} objcets.
+
 
 <<fig=TRUE,width=6,height=3>>=
 par(mfrow=c(1, 2))
 plot(function(x) gxhn(x, sigma=8.7), 0, 20, xlab="Distance (m)", 
 	ylab="Detection probability at 2m canopy ht.", cex=0.7, cex.lab=0.7,
-    cex.axis=0.7)
+    cex.axis=0.7, las=3)
 hist(hn_Null, xlab="Distance (m)", ylab="Density", main="", ylim=c(0, 0.1),
-    cex=0.7, cex.lab=0.7, cex.axis=0.7)
+    cex=0.7, cex.lab=0.7, cex.axis=0.7, las=3)
 plot(function(x) dxhn(x, sigma=8.7), 0, 20, add=TRUE, col="blue")
 plot(function(x) dxhn(x, sigma=10.2), 0, 20, add=TRUE, col="green")
 legend('topright', c("CanHt=2", "Null", "CanHt=8"), 
@@ -173,10 +175,10 @@ legend('topright', c("CanHt=2", "Null", "CanHt=8"),
 @
 
 
-Model selection and evaluating model fit can be accomplished in the same manner as for all unmarked models.
+This document has emphasized methods tailored to distance-sampling analysis; however, it is important to realize that the more general methods available in package \package{unmarked} can be applied to distsamp related objects. For example, model selection and model fit evaluation can be accomplished using the same methods, \code{modSel} and \code{parboot}, common to all unmarked models.
 
 
-\bibliography{distsamp}
+\bibliography{unmarked}
 
 
 \end{document}
