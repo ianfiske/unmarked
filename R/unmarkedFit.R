@@ -34,6 +34,7 @@ setClass("unmarkedFitDS",
          contains = "unmarkedFit")
 
 
+
 setClass("unmarkedFitPCount", 
          representation(
                         K = "numeric",
@@ -41,13 +42,17 @@ setClass("unmarkedFitPCount",
          contains = "unmarkedFit")
 
 
+setClass("unmarkedFitPCountOpen", 
+        contains = "unmarkedFitPCount")
+
+
 setClass("unmarkedFitOccu", 
          representation(knownOcc = "logical"),
-         contains = "unmarkedFit")			
+         contains = "unmarkedFit")
 
 
 setClass("unmarkedFitMPois", 
-         contains = "unmarkedFit")			
+         contains = "unmarkedFit")
 
 
 setClass("unmarkedFitOccuRN", 
