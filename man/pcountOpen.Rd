@@ -78,19 +78,16 @@ plot(umf)
 
 
 # Fit some models
-system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))
+(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf))
 backTransform(m1, "lambda")
 backTransform(m1, "gamma")
 backTransform(m1, "omega")
 backTransform(m1, "det")
 
 \dontrun{
-# Real slow
-system.time(m2 <- pcountOpen(~veght, ~isolation, ~1, ~date, umf, K=10, se=F,
-	control=list(maxit=20, trace=T), starts=c(-1, 0.5, -1, -1, 1.5, -1, 1)))
+(m2 <- pcountOpen(~veght, ~isolation, ~1, ~date, umf,
+	control=list(maxit=30, trace=TRUE), starts=c(-1, 0.5, -1, -1, 1.5, -1, 1)))
 }
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
 \keyword{models}

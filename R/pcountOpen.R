@@ -38,10 +38,10 @@ nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 
 cmin <- pmin(rep(k, times=lk), rep(k, each=lk))
 
-transProbs <- function(x) #(N.itm1, N.it, om, gam, cmin)
-	sum(dbinom(0:x[5], x[2], x[3]) * dpois(x[1]-(0:x[5]), x[4]))
 mk.order <- matrix(1:(M*lk), M, lk)
 mat.to.vec <- as.numeric(apply(mk.order, 1, rep, times=lk))
+convMat <- matrix(NA, nrow(g3args), K+1)
+g.star <- array(NA, c(M, lk, T-1))
 
 nll <- function(parms) { # No survey-specific NA handling.
     lambda <- exp(Xlam %*% parms[1 : nAP]) * plotArea
@@ -61,11 +61,13 @@ nll <- function(parms) { # No survey-specific NA handling.
     switch(mixture,
         P = g2 <- sapply(k, function(x) dpois(x, lambda)),
         NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
-            mu=lambda)))
-    g.star <- array(NA, c(M, lk, T-1))
+           mu=lambda)))
     g3args <- cbind(rep(k, times=lk), rep(k, each=lk),
         rep(omega, each=lk*lk), rep(gamma, each=lk*lk), cmin)	# recycle
-    g3 <- apply(g3args, 1, transProbs) 	# Slow when covars on gamma/omega
+    for(i in k)
+        convMat[,i+1] <- dbinom(i, g3args[,2], g3args[,3]) * 
+            dpois(g3args[,1] - i, g3args[,4])
+    g3 <- rowSums(convMat)
     g3 <- array(g3, c(lk, lk, M, T-1))
     pT.kk <- rep(p[, T], each=lk*lk)
     g1.Tm1 <- dbinom(y.kk[,T], k, pT.kk) # recycle
