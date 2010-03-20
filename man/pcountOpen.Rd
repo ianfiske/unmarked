@@ -1,7 +1,7 @@
 \name{pcountOpen}
 \alias{pcountOpen}
 \title{Fit the open N-mixture model of Dail and Madsen (2010)}
-\description{}
+\description{Fit the open N-mixture model of Dail and Madsen (2010)}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data, 
 	mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE, ...)
@@ -20,30 +20,32 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
   \item{\dots}{additional arguments to be passed to \code{\link{optim}}.}
 }
 \details{
-This model generalizes the Royle (2004) N-mixture model, by allowing N to vary among sites and survey occasions. By relying on a Markovian assumption, parameters are identifiable without secondary sampling periods. 
+This model generalizes the Royle (2004) N-mixture model by relaxing the closure assumption. 
 }
 \value{
 A unmarkedFitPCountOpen object.
 }
 \references{
-%% ~put references to the literature/web site here ~
+Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 }
 
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 
 \note{
-When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored. However, it must be supplied because of the way that unmarkedFrame stores data.
+When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, it must be supplied.
+
+If time intervals vary among survey occasions (sampling periods), an Mx(T-1) matrix of time intervals should be supplied to unmarkedFramePCountOpen using the delta argument.
 }
 
-\section{Warning }{This function can be extremely slow, especially when there are covariates on gamma or omega. Consider testing the timing on a small subset of the data.}
+\section{Warning}{This function can be extremely slow, especially when there are covariates on gamma or omega. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates (MLEs) will also help with speed. }
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{pcount}}
 }
 
 \examples{
 # Simulate	
-set.seed(1)
+# set.seed(1)
 M <- 50
 T <- 5
 veght <- rnorm(M)
@@ -78,14 +80,14 @@ plot(umf)
 
 
 # Fit some models
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf))
+(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=15))
 backTransform(m1, "lambda")
 backTransform(m1, "gamma")
 backTransform(m1, "omega")
 backTransform(m1, "det")
 
 \dontrun{
-(m2 <- pcountOpen(~veght, ~isolation, ~1, ~date, umf,
+(m2 <- pcountOpen(~veght, ~isolation, ~1, ~date, umf, K=15, se=FALSE,
 	control=list(maxit=30, trace=TRUE), starts=c(-1, 0.5, -1, -1, 1.5, -1, 1)))
 }
 

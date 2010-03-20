@@ -21,11 +21,6 @@ lk <- length(k)
 y.kk <- apply(y, 2, rep, each=lk*lk)
 delta.kk <- apply(delta, 2, rep, each=lk*lk)
 
-# identical() returns FALSE b/c of environment differences
-if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)))
-    are.null <- TRUE  	# Save time in likelihood evaluation
-else are.null <- FALSE
-
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)
 omParms <- colnames(Xom)
@@ -36,34 +31,50 @@ nOP <- ncol(Xom)
 nDP <- ncol(Xp)
 nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 
-cmin <- pmin(rep(k, times=lk), rep(k, each=lk))
+# Save time in likelihood evaluation
+# identical() returns FALSE b/c of environment differences
+if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)))
+    goDims <- "scalar"
+    else {
+        goParms <- unique(gamParms, omParms)
+        if(any(goParms %in% colnames(obsCovs(data))))
+            goDims <- "matrix"
+            else goDims <- "vector"
+        }
 
 mk.order <- matrix(1:(M*lk), M, lk)
 mat.to.vec <- as.numeric(apply(mk.order, 1, rep, times=lk))
-convMat <- matrix(NA, nrow(g3args), K+1)
 g.star <- array(NA, c(M, lk, T-1))
 
 nll <- function(parms) { # No survey-specific NA handling.
     lambda <- exp(Xlam %*% parms[1 : nAP]) * plotArea
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         M, T, byrow=TRUE)
-    if(are.null) { 	# Save time by using scalars
+    switch(goDims,
+    scalar = {
         gamma <- exp(parms[(nAP+1) : (nAP+nGP)])
         omega <- plogis(parms[(nAP+nGP+1) : (nAP+nGP+nOP)])
-        }
-    else { # could save time using vectors when only siteCovs are present
+        },
+    vector = {
+        gamma <- matrix(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)]), 
+            M, T, byrow=TRUE)[,1]
+        omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]), 
+            M, T, byrow=TRUE)[,1]
+        },
+    matrix = {
         gamma <- matrix(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)]),
             M, T, byrow=TRUE)[,-T]
         omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]),
             M, T, byrow=TRUE)[,-T]
-        }
+        })
     g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))
     switch(mixture,
         P = g2 <- sapply(k, function(x) dpois(x, lambda)),
         NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
            mu=lambda)))
     g3args <- cbind(rep(k, times=lk), rep(k, each=lk),
-        rep(omega, each=lk*lk), rep(gamma, each=lk*lk), cmin)	# recycle
+        rep(omega, each=lk*lk), rep(gamma, each=lk*lk))	# recycle
+    convMat <- matrix(NA, nrow(g3args), K+1)
     for(i in k)
         convMat[,i+1] <- dbinom(i, g3args[,2], g3args[,3]) * 
             dpois(g3args[,1] - i, g3args[,4])
@@ -80,7 +91,7 @@ nll <- function(parms) { # No survey-specific NA handling.
         g.star.vec <- g.star[,, t][mat.to.vec]
         delta.tkk <- delta.kk[,t-1]
         g3.t <- g3[,,, t]^delta.tkk
-        g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, c(3,2), sum)
+        g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, c(3, 2), sum)
     }
     L <- rowSums(g1 * g2 * g.star[,, 1])
     -sum(log(L))
@@ -94,9 +105,13 @@ if(identical(mixture,"NB")) nbParm <- "alpha"
     else nbParm <- character(0)
 names(ests) <- c(lamParms, gamParms, omParms, detParms, nbParm)
 if(se) {
-    tryCatch(covMat <- solve(fm$hessian),
-        error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
-} else covMat <- matrix(NA, nP, nP)
+	covMat <- tryCatch(solve(fm$hessian), error=function(x) 
+		simpleError("Hessian is not invertible. Try using fewer covariates or providing starting values."))
+	if(class(covMat)[1] == "simpleError") {
+		print(covMat$message)
+		covMat <- matrix(NA, nP, nP)
+		} 
+    } else covMat <- matrix(NA, nP, nP)
 
 fmAIC <- 2 * fm$value + 2 * nP
 
