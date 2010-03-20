@@ -803,8 +803,8 @@ else
 	out <- list(y=getY(umf), Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
 		plotArea=umf@plotArea, delta=umf@delta, removed.sites=integer(0))
 	
-return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam, Xom = Xom, Xp = Xp,
-	plotArea = out$plotArea, delta = out$delta, 
+return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam, Xom = out$Xom, 
+    Xp = out$Xp, plotArea = out$plotArea, delta = out$delta, 
 	removed.sites = out$removed.sites))
 }
 
@@ -939,7 +939,6 @@ handleNA3 <- function(umf, X.gam, X.eps, W, V) {
 
 
 handleNA4 <- function(umf, Xlam, Xgam, Xom, Xp) {
-	# Perhaps all rows with NAs need to be removed b/c of recursive algorithm?
 	obsToY <- obsToY(umf)
 	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
 	
@@ -964,10 +963,10 @@ handleNA4 <- function(umf, Xlam, Xgam, Xom, Xp) {
 	
 	Xp.long.na <- apply(Xp, 2, long.na)
 	Xp.long.na <- apply(Xp.long.na, 1, any)
-	Xgam.long.na <- apply(Xgam, 2, long.na)			# Xgam[rep(1:M, each = J),]
-	Xgam.long.na <- apply(Xgam.long.na, 1, any)		# is.na(Xgam.long)
-	Xom.long.na <- apply(Xom, 2, long.na)			# Xom[rep(1:M, each = J),]
-	Xom.long.na <- apply(Xom.long.na, 1, any)		# is.na(Xom.long)
+	Xgam.long.na <- apply(Xgam, 2, long.na)			
+	Xgam.long.na <- apply(Xgam.long.na, 1, any)		
+	Xom.long.na <- apply(Xom, 2, long.na)			
+	Xom.long.na <- apply(Xom.long.na, 1, any)		
 	
 	y.long <- as.vector(t(getY(umf)))
 	y.long.na <- is.na(y.long)
@@ -980,12 +979,11 @@ handleNA4 <- function(umf, Xlam, Xgam, Xom, Xp) {
 	
 	if(sum(y.new.na) > 0) {
 		y.long[y.new.na] <- NA
-		warning("Some observations have been discarded because correspoding covariates were missing.")
-	}
+    	}
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
-	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
-	#sites.to.remove <- sites.to.remove | plotArea.na
+	sites.to.remove <- apply(y, 1, function(x) any(is.na(x)))
+	sites.to.remove <- sites.to.remove | plotArea.na
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
@@ -996,22 +994,13 @@ handleNA4 <- function(umf, Xlam, Xgam, Xom, Xp) {
 		Xp <- Xp[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
 		plotArea <- plotArea[!sites.to.remove]
 		delta <- delta[!sites.to.remove, ,drop =FALSE]
-		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
+		warning(paste(num.to.remove, "sites have been discarded because of missing data."))
 	}
 	
 	list(y = y, Xlam = Xlam, Xgam = Xgam, Xom = Xom, Xp = Xp, 
 		plotArea = plotArea, delta = delta, 
 		removed.sites = which(sites.to.remove))
 }
-
-
-
-
-
-
-
-
-
 
 
 

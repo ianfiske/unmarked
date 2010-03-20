@@ -51,7 +51,7 @@ T <- 5
 veght <- rnorm(M)
 isolation <- matrix(rnorm(M*T), M, T)
 date <- matrix(rnorm(M*T, 1), M, T)
-lambda <- exp(-1 + 0.5*veght)
+lambda <- exp(-1)   # + 0.5*veght)
 y <- p <- N <- gamma <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
 gamma[] <- exp(-1 + -1*isolation)
@@ -63,31 +63,26 @@ for(t in 1:(T-1)) {
 	}
 p[] <- plogis(-1 + 1*date)
 y[] <- rbinom(M*T, N, p)
-#y[1, 1:2] <- NA
-#isolation[1, 1:2] <- NA
-#date[1, 1:2] <- NA
-dat <- data.frame(veght)
-
 
 
 # Prepare data                               
-umf <- unmarkedFramePCountOpen(y = y, siteCovs = dat, 
+umf <- unmarkedFramePCountOpen(y = y, siteCovs = data.frame(veght), 
 	obsCovs = list(isolation=isolation, date=date))
 
 head(umf)
 summary(umf)
-plot(umf)
+plot(umf, strip=FALSE)
 
 
 # Fit some models
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=15))
+(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=15))   # K may be too small
 backTransform(m1, "lambda")
 backTransform(m1, "gamma")
 backTransform(m1, "omega")
 backTransform(m1, "det")
 
 \dontrun{
-(m2 <- pcountOpen(~veght, ~isolation, ~1, ~date, umf, K=15, se=FALSE,
+(m2 <- pcountOpen(~1, ~isolation, ~1, ~date, umf, K=15, se=FALSE,
 	control=list(maxit=30, trace=TRUE), starts=c(-1, 0.5, -1, -1, 1.5, -1, 1)))
 }
 
