@@ -115,10 +115,6 @@ setMethod("summary", "unmarkedFitDS",
             callNextMethod()
             cat("Survey design: ", object@data@survey, "-transect", sep="")
             cat("\nDetection function:", object@keyfun)
-            output <- object@output
-            if(output == "abund" & length(table(object@data@tlength)) > 1)
-              output <- "Abundance standardized by transect length"
-            cat("\nResponse:", output)    
             cat("\nUnitsIn:", object@data@unitsIn)
             cat("\nUnitsOut:", object@unitsOut, "\n\n")
           })
@@ -504,8 +500,9 @@ setMethod("update", "unmarkedFit",
               upDetformula <- update.formula(detformula, newDetformula)
               newStateformula <- as.formula(paste("~", formula.[3], sep=""))
               upStateformula <- update.formula(stateformula, newStateformula)
-              call$formula <- as.formula(paste(deparse(upDetformula), 
-                                               deparse(upStateformula)))
+              call$formula <- as.formula(paste(
+			  	deparse(upDetformula, width=500), 
+                deparse(upStateformula, width=500)))
             }
             if (length(extras) > 0) {
               existing <- !is.na(match(names(extras), names(call)))
@@ -610,8 +607,6 @@ setMethod("residuals", "unmarkedFitOccuRN", function(object, ...)
             r <- y - e
             return(r)
           })
-
-
 
 
 setMethod("plot", c(x = "unmarkedFit", y = "missing"), 
@@ -763,20 +758,21 @@ setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE)
             survey <- umf@survey
             key <- object@keyfun
             switch(key, 
-                   halfnorm = {
-                     sigma <- exp(V %*% ppars)
-                     p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
-                   }, 
-                   exp = {
-                     rate <- exp(V %*% ppars)
-                     p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
-                   }, 
-                   hazard = {
-                     shape <- exp(V %*% ppars)
-                     scale <- exp(coef(object, type="scale"))
-                     p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
-                                                           scale = scale, survey = survey))
-                   })
+                halfnorm = {
+                	sigma <- exp(V %*% ppars)
+                    p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
+                   	}, 
+                exp = {
+                    rate <- exp(V %*% ppars)
+                    p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
+                   	}, 
+                hazard = {
+                    shape <- exp(V %*% ppars)
+                    scale <- exp(coef(object, type="scale"))
+                    p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
+                    	scale = scale, survey = survey))
+                   	},
+				uniform = p <-1)
             p <- matrix(p, M, J, byrow = TRUE)
             return(p)
           })
@@ -1113,7 +1109,7 @@ setMethod("show", "parboot", function(object)
             p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
             stats <- c("original" = t0, "bias" = bias, "Std. error" = bias.se, 
                        "p.value" = p.val)
-            cat("\nCall:", deparse(object@call), fill=T)
+            cat("\nCall:", deparse(object@call, width=500), fill=T)
             cat("\nBootstrap Statistics:\n")
             print(stats, digits=3)
             cat("\nt quantiles:\n")

@@ -40,19 +40,24 @@ setClass("unmarkedMultFrame",
 
 ## a class for distance sampling data
 setClass("unmarkedFrameDS", 
-		representation(
-				dist.breaks = "numeric",
-				tlength = "numeric",
-				survey = "character",
-				unitsIn = "character"),
-		contains = "unmarkedFrame",
-		validity = function(object) 
-		{
-			J <- numY(object)
-			db <- object@dist.breaks
-			if(J == length(db) - 1 && db[1] == 0) TRUE
-			else "ncol(y) must equal length(dist.breaks)-1 and 
-						dist.breaks[1] must equal 0"
+	representation(
+		dist.breaks = "numeric",
+		tlength = "numeric",
+		survey = "character",
+		unitsIn = "character"),
+	contains = "unmarkedFrame",
+	validity = function(object) {
+		errors <- character(0)
+		J <- numY(object)
+		db <- object@dist.breaks
+		if(J != length(db) - 1)
+			errors <- c(errors, "ncol(y) must equal length(dist.breaks)-1")
+		if(db[1] != 0)
+			errors <- c(errors, "dist.breaks[1] must equal 0")
+		if(!is.null(obsCovs(object)))
+			"obsCovs cannot be used with distsamp"
+		if(length(errors) == 0) TRUE	
+			else errors
 		})
 
 
@@ -295,6 +300,9 @@ setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
 setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
 			object@obsCovs <- as.data.frame(value)
 			object
+		})
+setReplaceMethod("obsCovs", "unmarkedFrameDS", function(object, value) {
+			stop("unmarkedFrameDS objects cannot have obsCovs")
 		})
 
 

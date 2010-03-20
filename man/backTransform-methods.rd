@@ -16,7 +16,7 @@
 }
 \arguments{
 	\item{obj}{Object of appropriate S4 class}
-	\item{whichEstimate}{Either 'state' or 'det'}
+	\item{whichEstimate}{one of names(obj), eg 'state' or 'det'}
 	}
 \section{Methods}{
 \describe{
@@ -25,7 +25,7 @@
 
 \item{obj = "unmarkedFit"}{Back-transform a parameter from a fitted model. Only
 	possible if no covariates are present. Must specify argument whichEstimate 
-	as either 'state' or 'det'.}
+	as one of the values returned by names(obj).}
 
 \item{obj = "unmarkedLinComb"}{Back-transform a predicted value created by 
 	\code{linearComb}. This is done internally by \code{\link{predict}} but

@@ -65,12 +65,12 @@ extracted using the methods described below.
 \section{Methods}{
   \describe{
     \item{[}{\code{signature(x = "unmarkedFit", i = "ANY", j = "ANY", 
-		drop = "ANY")}: extract either 'det' or 'state' coefficient information }
+		drop = "ANY")}: extract one of names(obj), eg 'state' or 'det' }
     \item{backTransform}{\code{signature(obj = "unmarkedFit")}: back-transform
 		parameters to original scale when no covariate effects are modeled }
     \item{coef}{\code{signature(object = "unmarkedFit")}: returns parameter 
-		estimates. type can be 'state' or 'det'. If altNames=T estimate names 
-		are more specific. }
+		estimates. type can be one of names(obj), eg 'state' or 'det'. 
+        If altNames=TRUE estimate names are more specific. }
     \item{confint}{\code{signature(object = "unmarkedFit")}: Returns confidence
 		intervals. Must specify type and method (either "normal" or "profile") }
     \item{fitted}{\code{signature(object = "unmarkedFit")}: returns expected
