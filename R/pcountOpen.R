@@ -143,7 +143,7 @@ if(identical(mixture, "NB")) {
     }
 umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", call = match.call(),
     formula = as.formula(paste(unlist(formlist), collapse=" ")),
-    data = data, sitesRemoved=D$removed.sites,
+    formlist = formlist, data = data, sitesRemoved=D$removed.sites,
     estimates = estimateList, AIC = fmAIC, opt = opt, negLogLike = fm$value,
     nllFun = nll, K = K, mixture = mixture)
 return(umfit)

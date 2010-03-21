@@ -43,6 +43,8 @@ setClass("unmarkedFitPCount",
 
 
 setClass("unmarkedFitPCountOpen", 
+        representation(
+            formlist = "list"),
         contains = "unmarkedFitPCount")
 
 
@@ -350,6 +352,43 @@ setMethod("fitted", "unmarkedFitPCount",
                    })
             fitted
           })
+
+
+setMethod("fitted", "unmarkedFitPCountOpen",
+    function(object, K, na.rm = FALSE) {
+        stop("fitted method not ready yet for unmarkedFitPCountOpen objects")
+        data <- getData(object)
+        D <- getDesign4(object@formlist, data, na.rm = na.rm)
+        Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
+        a <- D$plotArea
+        y <- D$y
+        M <- nrow(y)
+        T <- ncol(y)
+        lambda <- exp(Xlam %*% coef(object, 'lambda')) * a
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, byrow=TRUE)
+        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, byrow=TRUE) 
+        p <- getP(object, na.rm = na.rm)
+        state <- matrix(NA, M, T)
+        state[,1] <- lambda
+        for(t in 2:T)
+            state[,t] <- omega[,t-1]*state[,t-1] + gamma[,t-1]
+        mix <- object@mixture
+        switch(mix,
+        P = fitted <- state * p,
+        NB = {
+            if(missing(K)) K <- max(y, na.rm = TRUE) + 20 
+            k <- 0:K
+            k.ijk <- rep(k, M*J)
+            state.ijk <- state[rep(1:M, each = J*(K+1))]
+            alpha <- exp(coef(object['alpha']))
+            prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
+            all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk, prob.ijk)
+            prod.ijk <- rowProds(all)
+            fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
+            fitted <- matrix(fitted, M, J, byrow = TRUE)
+            })
+        fitted
+        })
 
 
 
@@ -806,6 +845,24 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
           })
 
 
+
+setMethod("getP", "unmarkedFitPCountOpen", function(object, na.rm = TRUE) 
+    {
+        formlist <- object@formlist
+        umf <- object@data
+        D <- getDesign4(formlist, umf, na.rm = na.rm)
+        y <- D$y
+        Xp <- D$Xp
+        M <- nrow(y)
+        J <- ncol(y)
+        ppars <- coef(object, type = "det")
+        p <- plogis(Xp %*% ppars)
+        p <- matrix(p, M, J, byrow = TRUE)
+        return(p)
+    })
+
+
+
 setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
           {
             stop("getP is not yet implemented for colext fits.")
@@ -882,6 +939,42 @@ setMethod("simulate", "unmarkedFitPCount",
             }
             return(simList)
           })
+
+
+setMethod("simulate", "unmarkedFitPCountOpen", 
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
+        formlist <- object@formlist
+        umf <- object@data
+        D <- getDesign4(formlist, umf, na.rm = na.rm)
+        Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
+        y <- D$y
+        a <- D$plotArea
+        M <- nrow(y)
+        T <- ncol(y)
+        lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, byrow=TRUE)
+        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, byrow=TRUE) 
+        p <- getP(object, na.rm = na.rm)
+        mix <- object@mixture
+        N <- matrix(NA, M, T)
+        S <- G <- matrix(NA, M, T-1)
+        simList <- list()
+        for(i in 1:nsim) {
+            switch(mix, 
+                P = N[,1] <- rpois(M, lambda),
+                NB = N[,1] <- rnbinom(M, size = exp(coef(object["alpha"])), 
+                    mu = lambda)
+                )
+            for(t in 2:T) {
+            	S[,t-1] <- rbinom(M, N[,t-1], 0.8)
+                G[,t-1] <- rpois(M, gamma[,t-1])
+                N[,t] <- S[,t-1] + G[,t-1]
+	            }
+            yvec <- rbinom(M * T, N, prob = p)
+            simList[[i]] <- matrix(yvec, M, T)
+            }
+        return(simList)
+        })
 
 
 
