@@ -622,98 +622,94 @@ setMethod("plot", c(x = "unmarkedFit", y = "missing"),
 
 
 setMethod("hist", "unmarkedFitDS", 
-          function(x, lwd=1, lty=1, ...)
-          {
-            ymat <- getY(getData(x))
-            dbreaks <- getData(x)@dist.breaks
-            nb <- length(dbreaks)
-            mids <- (dbreaks[-1] - dbreaks[-nb]) / 2 + dbreaks[-nb]
-            distances <- unlist(mapply(rep, mids, each=colSums(ymat)))
-            h <- hist(distances, plot=F, breaks=dbreaks)
-            key <- x@keyfun
-            survey <- x@data@survey
-            switch(key, 
-                   halfnorm = {
-                     sigma <- exp(coef(x, type="det"))
-                     if(length(sigma) > 1)
-                       stop("This method only works when there are no detection covars")
-                     switch(survey, 
-                            line = {
-                              int <- 2 * integrate(dnorm, dbreaks[1], dbreaks[nb], 
-                                                   sd=sigma)$value
-                              h$density <- h$density * int
-                              plot(h, freq=F, ...)
-                              plot(function(x) 2 * dnorm(x, mean=0, sd=sigma), 
-                                   min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
-                            },
-                            point = {
-                              int <- integrate(drhn, dbreaks[1], dbreaks[nb], 
-                                               sigma=sigma)$value
-                              h$density <- h$density * int
-                              plot(h, freq=F, ...)
-                              plot(function(r) drhn(r, sigma=sigma), 
-                                   min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
-                            })
-                   },
-                   exp = {		# This doesn't work on example fm4
-                     rate <- exp(coef(x, type="det"))
-                     if(length(rate) > 1)
-                       stop("This method only works when there are no detection covars")
-                     switch(survey,
-                            line = {
-                              int <- integrate(dxexp, dbreaks[1], dbreaks[nb], 
-                                               rate=rate)$value
-                              h$density <- h$density * int
-                              plot(h, freq=F, ...)
-                              plot(function(x) dxexp(x, rate=rate), min(dbreaks), 
-                                   max(dbreaks), add=T, lwd=lwd, lty=lty)
-                            },
-                            point = {
-                              int <- integrate(drexp, dbreaks[1], dbreaks[nb], 
-                                               rate=rate)$value
-                              h$density <- h$density * int
-                              plot(h, freq=F, ...)
-                              plot(function(r) drexp(r, rate=rate), min(dbreaks), 
-                                   max(dbreaks), add=T, lwd=lwd, lty=lty)
-                            })
-                   },
-                   hazard = {
-                     shape <- exp(coef(x, type="det"))
-                     scale <- exp(coef(x, type="scale"))
-                     if(length(shape) > 1)
-                       stop("This method only works when there are no detection covars")
-                     switch(survey, 
-                            line = {
-                              int <- integrate(dxhaz, dbreaks[1], dbreaks[nb], 
-                                               shape=shape, scale=scale)$value
-                              h$density <- h$density * int
-                              plot(h, freq=F, ...)
-                              plot(function(x) dxhaz(x, shape=shape, scale=scale), 
-                                   min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
-                            },
-                            point = {
-                              int <- integrate(drexp, dbreaks[1], dbreaks[nb], 
-                                               rate=rate)$value
-                              h$density <- h$density * int
-                              plot(h, freq=F, ...)
-                              plot(function(r) drhaz(r, shape=shape, scale=scale), 
-                                   min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
-                            })
-                   },
-                   uniform = {
-                     switch(survey, 
-                            line = {
-                              plot(h, freq=F, ...)
-                              abline(h=1/max(dbreaks), lwd=lwd, lty=lty)
-                            },
-                            point = {
-                              plot(h, freq=F, ...)
-                              plot(function(r) (pi*r^2) / (pi*max(dbreaks)^2), 
-                                   min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
-                            }
-                            )}
-                   )
-          })
+    function(x, lwd=1, lty=1, ...) {
+        ymat <- getY(getData(x))
+        dbreaks <- getData(x)@dist.breaks
+        nb <- length(dbreaks)
+        mids <- (dbreaks[-1] - dbreaks[-nb]) / 2 + dbreaks[-nb]
+        distances <- unlist(mapply(rep, mids, each=colSums(ymat)))
+        h <- hist(distances, plot=F, breaks=dbreaks)
+        key <- x@keyfun
+        survey <- x@data@survey
+        switch(key, 
+        halfnorm = {
+            sigma <- exp(coef(x, type="det"))
+            if(length(sigma) > 1)
+                stop("This method only works when there are no detection covars")
+            switch(survey, 
+            line = {
+                int <- 2 * integrate(dnorm, dbreaks[1], dbreaks[nb], 
+                    sd=sigma)$value
+                h$density <- h$density * int
+                plot(h, freq=F, ...)
+                plot(function(x) 2 * dnorm(x, mean=0, sd=sigma), 
+                    min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+                },
+            point = {
+                int <- integrate(drhn, dbreaks[1], dbreaks[nb], 
+                    sigma=sigma)$value
+                h$density <- h$density * int
+                plot(h, freq=F, ...)
+                plot(function(r) drhn(r, sigma=sigma), min(dbreaks), 
+                    max(dbreaks), add=T, lwd=lwd, lty=lty)
+                })
+            },
+        exp = {		# This doesn't work on example fm4
+            rate <- exp(coef(x, type="det"))
+            if(length(rate) > 1)
+                stop("This method only works when there are no detection covars")
+            switch(survey,
+            line = {
+                int <- integrate(dxexp, dbreaks[1], dbreaks[nb], rate=rate)$value
+                h$density <- h$density * int
+                plot(h, freq=F, ...)
+                plot(function(x) dxexp(x, rate=rate), min(dbreaks), 
+                    max(dbreaks), add=T, lwd=lwd, lty=lty)
+                },
+            point = {
+                int <- integrate(drexp, dbreaks[1], dbreaks[nb], rate=rate)$value
+                h$density <- h$density * int
+                plot(h, freq=F, ...)
+                plot(function(r) drexp(r, rate=rate), min(dbreaks), 
+                    max(dbreaks), add=T, lwd=lwd, lty=lty)
+                })
+            },
+        hazard = {
+            shape <- exp(coef(x, type="det"))
+            scale <- exp(coef(x, type="scale"))
+            if(length(shape) > 1)
+                stop("This method only works when there are no detection covars")
+            switch(survey, 
+            line = {
+                int <- integrate(dxhaz, dbreaks[1], dbreaks[nb], 
+                    shape=shape, scale=scale)$value
+                h$density <- h$density * int
+                plot(h, freq=F, ...)
+                plot(function(x) dxhaz(x, shape=shape, scale=scale), 
+                    min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+                },
+            point = {
+                int <- integrate(drexp, dbreaks[1], dbreaks[nb], rate=rate)$value
+                    h$density <- h$density * int
+                    plot(h, freq=F, ...)
+                    plot(function(r) drhaz(r, shape=shape, scale=scale), 
+                        min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+                })
+            },
+        uniform = {
+            switch(survey, 
+            line = {
+                plot(h, freq=F, ...)
+                abline(h=1/max(dbreaks), lwd=lwd, lty=lty)
+                },
+            point = {
+                plot(h, freq=F, ...)
+                plot(function(r) (pi*r^2) / (pi*max(dbreaks)^2), 
+                    min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+                }
+            )}
+            )
+        })
 
 
 
@@ -743,39 +739,39 @@ setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE)
 
 
 
-setMethod("getP", "unmarkedFitDS", function(object, na.rm = TRUE) 
-          {
-            formula <- object@formula
-            detformula <- as.formula(formula[[2]])
-            umf <- object@data
-            designMats <- getDesign2(formula, umf, na.rm = na.rm)
-            y <- designMats$y
-            V <- designMats$V
-            M <- nrow(y)
-            J <- ncol(y)
-            ppars <- coef(object, type = "det")
-            d <- umf@dist.breaks
-            survey <- umf@survey
-            key <- object@keyfun
-            switch(key, 
-                halfnorm = {
-                	sigma <- exp(V %*% ppars)
-                    p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
-                   	}, 
-                exp = {
-                    rate <- exp(V %*% ppars)
-                    p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
-                   	}, 
-                hazard = {
-                    shape <- exp(V %*% ppars)
-                    scale <- exp(coef(object, type="scale"))
-                    p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
-                    	scale = scale, survey = survey))
-                   	},
-				uniform = p <-1)
-            p <- matrix(p, M, J, byrow = TRUE)
-            return(p)
-          })
+setMethod("getP", "unmarkedFitDS", 
+    function(object, na.rm = TRUE) {
+        formula <- object@formula
+        detformula <- as.formula(formula[[2]])
+        umf <- object@data
+        designMats <- getDesign2(formula, umf, na.rm = na.rm)
+        y <- designMats$y
+        V <- designMats$V
+        M <- nrow(y)
+        J <- ncol(y)
+        ppars <- coef(object, type = "det")
+        d <- umf@dist.breaks
+        survey <- umf@survey
+        key <- object@keyfun
+        switch(key, 
+        halfnorm = {
+            sigma <- exp(V %*% ppars)
+            p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
+            }, 
+        exp = {
+            rate <- exp(V %*% ppars)
+            p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
+            }, 
+        hazard = {
+            shape <- exp(V %*% ppars)
+            scale <- exp(coef(object, type="scale"))
+            p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
+            scale = scale, survey = survey))
+            },
+		uniform = p <-1)
+        p <- matrix(p, M, J, byrow = TRUE)
+        return(p)
+        })
 
 
 
