@@ -402,7 +402,7 @@ setMethod("fitted", "unmarkedFitPCount",
 
 setMethod("fitted", "unmarkedFitPCountOpen",
     function(object, K, na.rm = FALSE) {
-        stop("fitted method not ready yet for unmarkedFitPCountOpen objects")
+#        stop("fitted method not ready yet for unmarkedFitPCountOpen objects")
         data <- getData(object)
         D <- getDesign4(object@formlist, data, na.rm = na.rm)
         Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
@@ -415,25 +415,19 @@ setMethod("fitted", "unmarkedFitPCountOpen",
         omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, byrow=TRUE) 
         p <- getP(object, na.rm = na.rm)
         state <- matrix(NA, M, T)
-        state[,1] <- lambda
-        for(t in 2:T)
-            state[,t] <- omega[,t-1]*state[,t-1] + gamma[,t-1]
-        mix <- object@mixture
-        switch(mix,
-        P = fitted <- state * p,
+        switch(object@mixture,
+        P = state[,1] <- lambda,
         NB = {
-            if(missing(K)) K <- max(y, na.rm = TRUE) + 20 
+            if(missing(K)) K <- max(y, na.rm = TRUE) + 20
             k <- 0:K
-            k.ijk <- rep(k, M*J)
-            state.ijk <- state[rep(1:M, each = J*(K+1))]
             alpha <- exp(coef(object['alpha']))
-            prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
-            all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk, prob.ijk)
-            prod.ijk <- rowProds(all)
-            fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
-            fitted <- matrix(fitted, M, J, byrow = TRUE)
+            den.ik <- sapply(k, function(x) dnbinom(x, size=alpha, mu=lambda))
+            state[,1] <- den.ik %*% k
             })
-        fitted
+        for(t in 2:T)
+            state[,t] <- omega[,t-1] * state[,t-1] + gamma[,t-1]
+        fitted <- state * p
+        return(fitted)
         })
 
 
