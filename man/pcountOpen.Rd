@@ -34,7 +34,7 @@ Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatial
 \note{
 When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, it must be supplied.
 
-If time intervals vary among survey occasions (sampling periods), an Mx(T-1) matrix of time intervals should be supplied to unmarkedFramePCountOpen using the delta argument.
+If time intervals vary among survey occasions (sampling periods), an M by T-1 matrix of time intervals should be supplied to unmarkedFramePCountOpen using the delta argument.
 }
 
 \section{Warning}{This function can be extremely slow, especially when there are covariates on gamma or omega. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates (MLEs) will also help with speed. }
@@ -45,7 +45,7 @@ If time intervals vary among survey occasions (sampling periods), an Mx(T-1) mat
 
 \examples{
 # Simulate	
-# set.seed(1)
+set.seed(1)
 M <- 50
 T <- 5
 veght <- rnorm(M)
@@ -64,7 +64,7 @@ for(t in 1:(T-1)) {
 p[] <- plogis(-1 + 1*date)
 y[] <- rbinom(M*T, N, p)
 
-
+                            
 # Prepare data                               
 umf <- unmarkedFramePCountOpen(y = y, siteCovs = data.frame(veght), 
 	obsCovs = list(isolation=isolation, date=date))
@@ -83,7 +83,7 @@ backTransform(m1, "det")
 
 \dontrun{
 (m2 <- pcountOpen(~1, ~isolation, ~1, ~date, umf, K=15, se=FALSE,
-	control=list(maxit=30, trace=TRUE), starts=c(-1, 0.5, -1, -1, 1.5, -1, 1)))
+	control=list(maxit=30, trace=TRUE), starts=c(-1, -1, -1, 1.5, -1, 1)))
 }
 
 }
