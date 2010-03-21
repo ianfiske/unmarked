@@ -206,6 +206,52 @@ setMethod("predict", "unmarkedFit",
           }
           )
 
+
+setMethod("predict", "unmarkedFitPCountOpen", 
+    function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
+        appendData = FALSE, ...) 
+    {
+        if(missing(newdata) || is.null(newdata))
+        newdata <- getData(object)
+        formlist <- object@formlist
+        if(inherits(newdata, "unmarkedFrame"))
+            cls <- "unmarkedFrame"            
+            else if(identical(class(newdata), "data.frame")) 
+                cls <- "data.frame"
+                else stop("newdata should be a data.frame or inherit unmarkedFrame class")
+        switch(cls, 
+            unmarkedFrame = {
+                D <- getDesign4(formlist, newdata, na.rm = na.rm)
+                switch(type, 
+                    lambda = X <- D$Xlam,
+                    gamma = X <- D$Xgam,
+                    omega = X <- D$Xom,                           
+                    det = X <- D$Xp)
+                },
+            data.frame = {
+                lambdaformula <- formlist$lambdaformula
+                gammaformula <- formlist$gammaformula
+                omegaformula <- formlist$omegaformula
+                pformula <- formlist$pformula
+                switch(type, 
+                    lambda = X <- model.matrix(lambdaformula, newdata),
+                    gamma = X <- model.matrix(gammaformula, newdata),
+                    omega = X <- model.matrix(omegaformula, newdata),
+                    det = X <- model.matrix(pformula, newdata))    
+                })
+        out <- data.frame(matrix(NA, nrow(X), 2, 
+            dimnames=list(NULL, c("Predicted", "SE"))))
+        lc <- linearComb(object, X, type)
+        if(backTransform) lc <- backTransform(lc)
+        out$Predicted <- coef(lc)
+        out$SE <- SE(lc)
+        if(appendData)
+            out <- data.frame(out, newdata)
+        return(out)
+        })
+
+
+
 setMethod("coef", "unmarkedFit",
           function(object, type, altNames = TRUE) {
             if(missing(type)) {
