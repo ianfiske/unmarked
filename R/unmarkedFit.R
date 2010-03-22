@@ -622,6 +622,47 @@ setMethod("update", "unmarkedFitColExt",
             else call
           })
 
+
+setMethod("update", "unmarkedFitPCountOpen", 
+    function(object, lambdaformula., gammaformula., omegaformula., pformula., 
+        ..., evaluate = TRUE) 
+    {
+        call <- object@call
+        lambdaformula <- as.formula(call[['lambdaformula']])
+        gammaformula <- as.formula(call[['gammaformula']])
+        omegaformula <- as.formula(call[['omegaformula']])
+        pformula <- as.formula(call[['pformula']])
+        extras <- match.call(expand.dots = FALSE)$...
+        if (!missing(lambdaformula.)) {
+            upLambdaformula <- update.formula(lambdaformula, lambdaformula.)
+            call[['lambdaformula']] <- upLambdaformula
+            }
+        if (!missing(gammaformula.)) {
+            upGammaformula <- update.formula(gammaformula, gammaformula.)
+            call[['gammaaformula']] <- upGammaformula
+            }
+        if (!missing(omegaformula.)) {
+            upOmegaformula <- update.formula(omegaformula, omegaformula.)
+            call[['omegaformula']] <- upOmegaformula
+            }
+        if (!missing(pformula.)) {
+            upPformula <- update.formula(pformula, pformula.)
+            call[['pformula']] <- upPformula
+            }
+        if (length(extras) > 0) {
+            existing <- !is.na(match(names(extras), names(call)))
+            for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+            if (any(!existing)) {
+                call <- c(as.list(call), extras[!existing])
+                call <- as.call(call)
+                }
+            }
+        if (evaluate) 
+            eval(call, parent.frame())
+        else call
+        })
+
+
 setGeneric("sampleSize", function(object) standardGeneric("sampleSize"))
 setMethod("sampleSize", "unmarkedFit",
           function(object) {
