@@ -16,9 +16,12 @@ drhaz(r, shape, scale)
 \alias{gxhn}
 \alias{gxexp}
 \alias{gxhaz}
-\alias{grhn}
-\alias{grexp}
-\alias{grhaz}
+\alias{dxhn}
+\alias{dxexp}
+\alias{dxhaz}
+\alias{drhn}
+\alias{drexp}
+\alias{drhaz}
 \description{These functions represent the currently available detection
     functions used for modeling line and point transect data with 
 	\code{\link{distsamp}. Detection functions begin with "g", and density
