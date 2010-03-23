@@ -11,20 +11,30 @@ setClass("unmarkedFitList",
 
 # constructor of unmarkedFitList objects
 fitList <- function(..., fits) {
-	if(missing(fits)) {
-		fits <- list(...)
-		isList <- sapply(fits, function(x) is.list(x))
-		if(sum(isList) > 1)
-			stop("Specify nested models as named objects, or use fits = 'mylist'")
-		if(isList[1L]) {
-			warning("If supplying a list of fits, use fits = 'mylist'")
-			fits <- fits[[1L]] 	# This is allowed for back-compatability.
-			}
-		}	
-	umfl <- new("unmarkedFitList", fits=fits)
-	return(umfl)
-	}
-	
+    if(length(list(...)) > 0 & !missing(fits))
+        stop("Do not use both the '...' and 'fits' arguments")
+    if(missing(fits)) {
+        fits <- list(...)
+        isList <- sapply(fits, function(x) is.list(x))
+        if(sum(isList) > 1)
+            stop("Specify nested models as named objects, or use fits = 'mylist'")
+        if(isList[1L]) {
+            warning("If supplying a list of fits, use fits = 'mylist'")
+            fits <- fits[[1L]] 	# This is allowed for back-compatability.
+            }
+        if(is.null(names(fits))) {
+            c <- match.call(expand.dots = FALSE)
+            names(fits) <- as.character(c[[2]])
+            warning("Your list was unnamed, so names were added as object names")
+            }
+        }
+    if(is.null(names(fits))) {
+        names(fits) <- as.character(1:(length(fits)))
+        warning("Your list was unnamed, so names were added as c('1','2',...)")
+        }
+    umfl <- new("unmarkedFitList", fits=fits)
+    return(umfl)
+    }
 
 
 setMethod("summary", "unmarkedFitList", function(object) {
@@ -103,9 +113,9 @@ setClass("unmarkedModSel",
 setMethod("modSel", "unmarkedFitList", 
 	function(object, nullmod=NULL) 
 {
-  if (!is.character(nullmod) && !is.null(nullmod)) {
-    stop("nullmod must be character name of null model fit in the fitlist.")
-  }
+    if (!is.character(nullmod) && !is.null(nullmod)) {
+        stop("nullmod must be character name of null model fit in the fitlist.")
+        }
 	fits <- object@fits
 	estList <- lapply(fits, coef, altNames=T)
 	seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=T))))
