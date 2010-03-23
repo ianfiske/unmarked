@@ -90,7 +90,7 @@ nll <- function(parms) { # No survey-specific NA handling.
         g1.t <- dbinom(y.kk[,t], k, pt.kk)
         g.star.vec <- g.star[,, t][mat.to.vec]
         delta.tkk <- delta.kk[,t-1]
-        g3.t <- g3[,,, t]^delta.tkk
+        g3.t <- g3[,,, t-1]^delta.tkk #t or t-1?
         g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
     }
     L <- rowSums(g1 * g2 * g.star[,, 1])

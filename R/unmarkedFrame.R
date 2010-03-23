@@ -214,7 +214,9 @@ unmarkedFramePCountOpen <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 		delta <- matrix(1, nrow(y), ncol(y) - 1)
 	if(nrow(delta) != nrow(y) | ncol(delta) != ncol(y) - 1)
 		stop("Dimensions of delta matrix should be nrow(y), ncol(y)-1")
-	if(class(obsCovs) == "list") {
+	if(any(delta < 0, na.rm=TRUE))
+	   stop("Negative delta values not allowed.")
+    if(class(obsCovs) == "list") {
 		obsVars <- names(obsCovs)
     for(i in seq(length(obsVars))) {
     	if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
