@@ -240,6 +240,74 @@ drhaz <- function(r, shape, scale)
 
 
 
+# Vectorized version of integrate()
+vIntegrate <- Vectorize(integrate, c("lower", "upper"))
+
+
+# Multinomial cell probabilities for line or point transects under half-normal model. These are still used by getP but not distsamp.
+cp.hn <- function(d, s, survey) 
+{
+	switch(survey, 
+		line = {
+			strip.widths <- diff(d)
+			f.0 <- 2 * dnorm(0, 0, sd=s)
+			int <- 2 * (pnorm(d[-1], 0, sd=s) - pnorm(d[-length(d)], 0, sd=s))
+			cp <- int / f.0 / strip.widths 
+		},
+		point = {
+			W <- max(d)
+			int <- as.numeric(vIntegrate(grhn, d[-length(d)], d[-1], 
+				sigma=s)["value",])
+			cp <- 2 / W^2 * int
+		})
+	return(cp)
+}
+
+
+
+cp.exp <- function(d, rate, survey) 
+{
+	switch(survey, 
+		line = {
+			strip.widths <- diff(d)
+#			f.0 <- dexp(0, rate=rate)
+#			int <- pexp(d[-1], rate=rate) - pexp(d[-length(d)], rate=rate)
+			int <- as.numeric(vIntegrate(gxexp, d[-length(d)], d[-1],
+				rate=rate)["value",])
+			cp <- int / strip.widths
+		},
+		point = {
+			W <- max(d)
+			int <- as.numeric(vIntegrate(grexp, d[-length(d)], d[-1], 
+				rate=rate)["value",])
+			cp <- 2 / W^2 * int
+		})
+	return(cp)
+}
+
+
+
+cp.haz <- function(d, shape, scale, survey)
+{
+	switch(survey, 
+		line = {
+			strip.widths <- diff(d)
+			int <- as.numeric(vIntegrate(gxhaz, d[-length(d)], d[-1], 
+				shape=shape, scale=scale)["value",])
+			cp <- int / strip.widths
+		},
+		point = {
+			W <- max(d)
+			int <- as.numeric(vIntegrate(grhaz, d[-length(d)], d[-1], 
+				shape=shape, scale=scale)["value",])
+			cp <- 2 / W^2 * int
+		})
+	return(cp)
+}
+
+
+
+
 # Prepare area argument for distsamp(). This is primarily for internal use
 
 calcAreas <- function(dist.breaks, tlength, survey, output, M, J, unitsIn, 

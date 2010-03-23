@@ -41,7 +41,7 @@ fm1 <- distsamp(~ 1 ~1, ltUMF)
 fm2 <- distsamp(~ area ~1, ltUMF)
 fm3 <- distsamp( ~ 1 ~area, ltUMF)
 
-fl <- fitList(Null=fm1, A.=fm2, .A=fm2)
+fl <- fitList(Null=fm1, A.=fm2, .A=fm3)
 fl
 
 (ms <- modSel(fl, nullmod="Null"))
