@@ -20,7 +20,28 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
   \item{\dots}{additional arguments to be passed to \code{\link{optim}}.}
 }
 \details{
-This model generalizes the Royle (2004) N-mixture model by relaxing the closure assumption. 
+This model generalizes the Royle (2004) N-mixture model by relaxing the closure assumption.
+
+The latent initial abundance distribution, 
+\eqn{f(N | \mathbf{\theta})}{f(N | theta)} can be set as either a 
+Poisson or a negative binomial random variable, depending on the setting of the 
+\code{mixture} argument. \code{mixture = "P"} or \code{mixture = "NB"} select 
+the Poisson or negative binomial distribution respectively.  The mean of 
+\eqn{N_i} is \eqn{\lambda_i}{lambda_i}.  If \eqn{N_i \sim NB}{N_i ~ NB}, then an
+additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
+\eqn{\alpha}{alpha} implies higher variance).
+
+The latent abundance state following the initial sampling period arises from a
+Markovian process in which survivors are modeled as \eqn{S_it \sim 
+Binomial(N_it-1, omega_it)}{G_it ~ Binomial(N_it-1, omega_it)}, and recruits
+follow \eqn{G_it \sim Poisson(gamma_it)}{G_it ~ Poisson(gamma_it)}.
+
+The detection process is modeled as binomial: \eqn{y_{it} \sim
+Binomial(N_it, p_it)}{y_it ~ Binomial(N_it, p_it)}.
+
+Covariates of \eqn{\lambda_i}{lamdba_i} use the log link and
+covariates of \eqn{p_it}{p_it} use the logit link.
+ 
 }
 \value{
 A unmarkedFitPCountOpen object.
@@ -45,7 +66,7 @@ If time intervals vary among survey occasions (sampling periods), an M by T-1 ma
 
 \examples{
 # Simulate	
-set.seed(1)
+set.seed(3)
 M <- 50
 T <- 5
 veght <- rnorm(M)
