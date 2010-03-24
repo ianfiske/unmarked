@@ -1237,6 +1237,7 @@ setMethod("parboot", "unmarkedFit",
     t.star <- matrix(NA, nsim, lt0)
     if(!is.null(names(t0)))
         colnames(t.star) <- names(t0)
+    else colnames(t.star) <- paste("t*", 1:lt0, sep="")
     cat("t0 =", t0, "\n")      
     fits <- list()
     simdata <- umf
@@ -1265,21 +1266,22 @@ setMethod("show", "parboot", function(object)
             t.star <- object@t.star
             t0 <- object@t0
             nsim <- nrow(t.star)
-            tmp1 <- tmp2 <- matrix(NA, nsim, length(t0))
-            tmp1[] <- t(apply(t.star, 1, function(x) t0 - x))
-            bias <- colMeans(tmp1)
-            bias.se <- apply(tmp1, 2, sd)
-            p.val.fun <- function(x) abs(x - 1) > abs(t0 - 1)
-            tmp2[] <- t(apply(t.star, 1, p.val.fun))
-            p.val <- colSums(tmp2) / (1 + nsim)
+            biasMat <- pMat <- matrix(NA, nsim, length(t0))
+            for(i in 1:nsim) {
+                biasMat[i,] <- t0 - t.star[i,]
+                pMat[i,] <- abs(t.star[i,] - 1) > abs(t0 - 1)
+                }
+            bias <- colMeans(biasMat)
+            bias.se <- apply(biasMat, 2, sd)
+            p.val <- colSums(pMat) / (1 + nsim)
             stats <- data.frame("original" = t0, "bias" = bias, 
                 "SE" = bias.se, "p.value" = p.val)
             cat("\nCall:", deparse(object@call, width=500), fill=T)
             cat("\nBootstrap Statistics:\n")
             print(stats, digits=3)
             cat("\nt quantiles:\n")
-            print(apply(t.star, 2, quantile, 
-                probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100))
+            print(t(apply(t.star, 2, quantile, 
+                probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
           })
 
 
@@ -1290,16 +1292,11 @@ setMethod("plot", signature(x="parboot", y="missing"),
     {
         t.star <- x@t.star
         t0 <- x@t0
-        t.t0 <- c(t.star, t0)
-        bias <- mean(t0 - t.star)
-        bias.se <- sd(t0 - t.star)
-        nsim <- length(t.star)
-        p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
-        hist(t.star, xlim=c(min(floor(t.t0)), max(ceiling(t.t0))), 
-            main=paste("P =", round(p.val, 4), "; nsim =", format(nsim)), 
-            xlab="t*")
-        rug(t.star)
-        abline(v=t0, lty=2)
+        for(i in 1:length(t0)) {
+            hist(t.star[,i], xlab=colnames(t.star)[i], ...)
+            abline(v=t0[i], lty=2)
+            devAskNewPage(ask = TRUE)
+            }
     })
 
 

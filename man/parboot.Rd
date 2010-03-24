@@ -8,7 +8,7 @@
 	\item{object}{a fitted model of class "unmarkedFit"}
 	\item{statistic}{a function  returning a vector of fit-statistics. 
         First argument must be the fitted model. 
-        Default is root-mean-squared-error.}
+        Default is deviance.}
    	\item{nsim}{number of bootstrap replicates}
 	\item{report}{print fit statistic every 'report' iterations during resampling}
     \item{...}{Additional arguments to be passed to statistic}
@@ -35,6 +35,6 @@ fitStats <- function(fit) {
 
 
 (pb <- parboot(fm, fitStats, nsim=25))
-plot(pb)
+plot(pb, main="")
 
 }
