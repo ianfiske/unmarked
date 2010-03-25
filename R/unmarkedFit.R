@@ -1221,7 +1221,7 @@ setClass("parboot",
          
 
 setMethod("parboot", "unmarkedFit", 
-    function(object, statistic=SSE, nsim=10, report=2, ...) 
+    function(object, statistic=iSSE, nsim=10, report=2, ...) 
     {
     call <- match.call(call = sys.call(-1))
     formula <- object@formula
