@@ -1042,11 +1042,7 @@ setClass("parboot",
          
 
 setMethod("parboot", "unmarkedFit", 
-    function(object, statistic=function(fit) {
-        sse <- sum(residuals(fit)^2, na.rm=TRUE)
-        return(c(SSE=sse))
-        }, 
-        nsim=10, report=2, ...) 
+    function(object, statistic=SSE, nsim=10, report=2, ...) 
     {
     call <- match.call(call = sys.call(-1))
     formula <- object@formula
