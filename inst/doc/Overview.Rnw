@@ -158,8 +158,8 @@ predict(fms, type='det', newdata = newData, appendData = TRUE)
 Parametric bootstrapping can be used to check the adequacy of model fit.
 
 <<fig=TRUE>>=
-	pcru.pb <- parboot(fm2, nsim=50, report=5)
-	plot(pcru.pb)
+	pcru.pb <- parboot(fm2, statistic=SSE, nsim=50, report=5)
+	plot(pcru.pb, main="")
 @
 
 This example suggests an adequate fit.

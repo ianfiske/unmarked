@@ -34,5 +34,5 @@ export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
 
 # Misc
 export(imputeMissing, gxhn, gxexp, gxhaz, dxhn, dxexp, dxhaz, drhn, drexp, 
-	drhaz, calcAreas, sight2perpdist, lambda2psi)
+	drhaz, calcAreas, sight2perpdist, lambda2psi, SSE)
 useDynLib(unmarked)
