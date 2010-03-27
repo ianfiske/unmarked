@@ -1274,16 +1274,17 @@ setMethod("show", "parboot", function(object)
             bias <- colMeans(biasMat)
             bias.se <- apply(biasMat, 2, sd)
             p.val <- colSums(pMat) / (1 + nsim)
-            stats <- data.frame("t0" = t0, "t0 - mean(t_B)" = bias, 
-                "StdDev(t_B)" = bias.se, "Pr(t_B > t0)" = p.val, check.names = FALSE)
+            stats <- data.frame("t0" = t0, "mean(t0 - t_B)" = bias, 
+                "StdDev(t0 - t_B)" = bias.se, "Pr(t_B > t0)" = p.val, 
+                check.names = FALSE)
             cat("\nCall:", deparse(object@call, width=500), fill=T)
             cat("\nParametric Bootstrap Statistics:\n")
             print(stats, digits=3)
             cat("\nt_B quantiles:\n")
             print(t(apply(t.star, 2, quantile, 
                 probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
-            cat("\nt0 = Original statistic compuated from data
-t_B = Vector of bootstrap samples\n")
+            cat("\nt0 = Original statistic compuated from data\n")
+            cat("\nt_B = Vector of bootstrap samples\n")
           })
 
 
