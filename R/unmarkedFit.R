@@ -181,15 +181,15 @@ setMethod("predict", "unmarkedFit",
         switch(cls, 
         unmarkedFrame = {
             designMats <- getDesign2(formula, newdata, na.rm = na.rm)
-                switch(type, 
-                    state = X <- designMats$X,
-                    det = X <- designMats$V)
-                    },
-            data.frame = {
-                switch(type, 
-                    state = X <- model.matrix(stateformula, newdata),
-                    det = X <- model.matrix(detformula, newdata))
-                    })
+            switch(type, 
+                state = X <- designMats$X,
+                det = X <- designMats$V)
+            },
+        data.frame = {
+            switch(type, 
+                state = X <- model.matrix(stateformula, newdata),
+                det = X <- model.matrix(detformula, newdata))
+            })
         out <- data.frame(matrix(NA, nrow(X), 2, 
             dimnames=list(NULL, c("Predicted", "SE"))))
         lc <- linearComb(object, X, type)
@@ -197,7 +197,7 @@ setMethod("predict", "unmarkedFit",
         out$Predicted <- coef(lc)
         out$SE <- SE(lc)
         if(appendData)
-            out <- data.frame(out, newdata)
+            out <- data.frame(out, as(newdata, "data.frame"))
         return(out)
         })
 
