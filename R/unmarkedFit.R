@@ -1284,7 +1284,7 @@ setMethod("show", "parboot", function(object)
             print(t(apply(t.star, 2, quantile, 
                 probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
             cat("\nt0 = Original statistic compuated from data\n")
-            cat("\nt_B = Vector of bootstrap samples\n")
+            cat("t_B = Vector of bootstrap samples\n\n")
           })
 
 
