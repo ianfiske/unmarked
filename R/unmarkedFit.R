@@ -1044,6 +1044,7 @@ setClass("parboot",
 setMethod("parboot", "unmarkedFit", 
     function(object, statistic=iSSE, nsim=10, report=2, ...) 
     {
+    statistic <- match.fun(statistic)
     call <- match.call(call = sys.call(-1))
     formula <- object@formula
     umf <- getData(object)
@@ -1094,14 +1095,16 @@ setMethod("show", "parboot", function(object)
             bias <- colMeans(biasMat)
             bias.se <- apply(biasMat, 2, sd)
             p.val <- colSums(pMat) / (1 + nsim)
-            stats <- data.frame("original" = t0, "bias" = bias, 
-                "SE" = bias.se, "p.value" = p.val)
+            stats <- data.frame("t0" = t0, "t0 - mean(t_B)" = bias, 
+                "StdDev(t_B)" = bias.se, "Pr(t_B > t0)" = p.val, check.names = FALSE)
             cat("\nCall:", deparse(object@call, width=500), fill=T)
-            cat("\nBootstrap Statistics:\n")
+            cat("\nParametric Bootstrap Statistics:\n")
             print(stats, digits=3)
-            cat("\nt quantiles:\n")
+            cat("\nt_B quantiles:\n")
             print(t(apply(t.star, 2, quantile, 
                 probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
+            cat("\nt0 = Original statistic compuated from data
+t_B = Vector of bootstrap samples\n")
           })
 
 
