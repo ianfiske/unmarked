@@ -11,8 +11,6 @@ validunmarkedFrame <- function(object) {
 	if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
 		if(nrow(object@obsCovs) != M*obsNum(object))
 			errors <- c(errors, "obsCovData does not have M*obsNum rows.")
-	if(!all(is.na(object@plotArea)) & any(object@plotArea < 0))
-		errors <- c(errors, "plotArea cannot contain negative values.")	
 	if(length(errors) == 0)
 		TRUE
 	else
@@ -27,7 +25,6 @@ setClass("unmarkedFrame",
         obsCovs = "optionalDataFrame",
         siteCovs = "optionalDataFrame",
 		mapInfo = "optionalMapInfo",
-		plotArea = "numeric",
         obsToY = "optionalMatrix"),
     validity = validunmarkedFrame)
 
@@ -44,7 +41,8 @@ setClass("unmarkedFrameDS",
 		dist.breaks = "numeric",
 		tlength = "numeric",
 		survey = "character",
-		unitsIn = "character"),
+		unitsIn = "character",
+                plotArea = "numeric"),
 	contains = "unmarkedFrame",
 	validity = function(object) {
 		errors <- character(0)
@@ -79,7 +77,7 @@ setClass("unmarkedFrameMPois",
 
 # Constructor for unmarkedFrames.
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
-    plotArea, obsToY) {
+    obsToY) {
 
   if(class(obsCovs) == "list") {
     obsVars <- names(obsCovs)
@@ -98,10 +96,9 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 
 	if(missing(obsToY)) obsToY <- NULL
 	if(missing(mapInfo)) mapInfo <- NULL
-	if(missing(plotArea) || is.null(plotArea)) plotArea <- rep(1, nrow(y))
 	
   umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs,
-      siteCovs = siteCovs, mapInfo = mapInfo, plotArea = plotArea, 
+      siteCovs = siteCovs, mapInfo = mapInfo, 
 	  obsToY = obsToY)
 
   return(umf)
@@ -141,11 +138,10 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
 
 # This function constructs an unmarkedMultFrame object.
 unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
-	yearlySiteCovs = NULL, plotArea = NULL) 
+	yearlySiteCovs = NULL) 
 {
 	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), 
-		plotArea = plotArea)
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
 	umf <- as(umf, "unmarkedMultFrame")
 	umf@numPrimary <- numPrimary
 	umf@yearlySiteCovs <- yearlySiteCovs
@@ -154,12 +150,11 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 
 
 
-unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
- 	plotArea = NULL) 
+unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo) 
 {
 	J <- ncol(y)
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J), 
-		mapInfo = mapInfo, plotArea = plotArea)
+		mapInfo = mapInfo)
 	umf <- as(umf, "unmarkedFramePCount")
 	umf
 }
@@ -167,7 +162,7 @@ unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 
 
 unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY, 
-	mapInfo, piFun, plotArea = NULL) 
+	mapInfo, piFun) 
 {
 	if(!missing(type)) {
 		switch(type,
@@ -187,7 +182,7 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 		type <- "userDefined"
 		}
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY, 
-		mapInfo = mapInfo, plotArea = plotArea)
+		mapInfo = mapInfo)
 	umf <- as(umf, "unmarkedFrameMPois")
 	umf@piFun <- piFun
 	umf@samplingMethod <- type
@@ -296,15 +291,6 @@ setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
 
 setGeneric("getY", function(object) standardGeneric("getY"))
 setMethod("getY", "unmarkedFrame", function(object) object@y)
-
-
-setGeneric("plotArea", function(object) standardGeneric("plotArea"))
-setMethod("plotArea", "unmarkedFrame", function(object) object@plotArea)
-setGeneric("plotArea<-", function(object, value) standardGeneric("plotArea<-"))
-setReplaceMethod("plotArea", "unmarkedFrame", function(object, value) {
-			object@plotArea <- value
-			object
-		})
 
 
 setGeneric("coordinates", function(object) standardGeneric("coordinates"))
@@ -487,7 +473,6 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
           umf@y <- y
           umf@siteCovs <- siteCovs
           umf@obsCovs <- obsCovs
-          umf@plotArea <- umf@plotArea[i]
           umf
 	})
 
@@ -629,7 +614,6 @@ setMethod("powerAnalysis", c("formula", "unmarkedFramePCount", "numeric"),
     	V <- designMats$V
     	y <- designMats$y
 #		y[] <- NA	# Safety
-		plotArea <- designMats$plotArea
     	J <- ncol(y)
     	M <- nrow(y)
    	    nDP <- ncol(V)
@@ -637,7 +621,7 @@ setMethod("powerAnalysis", c("formula", "unmarkedFramePCount", "numeric"),
 	    nP <- nAP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
         lamParms <- coefs[(nDP+1):(nDP+nAP)]
     	detParms <- coefs[1:nDP]
-		lambda <- exp(X %*% lamParms) * plotArea
+		lambda <- exp(X %*% lamParms) 
 		p <- plogis(V %*% detParms)
 		umf <- data
 		fits <- list()

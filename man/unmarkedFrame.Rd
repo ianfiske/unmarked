@@ -5,7 +5,7 @@
 \alias{unmarkedFramePCount}
 \alias{unmarkedFrameDS}
 \alias{unmarkedFrameMPois}
-\usage{unmarkedFrame(y, siteCovs=NULL, obsCovs=NULL, mapInfo, plotArea, obsToY)}
+\usage{unmarkedFrame(y, siteCovs=NULL, obsCovs=NULL, mapInfo, obsToY)}
 \description{Constructor for unmarkedFrames.}
 \arguments{
 	\item{y}{A matrix of the observed measured data.}
@@ -16,9 +16,6 @@
 	\item{obsToY}{optional matrix specifying relationship between 
 		observation-level covariates and response matrix}
 	\item{mapInfo}{geographic coordinate information}
-	\item{plotArea}{Vector of length M of plot areas. If specified, density 
-		rather than abundance will be modeled...for abundance models. 
-		Ignored by occupancy models.}
 }
 \details{unmarkedFrame is the S4 class that holds data structures to be passed 
 to the model-fitting functions in unmarked.
@@ -34,7 +31,7 @@ corresponding sites.
 then observation number.  Missing values are coded with \code{NA} in any of y, 
 siteCovs, or obsCovs.
 
-Additionally, unmarkedFrames contain metadata: obsToY, plotArea, mapInfo. 
+Additionally, unmarkedFrames contain metadata: obsToY, mapInfo. 
 ObsToY is a matrix describing relationship between response matrix and 
 observation-level covariates. Generally this does not need to be supplied by
 the user; however, it may be needed when using \code{\link{multinomPois}}. For

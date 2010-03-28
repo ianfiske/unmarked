@@ -659,11 +659,11 @@ getDesign2 <- function(formula, umf, na.rm = TRUE) {
 	if(na.rm)
 		out <- handleNA2(umf, X, V)
 	else
-		out <- list(y=getY(umf), X=X, V=V, plotArea=umf@plotArea, 
+		out <- list(y=getY(umf), X=X, V=V, 
 			removed.sites=integer(0))
-	
+
 	return(list(y = out$y, X = out$X, V = out$V, 
-		plotArea = out$plotArea, removed.sites = out$removed.sites))
+		removed.sites = out$removed.sites))
 }
 
 # TODO: use methods so that this is for multframe
@@ -742,11 +742,11 @@ getDesign3 <- function(formula, umf, na.rm = TRUE) {
 		out <- handleNA3(umf, X.gam, X.eps, W, V)
 	else
 		out <- list(y=getY(umf), X.gam=X.gam, X.eps=X.eps,
-                            W=W,V=V, plotArea=umf@plotArea, 
+                            W=W,V=V,
 				removed.sites=integer(0))
 	
 	return(list(y = out$y, X.eps = out$X.eps, X.gam = out$X.gam,
-                    W = out$W, V = out$V, plotArea = out$plotArea,
+                    W = out$W, V = out$V,
                     removed.sites = out$removed.sites))
 }
 
@@ -758,12 +758,6 @@ handleNA2 <- function(umf, X, V) {
 	J <- numY(umf)
 	R <- obsNum(umf)
 	M <- numSites(umf)
-
-	plotArea <- umf@plotArea
-	if(all(is.na(plotArea))) 	# Necessary b/c distsamp calculates plot areas w/in the function when all(is.na(plotArea))
-		plotArea.na <- rep(FALSE, length(plotArea))
-	else
-		plotArea.na <- is.na(plotArea)
 	
 	X.long <- X[rep(1:M, each = J),]
 	X.long.na <- is.na(X.long)
@@ -792,18 +786,16 @@ handleNA2 <- function(umf, X, V) {
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
-	#sites.to.remove <- sites.to.remove | plotArea.na
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
 		y <- y[!sites.to.remove, ,drop = FALSE]
 		X <- X[!sites.to.remove, ,drop = FALSE]
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
-		plotArea <- plotArea[!sites.to.remove]
 		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
 	}
 	
-	list(y = y, X = X, V = V, plotArea = plotArea, removed.sites = which(sites.to.remove))
+	list(y = y, X = X, V = V, removed.sites = which(sites.to.remove))
 }
 
 
@@ -819,11 +811,11 @@ handleNA3 <- function(umf, X.gam, X.eps, W, V) {
         ## treat both X's and W together
         X <- cbind(X.gam, X.eps, W[rep(1:M, each = nY), ])
 
-	plotArea <- umf@plotArea
-	if(all(is.na(plotArea))) 	# Necessary b/c distsamp calculates plot areas w/in the function when all(is.na(plotArea))
-		plotArea.na <- rep(FALSE, length(plotArea))
-	else
-		plotArea.na <- is.na(plotArea)
+
+	## if(all(is.na(plotArea))) 	# Necessary b/c distsamp calculates plot areas w/in the function when all(is.na(plotArea))
+	## 	plotArea.na <- rep(FALSE, length(plotArea))
+	## else
+	## 	plotArea.na <- is.na(plotArea)
 	
 	X.na <- is.na(X)
 	X.na[seq(nY,M*nY,by=nY),] <- FALSE  ## final years are unimportant (not used).
@@ -853,7 +845,6 @@ handleNA3 <- function(umf, X.gam, X.eps, W, V) {
 	
 	y <- matrix(y.long, M, numY(umf), byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
-	#sites.to.remove <- sites.to.remove | plotArea.na
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
@@ -862,11 +853,10 @@ handleNA3 <- function(umf, X.gam, X.eps, W, V) {
                 X.eps <- X.eps[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
                 W <- X[!sites.to.remove, drop = FALSE]
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
-		plotArea <- plotArea[!sites.to.remove]
 		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
 	}
 	list(y = y, X.gam = X.gam, X.eps = X.eps, W = W,
-             V = V, plotArea = plotArea,
+             V = V,
              removed.sites = which(sites.to.remove))
 }
 

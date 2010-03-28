@@ -10,7 +10,6 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
 
 	designMats <- getDesign2(formula, data)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
-	plotArea <- designMats$plotArea
 
 	J <- ncol(y)
 	M <- nrow(y)
@@ -38,7 +37,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
 	ijk.to.ikj <- with(ijk, order(i, k, j)) 
 
 	nll <- function(parms){
-		theta.i <- exp(X %*% parms[1 : nAP]) * plotArea
+		theta.i <- exp(X %*% parms[1 : nAP]) 
 		p.ij <- plogis(V %*% parms[(nAP + 1) : (nAP + nDP)])
 		theta.ik <- rep(theta.i, each = K + 1)
 		p.ijk <- rep(p.ij, each = K + 1)
@@ -78,7 +77,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
 	}
 	fmAIC <- 2 * fm$value + 2 * nP
 	
-	stateName <- ifelse(all(data@plotArea == 1), "Abundance", "Density")
+	stateName <- "Abundance"
 	
 	stateEstimates <- unmarkedEstimate(name = stateName, short.name = "lam",
 		estimates = ests[1:nAP], covMat = as.matrix(covMat[1:nAP,1:nAP]), 

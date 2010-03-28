@@ -5,8 +5,7 @@
 \alias{yearlySiteCovs<-}
 \alias{yearlySiteCovs<-,unmarkedMultFrame-method}
 \title{Create an unmarkedMultFrame.}
-\usage{unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs,
-    plotArea)}
+\usage{unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)}
 \description{This function constructs an unmarkedMultFrame object.}
 
 \details{unmarkedMultFrame objects are used by
@@ -31,5 +30,4 @@ If the data are in long format, the convenience function
 \item{siteCovs}{Data frame of covariates that vary at the site level.}
 \item{obsCovs}{Data frame of covariates that vary within site-year-observation level.}
 \item{numPrimary}{Number of primary time periods (seasons in the multiseason model).}
-\item{yearlySiteCovs}{Data frame containing covariates at the site-year level.}
-\item{plotArea}{optional vector of plot areas.}}
+\item{yearlySiteCovs}{Data frame containing covariates at the site-year level.}}

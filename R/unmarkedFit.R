@@ -286,10 +286,10 @@ setMethod("fitted", "unmarkedFit",
           function(object, na.rm = FALSE) {
             data <- object@data
             des <- getDesign2(object@formula, data, na.rm = na.rm)
-            X <- des$X; V <- des$V; a <- des$plotArea
+            X <- des$X; V <- des$V
             state <- do.call(object['state']@invlink, 
                              list(X %*% coef(object, 'state')))
-            state <- as.numeric(state) * a  ## E(X) for most models
+            state <- as.numeric(state)  ## E(X) for most models
             p <- getP(object, na.rm = na.rm) # P(detection | presence)
             fitted <- state * p  # true for models with E[Y] = p * E[X]
             fitted
@@ -301,7 +301,7 @@ setMethod("fitted", "unmarkedFitOccu",
           function(object, na.rm = FALSE) {
             data <- object@data
             des <- getDesign2(object@formula, data, na.rm = na.rm)
-            X <- des$X; V <- des$V; a <- des$plotArea
+            X <- des$X; V <- des$V
             state <- plogis(X %*% coef(object, 'state'))
             state <- as.numeric(state)  ## E(X) for most models
             state[object@knownOcc] <- 1
@@ -316,7 +316,7 @@ setMethod("fitted", "unmarkedFitPCount",
           function(object, K, na.rm = FALSE) {
             data <- object@data
             des <- getDesign2(object@formula, data, na.rm = na.rm)
-            X <- des$X; V <- des$V; a <- des$plotArea
+            X <- des$X; V <- des$V
             y <- des$y	# getY(data) ... to be consistent w/NA handling?
             M <- nrow(X)
             J <- ncol(y)
@@ -348,7 +348,7 @@ setMethod("fitted", "unmarkedFitOccuRN",
           function(object, K, na.rm = FALSE) {
             data <- object@data
             des <- getDesign2(object@formula, data, na.rm = na.rm)
-            X <- des$X; V <- des$V; a <- des$plotArea
+            X <- des$X; V <- des$V
             y <- des$y	# getY(data) ... to be consistent w/NA handling?
             y <- truncateToBinary(y)
             M <- nrow(X)
@@ -821,12 +821,12 @@ setMethod("simulate", "unmarkedFitDS",
             designMats <- getDesign2(formula, umf, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
-            a <- designMats$plotArea
+#            a <- designMats$plotArea
             M <- nrow(y)
             J <- ncol(y)
             lamParms <- coef(object, type = "state")
             lam <- as.numeric(exp(X %*% lamParms))
-            lamvec <- rep(lam, each = J) * a
+            lamvec <- rep(lam, each = J) #* a
             pvec <- c(t(getP(object, na.rm = na.rm)))
             simList <- list()
             for(i in 1:nsim) {
@@ -847,12 +847,11 @@ setMethod("simulate", "unmarkedFitPCount",
             designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
-            a <- designMats$plotArea
             M <- nrow(y)
             J <- ncol(y)
             allParms <- coef(object, altNames = FALSE)
             lamParms <- coef(object, type = "state")
-            lam <- as.numeric(exp(X %*% lamParms)) * a
+            lam <- as.numeric(exp(X %*% lamParms)) 
             lamvec <- rep(lam, each = J)
             pvec <- c(t(getP(object, na.rm = na.rm)))
             mix <- object@mixture
@@ -880,12 +879,11 @@ setMethod("simulate", "unmarkedFitMPois",
             designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
-            a <- designMats$plotArea
             M <- nrow(y)
             J <- ncol(y)
             lamParms <- coef(object, type = "state")
             lam <- as.numeric(exp(X %*% lamParms))
-            lamvec <- rep(lam, each = J) * a
+            lamvec <- rep(lam, each = J)
             pivec <- as.vector(t(getP(object, na.rm = na.rm)))
             simList <- list()
             for(i in 1:nsim) {

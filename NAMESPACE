@@ -21,8 +21,8 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData, getP,
 	obsCovs, obsNum, "obsCovs<-", obsToY, "obsToY<-", parboot, plot, hist, 
 	predict, profile, projection, powerAnalysis, residuals, sampleSize, SE, 
 	show, simulate, siteCovs, "siteCovs<-", summary, update, vcov, 
-	yearlySiteCovs, "yearlySiteCovs<-", "[", smoothed, projected, plotArea, 
-	"plotArea<-", nonparboot)
+	yearlySiteCovs, "yearlySiteCovs<-", "[", smoothed, projected, 
+	nonparboot)
 
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame, unmarkedFrameOccu,
