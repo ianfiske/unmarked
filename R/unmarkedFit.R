@@ -814,27 +814,30 @@ setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
 
 
 setMethod("simulate", "unmarkedFitDS", 
-          function(object, nsim = 1, seed = NULL, na.rm=TRUE)
-          {
-            formula <- object@formula
-            umf <- object@data
-            designMats <- getDesign2(formula, umf, na.rm = na.rm)
-            y <- designMats$y
-            X <- designMats$X
-#            a <- designMats$plotArea
-            M <- nrow(y)
-            J <- ncol(y)
-            lamParms <- coef(object, type = "state")
-            lam <- as.numeric(exp(X %*% lamParms))
-            lamvec <- rep(lam, each = J) #* a
-            pvec <- c(t(getP(object, na.rm = na.rm)))
-            simList <- list()
-            for(i in 1:nsim) {
-              yvec <- rpois(M * J, lamvec * pvec)
-              simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
-            }
-            return(simList)
-          })
+    function(object, nsim = 1, seed = NULL, na.rm=TRUE)
+    {
+    formula <- object@formula
+    umf <- object@data
+    designMats <- getDesign2(formula, umf, na.rm = na.rm)
+    y <- designMats$y
+    X <- designMats$X
+    a <- calcAreas(dist.breaks = umf@dist.breaks, tlength = umf@tlength, 
+	   survey = umf@survey, output = object@output, M = numSites(umf), 
+	   J = ncol(getY(umf)), unitsIn = umf@unitsIn, unitsOut = object@unitsOut)
+    if(length(designMats$removed.sites)>0)
+        a <- a[-designMats$removed.sites,]
+    M <- nrow(y)
+    J <- ncol(y)
+    lamParms <- coef(object, type = "state")
+    lam <- drop(exp(X %*% lamParms))
+    pmat <- getP(object, na.rm = na.rm)
+    simList <- list()
+    for(i in 1:nsim) {
+        yvec <- rpois(M * J, lam * pmat * a)
+        simList[[i]] <- matrix(yvec, M, J)
+        }
+    return(simList)
+    })
 
 
 

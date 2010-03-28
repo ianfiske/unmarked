@@ -19,19 +19,14 @@ if(output == "abund" & length(table(tlength)) > 1)
 	warning("Response is individuals per unit transect length")		
 designMats <- getDesign2(formula, data)
 X <- designMats$X; V <- designMats$V; y <- designMats$y
-if(all(is.na(data@plotArea)) || is.null(data@plotArea)) {
-	a <- calcAreas(dist.breaks = db, tlength = tlength, 
-		survey = survey, output = output, M = numSites(data), 
-		J = ncol(getY(data)), unitsIn = unitsIn, unitsOut = unitsOut)
-	a <- c(t(a))
-	data@plotArea <- a
-      } else if(length(designMats$removed.sites)>0) {
-        data@plotArea <- data@plotArea[-designMats$removed.sites]
-      }
+a <- calcAreas(dist.breaks = db, tlength = tlength, 
+	survey = survey, output = output, M = numSites(data), 
+	J = ncol(getY(data)), unitsIn = unitsIn, unitsOut = unitsOut)
+if(length(designMats$removed.sites)>0)
+    a <- a[-designMats$removed.sites,]
 M <- nrow(y)
 J <- ncol(y)
 namat <- is.na(y)
-a <- matrix(data@plotArea, M, J, byrow=TRUE)
 lamParms <- colnames(X)
 detParms <- colnames(V)
 nAP <- length(lamParms)

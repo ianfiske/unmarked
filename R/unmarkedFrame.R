@@ -41,8 +41,7 @@ setClass("unmarkedFrameDS",
 		dist.breaks = "numeric",
 		tlength = "numeric",
 		survey = "character",
-		unitsIn = "character",
-                plotArea = "numeric"),
+		unitsIn = "character"),
 	contains = "unmarkedFrame",
 	validity = function(object) {
 		errors <- character(0)
@@ -108,19 +107,11 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
 		unitsIn, mapInfo = NULL, plotArea = NULL)
 {
-	if(is.null(plotArea))
-		plotArea <- as.numeric(rep(NA, nrow(y)))
-	else {
-		if(is.matrix(plotArea))
-			plotArea <- c(t(plotArea))
-		else
-			stop("plotArea must be NULL or an M x J matrix of plot areas in same units as unitsOut argument to be used in distsamp")
-		}
 	if(missing(tlength) & survey == "point")
 		tlength <- numeric(0)
 	umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
 			siteCovs = siteCovs, dist.breaks = dist.breaks, tlength = tlength,
-			survey = survey, unitsIn = unitsIn, plotArea = plotArea,
+			survey = survey, unitsIn = unitsIn,
 			obsToY = matrix(1, 1, ncol(y)))
 	return(umfds)
 }
@@ -339,8 +330,7 @@ setMethod("summary", "unmarkedFrameDS",
 	cat("unmarkedFrameDS Object\n\n")
 	cat(object@survey, "-transect survey design", "\n", sep="")
 	cat(paste("Distance class cutpoints (", object@unitsIn, "): ", sep=""), 
-		object@dist.breaks, "\n")
-	cat("plot area information supplied? :", !all(is.na(object@plotArea)), "\n\n")
+		object@dist.breaks, "\n\n")
 	cat(nrow(object@y), "sites\n")
 	cat("Maximum number of distance classes per site:", ncol(getY(object)), "\n")
 		mean.dc <- mean(rowSums(!is.na(getY(object))))
