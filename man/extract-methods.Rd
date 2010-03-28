@@ -46,6 +46,7 @@ Methods for bracket extraction \code{[} in Package `unmarked'
 
 \item{x = "unmarkedMultFrame", i = "missing", j = "numeric", drop = "missing"}{
 	Extract primary sampling periods from an unmarkedMultFrame}
+
 \item{x = "unmarkedFrame", i = "list", j = "missing", drop = "missing"}{ 
 	List is the index of observations to subset for each site. }
 }}

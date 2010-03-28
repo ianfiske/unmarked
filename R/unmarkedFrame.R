@@ -75,15 +75,6 @@ setClass("unmarkedFrameMPois",
 			piFun = "character"),
 		contains = "unmarkedFrame")
 
-		
-setClass("unmarkedFramePCountOpen",
-		representation(
-			delta = "matrix"),
-		contains = "unmarkedFrame")
-
-
-
-
 ################### CONSTRUCTORS ###############################################
 
 # Constructor for unmarkedFrames.
@@ -202,41 +193,6 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 	umf@samplingMethod <- type
 	umf
 }
-
-
-
-unmarkedFramePCountOpen <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
- 	plotArea = NULL, delta) 
-{
-	J <- ncol(y)
-	if(missing(plotArea) || is.null(plotArea)) plotArea <- rep(1, nrow(y))		
-	if(missing(delta))
-		delta <- matrix(1, nrow(y), ncol(y) - 1)
-	if(nrow(delta) != nrow(y) | ncol(delta) != ncol(y) - 1)
-		stop("Dimensions of delta matrix should be nrow(y), ncol(y)-1")
-	if(any(delta < 0, na.rm=TRUE))
-	   stop("Negative delta values not allowed.")
-    if(class(obsCovs) == "list") {
-		obsVars <- names(obsCovs)
-    for(i in seq(length(obsVars))) {
-    	if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
-        	stop("At least one element of obsCovs is not a matrix or data frame.")
-    	if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
-        	stop("At least one matrix in obsCovs has incorrect number of dimensions.")
-    	}
-	if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
-	obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
-  	}
-	umf <- new("unmarkedFramePCountOpen", y = y, siteCovs = siteCovs, 
-		obsCovs = obsCovs, obsToY = diag(J), 
-		plotArea = plotArea, delta = delta)
-	return(umf)
-}
-
-
-
-
-
 
 ################ SHOW METHODS ##################################################
 

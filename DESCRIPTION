@@ -15,6 +15,6 @@ LazyData: yes
 Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'unmarkedFit.R' 'utils.R' 'colext.R' 'distsamp.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R'
-    'pcountOpen.R' 'unmarkedFitList.R' 'unmarkedLinComb.R'
+    'unmarkedFitList.R' 'unmarkedLinComb.R'
 Encoding: UTF-8
 URL: http://groups.google.com/group/unmarked, http://github.com/ianfiske/unmarked
