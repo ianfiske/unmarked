@@ -297,6 +297,24 @@ setMethod("fitted", "unmarkedFit",
 
 
 
+setMethod("fitted", "unmarkedFitDS", function(object, na.rm = FALSE) 
+{
+    data <- object@data
+    D <- getDesign2(object@formula, data, na.rm = na.rm)
+    X <- D$X
+    lambda <- drop(exp(X %*% coef(object, 'state')))
+    a <- calcAreas(dist.breaks = data@dist.breaks, tlength = data@tlength, 
+	   survey = data@survey, output = object@output, M = numSites(data), 
+	   J = ncol(getY(data)), unitsIn = data@unitsIn, unitsOut = object@unitsOut)
+    if(length(D$removed.sites)>0)
+        a <- a[-D$removed.sites,]
+    p <- getP(object, na.rm = na.rm)
+    fitted <- lambda * p * a
+    fitted
+})		
+
+
+
 setMethod("fitted", "unmarkedFitOccu",
           function(object, na.rm = FALSE) {
             data <- object@data

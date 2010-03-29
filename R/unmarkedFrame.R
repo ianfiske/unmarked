@@ -105,7 +105,7 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 
 
 unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
-		unitsIn, mapInfo = NULL, plotArea = NULL)
+		unitsIn, mapInfo = NULL)
 {
 	if(missing(tlength) & survey == "point")
 		tlength <- numeric(0)
