@@ -6,6 +6,7 @@
 \alias{fitted,unmarkedFitOccu-method}
 \alias{fitted,unmarkedFitOccuRN-method}
 \alias{fitted,unmarkedFitPCount-method}
+\alias{fitted,unmarkedFitDS-method}
 \title{Methods for Function fitted in Package `unmarked'}
 \description{Extracted fitted values from a fitted model.
 }
@@ -15,6 +16,7 @@
 \S4method{fitted}{unmarkedFitOccu}(object, na.rm = FALSE)
 \S4method{fitted}{unmarkedFitOccuRN}(object, K, na.rm = FALSE)
 \S4method{fitted}{unmarkedFitPCount}(object, K, na.rm = FALSE)
+\S4method{fitted}{unmarkedFitDS}(object, na.rm = FALSE)
 }
 \arguments{
 \item{object}{A fitted model of appropriate S4 class}
@@ -28,6 +30,7 @@
 \item{object = "unmarkedFitOccu"}{A model fit by \code{\link{occu}}}
 \item{object = "unmarkedFitOccuRN"}{A model fit by \code{\link{occuRN}}}
 \item{object = "unmarkedFitPCount"}{A model fit by \code{\link{pcount}}}
+\item{object = "unmarkedFitDS"}{A model fit by \code{\link{distsamp}}}
 }}
 \value{Returns a matrix of expected values}
 \keyword{methods}
