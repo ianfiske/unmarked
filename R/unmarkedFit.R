@@ -1055,55 +1055,46 @@ setGeneric("parboot",
 
 
 setClass("parboot",
-         representation(fitType = "character",
-                        call = "call",
+         representation(call = "call",
                         t0 = "numeric",
-                        t.star = "numeric")
-         )
+                        t.star = "matrix"))
+         
 
-
-                                        # Evaluate goodness-of-fit of a fitted model. 
-setMethod("parboot", "unmarkedFit", function(object, nsim=10, report=2, ...)  
-          {
-            call <- match.call(call = sys.call(-1))
-            formula <- object@formula
-            umf <- object@data
-            dataClass <- class(umf)
-            if(dataClass[1] == "unmarkedMultFrame") {
-              formulaList <- list(psiformula=object@psiformula,
-                                  gammaformula=object@gamformula,
-                                  epsilonformula=object@epsformula,
-                                  pformula=object@detformula)
-              designMats <- getDesign3(formulaList, umf, na.rm = FALSE)
-            } else	
-            designMats <- getDesign2(formula, umf, na.rm = FALSE)
-            y <- designMats$y
-            if(class(object) %in% c("unmarkedFitOccu", "unmarkedFitOccuRN", 
-                                    "unmarkedFitColExt"))
-              y <- truncateToBinary(y)
-            yvec0 <- c(t(y))
-            ests <- as.numeric(coef(object, altNames = TRUE))
-            expected0 <- as.vector(t(fitted(object, na.rm = FALSE))) 
-            rmse0 <- sqrt(sum((sqrt(yvec0) - sqrt(expected0))^2, na.rm = TRUE))
-            cat("t0 =", rmse0, "\n")      
-            rmse <- numeric(nsim)
-            fits <- list()
-            simdata <- umf
-            simList <- simulate(object, nsim = nsim, na.rm = FALSE)
-            for(i in 1:nsim) {
-              y.sim <- simList[[i]]
-              is.na(y.sim) <- is.na(y)
-              yvec <- c(t(y.sim))
-              simdata@y <- y.sim
-              fits[[i]] <- update(object, data = simdata, starts = ests, se = F, ...)
-              expected <- as.vector(t(fitted(fits[[i]], na.rm = FALSE)))
-              rmse[i] <- sqrt(sum((sqrt(yvec) - sqrt(expected))^2, na.rm = TRUE))
-              if(nsim > report && i %in% seq(report, nsim, by=report))
-                cat(paste(round(rmse[(i-(report-1)):i], 1), collapse=", "), fill=T)
-            }
-            out <- new("parboot", call=call, t0 = rmse0, t.star = rmse)
-            return(out)
-          })
+setMethod("parboot", "unmarkedFit", 
+    function(object, statistic=SSE, nsim=10, report=2, ...) 
+    {
+    statistic <- match.fun(statistic)
+    call <- match.call(call = sys.call(-1))
+    formula <- object@formula
+    umf <- getData(object)
+    y <- getY(umf)
+    if(class(object) %in% c("unmarkedFitOccu", "unmarkedFitOccuRN", 
+        "unmarkedFitColExt"))
+            y <- truncateToBinary(y)
+    ests <- as.numeric(coef(object))
+    t0 <- statistic(object, ...)
+    lt0 <- length(t0)
+    t.star <- matrix(NA, nsim, lt0)
+    if(!is.null(names(t0)))
+        colnames(t.star) <- names(t0)
+    else colnames(t.star) <- paste("t*", 1:lt0, sep="")
+    cat("t0 =", t0, "\n")      
+    fits <- list()
+    simdata <- umf
+    simList <- simulate(object, nsim = nsim, na.rm = FALSE)
+    for(i in 1:nsim) {
+        y.sim <- simList[[i]]
+        is.na(y.sim) <- is.na(y)
+        simdata@y <- y.sim
+        fits[[i]] <- update(object, data=simdata, starts=ests, se=FALSE, ...)
+        t.star[i,] <- statistic(fits[[i]], ...)
+        if(nsim > report && i %in% seq(report, nsim, by=report))
+            cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=", "), 
+                fill=TRUE)
+        }
+    out <- new("parboot", call=call, t0 = t0, t.star = t.star)
+    return(out)
+    })
 
 
 
@@ -1114,42 +1105,42 @@ setMethod("show", "parboot", function(object)
           {
             t.star <- object@t.star
             t0 <- object@t0
-            bias <- mean(t0 - t.star)
-            bias.se <- sd(t0 - t.star)
-            nsim <- length(t.star)
-            p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
-            stats <- c("original" = t0, "bias" = bias, "Std. error" = bias.se, 
-                       "p.value" = p.val)
+            nsim <- nrow(t.star)
+            biasMat <- pMat <- matrix(NA, nsim, length(t0))
+            for(i in 1:nsim) {
+                biasMat[i,] <- t0 - t.star[i,]
+                pMat[i,] <- abs(t.star[i,] - 1) > abs(t0 - 1)
+                }
+            bias <- colMeans(biasMat)
+            bias.se <- apply(biasMat, 2, sd)
+            p.val <- colSums(pMat) / (1 + nsim)
+            stats <- data.frame("t0" = t0, "mean(t0 - t_B)" = bias, 
+                "StdDev(t0 - t_B)" = bias.se, "Pr(t_B > t0)" = p.val, 
+                check.names = FALSE)
             cat("\nCall:", deparse(object@call, width=500), fill=T)
-            cat("\nBootstrap Statistics:\n")
+            cat("\nParametric Bootstrap Statistics:\n")
             print(stats, digits=3)
-            cat("\nt quantiles:\n")
-            print(quantile(t.star, probs=c(0,2.5,25,50,75,97.5,100)/100))        
+            cat("\nt_B quantiles:\n")
+            print(t(apply(t.star, 2, quantile, 
+                probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
+            cat("\nt0 = Original statistic compuated from data\n")
+            cat("t_B = Vector of bootstrap samples\n\n")
           })
 
 
 
 
-setMethod("plot", signature(x="parboot", y="missing"), function(x, y, ...)
-          {
-                                        #			op <- par(mfrow=c(1, 2))
-            t.star <- x@t.star
-            t0 <- x@t0
-            t.t0 <- c(t.star, t0)
-            bias <- mean(t0 - t.star)
-            bias.se <- sd(t0 - t.star)
-            nsim <- length(t.star)
-            p.val <- sum(abs(t.star - 1) > abs(t0 - 1)) / (1 + nsim)
-            hist(t.star, xlim=c(min(floor(t.t0)), max(ceiling(t.t0))), 
-                 main=paste("P =", round(p.val, 4), "; nsim =", format(nsim)), 
-                 xlab="t*")
-            rug(t.star)
-            abline(v=t0, lty=2)
-                                        #			qqnorm(t.star, ylab="t*")
-                                        #			qqline(t.star)
-                                        #			title(outer=T, ...)
-                                        #			par(op)
-          })
+setMethod("plot", signature(x="parboot", y="missing"), 
+    function(x, y, ...)
+    {
+        t.star <- x@t.star
+        t0 <- x@t0
+        for(i in 1:length(t0)) {
+            hist(t.star[,i], xlab=colnames(t.star)[i], ...)
+            abline(v=t0[i], lty=2)
+            devAskNewPage(ask = TRUE)
+            }
+    })
 
 
 ############################### Nonparametric bootstrapping ###########################

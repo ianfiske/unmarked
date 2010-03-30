@@ -999,3 +999,9 @@ if(any(0 > sightangle | sightangle > 180))
 sightdist * sin(sightangle * pi / 180)
 }
 
+
+
+SSE <- function(fit) {
+    sse <- sum(residuals(fit)^2, na.rm=TRUE)
+    return(c(SSE=sse))
+    }
