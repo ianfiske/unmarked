@@ -156,7 +156,7 @@ opt <- fm
 ests <- fm$par
 if(se) {
 	covMat <- tryCatch(solve(fm$hessian), error=function(x) 
-		simpleError("Hessian is not invertible. Try using fewer covariates or providing starting values."))
+		stop(simpleError("Hessian is singular. Try using fewer covariates or providing starting values.")))
 	if(class(covMat)[1] == "simpleError") {
 		print(covMat$message)
 		covMat <- matrix(NA, nP, nP)

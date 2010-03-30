@@ -71,7 +71,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
 	names(ests) <- c(lamParms, detParms, nbParm)
 	if(se) {
 		tryCatch(covMat <- solve(fm$hessian),
-				error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+				error=function(x) stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
 	} else {
 		covMat <- matrix(NA, nP, nP)
 	}

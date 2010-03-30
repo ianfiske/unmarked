@@ -44,7 +44,7 @@ occu <- function(formula, data, knownOcc = numeric(0), starts, method = "BFGS",
 	opt <- fm
 	if(se) {
 		tryCatch(covMat <- solve(fm$hessian),
-			error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+			error=function(x) stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
 	} else {
 		covMat <- matrix(NA, nP, nP)
 	}

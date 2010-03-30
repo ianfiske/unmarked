@@ -45,7 +45,7 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
   
   if(se) {
     tryCatch(covMat <- solve(opt$hessian),
-             error=function(x) simpleError("Hessian is not invertible.  Try using fewer covariates."))
+             error=function(x) stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
   } else {
     covMat <- matrix(NA, nP, nP)
   }
