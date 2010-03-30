@@ -1,41 +1,70 @@
-test.occu.fit <- function() {
-	M <- 50
-	J <- 4
-	
-	# simulation with factors
-	detParms <- c(-0.5, 0.5)
-	occParms <- c(0, 1, 0, 0.5, 1, 1)
-	
-	abundance.cov1 <- rnorm(M)
-	abundance.cov2 <- as.factor(rep(1:5, each = M/5))
-	detection.cov <- rnorm(M*J)
-	X <- model.matrix(~ abundance.cov1 + abundance.cov2)
-	V <- cbind(rep(1, M*J), detection.cov)
-	
-	psi.probs <- plogis(X %*% occParms)
-	occ <- rbinom(M, 1, psi.probs)
-	
-	p <- plogis(V %*% detParms)
-	p <- matrix(p, M, J, byrow = TRUE)
-	
-	y <- matrix(NA, M, J)
-	for(i in 1:J) {
-		y[,i] <- rbinom(M, 1, p[,i])*occ
-	}
-	
-	#abundance.cov1[sample(1:M, 100)] <- NA
-	#detection.cov[sample(1:M, 100)] <- NA
-	umf <- unmarkedFrameOccu(y,
-			siteCovs = data.frame(abundance.cov1, abundance.cov2),
-			obsCovs = data.frame(detection.cov))
-	
-	fm <- occu(~detection.cov ~ abundance.cov1 + abundance.cov2 , umf)
-	
-	## check that detection is w/in 3 SE of truth
-	checkTrue(all(detParms - 3*SE(fm['det']) < coef(fm,'det')) &
-			all(coef(fm,'det') < detParms + 3*SE(fm['det'])))
+test.occu.fit.simple.1 <- function() {
+  
+  y <- matrix(rep(1,10),5,2)
+  umf <- unmarkedFrameOccu(y = y)
+  fm <- occu(~ 1 ~ 1, data = umf)
 
-	## check that occupancy params are w/in 3 SE of truth
-	checkTrue(all(occParms - 3*SE(fm['state']) < coef(fm,'state')) &
-				all(coef(fm,'state') < occParms + 3*SE(fm['state'])))
+  occ <- fm['state']
+  det <- fm['det']
+
+  occ <- coef(backTransform(occ))
+  checkEqualsNumeric(occ,1)
+
+  det <- coef(backTransform(det))
+  checkEqualsNumeric(det,1)
+
+}
+
+test.occu.fit.simple.0 <- function() {
+
+  y <- matrix(rep(0,10),5,2)
+  umf <- unmarkedFrameOccu(y = y)
+  fm <- occu(~ 1 ~ 1, data = umf)
+
+  occ <- fm['state']
+  det <- fm['det']
+
+  occ <- coef(backTransform(occ))
+  checkEqualsNumeric(occ, 0, tolerance = 1e-4)
+
+  det <- coef(backTransform(det))
+  checkEqualsNumeric(det,0, tolerance = 1e-4)
+
+}
+
+test.occu.fit.covs <- function() {
+
+  y <- matrix(rep(0:1,10),5,2)
+  siteCovs <- data.frame(x = c(0,2,3,4,1))
+  obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
+  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  fm <- occu(~ o1 + o2 ~ x, data = umf)
+  
+  occ <- fm['state']
+  det <- fm['det']
+
+  checkException(occ <- coef(backTransform(occ)))
+
+  checkEqualsNumeric(coef(occ), c(8.590737, 2.472220), tolerance = 1e-4)
+  checkEqualsNumeric(coef(det), c(0.44457, -0.14706, 0.44103), tolerance = 1e-4)
+
+  occ.lc <- linearComb(fm, type = 'state', c(1, 0.5))
+  det.lc <- linearComb(fm, type = 'det', c(1, 0.3, -0.3))
+    
+  checkEqualsNumeric(coef(occ.lc), 9.826848, tol = 1e-4)
+  checkEqualsNumeric(coef(det.lc), 0.2681477, tol = 1e-4)
+
+  checkEqualsNumeric(coef(backTransform(occ.lc)), 1, tol = 1e-4)
+  checkEqualsNumeric(coef(backTransform(det.lc)), 0.5666381, tol = 1e-4)
+
+}
+
+test.occu.fit.covs.0 <- function() {
+
+  y <- matrix(rep(0,10),5,2)
+  siteCovs <- data.frame(x = c(0,2,3,4,1))
+  obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
+  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  checkException(fm <- occu(~ o1 + o2 ~ x, data = umf))
+
 }
