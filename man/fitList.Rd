@@ -8,21 +8,27 @@
 \item{fits}{An alternative way of providing the models. A (preferrably named) list of fitted models.}
 }
 \examples{# Fit some N-mixture models
-data(mallard)
-mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
-obsCovs = mallard.obs)
+data(linetran)
+(dbreaksLine <- c(0, 5, 10, 15, 20)) 
+lengths <- linetran$Length * 1000
 
-fm1 <- pcount(~ ivel ~ length, mallardUMF)
-fm2 <- pcount(~ ivel ~ 1, mallardUMF)
-fm3 <- pcount(~ 1 ~ 1, mallardUMF)
+ltUMF <- with(linetran, {
+	unmarkedFrameDS(y = cbind(dc1, dc2, dc3, dc4), 
+	siteCovs = data.frame(Length, area, habitat), dist.breaks = dbreaksLine,
+	tlength = lengths, survey = "line", unitsIn = "m")
+	})
+
+fm1 <- distsamp(~ 1 ~1, ltUMF)
+fm2 <- distsamp(~ area ~1, ltUMF)
+fm3 <- distsamp( ~ 1 ~area, ltUMF)
 
 ## Two methods of creating an unmarkedFitList using fitList()
 
 # Method 1
-fmList <- fitList(Global=fm1, ivel.=fm2, Null=fm3)
+fmList <- fitList(Null=fm1, .area=fm2, area.=fm3)
 
 # Method 2. Note that the arugment name "fits" must be included in call.
-models <- list(Global=fm1, ivel.=fm2, Null=fm3)
+models <- list(Null=fm1, .area=fm2, area.=fm3)
 fmList <- fitList(fits = models)
 
 
