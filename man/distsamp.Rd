@@ -61,8 +61,8 @@ abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
 
 \seealso{\code{\link{unmarkedFit-class}} \code{\link{fitList}}, 
 	\code{\link{formatDistData}}, \code{\link{parboot}}, 
-    \code{\link{calcAreas}}, \code{\link{sight2perpdist}}, 
-    \code{\link{detFuns}}. Also look at vignette("distsamp").
+    \code{\link{sight2perpdist}}, \code{\link{detFuns}}. 
+    Also look at vignette("distsamp").
 	}
 
 
