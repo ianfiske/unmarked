@@ -52,6 +52,10 @@ Program. Herpetological Conservation and Biology. 4(3):389-402.
 \examples{data(frogs)
 umf <- formatMult(masspcru)
 obsCovs(umf) <- scale(obsCovs(umf))
+
+## Use 1/4 of data just for run speed in example
+umf <- umf[which((1:numSites(umf)) \%\% 4 == 0),]
+
 ## constant transition rates
 (fm <- colext(psiformula = ~ 1,
 gammaformula = ~ 1,
