@@ -13,6 +13,12 @@ test.occu.fit.simple.1 <- function() {
   det <- coef(backTransform(det))
   checkEqualsNumeric(det,1)
 
+  bt <- backTransform(fm, type = 'state')
+  checkEqualsNumeric(coef(bt), 1)
+
+  bt <- backTransform(fm, type = 'det')
+  checkEqualsNumeric(coef(bt), 1)
+
 }
 
 test.occu.fit.simple.0 <- function() {
@@ -29,6 +35,13 @@ test.occu.fit.simple.0 <- function() {
 
   det <- coef(backTransform(det))
   checkEqualsNumeric(det,0, tolerance = 1e-4)
+
+  bt <- backTransform(fm, type = 'state')
+  checkEqualsNumeric(coef(bt), 0, tolerance = 1e-4)
+
+  bt <- backTransform(fm, type = 'det')
+  checkEqualsNumeric(coef(bt), 0, tolerance = 1e-4)
+
 
 }
 
@@ -56,6 +69,9 @@ test.occu.fit.covs <- function() {
 
   checkEqualsNumeric(coef(backTransform(occ.lc)), 1, tol = 1e-4)
   checkEqualsNumeric(coef(backTransform(det.lc)), 0.5666381, tol = 1e-4)
+
+  checkException(backTransform(fm, type = "state"))
+  checkException(backTransform(fm, type = "det"))
 
 }
 

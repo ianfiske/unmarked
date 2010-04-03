@@ -134,8 +134,8 @@ setMethod("linearComb",
           })
 
 setMethod("backTransform", "unmarkedFit",
-          function(obj, whichEstimate) {
-            est <- obj[whichEstimate]
+          function(obj, type) {
+            est <- obj[type]
             if(length(est@estimates) == 1) {
               lc <- linearComb(est, 1)
               return(backTransform(lc))
@@ -173,7 +173,7 @@ setMethod("predict", "unmarkedFit",
         cls <- class(newdata)
         switch(cls, 
         unmarkedFrame = {
-            designMats <- getDesign2(formula, newdata, na.rm = na.rm)
+            designMats <- getDesign(newdata, formula, na.rm = na.rm)
             switch(type, 
                 state = X <- designMats$X,
                 det = X <- designMats$V)
@@ -285,7 +285,7 @@ setMethod("confint", "unmarkedFit",
 setMethod("fitted", "unmarkedFit",
           function(object, na.rm = FALSE) {
             data <- object@data
-            des <- getDesign2(object@formula, data, na.rm = na.rm)
+            des <- getDesign(data, object@formula, na.rm = na.rm)
             X <- des$X; V <- des$V
             state <- do.call(object['state']@invlink, 
                              list(X %*% coef(object, 'state')))
@@ -300,7 +300,7 @@ setMethod("fitted", "unmarkedFit",
 setMethod("fitted", "unmarkedFitDS", function(object, na.rm = FALSE) 
 {
     data <- object@data
-    D <- getDesign2(object@formula, data, na.rm = na.rm)
+    D <- getDesign(data, object@formula, na.rm = na.rm)
     X <- D$X
     lambda <- drop(exp(X %*% coef(object, 'state')))
     a <- calcAreas(dist.breaks = data@dist.breaks, tlength = data@tlength, 
@@ -318,7 +318,7 @@ setMethod("fitted", "unmarkedFitDS", function(object, na.rm = FALSE)
 setMethod("fitted", "unmarkedFitOccu",
           function(object, na.rm = FALSE) {
             data <- object@data
-            des <- getDesign2(object@formula, data, na.rm = na.rm)
+            des <- getDesign(data, object@formula, na.rm = na.rm)
             X <- des$X; V <- des$V
             state <- plogis(X %*% coef(object, 'state'))
             state <- as.numeric(state)  ## E(X) for most models
@@ -333,7 +333,7 @@ setMethod("fitted", "unmarkedFitOccu",
 setMethod("fitted", "unmarkedFitPCount",
           function(object, K, na.rm = FALSE) {
             data <- object@data
-            des <- getDesign2(object@formula, data, na.rm = na.rm)
+            des <- getDesign(data, object@formula, na.rm = na.rm)
             X <- des$X; V <- des$V
             y <- des$y	# getY(data) ... to be consistent w/NA handling?
             M <- nrow(X)
@@ -365,7 +365,7 @@ setMethod("fitted", "unmarkedFitPCount",
 setMethod("fitted", "unmarkedFitOccuRN", 
           function(object, K, na.rm = FALSE) {
             data <- object@data
-            des <- getDesign2(object@formula, data, na.rm = na.rm)
+            des <- getDesign(data, object@formula, na.rm = na.rm)
             X <- des$X; V <- des$V
             y <- des$y	# getY(data) ... to be consistent w/NA handling?
             y <- truncateToBinary(y)
@@ -411,9 +411,7 @@ setMethod("fitted", "unmarkedFitColExt",
                                 gammaformula=object@gamformula,
                                 epsilonformula=object@epsformula,
                                 pformula=object@detformula)
-            designMats <- getDesign3(formula = formulaList,
-                                     object@data)
-            designMats <- getDesign3(formula = formulaList, object@data)
+            designMats <- getDesign(object@data, formlist = formulaList)
             V.itj <- designMats$V
             X.it.gam <- designMats$X.gam
             X.it.eps <- designMats$X.eps
@@ -739,7 +737,7 @@ setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE)
             formula <- object@formula
             detformula <- as.formula(formula[[2]])
             umf <- object@data
-            designMats <- getDesign2(formula, umf, na.rm = na.rm)
+            designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             V <- designMats$V
             M <- nrow(y)
@@ -758,7 +756,7 @@ setMethod("getP", "unmarkedFitDS",
         formula <- object@formula
         detformula <- as.formula(formula[[2]])
         umf <- object@data
-        designMats <- getDesign2(formula, umf, na.rm = na.rm)
+        designMats <- getDesign(umf, formula, na.rm = na.rm)
         y <- designMats$y
         V <- designMats$V
         M <- nrow(y)
@@ -798,7 +796,7 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
             detformula <- as.formula(formula[[2]])
             piFun <- object@data@piFun
             umf <- object@data
-            designMats <- getDesign2(formula, umf, na.rm = na.rm)
+            designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             V <- designMats$V
             M <- nrow(y)
@@ -836,7 +834,7 @@ setMethod("simulate", "unmarkedFitDS",
     {
     formula <- object@formula
     umf <- object@data
-    designMats <- getDesign2(formula, umf, na.rm = na.rm)
+    designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
     X <- designMats$X
     a <- calcAreas(dist.breaks = umf@dist.breaks, tlength = umf@tlength, 
@@ -865,7 +863,7 @@ setMethod("simulate", "unmarkedFitPCount",
           {
             formula <- object@formula
             umf <- object@data
-            designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
+            designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
             M <- nrow(y)
@@ -897,7 +895,7 @@ setMethod("simulate", "unmarkedFitMPois",
           {
             formula <- object@formula
             umf <- object@data
-            designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
+            designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
             M <- nrow(y)
@@ -922,7 +920,7 @@ setMethod("simulate", "unmarkedFitOccu",
           {
             formula <- object@formula
             umf <- object@data
-            designMats <- getDesign2(formula, umf, na.rm = na.rm)
+            designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
             M <- nrow(y)
@@ -953,7 +951,7 @@ setMethod("simulate", "unmarkedFitColExt",
                                 gammaformula=object@gamformula,
                                 epsilonformula=object@epsformula,
                                 pformula=object@detformula)
-            designMats <- getDesign3(formula = formulaList, object@data)
+            designMats <- getDesign(object@data, formlist = formulaList)
             V.itj <- designMats$V
             X.it.gam <- designMats$X.gam
             X.it.eps <- designMats$X.eps
@@ -1019,7 +1017,7 @@ setMethod("simulate", "unmarkedFitOccuRN",
           function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
             formula <- object@formula
             umf <- object@data
-            designMats <- unmarked:::getDesign2(formula, umf, na.rm = na.rm)
+            designMats <- unmarked:::getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y; X <- designMats$X; V <- designMats$V
             M <- nrow(y)
             J <- ncol(y)
@@ -1160,7 +1158,7 @@ setMethod("nonparboot", "unmarkedFit",
             }
             data <- object@data
             formula <- object@formula
-            designMats <- getDesign2(formula, data)  # bootstrap only after removing sites
+            designMats <- getDesign(data, formula)  # bootstrap only after removing sites
             removed.sites <- designMats$removed.sites
             data <- data[-removed.sites,]
             y <- getY(data)
@@ -1239,7 +1237,7 @@ setMethod("nonparboot", "unmarkedFitColExt",
                                 gammaformula=object@gamformula,
                                 epsilonformula=object@epsformula,
                                 pformula=object@detformula)
-            designMats <- getDesign3(formula = formulaList, object@data)   # bootstrap only after removing sites
+            designMats <- getDesign(object@data, formlist = formulaList)   # bootstrap only after removing sites
             removed.sites <- designMats$removed.sites
             data <- data[-removed.sites,]
             y <- getY(data)

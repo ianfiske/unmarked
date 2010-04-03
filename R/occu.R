@@ -6,7 +6,7 @@ occu <- function(formula, data, knownOcc = numeric(0), starts, method = "BFGS",
 {
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 		
-	designMats <- getDesign2(formula, data)
+	designMats <- getDesign(data, formula)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y; removed <- designMats$removed.sites
 
 	y <- truncateToBinary(y)

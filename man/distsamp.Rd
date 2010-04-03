@@ -61,8 +61,8 @@ abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}
 
 \seealso{\code{\link{unmarkedFit-class}} \code{\link{fitList}}, 
 	\code{\link{formatDistData}}, \code{\link{parboot}}, 
-    \code{\link{calcAreas}}, \code{\link{sight2perpdist}}, 
-    \code{\link{detFuns}}. Also look at vignette("distsamp").
+    \code{\link{sight2perpdist}}, \code{\link{detFuns}}. 
+    Also look at vignette("distsamp").
 	}
 
 
@@ -87,38 +87,26 @@ hist(ltUMF)
 
 # Some methods to use on fitted model
 summary(fm1)
-backTransform(fm1, whichEstimate="state")       # animals / ha
+backTransform(fm1, type="state")       # animals / ha
 exp(coef(fm1, type="state", altNames=TRUE))     # same 
-backTransform(fm1, whichEstimate="det")         # half-normal SD
-vcov(fm1, altNames=TRUE)
-confint(fm1, type = "state")
+backTransform(fm1, type="det")         # half-normal SD
 hist(fm1, xlab="Distance (m)")	# Only works when there are no detection covars
 
-# Half-normal. Abundance output. No covariates. Note that transect length
-# must be accounted for so abundance is animals per km of transect.
-(fm2 <- distsamp(~ 1 ~ 1, ltUMF, output="abund", unitsOut="kmsq"))
-
 # Halfnormal. Covariates affecting both density and and detection.  
-(fm3 <- distsamp(~area + habitat ~ habitat, ltUMF))
-
-# Negative exponential detection function.
-(fm4 <- distsamp(~ 1 ~ 1, ltUMF, key="exp"))
+(fm2 <- distsamp(~area + habitat ~ habitat, ltUMF))
 
 # Hazard-rate detection function.
-(fm5 <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
+(fm3 <- distsamp(~ 1 ~ 1, ltUMF, keyfun="hazard"))
 
 # Plot detection function.
-fmhz.shape <- exp(coef(fm5, type="det"))
-fmhz.scale <- exp(coef(fm5, type="scale"))
+fmhz.shape <- exp(coef(fm3, type="det"))
+fmhz.scale <- exp(coef(fm3, type="scale"))
 plot(function(x) gxhaz(x, shape=fmhz.shape, scale=fmhz.scale), 0, 25, 
 	xlab="Distance (m)", ylab="Detection probability")
 
-# Uniform detection function.
-(fm6 <- distsamp(~ 1 ~ 1, ltUMF, key="uniform"))
-
-
 ## Point transect example
 
+\dontrun{
 data(pointtran)
 
 ptUMF <- with(pointtran, {
@@ -130,7 +118,7 @@ ptUMF <- with(pointtran, {
 # Half-normal.
 (fmp1 <- distsamp(~ 1 ~ 1, ptUMF))
 hist(fmp1, ylim=c(0, 0.07), xlab="Distance (m)")
-
+}
 }
 
 \keyword{models}

@@ -8,7 +8,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
 	if(!is(data, "unmarkedFramePCount")) 
 		stop("Data is not an unmarkedFramePCount object.")
 
-	designMats <- getDesign2(formula, data)
+	designMats <- getDesign(data, formula)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 
 	J <- ncol(y)

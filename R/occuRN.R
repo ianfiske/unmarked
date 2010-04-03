@@ -7,7 +7,7 @@ function(formula, data, K = 25, starts, method = "BFGS", control = list(), se = 
 	if(!is(data, "unmarkedFrameOccu")) stop("Data is not an unmarkedFrameOccu object.")
 	
 	
-	designMats <- getDesign2(formula, data)
+	designMats <- getDesign(data, formula)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
 	
   y <- truncateToBinary(data@y)

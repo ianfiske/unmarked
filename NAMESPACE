@@ -19,7 +19,7 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS, unmarkedFitPCount,
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData, getP, 
 	getY, head, hessian, linearComb, mle, modSel, nllFun, numSites, numY, 
 	obsCovs, obsNum, "obsCovs<-", obsToY, "obsToY<-", parboot, plot, hist, 
-	predict, profile, projection, powerAnalysis, residuals, sampleSize, SE, 
+	predict, profile, projection, residuals, sampleSize, SE, 
 	show, simulate, siteCovs, "siteCovs<-", summary, update, vcov, 
 	yearlySiteCovs, "yearlySiteCovs<-", "[", smoothed, projected, 
 	nonparboot)
@@ -33,5 +33,5 @@ export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
 
 # Misc
 export(imputeMissing, gxhn, gxexp, gxhaz, dxhn, dxexp, dxhaz, drhn, drexp, 
-	drhaz, calcAreas, sight2perpdist, lambda2psi, SSE)
+	drhaz, sight2perpdist, lambda2psi, SSE)
 useDynLib(unmarked)
