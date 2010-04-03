@@ -221,7 +221,7 @@ colext.fit <- function(formula, data, J,
     forward(detParams, phis, psis) + 0.001*sqrt(sum(params^2))
   }
   
-  if(is.null(starts)) starts <- rnorm(nP)
+  if(is.null(starts)) starts <- rep(0,nP)
   fm <- optim(starts, nll, method=method,hessian = getHessian,	control=control)
   mle <- fm$par
 
