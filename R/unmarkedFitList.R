@@ -4,18 +4,20 @@ setClass("unmarkedFitList",
         fl <- object@fits
         testY <- function(fit) {
             f <- fit@formula
-            D <- getDesign(f, fit)
+            umf <- getData(fit)
+            D <- getDesign(umf, f)
             D$y
             }
-        d1 <- getData(fl[[1]])
-        y1 <- getDesign(f, fl[[1]])
-        dataTest <- sapply(fl, function(x) all.equal(d1, getData(x)))
+        data1 <- getData(fl[[1]])
+        form1 <- fl[[1]]@formula
+        y1 <- getDesign(data1, form1)$y
+        dataTest <- sapply(fl, function(x) all.equal(data1, getData(x)))
         yTest <- sapply(fl, function(x) all.equal(y1, testY(x)))
         if(!isTRUE(all(dataTest))) {
-            stop("Models are not nested. Make sure you use the same unmarkedFrame object for all models.")
+            stop("Data are not the same among models. Make sure you use the same unmarkedFrame object for all models.")
             }
         else if(!isTRUE(all(yTest))) {
-            stop("Models are not nested due to missing covariate values. Consider removing NAs before analysis.")
+            stop("Data are not the same among models due to missing covariate values. Consider removing NAs before analysis.")
             }
         TRUE
         }
