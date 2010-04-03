@@ -132,9 +132,9 @@ Back-transforming estimates to the original scale and obtaining standard errors 
 
 <<>>=
 names(haz_Null)
-backTransform(haz_Null, whichEstimate="state")
-backTransform(haz_Null, whichEstimate="det")
-backTransform(haz_Null, whichEstimate="scale")
+backTransform(haz_Null, type="state")
+backTransform(haz_Null, type="det")
+backTransform(haz_Null, type="scale")
 backTransform(linearComb(hn_Hab.Ht['det'], c(0, 5)))
 @
 

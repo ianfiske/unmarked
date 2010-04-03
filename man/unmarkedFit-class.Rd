@@ -136,7 +136,7 @@ names(fm1)
 fm1['state']
 fm1['det']
 
-backTransform(fm1, whichEstimate ='det')
+backTransform(fm1, type ='det')
 
 coef(fm1, type='state')
 

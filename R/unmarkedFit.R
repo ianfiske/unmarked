@@ -134,8 +134,8 @@ setMethod("linearComb",
           })
 
 setMethod("backTransform", "unmarkedFit",
-          function(obj, whichEstimate) {
-            est <- obj[whichEstimate]
+          function(obj, type) {
+            est <- obj[type]
             if(length(est@estimates) == 1) {
               lc <- linearComb(est, 1)
               return(backTransform(lc))

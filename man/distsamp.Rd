@@ -87,9 +87,9 @@ hist(ltUMF)
 
 # Some methods to use on fitted model
 summary(fm1)
-backTransform(fm1, whichEstimate="state")       # animals / ha
+backTransform(fm1, type="state")       # animals / ha
 exp(coef(fm1, type="state", altNames=TRUE))     # same 
-backTransform(fm1, whichEstimate="det")         # half-normal SD
+backTransform(fm1, type="det")         # half-normal SD
 hist(fm1, xlab="Distance (m)")	# Only works when there are no detection covars
 
 # Halfnormal. Covariates affecting both density and and detection.  
