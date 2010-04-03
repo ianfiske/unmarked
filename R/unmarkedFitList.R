@@ -101,9 +101,8 @@ setGeneric("modSel",
 
 setClass("unmarkedModSel", 
 	representation(
-		Estimates = "matrix", 
-		SE = "matrix",
-		Full = "data.frame"
+		Full = "data.frame",
+		Names = "matrix"
 		)
 	)
 	
@@ -117,29 +116,25 @@ setMethod("modSel", "unmarkedFitList",
         stop("nullmod must be character name of null model fit in the fitlist.")
         }
 	fits <- object@fits
-	estList <- lapply(fits, coef, altNames=T)
-	seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=T))))
+	estList <- lapply(fits, coef, altNames=TRUE)
+	seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=TRUE))))
 	eNames <- sort(unique(unlist(sapply(estList, names))))
 	seNames <- paste("SE", eNames, sep="")
 	eseNames <- character(l <- length(c(eNames, seNames)))
 	eseNames[seq(1, l, by=2)] <- eNames
 	eseNames[seq(2, l, by=2)] <- seNames
-	cNames <- c("formula", eseNames)
+	cNames <- c("model", "formula", eseNames)
 	out <- data.frame(matrix(NA, ncol=length(cNames), nrow=length(fits)))
-	rownames(out) <- names(fits)
 	colnames(out) <- cNames
-	eMat <- seMat <- matrix(NA, length(fits), length(eNames), 
-		dimnames=list(names(fits), eNames))
+	out$model <- names(fits)
 	out$formula <- sapply(fits, function(x) {
           f <- as.character(x@formula)
           f <- paste(f[2], "~", f[3])
           f
         })
 	for(i in 1:length(eNames)) {
-		eMat[,eNames[i]] <- out[,eNames[i]] <- sapply(estList, function(x) 
-			x[eNames[i]])
-		seMat[,eNames[i]] <- out[,seNames[i]] <- sapply(seList, function(x) 
-			x[eNames[i]])
+		out[,eNames[i]] <- sapply(estList, function(x) x[eNames[i]])
+		out[,seNames[i]] <- sapply(seList, function(x) x[eNames[i]])
 		}
 	out$Converge <- sapply(fits, function(x) x@opt$convergence)
 	out$CondNum <- sapply(fits, function(x) cn(x))
@@ -162,25 +157,51 @@ setMethod("modSel", "unmarkedFitList",
         }
 	out <- out[order(out$AIC),]
 	out$cumltvAICwt <- cumsum(out$AICwt)
-	msout <- new("unmarkedModSel", Estimates = eMat, SE = seMat, Full = out)
+	msout <- new("unmarkedModSel", Full = out, 
+        Names = rbind(Coefs = eNames, SEs = seNames))
 	return(msout)
 })
 
 
 
 
-setMethod("show", "unmarkedModSel", function(object) {
-  out <- as(object, "data.frame")
-  print(out, digits=5)
+setAs("unmarkedModSel", "data.frame", function(from) {
+    out <- from@Full
+    out
 })
+
+
+
+setMethod("show", "unmarkedModSel", function(object) 
+{
+    out <- as(object, "data.frame")
+    out <- out[,c('model', 'n', 'nPars', 'AIC', 'deltaAIC', 'AICwt', 'Rsq', 
+        'cumltvAICwt')]
+    print(out, digits=5)
+})
+
+
+
+setMethod("coef", "unmarkedModSel", function(object) 
+{
+    coefNames <- object@Names["Coefs",]
+    msdf <- as(object, "data.frame")
+    rownames(msdf) <- msdf$model
+    out <- msdf[,coefNames]
+    out
+})
+
+
+setMethod("SE", "unmarkedModSel", function(obj) 
+{
+    seNames <- obj@Names["SEs",]
+    msdf <- as(obj, "data.frame")
+    rownames(msdf) <- msdf$model
+    out <- msdf[,seNames]
+    out
+})
+
+
+
 	
 
-setAs("unmarkedModSel", "data.frame", function(from) {
-  out <- from@Full[,c("n", "nPars", "AIC", "deltaAIC", "AICwt", "Rsq", 
-			"cumltvAICwt")]
-  out$model <- rownames(out)
-  rownames(out) <- NULL
-  nc <- ncol(out)
-  out <- out[, c(nc, 1 : (nc - 1))]
-  out
-})
