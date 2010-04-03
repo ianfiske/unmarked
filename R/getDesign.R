@@ -62,55 +62,59 @@ setMethod("getDesign", "unmarkedFrame",
 
 # TODO: use methods so that this is for multframe
 setMethod("getDesign", "unmarkedMultFrame", 
-    function(umf, formlist, na.rm = TRUE) {
+    function(umf, formula, na.rm = TRUE) {
 
-  detformula <- formlist$pformula
-  psiformula <- formlist$psiformula
-  gamformula <- formlist$gammaformula
-  epsformula <- formlist$epsilonformula
-  
-  detVars <- all.vars(detformula)
-  
-  M <- numSites(umf)
-  R <- obsNum(umf)
-  nY <- umf@numPrimary
-  
-  ## Compute phi design matrices
-  if(is.null(umf@yearlySiteCovs)) {
-    yearlySiteCovs <- data.frame(placeHolder = rep(1, M*nY))
-  } else {
-    yearlySiteCovs <- umf@yearlySiteCovs
-  }
-  ## in order to drop factor levels that only appear in last year,
-  ## replace last year with NAs and use drop=TRUE
-  yearlySiteCovs[seq(nY,M*nY,by=nY),] <- NA
-  yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, function(x) {
-    x[,drop = TRUE]
-  }))
-  ## add siteCovs in so they can be used as well
-  if(!is.null(umf@siteCovs)) {
-    sC <- umf@siteCovs[rep(1:M, each = nY),,drop=FALSE]
-    yearlySiteCovs <- cbind(yearlySiteCovs, sC)
-  }
-  X.mf.gam <- model.frame(gamformula, yearlySiteCovs, na.action = NULL)
-  X.gam <- model.matrix(gamformula, X.mf.gam)
-  X.mf.eps <- model.frame(epsformula, yearlySiteCovs, na.action = NULL)
-  X.eps <- model.matrix(epsformula, X.mf.eps)
-  
-  ## Compute site-level design matrix for psi
-  if(is.null(siteCovs(umf))) {
-    siteCovs <- data.frame(placeHolder = rep(1, M))
-  } else {
-    siteCovs <- siteCovs(umf)
-  }
-  W.mf <- model.frame(psiformula, siteCovs, na.action = NULL)
-  W <- model.matrix(psiformula, W.mf)
+    aschar1 <- as.character(formula)
+    aschar2 <- as.character(formula[[2]])
+    aschar3 <- as.character(formula[[2]][[2]])    
 
-#  ## impute missing yearlySiteCovs across years as average
-#  X <- t(apply(X, 1, function(x) {
-#            out <- x
-#            out[is.na(x)] <- mean(x)
-#          }))
+    detformula <- as.formula(paste(aschar1[1], aschar1[3]))
+    epsformula <- as.formula(paste(aschar2[1], aschar2[3]))
+    gamformula <- as.formula(paste(aschar3[1], aschar3[3]))
+    psiformula <- as.formula(formula[[2]][[2]][[2]])
+    
+    detVars <- all.vars(detformula)
+  
+    M <- numSites(umf)
+    R <- obsNum(umf)
+    nY <- umf@numPrimary
+  
+    ## Compute phi design matrices
+    if(is.null(umf@yearlySiteCovs)) {
+        yearlySiteCovs <- data.frame(placeHolder = rep(1, M*nY))
+    } else {
+        yearlySiteCovs <- umf@yearlySiteCovs
+    }
+    ## in order to drop factor levels that only appear in last year,
+    ## replace last year with NAs and use drop=TRUE
+    yearlySiteCovs[seq(nY,M*nY,by=nY),] <- NA
+    yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, function(x) {
+        x[,drop = TRUE]
+        }))
+    ## add siteCovs in so they can be used as well
+    if(!is.null(umf@siteCovs)) {
+        sC <- umf@siteCovs[rep(1:M, each = nY),,drop=FALSE]
+        yearlySiteCovs <- cbind(yearlySiteCovs, sC)
+        }
+    X.mf.gam <- model.frame(gamformula, yearlySiteCovs, na.action = NULL)
+    X.gam <- model.matrix(gamformula, X.mf.gam)
+    X.mf.eps <- model.frame(epsformula, yearlySiteCovs, na.action = NULL)
+    X.eps <- model.matrix(epsformula, X.mf.eps)
+  
+    ## Compute site-level design matrix for psi
+    if(is.null(siteCovs(umf))) {
+        siteCovs <- data.frame(placeHolder = rep(1, M))
+    } else {
+        siteCovs <- siteCovs(umf)
+    }
+    W.mf <- model.frame(psiformula, siteCovs, na.action = NULL)
+    W <- model.matrix(psiformula, W.mf)
+
+    #  ## impute missing yearlySiteCovs across years as average
+    #  X <- t(apply(X, 1, function(x) {
+    #            out <- x
+    #            out[is.na(x)] <- mean(x)
+    #          }))
   
 	## Compute detection design matrix
 	if(is.null(obsCovs(umf))) {
