@@ -40,7 +40,7 @@ function(formula, data, starts, method = "BFGS", control = list(), se = TRUE)
 	if(!is(data, "unmarkedFrameMPois"))
 		stop("Data is not a data frame or unmarkedFrame.")
 
-	designMats <- getDesign2(formula, data)
+	designMats <- getDesign(data, formula)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
   
 	J <- ncol(y)

@@ -102,7 +102,7 @@ colext.fit <- function(formula, data, J,
 {
   K <- 1
   
-  designMats <- getDesign3(formula = formula, data)
+  designMats <- getDesign(data, formlist = formula)
   V.itjk <- designMats$V
   X.it.gam <- designMats$X.gam
   X.it.eps <- designMats$X.eps
