@@ -1,11 +1,24 @@
 setClass("unmarkedFitList",
     representation(fits = "list"),
     validity = function(object) {
-    	fl <- object@fits
-    	d1 <- getData(fl[[1]])
-    	tests <- sapply(fl, function(x) all.equal(d1, getData(x)))
-    	all(tests)
-    	}
+        fl <- object@fits
+        testY <- function(fit) {
+            f <- fit@formula
+            D <- getDesign(f, fit)
+            D$y
+            }
+        d1 <- getData(fl[[1]])
+        y1 <- getDesign(f, fl[[1]])
+        dataTest <- sapply(fl, function(x) all.equal(d1, getData(x)))
+        yTest <- sapply(fl, function(x) all.equal(y1, testY(x)))
+        if(!isTRUE(all(dataTest))) {
+            stop("Models are not nested. Make sure you use the same unmarkedFrame object for all models.")
+            }
+        else if(!isTRUE(all(yTest))) {
+            stop("Models are not nested due to missing covariate values. Consider removing NAs before analysis.")
+            }
+        TRUE
+        }
     )
 
 
@@ -38,34 +51,34 @@ fitList <- function(..., fits) {
 
 
 setMethod("summary", "unmarkedFitList", function(object) {
-	fits <- object@fits
-	for(i in 1:length(fits))
-		summary(fits[[i]])
-	})
+    fits <- object@fits
+    for(i in 1:length(fits))
+        summary(fits[[i]])
+    })
 
 
 
 setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL, 
-	backTransform = TRUE, appendData = FALSE) {
-		fitList <- object@fits
-		ese <- lapply(fitList, predict, type = type, newdata = newdata, 
-			backTransform = backTransform)
-		E <- sapply(ese, function(x) x[,"Predicted"])
-		SE <- sapply(ese, function(x) x[,"SE"])
-		ic <- sapply(fitList, slot, "AIC")
-		deltaic <- ic - min(ic)
-		wts <- exp(-deltaic / 2)
-		wts <- wts / sum(wts)
-		parav <- as.numeric(E %*% wts)
-		seav <- as.numeric((SE + (E - parav)^2) %*% wts) # Double check this
-		out <- data.frame(Predicted = parav, SE = seav)
-		if(appendData) {
-			if(missing(newdata))
-				newdata <- getData(object@fits[[1]])
-			out <- data.frame(out, newdata)
-			}
-		return(out)
-	})
+    backTransform = TRUE, appendData = FALSE) {
+        fitList <- object@fits
+        ese <- lapply(fitList, predict, type = type, newdata = newdata, 
+            backTransform = backTransform)
+        E <- sapply(ese, function(x) x[,"Predicted"])
+        SE <- sapply(ese, function(x) x[,"SE"])
+        ic <- sapply(fitList, slot, "AIC")
+        deltaic <- ic - min(ic)
+        wts <- exp(-deltaic / 2)
+        wts <- wts / sum(wts)
+        parav <- as.numeric(E %*% wts)
+        seav <- as.numeric((SE + (E - parav)^2) %*% wts) # Double check this
+        out <- data.frame(Predicted = parav, SE = seav)
+        if(appendData) {
+            if(missing(newdata))
+                newdata <- getData(object@fits[[1]])
+            out <- data.frame(out, newdata)
+            }
+        return(out)
+    })
 
 
 
@@ -83,29 +96,29 @@ cn <- function(object) {
 # R-squared index from Nagelkerke (1991)				  
 nagR2 <- function(fit, nullfit)
 {
-	n <- sampleSize(fit)
-	devI <- 2 * fit@negLogLike
-	devN <- 2 * nullfit@negLogLike
-	r2 <- 1 - exp((devI - devN) / n)
-	r2max <- 1 - exp(-1 * devN / n)
-	return(r2 / r2max)
+    n <- sampleSize(fit)
+    devI <- 2 * fit@negLogLike
+    devN <- 2 * nullfit@negLogLike
+    r2 <- 1 - exp((devI - devN) / n)
+    r2max <- 1 - exp(-1 * devN / n)
+    return(r2 / r2max)
 }
 
 
 
 setGeneric("modSel",
-		def = function(object, ...) {
-			standardGeneric("modSel")
-			}
-		)
+        def = function(object, ...) {
+            standardGeneric("modSel")
+            }
+        )
 
 setClass("unmarkedModSel", 
-	representation(
-		Full = "data.frame",
-		Names = "matrix"
-		)
-	)
-	
+    representation(
+        Full = "data.frame",
+        Names = "matrix"
+        )
+    )
+
 
 
 # Model selection results from an unmarkedFitList
@@ -115,51 +128,51 @@ setMethod("modSel", "unmarkedFitList",
     if (!is.character(nullmod) && !is.null(nullmod)) {
         stop("nullmod must be character name of null model fit in the fitlist.")
         }
-	fits <- object@fits
-	estList <- lapply(fits, coef, altNames=TRUE)
-	seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=TRUE))))
-	eNames <- sort(unique(unlist(sapply(estList, names))))
-	seNames <- paste("SE", eNames, sep="")
-	eseNames <- character(l <- length(c(eNames, seNames)))
-	eseNames[seq(1, l, by=2)] <- eNames
-	eseNames[seq(2, l, by=2)] <- seNames
-	cNames <- c("model", "formula", eseNames)
-	out <- data.frame(matrix(NA, ncol=length(cNames), nrow=length(fits)))
-	colnames(out) <- cNames
-	out$model <- names(fits)
-	out$formula <- sapply(fits, function(x) {
+    fits <- object@fits
+    estList <- lapply(fits, coef, altNames=TRUE)
+    seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=TRUE))))
+    eNames <- sort(unique(unlist(sapply(estList, names))))
+    seNames <- paste("SE", eNames, sep="")
+    eseNames <- character(l <- length(c(eNames, seNames)))
+    eseNames[seq(1, l, by=2)] <- eNames
+    eseNames[seq(2, l, by=2)] <- seNames
+    cNames <- c("model", "formula", eseNames)
+    out <- data.frame(matrix(NA, ncol=length(cNames), nrow=length(fits)))
+    colnames(out) <- cNames
+    out$model <- names(fits)
+    out$formula <- sapply(fits, function(x) {
           f <- as.character(x@formula)
           f <- paste(f[2], "~", f[3])
           f
         })
-	for(i in 1:length(eNames)) {
-		out[,eNames[i]] <- sapply(estList, function(x) x[eNames[i]])
-		out[,seNames[i]] <- sapply(seList, function(x) x[eNames[i]])
-		}
-	out$Converge <- sapply(fits, function(x) x@opt$convergence)
-	out$CondNum <- sapply(fits, function(x) cn(x))
-	out$negLogLike <- sapply(fits, function(x) x@negLogLike)
-	out$nPars <- sapply(fits, function(x) length(coef(x)))
-	out$n <- sapply(fits, function(x) sampleSize(x))
-	if(!identical(length(table(out$n)), 1L))
-		warning("Models are not nested. AIC comparisons not valid")
-	out$AIC <- sapply(fits, function(x) x@AIC)
-	out$deltaAIC <- out$AIC - min(out$AIC)
-	out$AICwt <- exp(-out$deltaAIC / 2)
-	out$AICwt <- out$AICwt / sum(out$AICwt)
-	out$Rsq <- NA
-	if(!is.null(nullmod)) {
+    for(i in 1:length(eNames)) {
+        out[,eNames[i]] <- sapply(estList, function(x) x[eNames[i]])
+        out[,seNames[i]] <- sapply(seList, function(x) x[eNames[i]])
+        }
+    out$Converge <- sapply(fits, function(x) x@opt$convergence)
+    out$CondNum <- sapply(fits, function(x) cn(x))
+    out$negLogLike <- sapply(fits, function(x) x@negLogLike)
+    out$nPars <- sapply(fits, function(x) length(coef(x)))
+    out$n <- sapply(fits, function(x) sampleSize(x))
+    if(!identical(length(table(out$n)), 1L))
+        warning("Models are not nested. AIC comparisons not valid")
+    out$AIC <- sapply(fits, function(x) x@AIC)
+    out$deltaAIC <- out$AIC - min(out$AIC)
+    out$AICwt <- exp(-out$deltaAIC / 2)
+    out$AICwt <- out$AICwt / sum(out$AICwt)
+    out$Rsq <- NA
+    if(!is.null(nullmod)) {
           if (is.na(match(nullmod, names(fits)))) {
             stop(paste("No fit named", nullmod, "was found in fits."))
           }
           nullmod <- fits[[nullmod]]
           out$Rsq <- sapply(fits, nagR2, nullmod)
         }
-	out <- out[order(out$AIC),]
-	out$cumltvAICwt <- cumsum(out$AICwt)
-	msout <- new("unmarkedModSel", Full = out, 
+    out <- out[order(out$AIC),]
+    out$cumltvAICwt <- cumsum(out$AICwt)
+    msout <- new("unmarkedModSel", Full = out, 
         Names = rbind(Coefs = eNames, SEs = seNames))
-	return(msout)
+    return(msout)
 })
 
 
@@ -201,7 +214,4 @@ setMethod("SE", "unmarkedModSel", function(obj)
     out
 })
 
-
-
-	
 
