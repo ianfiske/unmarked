@@ -8,10 +8,10 @@ setClass("unmarkedFitList",
             D <- getDesign(umf, f)
             D$y
             }
-        data1 <- getData(fl[[1]])
+        umf1 <- getData(fl[[1]])
         form1 <- fl[[1]]@formula
-        y1 <- getDesign(data1, form1)$y
-        dataTest <- sapply(fl, function(x) all.equal(data1, getData(x)))
+        y1 <- getDesign(umf1, form1)$y
+        dataTest <- sapply(fl, function(x) all.equal(umf1, getData(x)))
         yTest <- sapply(fl, function(x) all.equal(y1, testY(x)))
         if(!isTRUE(all(dataTest))) {
             stop("Data are not the same among models. Make sure you use the same unmarkedFrame object for all models.")
