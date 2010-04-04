@@ -7,6 +7,7 @@
 \item{...}{Fitted nested models. Preferrably named.}
 \item{fits}{An alternative way of providing the models. A (preferrably named) list of fitted models.}
 }
+\author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 \examples{# Fit some N-mixture models
 data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 

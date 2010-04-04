@@ -23,6 +23,7 @@
   \item{call}{parboot call}
   \item{t0}{Numeric vector of statistics for original fitted model.} 
   \item{t.star}{nsim by length(t0) matrix of statistics for each simulation fit.}}
+\author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 \examples{
 
 data(linetran)
