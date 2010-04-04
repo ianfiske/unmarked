@@ -157,8 +157,6 @@ setMethod("modSel", "unmarkedFitList",
     out$negLogLike <- sapply(fits, function(x) x@negLogLike)
     out$nPars <- sapply(fits, function(x) length(coef(x)))
     out$n <- sapply(fits, function(x) sampleSize(x))
-    if(!identical(length(table(out$n)), 1L))
-        warning("Models are not nested. AIC comparisons not valid")
     out$AIC <- sapply(fits, function(x) x@AIC)
     out$deltaAIC <- out$AIC - min(out$AIC)
     out$AICwt <- exp(-out$deltaAIC / 2)
