@@ -1,3 +1,4 @@
+
 setClass("unmarkedFitList",
     representation(fits = "list"),
     validity = function(object) {
@@ -5,18 +6,18 @@ setClass("unmarkedFitList",
         testY <- function(fit) {
             f <- fit@formula
             umf <- getData(fit)
-            D <- getDesign(umf, f)
+            D <- unmarked:::getDesign(umf, f)
             D$y
             }
         umf1 <- getData(fl[[1]])
         form1 <- fl[[1]]@formula
-        y1 <- getDesign(umf1, form1)$y
-        dataTest <- sapply(fl, function(x) all.equal(umf1, getData(x)))
-        yTest <- sapply(fl, function(x) all.equal(y1, testY(x)))
-        if(!isTRUE(all(dataTest))) {
+        y1 <- unmarked:::getDesign(umf1, form1)$y
+        dataTest <- sapply(fl, function(x) isTRUE(all.equal(umf1, getData(x))))
+        yTest <- sapply(fl, function(x) isTRUE(all.equal(y1, testY(x))))
+        if(!all(dataTest)) {
             stop("Data are not the same among models. Make sure you use the same unmarkedFrame object for all models.")
             }
-        else if(!isTRUE(all(yTest))) {
+        else if(!all(yTest)) {
             stop("Data are not the same among models due to missing covariate values. Consider removing NAs before analysis.")
             }
         TRUE
