@@ -15,8 +15,6 @@ strip.widths <- diff(db)				# only used for line-transects
 tlength <- data@tlength
 survey <- data@survey
 unitsIn <- data@unitsIn
-if(output == "abund" & length(table(tlength)) > 1)
-	warning("Response is individuals per unit transect length")		
 designMats <- getDesign(data, formula)
 X <- designMats$X; V <- designMats$V; y <- designMats$y
 X.offset <- designMats$X.offset; V.offset <- designMats$V.offset

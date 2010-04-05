@@ -775,15 +775,18 @@ switch(output,
 				})
 			},
 	abund = {
-        if(identical(survey, "line")) {
-            ntl <- length(unique(tlength))
-            if(!isTRUE(all.equal(ntl, 1)))
-                stop("output cannot equal 'abund' when transect lengths differ. Use output='density' instead.")
-            }
         ndi <- length(unique(diff(dist.breaks)))
         if(!isTRUE(all.equal(ndi, 1)))
             stop("output cannot equal 'abund' when distance intervals differ. Use output='density' instead.")
-        a <- matrix(1, M, J)
+        switch(survey, 
+            line = {
+                ntl <- length(unique(tlength))
+                if(!isTRUE(all.equal(ntl, 1)))
+                    stop("output cannot equal 'abund' when transect lengths differ. Use output='density' instead.")
+                a <- matrix(1 / J, M, J)
+                },
+            point = a <- matrix(1, M, J)
+            )
         })
 return(a)
 }
