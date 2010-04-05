@@ -37,14 +37,15 @@ ltUMF <- with(linetran, {
     })
 
 # Fit a model
-(fm <- distsamp(~ area ~habitat, ltUMF))
+(fm <- distsamp(~area ~habitat, ltUMF))
 
-# Function returning two fit-stats: sum of squared errors and mean density at
-# sampled sites.
+# Function returning two fit-stats: sum of squared errors and population size at
+# sampled plots.
 fitStats <- function(fit) {
     sse <- SSE(fit)
-    D <- mean(exp(coef(fit, type="state")), na.rm=TRUE)
-    return(c(sse, D.hat=D))
+    plot.area.ha <- lengths*1000 * 40 / 10000
+    N <- sum(predict(fit, type="state")$Predicted*plot.area.ha, na.rm=TRUE)
+    return(c(sse, N.hat=N))
     }
 
 (pb <- parboot(fm, fitStats, nsim=25))

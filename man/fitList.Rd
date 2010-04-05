@@ -2,11 +2,13 @@
 \alias{fitList}
 \title{constructor of unmarkedFitList objects}
 \usage{fitList(..., fits)}
-\description{Organize nested models for model selection or model-averaged prediction.}
+\description{Organize models for model selection or model-averaged prediction.}
 \arguments{
-\item{...}{Fitted nested models. Preferrably named.}
+\item{...}{Fitted models. Preferrably named.}
 \item{fits}{An alternative way of providing the models. A (preferrably named) list of fitted models.}
 }
+\note{Two requirements exist to conduct AIC-based model-selection and model-averaging in unmarked. First, the data objects (ie, unmarkedFrames) must be identical among fitted models. Second, the response matrix must be identical among fitted models after missing values have been removed. This means that if a response value was removed in one model due to missingness, it needs to be removed from all models.
+} 
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 \examples{# Fit some N-mixture models
 data(linetran)
