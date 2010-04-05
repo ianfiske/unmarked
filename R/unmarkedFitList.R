@@ -33,7 +33,7 @@ fitList <- function(..., fits) {
         fits <- list(...)
         isList <- sapply(fits, function(x) is.list(x))
         if(sum(isList) > 1)
-            stop("Specify nested models as named objects, or use fits = 'mylist'")
+            stop("Specify models as common-seperated objects, or use fits = 'mylist'")
         if(isList[1L]) {
             warning("If supplying a list of fits, use fits = 'mylist'")
             fits <- fits[[1L]] 	# This is allowed for back-compatability.
@@ -41,12 +41,12 @@ fitList <- function(..., fits) {
         if(is.null(names(fits))) {
             c <- match.call(expand.dots = FALSE)
             names(fits) <- as.character(c[[2]])
-            warning("Your list was unnamed, so names were added as object names")
+            warning("Your list was unnamed, so model names were added as object names")
             }
         }
     if(is.null(names(fits))) {
         names(fits) <- as.character(1:(length(fits)))
-        warning("Your list was unnamed, so names were added as c('1','2',...)")
+        warning("Your list was unnamed, so model names were added as c('1','2',...)")
         }
     umfl <- new("unmarkedFitList", fits=fits)
     return(umfl)
@@ -157,8 +157,6 @@ setMethod("modSel", "unmarkedFitList",
     out$negLogLike <- sapply(fits, function(x) x@negLogLike)
     out$nPars <- sapply(fits, function(x) length(coef(x)))
     out$n <- sapply(fits, function(x) sampleSize(x))
-    if(!identical(length(table(out$n)), 1L))
-        warning("Models are not nested. AIC comparisons not valid")
     out$AIC <- sapply(fits, function(x) x@AIC)
     out$deltaAIC <- out$AIC - min(out$AIC)
     out$AICwt <- exp(-out$deltaAIC / 2)
