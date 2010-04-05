@@ -22,6 +22,10 @@ setMethod("getDesign", "unmarkedFrame",
 	}
 	X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
 	X <- model.matrix(stateformula, X.mf)
+        X.offset <- as.vector(model.offset(X.mf))
+        if (!is.null(X.offset)) {
+          X.offset[is.na(X.offset)] <- 0
+        }
 
 	## Compute detection design matrix
 	if(is.null(obsCovs(umf))) {
@@ -44,20 +48,27 @@ setMethod("getDesign", "unmarkedFrame",
 	
 	V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
 	V <- model.matrix(detformula, V.mf)
-	
-	if(na.rm)
-		out <- handleNA(umf, X, V)
-	else
-		out <- list(y=getY(umf), X=X, V=V, 
-			removed.sites=integer(0))
+        V.offset <- as.vector(model.offset(V.mf))
+	if (!is.null(V.offset)) {
+          V.offset[is.na(V.offset)] <- 0
+        }
 
-	return(list(y = out$y, X = out$X, V = out$V, 
-		removed.sites = out$removed.sites))
+	if (na.rm) {
+          out <- handleNA(umf, X, X.offset, V, V.offset)
+          y <- out$y
+          X <- out$X
+          X.offset <- out$X.offset
+          V <- out$V
+          V.offset <- out$V.offset
+          removed.sites <- out$removed.sites
+        } else {
+          y=getY(umf)
+          removed.sites=integer(0)
+        }
+
+	return(list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset, 
+		removed.sites = removed.sites))
 	})
-
-
-
-
 
 
 # TODO: use methods so that this is for multframe
@@ -155,7 +166,7 @@ setMethod("getDesign", "unmarkedMultFrame",
 ## NA handling
 
 
-setMethod("handleNA", "unmarkedFrame", function(umf, X, V) 
+setMethod("handleNA", "unmarkedFrame", function(umf, X, X.offset, V, V.offset) 
     {
 	obsToY <- obsToY(umf)
 	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
@@ -186,7 +197,7 @@ setMethod("handleNA", "unmarkedFrame", function(umf, X, V)
 	
 	if(sum(y.new.na) > 0) {
 		y.long[y.new.na] <- NA
-		warning("Some observations have been discarded because correspoding covariates were missing.")
+		warning("Some observations have been discarded because corresponding covariates were missing.", .call = FALSE)
 	}
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
@@ -196,11 +207,15 @@ setMethod("handleNA", "unmarkedFrame", function(umf, X, V)
 	if(num.to.remove > 0) {
 		y <- y[!sites.to.remove, ,drop = FALSE]
 		X <- X[!sites.to.remove, ,drop = FALSE]
+                X.offset <- X.offset[!sites.to.remove]
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
-		warning(paste(num.to.remove,"sites have been discarded because of missing data."))
+                V.offset <- V.offset[!sites.to.remove[rep(1:M, each = R)], ]
+		warning(paste(num.to.remove,"sites have been discarded because of missing data."),
+                        .call = FALSE)
 	}
 	
-	list(y = y, X = X, V = V, removed.sites = which(sites.to.remove))
+	list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset,
+             removed.sites = which(sites.to.remove))
     })
 
 

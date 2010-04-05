@@ -126,11 +126,11 @@ setMethod("summary", "unmarkedFitDS",
 
 setMethod("linearComb",
           signature(obj = "unmarkedFit", coefficients = "matrixOrVector"),
-          function(obj, coefficients, type) {
+          function(obj, coefficients, type, offset = NULL) {
             stopifnot(!missing(type))
             stopifnot(type %in% names(obj))
             estimate <- obj@estimates[type]
-            linearComb(estimate, coefficients)
+            linearComb(estimate, coefficients, offset)
           })
 
 setMethod("backTransform", "unmarkedFit",
@@ -175,17 +175,31 @@ setMethod("predict", "unmarkedFit",
         unmarkedFrame = {
             designMats <- getDesign(newdata, formula, na.rm = na.rm)
             switch(type, 
-                state = X <- designMats$X,
-                det = X <- designMats$V)
+                state = {
+                  X <- designMats$X
+                  offset <- designMats$X.offset
+                },
+                det = {
+                  X <- designMats$V
+                  offset <- designMats$V.offset
+                })
             },
         data.frame = {
             switch(type, 
-                state = X <- model.matrix(stateformula, newdata),
-                det = X <- model.matrix(detformula, newdata))
+                state = {
+                  mf <- model.frame(stateformula, newdata)
+                  X <- model.matrix(stateformula, mf)
+                  offset <- model.offset(mf)
+                },
+                det = {
+                  mf <- model.frame(detformula, newdata)
+                  X <- model.matrix(detformula, mf)
+                  offset <- model.offset(mf)
+                })
             })
         out <- data.frame(matrix(NA, nrow(X), 2, 
             dimnames=list(NULL, c("Predicted", "SE"))))
-        lc <- linearComb(object, X, type)
+        lc <- linearComb(object, X, type, offset = offset)
         if(backTransform) lc <- backTransform(lc)
         out$Predicted <- coef(lc)
         out$SE <- SE(lc)

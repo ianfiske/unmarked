@@ -42,6 +42,13 @@ function(formula, data, starts, method = "BFGS", control = list(), se = TRUE)
 
 	designMats <- getDesign(data, formula)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
+        X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
+        if (is.null(X.offset)) {
+          X.offset <- rep(0, nrow(X))
+        }
+        if (is.null(V.offset)) {
+          V.offset <- rep(0, nrow(V))
+        }
   
 	J <- ncol(y)
 	R <- obsNum(data)
@@ -57,8 +64,8 @@ function(formula, data, starts, method = "BFGS", control = list(), se = TRUE)
 	navec <- is.na(yvec)
 
 	nll <- function(parms) {
-		lambda <- exp(X %*% parms[1 : nAP]) 
-		p <- plogis(V %*% parms[(nAP + 1) : nP])
+		lambda <- exp(X %*% parms[1 : nAP] + X.offset) 
+		p <- plogis(V %*% parms[(nAP + 1) : nP] + V.offset)
 		p.matrix <- matrix(p, M, R, byrow = TRUE)
 		pi <- do.call(piFun, list(p = p.matrix))
 		logLikeSite <- dpois(y, matrix(lambda, M, J) * pi, log = TRUE)

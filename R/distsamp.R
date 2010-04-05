@@ -19,6 +19,13 @@ if(output == "abund" & length(table(tlength)) > 1)
 	warning("Response is individuals per unit transect length")		
 designMats <- getDesign(data, formula)
 X <- designMats$X; V <- designMats$V; y <- designMats$y
+X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
+if (is.null(X.offset)) {
+  X.offset <- rep(0, nrow(X))
+}
+if (is.null(V.offset)) {
+  V.offset <- rep(0, nrow(V))
+}
 a <- calcAreas(dist.breaks = db, tlength = tlength, 
 	survey = survey, output = output, M = numSites(data), 
 	J = ncol(getY(data)), unitsIn = unitsIn, unitsOut = unitsOut)
@@ -43,8 +50,8 @@ switch(keyfun,
 			if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
 			}
 		nll <- function(param) {
-			sigma <- drop(exp(V %*% param[(nAP+1):nP]))
-			lambda <- drop(exp(X %*% param[1:nAP]))
+			sigma <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
+			lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
 			for(i in 1:M) 
 			{
 			switch(survey, 
@@ -75,8 +82,8 @@ switch(keyfun,
 				names(starts) <- c(lamParms, detParms)
 		}
 		nll <- function(param) {
-			rate <- drop(exp(V %*% param[(nAP+1):nP]))
-			lambda <- drop(exp(X %*% param[1:nAP]))
+			rate <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
+			lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
 			for(i in 1:M) 
 			{
 			switch(survey, 
@@ -109,9 +116,9 @@ switch(keyfun,
 				names(starts) <- c(lamParms, detParms, "scale")
 		}
 		nll <- function(param) {
-			shape <- drop(exp(V %*% param[(nAP+1):(nP-1)]))
+			shape <- drop(exp(V %*% param[(nAP+1):(nP-1)] + V.offset))
 			scale <- drop(exp(param[nP]))
-			lambda <- as.numeric(exp(X %*% param[1:nAP]))
+			lambda <- as.numeric(exp(X %*% param[1:nAP] + X.offset))
 			for(i in 1:M)
 			{
 			switch(survey, 
@@ -145,7 +152,7 @@ switch(keyfun,
 			}
 		nll <- function(param) 
 			{
-			lambda <- drop(exp(X %*% param))
+			lambda <- drop(exp(X %*% param + X.offset))
 			ll <- dpois(y, lambda * a, log=TRUE)
 			ll[namat] <- 0
 			-sum(ll)
