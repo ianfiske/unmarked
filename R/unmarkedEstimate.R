@@ -134,10 +134,11 @@ setMethod("summary", signature(object = "unmarkedEstimate"),
 
 setMethod("linearComb",
 		signature(obj = "unmarkedEstimate", coefficients = "matrixOrVector"),
-		function(obj, coefficients) {
+		function(obj, coefficients, offset = NULL) {
 			if(!is(coefficients, "matrix")) coefficients <- t(as.matrix(coefficients))
 			stopifnot(ncol(coefficients) == length(obj@estimates))
-			e <- as.vector(coefficients %*% obj@estimates)
+                        if (is.null(offset)) offset <- rep(0, nrow(coefficients))
+			e <- as.vector(coefficients %*% obj@estimates) + offset
 			v <- coefficients %*% obj@covMat %*% t(coefficients)
                         if (!is.null(obj@covMatBS)) {
                           v.bs <- coefficients %*% obj@covMatBS %*% t(coefficients)
