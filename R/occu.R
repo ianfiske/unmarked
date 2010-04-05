@@ -8,6 +8,13 @@ occu <- function(formula, data, knownOcc = numeric(0), starts, method = "BFGS",
 		
 	designMats <- getDesign(data, formula)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y; removed <- designMats$removed.sites
+        X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
+        if (is.null(X.offset)) {
+          X.offset <- rep(0, nrow(X))
+        }
+        if (is.null(V.offset)) {
+          V.offset <- rep(0, nrow(V))
+        }
 
 	y <- truncateToBinary(y)
 	J <- ncol(y)
@@ -29,9 +36,9 @@ occu <- function(formula, data, knownOcc = numeric(0), starts, method = "BFGS",
 	nd <- ifelse(rowSums(y,na.rm=TRUE) == 0, 1, 0) # no det at site i indicator
 
 	nll <- function(params) {
-		psi <- plogis(X %*% params[1 : nOP])
+		psi <- plogis(X %*% params[1 : nOP] + X.offset)
 		psi[knownOccLog] <- 1
-		pvec <- plogis(V %*% params[(nOP + 1) : nP])
+		pvec <- plogis(V %*% params[(nOP + 1) : nP] + V.offset)
 		cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
 		cp[navec] <- 1  # so that NA's don't modify likelihood
 		cpmat <- matrix(cp, M, J, byrow = TRUE) # put back into matrix to multiply appropriately
@@ -49,7 +56,7 @@ occu <- function(formula, data, knownOcc = numeric(0), starts, method = "BFGS",
 		covMat <- matrix(NA, nP, nP)
 	}
 	ests <- fm$par
-	fmAIC <- 2 * fm$value + 2 * nP + 2*nP*(nP + 1)/(M - nP - 1)
+	fmAIC <- 2 * fm$value + 2 * nP #+ 2*nP*(nP + 1)/(M - nP - 1)
 	names(ests) <- c(occParms, detParms)
 
 	state <- unmarkedEstimate(name = "Occupancy", short.name = "psi",

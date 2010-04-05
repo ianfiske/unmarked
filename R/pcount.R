@@ -10,6 +10,13 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
 
 	designMats <- getDesign(data, formula)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
+        X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
+        if (is.null(X.offset)) {
+          X.offset <- rep(0, nrow(X))
+        }
+        if (is.null(V.offset)) {
+          V.offset <- rep(0, nrow(V))
+        }
 
 	J <- ncol(y)
 	M <- nrow(y)
@@ -37,8 +44,8 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
 	ijk.to.ikj <- with(ijk, order(i, k, j)) 
 
 	nll <- function(parms){
-		theta.i <- exp(X %*% parms[1 : nAP]) 
-		p.ij <- plogis(V %*% parms[(nAP + 1) : (nAP + nDP)])
+		theta.i <- exp(X %*% parms[1 : nAP] + X.offset) 
+		p.ij <- plogis(V %*% parms[(nAP + 1) : (nAP + nDP)] + V.offset)
 		theta.ik <- rep(theta.i, each = K + 1)
 		p.ijk <- rep(p.ij, each = K + 1)
 

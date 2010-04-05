@@ -50,7 +50,7 @@ setMethod("getDesign", "unmarkedFrame",
 	V <- model.matrix(detformula, V.mf)
         V.offset <- as.vector(model.offset(V.mf))
 	if (!is.null(V.offset)) {
-          V.offset[is.nua(V.offset)] <- 0
+          V.offset[is.na(V.offset)] <- 0
         }
 
 	if (na.rm) {

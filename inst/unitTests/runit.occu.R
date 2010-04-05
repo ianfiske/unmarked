@@ -103,3 +103,15 @@ test.occu.fit.NA <- function() {
   checkEqualsNumeric(coef(fm), c(8.91289, 1.89291, -1.42471, 0.67011, -8.44608), tol = 1e-5)
 
 }
+
+## Add some checks here.
+test.occu.offest <- function() {
+
+  y <- matrix(rep(0:1,10),5,2)
+  siteCovs <- data.frame(x = c(0,2,3,4,1))
+  obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
+  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  fm <- occu(~ o1 + o2 ~ offset(x), data = umf)
+
+  fm <- occu(~ o1 + offset(o2) ~ offset(x), data = umf)
+}

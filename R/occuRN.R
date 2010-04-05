@@ -9,6 +9,13 @@ function(formula, data, K = 25, starts, method = "BFGS", control = list(), se = 
 	
 	designMats <- getDesign(data, formula)
 	X <- designMats$X; V <- designMats$V; y <- designMats$y
+        X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
+        if (is.null(X.offset)) {
+          X.offset <- rep(0, nrow(X))
+        }
+        if (is.null(V.offset)) {
+          V.offset <- rep(0, nrow(V))
+        }
 	
   y <- truncateToBinary(data@y)
 
@@ -29,7 +36,7 @@ function(formula, data, K = 25, starts, method = "BFGS", control = list(), se = 
   {
 
     ## compute individual level detection probabilities
-    r.ij <- matrix(plogis(V %*% parms[(nOP + 1) : nP]), M, J, byrow = TRUE)
+    r.ij <- matrix(plogis(V %*% parms[(nOP + 1) : nP] + V.offset), M, J, byrow = TRUE)
 
     ## compute list of detection probabilities along N
     p.ij.list <- lapply(n, function(k) 1 - (1 - r.ij)^k)
@@ -47,7 +54,7 @@ function(formula, data, K = 25, starts, method = "BFGS", control = list(), se = 
     cp.in <- sapply(cp.ij.list, rowProds)
 
     ## compute P(N = n | lambda_i) along i
-    lambda.i <- exp(X %*% parms[1 : nOP])
+    lambda.i <- exp(X %*% parms[1 : nOP] + X.offset)
     lambda.in <- sapply(n, function(x) dpois(x, lambda.i))
 
     ## integrate over P(y_i | N = n) * P(N = n | lambda_i) wrt n
