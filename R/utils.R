@@ -737,3 +737,55 @@ SSE <- function(fit) {
     sse <- sum(residuals(fit)^2, na.rm=TRUE)
     return(c(SSE=sse))
     }
+
+
+
+
+
+
+
+
+
+
+
+# Prepare area argument for distsamp(). This is primarily for internal use
+
+calcAreas <- function(dist.breaks, tlength, survey, output, M, J, unitsIn, 
+	unitsOut)
+{
+switch(output, 	
+	density = {
+        switch(unitsIn, 
+            km = conv <- 1,
+            m = conv <- 1000
+            )
+		switch(survey, 
+			line = {
+				stripwidths <- (((dist.breaks*2)[-1] - 
+                    (dist.breaks*2)[-(J+1)])) / conv
+				tl <- tlength / conv
+				a <- rep(tl, each=J) * stripwidths						# km^2
+				a <- matrix(a, nrow=M, ncol=J, byrow=TRUE)
+				if(unitsOut == "ha") a <- a * 100
+				},
+			point = {
+				W <- max(dist.breaks) / conv
+				a <- matrix(rep(pi * W^2, each=J), M, J, byrow=TRUE) 	# km^2
+				if(unitsOut == "ha") a <- a * 100			
+				})
+			},
+	abund = {
+        if(identical(survey, "line")) {
+            ntl <- length(unique(tlength))
+            if(!isTRUE(all.equal(ntl, 1)))
+                stop("output cannot equal 'abund' when transect lengths differ. Use output='density' instead.")
+            }
+        ndi <- length(unique(diff(dist.breaks)))
+        if(!isTRUE(all.equal(ndi, 1)))
+            stop("output cannot equal 'abund' when distance intervals differ. Use output='density' instead.")
+        a <- matrix(1, M, J)
+        })
+return(a)
+}
+
+

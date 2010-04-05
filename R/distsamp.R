@@ -118,7 +118,7 @@ switch(keyfun,
 		nll <- function(param) {
 			shape <- drop(exp(V %*% param[(nAP+1):(nP-1)] + V.offset))
 			scale <- drop(exp(param[nP]))
-			lambda <- as.numeric(exp(X %*% param[1:nAP] + X.offset))
+			lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
 			for(i in 1:M)
 			{
 			switch(survey, 
@@ -310,46 +310,6 @@ cp.haz <- function(d, shape, scale, survey)
 }
 
 
-
-
-# Prepare area argument for distsamp(). This is primarily for internal use
-
-calcAreas <- function(dist.breaks, tlength, survey, output, M, J, unitsIn, 
-	unitsOut)
-{
-if(J != length(dist.breaks) - 1)
-	stop("J must equal length(dist.breaks) - 1")
-if(!missing(tlength))
-	if(length(tlength) > 0 & length(tlength) != M)
-		stop("length(tlength) must equal M")
-switch(unitsIn, 
-	km = conv <- 1,
-	m = conv <- 1000
-	)
-switch(output, 	
-	density = {
-		switch(survey, 
-			line = {
-				stripwidths <- (((dist.breaks*2)[-1] - 
-					(dist.breaks*2)[-(J+1)])) / conv
-				tl <- tlength / conv
-				a <- rep(tl, each=J) * stripwidths						# km^2
-				a <- matrix(a, nrow=M, ncol=J, byrow=TRUE)
-				if(unitsOut == "ha") a <- a * 100
-				},
-			point = {
-				W <- max(dist.breaks) / conv
-				a <- matrix(rep(pi * W^2, each=J), M, J, byrow=TRUE) 	# km^2
-				if(unitsOut == "ha") a <- a * 100			
-				})
-			},
-	abund = { 
-		switch(survey, 
-			line = a <- matrix(rep(tlength, each=J), M, J, byrow=TRUE),
-			point = a <- matrix(1, M, J))
-		})
-return(a)
-}
 
 
 
