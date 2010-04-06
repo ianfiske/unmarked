@@ -1,0 +1,19 @@
+citHeader("To cite package 'unmarked' in publications use:")
+
+desc <- packageDescription("unmarked")
+year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", desc$Date)
+vers <- paste("R package version", desc$Version)
+
+citEntry(entry="Manual",
+         title = "unmarked: Models for Data from Unmarked Animals",
+         author = personList(as.person("Ian Fiske"),
+                             as.person("Richard Chandler")),
+         year = year,
+         note = vers,
+
+         textVersion =
+         paste("Ian Fiske and Richard Chandler (",
+               year,
+               "). unmarked: Models for Data from Unmarked Animals. ",
+               vers, ".", sep=""))
+
