@@ -420,21 +420,6 @@ setMethod("fitted", "unmarkedFitOccuRN",
             return(matrix(fitted, M, J, byrow = TRUE))
           })
 
-                                        #setMethod("fitted", "unmarkedFitMNmix",
-                                        #	function(object, na.rm = FALSE) {
-                                        #		data <- getData(object)
-                                        #		des <- getDesign2(object@formula, data, na.rm = na.rm)
-                                        #		X <- des$X; V <- des$V; a <- des$plotArea				
-                                        #		y <- des$y	# getY(data) ... to be consistent w/NA handling?
-                                        #		M <- nrow(X)
-                                        #		J <- ncol(y)
-                                        #		psi <- plogis(coef(object, type = 'state'))
-                                        #		psi <- c(1-psi, psi)
-                                        #		p <- getP(object, na.rm = na.rm) 	# Not yet written
-                                        #		## Needs to be finished
-                                        #	})
-
-
 setMethod("fitted", "unmarkedFitColExt", 
           function(object, na.rm = FALSE) {
             data <- object@data
@@ -862,18 +847,6 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
 setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
           {
             stop("getP is not yet implemented for colext fits.")
-### 		formula <- object@formula
-### 		detformula <- as.formula(formula[[2]])
-### 		data <- getData(object)	
-### 		designMats <- unmarked:::getDesign3(formula = formula, data, na.rm = na.rm)
-### 		y <- designMats$y
-### 		M <- nrow(y)
-### 		J <- ncol(y)
-### 		V.itjk <- designMats$V
-### 		ppars <- coef(object, type="det") 
-### 		p <- plogis(V.itjk %*% ppars)	
-### 		p <- matrix(p, M, J, byrow = TRUE)
-### 		return(p)
           })
 
 
