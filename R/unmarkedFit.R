@@ -754,10 +754,14 @@ setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE)
             designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             V <- designMats$V
+            V.offset <- designMat$V.offset
+            if (is.null(V.offset)) {
+              V.offset <- rep(0, nrow(V))
+            }
             M <- nrow(y)
             J <- ncol(y)
             ppars <- coef(object, type = "det")
-            p <- plogis(V %*% ppars)
+            p <- plogis(V %*% ppars + V.offset)
             p <- matrix(p, M, J, byrow = TRUE)
             return(p)
           })
@@ -773,6 +777,10 @@ setMethod("getP", "unmarkedFitDS",
         designMats <- getDesign(umf, formula, na.rm = na.rm)
         y <- designMats$y
         V <- designMats$V
+        V.offset <- designMat$V.offset
+        if (is.null(V.offset)) {
+          V.offset <- rep(0, nrow(V))
+        }
         M <- nrow(y)
         J <- ncol(y)
         ppars <- coef(object, type = "det")
@@ -781,15 +789,15 @@ setMethod("getP", "unmarkedFitDS",
         key <- object@keyfun
         switch(key, 
         halfnorm = {
-            sigma <- exp(V %*% ppars)
+            sigma <- exp(V %*% ppars + V.offset)
             p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
             }, 
         exp = {
-            rate <- exp(V %*% ppars)
+            rate <- exp(V %*% ppars + V.offset)
             p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
             }, 
         hazard = {
-            shape <- exp(V %*% ppars)
+            shape <- exp(V %*% ppars + V.offset)
             scale <- exp(coef(object, type="scale"))
             p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
             scale = scale, survey = survey))
@@ -813,10 +821,14 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
             designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             V <- designMats$V
+            V.offset <- designMat$V.offset
+            if (is.null(V.offset)) {
+              V.offset <- rep(0, nrow(V))
+            }
             M <- nrow(y)
             J <- ncol(y)
             ppars <- coef(object, type = "det")
-            p <- plogis(V %*% ppars)
+            p <- plogis(V %*% ppars + V.offset)
             p <- matrix(p, M, J, byrow = TRUE)
             pi <- do.call(piFun, list(p = p))
             return(pi)
