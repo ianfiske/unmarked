@@ -82,7 +82,7 @@ Suppose there also exists transect-specific covariate data.
 	habitat = c('A','A','A','A','B','B','B'), row.names=letters[1:7]))
 @
 
-The function \code{unmarkedFrameDS} can now be used to organize these data along their metadata (study design (line- or point-transect), distance class break points, transect lengths, and units of measurement) into an object to be used as the \code{data} argument in \code{distsamp}. By organizing the data this way, the user does not need to repetitively specify these arguments during each call to \code{distsamp}, thereby reducing the potential for errors and facilitating data summary and manipulation.
+The function \code{unmarkedFrameDS} can now be used to organize these data along with their metadata (study design (line- or point-transect), distance class break points, transect lengths, and units of measurement) into an object to be used as the \code{data} argument in \code{distsamp}. By organizing the data this way, the user does not need to repetitively specify these arguments during each call to \code{distsamp}, thereby reducing the potential for errors and facilitating data summary and manipulation.
 
 <<>>=
 umf <- unmarkedFrameDS(y=as.matrix(yDat), siteCovs=covs, survey="line", 
@@ -99,16 +99,17 @@ umf
 summary(umf)
 hist(umf, xlab="distance (m)", main="", cex.lab=0.8, cex.axis=0.8)
 @
-\begin{figure}[tb]
+\begin{figure}[!ht]
   \centering
   \includegraphics{distsamp-umfhist}
   \caption{Histogram of detection distances.}
   \label{fig:umfhist}
 \end{figure}
 
+\newpage
 \section{Model fitting}
 
-Now that we have put our data into an object of class \code{unmarkedFrameDS}, we are ready to fit some models with \code{distsamp}. The first argument is a \code{formula} which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the \code{data}, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the \code{keyfun} argument. The response can be changed from "density", to "abund" with the \code{output} argument. Note, however, that when line transect lenghs differ, they must be accounted for so abundance is actually animals per unit transect length. When modeling density, the output units can be changed from "ha" to "kmsq" using the \code{unitsOut} argument. \code{distsamp} also includes the arguments \code{starts}, \code{method}, and \code{control}, which are common to all unmarked fitting functions.
+Now that we have put our data into an object of class \code{unmarkedFrameDS}, we are ready to fit some models with \code{distsamp}. The first argument is a \code{formula} which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the \code{data}, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the \code{keyfun} argument. The response can be changed from "density", to "abund" with the \code{output} argument. When modeling density, the output units can be changed from "ha" to "kmsq" using the \code{unitsOut} argument. \code{distsamp} also includes the arguments \code{starts}, \code{method}, and \code{control}, which are common to all unmarked fitting functions.
 
 Below are a series of models that demonstrate \code{distsamp}'s arguments and defaults.
 
@@ -129,7 +130,7 @@ Once a model has been fit, typing it's name will display parameter estimate info
 summary(haz_Null)
 @
 
-\section{Working with parameter estimates}
+\section{Manipulating results}
 
 Back-transforming estimates to the original scale and obtaining standard errors via the delta method is easily accomplished:
 
@@ -207,12 +208,16 @@ with(Esigma, {
 	lines(canopyHt, Predicted-SE, lty=2)
 	})			
 @
-\begin{figure}[tb]
+\begin{figure}[!hb]
   \centering
   \includegraphics{distsamp-predplot}
   \caption{Predicted covariate relatonships.}
   \label{fig:predplot}
 \end{figure}
+
+
+Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do the latter, we can plug predicted values of $\bm{\sigma}$ at given covariate values into the \code{gxhn} function. For instance, Figure~\ref{fig:detplot}a shows to the half-normal function at a canopy height of 2m. This was plotted by setting $\bm{\sigma}$ to 10.8, the predicted value shown above. The available detection functions are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the distance histogram using the \code{hist} method for \code{unmarkedFitDS} objects (Figure~\ref{fig:detplot}b). This only works for models without detection covariates; however, probability density functions at specific covariate values can be added in a fashion similar to that above (Figure~\ref{fig:detplot}b).
+
 
 <<detplot,fig=TRUE,include=FALSE,width=6,height=3>>=
 par(mfrow=c(1, 2))
@@ -226,21 +231,17 @@ plot(function(x) dxhn(x, sigma=9.9), 0, 20, add=TRUE, col="green")
 legend('topright', c("Canopy ht. = 2m", "Null", "Canopy ht. = 8m"), 
 	col=c("blue", "black", "green"), lty=1, cex=0.4)
 @
-
-\newpage
-
-Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do the latter, we can plug predicted values of $\bm{\sigma}$ at given covariate values into the \code{gxhn} function. For instance, Figure~\ref{fig:detplot}a shows to the half-normal function at a canopy height of 2m. This was draw by setting $\bm{\sigma}$ to 10.8, the predicted value shown above. The available detection functions are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the distance histogram using the \code{hist} method for \code{unmarkedFitDS} objects (Figure~\ref{fig:detplot}b). This only works for models without detection covariates; however, probability density functions at specific covariate values can be added in a fashion similar to that above (Figure~\ref{fig:detplot}b).
-
-\begin{figure}[tb]
+\begin{figure}[!ht]
   \centering
   \includegraphics{distsamp-detplot}
   \caption{Detection and probability density functions.}
   \label{fig:detplot}
 \end{figure}
 
+\newpage
+
 This document has emphasized methods tailored to distance-sampling analysis; however, the more general methods available in package \package{unmarked} can also be applied to \code{distsamp} related objects. For example, model-selection, model-averaging, and goodness-of-fit evaluation can be accomplished using the \code{modSel} and \code{parboot} methods.
 
-\newpage
 
 \bibliography{unmarked}
 \end{document}
