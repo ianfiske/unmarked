@@ -863,6 +863,10 @@ setMethod("simulate", "unmarkedFitDS",
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
     X <- designMats$X
+    X.offset <- designMats$X.offset
+    if (is.null(X.offset)) {
+      X.offset <- rep(0, nrow(X))
+    }
     a <- calcAreas(dist.breaks = umf@dist.breaks, tlength = umf@tlength, 
 	   survey = umf@survey, output = object@output, M = numSites(umf), 
 	   J = ncol(getY(umf)), unitsIn = umf@unitsIn, unitsOut = object@unitsOut)
@@ -871,7 +875,7 @@ setMethod("simulate", "unmarkedFitDS",
     M <- nrow(y)
     J <- ncol(y)
     lamParms <- coef(object, type = "state")
-    lam <- drop(exp(X %*% lamParms))
+    lam <- drop(exp(X %*% lamParms + X.offset))
     pmat <- getP(object, na.rm = na.rm)
     simList <- list()
     for(i in 1:nsim) {
@@ -892,11 +896,15 @@ setMethod("simulate", "unmarkedFitPCount",
             designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
+            X.offset <- designMats$X.offset
+            if (is.null(X.offset)) {
+              X.offset <- rep(0, nrow(X))
+            }
             M <- nrow(y)
             J <- ncol(y)
             allParms <- coef(object, altNames = FALSE)
             lamParms <- coef(object, type = "state")
-            lam <- as.numeric(exp(X %*% lamParms)) 
+            lam <- as.numeric(exp(X %*% lamParms + X.offset)) 
             lamvec <- rep(lam, each = J)
             pvec <- c(t(getP(object, na.rm = na.rm)))
             mix <- object@mixture
@@ -924,10 +932,14 @@ setMethod("simulate", "unmarkedFitMPois",
             designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
+            X.offset <- designMats$X.offset
+            if (is.null(X.offset)) {
+              X.offset <- rep(0, nrow(X))
+            }
             M <- nrow(y)
             J <- ncol(y)
             lamParms <- coef(object, type = "state")
-            lam <- as.numeric(exp(X %*% lamParms))
+            lam <- as.numeric(exp(X %*% lamParms + X.offset))
             lamvec <- rep(lam, each = J)
             pivec <- as.vector(t(getP(object, na.rm = na.rm)))
             simList <- list()
@@ -949,11 +961,15 @@ setMethod("simulate", "unmarkedFitOccu",
             designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             X <- designMats$X
+            X.offset <- designMats$X.offset
+            if (is.null(X.offset)) {
+              X.offset <- rep(0, nrow(X))
+            }
             M <- nrow(y)
             J <- ncol(y)
             allParms <- coef(object, altNames = FALSE)
             psiParms <- coef(object, type = "state")
-            psi <- as.numeric(plogis(X %*% psiParms))
+            psi <- as.numeric(plogis(X %*% psiParms + X.offset))
             p <- c(t(getP(object,na.rm = na.rm)))
             simList <- list()
             for(i in 1:nsim) {
@@ -1045,16 +1061,17 @@ setMethod("simulate", "unmarkedFitOccuRN",
             umf <- object@data
             designMats <- unmarked:::getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y; X <- designMats$X; V <- designMats$V
+            X.offset <- designMats$X.offset
+            if (is.null(X.offset)) {
+              X.offset <- rep(0, nrow(X))
+            }
             M <- nrow(y)
             J <- ncol(y)
-            
             detParms <- coef(object, 'det')
             r.ij <- plogis(V %*% detParms)
             r <- matrix(r.ij, M, J, byrow = TRUE)
-            
             lamParms <- coef(object, 'state')
-            lambda <- exp(X %*% lamParms)
-
+            lambda <- exp(X %*% lamParms + X.offset)
             simList <- list()
             for(s in 1:nsim) {
               N.i <- rpois(M, lambda)
