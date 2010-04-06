@@ -73,6 +73,10 @@ test.occu.fit.covs <- function() {
   checkException(backTransform(fm, type = "state"))
   checkException(backTransform(fm, type = "det"))
 
+  fitted <- fitted(fm)
+  checkEqualsNumeric(fitted, structure(c(0.5738, 0.5014, 0.4318, 0.38581, 0.50171, 0.53764, 
+0.46563, 0.40283, 0.39986, 0.79928), .Dim = c(5L, 2L)), tol = 1e-5)
+
 }
 
 test.occu.fit.covs.0 <- function() {
@@ -112,6 +116,11 @@ test.occu.offest <- function() {
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
   fm <- occu(~ o1 + o2 ~ offset(x), data = umf)
-
+  checkEqualsNumeric(coef(fm),
+                     structure(c(9.74361, 0.44327, -0.14683, 0.44085), .Names = c("psi(Int)", 
+"p(Int)", "p(o1)", "p(o2)")), tol = 1e-5)
   fm <- occu(~ o1 + offset(o2) ~ offset(x), data = umf)
+  checkEqualsNumeric(coef(fm), structure(c(8.59459, 0.97574, -0.3096), .Names = c("psi(Int)", 
+"p(Int)", "p(o1)")), tol=1e-5)
+
 }
