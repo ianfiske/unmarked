@@ -320,8 +320,7 @@ setMethod("fitted", "unmarkedFitDS", function(object, na.rm = FALSE)
     data <- object@data
     D <- getDesign(data, object@formula, na.rm = na.rm)
     X <- D$X
-    X <- D$X
-    X.offset <- des$X.offset
+    X.offset <- D$X.offset
     if (is.null(X.offset)) {
       X.offset <- rep(0, nrow(X))
     }
@@ -763,7 +762,7 @@ setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE)
             designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             V <- designMats$V
-            V.offset <- designMat$V.offset
+            V.offset <- designMats$V.offset
             if (is.null(V.offset)) {
               V.offset <- rep(0, nrow(V))
             }
@@ -786,7 +785,7 @@ setMethod("getP", "unmarkedFitDS",
         designMats <- getDesign(umf, formula, na.rm = na.rm)
         y <- designMats$y
         V <- designMats$V
-        V.offset <- designMat$V.offset
+        V.offset <- designMats$V.offset
         if (is.null(V.offset)) {
           V.offset <- rep(0, nrow(V))
         }
@@ -830,7 +829,7 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
             designMats <- getDesign(umf, formula, na.rm = na.rm)
             y <- designMats$y
             V <- designMats$V
-            V.offset <- designMat$V.offset
+            V.offset <- designMats$V.offset
             if (is.null(V.offset)) {
               V.offset <- rep(0, nrow(V))
             }
