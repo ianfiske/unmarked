@@ -300,9 +300,13 @@ setMethod("fitted", "unmarkedFit",
           function(object, na.rm = FALSE) {
             data <- object@data
             des <- getDesign(data, object@formula, na.rm = na.rm)
-            X <- des$X; V <- des$V
+            X <- des$X
+            X.offset <- des$X.offset
+            if (is.null(X.offset)) {
+              X.offset <- rep(0, nrow(X))
+            }
             state <- do.call(object['state']@invlink, 
-                             list(X %*% coef(object, 'state')))
+                             list(X %*% coef(object, 'state') + X.offset))
             state <- as.numeric(state)  ## E(X) for most models
             p <- getP(object, na.rm = na.rm) # P(detection | presence)
             fitted <- state * p  # true for models with E[Y] = p * E[X]
@@ -316,7 +320,12 @@ setMethod("fitted", "unmarkedFitDS", function(object, na.rm = FALSE)
     data <- object@data
     D <- getDesign(data, object@formula, na.rm = na.rm)
     X <- D$X
-    lambda <- drop(exp(X %*% coef(object, 'state')))
+    X <- D$X
+    X.offset <- des$X.offset
+    if (is.null(X.offset)) {
+      X.offset <- rep(0, nrow(X))
+    }
+    lambda <- drop(exp(X %*% coef(object, 'state') + X.offset))
     a <- calcAreas(dist.breaks = data@dist.breaks, tlength = data@tlength, 
 	   survey = data@survey, output = object@output, M = numSites(data), 
 	   J = ncol(getY(data)), unitsIn = data@unitsIn, unitsOut = object@unitsOut)
@@ -333,8 +342,12 @@ setMethod("fitted", "unmarkedFitOccu",
           function(object, na.rm = FALSE) {
             data <- object@data
             des <- getDesign(data, object@formula, na.rm = na.rm)
-            X <- des$X; V <- des$V
-            state <- plogis(X %*% coef(object, 'state'))
+            X <- des$X
+            X.offset <- des$X.offset
+            if (is.null(X.offset)) {
+              X.offset <- rep(0, nrow(X))
+            }
+            state <- plogis(X %*% coef(object, 'state') + X.offset)
             state <- as.numeric(state)  ## E(X) for most models
             state[object@knownOcc] <- 1
             p <- getP(object, na.rm = na.rm) # P(detection | presence)
@@ -348,11 +361,15 @@ setMethod("fitted", "unmarkedFitPCount",
           function(object, K, na.rm = FALSE) {
             data <- object@data
             des <- getDesign(data, object@formula, na.rm = na.rm)
-            X <- des$X; V <- des$V
+            X <- des$X
+            X.offset <- des$X.offset
+            if (is.null(X.offset)) {
+              X.offset <- rep(0, nrow(X))
+            }
             y <- des$y	# getY(data) ... to be consistent w/NA handling?
             M <- nrow(X)
             J <- ncol(y)
-            state <- exp(X %*% coef(object, 'state')) * a
+            state <- exp(X %*% coef(object, 'state') + X.offset)
             p <- getP(object, na.rm = na.rm)
             mix <- object@mixture
             switch(mix,
@@ -381,12 +398,19 @@ setMethod("fitted", "unmarkedFitOccuRN",
             data <- object@data
             des <- getDesign(data, object@formula, na.rm = na.rm)
             X <- des$X; V <- des$V
+            X.offset <- des$X.offset; V.offset <- des$V.offset
+            if (is.null(X.offset)) {
+              X.offset <- rep(0, nrow(X))
+            }
+            if (is.null(V.offset)) {
+              V.offset <- rep(0, nrow(V))
+            }
             y <- des$y	# getY(data) ... to be consistent w/NA handling?
             y <- truncateToBinary(y)
             M <- nrow(X)
             J <- ncol(y)
-            lam <- exp(X %*% coef(object, 'state')) * a
-            r <- plogis(V %*% coef(object, 'det'))
+            lam <- exp(X %*% coef(object, 'state') + X.offset)
+            r <- plogis(V %*% coef(object, 'det') + V.offset)
             if(missing(K)) K <- max(y, na.rm = TRUE) + 20 
             
             lam <- rep(lam, each = J)
