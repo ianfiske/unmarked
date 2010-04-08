@@ -9,7 +9,7 @@ genFixedNLL <- function(nll, whichFixed, fixedValues) {
 # nll the original negative log likelihood function
 # MLE the full vector of MLE values
 profileCI <- function(nll, whichPar, MLE, interval, level){
-	stopifnot(length(whichPar) == 1)
+  stopifnot(length(whichPar) == 1)
   MLEnll <- nll(MLE)
   nPar <- length(MLE)
 	chsq <- qchisq(level, 1)/2
@@ -18,13 +18,19 @@ profileCI <- function(nll, whichPar, MLE, interval, level){
 		mleRestricted <- optim(MLE, fixedNLL)$value
     mleRestricted - MLEnll - chsq
   }
-## TODO: expand interval as necessary rather than use +/- Inf?
-#  lower <- tryCatch(uniroot(f, c(interval[1],MLE[whichPar]))$root,
-#			error=function(x) -Inf)
-#  upper <- tryCatch(uniroot(f, c(MLE[whichPar], interval[2]))$root,
-#			error=function(x) Inf)
-  lower <- uniroot(f, c(interval[1],MLE[whichPar]))$root
-  upper <- uniroot(f, c(MLE[whichPar], interval[2]))$root
+  lower <- tryCatch(uniroot(f, c(interval[1],MLE[whichPar]))$root,
+                    error = function(e) {
+                      warning("Lower endpoint of profile confidence interval is on the boundary.",
+                              call. = FALSE)
+                      -Inf
+                    })
+           
+  upper <- tryCatch(upper <- uniroot(f, c(MLE[whichPar], interval[2]))$root,
+                    error = function(e) {
+                      warning("Upper endpoint of profile confidence interval is on the boundary.",
+                              call. = FALSE)
+                      Inf
+                    })
 	
   return(c(lower,upper))
 }
