@@ -34,6 +34,7 @@ setClass("unmarkedFitDS",
          contains = "unmarkedFit")
 
 
+
 setClass("unmarkedFitPCount", 
          representation(
                         K = "numeric",
@@ -41,13 +42,19 @@ setClass("unmarkedFitPCount",
          contains = "unmarkedFit")
 
 
+setClass("unmarkedFitPCountOpen", 
+        representation(
+            formlist = "list"),
+        contains = "unmarkedFitPCount")
+
+
 setClass("unmarkedFitOccu", 
          representation(knownOcc = "logical"),
-         contains = "unmarkedFit")			
+         contains = "unmarkedFit")
 
 
 setClass("unmarkedFitMPois", 
-         contains = "unmarkedFit")			
+         contains = "unmarkedFit")
 
 
 setClass("unmarkedFitOccuRN", 
@@ -207,6 +214,52 @@ setMethod("predict", "unmarkedFit",
             out <- data.frame(out, as(newdata, "data.frame"))
         return(out)
         })
+
+
+
+setMethod("predict", "unmarkedFitPCountOpen", 
+    function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
+        appendData = FALSE, ...) 
+    {
+        if(missing(newdata) || is.null(newdata))
+        newdata <- getData(object)
+        formlist <- object@formlist
+        if(inherits(newdata, "unmarkedFrame"))
+            cls <- "unmarkedFrame"            
+            else if(identical(class(newdata), "data.frame")) 
+                cls <- "data.frame"
+                else stop("newdata should be a data.frame or inherit unmarkedFrame class")
+        switch(cls, 
+            unmarkedFrame = {
+                D <- getDesign4(formlist, newdata, na.rm = na.rm)
+                switch(type, 
+                    lambda = X <- D$Xlam,
+                    gamma = X <- D$Xgam,
+                    omega = X <- D$Xom,                           
+                    det = X <- D$Xp)
+                },
+            data.frame = {
+                lambdaformula <- formlist$lambdaformula
+                gammaformula <- formlist$gammaformula
+                omegaformula <- formlist$omegaformula
+                pformula <- formlist$pformula
+                switch(type, 
+                    lambda = X <- model.matrix(lambdaformula, newdata),
+                    gamma = X <- model.matrix(gammaformula, newdata),
+                    omega = X <- model.matrix(omegaformula, newdata),
+                    det = X <- model.matrix(pformula, newdata))    
+                })
+        out <- data.frame(matrix(NA, nrow(X), 2, 
+            dimnames=list(NULL, c("Predicted", "SE"))))
+        lc <- linearComb(object, X, type)
+        if(backTransform) lc <- backTransform(lc)
+        out$Predicted <- coef(lc)
+        out$SE <- SE(lc)
+        if(appendData)
+            out <- data.frame(out, newdata)
+        return(out)
+        })
+
 
 
 setMethod("coef", "unmarkedFit",
@@ -391,6 +444,37 @@ setMethod("fitted", "unmarkedFitPCount",
           })
 
 
+setMethod("fitted", "unmarkedFitPCountOpen",
+    function(object, K, na.rm = FALSE) {
+#        stop("fitted method not ready yet for unmarkedFitPCountOpen objects")
+        data <- getData(object)
+        D <- getDesign4(object@formlist, data, na.rm = na.rm)
+        Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
+        a <- D$plotArea
+        y <- D$y
+        M <- nrow(y)
+        T <- ncol(y)
+        lambda <- exp(Xlam %*% coef(object, 'lambda')) * a
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, byrow=TRUE)
+        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, byrow=TRUE) 
+        p <- getP(object, na.rm = na.rm)
+        state <- matrix(NA, M, T)
+        switch(object@mixture,
+        P = state[,1] <- lambda,
+        NB = {
+            if(missing(K)) K <- max(y, na.rm = TRUE) + 20
+            k <- 0:K
+            alpha <- exp(coef(object['alpha']))
+            den.ik <- sapply(k, function(x) dnbinom(x, size=alpha, mu=lambda))
+            state[,1] <- den.ik %*% k
+            })
+        for(t in 2:T)
+            state[,t] <- omega[,t-1] * state[,t-1] + gamma[,t-1]
+        fitted <- state * p
+        return(fitted)
+        })
+
+
 
 setMethod("fitted", "unmarkedFitOccuRN", 
           function(object, K, na.rm = FALSE) {
@@ -571,6 +655,47 @@ setMethod("update", "unmarkedFitColExt",
               eval(call, parent.frame())
             else call
           })
+
+
+setMethod("update", "unmarkedFitPCountOpen", 
+    function(object, lambdaformula., gammaformula., omegaformula., pformula., 
+        ..., evaluate = TRUE) 
+    {
+        call <- object@call
+        lambdaformula <- as.formula(call[['lambdaformula']])
+        gammaformula <- as.formula(call[['gammaformula']])
+        omegaformula <- as.formula(call[['omegaformula']])
+        pformula <- as.formula(call[['pformula']])
+        extras <- match.call(expand.dots = FALSE)$...
+        if (!missing(lambdaformula.)) {
+            upLambdaformula <- update.formula(lambdaformula, lambdaformula.)
+            call[['lambdaformula']] <- upLambdaformula
+            }
+        if (!missing(gammaformula.)) {
+            upGammaformula <- update.formula(gammaformula, gammaformula.)
+            call[['gammaaformula']] <- upGammaformula
+            }
+        if (!missing(omegaformula.)) {
+            upOmegaformula <- update.formula(omegaformula, omegaformula.)
+            call[['omegaformula']] <- upOmegaformula
+            }
+        if (!missing(pformula.)) {
+            upPformula <- update.formula(pformula, pformula.)
+            call[['pformula']] <- upPformula
+            }
+        if (length(extras) > 0) {
+            existing <- !is.na(match(names(extras), names(call)))
+            for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+            if (any(!existing)) {
+                call <- c(as.list(call), extras[!existing])
+                call <- as.call(call)
+                }
+            }
+        if (evaluate) 
+            eval(call, parent.frame())
+        else call
+        })
+
 
 setGeneric("sampleSize", function(object) standardGeneric("sampleSize"))
 setMethod("sampleSize", "unmarkedFit",
@@ -843,6 +968,24 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
           })
 
 
+
+setMethod("getP", "unmarkedFitPCountOpen", function(object, na.rm = TRUE) 
+    {
+        formlist <- object@formlist
+        umf <- object@data
+        D <- getDesign4(formlist, umf, na.rm = na.rm)
+        y <- D$y
+        Xp <- D$Xp
+        M <- nrow(y)
+        J <- ncol(y)
+        ppars <- coef(object, type = "det")
+        p <- plogis(Xp %*% ppars)
+        p <- matrix(p, M, J, byrow = TRUE)
+        return(p)
+    })
+
+
+
 setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
           {
             stop("getP is not yet implemented for colext fits.")
@@ -917,6 +1060,42 @@ setMethod("simulate", "unmarkedFitPCount",
             }
             return(simList)
           })
+
+
+setMethod("simulate", "unmarkedFitPCountOpen", 
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
+        formlist <- object@formlist
+        umf <- object@data
+        D <- getDesign4(formlist, umf, na.rm = na.rm)
+        Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
+        y <- D$y
+        a <- D$plotArea
+        M <- nrow(y)
+        T <- ncol(y)
+        lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, byrow=TRUE)
+        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, byrow=TRUE) 
+        p <- getP(object, na.rm = na.rm)
+        mix <- object@mixture
+        N <- matrix(NA, M, T)
+        S <- G <- matrix(NA, M, T-1)
+        simList <- list()
+        for(i in 1:nsim) {
+            switch(mix, 
+                P = N[,1] <- rpois(M, lambda),
+                NB = N[,1] <- rnbinom(M, size = exp(coef(object["alpha"])), 
+                    mu = lambda)
+                )
+            for(t in 2:T) {
+            	S[,t-1] <- rbinom(M, N[,t-1], 0.8)
+                G[,t-1] <- rpois(M, gamma[,t-1])
+                N[,t] <- S[,t-1] + G[,t-1]
+	            }
+            yvec <- rbinom(M * T, N, prob = p)
+            simList[[i]] <- matrix(yvec, M, T)
+            }
+        return(simList)
+        })
 
 
 
