@@ -7,9 +7,10 @@ pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
 mixture <- match.arg(mixture)
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
-D <- getDesign4(formlist, data)
+formula <- as.formula(paste(unlist(formlist), collapse=" "))
+D <- getDesign(data, formula)
 y <- D$y; Xlam = D$Xlam; Xgam = D$Xgam; Xom = D$Xom; Xp = D$Xp
-delta <- D$delta; plotArea <- D$plotArea
+delta <- D$delta
 M <- nrow(y)
 T <- ncol(y)
 y <- matrix(y,  M, T)
@@ -47,7 +48,7 @@ mat.to.vec <- as.numeric(apply(mk.order, 1, rep, times=lk))
 g.star <- array(NA, c(M, lk, T-1))
 
 nll <- function(parms) { # No survey-specific NA handling.
-    lambda <- exp(Xlam %*% parms[1 : nAP]) * plotArea
+    lambda <- exp(Xlam %*% parms[1 : nAP])
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         M, T, byrow=TRUE)
     switch(goDims,
@@ -115,8 +116,7 @@ if(se) {
 
 fmAIC <- 2 * fm$value + 2 * nP
 
-lamName <- ifelse(all(data@plotArea == 1), "Abundance", "Density")
-lamEstimates <- unmarkedEstimate(name = lamName, short.name = "lam",
+lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
     estimates = ests[1:nAP], covMat = as.matrix(covMat[1:nAP,1:nAP]),
     invlink = "exp", invlinkGrad = "exp")
 gamEstimates <- unmarkedEstimate(name = "Recruitment", short.name = "gam",
@@ -142,7 +142,7 @@ if(identical(mixture, "NB")) {
         invlinkGrad = "exp")
     }
 umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", call = match.call(),
-    formula = as.formula(paste(unlist(formlist), collapse=" ")),
+    formula = formula,
     formlist = formlist, data = data, sitesRemoved=D$removed.sites,
     estimates = estimateList, AIC = fmAIC, opt = opt, negLogLike = fm$value,
     nllFun = nll, K = K, mixture = mixture)

@@ -5,6 +5,7 @@
 \alias{unmarkedFramePCount}
 \alias{unmarkedFrameDS}
 \alias{unmarkedFrameMPois}
+\alias{unmarkedFramePCountOpen}
 \usage{unmarkedFrame(y, siteCovs=NULL, obsCovs=NULL, mapInfo, obsToY)}
 \description{Constructor for unmarkedFrames.}
 \arguments{

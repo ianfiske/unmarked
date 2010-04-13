@@ -192,10 +192,9 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 
 
 unmarkedFramePCountOpen <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
- 	plotArea = NULL, delta) 
+ 	delta) 
 {
 	J <- ncol(y)
-	if(missing(plotArea) || is.null(plotArea)) plotArea <- rep(1, nrow(y))		
 	if(missing(delta))
 		delta <- matrix(1, nrow(y), ncol(y) - 1)
 	if(nrow(delta) != nrow(y) | ncol(delta) != ncol(y) - 1)
@@ -215,7 +214,7 @@ unmarkedFramePCountOpen <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
   	}
 	umf <- new("unmarkedFramePCountOpen", y = y, siteCovs = siteCovs, 
 		obsCovs = obsCovs, obsToY = diag(J), 
-		plotArea = plotArea, delta = delta)
+		delta = delta)
 	return(umf)
 }
 

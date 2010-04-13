@@ -38,9 +38,11 @@
 \alias{unmarkedFramePCount-class}
 \alias{unmarkedFrameDS-class}
 \alias{unmarkedMultFrame-class}
+\alias{unmarkedFramePCountOpen-class}
 \alias{show,unmarkedFrame-method}
 \alias{summary,unmarkedFrame-method}
 \alias{summary,unmarkedFrameDS-method}
+
 
 \title{Class "unmarkedFrame" }
 \description{Methods for manipulating, summarizing and viewing unmarkedFrames}
