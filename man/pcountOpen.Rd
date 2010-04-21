@@ -1,7 +1,7 @@
 \name{pcountOpen}
 \alias{pcountOpen}
-\title{Fit the open N-mixture model of Dail and Madsen (2010)}
-\description{Fit the open N-mixture model of Dail and Madsen (2010)}
+\title{Fit the open N-mixture model}
+\description{Fit the open N-mixture model}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data, 
 	mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE, ...)
@@ -53,9 +53,9 @@ Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatial
 \author{Richard Chandler \email{rchandler@nrc.umass.edu}}
 
 \note{
-When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, it must be supplied.
+When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, they must be supplied.
 
-If time intervals vary among survey occasions (sampling periods), an M by T-1 matrix of time intervals should be supplied to unmarkedFramePCountOpen using the delta argument.
+If time intervals vary among survey occasions (sampling periods), an M by T-1 matrix of time intervals should be supplied to unmarkedFramePCountOpen using the delta argument. THIS IS CURRENTLY MISSPECIFIED.
 }
 
 \section{Warning}{This function can be extremely slow, especially when there are covariates on gamma or omega. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates (MLEs) will also help with speed. }
