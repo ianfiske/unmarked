@@ -9,7 +9,7 @@ formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- getDesign(data, formula)
-y <- D$y; Xlam = D$Xlam; Xgam = D$Xgam; Xom = D$Xom; Xp = D$Xp
+y <- D$y; Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
 delta <- D$delta
 M <- nrow(y)
 T <- ncol(y)
@@ -79,19 +79,19 @@ nll <- function(parms) { # No survey-specific NA handling.
     for(i in k)
         convMat[,i+1] <- dbinom(i, g3args[,2], g3args[,3]) * 
             dpois(g3args[,1] - i, g3args[,4])
-    g3 <- rowSums(convMat)
+    g3 <- rowSums(convMat)^delta.kk
     g3 <- array(g3, c(lk, lk, M, T-1))
     pT.kk <- rep(p[, T], each=lk*lk)
     g1.Tm1 <- dbinom(y.kk[,T], k, pT.kk) # recycle
-    delta.Tkk <- delta.kk[,T-1]
-    g3.Tm1 <- g3[,,, T-1]^delta.Tkk
+    #delta.Tkk <- delta.kk[,T-1]
+    g3.Tm1 <- g3[,,, T-1]#^delta.Tkk
     g.star[,, T-1] <- apply(g1.Tm1 * g3.Tm1, 2, colSums)	# recycle
     for(t in (T-1):2) {
         pt.kk <- rep(p[, t], each=lk*lk)
         g1.t <- dbinom(y.kk[,t], k, pt.kk)
         g.star.vec <- g.star[,, t][mat.to.vec]
-        delta.tkk <- delta.kk[,t-1]
-        g3.t <- g3[,,, t-1]^delta.tkk #t or t-1?
+        #delta.tkk <- delta.kk[,t-1]
+        g3.t <- g3[,,, t-1]#^delta.tkk
         g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
     }
     L <- rowSums(g1 * g2 * g.star[,, 1])
@@ -114,7 +114,7 @@ if(se) {
 		} 
     } else covMat <- matrix(NA, nP, nP)
 
-fmAIC <- 2 * fm$value + 2 * nP
+fmAIC <- 2*fm$value + 2*nP
 
 lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
     estimates = ests[1:nAP], covMat = as.matrix(covMat[1:nAP,1:nAP]),

@@ -71,7 +71,7 @@ M <- 50
 T <- 5
 veght <- rnorm(M)
 isolation <- matrix(rnorm(M*T), M, T)
-date <- matrix(rnorm(M*T, 1), M, T)
+time <- matrix(rnorm(M*T, 1), M, T)
 lambda <- exp(-1)   # + 0.5*veght)
 y <- p <- N <- gamma <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
@@ -82,13 +82,13 @@ for(t in 1:(T-1)) {
 	G[,t] <- rpois(M, gamma[,t])
 	N[,t+1] <- S[,t] + G[,t]
 	}
-p[] <- plogis(-1 + 1*date)
+p[] <- plogis(-1 + 1*time)
 y[] <- rbinom(M*T, N, p)
 
                             
 # Prepare data                               
 umf <- unmarkedFramePCountOpen(y = y, siteCovs = data.frame(veght), 
-	obsCovs = list(isolation=isolation, date=date))
+	obsCovs = list(isolation=isolation, time=time))
 
 head(umf)
 summary(umf)
@@ -103,8 +103,44 @@ backTransform(m1, "omega")
 backTransform(m1, "det")
 
 \dontrun{
-(m2 <- pcountOpen(~1, ~isolation, ~1, ~date, umf, K=15, se=FALSE,
+(m2 <- pcountOpen(~1, ~isolation, ~1, ~time, umf, K=15, se=FALSE,
 	control=list(maxit=30, trace=TRUE), starts=c(-1, -1, -1, 1.5, -1, 1)))
+
+# Now simulate with uneven sampling period intervals
+set.seed(3)
+M <- 50
+T <- 10
+date <- matrix(NA, M, T)
+datediff <- date[,-T]
+date[,1] <- rpois(M, 2)
+for(t in 2:T) {
+    date[,t] <- date[,t-1] + rpois(M, 10)
+    datediff[,t-1] <- date[,t] - date[,t-1]
+    }
+lambda <- exp(2)
+y <- p <- N <- gamma <- matrix(NA, M, T)
+S <- G <- matrix(NA, M, T-1)
+N[,1] <- rpois(M, lambda)
+for(t in 1:(T-1)) {
+	S[,t] <- rbinom(M, N[,t], 0.95^datediff[,t])   # 0.95 is daily survival rate
+	G[,t] <- rpois(M, 0.05*datediff[,t])           # 0.05 is daily recruitment
+	N[,t+1] <- S[,t] + G[,t]
+	}
+p[] <- 0.7
+y[] <- rbinom(M*T, N, p)
+
+
+umfO <- unmarkedFramePCountOpen(y = y, delta = datediff)
+umfO
+
+(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, se=FALSE, starts=c(2, -3, 3, 0.85),
+    control=list(maxit=15, trace=T, REPORT=1)))
+backTransform(m3, "lambda")
+backTransform(m3, "gamma")
+backTransform(m3, "omega")
+backTransform(m3, "det")
+
+       
 }
 
 }
