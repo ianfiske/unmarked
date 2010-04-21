@@ -848,7 +848,8 @@ setMethod("hist", "unmarkedFitDS",
                     min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
                 },
             point = {
-                int <- integrate(drexp, dbreaks[1], dbreaks[nb], rate=rate)$value
+                int <- integrate(drhaz, dbreaks[1], dbreaks[nb], 
+                    shape=shape, scale=scale)$value
                     h$density <- h$density * int
                     plot(h, freq=F, ...)
                     plot(function(r) drhaz(r, shape=shape, scale=scale), 

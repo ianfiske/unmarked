@@ -116,7 +116,9 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
 		unitsIn, mapInfo = NULL)
 {
-	if(missing(tlength) & survey == "point")
+	if(missing(survey))
+        stop("survey argument must be specified")
+    if(missing(tlength) & survey == "point")
 		tlength <- numeric(0)
 	umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
 			siteCovs = siteCovs, dist.breaks = dist.breaks, tlength = tlength,
@@ -285,24 +287,16 @@ setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
 
 setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
 setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
-			object@obsCovs <- as.data.frame(value)
+			if(identical(class(object)[1], "unmarkedFrameDS"))
+			     stop("unmarkedFrameDS objects cannot have obsCovs")     
+            object@obsCovs <- as.data.frame(value)
 			object
-		})
-setReplaceMethod("obsCovs", "unmarkedFrameDS", function(object, value) {
-			stop("unmarkedFrameDS objects cannot have obsCovs")
 		})
 
 
 setGeneric("siteCovs<-", function(object, value) standardGeneric("siteCovs<-"))
 setReplaceMethod("siteCovs", "unmarkedFrame", function(object, value) {
 			object@siteCovs <- as.data.frame(value)
-			object
-		})
-
-
-setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
-setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
-			object@obsCovs <- as.data.frame(value)
 			object
 		})
 
