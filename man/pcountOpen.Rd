@@ -65,8 +65,43 @@ If time intervals vary among survey occasions (sampling periods), an M by T-1 ma
 }
 
 \examples{
-# Simulate	
+# Simulate
+
+# No covariates, constant sampling period intervals	
 set.seed(3)
+M <- 50
+T <- 5
+lambda <- 1
+y <- N <- matrix(NA, M, T)
+S <- G <- matrix(NA, M, T-1)
+gamma <- 0.5
+omega <- 0.8
+N[,1] <- rpois(M, lambda)
+for(t in 1:(T-1)) {
+	S[,t] <- rbinom(M, N[,t], omega)
+	G[,t] <- rpois(M, gamma)
+	N[,t+1] <- S[,t] + G[,t]
+	}
+p <- 0.7
+y[] <- rbinom(M*T, N, p)
+
+                            
+# Prepare data                               
+umf <- unmarkedFramePCountOpen(y = y)
+
+summary(umf)
+
+# Fit model and backtransform
+(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=15))   # K may be too small
+backTransform(m1, "lambda")
+backTransform(m1, "gamma")
+backTransform(m1, "omega")
+backTransform(m1, "det")
+
+\dontrun{
+
+# Simulate covariate model with constant intervals
+set.seed(33)
 M <- 50
 T <- 5
 veght <- rnorm(M)
@@ -85,31 +120,17 @@ for(t in 1:(T-1)) {
 p[] <- plogis(-1 + 1*time)
 y[] <- rbinom(M*T, N, p)
 
-                            
-# Prepare data                               
-umf <- unmarkedFramePCountOpen(y = y, siteCovs = data.frame(veght), 
+umfC <- unmarkedFramePCountOpen(y = y, siteCovs = data.frame(veght), 
 	obsCovs = list(isolation=isolation, time=time))
 
-head(umf)
-summary(umf)
-plot(umf, strip=FALSE)
 
+(m2 <- pcountOpen(~1, ~isolation, ~1, ~time, umfC, K=15, se=FALSE,
+	control=list(maxit=30, trace=TRUE, REPORT=1), starts=c(-1,-1,-1,1.5,-1,1)))
 
-# Fit some models
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=15))   # K may be too small
-backTransform(m1, "lambda")
-backTransform(m1, "gamma")
-backTransform(m1, "omega")
-backTransform(m1, "det")
-
-\dontrun{
-(m2 <- pcountOpen(~1, ~isolation, ~1, ~time, umf, K=15, se=FALSE,
-	control=list(maxit=30, trace=TRUE), starts=c(-1, -1, -1, 1.5, -1, 1)))
-
-# Now simulate with uneven sampling period intervals
-set.seed(3)
+# Simulate uneven sampling period intervals
+set.seed(7)
 M <- 50
-T <- 10
+T <- 5
 date <- matrix(NA, M, T)
 datediff <- date[,-T]
 date[,1] <- rpois(M, 2)
@@ -117,7 +138,7 @@ for(t in 2:T) {
     date[,t] <- date[,t-1] + rpois(M, 10)
     datediff[,t-1] <- date[,t] - date[,t-1]
     }
-lambda <- exp(2)
+lambda <- 5
 y <- p <- N <- gamma <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
 N[,1] <- rpois(M, lambda)

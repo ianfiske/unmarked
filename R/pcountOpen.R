@@ -20,7 +20,8 @@ if(K <= max(y, na.rm = TRUE))
 k <- 0:K
 lk <- length(k)
 y.kk <- apply(y, 2, rep, each=lk*lk)
-delta.kk <- apply(delta, 2, rep, each=lk*lk)
+if(all(delta==1)) delta <- 1
+    # delta.kk <- 1 else delta.kk <- apply(delta, 2, rep, each=lk*lk)
 
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)
@@ -53,33 +54,36 @@ nll <- function(parms) { # No survey-specific NA handling.
         M, T, byrow=TRUE)
     switch(goDims,
     scalar = {
-        gamma <- exp(parms[(nAP+1) : (nAP+nGP)])
-        omega <- plogis(parms[(nAP+nGP+1) : (nAP+nGP+nOP)])
+        gamma <- drop(exp(parms[(nAP+1) : (nAP+nGP)]))
+        omega <- drop(plogis(parms[(nAP+nGP+1) : (nAP+nGP+nOP)]))
         },
     vector = {
-        gamma <- matrix(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)]), 
+        gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])), 
             M, T, byrow=TRUE)[,1]
-        omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]), 
+        omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])), 
             M, T, byrow=TRUE)[,1]
         },
     matrix = {
-        gamma <- matrix(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)]),
+        gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])),
             M, T, byrow=TRUE)[,-T]
-        omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]),
+        omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])),
             M, T, byrow=TRUE)[,-T]
         })
+    gamma <- gamma*delta
+    omega <- omega^delta
     g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))
     switch(mixture,
         P = g2 <- sapply(k, function(x) dpois(x, lambda)),
         NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
            mu=lambda)))
-    g3args <- cbind(rep(k, times=lk), rep(k, each=lk),
-        rep(omega, each=lk*lk), rep(gamma, each=lk*lk))	# recycle
+    g3args <- cbind(rep(k, times=lk), rep(k, each=lk), 
+        rep(omega, each=lk*lk), #^delta.kk
+        rep(gamma, each=lk*lk)) #*delta.kk)# recycle
     convMat <- matrix(NA, nrow(g3args), K+1)
     for(i in k)
         convMat[,i+1] <- dbinom(i, g3args[,2], g3args[,3]) * 
             dpois(g3args[,1] - i, g3args[,4])
-    g3 <- rowSums(convMat)^delta.kk
+    g3 <- rowSums(convMat)#^delta.kk
     g3 <- array(g3, c(lk, lk, M, T-1))
     pT.kk <- rep(p[, T], each=lk*lk)
     g1.Tm1 <- dbinom(y.kk[,T], k, pT.kk) # recycle
