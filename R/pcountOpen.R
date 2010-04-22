@@ -2,9 +2,11 @@
 
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
-    data, mixture=c("P", "NB"), K, starts, method="BFGS", se=TRUE, ...)
+    data, mixture=c("P", "NB"), K, fix=c("none", "gamma", "omega"), 
+    starts, method="BFGS", se=TRUE, ...)
 {
 mixture <- match.arg(mixture)
+fix <- match.arg(fix)
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
@@ -31,6 +33,15 @@ nAP <- ncol(Xlam)
 nGP <- ncol(Xgam)
 nOP <- ncol(Xom)
 nDP <- ncol(Xp)
+if(identical(fix, "gamma")) {
+    if(nGP > 1) stop("gamma covariates not allowed when fix==gamma")
+    else { nGP <- 0; gamParms <- character(0) }
+    }
+if(identical(fix, "omega")) {
+    if(nOP > 1) stop("omega covariates not allowed when fix==omega")
+    else { nOP <- 0; omParms <- character(0) }
+    }
+
 nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 
 # Save time in likelihood evaluation
@@ -69,8 +80,12 @@ nll <- function(parms) { # No survey-specific NA handling.
         omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])),
             M, T, byrow=TRUE)[,-T]
         })
-    gamma <- gamma*delta
-    omega <- omega^delta
+    if(identical(fix, "gamma")) gamma <- 0
+        else if(identical(fix, "omega")) omega <- 1    
+        else {
+            gamma <- gamma*delta
+            omega <- omega^delta
+            }
     g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))
     switch(mixture,
         P = g2 <- sapply(k, function(x) dpois(x, lambda)),
@@ -123,22 +138,28 @@ fmAIC <- 2*fm$value + 2*nP
 lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
     estimates = ests[1:nAP], covMat = as.matrix(covMat[1:nAP,1:nAP]),
     invlink = "exp", invlinkGrad = "exp")
-gamEstimates <- unmarkedEstimate(name = "Recruitment", short.name = "gam",
-    estimates = ests[(nAP+1) : (nAP+nGP)],
-    covMat = as.matrix(covMat[(nAP+1) : (nAP+nGP), (nAP+1) : (nAP+nGP)]),
-    invlink = "exp", invlinkGrad = "exp")
-omEstimates <- unmarkedEstimate(name = "Survival", short.name = "omega",
-    estimates = ests[(nAP+nGP+1) : (nAP+nGP+nOP)],
-    covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
-        (nAP+nGP+1) : (nAP+nGP+nOP)]),
-    invlink = "logistic", invlinkGrad = "logistic.grad")
+if(identical(fix, "omega")) 
+    omEstimates <- NULL
+    else {
+        }
 detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     estimates = ests[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)],
     covMat = as.matrix(covMat[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP),
         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
-    gamma = gamEstimates, omega = omEstimates, det=detEstimates))
+    det=detEstimates))
+if(!identical(fix, "gamma")) 
+    estimateList@estimates$gamma <- unmarkedEstimate(name = "Recruitment", 
+        short.name = "gam", estimates = ests[(nAP+1) : (nAP+nGP)],
+        covMat = as.matrix(covMat[(nAP+1) : (nAP+nGP), (nAP+1) : (nAP+nGP)]),
+        invlink = "exp", invlinkGrad = "exp")
+if(!identical(fix, "omega")) 
+    estimateList@estimates$omega <- unmarkedEstimate(name = "Survival", 
+        short.name = "omega", estimates = ests[(nAP+nGP+1) : (nAP+nGP+nOP)],
+        covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
+            (nAP+nGP+1) : (nAP+nGP+nOP)]),
+        invlink = "logistic", invlinkGrad = "logistic.grad")   
 if(identical(mixture, "NB")) {
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
         short.name = "alpha", estimates = ests[nP],

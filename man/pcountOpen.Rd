@@ -4,7 +4,8 @@
 \description{Fit the open N-mixture model}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data, 
-	mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE, ...)
+	mixture = c("P", "NB"), K, fix=c("none", "gamma", "omega"), starts, 
+    method = "BFGS", se = TRUE, ...)
 }
 \arguments{
   \item{lambdaformula}{Right-hand sided formula for initial abundance}
@@ -14,6 +15,7 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
   \item{data}{An object of class unmarkedFramePCountOpen. See details}
   \item{mixture}{character specifying mixture: either "P" or "NB".}
   \item{K}{Integer upper index of integration for N-mixture.}
+  \item{fix}{If "omega", omega is fixed at 1. If "gamma", gamma is fixed at 0.}
   \item{starts}{vector of starting values}
   \item{method}{Optimization method used by \code{\link{optim}}.}
   \item{se}{logical specifying whether or not to compute standard errors.}
@@ -129,7 +131,7 @@ umfC <- unmarkedFramePCountOpen(y = y, siteCovs = data.frame(veght),
 
 # Simulate uneven sampling period intervals
 set.seed(7)
-M <- 50
+M <- 25
 T <- 5
 date <- matrix(NA, M, T)
 datediff <- date[,-T]
@@ -138,7 +140,7 @@ for(t in 2:T) {
     date[,t] <- date[,t-1] + rpois(M, 10)
     datediff[,t-1] <- date[,t] - date[,t-1]
     }
-lambda <- 5
+lambda <- 4
 y <- p <- N <- gamma <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
 N[,1] <- rpois(M, lambda)
@@ -154,7 +156,7 @@ y[] <- rbinom(M*T, N, p)
 umfO <- unmarkedFramePCountOpen(y = y, delta = datediff)
 umfO
 
-(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, se=FALSE, starts=c(2, -3, 3, 0.85),
+(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=FALSE, starts=c(2,-3,3,0.85),
     control=list(maxit=15, trace=T, REPORT=1)))
 backTransform(m3, "lambda")
 backTransform(m3, "gamma")
