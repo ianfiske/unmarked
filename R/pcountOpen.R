@@ -10,7 +10,7 @@ fix <- match.arg(fix)
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
-D <- getDesign(data, formula)
+D <- unmarked:::getDesign(data, formula)
 y <- D$y; Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
 delta <- D$delta
 M <- nrow(y)
@@ -49,7 +49,7 @@ nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)))
     goDims <- "scalar"
     else {
-        goParms <- unique(gamParms, omParms)
+        goParms <- unique(c(all.vars(gammaformula), all.vars(omegaformula)))
         if(any(goParms %in% colnames(obsCovs(data))))
             goDims <- "matrix"
             else goDims <- "vector"
