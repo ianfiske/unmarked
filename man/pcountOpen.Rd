@@ -57,7 +57,7 @@ Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatial
 \note{
 When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, they must be supplied.
 
-If time intervals vary among survey occasions (sampling periods), an M by T-1 matrix of time intervals should be supplied to unmarkedFramePCountOpen using the delta argument. THIS IS CURRENTLY MISSPECIFIED.
+If time intervals vary among survey occasions (sampling periods), an M by T-1 matrix of time intervals should be supplied to unmarkedFramePCountOpen using the delta argument.
 }
 
 \section{Warning}{This function can be extremely slow, especially when there are covariates on gamma or omega. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates (MLEs) will also help with speed. }
@@ -67,9 +67,8 @@ If time intervals vary among survey occasions (sampling periods), an M by T-1 ma
 }
 
 \examples{
-# Simulate
 
-# No covariates, constant sampling period intervals	
+## Simulate no covariates, constant sampling period intervals	
 set.seed(3)
 M <- 50
 T <- 5
@@ -102,7 +101,7 @@ backTransform(m1, "det")
 
 \dontrun{
 
-# Simulate covariate model with constant intervals
+## Simulate covariate model with constant intervals
 set.seed(33)
 M <- 50
 T <- 5
@@ -122,14 +121,17 @@ for(t in 1:(T-1)) {
 p[] <- plogis(-1 + 1*time)
 y[] <- rbinom(M*T, N, p)
 
+
+# Prepare data
 umfC <- unmarkedFramePCountOpen(y = y, siteCovs = data.frame(veght), 
 	obsCovs = list(isolation=isolation, time=time))
 
-
+# Fit covariate model
 (m2 <- pcountOpen(~1, ~isolation, ~1, ~time, umfC, K=15, se=FALSE,
 	control=list(maxit=30, trace=TRUE, REPORT=1), starts=c(-1,-1,-1,1.5,-1,1)))
 
-# Simulate uneven sampling period intervals
+
+## Simulate uneven sampling period intervals
 set.seed(7)
 M <- 25
 T <- 5
@@ -153,9 +155,11 @@ p[] <- 0.7
 y[] <- rbinom(M*T, N, p)
 
 
+# Prepare data
 umfO <- unmarkedFramePCountOpen(y = y, delta = datediff)
 umfO
 
+# Fit model
 (m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=FALSE, starts=c(2,-3,3,0.85),
     control=list(maxit=15, trace=T, REPORT=1)))
 backTransform(m3, "lambda")
