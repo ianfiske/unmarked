@@ -264,7 +264,7 @@ setMethod("handleNA", "unmarkedFrame", function(umf, X, X.offset, V, V.offset)
 	
 	if(sum(y.new.na) > 0) {
 		y.long[y.new.na] <- NA
-		warning("Some observations have been discarded because corresponding covariates were missing.", .call = FALSE)
+		warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
 	}
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
@@ -278,7 +278,7 @@ setMethod("handleNA", "unmarkedFrame", function(umf, X, X.offset, V, V.offset)
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
                 V.offset <- V.offset[!sites.to.remove[rep(1:M, each = R)], ]
 		warning(paste(num.to.remove,"sites have been discarded because of missing data."),
-                        .call = FALSE)
+                        call. = FALSE)
 	}
 	
 	list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset,
