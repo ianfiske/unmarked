@@ -105,14 +105,21 @@ nll <- function(parms) { # No survey-specific NA handling.
     #delta.Tkk <- delta.kk[,T-1]
     g3.Tm1 <- g3[,,, T-1]#^delta.Tkk
     g.star[,, T-1] <- apply(g1.Tm1 * g3.Tm1, 2, colSums)	# recycle
+    # NA handling idea:
+    #g.star[is.na(g.star[,, T-1])] <- 1
     for(t in (T-1):2) {
         pt.kk <- rep(p[, t], each=lk*lk)
         g1.t <- dbinom(y.kk[,t], k, pt.kk)
         g.star.vec <- g.star[,, t][mat.to.vec]
-        #delta.tkk <- delta.kk[,t-1]
         g3.t <- g3[,,, t-1]#^delta.tkk
+        #delta.tkk <- delta.kk[,t-1]
         g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
-    }
+        # NA handling idea:
+        #g.star[is.na(g.star[,, t-1])] <- 1
+        }
+    #gp <- g1 * g2 * g.star[,,1]
+    #gp[is.na(gp)] <- 1
+    #L <- rowSums(gp)
     L <- rowSums(g1 * g2 * g.star[,, 1])
     -sum(log(L))
     }
