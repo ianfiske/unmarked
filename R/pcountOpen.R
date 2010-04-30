@@ -116,11 +116,12 @@ nll <- function(parms) { # No survey-specific NA handling.
         g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
         # NA handling idea:
         #g.star[is.na(g.star[,, t-1])] <- 1
+        # perhaps delta should be modified to accomodate missingness
         }
     #gp <- g1 * g2 * g.star[,,1]
-    #gp[is.na(gp)] <- 1
+    #gp[is.na(gp)] <- 0 # Hm, if these are NA, should the whole site be removed?
     #L <- rowSums(gp)
-    L <- rowSums(g1 * g2 * g.star[,, 1])
+    L <- rowSums(g1 * g2 * g.star[,, 1])                             
     -sum(log(L))
     }
 if(missing(starts))
@@ -145,17 +146,12 @@ fmAIC <- 2*fm$value + 2*nP
 lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
     estimates = ests[1:nAP], covMat = as.matrix(covMat[1:nAP,1:nAP]),
     invlink = "exp", invlinkGrad = "exp")
-if(identical(fix, "omega")) 
-    omEstimates <- NULL
-    else {
-        }
 detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     estimates = ests[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)],
     covMat = as.matrix(covMat[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP),
         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
-estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
-    det=detEstimates))
+estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates))
 if(!identical(fix, "gamma")) 
     estimateList@estimates$gamma <- unmarkedEstimate(name = "Recruitment", 
         short.name = "gam", estimates = ests[(nAP+1) : (nAP+nGP)],
@@ -167,6 +163,7 @@ if(!identical(fix, "omega"))
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")   
+estimateList@estimates$det <- detEstimates
 if(identical(mixture, "NB")) {
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
         short.name = "alpha", estimates = ests[nP],
