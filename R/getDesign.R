@@ -180,10 +180,27 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
     lamformula <- as.formula(formula[[2]][[2]][[2]])
 	
 	# FIXME: delta should be adjusted for missing values
+    y <- getY(umf)
+    M <- nrow(y)
+    T <- ncol(y)
     delta <- umf@delta
-    M <- numSites(umf)
-    R <- obsNum(umf)
-	
+    
+    # Adjust delta to handle interior NAs...even if na.rm=FALSE
+    # This should probably be done on an MxT matrix of dates
+    if(any(is.na(y)) | any(is.na(delta))) {
+        for(i in 1:M) { 
+            if(any(is.na(y[i,]))) {
+                first <- min(which(!is.na(y[i,])))
+                last <- max(which(!is.na(y[i,])))
+                y.in <- y[i, first:last]
+                if(any(is.na(y.in)))
+                    for(j in (first+1):(last-1))
+                        if(is.na(y[i,j]))
+                            # stop if delta[i,j] is NA?
+                            delta[i,j] <- delta[i,j-1] + delta[i,j]
+                }
+            }
+        }
     if(is.null(siteCovs(umf))) {
 	   siteCovs <- data.frame(placeHolder = rep(1, M))
     	} else {
@@ -193,18 +210,18 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
     Xlam <- model.matrix(lamformula, Xlam.mf)
 
     if(is.null(obsCovs(umf))) {
-	   obsCovs <- data.frame(placeHolder = rep(1, M*R))
+	   obsCovs <- data.frame(placeHolder = rep(1, M*T))
     	} else {
 	   obsCovs <- obsCovs(umf)
     	}
 	
     colNames <- c(colnames(obsCovs), colnames(siteCovs))
 	
-    obsCovs <- cbind(obsCovs, siteCovs[rep(1:M, each = R),])
+    obsCovs <- cbind(obsCovs, siteCovs[rep(1:M, each = T),])
     colnames(obsCovs) <- colNames
 	
     if(!("obs" %in% names(obsCovs))) {
-	   obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
+	   obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:T, M)))
     	}
 	
     Xp.mf <- model.frame(pformula, obsCovs, na.action = NULL)
@@ -215,9 +232,9 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
     Xom <- model.matrix(omformula, Xom.mf)
 	
     if(na.rm)
-        out <- handleNA(umf, Xlam, Xgam, Xom, Xp)
+        out <- handleNA(umf, Xlam, Xgam, Xom, Xp, delta)
     else
-        out <- list(y=getY(umf), Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
+        out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
         delta=delta, removed.sites=integer(0))
 	
     return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam, Xom = out$Xom, 
@@ -352,7 +369,7 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
 
 # FIXME: NA handling should follow pcount
 setMethod("handleNA", "unmarkedFramePCountOpen", 
-    function(umf, Xlam, Xgam, Xom, Xp) 
+    function(umf, Xlam, Xgam, Xom, Xp, delta) 
 {
 	obsToY <- obsToY(umf)
 	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
@@ -361,8 +378,6 @@ setMethod("handleNA", "unmarkedFramePCountOpen",
 	R <- obsNum(umf)
 	M <- numSites(umf)
 
-	delta <- umf@delta
-	
 	Xlam.long <- Xlam[rep(1:M, each = J),]
 	Xlam.long.na <- is.na(Xlam.long)
 	
@@ -391,11 +406,12 @@ setMethod("handleNA", "unmarkedFramePCountOpen",
 	y.new.na <- covs.na & !y.long.na
 	
 	if(sum(y.new.na) > 0) {
-		y.long[y.new.na] <- NA
-    	}
+        y.long[y.new.na] <- NA
+        warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
+        }
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
-	sites.to.remove <- apply(y, 1, function(x) any(is.na(x)))
+	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
 	sites.to.remove <- sites.to.remove
 	
 	num.to.remove <- sum(sites.to.remove)
@@ -406,7 +422,7 @@ setMethod("handleNA", "unmarkedFramePCountOpen",
 		Xom <- Xom[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
 		Xp <- Xp[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
 		delta <- delta[!sites.to.remove, ,drop =FALSE]
-		warning(paste(num.to.remove, "sites have been discarded because of missing data."))
+		warning(paste(num.to.remove, "sites have been discarded because of missing data."), call.=FALSE)
 	}
 	
 	list(y = y, Xlam = Xlam, Xgam = Xgam, Xom = Xom, Xp = Xp, 

@@ -51,16 +51,15 @@ nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 
 # Save time in likelihood evaluation
 # identical() returns FALSE b/c of environment differences
-# FIXME: This needs to account for delta. ie only scalar or vector if delta==1
-equalints <- length(delta) == 1
+equal.ints <- all(delta == 1)
 if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)) & 
-    equalints)
+    equal.ints)
     goDims <- "scalar"
     else {
         goParms <- unique(c(all.vars(gammaformula), all.vars(omegaformula)))
-        if(any(goParms %in% colnames(obsCovs(data))) & equalints)
-            goDims <- "matrix"
-            else goDims <- "vector"
+        if(!any(goParms %in% colnames(obsCovs(data))) & equal.ints)
+            goDims <- "vector"
+            else goDims <- "matrix"
         }
 
 mk.order <- matrix(1:(M*lk), M, lk)
