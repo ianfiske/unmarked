@@ -85,6 +85,8 @@ for(t in 1:(T-1)) {
 	N[,t+1] <- S[,t] + G[,t]
 	}
 y[] <- rbinom(M*T, N, p)
+# y[M-1,c(2,4)] <- NA
+# y[M,1] <- NA
 
                             
 # Prepare data                               

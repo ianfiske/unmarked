@@ -3,19 +3,24 @@
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     data, mixture=c("P", "NB"), K, fix=c("none", "gamma", "omega"), 
-    starts, method="BFGS", se=TRUE, ...)
+    starts, method="BFGS", se=TRUE, na.rm=FALSE, ...)
 {
 mixture <- match.arg(mixture)
 fix <- match.arg(fix)
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
-D <- unmarked:::getDesign(data, formula)
+D <- unmarked:::getDesign(data, formula, na.rm=na.rm)
 y <- D$y; Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
 delta <- D$delta
 M <- nrow(y)
 T <- ncol(y)
 y <- matrix(y,  M, T)
+yind <- matrix(1:(M*T), M, T)
+first <- 1:M
+for(i in 1:M) 
+    if(any(is.na(y[i,])))
+        first[i] <- yind[i, min(which(!is.na(y[i,])))]
 if(missing(K)) K <- max(y, na.rm=T) + 20
 if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
@@ -46,11 +51,14 @@ nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 
 # Save time in likelihood evaluation
 # identical() returns FALSE b/c of environment differences
-if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)))
+# FIXME: This needs to account for delta. ie only scalar or vector if delta==1
+equalints <- length(delta) == 1
+if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)) & 
+    equalints)
     goDims <- "scalar"
     else {
         goParms <- unique(c(all.vars(gammaformula), all.vars(omegaformula)))
-        if(any(goParms %in% colnames(obsCovs(data))))
+        if(any(goParms %in% colnames(obsCovs(data))) & equalints)
             goDims <- "matrix"
             else goDims <- "vector"
         }
@@ -76,17 +84,13 @@ nll <- function(parms) { # No survey-specific NA handling.
         },
     matrix = {
         gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])),
-            M, T, byrow=TRUE)[,-T]
+            M, T, byrow=TRUE)[,-T] * delta
         omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])),
-            M, T, byrow=TRUE)[,-T]
+            M, T, byrow=TRUE)[,-T] ^ delta
         })
-    if(identical(fix, "gamma")) gamma <- 0
-        else if(identical(fix, "omega")) omega <- 1    
-        else {
-            gamma <- gamma*delta
-            omega <- omega^delta
-            }
-    g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))
+    if(identical(fix, "gamma")) gamma[] <- 0
+        else if(identical(fix, "omega")) omega[] <- 1    
+    g1 <- sapply(k, function(x) dbinom(y[first], x, p[first]))
     switch(mixture,
         P = g2 <- sapply(k, function(x) dpois(x, lambda)),
         NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
@@ -101,12 +105,12 @@ nll <- function(parms) { # No survey-specific NA handling.
     g3 <- rowSums(convMat)#^delta.kk
     g3 <- array(g3, c(lk, lk, M, T-1))
     pT.kk <- rep(p[, T], each=lk*lk)
-    g1.Tm1 <- dbinom(y.kk[,T], k, pT.kk) # recycle
+    g1.T <- dbinom(y.kk[,T], k, pT.kk) # recycle
     #delta.Tkk <- delta.kk[,T-1]
-    g3.Tm1 <- g3[,,, T-1]#^delta.Tkk
-    g.star[,, T-1] <- apply(g1.Tm1 * g3.Tm1, 2, colSums)	# recycle
-    # NA handling idea:
-    #g.star[is.na(g.star[,, T-1])] <- 1
+    g3.T <- g3[,,, T-1]#^delta.Tkk
+    g.star[,, T-1] <- apply(g1.T * g3.T, 2, colSums)	# recycle
+    # NA handling: this will properly determine last obs for each site
+    g.star[,,T-1][is.na(g.star[,, T-1])] <- 1
     for(t in (T-1):2) {
         pt.kk <- rep(p[, t], each=lk*lk)
         g1.t <- dbinom(y.kk[,t], k, pt.kk)
@@ -114,13 +118,10 @@ nll <- function(parms) { # No survey-specific NA handling.
         g3.t <- g3[,,, t-1]#^delta.tkk
         #delta.tkk <- delta.kk[,t-1]
         g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
-        # NA handling idea:
-        #g.star[is.na(g.star[,, t-1])] <- 1
-        # perhaps delta should be modified to accomodate missingness
+        # NA handling: 
+        # FIXME: modify delta to account for unequal intervals due to missingness 
+        g.star[,,t-1][is.na(g.star[,, t-1])] <- g.star[,,t][is.na(g.star[,, t-1])]
         }
-    #gp <- g1 * g2 * g.star[,,1]
-    #gp[is.na(gp)] <- 0 # Hm, if these are NA, should the whole site be removed?
-    #L <- rowSums(gp)
     L <- rowSums(g1 * g2 * g.star[,, 1])                             
     -sum(log(L))
     }

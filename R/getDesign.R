@@ -179,6 +179,7 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
     gamformula <- as.formula(paste(aschar3[1], aschar3[3]))
     lamformula <- as.formula(formula[[2]][[2]][[2]])
 	
+	# FIXME: delta should be adjusted for missing values
     delta <- umf@delta
     M <- numSites(umf)
     R <- obsNum(umf)
@@ -217,7 +218,7 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
         out <- handleNA(umf, Xlam, Xgam, Xom, Xp)
     else
         out <- list(y=getY(umf), Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
-        delta=umf@delta, removed.sites=integer(0))
+        delta=delta, removed.sites=integer(0))
 	
     return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam, Xom = out$Xom, 
         Xp = out$Xp, delta = out$delta, removed.sites = out$removed.sites))
@@ -349,7 +350,7 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
 
 
 
-
+# FIXME: NA handling should follow pcount
 setMethod("handleNA", "unmarkedFramePCountOpen", 
     function(umf, Xlam, Xgam, Xom, Xp) 
 {
