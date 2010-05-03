@@ -239,7 +239,7 @@ setMethod("confint", "unmarkedEstimate",
 			lower.lim <- ests - z*ses
 			upper.lim <- ests + z*ses
 			ci <- as.matrix(cbind(lower.lim, upper.lim))
-			rownames(ci) <- names(ests)
+			rownames(ci) <- names(coef(object))[parm]
 			colnames(ci) <- c((1-level)/2, 1- (1-level)/2)
 			ci
 		})
