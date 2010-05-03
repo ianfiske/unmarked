@@ -86,7 +86,6 @@ for(t in 1:(T-1)) {
 	}
 y[] <- rbinom(M*T, N, p)
 # y[M-5, 1:4] <- y[M-4, 2:5] <- y[M-3, 2:4] <- y[M-2, c(2,4)] <- y[M-1, 1] <- y[M, T] <- NA
-# NA
 
                             
 # Prepare data                               

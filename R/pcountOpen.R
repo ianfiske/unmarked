@@ -3,14 +3,14 @@
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     data, mixture=c("P", "NB"), K, fix=c("none", "gamma", "omega"), 
-    starts, method="BFGS", se=TRUE, na.rm=FALSE, ...)
+    starts, method="BFGS", se=TRUE, ...)
 {
 mixture <- match.arg(mixture)
 fix <- match.arg(fix)
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
-D <- unmarked:::getDesign(data, formula, na.rm=na.rm)
+D <- unmarked:::getDesign(data, formula)
 y <- D$y; Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
 delta <- D$delta
 M <- nrow(y)
@@ -61,7 +61,6 @@ if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)) &
             goDims <- "vector"
             else goDims <- "matrix"
         }
-
 mk.order <- matrix(1:(M*lk), M, lk)
 mat.to.vec <- as.numeric(apply(mk.order, 1, rep, times=lk))
 g.star <- array(NA, c(M, lk, T-1))
@@ -117,8 +116,6 @@ nll <- function(parms) { # No survey-specific NA handling.
         g3.t <- g3[,,, t-1]#^delta.tkk
         #delta.tkk <- delta.kk[,t-1]
         g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
-        # NA handling: 
-        # FIXME: modify delta to account for unequal intervals due to missingness 
         g.star[,,t-1][is.na(g.star[,, t-1])] <- g.star[,,t][is.na(g.star[,, t-1])]
         }
     L <- rowSums(g1 * g2 * g.star[,, 1])                             

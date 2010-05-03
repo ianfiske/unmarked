@@ -197,10 +197,17 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
                     for(j in (first+1):(last-1))
                         if(is.na(y[i,j]))
                             # stop if delta[i,j] is NA?
-                            delta[i,j] <- delta[i,j-1] + delta[i,j]
+                            delta[i,j+1] <- delta[i,j]
                 }
             }
         }
+    # FIXME: This won't work if all delta == 1
+    delta.out <- t(apply(delta, 1, diff)) 
+    if(identical(length(table(delta.out)), 1L))
+        delta.out[] <- 1
+    if(!all(dim(delta.out) == c(M, T-1)))
+        stop("Dimensions of time intervals should be M x T-1")
+    
     if(is.null(siteCovs(umf))) {
 	   siteCovs <- data.frame(placeHolder = rep(1, M))
     	} else {
@@ -235,7 +242,7 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
         out <- handleNA(umf, Xlam, Xgam, Xom, Xp, delta)
     else
         out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
-        delta=delta, removed.sites=integer(0))
+        delta=delta.out, removed.sites=integer(0))
 	
     return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam, Xom = out$Xom, 
         Xp = out$Xp, delta = out$delta, removed.sites = out$removed.sites))
@@ -367,7 +374,6 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
 
 
 
-# FIXME: NA handling should follow pcount
 setMethod("handleNA", "unmarkedFramePCountOpen", 
     function(umf, Xlam, Xgam, Xom, Xp, delta) 
 {
@@ -398,19 +404,23 @@ setMethod("handleNA", "unmarkedFramePCountOpen",
 	
 	y.long <- as.vector(t(getY(umf)))
 	y.long.na <- is.na(y.long)
+	delta.long <- as.vector(t(delta))
+	delta.long.na <- is.na(delta.long)
 	
-	covs.na <- apply(cbind(Xlam.long.na, Xgam.long.na, Xom.long.na, Xp.long.na), 
-		1, any)
+	covs.na <- apply(cbind(Xlam.long.na, Xgam.long.na, Xom.long.na, Xp.long.na,
+        delta.long.na), 1, any)
 	
 	## are any NA in covs not in y already?
 	y.new.na <- covs.na & !y.long.na
 	
 	if(sum(y.new.na) > 0) {
         y.long[y.new.na] <- NA
+        delta.long.na[y.new.na] <- NA
         warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
         }
 	
 	y <- matrix(y.long, M, J, byrow = TRUE)
+	delta <- matrix(delta, M, J, byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
 	sites.to.remove <- sites.to.remove
 	
@@ -425,6 +435,26 @@ setMethod("handleNA", "unmarkedFramePCountOpen",
 		warning(paste(num.to.remove, "sites have been discarded because of missing data."), call.=FALSE)
 	}
 	
+	# Fill in interior NAs in delta by pushing forward
+    if(any(is.na(y)) | any(is.na(delta))) {
+        for(i in 1:M) { 
+            if(any(is.na(y[i,]))) {
+                first <- min(which(!is.na(y[i,])))
+                last <- max(which(!is.na(y[i,])))
+                y.in <- y[i, first:last]
+                if(any(is.na(y.in)))
+                    for(j in (first+1):(last-1))
+                        if(is.na(y[i,j]))
+                            # stop if delta[i,j] is NA?
+                            delta[i,j+1] <- delta[i,j]
+                }
+            }
+        }
+    delta.out <- t(apply(delta, 1, diff))
+    if(identical(length(table(delta.out)), 1L))
+        delta.out[] <- 1
+	
+	
 	list(y = y, Xlam = Xlam, Xgam = Xgam, Xom = Xom, Xp = Xp, 
-		delta = delta, removed.sites = which(sites.to.remove))
+		delta = delta.out, removed.sites = which(sites.to.remove))
     })
