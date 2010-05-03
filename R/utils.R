@@ -669,14 +669,6 @@ SSE <- function(fit) {
 
 
 
-
-
-
-
-
-
-
-
 # Prepare area argument for distsamp(). This is primarily for internal use
 
 calcAreas <- function(dist.breaks, tlength, survey, output, M, J, unitsIn, 
@@ -719,5 +711,46 @@ switch(output,
         })
 return(a)
 }
+
+
+
+
+
+
+
+# For pcountOpen. Calculate the time intervals 
+formatDelta <- function(d, y)
+{
+M <- nrow(y)
+T <- ncol(y)
+ytab <- table(y)
+equalInts <- identical(length(ytab), 1L)
+if(equalInts)
+    dout <- t(apply(d, 1, diff))
+else 
+    dout <- matrix(1, M, T-1)
+for(i in 1:M) {
+    if(any(is.na(y[i,]))) {
+        first <- min(which(!is.na(y[i,])))
+        last <- max(which(!is.na(y[i,])))
+        y.in <- y[i, first:last]
+        d.in <- d[i, first:last]
+        if(any(is.na(y.in))) {
+            for(j in last:first) {
+                v <- y[i, 1:j-1]
+                if(any(is.na(v))) {
+                    nextReal <- max(which(!is.na(v)))
+                    if(equalInts)
+                        dout[i,j-1] <- d[i,j] - d[i, nextReal]
+                    else 
+                        dout[i,j-1] <- j - nextReal
+                    }
+                }
+            }
+        }
+    }
+dout    
+}
+                        
 
 

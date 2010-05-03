@@ -94,7 +94,7 @@ umf <- unmarkedFramePCountOpen(y = y)
 summary(umf)
 
 # Fit model and backtransform
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=15))   # K might be too small
+(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))   # K might be too small
 backTransform(m1, "lambda")
 backTransform(m1, "gamma")
 backTransform(m1, "omega")

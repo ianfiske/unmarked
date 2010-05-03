@@ -51,7 +51,7 @@ nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 
 # Save time in likelihood evaluation
 # identical() returns FALSE b/c of environment differences
-equal.ints <- all(delta == 1)
+equal.ints <- identical(length(table(delta)), 1L)
 if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)) & 
     equal.ints)
     goDims <- "scalar"

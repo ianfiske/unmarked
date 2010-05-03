@@ -196,26 +196,37 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 unmarkedFramePCountOpen <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
  	delta) 
 {
-	J <- ncol(y)
+	M <- nrow(y)
+    T <- ncol(y)
 	if(missing(delta))
-		delta <- matrix(1L, nrow(y), ncol(y))
-	if(nrow(delta) != nrow(y) | ncol(delta) != ncol(y))
-		stop("Dimensions of delta matrix should be nrow(y), ncol(y)")
+		delta <- matrix(1L, M, T)
+	if(nrow(delta) != M | ncol(delta) != T)
+		stop("Dimensions of delta matrix should be MxT")
 	if(any(delta < 0, na.rm=TRUE))
 	   stop("Negative delta values not allowed.")
+	y.na <- which(is.na(y))
+    d.na <- which(is.na(delta))
+    if(any(!d.na %in% y.na))
+        stop("delta values must be supplied for all non-missing values of y")
+    increasing <- function(x) {
+        x <- x[!is.na(x)]
+        all(order(x) == 1:length(x))
+        }
+    if(!all(apply(delta, 1, increasing)))
+        stop("delta values must increase over time for each site")
     if(class(obsCovs) == "list") {
 		obsVars <- names(obsCovs)
     for(i in seq(length(obsVars))) {
     	if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
         	stop("At least one element of obsCovs is not a matrix or data frame.")
-    	if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
+    	if(ncol(obsCovs[[i]]) != T | nrow(obsCovs[[i]]) != M)
         	stop("At least one matrix in obsCovs has incorrect number of dimensions.")
     	}
 	if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
 	obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
   	}
 	umf <- new("unmarkedFramePCountOpen", y = y, siteCovs = siteCovs, 
-		obsCovs = obsCovs, obsToY = diag(J), 
+		obsCovs = obsCovs, obsToY = diag(T), 
 		delta = delta)
 	return(umf)
 }
