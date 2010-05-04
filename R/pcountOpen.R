@@ -18,16 +18,16 @@ T <- ncol(y)
 y <- matrix(y,  M, T)
 yind <- matrix(1:(M*T), M, T)
 first <- 1:M
-for(i in 1:M) 
-    if(any(is.na(y[i,])))
-        first[i] <- yind[i, min(which(!is.na(y[i,])))]
+#for(i in 1:M) 
+#    if(any(is.na(y[i,])))
+#        first[i] <- yind[i, min(which(!is.na(y[i,])))]
 if(missing(K)) K <- max(y, na.rm=T) + 20
 if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
 k <- 0:K
 lk <- length(k)
 y.kk <- apply(y, 2, rep, each=lk*lk)
-if(all(delta==1)) delta <- 1
+#if(all(delta==1)) delta <- 1
     # delta.kk <- 1 else delta.kk <- apply(delta, 2, rep, each=lk*lk)
 
 lamParms <- colnames(Xlam)

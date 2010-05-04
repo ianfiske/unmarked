@@ -723,12 +723,12 @@ formatDelta <- function(d, y)
 {
 M <- nrow(y)
 T <- ncol(y)
-ytab <- table(y)
-equalInts <- identical(length(ytab), 1L)
+dtab <- table(d)
+equalInts <- identical(length(dtab), 1L)
 if(equalInts)
-    dout <- t(apply(d, 1, diff))
-else 
     dout <- matrix(1, M, T-1)
+else 
+    dout <- t(apply(d, 1, diff))
 for(i in 1:M) {
     if(any(is.na(y[i,]))) {
         first <- 1  #min(which(!is.na(y[i,])))
