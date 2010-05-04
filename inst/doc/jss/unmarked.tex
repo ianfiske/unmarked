@@ -795,17 +795,28 @@ verify that the data was converted correctly.
 \end{Sinput}
 \begin{Soutput}
 Data frame representation of unmarkedFrame object.
-   y.1 y.2 y.3   elev length forest ivel.1 ivel.2 ivel.3 date.1 date.2 date.3
-1    0   0   0 -1.173  0.801 -1.156 -0.506 -0.506 -0.506 -1.761  0.310  1.381
-2    0   0   0 -1.127  0.115 -0.501 -0.934 -0.991 -1.162 -2.904 -1.047  0.596
-3    3   2   1 -0.198 -0.479 -0.101 -1.136 -1.339 -1.610 -1.690 -0.476  1.453
-4    0   0   0 -0.105  0.315  0.008 -0.819 -0.927 -1.197 -2.190 -0.690  1.239
-5    3   0   3 -1.034 -1.102 -1.193  0.638  0.880  1.042 -1.833  0.167  1.381
-6    0   0   0 -0.848  0.741  0.917 -1.329 -1.042 -0.899 -2.619  0.167  1.381
-7    0   0   0 -0.910  0.115 -1.083 -1.448 -1.562 -1.676 -2.690 -1.190  1.596
-8    0   0   0 -1.003 -1.007 -0.792 -0.321 -0.557 -0.636 -2.119 -0.476  1.453
-9    0   0   0 -0.058 -0.913  0.553 -0.231 -0.231 -0.001 -2.047 -0.547  1.167
-10   0   0   0 -0.631  1.556  0.808 -1.097 -1.021 -0.832 -2.333 -1.119 -0.261
+   y.1 y.2 y.3   elev length forest ivel.1 ivel.2 ivel.3 date.1
+1    0   0   0 -1.173  0.801 -1.156 -0.506 -0.506 -0.506 -1.761
+2    0   0   0 -1.127  0.115 -0.501 -0.934 -0.991 -1.162 -2.904
+3    3   2   1 -0.198 -0.479 -0.101 -1.136 -1.339 -1.610 -1.690
+4    0   0   0 -0.105  0.315  0.008 -0.819 -0.927 -1.197 -2.190
+5    3   0   3 -1.034 -1.102 -1.193  0.638  0.880  1.042 -1.833
+6    0   0   0 -0.848  0.741  0.917 -1.329 -1.042 -0.899 -2.619
+7    0   0   0 -0.910  0.115 -1.083 -1.448 -1.562 -1.676 -2.690
+8    0   0   0 -1.003 -1.007 -0.792 -0.321 -0.557 -0.636 -2.119
+9    0   0   0 -0.058 -0.913  0.553 -0.231 -0.231 -0.001 -2.047
+10   0   0   0 -0.631  1.556  0.808 -1.097 -1.021 -0.832 -2.333
+   date.2 date.3
+1   0.310  1.381
+2  -1.047  0.596
+3  -0.476  1.453
+4  -0.690  1.239
+5   0.167  1.381
+6   0.167  1.381
+7  -1.190  1.596
+8  -0.476  1.453
+9  -0.547  1.167
+10 -1.119 -0.261
 \end{Soutput}
 \end{Schunk}
 
@@ -894,6 +905,29 @@ point count model.
 > fm <- pcount(~date + I(date^2) ~ elev + forest, data = mallardUMF)
 > summary(fm)
 \end{Sinput}
+\begin{Soutput}
+Call:
+pcount(formula = ~date + I(date^2) ~ elev + forest, data = mallardUMF)
+
+Abundance (log-scale):
+            Estimate    SE     z  P(>|z|)
+(Intercept)   -1.853 0.236 -7.87 3.62e-15
+elev          -1.232 0.234 -5.27 1.36e-07
+forest        -0.756 0.165 -4.60 4.32e-06
+
+Detection (logit-scale):
+            Estimate     SE       z P(>|z|)
+(Intercept)   0.3071 0.2149  1.4290 0.15301
+date         -0.4091 0.1482 -2.7612 0.00576
+I(date^2)    -0.0077 0.0853 -0.0903 0.92801
+
+AIC: 521.2001 
+Sample size: 235
+Sites removed: 12 69 118 146
+optim convergence code: 0
+optim iterations: 37 
+Bootstrap iterations: 0 
+\end{Soutput}
 \end{Schunk}
 
 This initial fit suggests that \code{elev} and \code{forest} are
@@ -909,6 +943,22 @@ constant detection rates.
 \begin{Sinput}
 > (fm.cons.p <- pcount(~1 ~ elev + forest, data = mallardUMF))
 \end{Sinput}
+\begin{Soutput}
+Call:
+pcount(formula = ~1 ~ elev + forest, data = mallardUMF)
+
+Abundance:
+            Estimate    SE     z  P(>|z|)
+(Intercept)   -1.905 0.228 -8.34 7.58e-17
+elev          -1.317 0.222 -5.93 2.95e-09
+forest        -0.738 0.163 -4.53 5.79e-06
+
+Detection:
+ Estimate    SE    z P(>|z|)
+    0.492 0.188 2.62 0.00878
+
+AIC: 530.7381 
+\end{Soutput}
 \end{Schunk}
 
 \subsection{Examining model fits}
@@ -929,8 +979,10 @@ entire model, or from the state or detection levels.
 > coef(fm)
 \end{Sinput}
 \begin{Soutput}
-    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) p(I(date^2)) 
--1.853228484 -1.231995827 -0.756129430  0.307055927 -0.409105329 -0.007704162 
+    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) 
+-1.853228484 -1.231995827 -0.756129430  0.307055927 -0.409105329 
+p(I(date^2)) 
+-0.007704162 
 \end{Soutput}
 \begin{Sinput}
 > coef(fm, type = "state")
@@ -949,20 +1001,20 @@ the estimates, using the observed Fisher information by default.
 > vcov(fm)
 \end{Sinput}
 \begin{Soutput}
-                 lam(Int)    lam(elev)   lam(forest)       p(Int)      p(date)
-lam(Int)      0.055487740  0.042381157  0.0077094004 -0.002408246 -0.005337494
-lam(elev)     0.042381157  0.054652581 -0.0088797433  0.002406913 -0.007285857
-lam(forest)   0.007709400 -0.008879743  0.0270716249  0.000923048  0.001319487
-p(Int)       -0.002408246  0.002406913  0.0009230480  0.046173146 -0.006308606
-p(date)      -0.005337494 -0.007285857  0.0013194872 -0.006308606  0.021951667
-p(I(date^2)) -0.003185167 -0.003492489  0.0007185404 -0.008793313  0.008088666
-              p(I(date^2))
-lam(Int)     -0.0031851666
-lam(elev)    -0.0034924893
-lam(forest)   0.0007185404
-p(Int)       -0.0087933129
-p(date)       0.0080886657
-p(I(date^2))  0.0072713089
+                 lam(Int)    lam(elev)   lam(forest)       p(Int)
+lam(Int)      0.055487740  0.042381157  0.0077094004 -0.002408246
+lam(elev)     0.042381157  0.054652581 -0.0088797433  0.002406913
+lam(forest)   0.007709400 -0.008879743  0.0270716249  0.000923048
+p(Int)       -0.002408246  0.002406913  0.0009230480  0.046173146
+p(date)      -0.005337494 -0.007285857  0.0013194872 -0.006308606
+p(I(date^2)) -0.003185167 -0.003492489  0.0007185404 -0.008793313
+                  p(date)  p(I(date^2))
+lam(Int)     -0.005337494 -0.0031851666
+lam(elev)    -0.007285857 -0.0034924893
+lam(forest)   0.001319487  0.0007185404
+p(Int)       -0.006308606 -0.0087933129
+p(date)       0.021951667  0.0080886657
+p(I(date^2))  0.008088666  0.0072713089
 \end{Soutput}
 \begin{Sinput}
 > vcov(fm, type = "state")
@@ -984,8 +1036,10 @@ covariance matrices.
 > SE(fm)
 \end{Sinput}
 \begin{Soutput}
-    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) p(I(date^2)) 
-  0.23555836   0.23377891   0.16453457   0.21487937   0.14816095   0.08527197 
+    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) 
+  0.23555836   0.23377891   0.16453457   0.21487937   0.14816095 
+p(I(date^2)) 
+  0.08527197 
 \end{Soutput}
 \begin{Sinput}
 > SE(fm, type = "state")
@@ -1012,6 +1066,10 @@ summaries.  In the following, bootstrapping can be quite slow.
 > fm <- nonparboot(fm, B = 100)
 > SE(fm, type = "state", method = "nonparboot")
 \end{Sinput}
+\begin{Soutput}
+   lam(Int)   lam(elev) lam(forest) 
+  0.4650891   0.4156010   0.3109887 
+\end{Soutput}
 \end{Schunk}
 
 Confidence intervals can be requested for the coefficients at either
@@ -1023,9 +1081,9 @@ stage of the model.  By default, the normal approximation is used.
 \end{Sinput}
 \begin{Soutput}
                 0.025      0.975
-lam(Int)    -2.314914 -1.3915426
-lam(elev)   -1.690194 -0.7737976
-lam(forest) -1.078611 -0.4336476
+(Intercept) -2.314914 -1.3915426
+elev        -1.690194 -0.7737976
+forest      -1.078611 -0.4336476
 \end{Soutput}
 \end{Schunk}
 
@@ -1046,6 +1104,12 @@ Profiling parameter 3 of 3 ... done.
 \begin{Sinput}
 > ci
 \end{Sinput}
+\begin{Soutput}
+                0.025      0.975
+lam(Int)    -2.359677 -1.4274631
+lam(elev)   -1.735472 -0.8108724
+lam(forest) -1.094557 -0.4475007
+\end{Soutput}
 \end{Schunk}
 
 \subsubsection{Linear combinations of estimates}
@@ -1060,8 +1124,8 @@ log-abundance rate for a site with \code{elev = 0.5} and \code{forest
 
 \begin{Schunk}
 \begin{Sinput}
-> (lc <- linearComb(fm, type = "state", coefficients = c(1, 0.5, 
-+     0)))
+> (lc <- linearComb(fm, type = "state", coefficients = c(1, 
++     0.5, 0)))
 \end{Sinput}
 \begin{Soutput}
 Linear combination(s) of Abundance estimate(s)
@@ -1209,7 +1273,8 @@ other relevant information such as Nagelkerke's
 
 \begin{Schunk}
 \begin{Sinput}
-> fitlist <- fitList(null = fm.cons.p, lindate = fm.lindate, quaddate = fm)
+> fitlist <- fitList(null = fm.cons.p, lindate = fm.lindate, 
++     quaddate = fm)
 > modSel(fitlist, nullmod = "null")
 \end{Sinput}
 \begin{Soutput}
@@ -1227,7 +1292,8 @@ with predict.
 \begin{Sinput}
 > date.min <- min(obsCovs(mallardUMF)$date, na.rm = TRUE)
 > date.max <- max(obsCovs(mallardUMF)$date, na.rm = TRUE)
-> newdata <- data.frame(date = seq(date.min, date.max, by = 0.01))
+> newdata <- data.frame(date = seq(date.min, date.max, 
++     by = 0.01))
 > preddata <- predict(fm.lindate, type = "det", newdata = newdata, 
 +     appendData = TRUE)
 > plot(Predicted ~ date, preddata, type = "l")
@@ -1261,6 +1327,11 @@ statistic, with the default being the sum of squared residuals.
 \begin{Sinput}
 > set.seed(1234)
 > (pb <- parboot(fm, statistic = SSE, nsim = 100))
+\end{Sinput}
+\end{Schunk}
+
+\begin{Schunk}
+\begin{Sinput}
 > plot(pb, main = "Goodness-of-fit Parametric Bootstrap")
 \end{Sinput}
 \end{Schunk}
@@ -1280,9 +1351,22 @@ t0 = 463.4353
 146.4, 165
 174.1, 135.1
 161.1, 129.6
+
+Call: parboot(object = fm, statistic = SSE, nsim = 10)
+
+Parametric Bootstrap Statistics:
+     t0 mean(t0 - t_B) StdDev(t0 - t_B) Pr(t_B > t0)
+SSE 463            311             19.0            0
+
+t_B quantiles:
+     0% 2.5% 25% 50% 75% 97.5% 100%
+SSE 125  126 138 155 164   180  182
+
+t0 = Original statistic compuated from data
+t_B = Vector of bootstrap samples
 \end{Soutput}
 \end{Schunk}
-\includegraphics{unmarked-027}
+\includegraphics{unmarked-028}
 \caption{Graphically assess model fit by parametric bootsrapping
   the sum of squared residuals.}
 \label{fig:pb}
