@@ -1178,6 +1178,7 @@ setMethod("plot", signature(x="parboot", y="missing"),
             abline(v=t0[i], lty=2)
             devAskNewPage(ask = TRUE)
             }
+        devAskNewPage(ask = FALSE)
     })
 
 
