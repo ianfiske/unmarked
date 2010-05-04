@@ -1174,7 +1174,9 @@ setMethod("plot", signature(x="parboot", y="missing"),
         t.star <- x@t.star
         t0 <- x@t0
         for(i in 1:length(t0)) {
-            hist(t.star[,i], xlab=colnames(t.star)[i], ...)
+          h <- hist(t.star[,i])
+          hist(t.star[,i], xlab=colnames(t.star)[i],
+               xlim = c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i])), ...)
             abline(v=t0[i], lty=2)
             devAskNewPage(ask = TRUE)
             }
