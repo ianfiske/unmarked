@@ -124,7 +124,7 @@ hn_Hab.Ht <- distsamp(~canopyHt ~habitat, umf)
 The first two models are the same, a null half-normal detection function with density returned in animals / ha (on the log-scale). The third model uses the hazard-rate detection function, and the fourth model includes covariates affecting the Poisson mean ($\bm{\lambda}$) and the half-normal shape parameter ($\bm{\sigma}$).
 
 
-Once a model has been fit, typing it's name will display parameter estimate information and AIC. A summary method shows extra details including the scale on which parameters were estimated and convergence results. 
+Once a model has been fit, typing its name will display parameter estimate information and AIC. A summary method shows extra details including the scale on which parameters were estimated and convergence results. 
 
 <<>>=
 summary(haz_Null)
@@ -240,7 +240,7 @@ legend('topright', c("Canopy ht. = 2m", "Null", "Canopy ht. = 8m"),
 
 \newpage
 
-This document has emphasized methods tailored to distance-sampling analysis; however, the more general methods available in package \package{unmarked} can also be applied to \code{distsamp} related objects. For example, model-selection, model-averaging, and goodness-of-fit evaluation can be accomplished using the \code{modSel} and \code{parboot} methods.
+This document has emphasized methods tailored to distance-sampling analysis; however, the more general methods available in package \package{unmarked} can also be applied to \code{distsamp} related objects. For example, model-selection and model-averaging can be accomplished using the \code{fitList} function and the \code{modSel} and \code{predict} methods.
 
 
 \bibliography{unmarked}
