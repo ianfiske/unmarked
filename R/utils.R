@@ -718,7 +718,7 @@ return(a)
 
 
 
-# For pcountOpen. Calculate the time intervals 
+# For pcountOpen. Calculate time intervals acknowledging gaps due to NAs
 formatDelta <- function(d, y)
 {
 M <- nrow(y)
@@ -731,7 +731,7 @@ else
     dout <- matrix(1, M, T-1)
 for(i in 1:M) {
     if(any(is.na(y[i,]))) {
-        first <- min(which(!is.na(y[i,])))
+        first <- 1  #min(which(!is.na(y[i,])))
         last <- max(which(!is.na(y[i,])))
         y.in <- y[i, first:last]
         d.in <- d[i, first:last]
@@ -739,7 +739,8 @@ for(i in 1:M) {
             for(j in last:first) {
                 v <- y[i, 1:j-1]
                 if(any(is.na(v))) {
-                    nextReal <- max(which(!is.na(v)))
+                    nextReal <- which(!is.na(v))
+                    nextReal <- ifelse(length(nextReal) > 0, max(nextReal), 1)
                     if(equalInts)
                         dout[i,j-1] <- d[i,j] - d[i, nextReal]
                     else 

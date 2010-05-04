@@ -88,11 +88,14 @@ nll <- function(parms) { # No survey-specific NA handling.
         })
     if(identical(fix, "gamma")) gamma[] <- 0
         else if(identical(fix, "omega")) omega[] <- 1    
-    g1 <- sapply(k, function(x) dbinom(y[first], x, p[first]))
+    #g1 <- sapply(k, function(x) dbinom(y[first], x, p[first]))
+    g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))    
+    g1[is.na(g1)] <- 1
     switch(mixture,
         P = g2 <- sapply(k, function(x) dpois(x, lambda)),
         NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
            mu=lambda)))
+    g2[is.na(g2)] <- 1
     g3args <- cbind(rep(k, times=lk), rep(k, each=lk), 
         rep(omega, each=lk*lk), #^delta.kk
         rep(gamma, each=lk*lk)) #*delta.kk)# recycle
