@@ -4,3 +4,15 @@
 runit
 bc
 .Rhistory
+*.dvi
+*.log
+*.tex
+*.eps
+*.bst
+*.cls
+*.dbj
+*.drv
+*.dtx
+*.ins
+*.jpg
+
