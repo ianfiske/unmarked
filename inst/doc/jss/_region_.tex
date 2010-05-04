@@ -1,0 +1,387 @@
+\message{ !name(unmarked.Rnw.tex)}
+\message{ !name(unmarked.Rnw) !offset(47) }
+
+
+\abstract{Unmarked aims to be a complete environment for the
+statistical analysis of wildlife data.  Currently, the focus is on
+2-level hiearchical models that separately model a latent state and an
+observation process.  All model parameters are estimated using with
+the maximum likelihood estimates.  Unmarked uses S4 classes to help the user
+organize, explore, and analyze their data in a familiar manner.}
+
+\section{Overview of unmarked}
+
+The goal of much wildlife research is to understand whether a
+particular species is becoming more or less prevalent and if so,
+determine which factors might be related to the change.  Wildlife
+researchers have developed a suite of techniques to sample animal
+populations.  Each of these sampling methods requires specialized
+statistical model to describe the how the data are generated in terms
+of interesting biological parameters such as abundance or occurrence
+rates.  Thus, there is a large and growing body or statistical models
+for wildlife data.  The software trend for analyzing wildlife data is
+to create entirely new programs for each model or category of models.
+This paradigm requires wildlife researchers to learn new software for
+each new data sampling method they use.  However, many wildlife
+researchers are already familiar with the popular free statistical
+computing environment R \citep{R} and use it for preprocessing or
+data exploration.  So it is natural to develop an R package that
+analyzes a wide variety of wildlife data.  This is the goal of unmarked.
+
+In this paper, we will first introduce wildlife sampling broadly and
+how unmarked fits into this framework.  Then, we will
+give a brief summary of many of the models unmarked fits.  Next, we
+will describe the general syntax for using unmarked and general
+principles that unmarked follows.  Finally, we will show an extended
+usage example.
+
+\subsection{Current scope of unmarked}
+
+Wildlife sampling methods can coarsely be divided into two
+broad categories: individual-based methods and site-based methods.
+The most popular individual-based method is mark-recapture, which can
+provide detailed information about the survival rates of individuals
+and what factors are related to their survival.  Mark-capture sampling
+can be expensive relative to cheaper site-based methods, which involve
+visiting a sample of sites and recording some proxy to abundance.
+These site-based methods provide less information than
+individual-based sampling, but their reduced resource cost can allow
+researchers to study species over much broader areas to understand
+more global trends.  Currently, unmarked can analyze data from many
+site-based sampling protocols.
+
+
+\section{Models Implemented in unmarked}
+
+Unmarked finds maximum likelihood estimates for the parameters of
+many popular 2-stage hierarchical models for site sampling
+protocols.  These hierarchies are defined by a latent site-level \emph{state}
+model and a conditional observation-level \emph{data} model.  The state model
+describes the distribution of some quantity of interest, such as the
+binary variable indicating site
+occupancy or positive integer describing number of animal abundance at
+a site.  The data model describes the distribution of the observed data
+conditional of the latent state variable.  Together, these modeling
+layers for a fully parametric model for the data.  The flexibility in
+the state and observation models allows generates a large class of
+models that can adequately describe data collected from many animal
+sampling techniques, giving unmarked its power.  This section provides
+a summary of several wildlife sampling techniques and how they fit
+into this 2-stage hierarchy.
+
+\subsection{Models for Occurrence Data} \label{sec:occ}
+
+A popular wildlife research goal is to estimate the proportion of
+suitable sites that are used by the study species, called occupancy
+rate or factors that affect the probability of occupancy.  To estimate
+the occupancy rate, researchers can employ so-called occurrence
+sampling, where surveyors visit a sample of sites and record the
+binary measurement of species detection (1) or non-detection (0).
+False non-detections can occur when a surveyor records a 0 for a site
+that is in fact the site occupied.  Such imperfect detection can occur
+because the study species are elusive or surveyor error.  Regardless
+of the cause of false non-detections, failure to account for them can
+lead to biased estimates of the occupancy rate.  Therefore, sampling
+protocols have been developed along with accompanying statistical
+models for estimating occupancy while accounting for imperfect
+detection \citep{mackenzie_estimating_2002}.
+
+Surveyors visit sites repeatedly during a season.  The occupancy state
+is assumed to remain constant throughout the season.  Thus, the repeat
+visits give information about the detection process.  Then, a
+hierarchical Bernoulli model describes the data.  Let $\psi_i$ be the
+probability occupancy at site $i$.  And $p_{ij}$ is the probability of
+detection at site $i$ during the $j$th observation given that site $i$
+is truly occupied.  Then,
+\begin{gather}
+Z_i \sim \Bern(\psi_i) \\
+Y_{ij}|Z_i \sim \Bern(Z_i p_{ij}).
+\end{gather}
+where $Z_i$ is the partially observed occupancy state and $p_{ij}$ is
+the conditional probability of detection.
+
+Variables that are believed to affect the occupancy process are
+modeled as
+\begin{gather}
+  \logit(\psi_i) = \bm x_i' \bm \beta,
+\end{gather}
+where $\bm x_i$ is a vector of site-level covariates and $\bm \beta$
+is a vector of their corresponding effect parameters.  Similarly, the
+probability of detection can be modeled with
+\begin{gather}
+  \logit(p_{ij}) = \bm v_{ij}' \bm \alpha,
+\end{gather}
+where $\bm v_{ij}$ is a vector of observation-level covariates and
+$\bm \alpha$ is a vector of their corresponding effect parameters.
+
+
+
+\subsection{Models for Point Count Data}
+
+In some situations, biologists are interested in a measure of
+prevalence at the site level that is finer than occupancy.  This
+number is known as abundance.  One method to estimate abundance
+is to visit a sample of sites and record the number of unique
+individuals observed at each site, so-called point counts.  As with occurrence sampling,
+imperfect detection can result in smaller observed counts than the
+true number of animals at a site.  Again, to maintain identifiability
+of detection parameters, repeat visits are made to each site during a
+year.  Then, the following 2 level hierarchical structure describes
+the data \citep{royle_n-mixture_2004}.  Let $N_i$ is the unobserved
+total number of animals using a site and $Y_{ij}$ is the number of
+animals observed.
+\begin{gather}
+  N_i \sim \Poi(\lambda_i) \label{eq:pc2} \\
+  Y_{ij} \sim \Bin(N_i, p_{ij}),
+\end{gather}
+where $\lambda_i$ is the abundance rate and $p_{ij}$ is the detection probability.
+Often $\lambda$ is of primary interest if no covariates of abundance are present.
+When using covariates, interest may lay in how the variables are related to
+abundance.  Other distrubions may be used in equation~\ref{eq:pc2}.  A common
+alternative to the Poisson is a negative binomial distribution if overdispersion is
+suspected.
+
+\subsection{Models for General Multinomial-Poisson Data}
+
+Finally, we consider a 2-stage model that encompasses many popular wildlife sampling methods,
+the multinomial-Poisson model \citep{royle_generalized_2004}.  The general form of this model is
+\begin{gather}
+  N_i \sim \Poi(\lambda_i) \label{eq:mp2} \\
+  \bm Y_i \sim \MN(N_i, \bm \pi_i),
+\end{gather}
+where $N_i$ is the latent abundance as with the point count model, and
+$\bm \pi_i$ is the vector of cell probabilities governing the
+observation vector at a site.  In general, $\bm \pi_i$ is determined by the
+specific sampling method.  However, the final cell probability $\pi_{iJ}$ is
+always the probability of an individual at site $i$ escaping detection.
+
+\subsubsection{Distance Sampling}
+
+In distance sampling, surveyors sample sites by traveling along a
+transect or standing at a so-called point transect and recording the
+distance to each detected study animal
+\citep{buckland_introduction_2001}.  The continuous distances to each
+observed animal are then binned into categories according to
+cut-points $c_1, c_2,\dots,c_{J}$.  The user must specify a
+detection pdf $g(x;\theta)$ that describes the probability of
+observing an animal as a function of distance $x$ from the transect.
+Then  $Y_{ij}$ is the count of observations at site $i$ falling into
+the $j$th distance bin.   The cell probabilities $\bm \pi_i$ are
+constructed by integrating $g$ over the distance classes.
+
+
+\subsubsection{Removal Sampling}
+
+Popular in fisheries, removal sampling is implemented by
+visiting the same site $J-1$ times and trapping and removing individuals each time
+with the same effort.  Thus, $Y_{ij}$ is the number
+of individuals captured at the $j$th visit for $j=1,2,\dots,J-1$.
+
+Then, the probability of an individual at site $i$ being captured on the first
+visit is $\pi_{i1} = p_{i1}$.  The probability of capture on the $J$th visit is
+\begin{equation}
+  \pi_{iJ} = \prod_{j=1}^{J-1}(1-p_{ij})p_{iJ},
+\end{equation}
+and the probability of not being sampled is
+\begin{equation}
+  \pi_{i,J+1} = \prod_{j=1}^{J}(1-p_{ij})
+\end{equation}
+Or
+\begin{equation}
+  \bm \pi_i =
+  \begin{pmatrix}
+    p_{i1} \\
+    (1-p_{i1})p_{i2} \\
+    \vdots \\
+    \prod_{j=1}^{J-1}(1-p_{ij})p_{iJ} \\
+     \prod_{j=1}^{J}(1-p_{ij})
+  \end{pmatrix}
+\end{equation}
+
+\subsubsection{Double observer sampling}
+
+Double observer sampling collects data by a team of 2 surveyors
+simultaneously visiting a site.  They each collect lists of identified
+animals.  Thus the 4 cells of $\bm Y_i$ correspond to the numbers of
+individuals seen by observer 1, observer 2, both, and neither.  Thus,
+we have
+\begin{equation}
+  \bm \pi_i =
+  \begin{pmatrix}
+    p_{i1}(1-p_{i2}) \\
+    (1-p_{i1})p_{i2} \\
+    p_{i1}p_{i2} \\
+    (1-p_{i1})(1-p_{i2})
+  \end{pmatrix}
+\end{equation}
+
+\citep{royle_modeling_2004}
+
+\subsection{Colonization-extinction model}
+
+Wildlife scientists are often concerned with changes in state over
+time.  To obtain information about change in the occupancy state
+variable over time, surveyors conduct repeat occupancy studies (see
+section~\ref{sec:occ}) to the same sample of sites over consecutive
+seasons \citep{mackenzie_estimating_2003}.  They then seek to estimate
+probabilities of colonization ($\gamma_{it}$) and extinction
+($\epsilon_{it}$), where colonization is the change of an unoccupied
+site to occupied and extinction if the change of an occupied site to
+unoccupied.  If the occupancy status is assumed to evolve according to
+a Markov process, then a 2-state finite hidden Markov model describes
+these data.  Let $Y_{itj}$ denote the observed animal occurrence
+status at visit $j$ during season $t$ to site $i$.  Then
+\begin{gather}
+  Z_{i1} \sim \Bern(\psi) \\
+  Z_{it} \sim
+  \begin{cases}
+    \Bern(\gamma_{i(t-1)}) & \text{if $Z_{i(t-1)} = 0$} \\
+    \Bern(1-\epsilon_{i(t-1)}) & \text{if $Z_{i(t-1)} = 1$}
+  \end{cases}, t=2,3,\dots,T \\
+  Y_{itj} | Z_{it} \sim \Bern(Z_{it} p_{itj})
+\end{gather}
+
+
+\section{The unmarked implementation}
+
+Unmarked can fit all of the above models.  By exploiting the common
+2-stage hierarchical structure of these models, unmarked
+implements common data structures, fitting syntax, and post-fit
+processing to form a cohesive framework for site-based wildlife data
+analysis.  The modern S4 class system
+\citep{chambers_software_2008} provides a convenient mechanism to implement this
+common structure.
+
+\begin{table}
+  \caption{Models fit by the stable version of unmarked.}
+\begin{tabular}{cc}
+
+\end{tabular}
+\end{table}
+
+\subsection{Data Requirements}
+
+Because of the multi-level structure of the models, standard data
+structures such as data frames or matrices are inadequate for these
+animal sampling methods.  Also, good programming practice holds all
+data used in an analysis in one portable object to simplify future
+reference to previous analyses \citep{gentleman_r_2008}.  Repeated fitting
+calls using the same set of data require less code repetition if all
+data is contained in a single object.  Finally, calls to fitting
+functions have a cleaner appearance with a more obvious purpose when
+the call is not overfull with data arguments.  For these reasons, we
+developed S4 data structures to contain data for use with unmarked's
+model-fitting functions.  Although this necessitates the extra step of
+creating the data object before fitting models, the benefits outweigh
+this minor inconvenience.  The parent data class is called an
+unmarkedFrame and all other unmarked data types inherit from it.
+
+An unmarkedFrame object contains slots for an observation matrix
+*y*, a data frame of site-level covariates *siteCovs*, and a data
+frame of observation-level covariates *obsCovs*.  The matrix of
+observed response variables, *y*, is the only required unmarkedFrame
+slot.  *y* is an $M \times J$ matrix for a data set with $M$ sites
+and $J$-dimensional $\bm y_i$.  Thus, for occurrence data, $R$
+
+The meaning of observation vectors varies by data type.  For
+example, in occurrence data, $R$ is the number of repeat site visits
+and elements of the observation vectors are the repeated sampling
+events at each site.  In double observer sampling, observation vectors
+correspond to the multinomial response categories for counts for
+observer 1, observer 2, and both observers.  For distance sampling,
+$y_i$ is the vector of counts falling into the $R$ distance classes
+specified by the user.
+
+unmarkedFrames also contain covariate data, measured either at the
+observation level or at the site level.  The slots obsCovs and
+siteCovs hold these data respectively.
+
+Automatic handling of missing data via obsToY matrix...
+
+Other data components are unique to specific types of unmarkedFrames.
+
+Unmarked aims to make importing data into unmarkedFrames easy, through
+the use of several import functions.
+
+<<>>=
+library(unmarked)
+data(mallard)
+head(mallard.y)
+str(mallard.site)
+str(mallard.obs)
+mallardUMF <- unmarkedFramePCount(y = mallard.y, siteCovs = mallard.site, obsCovs = mallard.obs)
+head(mallardUMF)
+@
+
+unmarked can conveniently return an unmarkedFrame in data frame format
+by simply showing the object.
+
+%<<echo=FALSE>>=
+%mallardUMF
+%@
+
+
+\subsection{Pre-Analysis Data Exploration}
+
+Plotting data is a useful first step when embarking on any statistical analysis.
+Unmarked implements plot methods for each of the unmarkedFrame data types.
+
+<<include=FALSE>>=
+plot(mallardUMF)
+@
+
+
+Unmarked also has summary methods tailored for unmarkedFrames.
+
+<<>>=
+summary(mallardUMF)
+@
+
+
+\subsection{Fitting models}
+
+Each model type has a corresponding fit function.  For example, to fit a point count model, we call pcount.
+
+<<eval=FALSE>>=
+fm <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF)
+@
+
+
+\subsection{Examining model fits}
+
+\subsection{Model Selection}
+
+
+\subsubsection{Goodness-of-fit}
+
+
+\subsubsection{Prediction}
+
+
+
+\section{Extensive Examples}
+
+
+\subsection{Occurrence Data}
+
+
+\subsection{Point Count Data}
+
+
+\subsection{Distance Data}
+
+\section{Future directions for unmarked development}
+
+Spatial models, Bayesian implementations,...
+
+
+
+
+
+\bibliographystyle{apa}
+\bibliography{unmarked}
+
+
+\end{document}
+
+\message{ !name(unmarked.Rnw.tex) !offset(-387) }

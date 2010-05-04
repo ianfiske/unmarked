@@ -1,0 +1,47 @@
+COMMENTS
+
+-How about unmarked: An R package for the analysis of wildlife occurence and abundance data.
+
+-I think it would be better to use the phrase 'repeated counts' instead of 'point counts' since the N-mixture model can work with numerous types of repeated count sampling methods, such as quadrat counts, transect counts, area searches, etc... Plus, the phrase point count is used mainly by ornithologists and not by the ecology community in general. 
+
+-Rather than repeatedly define the starts, method, and se arguments, we
+could define them once at the beginning or refer back to the occu section.
+
+-The figure and table locations could be improved. 
+
+-Add some discussion of overdispersion? Users will want to know what to do if their models don't fit. When the neg bin option isn't available, I guess nonparboot could be used to get std errors. I just noticed that this came up on the DISTANCE listserv:
+
+https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=ind1001&L=DISTANCE-SAMPLING&P=R1246&1=DISTANCE-SAMPLING&9=A&J=on&d=No+Match%3BMatch%3BMatches&z=4
+
+which is good b/c now all DISTANCE users will know about unmarked.
+
+-Here is the citation the DISTANCE people prefer to use now:
+
+@article{thomas_distance_2009,
+	title = {Distance software: design and analysis of distance sampling surveys for estimating population size},
+	volume = {47},
+	shorttitle = {Distance software},
+	number = {1},
+	journal = {Journal of Applied Ecology},
+	author = {L. Thomas and S. T Buckland and E. A Rexstad and J. L Laake and S. Strindberg and S. L Hedley and J. {R.B} Bishop and T. A Marques and K. P Burnham},
+	year = {2009},
+	pages = {5–14}
+}
+
+
+-Should we throw this document up on git? 
+
+-repeat visits or repeated visits? I'm not sure which is best.
+
+
+
+
+library(tools)
+
+rnw <- "D:/Manuscripts/unmarked ms/unmarked_jss/unmarked[rbc].Rnw"
+
+Sweave(rnw)
+
+tex <- "D:/Manuscripts/unmarked ms/unmarked_jss/unmarked[rbc].tex"
+
+texi2dvi(tex, pdf=TRUE)

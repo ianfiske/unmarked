@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99c (Web2C 7.5.6)
+The top-level auxiliary file: unmarked.aux
+The style file: jss.bst
+Database file #1: /home/ian/Documents/bibtex/dissertation.bib
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+You've used 13 entries,
+            3179 wiz_defined-function locations,
+            734 strings with 7450 characters,
+and the built_in function-call counts, 12340 in all, are:
+= -- 1011
+> -- 346
+< -- 7
++ -- 131
+- -- 117
+* -- 1066
+:= -- 1678
+add.period$ -- 54
+call.type$ -- 13
+change.case$ -- 91
+chr.to.int$ -- 12
+cite$ -- 13
+duplicate$ -- 1101
+empty$ -- 1148
+format.name$ -- 150
+if$ -- 2506
+int.to.chr$ -- 2
+int.to.str$ -- 1
+missing$ -- 162
+newline$ -- 80
+num.names$ -- 52
+pop$ -- 335
+preamble$ -- 1
+purify$ -- 91
+quote$ -- 0
+skip$ -- 220
+stack$ -- 0
+substring$ -- 1186
+swap$ -- 377
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 111
+warning$ -- 0
+while$ -- 94
+width$ -- 0
+write$ -- 184
