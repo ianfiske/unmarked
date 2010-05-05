@@ -38,7 +38,7 @@
   site-based methods: occurrence,
   repeated count, distance, removal, double observer sampling.  To
   appropriately analyze these data, two-stage hierarchical
-  models have been employed that can separately model explanatory variables of
+  models have been developed that can separately model explanatory variables of
   both a latent abundance process and a conditional detection process.
   Because these models have a straightforward interpretation
   paralleling how these data arose, they have recently gained immense
@@ -89,7 +89,7 @@ may have effective camouflage
 or simply be so rare that detections are uncommon.  To overcome these
 difficulties, ecologists have developed a suite of robust techniques to
 sample animal populations.  These sampling techniques include site occupancy 
-sampling, repeated count sampling, transect distance sampling, 
+sampling, repeated count sampling, distance sampling, 
 removal sampling, and double observer sampling 
 (see Section~\ref{sec:models-impl-unmark} for definitions).  Each of these
 sampling methods has some degree of imperfect detection because not
@@ -135,7 +135,7 @@ maximum likelihood estimates of parameters from a particular TLEM
 easily manipulated. Methods exist for performing numerous post-hoc analyses
 such as requesting linear combinations of parameters, 
 back-transforming parameters to constrained scales,
-determining confidence intervals, and evaluating goodness of fit.  The model
+determining confidence intervals, and evaluating goodness-of-fit.  The model
 specification syntax of the fitting functions was designed in such a
 way that it is quite familiar to users of \rlang's common fitting
 functions such as \code{lm} for fitting linear models.
@@ -525,7 +525,7 @@ we have
 \end{gather}
 Here, the log link is required because $\theta$ is a positive shape parameter 
 of the detection function. Eventually, alternative models 
-(\emph{eg}, the negative binomial) of the latent abundance variable may be added.
+(\emph{eg} the negative binomial) of the latent abundance variable may be added.
 
 
 \subsubsection[Fitting distance sampling models in unmarked]{Fitting distance sampling models in \pkg{unmarked}}
@@ -773,17 +773,28 @@ verify that the data was converted correctly.
 \end{Sinput}
 \begin{Soutput}
 Data frame representation of unmarkedFrame object.
-   y.1 y.2 y.3   elev length forest ivel.1 ivel.2 ivel.3 date.1 date.2 date.3
-1    0   0   0 -1.173  0.801 -1.156 -0.506 -0.506 -0.506 -1.761  0.310  1.381
-2    0   0   0 -1.127  0.115 -0.501 -0.934 -0.991 -1.162 -2.904 -1.047  0.596
-3    3   2   1 -0.198 -0.479 -0.101 -1.136 -1.339 -1.610 -1.690 -0.476  1.453
-4    0   0   0 -0.105  0.315  0.008 -0.819 -0.927 -1.197 -2.190 -0.690  1.239
-5    3   0   3 -1.034 -1.102 -1.193  0.638  0.880  1.042 -1.833  0.167  1.381
-6    0   0   0 -0.848  0.741  0.917 -1.329 -1.042 -0.899 -2.619  0.167  1.381
-7    0   0   0 -0.910  0.115 -1.083 -1.448 -1.562 -1.676 -2.690 -1.190  1.596
-8    0   0   0 -1.003 -1.007 -0.792 -0.321 -0.557 -0.636 -2.119 -0.476  1.453
-9    0   0   0 -0.058 -0.913  0.553 -0.231 -0.231 -0.001 -2.047 -0.547  1.167
-10   0   0   0 -0.631  1.556  0.808 -1.097 -1.021 -0.832 -2.333 -1.119 -0.261
+   y.1 y.2 y.3   elev length forest ivel.1 ivel.2 ivel.3 date.1
+1    0   0   0 -1.173  0.801 -1.156 -0.506 -0.506 -0.506 -1.761
+2    0   0   0 -1.127  0.115 -0.501 -0.934 -0.991 -1.162 -2.904
+3    3   2   1 -0.198 -0.479 -0.101 -1.136 -1.339 -1.610 -1.690
+4    0   0   0 -0.105  0.315  0.008 -0.819 -0.927 -1.197 -2.190
+5    3   0   3 -1.034 -1.102 -1.193  0.638  0.880  1.042 -1.833
+6    0   0   0 -0.848  0.741  0.917 -1.329 -1.042 -0.899 -2.619
+7    0   0   0 -0.910  0.115 -1.083 -1.448 -1.562 -1.676 -2.690
+8    0   0   0 -1.003 -1.007 -0.792 -0.321 -0.557 -0.636 -2.119
+9    0   0   0 -0.058 -0.913  0.553 -0.231 -0.231 -0.001 -2.047
+10   0   0   0 -0.631  1.556  0.808 -1.097 -1.021 -0.832 -2.333
+   date.2 date.3
+1   0.310  1.381
+2  -1.047  0.596
+3  -0.476  1.453
+4  -0.690  1.239
+5   0.167  1.381
+6   0.167  1.381
+7  -1.190  1.596
+8  -0.476  1.453
+9  -0.547  1.167
+10 -1.119 -0.261
 \end{Soutput}
 \end{Schunk}
 
@@ -895,8 +906,8 @@ specify the particular type of multinomial-Poisson data as
 \begin{Sinput}
 > scaled.covs <- as.data.frame(scale(ovendata.list$covariates[, 
 +     -1]))
-> ovenFrame <- unmarkedFrameMPois(ovendata.list$data, siteCovs = scaled.covs, 
-+     type = "removal")
+> ovenFrame <- unmarkedFrameMPois(ovendata.list$data, 
++     siteCovs = scaled.covs, type = "removal")
 > summary(ovenFrame)
 \end{Sinput}
 \begin{Soutput}
@@ -942,7 +953,8 @@ Site-level covariates:
 As introduced in Section~\ref{sec:models-impl-unmark}, each TLEM has a
 corresponding fitting function.  For example, to fit a repeated count
 model, we call \code{pcount}.  Table~\ref{tab:models} provides a
-summary of all models that \um\ currently fits.  All fitting functions
+summary of all models that \um\ currently fits.  With the exception of colext,
+all fitting functions
 share a double right-hand sided formula syntax that expresses the
 hierarchical model and data structures.  No response side of the formula is
 specified because the unmarkedFrame defines the response variable
@@ -965,11 +977,35 @@ the point count model.
 > fm <- pcount(~date + I(date^2) ~ elev + forest, data = mallardUMF)
 > summary(fm)
 \end{Sinput}
+\begin{Soutput}
+Call:
+pcount(formula = ~date + I(date^2) ~ elev + forest, data = mallardUMF)
+
+Abundance (log-scale):
+            Estimate    SE     z  P(>|z|)
+(Intercept)   -1.853 0.236 -7.87 3.62e-15
+elev          -1.232 0.234 -5.27 1.36e-07
+forest        -0.756 0.165 -4.60 4.32e-06
+
+Detection (logit-scale):
+            Estimate     SE       z P(>|z|)
+(Intercept)   0.3071 0.2149  1.4290 0.15301
+date         -0.4091 0.1482 -2.7612 0.00576
+I(date^2)    -0.0077 0.0853 -0.0903 0.92801
+
+AIC: 521.2001 
+Sample size: 235
+Sites removed: 12 69 118 146
+optim convergence code: 0
+optim iterations: 37 
+Bootstrap iterations: 0 
+\end{Soutput}
 \end{Schunk}
 
-This initial fit suggests that \code{elev} and \code{forest} are
-associated with abundance.  It also appears that \code{date} is
-linearly related to detection probability.
+%%%% This interpretation comes before model results are presented
+%This initial fit suggests that \code{elev} and \code{forest} are
+%associated with abundance.  It also appears that \code{date} is
+%linearly related to detection probability.
 
 % To specify no covariates (intercept only), use \code{1} for the
 % corresponding model level.  For example, we can specify a model with
@@ -978,13 +1014,31 @@ linearly related to detection probability.
 % (fm.cons.p <- pcount(~ 1 ~ elev + forest, data = mallardUMF))
 % @
 
-The Ovenbird data has no visit-level covariates, so detection
+Here we demonstrate fitting a multinomial-Poisson model to removal sampling 
+data.  The Ovenbird data has no visit-level covariates, so detection
 probability is assumed constant across visits.  
+% Abundance is modeled using... what are ufp and trba?
 
 \begin{Schunk}
 \begin{Sinput}
 > (fm1 <- multinomPois(~1 ~ ufp + trba, ovenFrame))
 \end{Sinput}
+\begin{Soutput}
+Call:
+multinomPois(formula = ~1 ~ ufp + trba, data = ovenFrame)
+
+Abundance:
+            Estimate    SE      z P(>|z|)
+(Intercept)    0.102 0.119  0.864   0.388
+ufp            0.100 0.126  0.794   0.427
+trba          -0.171 0.135 -1.262   0.207
+
+Detection:
+ Estimate    SE    z P(>|z|)
+    0.288 0.233 1.24   0.217
+
+AIC: 326.1387 
+\end{Soutput}
 \end{Schunk}
 
 \subsection{Examining model fits}
@@ -1005,8 +1059,10 @@ entire model, or from the state or detection levels.
 > coef(fm)
 \end{Sinput}
 \begin{Soutput}
-    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) p(I(date^2)) 
--1.853228484 -1.231995827 -0.756129430  0.307055927 -0.409105329 -0.007704162 
+    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) 
+-1.853228484 -1.231995827 -0.756129430  0.307055927 -0.409105329 
+p(I(date^2)) 
+-0.007704162 
 \end{Soutput}
 \begin{Sinput}
 > coef(fm, type = "state")
@@ -1025,20 +1081,20 @@ the estimates, using the observed Fisher information by default.
 > vcov(fm)
 \end{Sinput}
 \begin{Soutput}
-                 lam(Int)    lam(elev)   lam(forest)       p(Int)      p(date)
-lam(Int)      0.055487740  0.042381157  0.0077094004 -0.002408246 -0.005337494
-lam(elev)     0.042381157  0.054652581 -0.0088797433  0.002406913 -0.007285857
-lam(forest)   0.007709400 -0.008879743  0.0270716249  0.000923048  0.001319487
-p(Int)       -0.002408246  0.002406913  0.0009230480  0.046173146 -0.006308606
-p(date)      -0.005337494 -0.007285857  0.0013194872 -0.006308606  0.021951667
-p(I(date^2)) -0.003185167 -0.003492489  0.0007185404 -0.008793313  0.008088666
-              p(I(date^2))
-lam(Int)     -0.0031851666
-lam(elev)    -0.0034924893
-lam(forest)   0.0007185404
-p(Int)       -0.0087933129
-p(date)       0.0080886657
-p(I(date^2))  0.0072713089
+                 lam(Int)    lam(elev)   lam(forest)       p(Int)
+lam(Int)      0.055487740  0.042381157  0.0077094004 -0.002408246
+lam(elev)     0.042381157  0.054652581 -0.0088797433  0.002406913
+lam(forest)   0.007709400 -0.008879743  0.0270716249  0.000923048
+p(Int)       -0.002408246  0.002406913  0.0009230480  0.046173146
+p(date)      -0.005337494 -0.007285857  0.0013194872 -0.006308606
+p(I(date^2)) -0.003185167 -0.003492489  0.0007185404 -0.008793313
+                  p(date)  p(I(date^2))
+lam(Int)     -0.005337494 -0.0031851666
+lam(elev)    -0.007285857 -0.0034924893
+lam(forest)   0.001319487  0.0007185404
+p(Int)       -0.006308606 -0.0087933129
+p(date)       0.021951667  0.0080886657
+p(I(date^2))  0.008088666  0.0072713089
 \end{Soutput}
 \begin{Sinput}
 > vcov(fm, type = "state")
@@ -1060,8 +1116,10 @@ covariance matrices.
 > SE(fm)
 \end{Sinput}
 \begin{Soutput}
-    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) p(I(date^2)) 
-  0.23555836   0.23377891   0.16453457   0.21487937   0.14816095   0.08527197 
+    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) 
+  0.23555836   0.23377891   0.16453457   0.21487937   0.14816095 
+p(I(date^2)) 
+  0.08527197 
 \end{Soutput}
 \begin{Sinput}
 > SE(fm, type = "state")
@@ -1133,7 +1191,7 @@ Detection (logit-scale):
 AIC: 326.1387 
 Sample size: 70
 optim convergence code: 0
-optim iterations: 30 
+optim iterations: 33 
 Bootstrap iterations: 100 
 \end{Soutput}
 \end{Schunk}
@@ -1144,6 +1202,26 @@ Additional bootstrap samples can be drawn by calling \code{nonparboot} again.
 > fm1 <- nonparboot(fm1, B = 100)
 > summary(fm1)
 \end{Sinput}
+\begin{Soutput}
+Call:
+multinomPois(formula = ~1 ~ ufp + trba, data = ovenFrame)
+
+Abundance (log-scale):
+            Estimate    SE      z P(>|z|)
+(Intercept)    0.102 0.119  0.864   0.388
+ufp            0.100 0.126  0.794   0.427
+trba          -0.171 0.135 -1.262   0.207
+
+Detection (logit-scale):
+ Estimate    SE    z P(>|z|)
+    0.288 0.233 1.24   0.217
+
+AIC: 326.1387 
+Sample size: 70
+optim convergence code: 0
+optim iterations: 33 
+Bootstrap iterations: 200 
+\end{Soutput}
 \end{Schunk}
 
 Confidence intervals can be requested for the coefficients at either
@@ -1170,6 +1248,11 @@ profile limit.
 \begin{Sinput}
 > ci <- confint(fm1, type = "state", level = 0.95, method = "profile")
 \end{Sinput}
+\begin{Soutput}
+Profiling parameter 1 of 3 ... done.
+Profiling parameter 2 of 3 ... done.
+Profiling parameter 3 of 3 ... done.
+\end{Soutput}
 \end{Schunk}
 \begin{Schunk}
 \begin{Sinput}
@@ -1198,8 +1281,8 @@ log-abundance rate for a site with \code{ufp = 0.5} and \code{trba
 
 \begin{Schunk}
 \begin{Sinput}
-> (lc <- linearComb(fm1, type = "state", coefficients = c(1, 0.5, 
-+     0)))
+> (lc <- linearComb(fm1, type = "state", coefficients = c(1, 
++     0.5, 0)))
 \end{Sinput}
 \begin{Soutput}
 Linear combination(s) of Abundance estimate(s)
@@ -1339,7 +1422,8 @@ other relevant information such as Nagelkerke's
 
 \begin{Schunk}
 \begin{Sinput}
-> fmList <- fitList(Global = fm1, ufp = fm2, trba = fm3, Null = fm4)
+> fmList <- fitList(Global = fm1, ufp = fm2, trba = fm3, 
++     Null = fm4)
 > modSel(fmList, nullmod = "Null")
 \end{Sinput}
 \begin{Soutput}
@@ -1371,9 +1455,10 @@ predictor of abundance.  We can examine the relationship with the
 \begin{Sinput}
 > preddata <- predict(fm3, type = "state", appendData = TRUE)
 > library(ggplot2)
-> qplot(trba, Predicted, data = preddata, geom = "line", xlab = "Scaled Basal Tree Diameter", 
-+     ylab = "Estimated Abundance") + geom_ribbon(aes(x = trba, 
-+     ymin = lower, ymax = upper), alpha = 0.1) + theme_bw()
+> qplot(trba, Predicted, data = preddata, geom = "line", 
++     xlab = "Scaled Basal Tree Diameter", ylab = "Estimated Abundance") + 
++     geom_ribbon(aes(x = trba, ymin = lower, ymax = upper), 
++         alpha = 0.1) + theme_bw()
 \end{Sinput}
 \end{Schunk}
 
@@ -1388,7 +1473,7 @@ parametric bootstrapping function.  It simulated data from the fitted
 model and the computes summary information from any specified
 statistic, with the default being the sum of squared residuals.
 
-
+%suppress progress report. Probably should add option to argument list too.
 \begin{Schunk}
 \begin{Sinput}
 > set.seed(1234)
@@ -1431,7 +1516,7 @@ t_B = Vector of bootstrap samples
 
 
 The above call to \code{plot} with a parametric bootstrap object as
-the argument produces a useful graphic for assessing goodness of fit
+the argument produces a useful graphic for assessing goodness-of-fit
 (see Figure~\ref{fig:pb}).  The plot suggests that the model can sufficiently
 explain these data.
 

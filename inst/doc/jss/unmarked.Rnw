@@ -41,7 +41,7 @@ options(device.ask.default=FALSE)
   site-based methods: occurrence,
   repeated count, distance, removal, double observer sampling.  To
   appropriately analyze these data, two-stage hierarchical
-  models have been employed that can separately model explanatory variables of
+  models have been developed that can separately model explanatory variables of
   both a latent abundance process and a conditional detection process.
   Because these models have a straightforward interpretation
   paralleling how these data arose, they have recently gained immense
@@ -92,7 +92,7 @@ may have effective camouflage
 or simply be so rare that detections are uncommon.  To overcome these
 difficulties, ecologists have developed a suite of robust techniques to
 sample animal populations.  These sampling techniques include site occupancy 
-sampling, repeated count sampling, transect distance sampling, 
+sampling, repeated count sampling, distance sampling, 
 removal sampling, and double observer sampling 
 (see Section~\ref{sec:models-impl-unmark} for definitions).  Each of these
 sampling methods has some degree of imperfect detection because not
@@ -138,7 +138,7 @@ maximum likelihood estimates of parameters from a particular TLEM
 easily manipulated. Methods exist for performing numerous post-hoc analyses
 such as requesting linear combinations of parameters, 
 back-transforming parameters to constrained scales,
-determining confidence intervals, and evaluating goodness of fit.  The model
+determining confidence intervals, and evaluating goodness-of-fit.  The model
 specification syntax of the fitting functions was designed in such a
 way that it is quite familiar to users of \rlang's common fitting
 functions such as \code{lm} for fitting linear models.
@@ -528,7 +528,7 @@ we have
 \end{gather}
 Here, the log link is required because $\theta$ is a positive shape parameter 
 of the detection function. Eventually, alternative models 
-(\emph{eg}, the negative binomial) of the latent abundance variable may be added.
+(\emph{eg} the negative binomial) of the latent abundance variable may be added.
 
 
 \subsubsection[Fitting distance sampling models in unmarked]{Fitting distance sampling models in \pkg{unmarked}}
@@ -792,7 +792,8 @@ summary(ovenFrame)
 As introduced in Section~\ref{sec:models-impl-unmark}, each TLEM has a
 corresponding fitting function.  For example, to fit a repeated count
 model, we call \code{pcount}.  Table~\ref{tab:models} provides a
-summary of all models that \um\ currently fits.  All fitting functions
+summary of all models that \um\ currently fits.  With the exception of colext,
+all fitting functions
 share a double right-hand sided formula syntax that expresses the
 hierarchical model and data structures.  No response side of the formula is
 specified because the unmarkedFrame defines the response variable
@@ -815,9 +816,10 @@ fm <- pcount(~ date + I(date^2) ~ elev + forest, data = mallardUMF)
 summary(fm)
 @
 
-This initial fit suggests that \code{elev} and \code{forest} are
-associated with abundance.  It also appears that \code{date} is
-linearly related to detection probability.
+%%%% This interpretation comes before model results are presented
+%This initial fit suggests that \code{elev} and \code{forest} are
+%associated with abundance.  It also appears that \code{date} is
+%linearly related to detection probability.
 
 % To specify no covariates (intercept only), use \code{1} for the
 % corresponding model level.  For example, we can specify a model with
@@ -826,8 +828,10 @@ linearly related to detection probability.
 % (fm.cons.p <- pcount(~ 1 ~ elev + forest, data = mallardUMF))
 % @
 
-The Ovenbird data has no visit-level covariates, so detection
+Here we demonstrate fitting a multinomial-Poisson model to removal sampling 
+data.  The Ovenbird data has no visit-level covariates, so detection
 probability is assumed constant across visits.  
+% Abundance is modeled using... what are ufp and trba?
 
 <<cache=true>>=
 (fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
@@ -1062,8 +1066,8 @@ parametric bootstrapping function.  It simulated data from the fitted
 model and the computes summary information from any specified
 statistic, with the default being the sum of squared residuals.
 
-
-<<cache=true>>=
+%suppress progress report. Probably should add option to argument list too.
+<<cache=true,eval=FALSE>>=  
 set.seed(1234)
 pb <- parboot(fm1, statistic = SSE, nsim = 200)
 @ 
@@ -1071,7 +1075,7 @@ pb <- parboot(fm1, statistic = SSE, nsim = 200)
 pb
 @ 
 
-<<eval=FALSE>>=
+<<eval=FALSE>>= 
 plot(pb, main = "Goodness-of-fit Parametric Bootstrap")
 @ 
 
@@ -1088,7 +1092,7 @@ plot(pb, main = "Goodness-of-fit Parametric Bootstrap")
 
 
 The above call to \code{plot} with a parametric bootstrap object as
-the argument produces a useful graphic for assessing goodness of fit
+the argument produces a useful graphic for assessing goodness-of-fit
 (see Figure~\ref{fig:pb}).  The plot suggests that the model can sufficiently
 explain these data.
 
