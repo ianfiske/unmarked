@@ -742,9 +742,9 @@ for(i in 1:M) {
                     nextReal <- which(!is.na(v))
                     nextReal <- ifelse(length(nextReal) > 0, max(nextReal), 1)
                     if(equalInts)
-                        dout[i,j-1] <- d[i,j] - d[i, nextReal]
-                    else 
                         dout[i,j-1] <- j - nextReal
+                    else 
+                        dout[i,j-1] <- d[i,j] - d[i, nextReal]
                     }
                 }
             }
