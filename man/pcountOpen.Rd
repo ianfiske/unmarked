@@ -102,6 +102,9 @@ backTransform(m1, "det")
 
 \dontrun{
 
+# Fix omega at 1 (no losses)
+m1.fixo <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10, fix="omega")
+
 ## Simulate covariate model with constant intervals
 set.seed(33)
 M <- 50
