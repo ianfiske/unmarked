@@ -120,7 +120,7 @@ for many popular TLEMs.
 
 \um\ provides tools to assist researchers with every step
 of the analysis process, including data conversion and exploration, 
-visualization, model fitting, post-hoc analysis, and model criticism.  
+model fitting, post-hoc analysis, and model criticism.  
 Because of the
 multi-level structure of the data and models, covariate data can exist
 at both the state and detection level.  To succinctly describe these
@@ -349,7 +349,7 @@ where
 
      
 \subsection{General multinomial-Poisson TLEM}
-
+\label{sec:gener-mult-poiss}
 Here we discuss a more general TLEM that can be modified to fit a
 variety of ecological sampling methods, the multinomial-Poisson model
 \citep{Royle2004a}.  The general form of this model is
@@ -613,18 +613,18 @@ fitting function.
 \section[unmarked usage]{\pkg{unmarked} usage}
 \label{sec:unmarked-usage}
 
-By exploiting the common structure of TLEMs, \um\ is able to
-provide data structures, fitting syntax, and post-processing that form
-a cohesive framework for site-based ecological data analysis.  In
-order to achieve these goals, \um\ uses the S4 class system
+By exploiting the common structure of TLEMs, \um\ is able to provide
+data structures, fitting syntax, and post-processing that form a
+cohesive framework for site-based ecological data analysis.  In order
+to achieve these goals, \um\ uses the S4 class system
 \citep{Chambers2008}. As \rlang's most modern system of class-based
-programming,  S4 allows customization of functions, referred to as methods, 
-to specific object classes and superclasses. For example, when
-\code{predict}, a common method, is called with any \um\  model fit
-object as an argument, the actual \code{predict} implementation depends on the
-specific TLEM that was fit.  Use of class-based programming can provide
-more reliable and maintainable software while also making the program
-more user-friendly \citep{Chambers2008}.
+programming, S4 allows customization of functions, referred to as
+methods, to specific object classes and superclasses. For example,
+when the generic \code{predict} method is called with any \um\ model
+fit object as an argument, the actual \code{predict} implementation
+depends on the specific TLEM that was fit.  Use of class-based
+programming can provide more reliable and maintainable software while
+also making the program more user-friendly \citep{Chambers2008}.
 
 
 \subsection{Preparing data}
@@ -677,13 +677,14 @@ constructor functions to make creating unmarkedFrames straightforward.
 For each specific data type, specific types of unmarkedFrames extend
 the basic unmarkedFrame to handle model-specific nuances.
 
+\subsubsection{Importing repeated count data}
+
 Here is an example of creating an unmarkedFrame for point count data
+(Section~\ref{sec:repeated-count-data}).
 from a list a matrix of observations, a data frame of site-level
 covariates, and a list of matrices of observation-level covariates.
-\pkg{unmarked} seamlessly displays the unmarkedFramePCount object as a
-data frame.
 
-First, load the included data set of avian point counts from
+First, load the included data set of Mallard duck point counts from
 \citet{Kery2005} and visually inspect the point count matrix, which is
 already in the same format as the \code{y} slot of an unmarkedFrame.
 
@@ -705,7 +706,7 @@ summary(mallard.site)
 @ 
 
 
-However observation level covariates
+However, observation level covariates
 are a list object with separate $M \times J$ matrices for each
 observation-level covariate.  The unmarkedFrame constructors can
 accept \ocovs\ in this list format or as a data frame in the format
@@ -741,6 +742,34 @@ these data are in fact very sparse as is commonly place in ecological statistics
 Notice that these data already appear centered and scaled.  This is
 common practice to improve numerical stability of the estimation procedure.
 
+\subsubsection{Importing removal sampling data}
+
+To illustrate the slightly different syntax for removal sampling data
+example, we will import removal data from a removal survey of Ovenbird 
+described by \citet{Royle2004a}.  The data consist of a list with a
+matrix \code{data} containing the removal counts for 4 visits and a
+data frame called \code{covariates} containing site-level covariates
+information.
+
+<<>>=
+data(ovendata)
+str(ovendata.list)
+ovendata.list$data[sample(1:70,10),]
+ovendata.list$covariates[sample(1:70,10),]
+@ 
+
+The only additional specification when importing removal data is to
+specify the particular type of multinomial-Poisson data as
+\code{removal} via the \code{type} argument.
+
+<<>>=
+scaled.covs <- as.data.frame(scale(ovendata.list$covariates[,-1]))
+ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
+                                siteCovs = scaled.covs, type = "removal")
+summary(ovenFrame)
+@ 
+
+
 % \subsubsection{Importing Data}
 % \label{sec:importing-data}
 
@@ -771,14 +800,15 @@ uniquely as the \code{y} slot.  The first component of the formula
 describes the observation-level model of the detection process and the
 second component describes the site-level model of the state process.
 
-Continuing the mallard example, the following call to \code{pcount}
-fits an N-mixture model (Section~\ref{sec:repeated-count-data}).  Here,
-we specify that the detection probability $p$ should be modeled by day
-of year, including a quadratic term.  We also wish to model abundance
-using elevation and proportion of area forested.  As described in
-Section~\ref{sec:repeated-count-data}, covariates of detection are on the
-logit-scale and covariates of abundance are on the log scale for the
-point count model.
+Continuing the Mallard example, the following call to \code{pcount}
+fits an binomaial-Poisson mixture model
+(Section~\ref{sec:repeated-count-data}).  Here, we specify that the
+detection probability $p$ should be modeled by day of year, including
+a quadratic term.  We also wish to model abundance using elevation and
+proportion of area forested.  As described in
+Section~\ref{sec:repeated-count-data}, covariates of detection are on
+the logit-scale and covariates of abundance are on the log scale for
+the point count model.
 
 <<cache=TRUE>>=
 fm <- pcount(~ date + I(date^2) ~ elev + forest, data = mallardUMF)
@@ -789,14 +819,19 @@ This initial fit suggests that \code{elev} and \code{forest} are
 associated with abundance.  It also appears that \code{date} is
 linearly related to detection probability.
 
-To specify no covariates (intercept only), use \code{1} for the
-corresponding model level.  For example, we can specify a model with
-constant detection rates.
+% To specify no covariates (intercept only), use \code{1} for the
+% corresponding model level.  For example, we can specify a model with
+% constant detection rates.
+% <<cache=TRUE>>=
+% (fm.cons.p <- pcount(~ 1 ~ elev + forest, data = mallardUMF))
+% @
 
+The Ovenbird data has no visit-level covariates, so detection
+probability is assumed constant across visits.  
 
-<<cache=TRUE>>=
-(fm.cons.p <- pcount(~ 1 ~ elev + forest, data = mallardUMF))
-@
+<<cache=true>>=
+(fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+@ 
 
 \subsection{Examining model fits}
 \label{sec:examining-model-fits}
@@ -841,19 +876,39 @@ be taken using the \code{nonparboot}.  \code{nonparboot} returns a new
 version of the unmarkedFit object with additional bootstrap sampling
 information.  Thus, this new fit must be stored, either in a new fit
 object or the same one, and then subsequently queried for bootstrap
-summaries.  In the following, bootstrapping can be quite slow.
+summaries.  In the following, bootstrapping can be quite slow.  For
+these examples, we illustrate with the removal sampling data simply
+because computations are much faster.  However, bootstrapping is
+available for any of the TLEMs that \um\ fits.
 
 <<cache=TRUE>>=
 set.seed(1234)
-fm <- nonparboot(fm, B = 100)
-SE(fm, type = "state", method = "nonparboot")
+fm1 <- nonparboot(fm1, B = 100)
+@ 
+
+<<>>=
+SE(fm1, type = "state")
+SE(fm1, type = "state", method = "nonparboot")
+@ 
+
+It looks like bootstrapping and asymptotic standard errors are close.
+The summary now states the number of bootstrap samples.
+
+<<>>=
+summary(fm1)
+@ 
+
+Additional bootstrap samples can be drawn by calling \code{nonparboot} again.
+<<cache=TRUE>>=
+fm1 <- nonparboot(fm1, B = 100)
+summary(fm1)
 @ 
 
 Confidence intervals can be requested for the coefficients at either
 stage of the model.  By default, the normal approximation is used.
 
 <<>>=
-confint(fm, type = "state", level = 0.95)
+confint(fm1, type = "state", level = 0.95)
 @ 
 
 Profile confidence intervals are also available upon request.  This
@@ -862,9 +917,14 @@ optimization within a root-finding algorithm is being used to find the
 profile limit.
 
 <<cache=TRUE>>=
-ci <- confint(fm, type = "state", level = 0.95, method = "profile") 
+ci <- confint(fm1, type = "state", level = 0.95, method = "profile") 
+@ 
+<<>>=
 ci
 @ 
+
+The profile confidence intervals and normal approximations are quite
+similar here.
 
 \subsubsection{Linear combinations of estimates}
 
@@ -872,25 +932,26 @@ Often, meaningful hypotheses can be addressed by estimating linear
 combinations of coefficient estimates.  Linear combinations of coefficient
 estimates can be requested with \code{linearComb}.
 
-Continuing the mallard example, the following code estimates the
-log-abundance rate for a site with \code{elev = 0.5} and \code{forest
+Continuing the Ovenbird example, the following code estimates the
+log-abundance rate for a site with \code{ufp = 0.5} and \code{trba
   = 0}.
 
 <<>>=
-(lc <- linearComb(fm, type = "state", coefficients = c(1, 0.5, 0)))
+(lc <- linearComb(fm1, type = "state", coefficients = c(1, 0.5, 0)))
 @ 
 
 Multiple sets of coefficients may be supplied as a matrix.  The
 following code requests the estimated log-abundance for sites with
-\code{elev = 0.5} and \code{elev = 1}.
+\code{ufp = 0.5} and \code{trba = 1}.
 
 <<>>=
-(lc <- linearComb(fm, type = "state", coefficients = matrix(c(1, 0.5, 0,
+(lc <- linearComb(fm1, type = "state", coefficients = matrix(c(1, 0.5, 0,
                                         1, 1, 0), 2, 3, byrow = TRUE)))
 @ 
 
 Standard errors and confidence intervals are also available for linear
-combinations of parameters.
+combinations of parameters.  By requesting parametric bootstrapped
+standard errors, \um\ uses the samples that were drawn earlier.
 
 <<>>=
 SE(lc)
@@ -916,68 +977,81 @@ SE(btlc, method = "nonparboot")
 confint(btlc)
 @ 
 
-As another example, when there are no covariates, the estimate can be
-directly back-transformed without first taking a linear combination.
-For example, using the model that was fit with no detection
-covariates, we can estimate the overall rate of detection.
+% As another example, when there are no covariates, the estimate can be
+% directly back-transformed without first taking a linear combination.
+% For example, using the model that was fit with no detection
+% covariates, we can estimate the overall rate of detection.
 
-<<>>=
-(cons.p <- backTransform(fm.cons.p, type = "det"))
-confint(cons.p, level = 0.90)
-@ 
+% <<>>=
+% (cons.p <- backTransform(fm.cons.p, type = "det"))
+% confint(cons.p, level = 0.90)
+% @ 
 
 \subsubsection{Model selection}
 
 \pkg{unmarked} performs simple AIC-based model selection for
-structured lists of unmarkedFit objects.  %Better
-Implementing alternative methods of
-variable selection for these models is an area of future research.
-To demonstrate, let's add one more fit, with date in the detection model,
-but no quadratic component.
+structured lists of unmarkedFit objects.  Implementing alternative
+methods of variable selection for these models is an area of future
+research.  To demonstrate, we fit a few more models to the Ovenbird
+removal data with fewer covariates and a null model with no covariates.
 
-<<cache=TRUE>>=
-fm.lindate <- pcount(~ date ~ elev + forest, data = mallardUMF)
+<<cache=true>>=
+fm2 <- multinomPois(~ 1 ~ ufp, ovenFrame)
+fm3 <- multinomPois(~ 1 ~ trba, ovenFrame)
+fm4 <- multinomPois(~ 1 ~ 1, ovenFrame)
 @ 
+
+% <<cache=TRUE>>=
+% fm.lindate <- pcount(~ date ~ elev + forest, data = mallardUMF)
+% @ 
 
 Now, we can organize the fitted models with the \code{fitList} function and
 the use the \code{modSel} method to rank the models by AIC and print
 other relevant information such as Nagelkerke's
 \citeyearpar{Nagelkerke1991} $R^{2}$.
 
+
+
 <<>>=
-fitlist <- fitList(null=fm.cons.p, lindate = fm.lindate, quaddate=fm)
-modSel(fitlist, nullmod = "null")
+fmList <- fitList(Global=fm1, ufp=fm2, trba=fm3, Null=fm4)
+modSel(fmList, nullmod="Null")
 @ 
-It looks like there is pretty good evidence of a quadratic
-relationship between date and detection.  We can explore that a bit
-with predict.
+
+
+\begin{figure}[ht]
+  \centering
+<<eval=true,echo=false,fig=true>>=
+preddata <- predict(fm3, type = "state", appendData = TRUE)
+library(ggplot2)
+print(qplot(trba, Predicted, data = preddata, geom = "line", 
+      xlab = "Scaled Basal Tree Diameter",
+      ylab = "Estimated Abundance") + 
+  geom_ribbon(aes(x = trba, ymin = lower, ymax = upper),
+              alpha = 0.1) + theme_bw())
+@ 
+\caption{Examine estimated abundance for Ovenbird removal data.  Band
+  is 95\% confidence interval.}
+\label{fig:pred}
+\end{figure}
+
+
+It looks like the best model only includes tree basal area as a
+predictor of abundance.  We can examine the relationship with the
+\code{predict} method (Figure~\ref{fig:pred}).
+
+
 
 <<eval=FALSE,fig=FALSE>>=
-date.min <- min(obsCovs(mallardUMF)$date, na.rm = TRUE)
-date.max <- max(obsCovs(mallardUMF)$date, na.rm = TRUE)
-newdata <- data.frame(date = seq(date.min, date.max, by = 0.01))
-preddata <- predict(fm.lindate, type = "det", newdata = newdata, appendData = TRUE)
-plot(Predicted ~ date, preddata, type = "l")
+preddata <- predict(fm3, type = "state", appendData = TRUE)
+library(ggplot2)
+qplot(trba, Predicted, data = preddata, geom = "line", 
+      xlab = "Scaled Basal Tree Diameter",
+      ylab = "Estimated Abundance") + 
+  geom_ribbon(aes(x = trba, ymin = lower, ymax = upper),
+              alpha = 0.1) + theme_bw()
 @ 
 
-The above produces Figure~\ref{fig:preddet}, which displays the
-estimates association between day of year and detection probability.
-Detection probability appears to drop off throughout the year.
-This might be useful information for designing the next survey.
 
-\begin{figure}
-  \centering
-<<fig=TRUE,echo=FALSE,width=3,height=3>>=
-date.min <- min(obsCovs(mallardUMF)$date, na.rm = TRUE)
-date.max <- max(obsCovs(mallardUMF)$date, na.rm = TRUE)
-newdata <- data.frame(date = seq(date.min, date.max, by = 0.01))
-preddata <- predict(fm, type = "det", newdata = newdata, appendData = TRUE)
-plot(Predicted ~ date, preddata, type = "l", xlab = "day", ylab = "Probability of detection")
-@ 
-\caption{Predicted detection probability as a function of day of year
-  in the running mallard example}
-\label{fig:preddet}
-\end{figure}
 
 \subsubsection{Parametric Bootstrap for Goodness-of-fit}
 
@@ -989,31 +1063,35 @@ model and the computes summary information from any specified
 statistic, with the default being the sum of squared residuals.
 
 
-<<cache=true,eval=FALSE,fig=FALSE>>=
+<<cache=true>>=
 set.seed(1234)
-(pb <- parboot(fm, statistic = SSE, nsim = 100))
+pb <- parboot(fm1, statistic = SSE, nsim = 200)
+@ 
+<<>>=
+pb
 @ 
 
 <<eval=FALSE>>=
 plot(pb, main = "Goodness-of-fit Parametric Bootstrap")
 @ 
 
-The above call to \code{plot} with a parametric bootstrap object as
-the argument produces a useful graphic for assessing goodness of fit
-(see Figure~\ref{fig:pb}).  The plot suggests that the model can adequately
-explain these data.
-
-\begin{figure}
+\begin{figure}[ht]
   \centering
-<<fig=TRUE,echo=FALSE,width=3,height=3>>=
-set.seed(100)
-(pb <- parboot(fm, statistic = SSE, nsim = 10))
+<<fig=TRUE,echo=FALSE>>=
+set.seed(1234)
 plot(pb, main = "Goodness-of-fit Parametric Bootstrap")
 @ 
 \caption{Graphically assess model fit by parametric bootsrapping
   the sum of squared residuals.}
 \label{fig:pb}
 \end{figure}
+
+
+The above call to \code{plot} with a parametric bootstrap object as
+the argument produces a useful graphic for assessing goodness of fit
+(see Figure~\ref{fig:pb}).  The plot suggests that the model can sufficiently
+explain these data.
+
 
 \section[Future directions for unmarked development]{Future directions for \um\ development}
 \label{sec:future-direct-unmark}
@@ -1037,7 +1115,6 @@ CRAN within \rlang\ by issuing the command \\
 install.packages("unmarked").
 \end{Code}
 
-% TODO: fix title case in bib file for titles.
 %\bibliographystyle{jss}
 \bibliography{/home/ian/Documents/bibtex/dissertation}
 
