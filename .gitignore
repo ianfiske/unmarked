@@ -15,9 +15,6 @@ bc
 *.ins
 *.jpg
 *.out
-Overview.pdf
-Rplots.pdf
-distsamp.pdf
-unmarked-025.pdf
-unmarked-0.28.pdf
+*.pdf
+
 
