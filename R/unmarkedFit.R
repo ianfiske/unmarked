@@ -1455,11 +1455,8 @@ setMethod("nonparboot", "unmarkedFitColExt",
             detParms <- coef(object, 'det')
             colParms <- coef(object, 'col')
             extParms <- coef(object, 'ext')
-            formulaList <- list(psiformula=object@psiformula,
-                                gammaformula=object@gamformula,
-                                epsilonformula=object@epsformula,
-                                pformula=object@detformula)
-            designMats <- getDesign(object@data, formlist = formulaList)   # bootstrap only after removing sites
+          
+            designMats <- getDesign(object@data, formula = object@formula)   # bootstrap only after removing sites
             removed.sites <- designMats$removed.sites
             data <- data[-removed.sites,]
             y <- getY(data)
