@@ -6,7 +6,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.8-6\cr
+Version: \tab 0.8-7\cr
 License: \tab GPL (>= 2)\cr
 }
 
