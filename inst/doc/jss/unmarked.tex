@@ -121,7 +121,7 @@ model fitting, post-hoc analysis, and model criticism.
 Because of the
 multi-level structure of the data and models, covariate data can exist
 at both the state and detection level.  To succinctly describe these
-data, \um\ uses a new data type called the \code{unmarkedFrame}
+data, \um\ uses a new data type called the unmarkedFrame
 (Section~\ref{sec:data-requirements}).  
 \um\ provides functions that
 import data from various common formats and convert it into \um's data
@@ -135,7 +135,7 @@ maximum likelihood estimates of parameters from a particular TLEM
 easily manipulated. Methods exist for performing numerous post-hoc analyses
 such as requesting linear combinations of parameters, 
 back-transforming parameters to constrained scales,
-determining confidence intervals, and evaluating goodness-of-fit.  The model
+determining confidence intervals, and evaluating goodness of fit.  The model
 specification syntax of the fitting functions was designed in such a
 way that it is quite familiar to users of \rlang's common fitting
 functions such as \code{lm} for fitting linear models.
@@ -153,10 +153,10 @@ within \rlang, and using a single environment to complete all phases of
 the analysis is much less error-prone than switching between applications.
 Another important advantage of \um's approach is
 that researchers can easily simulate and analyze data within the same
-computational environment.  This work flow permits the computation of
-power analyses or designing for planning sampling plans.  An
+computational environment.  This work flow permits simulation studies for
+power analysis calculations or the effectiveness of future sampling designs.  An
 alternative approach for fitting TLEMs is for researchers to program
-their own likelihood and maximize it.  However, this requires that the
+their own likelihood and maximize it within \rlang.  However, this requires that the
 researcher have well-developed programming abilities and also can
 require significant amount of overhead replicating code with minor
 tweaks for each new set of data.  \um\ provides a sufficiently
@@ -165,7 +165,7 @@ extensive programming by the applied researcher.
 
 In this paper, Section~\ref{sec:models-impl-unmark} gives a brief
 summary of many of the models \um\ is capable of fitting.  
-Section~\ref{sec:unmarked-usage} describes general \um\ usage accompanied by a 
+Section~\ref{sec:unmarked-usage} describes general \um\ usage aided by a 
 running data example.
 
 \section[Models implemented in unmarked]{Models implemented in \um}
@@ -339,7 +339,7 @@ where
 \item \code{K} is the upper index if summation used to integrate out
   $N_{i}$ in to compute the likelihood in Equation~\eqref{eq:pc2}.
 \item \code{mixture} specifies whether $F$ is Poisson or negative
-  binomial, taking values \code{``P''} or \code{``NB''} respectively.
+  binomial, taking values \code{"P"} or \code{"NB"} respectively.
 \item see Section~\ref{sec:occ} for details on the \code{starts},
   \code{method}, and \code{se} arguments.
 \end{itemize}
@@ -352,16 +352,24 @@ variety of ecological sampling methods, the multinomial-Poisson model
 \citep{Royle2004a}.  The general form of this model is
 \begin{gather}
   N_i \sim \Poi(\lambda_i) \label{eq:mp2} \\
-  \mathbf Y_i|N_{i} \sim \MN(N_i, \boldsymbol \pi_i),
+  \begin{pmatrix}
+    \mathbf Y_i\\
+    N_{i} - \sum_{j=1}^{J} Y_{ij}
+  \end{pmatrix}
+  \bigg| N_{i} \sim \MN\left(N_i, 
+  \begin{pmatrix}
+    \boldsymbol \pi_i \\
+    \pi_{i}^{*}
+  \end{pmatrix}\right),
 \end{gather}
 where $N_i$ is the latent abundance at site $i$ as with the point
-count model, and $\boldsymbol \pi_i=(\pi_{i1},\pi_{i2},\pi_{iJ})'$ is
+count model, and $\boldsymbol \pi_i=(\pi_{i1},\pi_{i2},\dots,\pi_{iJ})'$ is
 the vector of cell probabilities of observing responses in the $J$
 possible categories, and $\mathbf Y_{i}$ is the $J$-vector of counts
 that were actually observed.  In general, $\boldsymbol \pi_i$ is
 determined by the specific sampling method and
 $\sum_{j} \pi_{ij} \le 1$ because detection is imperfect and
-$1 - \sum_{j} \pi_{ij} \le 1$ is the probability of the species
+$\pi_{i}^{*}=1 - \sum_{j} \pi_{ij}$ is the probability of the species
 escaping detection at site $i$.  
 
 For multinomial-Poisson sampling methods, the actual observations are
@@ -906,8 +914,8 @@ specify the particular type of multinomial-Poisson data as
 \begin{Sinput}
 > scaled.covs <- as.data.frame(scale(ovendata.list$covariates[, 
 +     -1]))
-> ovenFrame <- unmarkedFrameMPois(ovendata.list$data, 
-+     siteCovs = scaled.covs, type = "removal")
+> ovenFrame <- unmarkedFrameMPois(ovendata.list$data, siteCovs = scaled.covs, 
++     type = "removal")
 > summary(ovenFrame)
 \end{Sinput}
 \begin{Soutput}
@@ -962,6 +970,8 @@ uniquely as the \code{y} slot.  The first component of the formula
 describes the observation-level model of the detection process and the
 second component describes the site-level model of the state process.
 
+\subsubsection{Fitting a repeated count model}
+
 Continuing the Mallard example, the following call to \code{pcount}
 fits an binomaial-Poisson mixture model
 (Section~\ref{sec:repeated-count-data}).  Here, we specify that the
@@ -974,36 +984,29 @@ the point count model.
 
 \begin{Schunk}
 \begin{Sinput}
-> fm <- pcount(~date + I(date^2) ~ elev + forest, data = mallardUMF)
-> summary(fm)
+> fm.mallard.1 <- pcount(~date + I(date^2) ~ elev + forest, 
++     data = mallardUMF)
+> summary(fm.mallard.1)
 \end{Sinput}
-\begin{Soutput}
-Call:
-pcount(formula = ~date + I(date^2) ~ elev + forest, data = mallardUMF)
-
-Abundance (log-scale):
-            Estimate    SE     z  P(>|z|)
-(Intercept)   -1.853 0.236 -7.87 3.62e-15
-elev          -1.232 0.234 -5.27 1.36e-07
-forest        -0.756 0.165 -4.60 4.32e-06
-
-Detection (logit-scale):
-            Estimate     SE       z P(>|z|)
-(Intercept)   0.3071 0.2149  1.4290 0.15301
-date         -0.4091 0.1482 -2.7612 0.00576
-I(date^2)    -0.0077 0.0853 -0.0903 0.92801
-
-AIC: 521.2001 
-Sample size: 235
-Sites removed: 12 69 118 146
-optim convergence code: 0
-optim iterations: 37 
-Bootstrap iterations: 0 
-\end{Soutput}
 \end{Schunk}
 
 %%%% This interpretation comes before model results are presented
-%This initial fit suggests that \code{elev} and \code{forest} are
+This initial fit suggests that Mallard abundance decreases with
+increasing elevation and forest.  It also looks like a linear model
+might suffice for the detection model, so we subsequently fit the
+linear detection model.
+
+
+\begin{Schunk}
+\begin{Sinput}
+> fm.mallard.2 <- pcount(~date ~ elev + forest, data = mallardUMF)
+> fm.mallard.2
+\end{Sinput}
+\end{Schunk}
+
+This seems to be a better model according to both the Wald p-value and
+AIC.  Thus detection appears to decrease during the course of a year.
+
 %associated with abundance.  It also appears that \code{date} is
 %linearly related to detection probability.
 
@@ -1014,31 +1017,22 @@ Bootstrap iterations: 0
 % (fm.cons.p <- pcount(~ 1 ~ elev + forest, data = mallardUMF))
 % @
 
+
+\subsubsection{Fitting a multinomial-Poisson model}
+
 Here we demonstrate fitting a multinomial-Poisson model to removal sampling 
 data.  The Ovenbird data has no visit-level covariates, so detection
-probability is assumed constant across visits.  
-% Abundance is modeled using... what are ufp and trba?
+probability is assumed constant across visits.  It is not necessary
+to specify that removal sampling was used when fitting the model
+because this information is already stored in the \code{ovenFrame} data.
+We model the abundance with understory forest coverage (\code{ufp})
+and average basal tree area (\code{trba}).
 
 \begin{Schunk}
 \begin{Sinput}
-> (fm1 <- multinomPois(~1 ~ ufp + trba, ovenFrame))
+> fm.oven.1 <- multinomPois(~1 ~ ufp + trba, ovenFrame)
+> fm.oven.1
 \end{Sinput}
-\begin{Soutput}
-Call:
-multinomPois(formula = ~1 ~ ufp + trba, data = ovenFrame)
-
-Abundance:
-            Estimate    SE      z P(>|z|)
-(Intercept)    0.102 0.119  0.864   0.388
-ufp            0.100 0.126  0.794   0.427
-trba          -0.171 0.135 -1.262   0.207
-
-Detection:
- Estimate    SE    z P(>|z|)
-    0.288 0.233 1.24   0.217
-
-AIC: 326.1387 
-\end{Soutput}
 \end{Schunk}
 
 \subsection{Examining model fits}
@@ -1052,24 +1046,34 @@ have been adapted to behave similar to \rlang's base functions.
 
 
 For example, we can extract estimated coefficients either from the
-entire model, or from the state or detection levels.
+entire model, or from the state or detection levels by specifying the
+\code{type} argument.
 
 \begin{Schunk}
 \begin{Sinput}
-> coef(fm)
+> coef(fm.mallard.2)
 \end{Sinput}
 \begin{Soutput}
-    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) 
--1.853228484 -1.231995827 -0.756129430  0.307055927 -0.409105329 
-p(I(date^2)) 
--0.007704162 
+   lam(Int)   lam(elev) lam(forest)      p(Int)     p(date) 
+ -1.8565048  -1.2355497  -0.7555178   0.2977558  -0.4006066 
 \end{Soutput}
 \begin{Sinput}
-> coef(fm, type = "state")
+> coef(fm.mallard.2, type = "state")
 \end{Sinput}
 \begin{Soutput}
    lam(Int)   lam(elev) lam(forest) 
- -1.8532285  -1.2319958  -0.7561294 
+ -1.8565048  -1.2355497  -0.7555178 
+\end{Soutput}
+\end{Schunk}
+
+To check which types are available for a model, use the \code{names} method.
+
+\begin{Schunk}
+\begin{Sinput}
+> names(fm.mallard.2)
+\end{Sinput}
+\begin{Soutput}
+[1] "state" "det"  
 \end{Soutput}
 \end{Schunk}
 
@@ -1078,32 +1082,35 @@ the estimates, using the observed Fisher information by default.
 
 \begin{Schunk}
 \begin{Sinput}
-> vcov(fm)
+> vcov(fm.mallard.2)
 \end{Sinput}
 \begin{Soutput}
-                 lam(Int)    lam(elev)   lam(forest)       p(Int)
-lam(Int)      0.055487740  0.042381157  0.0077094004 -0.002408246
-lam(elev)     0.042381157  0.054652581 -0.0088797433  0.002406913
-lam(forest)   0.007709400 -0.008879743  0.0270716249  0.000923048
-p(Int)       -0.002408246  0.002406913  0.0009230480  0.046173146
-p(date)      -0.005337494 -0.007285857  0.0013194872 -0.006308606
-p(I(date^2)) -0.003185167 -0.003492489  0.0007185404 -0.008793313
-                  p(date)  p(I(date^2))
-lam(Int)     -0.005337494 -0.0031851666
-lam(elev)    -0.007285857 -0.0034924893
-lam(forest)   0.001319487  0.0007185404
-p(Int)       -0.006308606 -0.0087933129
-p(date)       0.021951667  0.0080886657
-p(I(date^2))  0.008088666  0.0072713089
+                lam(Int)    lam(elev)   lam(forest)       p(Int)
+lam(Int)     0.054013257  0.040740133  0.0080777484 -0.006188545
+lam(elev)    0.040740133  0.052810074 -0.0084624468 -0.001751201
+lam(forest)  0.008077748 -0.008462447  0.0269780875  0.001779971
+p(Int)      -0.006188545 -0.001751201  0.0017799714  0.035490236
+p(date)     -0.001785422 -0.003393574  0.0005126907  0.003448530
+                  p(date)
+lam(Int)    -0.0017854217
+lam(elev)   -0.0033935742
+lam(forest)  0.0005126907
+p(Int)       0.0034485301
+p(date)      0.0130286462
 \end{Soutput}
+\end{Schunk}
+
+\code{vcov} also accepts a \code{type} argument.
+
+\begin{Schunk}
 \begin{Sinput}
-> vcov(fm, type = "state")
+> vcov(fm.mallard.2, type = "state")
 \end{Sinput}
 \begin{Soutput}
-              lam(Int)    lam(elev)  lam(forest)
-lam(Int)    0.05548774  0.042381157  0.007709400
-lam(elev)   0.04238116  0.054652581 -0.008879743
-lam(forest) 0.00770940 -0.008879743  0.027071625
+               lam(Int)    lam(elev)  lam(forest)
+lam(Int)    0.054013257  0.040740133  0.008077748
+lam(elev)   0.040740133  0.052810074 -0.008462447
+lam(forest) 0.008077748 -0.008462447  0.026978087
 \end{Soutput}
 \end{Schunk}
 
@@ -1113,20 +1120,18 @@ covariance matrices.
 
 \begin{Schunk}
 \begin{Sinput}
-> SE(fm)
+> SE(fm.mallard.2)
 \end{Sinput}
 \begin{Soutput}
-    lam(Int)    lam(elev)  lam(forest)       p(Int)      p(date) 
-  0.23555836   0.23377891   0.16453457   0.21487937   0.14816095 
-p(I(date^2)) 
-  0.08527197 
+   lam(Int)   lam(elev) lam(forest)      p(Int)     p(date) 
+  0.2324075   0.2298044   0.1642501   0.1883885   0.1141431 
 \end{Soutput}
 \begin{Sinput}
-> SE(fm, type = "state")
+> SE(fm.mallard.2, type = "state")
 \end{Sinput}
 \begin{Soutput}
    lam(Int)   lam(elev) lam(forest) 
-  0.2355584   0.2337789   0.1645346 
+  0.2324075   0.2298044   0.1642501 
 \end{Soutput}
 \end{Schunk}
 
@@ -1146,20 +1151,20 @@ available for any of the TLEMs that \um\ fits.
 \begin{Schunk}
 \begin{Sinput}
 > set.seed(1234)
-> fm1 <- nonparboot(fm1, B = 100)
+> fm.oven.1 <- nonparboot(fm.oven.1, B = 100)
 \end{Sinput}
 \end{Schunk}
 
 \begin{Schunk}
 \begin{Sinput}
-> SE(fm1, type = "state")
+> SE(fm.oven.1, type = "state")
 \end{Sinput}
 \begin{Soutput}
  lambda(Int)  lambda(ufp) lambda(trba) 
    0.1185431    0.1262615    0.1353444 
 \end{Soutput}
 \begin{Sinput}
-> SE(fm1, type = "state", method = "nonparboot")
+> SE(fm.oven.1, type = "state", method = "nonparboot")
 \end{Sinput}
 \begin{Soutput}
  lambda(Int)  lambda(ufp) lambda(trba) 
@@ -1172,7 +1177,7 @@ The summary now states the number of bootstrap samples.
 
 \begin{Schunk}
 \begin{Sinput}
-> summary(fm1)
+> summary(fm.oven.1)
 \end{Sinput}
 \begin{Soutput}
 Call:
@@ -1191,7 +1196,7 @@ Detection (logit-scale):
 AIC: 326.1387 
 Sample size: 70
 optim convergence code: 0
-optim iterations: 33 
+optim iterations: 30 
 Bootstrap iterations: 100 
 \end{Soutput}
 \end{Schunk}
@@ -1199,37 +1204,18 @@ Bootstrap iterations: 100
 Additional bootstrap samples can be drawn by calling \code{nonparboot} again.
 \begin{Schunk}
 \begin{Sinput}
-> fm1 <- nonparboot(fm1, B = 100)
-> summary(fm1)
+> fm.oven.1 <- nonparboot(fm.oven.1, B = 100)
+> summary(fm.oven.1)
 \end{Sinput}
-\begin{Soutput}
-Call:
-multinomPois(formula = ~1 ~ ufp + trba, data = ovenFrame)
-
-Abundance (log-scale):
-            Estimate    SE      z P(>|z|)
-(Intercept)    0.102 0.119  0.864   0.388
-ufp            0.100 0.126  0.794   0.427
-trba          -0.171 0.135 -1.262   0.207
-
-Detection (logit-scale):
- Estimate    SE    z P(>|z|)
-    0.288 0.233 1.24   0.217
-
-AIC: 326.1387 
-Sample size: 70
-optim convergence code: 0
-optim iterations: 33 
-Bootstrap iterations: 200 
-\end{Soutput}
 \end{Schunk}
 
 Confidence intervals can be requested for the coefficients at either
-stage of the model.  By default, the normal approximation is used.
+stage of the model.  By default, the asymptotic normal approximation
+is used.
 
 \begin{Schunk}
 \begin{Sinput}
-> confint(fm1, type = "state", level = 0.95)
+> confint(fm.oven.1, type = "state", level = 0.95)
 \end{Sinput}
 \begin{Soutput}
                   0.025      0.975
@@ -1246,13 +1232,9 @@ profile limit.
 
 \begin{Schunk}
 \begin{Sinput}
-> ci <- confint(fm1, type = "state", level = 0.95, method = "profile")
+> ci <- confint(fm.oven.1, type = "state", level = 0.95, 
++     method = "profile")
 \end{Sinput}
-\begin{Soutput}
-Profiling parameter 1 of 3 ... done.
-Profiling parameter 2 of 3 ... done.
-Profiling parameter 3 of 3 ... done.
-\end{Soutput}
 \end{Schunk}
 \begin{Schunk}
 \begin{Sinput}
@@ -1281,7 +1263,7 @@ log-abundance rate for a site with \code{ufp = 0.5} and \code{trba
 
 \begin{Schunk}
 \begin{Sinput}
-> (lc <- linearComb(fm1, type = "state", coefficients = c(1, 
+> (lc <- linearComb(fm.oven.1, type = "state", coefficients = c(1, 
 +     0.5, 0)))
 \end{Sinput}
 \begin{Soutput}
@@ -1298,7 +1280,7 @@ following code requests the estimated log-abundance for sites with
 
 \begin{Schunk}
 \begin{Sinput}
-> (lc <- linearComb(fm1, type = "state", coefficients = matrix(c(1, 
+> (lc <- linearComb(fm.oven.1, type = "state", coefficients = matrix(c(1, 
 +     0.5, 0, 1, 1, 0), 2, 3, byrow = TRUE)))
 \end{Sinput}
 \begin{Soutput}
@@ -1399,13 +1381,15 @@ Transformation: exp
 structured lists of unmarkedFit objects.  Implementing alternative
 methods of variable selection for these models is an area of future
 research.  To demonstrate, we fit a few more models to the Ovenbird
-removal data with fewer covariates and a null model with no covariates.
+removal data, including all an interaction model, two models with
+single predictors, and a null model with no predictors.
 
 \begin{Schunk}
 \begin{Sinput}
-> fm2 <- multinomPois(~1 ~ ufp, ovenFrame)
-> fm3 <- multinomPois(~1 ~ trba, ovenFrame)
-> fm4 <- multinomPois(~1 ~ 1, ovenFrame)
+> fm.oven.2 <- update(fm.oven.1, formula = ~1 ~ ufp * trba)
+> fm.oven.3 <- update(fm.oven.1, formula = ~1 ~ ufp)
+> fm.oven.4 <- update(fm.oven.1, formula = ~1 ~ trba)
+> fm.oven.5 <- update(fm.oven.1, formula = ~1 ~ 1)
 \end{Sinput}
 \end{Schunk}
 
@@ -1422,32 +1406,36 @@ other relevant information such as Nagelkerke's
 
 \begin{Schunk}
 \begin{Sinput}
-> fmList <- fitList(Global = fm1, ufp = fm2, trba = fm3, 
-+     Null = fm4)
+> fmList <- fitList(Global = fm.oven.2, additive = fm.oven.1, 
++     ufp = fm.oven.3, trba = fm.oven.4, Null = fm.oven.5)
 > modSel(fmList, nullmod = "Null")
 \end{Sinput}
 \begin{Soutput}
-   model  n nPars    AIC deltaAIC   AICwt      Rsq cumltvAICwt
-3   trba 70     3 324.77  0.00000 0.38582 0.049418     0.38582
-2    ufp 70     3 325.73  0.96248 0.23844 0.036118     0.62426
-1 Global 70     4 326.14  1.36966 0.19452 0.058030     0.81878
-4   Null 70     2 326.28  1.51126 0.18122 0.000000     1.00000
+     model  n nPars    AIC deltaAIC   AICwt      Rsq cumltvAICwt
+4     trba 70     3 324.77  0.00000 0.34565 0.049418     0.34565
+3      ufp 70     3 325.73  0.96248 0.21362 0.036118     0.55927
+2 additive 70     4 326.14  1.36966 0.17427 0.058030     0.73354
+5     Null 70     2 326.28  1.51126 0.16236 0.000000     0.89590
+1   Global 70     5 327.17  2.40020 0.10410 0.071125     1.00000
 \end{Soutput}
 \end{Schunk}
 
 
 \begin{figure}[ht]
   \centering
-\includegraphics{unmarked-029}
+\includegraphics{unmarked-032}
 \caption{Examine estimated abundance for Ovenbird removal data.  Band
   is 95\% confidence interval.}
 \label{fig:pred}
 \end{figure}
 
 
-It looks like the best model only includes tree basal area as a
-predictor of abundance.  We can examine the relationship with the
-\code{predict} method (Figure~\ref{fig:pred}).
+It looks like the best model includes only tree basal area as a
+predictor of abundance.  As \citet{Royle2004a} pointed out, this is a
+reasonable result because tree basal area and understory forest
+coverage are negatively correlated.  We can examine the relationship
+between basal tree area and estimated abundance
+with the \code{predict} method (Figure~\ref{fig:pred}).
 
 
 
@@ -1456,7 +1444,7 @@ predictor of abundance.  We can examine the relationship with the
 > preddata <- predict(fm3, type = "state", appendData = TRUE)
 > library(ggplot2)
 > qplot(trba, Predicted, data = preddata, geom = "line", 
-+     xlab = "Scaled Basal Tree Diameter", ylab = "Estimated Abundance") + 
++     xlab = "Scaled Basal Tree Area", ylab = "Estimated Abundance") + 
 +     geom_ribbon(aes(x = trba, ymin = lower, ymax = upper), 
 +         alpha = 0.1) + theme_bw()
 \end{Sinput}
@@ -1464,11 +1452,11 @@ predictor of abundance.  We can examine the relationship with the
 
 
 
-\subsubsection{Parametric Bootstrap for Goodness-of-fit}
+\subsubsection{Parametric bootstrap for goodness of fit}
 
 AIC can be used to select the best model in a set, but it does not indicate
 how well a model fits the data.  
-To conduct goodness-of-fit tests, \um\ provides a generic
+To conduct goodness of fit tests, \um\ provides a generic
 parametric bootstrapping function.  It simulated data from the fitted
 model and the computes summary information from any specified
 statistic, with the default being the sum of squared residuals.
@@ -1477,7 +1465,7 @@ statistic, with the default being the sum of squared residuals.
 \begin{Schunk}
 \begin{Sinput}
 > set.seed(1234)
-> pb <- parboot(fm1, statistic = SSE, nsim = 200)
+> pb <- parboot(fm.oven.1, statistic = SSE, nsim = 200)
 \end{Sinput}
 \end{Schunk}
 \begin{Schunk}
@@ -1502,21 +1490,22 @@ t_B = Vector of bootstrap samples
 
 \begin{Schunk}
 \begin{Sinput}
-> plot(pb, main = "Goodness-of-fit Parametric Bootstrap")
+> plot(pb, main = "Goodness of fit Parametric Bootstrap")
 \end{Sinput}
 \end{Schunk}
 
 \begin{figure}[ht]
   \centering
-\includegraphics{unmarked-034}
-\caption{Graphically assess model fit by parametric bootsrapping
-  the sum of squared residuals.}
+\includegraphics{unmarked-037}
+\caption{Graphically assess model fit by parametric bootstrapping
+  the sum of squared residuals.  The dashed line is the observed sum
+  of squared residuals.}
 \label{fig:pb}
 \end{figure}
 
 
 The above call to \code{plot} with a parametric bootstrap object as
-the argument produces a useful graphic for assessing goodness-of-fit
+the argument produces a useful graphic for assessing goodness of fit
 (see Figure~\ref{fig:pb}).  The plot suggests that the model can sufficiently
 explain these data.
 
@@ -1525,23 +1514,24 @@ explain these data.
 \label{sec:future-direct-unmark}
 
 \um\ has become a stable and useful platform for the analysis of
-ecological data, but 
-several areas of development could improve its utility.
-Bayesian estimation could be implemented for many
-of these models.  This would provide a useful comparison with the
-maximum likelihood results.  Random effects are an often requested
-feature from users that will likely be incorporated into a future
-version.  Random effects are useful for modeling heterogeneity among
-sites that is not accounted for by covariates alone.  For maximum
-likelihood methods, the Laplace approximation to the integrated
-likelihood approach is likely to be fruitful and the incorporation of
-random effects into Bayesian estimation is even more straightforward.
+ecological data, but several areas of development could improve its
+utility.  Bayesian estimation could be implemented for many of these
+models.  This would provide a useful comparison with the maximum
+likelihood results.  Random effects are an often requested feature
+from users that will likely be incorporated into a future version.
+Random effects are useful for modeling heterogeneity among sites that
+is not accounted for by covariates alone.  For maximum likelihood
+methods, the Laplace approximation to the integrated likelihood
+approach is likely to be fruitful and the incorporation of random
+effects into Bayesian estimation is even more straightforward.  Also,
+\um\ can easily be extended to add new TLEMs as they are published
+and found to be useful.
 
-\um\ can be obtained from
-CRAN within \rlang\ by issuing the command \\
-\begin{Code}
-install.packages("unmarked").
-\end{Code}
+\section*{Acknowledgements}
+
+The authors thank Andy Royle of the United States Geological Survey's
+Patuxent Wildlife Research Center, who provided initial funding and
+inspiration for this work.
 
 %\bibliographystyle{jss}
 \bibliography{/home/ian/Documents/bibtex/dissertation}
