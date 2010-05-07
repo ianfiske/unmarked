@@ -182,12 +182,8 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
     y <- getY(umf)
     M <- nrow(y)
     T <- ncol(y)
-    delta <- umf@delta
+    delta <- umf@delta  
     
-    # Adjust delta to handle interior NAs...even if na.rm=FALSE?
-    # This might be necessary for parboot, but it could add bug to handleNA method
-    #delta <- formatDelta(delta)
-        
     if(is.null(siteCovs(umf))) {
 	   siteCovs <- data.frame(placeHolder = rep(1, M))
     	} else {
@@ -220,9 +216,9 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
 	
     if(na.rm)
         out <- handleNA(umf, Xlam, Xgam, Xom, Xp, delta)
-    else
+    else    # delta needs to be handled first
         out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
-        delta=delta, removed.sites=integer(0))
+            delta=delta, removed.sites=integer(0))
 	
     return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam, Xom = out$Xom, 
         Xp = out$Xp, delta = out$delta, removed.sites = out$removed.sites))

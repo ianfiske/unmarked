@@ -451,12 +451,17 @@ setMethod("fitted", "unmarkedFitPCountOpen",
         data <- getData(object)
         D <- getDesign(data, object@formula, na.rm = na.rm)
         Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
+        delta <- D$delta #FIXME this isn't returned propertly when na.rm=F
         y <- D$y
         M <- nrow(y)
         T <- ncol(y)
         lambda <- exp(Xlam %*% coef(object, 'lambda'))
-        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, byrow=TRUE)
-        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, byrow=TRUE) 
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, 
+            byrow=TRUE)[,-T]
+        gamma <- gamma*delta
+        omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T, 
+            byrow=TRUE)[,-T]
+        omega <- omega^delta
         p <- getP(object, na.rm = na.rm)
         state <- matrix(NA, M, T)
         switch(object@mixture,
@@ -1069,12 +1074,17 @@ setMethod("simulate", "unmarkedFitPCountOpen",
         umf <- object@data
         D <- getDesign(umf, object@formula, na.rm = na.rm)
         Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
+        delta <- D$delta
         y <- D$y
         M <- nrow(y)
         T <- ncol(y)
         lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
-        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, byrow=TRUE)
-        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, byrow=TRUE) 
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, 
+            byrow=TRUE)[,-T]
+        gamma <- gamma*delta
+        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, 
+            byrow=TRUE)[,-T]
+        omega <- omega^delta
         p <- getP(object, na.rm = na.rm)
         mix <- object@mixture
         N <- matrix(NA, M, T)

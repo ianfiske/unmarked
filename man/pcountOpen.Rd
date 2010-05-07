@@ -141,16 +141,15 @@ set.seed(333)
 M <- 25
 T <- 5
 date <- matrix(NA, M, T)
-datediff <- date[,-T]
 date[,1] <- rpois(M, 2)
 for(t in 2:T) {
     date[,t] <- date[,t-1] + rpois(M, 10)
-    datediff[,t-1] <- date[,t] - date[,t-1]
     }
+datediff <- t(apply(date, 1, diff))    
 lambda <- 4
 gamma <- 0.05   # Daily survival rate
 omega <- 0.95   # Daily recruitment rate
-p[] <- 0.7
+p <- 0.7
 y <- N <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
 N[,1] <- rpois(M, lambda)
@@ -163,7 +162,7 @@ y[] <- rbinom(M*T, N, p)
 
 
 # Prepare data
-umfO <- unmarkedFramePCountOpen(y = y, delta = datediff)
+umfO <- unmarkedFramePCountOpen(y = y, delta = date)
 umfO
 
 # Fit model
