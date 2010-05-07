@@ -223,7 +223,8 @@ setMethod("predict", "unmarkedFitPCountOpen",
     {
         if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
-        formlist <- object@formlist
+        formula <- object@formula
+        formlist <- as.formula(paste(unlist(formlist), collapse=" "))
         if(inherits(newdata, "unmarkedFrame"))
             cls <- "unmarkedFrame"            
             else if(identical(class(newdata), "data.frame")) 
@@ -231,7 +232,7 @@ setMethod("predict", "unmarkedFitPCountOpen",
                 else stop("newdata should be a data.frame or inherit unmarkedFrame class")
         switch(cls, 
             unmarkedFrame = {
-                D <- getDesign4(formlist, newdata, na.rm = na.rm)
+                D <- getDesign(newdata, formula, na.rm = na.rm)
                 switch(type, 
                     lambda = X <- D$Xlam,
                     gamma = X <- D$Xgam,
@@ -446,9 +447,8 @@ setMethod("fitted", "unmarkedFitPCount",
 
 setMethod("fitted", "unmarkedFitPCountOpen",
     function(object, K, na.rm = FALSE) {
-#        stop("fitted method not ready yet for unmarkedFitPCountOpen objects")
         data <- getData(object)
-        D <- getDesign4(object@formlist, data, na.rm = na.rm)
+        D <- getDesign(data, object@formula, data, na.rm = na.rm)
         Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
         a <- D$plotArea
         y <- D$y
@@ -974,7 +974,7 @@ setMethod("getP", "unmarkedFitPCountOpen", function(object, na.rm = TRUE)
     {
         formlist <- object@formlist
         umf <- object@data
-        D <- getDesign4(formlist, umf, na.rm = na.rm)
+        D <- getDesign(umf, umf@formula, na.rm = na.rm)
         y <- D$y
         Xp <- D$Xp
         M <- nrow(y)
@@ -1067,7 +1067,7 @@ setMethod("simulate", "unmarkedFitPCountOpen",
     function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
         formlist <- object@formlist
         umf <- object@data
-        D <- getDesign4(formlist, umf, na.rm = na.rm)
+        D <- getDesign(umf, umf@formula, na.rm = na.rm)
         Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
         y <- D$y
         a <- D$plotArea
