@@ -111,7 +111,7 @@ hist(umf, xlab="distance (m)", main="", cex.lab=0.8, cex.axis=0.8)
 
 Now that we have put our data into an object of class \code{unmarkedFrameDS}, we are ready to fit some models with \code{distsamp}. The first argument is a \code{formula} which specifies the detection covariates followed by the density (or abundance) covariates. The only other required argument is the \code{data}, but several other optional arguments exist. By default, the half-normal detection function is used to model density in animals / ha. The detection function can be selected using the \code{keyfun} argument. The response can be changed from "density", to "abund" with the \code{output} argument. When modeling density, the output units can be changed from "ha" to "kmsq" using the \code{unitsOut} argument. \code{distsamp} also includes the arguments \code{starts}, \code{method}, and \code{control}, which are common to all unmarked fitting functions.
 
-Below are a series of models that demonstrate \code{distsamp}'s arguments and defaults.
+Below is a series of models that demonstrates \code{distsamp}'s arguments and defaults.
 
 <<>>=
 hn_Null <- distsamp(~1~1, umf)
@@ -173,7 +173,7 @@ Here, \code{t\_B} is an approximation of the sampling distribution for \code{N.h
 A \code{predict} method exits for all \code{unmarkedFit} objects, which is useful when multiple covariate combinations exist. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
 
 <<>>=
-(habConstant <- data.frame(canopyHt = seq(2, 8, length=20), 
+head(habConstant <- data.frame(canopyHt = seq(2, 8, length=20), 
 	habitat=factor("A", levels=c("A", "B"))))
 (htConstant <- data.frame(canopyHt = 5, 
 	habitat=factor(c("A", "B"))))
@@ -208,7 +208,7 @@ with(Esigma, {
 	lines(canopyHt, Predicted-SE, lty=2)
 	})			
 @
-\begin{figure}[!hb]
+\begin{figure}[!ht]
   \centering
   \includegraphics{distsamp-predplot}
   \caption{Predicted covariate relatonships.}
