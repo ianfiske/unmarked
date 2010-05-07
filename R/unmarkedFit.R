@@ -224,7 +224,7 @@ setMethod("predict", "unmarkedFitPCountOpen",
         if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
         formula <- object@formula
-        formlist <- as.formula(paste(unlist(formlist), collapse=" "))
+        formlist <- object@formlist
         if(inherits(newdata, "unmarkedFrame"))
             cls <- "unmarkedFrame"            
             else if(identical(class(newdata), "data.frame")) 
@@ -233,6 +233,7 @@ setMethod("predict", "unmarkedFitPCountOpen",
         switch(cls, 
             unmarkedFrame = {
                 D <- getDesign(newdata, formula, na.rm = na.rm)
+                
                 switch(type, 
                     lambda = X <- D$Xlam,
                     gamma = X <- D$Xgam,
@@ -448,13 +449,12 @@ setMethod("fitted", "unmarkedFitPCount",
 setMethod("fitted", "unmarkedFitPCountOpen",
     function(object, K, na.rm = FALSE) {
         data <- getData(object)
-        D <- getDesign(data, object@formula, data, na.rm = na.rm)
+        D <- getDesign(data, object@formula, na.rm = na.rm)
         Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
-        a <- D$plotArea
         y <- D$y
         M <- nrow(y)
         T <- ncol(y)
-        lambda <- exp(Xlam %*% coef(object, 'lambda')) * a
+        lambda <- exp(Xlam %*% coef(object, 'lambda'))
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, byrow=TRUE)
         omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, byrow=TRUE) 
         p <- getP(object, na.rm = na.rm)
@@ -974,7 +974,7 @@ setMethod("getP", "unmarkedFitPCountOpen", function(object, na.rm = TRUE)
     {
         formlist <- object@formlist
         umf <- object@data
-        D <- getDesign(umf, umf@formula, na.rm = na.rm)
+        D <- getDesign(umf, object@formula, na.rm = na.rm)
         y <- D$y
         Xp <- D$Xp
         M <- nrow(y)
@@ -1067,10 +1067,9 @@ setMethod("simulate", "unmarkedFitPCountOpen",
     function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
         formlist <- object@formlist
         umf <- object@data
-        D <- getDesign(umf, umf@formula, na.rm = na.rm)
+        D <- getDesign(umf, object@formula, na.rm = na.rm)
         Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
         y <- D$y
-        a <- D$plotArea
         M <- nrow(y)
         T <- ncol(y)
         lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
