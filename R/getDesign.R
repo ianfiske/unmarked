@@ -216,9 +216,11 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
 	
     if(na.rm)
         out <- handleNA(umf, Xlam, Xgam, Xom, Xp, delta)
-    else    # delta needs to be handled first
+    else {   # delta needs to be formatted first
+        delta <- formatDelta(delta, y)
         out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
             delta=delta, removed.sites=integer(0))
+        }
 	
     return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam, Xom = out$Xom, 
         Xp = out$Xp, delta = out$delta, removed.sites = out$removed.sites))
