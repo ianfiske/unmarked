@@ -161,8 +161,6 @@ setMethod("predict", "unmarkedFit",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
         appendData = FALSE, ...) 
     {
-        if(class(object) == "unmarkedFitColExt")
-            stop("predict is not implemented for colext yet.")
         if(missing(newdata) || is.null(newdata))
             newdata <- getData(object)
         formula <- object@formula
@@ -207,6 +205,80 @@ setMethod("predict", "unmarkedFit",
             out <- data.frame(out, as(newdata, "data.frame"))
         return(out)
         })
+
+
+
+setMethod("predict", "unmarkedFitColExt", 
+    function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
+        appendData = FALSE, ...) 
+    {
+        if(missing(newdata) || is.null(newdata))
+            newdata <- getData(object)
+        formula <- object@formula
+        cls <- class(newdata)
+        switch(cls, 
+        unmarkedMultFrame = {
+            designMats <- getDesign(newdata, formula, na.rm = na.rm)
+            switch(type, 
+                psi = {
+                  X <- designMats$W
+                  #offset <- designMats$W.offset
+                },
+                col = X <- designMats$X.gam,
+                ext = X <- designMats$X.eps,                
+                det = {
+                  X <- designMats$V
+                  #offset <- designMats$V.offset
+                })
+            },
+        data.frame = {
+            aschar1 <- as.character(formula)
+            aschar2 <- as.character(formula[[2]])
+            aschar3 <- as.character(formula[[2]][[2]])    
+
+            detformula <- as.formula(paste(aschar1[1], aschar1[3]))
+            epsformula <- as.formula(paste(aschar2[1], aschar2[3]))
+            gamformula <- as.formula(paste(aschar3[1], aschar3[3]))
+            psiformula <- as.formula(formula[[2]][[2]][[2]])
+            
+            switch(type, 
+                psi = {
+                  mf <- model.frame(psiformula, newdata)
+                  X <- model.matrix(psiformula, mf)
+                  #offset <- model.offset(mf)
+                },
+                col = {
+                  mf <- model.frame(gamformula, newdata)
+                  X <- model.matrix(gamformula, mf)
+                  #offset <- model.offset(mf)
+                },
+                ext = {
+                  mf <- model.frame(epsformula, newdata)
+                  X <- model.matrix(epsformula, mf)
+                  #offset <- model.offset(mf)
+                },               
+                
+                det = {
+                  mf <- model.frame(detformula, newdata)
+                  X <- model.matrix(detformula, mf)
+                  #offset <- model.offset(mf)
+                })
+            })
+        out <- data.frame(matrix(NA, nrow(X), 2, 
+            dimnames=list(NULL, c("Predicted", "SE"))))
+        lc <- linearComb(object, X, type)#, offset = offset)
+        if(backTransform) lc <- backTransform(lc)
+        out$Predicted <- coef(lc)
+        out$SE <- SE(lc)
+        if(appendData)
+            out <- data.frame(out, as(newdata, "data.frame"))
+        return(out)
+        })
+
+
+
+
+
 
 
 setMethod("coef", "unmarkedFit",
