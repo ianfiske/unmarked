@@ -90,8 +90,12 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
 
 # Condition number
 cn <- function(object) {
-   	ev <- eigen(hessian(object))$value
-   	max(ev) / min(ev)
+    h <- hessian(object)
+    if(any(is.na(h))) return(NA)
+        else {
+   	        ev <- eigen(h)$value
+   	        return(max(ev) / min(ev))
+   	        }
    	}
 
 
@@ -133,7 +137,9 @@ setMethod("modSel", "unmarkedFitList",
         }
     fits <- object@fits
     estList <- lapply(fits, coef, altNames=TRUE)
-    seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=TRUE))))
+    seList <- lapply(fits, function(x) 
+        if(any(is.na(x@opt$hessian))) rep(NA, length(coef(x))) 
+            else sqrt(diag(vcov(x, altNames=TRUE))))
     eNames <- sort(unique(unlist(sapply(estList, names))))
     seNames <- paste("SE", eNames, sep="")
     eseNames <- character(l <- length(c(eNames, seNames)))

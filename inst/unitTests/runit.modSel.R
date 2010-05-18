@@ -49,5 +49,14 @@ test.modSel <- function() {
         ms1@Full[,-which(colnames(ms1@Full)=="Rsq")],
         ms1@Full[,-which(colnames(ms2@Full)=="Rsq")]        
         )
+    
+    # Fake hessian problem    
+    fm1@opt$hessian[] <- NA
+    fm1@estimates@estimates$state@covMat[] <- NA
+    fits2 <- fitList(m1=fm1, m2=fm2)
+    ms3 <- modSel(fits2)
+    checkEquals(coef(ms1), coef(ms3))
+    
+    
     }
 
