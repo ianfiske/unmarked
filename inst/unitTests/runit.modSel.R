@@ -39,7 +39,7 @@ test.modSel <- function() {
     
     checkTrue(all(is.na(ms1@Full$Rsq)))
     checkEqualsNumeric(sum(ms1@Full$AICwt), 1)
-    checkEqualsNumeric(ms1@Full$deltaAIC[1L], 0)
+    checkEqualsNumeric(ms1@Full$delta[1L], 0)
     
     checkException(modSel(fits, nullmod=fm2))
 
