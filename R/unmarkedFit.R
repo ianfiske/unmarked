@@ -455,6 +455,7 @@ setMethod("fitted", "unmarkedFitPCountOpen",
         y <- D$y
         M <- nrow(y)
         T <- ncol(y)
+        ### FIXME: Add NA handling when first obs is missing
         lambda <- exp(Xlam %*% coef(object, 'lambda'))
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, 
             byrow=TRUE)[,-T]
@@ -1078,7 +1079,10 @@ setMethod("simulate", "unmarkedFitPCountOpen",
         y <- D$y
         M <- nrow(y)
         T <- ncol(y)
+        ## FIXME: Add NA handlilng when first obs is missing
         lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
+#        if(any(is.na(lambda)))
+#            stop("Simulate method not written yet for case of missing values in first sampling period.")
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, 
             byrow=TRUE)[,-T]
         gamma <- gamma*delta
@@ -1097,9 +1101,11 @@ setMethod("simulate", "unmarkedFitPCountOpen",
                     mu = lambda)
                 )
             for(t in 2:T) {
-            	S[,t-1] <- rbinom(M, N[,t-1], 0.8)
+            	S[,t-1] <- rbinom(M, N[,t-1], omega[,t-1])
                 G[,t-1] <- rpois(M, gamma[,t-1])
                 N[,t] <- S[,t-1] + G[,t-1]
+                N[,t][is.na(N[,t])]
+                
 	            }
             yvec <- rbinom(M * T, N, prob = p)
             simList[[i]] <- matrix(yvec, M, T)

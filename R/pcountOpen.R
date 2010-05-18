@@ -88,7 +88,6 @@ nll <- function(parms) { # No survey-specific NA handling.
         })
     if(identical(fix, "gamma")) gamma[] <- 0
         else if(identical(fix, "omega")) omega[] <- 1    
-    #g1 <- sapply(k, function(x) dbinom(y[first], x, p[first]))
     g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))    
     g1[is.na(g1)] <- 1
     switch(mixture,
@@ -97,18 +96,17 @@ nll <- function(parms) { # No survey-specific NA handling.
            mu=lambda)))
     g2[is.na(g2)] <- 1
     g3args <- cbind(rep(k, times=lk), rep(k, each=lk), 
-        rep(omega, each=lk*lk), #^delta.kk
-        rep(gamma, each=lk*lk)) #*delta.kk)# recycle
+        rep(omega, each=lk*lk), 
+        rep(gamma, each=lk*lk)) # recycle
     convMat <- matrix(NA, nrow(g3args), K+1)
     for(i in k)
         convMat[,i+1] <- dbinom(i, g3args[,2], g3args[,3]) * 
             dpois(g3args[,1] - i, g3args[,4])
-    g3 <- rowSums(convMat)#^delta.kk
+    g3 <- rowSums(convMat)
     g3 <- array(g3, c(lk, lk, M, T-1))
     pT.kk <- rep(p[, T], each=lk*lk)
     g1.T <- dbinom(y.kk[,T], k, pT.kk) # recycle
-    #delta.Tkk <- delta.kk[,T-1]
-    g3.T <- g3[,,, T-1]#^delta.Tkk
+    g3.T <- g3[,,, T-1]
     g.star[,, T-1] <- apply(g1.T * g3.T, 2, colSums)	# recycle
     # NA handling: this will properly determine last obs for each site
     g.star[,,T-1][is.na(g.star[,, T-1])] <- 1
@@ -116,8 +114,7 @@ nll <- function(parms) { # No survey-specific NA handling.
         pt.kk <- rep(p[, t], each=lk*lk)
         g1.t <- dbinom(y.kk[,t], k, pt.kk)
         g.star.vec <- g.star[,, t][mat.to.vec]
-        g3.t <- g3[,,, t-1]#^delta.tkk
-        #delta.tkk <- delta.kk[,t-1]
+        g3.t <- g3[,,, t-1]
         g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
         g.star[,,t-1][is.na(g.star[,, t-1])] <- g.star[,,t][is.na(g.star[,, t-1])]
         }

@@ -730,7 +730,7 @@ if(equalInts)
 else 
     dout <- t(apply(d, 1, diff))
 for(i in 1:M) {
-    if(any(is.na(y[i,]))) {
+    if(any(is.na(y[i,])) & !all(is.na(y[i,]))) { # 2nd test deals w/ simulated y
         first <- 1  #min(which(!is.na(y[i,])))
         last <- max(which(!is.na(y[i,])))
         y.in <- y[i, first:last]
