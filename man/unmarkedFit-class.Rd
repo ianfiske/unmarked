@@ -16,6 +16,7 @@
 \alias{parboot,unmarkedFit-method}
 \alias{plot,unmarkedFit,missing-method}
 \alias{predict,unmarkedFit-method}
+\alias{predict,unmarkedFitColExt-method}
 \alias{predict,unmarkedFitPCountOpen-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}

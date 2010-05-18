@@ -90,8 +90,12 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
 
 # Condition number
 cn <- function(object) {
-   	ev <- eigen(hessian(object))$value
-   	max(ev) / min(ev)
+    h <- hessian(object)
+    if(any(is.na(h))) return(NA)
+        else {
+   	        ev <- eigen(h)$value
+   	        return(max(ev) / min(ev))
+   	        }
    	}
 
 
@@ -133,7 +137,9 @@ setMethod("modSel", "unmarkedFitList",
         }
     fits <- object@fits
     estList <- lapply(fits, coef, altNames=TRUE)
-    seList <- lapply(fits, function(x) sqrt(diag(vcov(x, altNames=TRUE))))
+    seList <- lapply(fits, function(x) 
+        if(any(is.na(x@opt$hessian))) rep(NA, length(coef(x))) 
+            else sqrt(diag(vcov(x, altNames=TRUE))))
     eNames <- sort(unique(unlist(sapply(estList, names))))
     seNames <- paste("SE", eNames, sep="")
     eseNames <- character(l <- length(c(eNames, seNames)))
@@ -158,8 +164,8 @@ setMethod("modSel", "unmarkedFitList",
     out$nPars <- sapply(fits, function(x) length(coef(x)))
     out$n <- sapply(fits, function(x) sampleSize(x))
     out$AIC <- sapply(fits, function(x) x@AIC)
-    out$deltaAIC <- out$AIC - min(out$AIC)
-    out$AICwt <- exp(-out$deltaAIC / 2)
+    out$delta <- out$AIC - min(out$AIC)
+    out$AICwt <- exp(-out$delta / 2)
     out$AICwt <- out$AICwt / sum(out$AICwt)
     out$Rsq <- NA
     if(!is.null(nullmod)) {
@@ -170,7 +176,7 @@ setMethod("modSel", "unmarkedFitList",
           out$Rsq <- sapply(fits, nagR2, nullmod)
         }
     out <- out[order(out$AIC),]
-    out$cumltvAICwt <- cumsum(out$AICwt)
+    out$cumltvWt <- cumsum(out$AICwt)
     msout <- new("unmarkedModSel", Full = out, 
         Names = rbind(Coefs = eNames, SEs = seNames))
     return(msout)
@@ -189,9 +195,9 @@ setAs("unmarkedModSel", "data.frame", function(from) {
 setMethod("show", "unmarkedModSel", function(object) 
 {
     out <- as(object, "data.frame")
-    out <- out[,c('model', 'n', 'nPars', 'AIC', 'deltaAIC', 'AICwt', 'Rsq', 
-        'cumltvAICwt')]
-    print(out, digits=5)
+    rownames(out) <- out$model
+    out <- out[,c('n', 'nPars', 'AIC', 'delta', 'AICwt', 'cumltvWt', 'Rsq')]
+    print(format(out, digits=2, nsmall=2))
 })
 
 
