@@ -4,6 +4,9 @@
 validunmarkedFrame <- function(object) {
 	errors <- character(0)
 	M <- nrow(object@y)
+    J <- ncol(object@y)
+    if(J < 2) # matrices can have 0 columns
+        errors <- c(errors, "y must have at least 2 columns")    
 	if(!is.null(object@siteCovs))
 		if(nrow(object@siteCovs) != M)
 			errors <- c(errors, 
