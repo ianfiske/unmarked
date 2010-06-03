@@ -1251,7 +1251,8 @@ setMethod("plot", signature(x="parboot", y="missing"),
         for(i in 1:length(t0)) {
           h <- hist(t.star[,i], plot = FALSE)
           hist(t.star[,i], xlab=colnames(t.star)[i],
-               xlim = c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i])), ...)
+               xlim = c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i])),
+               main = "Parametric Bootstrapped Samples", ...)
             abline(v=t0[i], lty=2)
             devAskNewPage(ask = TRUE)
             }
