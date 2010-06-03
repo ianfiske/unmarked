@@ -1244,7 +1244,7 @@ setMethod("show", "parboot", function(object)
 
 
 setMethod("plot", signature(x="parboot", y="missing"), 
-    function(x, y, ...)
+    function(x, y, main = "Parametric Bootstrapped Samples", ...)
     {
         t.star <- x@t.star
         t0 <- x@t0
@@ -1252,7 +1252,7 @@ setMethod("plot", signature(x="parboot", y="missing"),
           h <- hist(t.star[,i], plot = FALSE)
           hist(t.star[,i], xlab=colnames(t.star)[i],
                xlim = c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i])),
-               main = "Parametric Bootstrapped Samples", ...)
+               main = main, ...)
             abline(v=t0[i], lty=2)
             devAskNewPage(ask = TRUE)
             }
