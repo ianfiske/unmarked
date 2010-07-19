@@ -1204,6 +1204,7 @@ setMethod("parboot", "unmarkedFit",
         if(nsim > report && i %in% seq(report, nsim, by=report))
             cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=", "), 
                 fill=TRUE)
+        flush.console()
         }
     out <- new("parboot", call=call, t0 = t0, t.star = t.star)
     return(out)
