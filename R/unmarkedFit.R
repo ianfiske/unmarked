@@ -736,7 +736,7 @@ setMethod("hist", "unmarkedFitDS",
         dbreaks <- getData(x)@dist.breaks
         nb <- length(dbreaks)
         mids <- (dbreaks[-1] - dbreaks[-nb]) / 2 + dbreaks[-nb]
-        distances <- unlist(mapply(rep, mids, each=colSums(ymat)))
+        distances <- rep(mids, times=colSums(ymat))
         h <- hist(distances, plot=F, breaks=dbreaks)
         key <- x@keyfun
         survey <- x@data@survey
