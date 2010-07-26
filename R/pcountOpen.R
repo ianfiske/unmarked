@@ -100,7 +100,7 @@ nll <- function(parms) { # No survey-specific NA handling.
         rep(gamma, each=lk*lk)) # recycle
     convMat <- matrix(0, nrow(g3args), K+1)
     for(i in k) {
-        nonzero <- which(g3args[,2] >= i)
+        nonzero <- which(g3args[,2] >= i & g3args[,1] >= i)
         convMat[nonzero,i+1] <- dbinom(i, g3args[nonzero,2], g3args[nonzero,3]) * 
             dpois(g3args[nonzero,1] - i, g3args[nonzero,4])
         }
