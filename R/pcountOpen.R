@@ -98,10 +98,12 @@ nll <- function(parms) { # No survey-specific NA handling.
     g3args <- cbind(rep(k, times=lk), rep(k, each=lk), 
         rep(omega, each=lk*lk), 
         rep(gamma, each=lk*lk)) # recycle
-    convMat <- matrix(NA, nrow(g3args), K+1)
-    for(i in k)
-        convMat[,i+1] <- dbinom(i, g3args[,2], g3args[,3]) * 
-            dpois(g3args[,1] - i, g3args[,4])
+    convMat <- matrix(0, nrow(g3args), K+1)
+    for(i in k) {
+        nonzero <- which(g3args[,2] >= i)
+        convMat[nonzero,i+1] <- dbinom(i, g3args[nonzero,2], g3args[nonzero,3]) * 
+            dpois(g3args[nonzero,1] - i, g3args[nonzero,4])
+        }
     g3 <- rowSums(convMat)
     g3 <- array(g3, c(lk, lk, M, T-1))
     pT.kk <- rep(p[, T], each=lk*lk)
