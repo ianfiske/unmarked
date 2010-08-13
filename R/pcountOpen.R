@@ -26,7 +26,7 @@ if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
 k <- 0:K
 lk <- length(k)
-y.kk <- apply(y, 2, rep, each=lk*lk)
+y.k <- apply(y, 2, rep, each=lk)
 #if(all(delta==1)) delta <- 1
     # delta.kk <- 1 else delta.kk <- apply(delta, 2, rep, each=lk*lk)
 
@@ -65,6 +65,10 @@ mk.order <- matrix(1:(M*lk), M, lk)
 mat.to.vec <- as.numeric(apply(mk.order, 1, rep, times=lk))
 g.star <- array(NA, c(M, lk, T-1))
 
+expand.ki <- numeric(0)
+s <- seq(0, lk*lk*nrow(y), by=lk)
+for(i in 1:nrow(y)) expand.ki <- c(expand.ki, rep((s[i]+1) : s[i+1], lk))
+
 nll <- function(parms) { # No survey-specific NA handling.
     lambda <- exp(Xlam %*% parms[1 : nAP])
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
@@ -89,12 +93,12 @@ nll <- function(parms) { # No survey-specific NA handling.
     if(identical(fix, "gamma")) gamma[] <- 0
         else if(identical(fix, "omega")) omega[] <- 1    
     g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))    
-    g1[is.na(g1)] <- 1
+    g1[is.na(g1)] <- 1 # Double check this
     switch(mixture,
         P = g2 <- sapply(k, function(x) dpois(x, lambda)),
         NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
            mu=lambda)))
-    g2[is.na(g2)] <- 1
+    g2[is.na(g2)] <- 1 # Double check this
     g3args <- cbind(rep(k, times=lk), rep(k, each=lk), 
         rep(omega, each=lk*lk), 
         rep(gamma, each=lk*lk)) # recycle
@@ -106,15 +110,17 @@ nll <- function(parms) { # No survey-specific NA handling.
         }
     g3 <- rowSums(convMat)
     g3 <- array(g3, c(lk, lk, M, T-1))
-    pT.kk <- rep(p[, T], each=lk*lk)
-    g1.T <- dbinom(y.kk[,T], k, pT.kk) # recycle
+    pT.k <- rep(p[, T], each=lk)
+    g1.T <- dbinom(y.k[,T], k, pT.k) # recycle
+    g1.T <- g1.T[expand.ki]
     g3.T <- g3[,,, T-1]
     g.star[,, T-1] <- apply(g1.T * g3.T, 2, colSums)	# recycle
     # NA handling: this will properly determine last obs for each site
     g.star[,,T-1][is.na(g.star[,, T-1])] <- 1
     for(t in (T-1):2) {
-        pt.kk <- rep(p[, t], each=lk*lk)
-        g1.t <- dbinom(y.kk[,t], k, pt.kk)
+        pt.k <- rep(p[, t], each=lk)
+        g1.t <- dbinom(y.k[,t], k, pt.k)
+        g1.t <- g1.t[expand.ki]
         g.star.vec <- g.star[,, t][mat.to.vec]
         g3.t <- g3[,,, t-1]
         g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
