@@ -1,7 +1,9 @@
 \name{pcountOpen}
 \alias{pcountOpen}
-\title{Fit the open N-mixture model}
-\description{Fit the open N-mixture model}
+\title{Fit the open N-mixture model of Dail and Madsen}
+\description{Fit the model of Dail and Madsen, which is 
+a generalized form of the Royle (2004) binomial mixture model that allows for
+estimation of gains (recruitment) and losses (mortality/emigration).}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data, 
 	mixture = c("P", "NB"), K, fix=c("none", "gamma", "omega"), starts, 
@@ -46,21 +48,26 @@ covariates of \eqn{p_it}{p_it} use the logit link.
  
 }
 \value{
-A unmarkedFitPCountOpen object.
+An unmarkedFitPCO object.
 }
 \references{
 Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
+
+Dail, D. and L. Madsen (In press) Models for Estimating Abundance from Repeated Counts of an Open Metapopulation. \emph{Biometrics}.
+
 }
 
-\author{Richard Chandler \email{rchandler@nrc.umass.edu}}
+\author{Richard Chandler \email{richard.chandlers@gmail.com}}
 
 \note{
 When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, they must be supplied.
 
-If time intervals vary among survey occasions (sampling periods), an M by T-1 matrix of time intervals should be supplied to unmarkedFramePCountOpen using the delta argument.
+If time intervals vary among survey occasions (sampling periods), an M by T matrix of dates should be supplied to unmarkedFramePCO using the dates argument. Currently, the handling of non-constant survey intervals differs from the methods described in the original paper. Specifically, omega and gamma are modeled as omega^time and gamma*time, where time is the time between successive survey occasions. This allows for continuous (non-integer) time increments. Fractional time intervals can be useful if, for instance, survey were conducted over many days, but monthly rates are desired. For this case, one could simply use dates=dates/30 in the call to unmarkedFramePCO.
+
+At this time, the robust design is not available. However, if you have multiple seasons of data, you can model within vs. among rates by creating an MxT observation-level covariate identifying the transition periods and include it the gamma and omega formulas.
 }
 
-\section{Warning}{This function can be extremely slow, especially when there are covariates on gamma or omega. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates (MLEs) will also help with speed. }
+\section{Warning}{This function can be extremely slow, especially when there are covariates on gamma or omega, or when sampling intervals are not constant. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates (MLEs) will also help with speed. }
 
 \seealso{
 \code{\link{pcount}}
@@ -89,7 +96,7 @@ y[] <- rbinom(M*T, N, p)
 
                             
 # Prepare data                               
-umf <- unmarkedFramePCountOpen(y = y)
+umf <- unmarkedFramePCO(y = y)
 
 summary(umf)
 
@@ -128,7 +135,7 @@ y[] <- rbinom(M*T, N, p)
 
 
 # Prepare data
-umfC <- unmarkedFramePCountOpen(y = y, siteCovs = data.frame(veght), 
+umfC <- unmarkedFramePCO(y = y, siteCovs = data.frame(veght), 
 	obsCovs = list(isolation=isolation, time=time))
 
 # Fit covariate model
@@ -162,7 +169,7 @@ y[] <- rbinom(M*T, N, p)
 
 
 # Prepare data
-umfO <- unmarkedFramePCountOpen(y = y, delta = date)
+umfO <- unmarkedFramePCO(y = y, delta = date)
 umfO
 
 # Fit model

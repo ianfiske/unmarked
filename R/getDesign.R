@@ -292,7 +292,7 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
 # pcountOpen
 
 
-setMethod("getDesign", "unmarkedFramePCountOpen", 
+setMethod("getDesign", "unmarkedFramePCO", 
     function(umf, formula, na.rm = TRUE) 
 {
     aschar1 <- as.character(formula)
@@ -360,7 +360,7 @@ setMethod("getDesign", "unmarkedFramePCountOpen",
 
 
 
-setMethod("handleNA", "unmarkedFramePCountOpen", 
+setMethod("handleNA", "unmarkedFramePCO", 
     function(umf, Xlam, Xgam, Xom, Xp, delta) 
 {
 	obsToY <- obsToY(umf)

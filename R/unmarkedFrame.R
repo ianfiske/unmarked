@@ -76,7 +76,7 @@ setClass("unmarkedFrameMPois",
 		contains = "unmarkedFrame")
 
 		
-setClass("unmarkedFramePCountOpen",
+setClass("unmarkedFramePCO",
 		representation(
 			delta = "matrix"),
 		contains = "unmarkedFrame")
@@ -196,7 +196,7 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 
 
 
-unmarkedFramePCountOpen <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
+unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
  	delta) 
 {
 	M <- nrow(y)
@@ -228,7 +228,7 @@ unmarkedFramePCountOpen <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 	if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
 	obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
   	}
-	umf <- new("unmarkedFramePCountOpen", y = y, siteCovs = siteCovs, 
+	umf <- new("unmarkedFramePCO", y = y, siteCovs = siteCovs, 
 		obsCovs = obsCovs, obsToY = diag(T), 
 		delta = delta)
 	return(umf)
