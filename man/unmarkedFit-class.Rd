@@ -37,6 +37,10 @@
 \alias{smoothed,unmarkedFitColExt-method}
 \alias{projected}
 \alias{projected,unmarkedFitColExt-method}
+\alias{logLik}
+\alias{logLik,unmarkedFit-method}
+\alias{LRT}
+\alias{LRT,unmarkedFit,unmarkedFit-method}
 
 \title{Class "unmarkedFit" }
 \description{Contains fitted model information which can be manipulated or 
@@ -115,7 +119,12 @@ extracted using the methods described below.
     \item{projected}{\code{signature(object="unmarkedFitColExt")}:
       Returns the projected trajectory from a colonization-extinction
       model fit.  Takes additional logical argument mean which specifies
-    whether or not to return the average over sites.} 
+    whether or not to return the average over sites.}
+    \item{logLik}{\code{signature(object="unmarkedFit")}:
+        Returns the log-likelihood.}
+    \item{LRT}{\code{signature(m1="unmarkedFit", m2="unmarkedFit")}:
+        Returns the chi-squared statistic, degrees-of-freedom, and p-value from
+        a Likelihood Ratio Test.} 
 	 }
 }
 \note{ This is a superclass with child classes for each fit type }

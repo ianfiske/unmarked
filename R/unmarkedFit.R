@@ -330,6 +330,30 @@ setMethod("SE", "unmarkedFit",
           })
 
 
+          
+setMethod("logLik", "unmarkedFit", function(object, ...) 
+{
+    if(length(list(...)))
+        warning("extra arguments discarded")
+    ll <- -object@negLogLike
+    #attr(ll, "df") <- length(coef(object))
+    #class(ll) <- "logLik"
+    return(ll)
+})
+
+
+
+setMethod("LRT", c(m1="unmarkedFit", m2="unmarkedFit"), function(m1, m2)
+{
+    chisq <- 2 * diff(c(logLik(m1), logLik(m2)))
+    DF <- diff(c(length(coef(m1)), length(coef(m2))))
+    pval <- pchisq(chisq, DF, lower=FALSE)
+    return(data.frame(Chisq=chisq, DF = DF, 'Pr(>Chisq)' = pval, check.names=F))
+}) 
+    
+    
+
+
 
 setMethod("confint", "unmarkedFit",
           function(object, parm, level = 0.95, type, method = c("normal", "profile")) {
