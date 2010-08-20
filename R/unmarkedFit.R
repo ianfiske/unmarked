@@ -755,7 +755,7 @@ setMethod("update", "unmarkedFitPCountOpen",
             }
         if (!missing(gammaformula.)) {
             upGammaformula <- update.formula(gammaformula, gammaformula.)
-            call[['gammaaformula']] <- upGammaformula
+            call[['gammaformula']] <- upGammaformula
             }
         if (!missing(omegaformula.)) {
             upOmegaformula <- update.formula(omegaformula, omegaformula.)
