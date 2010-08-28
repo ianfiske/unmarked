@@ -139,10 +139,10 @@ names(haz_Null)
 backTransform(haz_Null, type="state")
 backTransform(haz_Null, type="det")
 backTransform(haz_Null, type="scale")
-backTransform(linearComb(hn_Hab.Ht['det'], c(0, 5)))
+backTransform(linearComb(hn_Hab.Ht['det'], c(1, 5)))
 @
 
-The first back-transformation returns population density, since this is the default state parameter modeled when \code{distsamp}'s \code{output} argument is set to 'density'. The second back-transformation returns the hazard-rate shape parameter, and third is the hazard-rate scale parameter. When covariates are present, \code{backTransform} in conjunction with \code{linearComb} should be used.
+The first back-transformation returns population density, since this is the default state parameter modeled when \code{distsamp}'s \code{output} argument is set to 'density'. The second back-transformation returns the hazard-rate shape parameter, and third is the hazard-rate scale parameter. When covariates are present, \code{backTransform} in conjunction with \code{linearComb} should be used. Here, we requested the value of sigma when canopy height was 5 meters tall. Note that the intercept was included in the calculation by setting the first value in the linear equation to 1.
 
 Parameters that do not occur in the likelihood may also be of interest. For example, the number of individuals occuring in the sampled plots (local population size) is a fundamental parameter in monitoring and conservation efforts. The following commands can be used to derive this parameter from our model of density:
 
@@ -216,7 +216,7 @@ with(Esigma, {
 \end{figure}
 
 
-Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do the latter, we can plug predicted values of $\bm{\sigma}$ at given covariate values into the \code{gxhn} function. For instance, Figure~\ref{fig:detplot}a shows to the half-normal function at a canopy height of 2m. This was plotted by setting $\bm{\sigma}$ to 10.8, the predicted value shown above. The available detection functions are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the distance histogram using the \code{hist} method for \code{unmarkedFitDS} objects (Figure~\ref{fig:detplot}b). This only works for models without detection covariates; however, probability density functions at specific covariate values can be added in a fashion similar to that above (Figure~\ref{fig:detplot}b).
+Plots of the detection function parameters can be less informative than plots of the detection functions themselves. To do the latter, we can plug predicted values of $\bm{\sigma}$ at given covariate values into the \code{gxhn} function. For instance, Figure~\ref{fig:detplot}a shows to the half-normal function at a canopy height of 2m. This was plotted by setting $\bm{\sigma}$ to 10.8, the predicted value shown above. The available detection functions are described on the \code{detFuns} help page. Probability density functions such as \code{dxhn} can be plotted with the distance histogram using the \code{hist} method for \code{unmarkedFitDS} objects (Figure\ref{fig:detplot}b). This only works for models without detection covariates; however, probability density functions at specific covariate values can be added in a fashion similar to that above (Figure\ref{fig:detplot}b).
 
 
 <<detplot,fig=TRUE,include=FALSE,width=6,height=3>>=

@@ -428,7 +428,7 @@ setMethod("hist", "unmarkedFrameDS",
 	dbreaks <- x@dist.breaks
 	nb <- length(dbreaks)
  	mids <- (dbreaks[-1] - dbreaks[-nb]) / 2 + dbreaks[-nb]
-    distances <- unlist(mapply(rep, mids, each=colSums(y)))
+    distances <- rep(mids, times=colSums(y))
 	hist(distances, breaks=dbreaks, ...)
 })
 

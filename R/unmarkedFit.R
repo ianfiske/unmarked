@@ -386,6 +386,30 @@ setMethod("SE", "unmarkedFit",
           })
 
 
+          
+setMethod("logLik", "unmarkedFit", function(object, ...) 
+{
+    if(length(list(...)))
+        warning("extra arguments discarded")
+    ll <- -object@negLogLike
+    #attr(ll, "df") <- length(coef(object))
+    #class(ll) <- "logLik"
+    return(ll)
+})
+
+
+
+setMethod("LRT", c(m1="unmarkedFit", m2="unmarkedFit"), function(m1, m2)
+{
+    chisq <- 2 * diff(c(logLik(m1), logLik(m2)))
+    DF <- diff(c(length(coef(m1)), length(coef(m2))))
+    pval <- pchisq(chisq, DF, lower=FALSE)
+    return(data.frame(Chisq=chisq, DF = DF, 'Pr(>Chisq)' = pval, check.names=F))
+}) 
+    
+    
+
+
 
 setMethod("confint", "unmarkedFit",
           function(object, parm, level = 0.95, type, method = c("normal", "profile")) {
@@ -868,7 +892,7 @@ setMethod("hist", "unmarkedFitDS",
         dbreaks <- getData(x)@dist.breaks
         nb <- length(dbreaks)
         mids <- (dbreaks[-1] - dbreaks[-nb]) / 2 + dbreaks[-nb]
-        distances <- unlist(mapply(rep, mids, each=colSums(ymat)))
+        distances <- rep(mids, times=colSums(ymat))
         h <- hist(distances, plot=F, breaks=dbreaks)
         key <- x@keyfun
         survey <- x@data@survey
@@ -1399,6 +1423,7 @@ setMethod("parboot", "unmarkedFit",
         if(nsim > report && i %in% seq(report, nsim, by=report))
             cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=", "), 
                 fill=TRUE)
+        flush.console()
         }
     out <- new("parboot", call=call, t0 = t0, t.star = t.star)
     return(out)
