@@ -282,3 +282,149 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
              V = V,
              removed.sites = which(sites.to.remove))
     })
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+# UnmarkedFrameGMN    
+	
+
+
+
+setMethod("getDesign", "unmarkedFrameGMN", function(umf, formula, na.rm = TRUE) 
+{
+ac1 <- as.character(formula)
+ac2 <- as.character(formula[[2]])
+ac3 <- as.character(formula[[2]][[2]])    
+
+lamformula <- as.formula(paste(ac1[1], ac1[3]))
+phiformula <- as.formula(paste(ac2[1], ac2[3]))
+detformula <- as.formula(formula[[2]][[2]])
+    
+detVars <- all.vars(detformula)
+  
+M <- numSites(umf)
+R <- obsNum(umf)
+nY <- umf@numPrimary
+  
+## Compute phi design matrices
+if(is.null(umf@yearlySiteCovs)) {
+    yearlySiteCovs <- data.frame(placeHolder = rep(1, M*nY))
+    } else yearlySiteCovs <- umf@yearlySiteCovs
+
+## in order to drop factor levels that only appear in last year,
+## replace last year with NAs and use drop=TRUE
+yearlySiteCovs[seq(nY,M*nY,by=nY),] <- NA
+yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, 
+    function(x) x[,drop = TRUE]))
+
+## add siteCovs in so they can be used as well
+if(!is.null(umf@siteCovs)) {
+    sC <- umf@siteCovs[rep(1:M, each = nY),,drop=FALSE]
+    yearlySiteCovs <- cbind(yearlySiteCovs, sC)
+    }
+
+Xphi.mf <- model.frame(phiformula, yearlySiteCovs, na.action = NULL)
+Xphi <- model.matrix(phiformula, Xphi.mf)
+  
+## Compute site-level design matrix for lambda
+if(is.null(siteCovs(umf))) {
+    siteCovs <- data.frame(placeHolder = rep(1, M))
+    } else siteCovs <- siteCovs(umf)
+Xlam.mf <- model.frame(lambdaformula, siteCovs, na.action = NULL)
+Xlam <- model.matrix(lambdaformula, Xlam.mf)
+
+# Compute detection design matrix
+if(is.null(obsCovs(umf))) {
+    obsCovs <- data.frame(placeHolder = rep(1, M*R))
+    } else obsCovs <- obsCovs(umf)
+	
+## add site and yearlysite covariates at observation-level
+obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = R),],
+    siteCovs[rep(1:M, each = R), ])
+	
+## add observation number if not present
+if(!("obs" %in% names(obsCovs)))
+    obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
+	
+Xdet.mf <- model.frame(detformula, obsCovs, na.action = NULL)
+Xdet <- model.matrix(detformula, V.mf)
+	
+if(na.rm)
+    out <- handleNA(umf, Xlam, Xphi, Xdet)
+else
+    out <- list(y=getY(umf), Xlam=Xlam, Xphi=Xphi, Xdet=Xdet,
+				removed.sites=integer(0))
+	
+return(list(y = out$y, Xlam = out$Xlam, Xphi = out$Xphi, Xdet = out$Xdet, 
+    removed.sites = out$removed.sites))
+})
+
+
+
+
+
+
+setMethod("handleNA", "unmarkedFrameGMN", function(umf, Xlam, Xphi, Xdet) 
+{
+
+obsToY <- obsToY(umf)
+    if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
+	
+R <- obsNum(umf)
+M <- numSites(umf)
+nY <- umf@numPrimary
+J <- numY(umf) / nY
+	
+## treat both X's and W together
+X <- cbind(Xphi, Xdet[rep(1:M, each = nY), ])
+
+X.na <- is.na(X)
+X.na[seq(nY, M*nY, by=nY),] <- FALSE  ## final years are unimportant (not used).
+X.long.na <- X.na[rep(1:(M*nY), each = J),]
+	
+Xdet.long.na <- apply(Xdet, 2, function(x) {
+    x.mat <- matrix(x, M, R, byrow = TRUE)
+    x.mat <- is.na(x.mat)
+    x.mat <- x.mat %*% obsToY
+    x.long <- as.vector(t(x.mat))
+    x.long == 1
+    })
+
+Xdet.long.na <- apply(Xdet.long.na, 1, any)
+	
+y.long <- as.vector(t(getY(umf)))
+y.long.na <- is.na(y.long)
+	
+covs.na <- apply(cbind(X.long.na, Xdet.long.na), 1, any)
+	
+## are any NA in covs not in y already?
+y.new.na <- covs.na & !y.long.na
+	
+if(sum(y.new.na) > 0) {
+		y.long[y.new.na] <- NA
+		warning("Some observations have been discarded because correspoding covariates were missing.")
+	}
+	
+y <- matrix(y.long, M, numY(umf), byrow = TRUE)
+sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+	
+num.to.remove <- sum(sites.to.remove)
+if(num.to.remove > 0) {
+		y <- y[!sites.to.remove, ,drop = FALSE]
+		Xphi <- Xphi[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
+    Xlam <- Xlam[!sites.to.remove, drop = FALSE]
+		Xdet <- Xdet[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
+		warning(paste(num.to.remove, 
+        "sites have been discarded because of missing data."), call.=FALSE)
+	}
+list(y = y, Xlam = Xlam, Xphi = Xphi, Xdet = Xdet, 
+    removed.sites = which(sites.to.remove))
+})
+    

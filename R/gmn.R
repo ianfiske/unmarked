@@ -28,7 +28,7 @@ if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
 
 M <- nrow(y)  
 J <- ncol(y)
-L <- dim(y)[3]
+nY <- dim(y)[3]
 R <- obsNum(data)
 
 piFun <- data@piFun
@@ -42,7 +42,7 @@ nDP <- ncol(Xdet)
 nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
 
 p <- array(as.numeric(NA), c(M, J, L))
-pi <- array(as.numeric(NA), c(M, J, R))   # L does not necessarily equal R
+cp <- array(as.numeric(NA), c(M, J, R+1))   # L does not necessarily equal R
 lfac.k <- lgamma(k+1)
 A <- matrix(0, M, lk)
 g <- matrix(as.numeric(NA), M, lk)
@@ -61,8 +61,8 @@ nll <- function(pars) {
         for(j in 1:J) {
             kmn <- k-n[j]
             kmn <- kmn[kmn >= 0]
-            A[,j] <- lfac.k - lgamma(kmn+1) + sum(y[i,j,]*log(cp[i,j,1:L])) + 
-                kmn*log(cp[i,j,L])
+            A[,j] <- lfac.k - lgamma(kmn+1) + sum(y[i,j,]*log(cp[i,j,1:R])) + 
+                kmn*log(cp[i,j,R+1])
             }
         g[i,] <- exp(rowSums(A))
         }
@@ -91,8 +91,8 @@ lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
 		invlinkGrad = "exp")
 phiEstimates <- unmarkedEstimate(name = "Availability", short.name = "phi",
     estimates = ests[(nLP+1):(nLP+nPP)],
-		covMat = as.matrix(covMat[(nLP+1):(nLP+nPP)]), invlink = "exp",
-		invlinkGrad = "exp")
+		covMat = as.matrix(covMat[(nLP+1):(nLP+nPP)]), invlink = "logistic",
+		invlinkGrad = "logistic.grad")
 detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
 		estimates = ests[(nPP+1):(nLP+nPP+nDP)],
 		covMat = as.matrix(covMat[(nPP+1):(nLP+nPP+nDP), (nPP+1):(nLP+nPP+nDP)]), 
