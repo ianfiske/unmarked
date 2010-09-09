@@ -54,7 +54,8 @@ nll <- function(pars)
 		lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
     phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
     p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
-
+    p.array <- array(p, c(M, R, J))
+    
     f <- sapply(lambda, function(x) dpois(k, lambda))
 
     for(r in 1:R) {
