@@ -70,6 +70,12 @@ setClass("unmarkedFitColExt",
                         projected.mean.bsse = "optionalMatrix",
                         smoothed.mean.bsse = "optionalMatrix"),
          contains = "unmarkedFit")
+         
+
+setClass("unmarkedFitGMM", 
+    representation(formlist = "list"),
+    contains = "unmarkedFit")
+        
 
 ################################################################################
 

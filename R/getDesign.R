@@ -199,6 +199,8 @@ setMethod("getDesign", "unmarkedMultFrame",
 	}
 	
 	## add site and yearlysite covariates at observation-level
+	## DOUBLE CHECK THIS. Shouldn't it be:
+  ## yearlySiteCovs[rep(1:(M*nY), each = J),] where J is R/nY
 	obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = R),],
                          siteCovs[rep(1:M, each = R), ])
 	
@@ -297,7 +299,7 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
 
 
 
-setMethod("getDesign", "unmarkedFrameGMN", function(umf, formula, na.rm = TRUE) 
+setMethod("getDesign", "unmarkedFrameGMM", function(umf, formula, na.rm = TRUE) 
 {
 ac1 <- as.character(formula)
 ac2 <- as.character(formula[[2]])
@@ -310,23 +312,25 @@ detformula <- as.formula(formula[[2]][[2]])
 detVars <- all.vars(detformula)
   
 M <- numSites(umf)
+T <- umf@numPrimary
 R <- obsNum(umf)
-nY <- umf@numPrimary
+J <- R/T
+
   
 ## Compute phi design matrices
 if(is.null(umf@yearlySiteCovs)) {
-    yearlySiteCovs <- data.frame(placeHolder = rep(1, M*nY))
+    yearlySiteCovs <- data.frame(placeHolder = rep(1, M*T))
     } else yearlySiteCovs <- umf@yearlySiteCovs
 
 ## in order to drop factor levels that only appear in last year,
 ## replace last year with NAs and use drop=TRUE
-yearlySiteCovs[seq(nY,M*nY,by=nY),] <- NA
+yearlySiteCovs[seq(T, M*T, by=T),] <- NA
 yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, 
     function(x) x[,drop = TRUE]))
 
 ## add siteCovs in so they can be used as well
 if(!is.null(umf@siteCovs)) {
-    sC <- umf@siteCovs[rep(1:M, each = nY),,drop=FALSE]
+    sC <- umf@siteCovs[rep(1:M, each = T),,drop=FALSE]
     yearlySiteCovs <- cbind(yearlySiteCovs, sC)
     }
 
@@ -337,8 +341,8 @@ Xphi <- model.matrix(phiformula, Xphi.mf)
 if(is.null(siteCovs(umf))) {
     siteCovs <- data.frame(placeHolder = rep(1, M))
     } else siteCovs <- siteCovs(umf)
-Xlam.mf <- model.frame(lambdaformula, siteCovs, na.action = NULL)
-Xlam <- model.matrix(lambdaformula, Xlam.mf)
+Xlam.mf <- model.frame(lamformula, siteCovs, na.action = NULL)
+Xlam <- model.matrix(lamformula, Xlam.mf)
 
 # Compute detection design matrix
 if(is.null(obsCovs(umf))) {
@@ -346,7 +350,7 @@ if(is.null(obsCovs(umf))) {
     } else obsCovs <- obsCovs(umf)
 	
 ## add site and yearlysite covariates at observation-level
-obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = R),],
+obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),],
     siteCovs[rep(1:M, each = R), ])
 	
 ## add observation number if not present
@@ -354,7 +358,7 @@ if(!("obs" %in% names(obsCovs)))
     obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
 	
 Xdet.mf <- model.frame(detformula, obsCovs, na.action = NULL)
-Xdet <- model.matrix(detformula, V.mf)
+Xdet <- model.matrix(detformula, Xdet.mf)
 	
 if(na.rm)
     out <- handleNA(umf, Xlam, Xphi, Xdet)
@@ -371,23 +375,22 @@ return(list(y = out$y, Xlam = out$Xlam, Xphi = out$Xphi, Xdet = out$Xdet,
 
 
 
-setMethod("handleNA", "unmarkedFrameGMN", function(umf, Xlam, Xphi, Xdet) 
+setMethod("handleNA", "unmarkedFrameGMM", function(umf, Xlam, Xphi, Xdet) 
 {
 
 obsToY <- obsToY(umf)
     if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
-	
-R <- obsNum(umf)
+
 M <- numSites(umf)
-nY <- umf@numPrimary
-J <- numY(umf) / nY
+T <- umf@numPrimary
+R <- obsNum(umf)
+J <- R/T            # numY(umf) / T
 	
-## treat both X's and W together
-X <- cbind(Xphi, Xdet[rep(1:M, each = nY), ])
+## treat Xphi and Xlam together
+X <- cbind(Xphi, Xlam[rep(1:M, each = T), ])
 
 X.na <- is.na(X)
-X.na[seq(nY, M*nY, by=nY),] <- FALSE  ## final years are unimportant (not used).
-X.long.na <- X.na[rep(1:(M*nY), each = J),]
+X.long.na <- X.na[rep(1:(M*T), each = J),]
 	
 Xdet.long.na <- apply(Xdet, 2, function(x) {
     x.mat <- matrix(x, M, R, byrow = TRUE)
