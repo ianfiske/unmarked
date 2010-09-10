@@ -34,7 +34,8 @@ T <- data@numPrimary
 R <- ncol(y)
 J <- R / T
 
-y <- array(y, c(M, T, J))
+y <- array(y, c(M, J, T))
+y <- aperm(y, c(1,3,2))
 yt <- apply(y, 1:2, sum)
 
 piFun <- data@piFun
@@ -53,13 +54,14 @@ A <- matrix(0, lk, T)
 g <- matrix(as.numeric(NA), M, lk)
 
 lfac.k <- lgamma(k+1)
-kmn <- array(NA, c(M, T, lk))
-lfac.kmn <- array(0, c(M, T, lk))
+kmyt <- array(NA, c(M, T, lk))
+lfac.kmyt <- array(0, c(M, T, lk))
+fin <- matrix(NA, M, lk)
 for(i in 1:M) {
+    fin[i, ] <- k - max(yt[i,]) >= 0
     for(t in 1:T) {
-        kmn[i,t,] <- k - yt[i,t]
-        zp <- kmn[i,t,] >= 0
-        lfac.kmn[i, t, zp] <- lgamma(kmn[i,t,zp] + 1)
+        kmyt[i,t,] <- k - yt[i,t]
+        lfac.kmyt[i, t, fin[i,]] <- lgamma(kmyt[i, t, fin[i,]] + 1)
         }
     }
 
@@ -67,19 +69,27 @@ nll <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
     phi <- drop(plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset))
     p[] <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
+
+    p <- array(p, c(M, J, T))
+    p <- aperm(p, c(1,3,2))     ## Double-check
+    cp <- array(as.numeric(NA), c(M, T, J+1))
+    
     for(i in 1:T) cp[,i,1:J] <- do.call(piFun, list(p[,i,]))
     cp[,,1:J] <- cp[,,1:J] * phi
-    cp[,,J+1] <- apply(cp[,,1:J], 1:2, sum) 
+    cp[,,J+1] <- 1 - apply(cp[,,1:J], 1:2, sum) 
+    
     switch(mixture, 
         P = f <- sapply(k, function(x) dpois(x, lambda)),
-        NB = f <- sapply(k, dnbinom(x, mu=lambda, size=pars[nP]))
-        )
+        NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, size=pars[nP])))
     for(i in 1:M) {
-        for(t in 1:T)
-            A[,t] <- lfac.k - lfac.kmn[i,t,] + sum(y[i,t,]*log(cp[i,t,1:J])) + 
-                kmn[i,t,]*log(cp[i,t,J+1])
+        A <- matrix(0, lk, T)
+        for(t in 1:T) {
+            A[, t] <- lfac.k - lfac.kmyt[i,t,] + 
+                sum(y[i,t,]*log(cp[i,t,1:J])) + kmyt[i,t,]*log(cp[i,t,J+1])
+            }
         g[i,] <- exp(rowSums(A))
         }
+    f[!fin] <- g[!fin] <- 0
     ll <- rowSums(f*g)
     -sum(log(ll))
     }
@@ -105,7 +115,8 @@ lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
     invlinkGrad = "exp")
 phiEstimates <- unmarkedEstimate(name = "Availability", short.name = "phi",
     estimates = ests[(nLP+1):(nLP+nPP)],
-    covMat = as.matrix(covMat[(nLP+1):(nLP+nPP)]), invlink = "logistic",
+    covMat = as.matrix(covMat[(nLP+1):(nLP+nPP), (nLP+1):(nLP+nPP)]), 
+        invlink = "logistic",
     invlinkGrad = "logistic.grad")
 detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     estimates = ests[(nLP+nPP+1):(nLP+nPP+nDP)],

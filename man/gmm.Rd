@@ -1,7 +1,6 @@
 \name{gmm}
 \alias{gmm}
 \title{Generalized multinomial mixture model}
-}
 \description{
 A three level hierarchical model with a multinomial observation process
 }
@@ -52,15 +51,16 @@ Richard Chandler and Andy Royle
 
 n <- 50   # number of sites
 T <- 4    # number of primary periods
-R <- 3    # number of secondary periods
+J <- 3    # number of secondary periods
 
 lam <- 3
 phi <- 0.5
 p <- 0.3
 
-y <- array(NA, c(n, T, R))
-M <- rpois(n, lam)
-N <- matrix(NA, n, T)
+#set.seed(26)
+y <- array(NA, c(n, T, J))
+M <- rpois(n, lam)          # Local population size
+N <- matrix(NA, n, T)       # Individuals availabe for detection
     
 for(i in 1:n) {
     N[i,] <- rbinom(T, M[i], phi)
@@ -70,12 +70,17 @@ for(i in 1:n) {
     Nleft2 <- Nleft1 - y[i,,2]
     y[i,,3] <- rbinom(T, Nleft2, p)
     }
+    
+apply(y, 3, sum)    
 
-y <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
+y.MxTJ <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
 
-umf <- unmarkedFrameGMM(y=y, numPrimary=T, piFun="removalPiFun")
+umf <- unmarkedFrameGMM(y=y.MxTJ, numPrimary=T, piFun="removalPiFun")
 
-gmm(~1, ~1, ~1, data=umf)       
+summary(m <- gmm(~1, ~1, ~1, data=umf))
+e <- coef(m)
+# Should be 3, 0.5, 0.3
+round(c(exp(e[1]), plogis(e[2]), plogis(e[3])), 2)
 
 }
 \keyword{ model }
