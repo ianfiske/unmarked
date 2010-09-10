@@ -16,8 +16,8 @@ D <- getDesign(data, formula = as.formula(paste(unlist(formula), collapse=" ")))
 Xlam <- D$Xlam
 Xphi <- D$Xphi 
 Xdet <- D$Xdet
-y <- D$y  # MxJxL
-n <- apply(y, 1:2, sum)
+y.mto <- D$y  # MxJxL
+n.mt <- apply(y, 1:2, sum)
 
 Xlam.offset <- D$X.offset
 Xphi.offset <- D$Xphi.offset
@@ -27,8 +27,8 @@ if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
 if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
 
 M <- nrow(y)  
-J <- ncol(y)
-nY <- dim(y)[3]
+T <- ncol(y)
+O <- dim(y)[3]
 R <- obsNum(data)
 
 piFun <- data@piFun
@@ -43,9 +43,19 @@ nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
 
 p <- array(as.numeric(NA), c(M, J, L))
 cp <- array(as.numeric(NA), c(M, J, R+1))   # L does not necessarily equal R
-lfac.k <- lgamma(k+1)
 A <- matrix(0, M, lk)
 g <- matrix(as.numeric(NA), M, lk)
+
+lfac.k <- lgamma(k+1)
+kmn <- array(NA, c(M, T, lk))
+lfac.kmn <- array(0, c(M, T, lk))
+for(i in 1:M) {
+    for(t in 1:T) {
+        kmn[i,t,] <- k-n[i,t]
+        zp <- kmn >= 0
+        lfac.kmn[i,t,zp] <- lgamma(kmn[zp]+1)
+        }
+    }
 
 nll <- function(pars) {
 		lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
@@ -58,12 +68,9 @@ nll <- function(pars) {
         NB = f <- sapply(k, dnbinom(x, mu=lambda, size=pars[nP]))
         )
     for(i in 1:M) {
-        for(j in 1:J) {
-            kmn <- k-n[j]
-            kmn <- kmn[kmn >= 0]
-            A[,j] <- lfac.k - lgamma(kmn+1) + sum(y[i,j,]*log(cp[i,j,1:R])) + 
-                kmn*log(cp[i,j,R+1])
-            }
+        for(t in 1:T)
+            A[,T] <- lfac.k - lfac.kmn[i,t,] + sum(y[i,j,]*log(cp[i,j,1:R])) + 
+                kmn[i,t,]*log(cp[i,j,R+1])
         g[i,] <- exp(rowSums(A))
         }
     ll <- rowSums(f*g)
