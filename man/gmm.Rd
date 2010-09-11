@@ -49,7 +49,7 @@ Richard Chandler and Andy Royle
 }
 \examples{
 
-n <- 50   # number of sites
+n <- 100  # number of sites
 T <- 4    # number of primary periods
 J <- 3    # number of secondary periods
 
@@ -75,12 +75,62 @@ apply(y, 3, sum)
 
 y.MxTJ <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
 
+
 umf <- unmarkedFrameGMM(y=y.MxTJ, numPrimary=T, piFun="removalPiFun")
 
-summary(m <- gmm(~1, ~1, ~1, data=umf))
+
+system.time(m <- gmm(~1, ~1, ~1, data=umf))
 e <- coef(m)
 # Should be 3, 0.5, 0.3
 round(c(exp(e[1]), plogis(e[2]), plogis(e[3])), 2)
+
+
+
+
+# An example with covariates
+
+sc <- rnorm(n)
+ysc <- rnorm(n*T)
+ysc <- matrix(ysc, n, T)
+oc <- rnorm(n*J*T)
+oc <- array(oc, c(n,J,T))
+
+lam <- exp(-1 + 1*sc)
+phi <- plogis(2 + -2*ysc)
+p <- plogis(1 + -1*oc)
+
+y <- array(NA, c(n,J,T))
+M <- rpois(n, lam)
+N <- matrix(NA, n, T)
+
+for(i in 1:n) {
+    N[i,] <- rbinom(T, M[i], phi[i,])
+    y[i,1,] <- rbinom(T, N[i,], p[i,1,])
+    Nleft1 <- N[i,] - y[i,1,]
+    y[i,2,] <- rbinom(T, Nleft1, p[i,2,])
+    Nleft2 <- Nleft1 - y[i,2,]
+    y[i,3,] <- rbinom(T, Nleft2, p[i,3,])
+    }
+    
+apply(y, 2, sum)
+
+
+umf <- unmarkedFrameGMM(y=matrix(y, nrow=n), 
+    siteCovs = data.frame(sc=sc), 
+    obsCovs=list(oc=matrix(oc, nrow=n)),
+    yearlySiteCovs=data.frame(ysc=as.numeric(t(ysc))), 
+    numPrimary=T, piFun="removalPiFun")
+    
+summary(umf)
+plot(umf) 
+
+system.time(m2 <- gmm(~sc, ~ysc, ~oc, umf) )
+summary(m2)
+
+  
+     
+
+
 
 }
 \keyword{ model }

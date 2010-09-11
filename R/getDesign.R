@@ -303,11 +303,10 @@ setMethod("getDesign", "unmarkedFrameGMM", function(umf, formula, na.rm = TRUE)
 {
 ac1 <- as.character(formula)
 ac2 <- as.character(formula[[2]])
-ac3 <- as.character(formula[[2]][[2]])    
 
-lamformula <- as.formula(paste(ac1[1], ac1[3]))
+detformula <- as.formula(paste(ac1[1], ac1[3]))
 phiformula <- as.formula(paste(ac2[1], ac2[3]))
-detformula <- as.formula(formula[[2]][[2]])
+lamformula <- as.formula(formula[[2]][[2]])
     
 detVars <- all.vars(detformula)
   
@@ -321,12 +320,6 @@ J <- R/T
 if(is.null(umf@yearlySiteCovs)) {
     yearlySiteCovs <- data.frame(placeHolder = rep(1, M*T))
     } else yearlySiteCovs <- umf@yearlySiteCovs
-
-## in order to drop factor levels that only appear in last year,
-## replace last year with NAs and use drop=TRUE
-yearlySiteCovs[seq(T, M*T, by=T),] <- NA
-yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, 
-    function(x) x[,drop = TRUE]))
 
 ## add siteCovs in so they can be used as well
 if(!is.null(umf@siteCovs)) {
