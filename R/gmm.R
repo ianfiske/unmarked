@@ -36,7 +36,7 @@ J <- R / T
 
 y <- array(y, c(M, J, T))
 y <- aperm(y, c(1,3,2))
-yt <- apply(y, 1:2, sum)
+yt <- apply(y, 1:2, sum, na.rm=TRUE) # FIXME: This returns 0 if all are NAs
 
 piFun <- data@piFun
 
@@ -57,20 +57,26 @@ kmyt <- array(NA, c(M, T, lk))
 lfac.kmyt <- array(0, c(M, T, lk))
 fin <- matrix(NA, M, lk)
 for(i in 1:M) {
-    fin[i, ] <- k - max(yt[i,]) >= 0
+    fin[i, ] <- k - max(yt[i,], na.rm=TRUE) >= 0
     for(t in 1:T) {
-        kmyt[i,t,] <- k - yt[i,t]
-        lfac.kmyt[i, t, fin[i,]] <- lgamma(kmyt[i, t, fin[i,]] + 1)
+        if(!all(is.na(y[i,t,]))) {
+            kmyt[i,t,] <- k - yt[i,t]
+            lfac.kmyt[i, t, fin[i,]] <- lgamma(kmyt[i, t, fin[i,]] + 1)
+            }
         }
     }
+    
+## NA handling
+# Sites w/ missing siteCovs should be removed beforehand
+# Sites w/ some missing yearlySiteCovs shoul be retained but      
 
 nll <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
     phi <- drop(plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset))
     p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
 
-    phi <- matrix(phi, M, T, byrow=TRUE)
-    phi <- as.numeric(t(phi))
+    phi.mat <- matrix(phi, M, T, byrow=TRUE)
+    phi <- as.numeric(t(phi.mat))
     
     p <- matrix(p, nrow=M, byrow=TRUE)
     p <- array(p, c(M, J, T))
@@ -79,7 +85,7 @@ nll <- function(pars) {
     
     for(t in 1:T) cp[,t,1:J] <- do.call(piFun, list(p[,t,]))
     cp[,,1:J] <- cp[,,1:J] * phi
-    cp[,,J+1] <- 1 - apply(cp[,,1:J], 1:2, sum) 
+    cp[,,J+1] <- 1 - apply(cp[,,1:J], 1:2, sum, na.rm=TRUE) # is na.rm=T valid?
     
     switch(mixture, 
         P = f <- sapply(k, function(x) dpois(x, lambda)),
@@ -87,8 +93,13 @@ nll <- function(pars) {
     for(i in 1:M) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
-            A[, t] <- lfac.k - lfac.kmyt[i,t,] + 
-                sum(y[i,t,]*log(cp[i,t,1:J])) + kmyt[i,t,]*log(cp[i,t,J+1])
+            naflag <- is.na(y[i,t,]) | is.na(phi.mat[i,t])
+            if(all(naflag)) 
+                A[,t] <- 0 
+            else                 
+                A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
+                    sum(y[i, t, !naflag]*log(cp[i, t, which(!naflag)])) + 
+                    kmyt[i, t,]*log(cp[i, t, J+1])
             }
         g[i,] <- exp(rowSums(A))
         }

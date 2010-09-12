@@ -1,6 +1,6 @@
 \name{gmm}
 \alias{gmm}
-\title{Generalized multinomial mixture model}
+\title{Generalized multinomial-mixture model}
 \description{
 A three level hierarchical model with a multinomial observation process. This 
 model is useful when both availability and detection probability influence 
@@ -154,6 +154,9 @@ for(i in 1:n) {
     }
     
 apply(y, 2, sum)
+
+
+y[1, 1, 1] <- NA
 
 
 umf <- unmarkedFrameGMM(y=matrix(y, nrow=n), 
