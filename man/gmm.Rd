@@ -2,7 +2,10 @@
 \alias{gmm}
 \title{Generalized multinomial mixture model}
 \description{
-A three level hierarchical model with a multinomial observation process
+A three level hierarchical model with a multinomial observation process. This 
+model is useful when both availability and detection probability influence 
+observed counts. A robust survey design is required with both primary 
+and secondary sampling periods.
 }
 \usage{
 gmm(lambdaformula, phiformula, pformula, data, mixture = c("P", "NB"), K, 
@@ -23,29 +26,58 @@ gmm(lambdaformula, phiformula, pformula, data, mixture = c("P", "NB"), K,
     \item{se}{Logical. Should standard errors be calculated?}  
     }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+The latent transect-level super-population abundance distribution 
+\eqn{f(M | \mathbf{\theta})}{f(M | theta)} can be set as either a Poisson or 
+a negative binomial random variable, depending on the setting of the 
+\code{mixture} argument. \code{mixture = "P"} or \code{mixture = "NB"} select 
+the Poisson or negative binomial distribution respectively.  The mean of 
+\eqn{M_i} is \eqn{\lambda_i}{lambda_i}.  If \eqn{M_i \sim NB}{M_i ~ NB}, then an
+additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
+\eqn{\alpha}{alpha} implies higher variance).
+
+The number of individuals available for detection at time \eqn{\t}{t} 
+is a modeled as binomial: 
+\eqn{N_{it} \sim Binomial(M_i, \mathbf{\phi_ij})}{M_i ~ Binomial(M_i, phi_ij)}.
+
+The detection process is modeled as multinomial: 
+\eqn{y_{ij} \sim 
+Multinomial(N_it, pi_{itj})}{y_itj ~ 
+Multinomial(N_it, pi_it1, pi_it2, ..., pi_itJ)}, 
+where \eqn{pi_itj} is the multinomial cell probability for plot i at time t on 
+occasion j. 
+
+Cell probabilities are computed via a user-defined function related to the 
+sampling design. Alternatively, the default functions \code{\link{removalPiFun}}
+or \code{\link{doublePiFun}} can be used for equal-interval removal sampling or
+double observer sampling. Note that the function for computing cell probabilites
+is specified when setting up the data using \code{\link{unmarkedFrameGMM}}.
+
+Parameters \eqn{\lambda}{lambda}, \eqn{\phi}{phi} and \eqn{p}{p} can be 
+modeled as linear functions of covariates using the log, logit and logit links
+respectively.}
+
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+An object of class unmarkedFitGMM.
 }
 \references{
-%% ~put references to the literature/web site here ~
+Royle, J. A. (2004) Generalized estimators of avian abundance from count 
+survey data. \emph{Animal Biodiversity and Conservation} 27, pp. 375--386.
 }
 \author{
-Richard Chandler and Andy Royle
+Richard Chandler \email{richard.chandlers@gmail.com} and Andy Royle
 }
 \note{
-%%  ~~further notes~~
+Three types of covariates can be supplied, site-level, site-by-year-level, and 
+observation-level. These must be formatted correctly when organizing the data
+with \code{\link{unmarkedFrameGMM}}
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{unmarkedFrameGMM}} for setting up the data and metadata. 
+\code{\link{multinomPois}} for surveys where no secondary sampling periods were
+used. Example functions to calculate multinomial cell probabilities are 
+described \code{\link{piFuns}} 
 }
 \examples{
 
@@ -88,6 +120,9 @@ round(c(exp(e[1]), plogis(e[2]), plogis(e[3])), 2)
 
 
 # An example with covariates
+
+
+set.seed(37)
 
 n <- 50   # number of sites
 T <- 4    # number of primary periods

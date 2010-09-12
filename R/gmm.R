@@ -77,7 +77,7 @@ nll <- function(pars) {
     p <- aperm(p, c(1,3,2))     
     cp <- array(as.numeric(NA), c(M, T, J+1))
     
-    for(i in 1:T) cp[,i,1:J] <- do.call(piFun, list(p[,i,]))
+    for(t in 1:T) cp[,t,1:J] <- do.call(piFun, list(p[,t,]))
     cp[,,1:J] <- cp[,,1:J] * phi
     cp[,,J+1] <- 1 - apply(cp[,,1:J], 1:2, sum) 
     
