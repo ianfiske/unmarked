@@ -89,11 +89,17 @@ round(c(exp(e[1]), plogis(e[2]), plogis(e[3])), 2)
 
 # An example with covariates
 
+n <- 50   # number of sites
+T <- 4    # number of primary periods
+J <- 3    # number of secondary periods
+
 sc <- rnorm(n)
 ysc <- rnorm(n*T)
 ysc <- matrix(ysc, n, T)
+yr <- factor(rep(1:T, n))
 oc <- rnorm(n*J*T)
-oc <- array(oc, c(n,J,T))
+oc <- array(oc, c(n, J, T))
+pi <- array(NA, c(n, J, T))
 
 lam <- exp(-1 + 1*sc)
 phi <- plogis(2 + -2*ysc)
@@ -118,18 +124,13 @@ apply(y, 2, sum)
 umf <- unmarkedFrameGMM(y=matrix(y, nrow=n), 
     siteCovs = data.frame(sc=sc), 
     obsCovs=list(oc=matrix(oc, nrow=n)),
-    yearlySiteCovs=data.frame(ysc=as.numeric(t(ysc))), 
+    yearlySiteCovs=data.frame(ysc=as.numeric(ysc), yr=yr), 
     numPrimary=T, piFun="removalPiFun")
     
 summary(umf)
-plot(umf) 
 
-system.time(m2 <- gmm(~sc, ~ysc, ~oc, umf) )
+system.time(m2 <- gmm(~sc, ~ysc, ~oc, umf)) # 6.77
 summary(m2)
-
-  
-     
-
 
 
 }

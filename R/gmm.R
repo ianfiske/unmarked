@@ -11,7 +11,7 @@ mixture <- match.arg(mixture)
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula, 
     pformula = pformula)
 form <- as.formula(paste(unlist(formlist), collapse=" "))
-D <- getDesign(data, formula = form)
+D <- unmarked:::getDesign(data, formula = form)
 
 Xlam <- D$Xlam
 Xphi <- D$Xphi 
@@ -48,7 +48,6 @@ nPP <- ncol(Xphi)
 nDP <- ncol(Xdet)
 nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
 
-p <- array(as.numeric(NA), c(M, T, J))
 cp <- array(as.numeric(NA), c(M, T, J+1))
 A <- matrix(0, lk, T)
 g <- matrix(as.numeric(NA), M, lk)
@@ -68,10 +67,14 @@ for(i in 1:M) {
 nll <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
     phi <- drop(plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset))
-    p[] <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
+    p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
 
+    phi <- matrix(phi, M, T, byrow=TRUE)
+    phi <- as.numeric(t(phi))
+    
+    p <- matrix(p, nrow=M, byrow=TRUE)
     p <- array(p, c(M, J, T))
-    p <- aperm(p, c(1,3,2))     ## Double-check
+    p <- aperm(p, c(1,3,2))     
     cp <- array(as.numeric(NA), c(M, T, J+1))
     
     for(i in 1:T) cp[,i,1:J] <- do.call(piFun, list(p[,i,]))
@@ -123,7 +126,7 @@ detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     covMat = as.matrix(
         covMat[(nLP+nPP+1):(nLP+nPP+nDP), (nLP+nPP+1):(nLP+nPP+nDP)]), 
     invlink = "logistic", invlinkGrad = "logistic.grad")
-estimateList <- unmarkedEstimateList(list(lambda=lamEstimates,
+estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
     phi=phiEstimates, det=detEstimates))
 
 umfit <- new("unmarkedFitGMM", fitType = "gmn", 
