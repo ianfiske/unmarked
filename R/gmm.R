@@ -155,7 +155,8 @@ if(identical(mixture,"NB"))
 umfit <- new("unmarkedFitGMM", fitType = "gmn", 
     call = match.call(), formula = form, formlist = formlist,    
     data = data, estimates = estimateList, sitesRemoved = D$removed.sites, 
-    AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
+    AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll,
+    mixture=mixture, K=K)
 
 return(umfit)
 }

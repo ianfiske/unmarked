@@ -40,11 +40,6 @@ setClass("unmarkedMultFrame",
         yearlySiteCovs = "optionalDataFrame"),
     contains="unmarkedFrame")
 
-## for gmm aka gmultmix     
-setClass("unmarkedFrameGMM", 
-    representation(
-        piFun = "character"),
-    contains = "unmarkedMultFrame")    
 
 ## a class for distance sampling data
 setClass("unmarkedFrameDS", 
@@ -82,6 +77,16 @@ setClass("unmarkedFrameMPois",
 			samplingMethod = "character",
 			piFun = "character"),
 		contains = "unmarkedFrame")
+
+
+# for gmm aka gmultmix     
+setClass("unmarkedFrameGMM", 
+    representation(
+        piFun = "character",
+        samplingMethod = "character"),
+    contains = "unmarkedMultFrame")    
+
+
 
 ################### CONSTRUCTORS ###############################################
 
@@ -182,6 +187,7 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
     umf@yearlySiteCovs <- yearlySiteCovs
     umf <- as(umf, "unmarkedFrameGMM")
     umf@piFun <- piFun
+    umf@samplingMethod <- type
     umf
 }
 
