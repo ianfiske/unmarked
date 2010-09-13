@@ -155,10 +155,28 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 
 # This function constructs an unmarkedMultFrame object.
 unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
-	yearlySiteCovs = NULL, piFun) 
+	yearlySiteCovs = NULL, type, obsToY, piFun) 
 {
-    J <- ncol(y)
-    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+    if(!missing(type)) {
+      if(!type %in% c("removal", "double"))
+        stop("if specifying type, it should either be 'removal' or 'double'")
+      switch(type,
+        removal = {
+          obsToY <- matrix(1, ncol(y), ncol(y))
+				  obsToY[col(obsToY) < row(obsToY)] <- 0
+				  piFun <- "removalPiFun"
+          },
+        double = {
+				  obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
+				  piFun <- "doublePiFun"
+          })
+      }
+    else if(missing(obsToY)) { 
+      stop("obsToY is required for gmultmix data with no specified type.")
+		  type <- "userDefined"
+		  }
+       
+    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
     umf@yearlySiteCovs <- yearlySiteCovs

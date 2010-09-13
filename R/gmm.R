@@ -56,10 +56,12 @@ lfac.k <- lgamma(k+1)
 kmyt <- array(NA, c(M, T, lk))
 lfac.kmyt <- array(0, c(M, T, lk))
 fin <- matrix(NA, M, lk)
+naflag <- array(NA, c(M, T, J))
 for(i in 1:M) {
     fin[i, ] <- k - max(yt[i,], na.rm=TRUE) >= 0
     for(t in 1:T) {
-        if(!all(is.na(y[i,t,]))) {
+        naflag[i,t,] <- is.na(y[i,t,])
+        if(!all(naflag[i,t,])) {
             kmyt[i,t,] <- k - yt[i,t]
             lfac.kmyt[i, t, fin[i,]] <- lgamma(kmyt[i, t, fin[i,]] + 1)
             }
@@ -89,17 +91,17 @@ nll <- function(pars) {
     
     switch(mixture, 
         P = f <- sapply(k, function(x) dpois(x, lambda)),
-        NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, size=pars[nP])))
+        NB = f <- sapply(k, function(x) dnbinom(x,mu=lambda,size=exp(pars[nP]))))
     for(i in 1:M) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
-            naflag <- is.na(y[i,t,]) | is.na(phi.mat[i,t])
-            if(all(naflag)) 
+            if(all(naflag[i,t,])) 
                 A[,t] <- 0 
             else                 
                 A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
-                    sum(y[i, t, !naflag]*log(cp[i, t, which(!naflag)])) + 
-                    kmyt[i, t,]*log(cp[i, t, J+1])
+                    sum(y[i, t, !naflag[i,t,]] * 
+                    log(cp[i, t, which(!naflag[i,t,])])) + 
+                    kmyt[i, t,] * log(cp[i, t, J+1])
             }
         g[i,] <- exp(rowSums(A))
         }
@@ -121,7 +123,11 @@ if(se) {
     } else covMat <- matrix(NA, nP, nP)
 ests <- fm$par
 fmAIC <- 2 * fm$value + 2 * nP
-names(ests) <- c(lamPars, phiPars, detPars)
+
+if(identical(mixture,"NB")) nbParm <- "alpha"
+	else nbParm <- character(0)
+
+names(ests) <- c(lamPars, phiPars, detPars, nbParm)
 
 lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
     estimates = ests[1:nLP],
@@ -139,6 +145,12 @@ detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     invlink = "logistic", invlinkGrad = "logistic.grad")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
     phi=phiEstimates, det=detEstimates))
+
+if(identical(mixture,"NB"))
+		estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
+        short.name = "alpha", estimates = ests[nP],
+        covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
+        invlinkGrad = "exp")
 
 umfit <- new("unmarkedFitGMM", fitType = "gmn", 
     call = match.call(), formula = form, formlist = formlist,    

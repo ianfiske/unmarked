@@ -120,8 +120,7 @@ setMethod("handleNA", "unmarkedFrame", function(umf, X, X.offset, V, V.offset)
                 X.offset <- X.offset[!sites.to.remove]
 		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
                 V.offset <- V.offset[!sites.to.remove[rep(1:M, each = R)], ]
-		warning(paste(num.to.remove,"sites have been discarded because of missing data."),
-                        call. = FALSE)
+		warning(paste(num.to.remove,"sites have been discarded because of missing data."), call. = FALSE)
 	}
 	
 	list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset,
@@ -265,7 +264,7 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
 	
 	if(sum(y.new.na) > 0) {
 		y.long[y.new.na] <- NA
-		warning("Some observations have been discarded because correspoding covariates were missing.")
+		warning("Some observations have been discarded because correspoding covariates were missing.", call. = FALSE)
 	}
 	
 	y <- matrix(y.long, M, numY(umf), byrow = TRUE)
@@ -347,6 +346,7 @@ obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),],
     siteCovs[rep(1:M, each = R), ])
 	
 ## add observation number if not present
+## FIXME. obs is often used as abbreviation for observer. This can cause conflict
 if(!("obs" %in% names(obsCovs)))
     obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
 	
