@@ -156,7 +156,7 @@ for(i in 1:n) {
 apply(y, 2, sum)
 
 
-y[1, 1, 1] <- NA
+#y[1, 1, 1] <- NA
 
 
 umf <- unmarkedFrameGMM(y=matrix(y, nrow=n), 

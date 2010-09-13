@@ -956,6 +956,32 @@ setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
 
 
 
+setMethod("getP", "unmarkedFitGMM", 
+    function(object, na.rm = TRUE) 
+{
+    formula <- object@formula
+    detformula <- object@formlist$pformula
+    piFun <- object@data@piFun
+    umf <- object@data
+    D <- getDesign(umf, formula, na.rm = na.rm)
+    y <- D$y
+    Xdet <- D$X
+    Xdet.offset <- D$Xdet.offset
+    if (is.null(Xdet.offset))
+        Xdet.offset <- rep(0, nrow(Xdet))
+    M <- nrow(y)
+    T <- object@data@numPrimary
+    J <- ncol(y) / T
+    ppars <- coef(object, type = "det")
+    p <- plogis(Xdet %*% ppars + Xdet.offset)
+    p <- matrix(p, M, J, byrow = TRUE)
+    pi <- do.call(piFun, list(p = p))
+    return(pi)
+})
+
+
+
+
 
 setMethod("simulate", "unmarkedFitDS", 
     function(object, nsim = 1, seed = NULL, na.rm=TRUE)
