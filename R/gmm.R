@@ -18,7 +18,6 @@ Xphi <- D$Xphi
 Xdet <- D$Xdet
 y <- D$y  # MxJT 
 
-
 Xlam.offset <- D$X.offset
 Xphi.offset <- D$Xphi.offset
 Xdet.offset <- D$Xdet.offset
@@ -91,7 +90,8 @@ nll <- function(pars) {
     
     switch(mixture, 
         P = f <- sapply(k, function(x) dpois(x, lambda)),
-        NB = f <- sapply(k, function(x) dnbinom(x,mu=lambda,size=exp(pars[nP]))))
+        NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, 
+            size=exp(pars[nP]))))
     for(i in 1:M) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {

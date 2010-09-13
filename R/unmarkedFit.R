@@ -164,8 +164,12 @@ setMethod("names", "unmarkedFit",
             names(x@estimates)
           })
 
-# Prediction
-# TODO: make predict method for colext.
+
+
+# ----------------------------- Prediction ------------------------------------
+
+
+
 setMethod("predict", "unmarkedFit", 
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
         appendData = FALSE, ...) 
@@ -282,6 +286,77 @@ setMethod("predict", "unmarkedFitColExt",
         if(backTransform) lc <- backTransform(lc)
         out$Predicted <- coef(lc)
         out$SE <- SE(lc)
+        if(appendData)
+            out <- data.frame(out, as(newdata, "data.frame"))
+        return(out)
+        })
+
+
+
+
+
+
+
+
+
+setMethod("predict", "unmarkedFitGMM", 
+    function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
+        appendData = FALSE, ...) 
+{
+    if(missing(newdata) || is.null(newdata))
+        newdata <- getData(object)
+    formlist <- object@formlist
+    lamformula <- formlist$lambdaformula
+    phiformula <- formlist$phiformula        
+    pformula <- formlist$pformula        
+    formula <- object@formula
+        
+    if(inherits(newdata, "unmarkedFrame"))
+        cls <- "unmarkedFrame"
+    switch(cls, 
+        unmarkedFrame = {
+            D <- getDesign(newdata, formula, na.rm = na.rm)
+            switch(type, 
+                lambda = {
+                    X <- D$Xlam
+                    offset <- D$Xlam.offset
+                    },
+                phi = {
+                    X <- D$Xphi
+                    offset <- D$Xphi.offset
+                    },
+                det = {   # Note, this is p not pi
+                    X <- D$Xdet
+                    offset <- D$Xdet.offset
+                    })
+              },
+        data.frame = {
+            switch(type, 
+                lambda = {
+                    mf <- model.frame(lambdaformula, newdata)
+                    X <- model.matrix(lambdaformula, mf)
+                    offset <- model.offset(mf)
+                    },
+                phi = {
+                    mf <- model.frame(phiformula, newdata)
+                    X <- model.matrix(phiformula, mf)
+                    offset <- model.offset(mf)
+                    },                
+                det = {   # Note, this is p not pi
+                  mf <- model.frame(detformula, newdata)
+                  X <- model.matrix(detformula, mf)
+                  offset <- model.offset(mf)
+                })
+            })
+        out <- data.frame(matrix(NA, nrow(X), 2, 
+            dimnames=list(NULL, c("Predicted", "SE"))))
+        lc <- linearComb(object, X, type, offset = offset)
+        if(backTransform) lc <- backTransform(lc)
+        out$Predicted <- coef(lc)
+        out$SE <- SE(lc)
+        ci <- as.data.frame(confint(lc))
+        colnames(ci) <- c("lower", "upper")
+        out <- cbind(out, ci)
         if(appendData)
             out <- data.frame(out, as(newdata, "data.frame"))
         return(out)
@@ -588,6 +663,62 @@ setMethod("fitted", "unmarkedFitColExt",
             return(matrix(fitted, M, J*nY, byrow = TRUE))
             
           })
+          
+          
+          
+
+setMethod("fitted", "unmarkedFitGMM",
+    function(object, na.rm = FALSE) 
+{
+
+    # Steps
+    # Multiply cell probs by phi
+    # Product of these multiplied by k and f 
+    
+    
+    data <- object@data
+    D <- getDesign(data, object@formula, na.rm = na.rm)
+    Xlam <- D$Xlam
+    Xphi <- D$Xphi
+    Xdet <- D$Xdet
+    
+    Xlam.offset <- D$Xlam.offset
+    Xphi.offset <- D$Xphi.offset
+    Xdet.offset <- D$Xdet.offset
+    if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
+    if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
+    if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
+    
+    y <- D$y
+    M <- nrow(y)
+    T <- data@numPrimary
+    J <- ncol(y) / T
+    lambda <- drop(exp(Xlam %*% coef(object, 'lambda') + Xlam.offset))
+    phi <- plogis(Xphi %*% coef(object, 'phi') + Xphi.offset)
+    phi.mat <- matrix(phi, nrow=M, ncol=T, byrow=TRUE)
+    phi.ijt <- as.numeric(apply(phi, 2, rep, times=J))
+    cp <- getP(object, na.rm = na.rm)
+    
+    mix <- object@mixture
+    switch(mix,
+        P = {
+            fitted <- lambda * phi.ijt * as.numeric(cp) # recycle 
+            },
+        NB = {
+            K <- object@K 
+            k <- 0:K
+            k.ijk <- rep(k, M*J)
+            lambda.ijk <- lambda[rep(1:M, each = J*(K+1))]
+            alpha <- exp(coef(object['alpha']))
+            prob.ijk <- dnbinom(k.ijk, mu = lambda.ijk, size = alpha)
+            all <- cbind(rep(as.vector(t(cp)), each = K + 1), k.ijk, prob.ijk)
+            prod.ijk <- rowProds(all)
+            fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
+            fitted <- matrix(fitted, M, J, byrow = TRUE)
+            })
+      fitted
+})
+          
 
 
 
