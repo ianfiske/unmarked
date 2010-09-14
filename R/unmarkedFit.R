@@ -365,7 +365,7 @@ setMethod("predict", "unmarkedFitGMM",
 
 
 
-
+# ---------------------- coef, vcov, and SE -----------------------------------
 
 
 setMethod("coef", "unmarkedFit",
@@ -671,10 +671,7 @@ setMethod("fitted", "unmarkedFitGMM",
     function(object, na.rm = FALSE) 
 {
 
-    # Steps
-    # Multiply cell probs by phi
-    # Product of these multiplied by k and f 
-    
+    # E[y_itj] = M_i * phi_it * cp_itj
     
     data <- object@data
     D <- getDesign(data, object@formula, na.rm = na.rm)
@@ -702,7 +699,8 @@ setMethod("fitted", "unmarkedFitGMM",
     mix <- object@mixture
     switch(mix,
         P = {
-            fitted <- lambda * phi.ijt * as.numeric(cp) # recycle 
+            fitted <- lambda * phi.ijt * as.numeric(cp) # recycle
+            fitted <- matrix(fitted, M, J*T) 
             },
         NB = {
             K <- object@K 
@@ -1139,19 +1137,22 @@ setMethod("getP", "unmarkedFitGMM",
     Xdet.offset <- D$Xdet.offset
     if (is.null(Xdet.offset))
         Xdet.offset <- rep(0, nrow(Xdet))
+    
     M <- nrow(y)
     T <- object@data@numPrimary
-    J <- ncol(y) / T
+    R <- ncol(y) 
+    J <- R / T
+    
     ppars <- coef(object, type = "det")
     p <- plogis(Xdet %*% ppars + Xdet.offset)
     p <- matrix(p, nrow=M, byrow=TRUE)
     p <- array(p, c(M, J, T))
     p <- aperm(p, c(1,3,2))     
 
-    cp <- array(as.numeric(NA), c(M, T, J+1))
-    for(t in 1:T) cp[,t,1:J] <- do.call(piFun, list(p[,t,]))
+    cp <- array(as.numeric(NA), c(M, T, J))
+    for(t in 1:T) cp[,t,] <- do.call(piFun, list(p[,t,]))
     cp <- aperm(cp, c(1,3,2))
-    cp <- matrix(cp, nrow=M)
+    cp <- matrix(cp, nrow=M, ncol=R)
     
     return(cp)
 })

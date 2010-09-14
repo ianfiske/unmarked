@@ -106,10 +106,10 @@ for(i in 1:n) {
     
 apply(y, 3, sum)    
 
-y.MxTJ <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
+y.ijt <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
 
 
-umf1 <- unmarkedFrameGMM(y=y.MxTJ, numPrimary=T, type="removal")
+umf1 <- unmarkedFrameGMM(y=y.ijt, numPrimary=T, type="removal")
 
 
 system.time(m1 <- gmm(~1, ~1, ~1, data=umf1)) #2.9
