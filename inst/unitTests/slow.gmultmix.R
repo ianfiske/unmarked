@@ -31,10 +31,10 @@ y.ijt <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
 umf1 <- unmarkedFrameGMM(y=y.ijt, numPrimary=T, type="removal")
 
 
-system.time(m1 <- gmm(~1, ~1, ~1, data=umf1)) #2.3
+system.time(m1 <- gmultmix(~1, ~1, ~1, data=umf1)) #2.3
 
 # Test 1
-all.equal(as.numeric(coef(m1)), c(1.3923561, -0.3183231, -0.7864098), 
+checkEqualsNumeric(coef(m1), c(1.3923561, -0.3183231, -0.7864098), 
     tolerance=1e-5)
 
 SSE(m1)
@@ -74,16 +74,16 @@ for(i in 1:n) {
 y.ijt <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
 umf2 <- unmarkedFrameGMM(y=y.ijt, numPrimary=T, type="removal")
 
-system.time(m2 <- gmm(~1, ~1, ~1, data=umf2, mixture="NB")) #2.3
+system.time(m2 <- gmultmix(~1, ~1, ~1, data=umf2, mixture="NB")) #2.3
 
 backTransform(m2, type="alpha")
 
 # Test
-all.equal(as.numeric(coef(m2)), c(1.118504, 1.414340, -1.394736, 1.056084),
+checkEqualsNumeric(coef(m2), c(1.118504, 1.414340, -1.394736, 1.056084),
     tol=1e-5)
 
 (pb2 <- parboot(m2, nsim=50, report=5))
-plot(pb1)
+plot(pb2)
 
 
 
@@ -106,6 +106,7 @@ ysc <- matrix(ysc, n, T)
 yr <- factor(rep(1:T, n))
 oc <- rnorm(n*J*T)
 oc <- array(oc, c(n, J, T))
+int <- matrix(1:(T*J), nrow=n, ncol=T*J, byrow=TRUE)
 pi <- array(NA, c(n, J, T))
 
 lam <- exp(-1 + 1*sc)
@@ -127,16 +128,24 @@ for(i in 1:n) {
 
 umf3 <- unmarkedFrameGMM(y=matrix(y, nrow=n), 
     siteCovs = data.frame(sc=sc), 
-    obsCovs=list(oc=matrix(oc, nrow=n)),
-    yearlySiteCovs=data.frame(ysc=as.numeric(ysc), yr=yr), 
+    obsCovs=list(oc=matrix(oc, nrow=n), int=int),
+    yearlySiteCovs=data.frame(ysc=as.numeric(t(ysc)), yr=yr), 
     numPrimary=T, type="removal")
-    
-system.time(m3 <- gmm(~sc, ~ysc, ~oc, umf3)) # 4.8
 
+(m3 <- gmultmix(~sc, ~ysc, ~oc, umf3))
+system.time(m3 <- gmultmix(~sc, ~ysc, ~oc, umf3)) # 4.8
+            
 # Test
-all.equal(as.numeric(coef(m3)), c(-1.2513974, 1.3585940, 2.2889517, -2.1197854, 
+checkEqualsNumeric(coef(m3), c(-1.2513974, 1.3585940, 2.2889517, -2.1197854, 
     1.0450782, -0.8627125), tol=1e-5)
     
 (pb3 <- parboot(m3, nsim=50, report=5))    
     
      
+
+
+umf4 <- unmarkedFrameGMM(y=matrix(y, nrow=n), 
+    siteCovs = data.frame(sc=sc), 
+    obsCovs=list(oc=matrix(oc, nrow=n), int=int),
+    #yearlySiteCovs=list(ysc=ysc), 
+    numPrimary=T, type="removal")

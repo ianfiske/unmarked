@@ -2,25 +2,38 @@
 
 
 
-test.occu.fit.NA <- function() 
+test.gmultmix.fit.NA <- function() 
 {
-    y <- matrix(rep(0:1,10),5,2)
+    y <- matrix(0:3, 5, 4)
     siteCovs <- data.frame(x = c(0,2,3,4,1))
     siteCovs[3,1] <- NA
-    obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
-    umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
-    fm <- occu(~ o1 + o2 ~ x, data = umf)
+    obsCovs <- data.frame(o1 = 1:20, o2 = exp(-5:4)/20)
+    yrSiteCovs <- data.frame(yr=factor(rep(1:2, 5)))
+    
+    umf <- unmarkedFrameGMM(y = y, siteCovs = siteCovs, obsCovs = obsCovs, 
+        yearlySiteCovs = yrSiteCovs, type="removal", numPrimary=2)
+    fm <- gmultmix(~x, ~yr, ~o1 + o2, data = umf)
     checkEquals(fm@sitesRemoved, 3)
     checkEqualsNumeric(coef(fm), 
-        c(8.70123, 4.58255, 0.66243, -0.22862, 0.58192), 
-        tol = 1e-5)
+        c(2.50638554, 0.06226627, 0.21787839, 6.46029769, -1.51885928, 
+            -0.03409375, 0.43424295), tol = 1e-5)
 
     obsCovs[10,2] <- NA
-    umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
-    fm <- occu(~ o1 + o2 ~ x, data = umf)
+    umf <- unmarkedFrameGMM(y = y, siteCovs = siteCovs, obsCovs = obsCovs, 
+        yearlySiteCovs = yrSiteCovs, type="removal", numPrimary=2)
+    fm <- gmultmix(~x, ~yr, ~o1 + o2, data = umf)
     checkEquals(fm@sitesRemoved, 3)
     checkEqualsNumeric(coef(fm), 
-        c(8.91289, 1.89291, -1.42471, 0.67011, -8.44608), 
-        tol = 1e-5)
+        c(2.50638554, 0.06226627, 0.21787839, 6.46029769, -1.51885928, 
+            -0.03409375, 0.43424295), tol = 1e-5)
+            
+    yrSiteCovs[2, 1] <- NA
+    umf <- unmarkedFrameGMM(y = y, siteCovs = siteCovs, obsCovs = obsCovs, 
+        yearlySiteCovs = yrSiteCovs, type="removal", numPrimary=2)
+    fm <- gmultmix(~x, ~yr, ~o1 + o2, data = umf)
+    checkEqualsNumeric(coef(fm), 
+        c(1.17280104, 0.37694710, 2.38249795, 2.87354955, -0.83875134, 
+            -0.08446507, 1.88056826), tol = 1e-5)
+
 
 }

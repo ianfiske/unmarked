@@ -35,7 +35,12 @@ J <- R / T
 
 y <- array(y, c(M, J, T))
 y <- aperm(y, c(1,3,2))
-yt <- apply(y, 1:2, sum, na.rm=TRUE) # FIXME: This returns 0 if all are NAs
+yt <- apply(y, 1:2, function(x) {
+    if(all(is.na(x))) 
+        return(NA)
+    else return(sum(x, na.rm=TRUE))
+    })
+
 
 piFun <- data@piFun
 
@@ -48,7 +53,6 @@ nDP <- ncol(Xdet)
 nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
 
 cp <- array(as.numeric(NA), c(M, T, J+1))
-A <- matrix(0, lk, T)
 g <- matrix(as.numeric(NA), M, lk)
 
 lfac.k <- lgamma(k+1)
@@ -77,7 +81,7 @@ nll <- function(pars) {
     p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
 
     phi.mat <- matrix(phi, M, T, byrow=TRUE)
-    phi <- as.numeric(t(phi.mat))
+    phi <- as.numeric(phi.mat)
     
     p <- matrix(p, nrow=M, byrow=TRUE)
     p <- array(p, c(M, J, T))

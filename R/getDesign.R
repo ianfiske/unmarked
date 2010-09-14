@@ -314,7 +314,6 @@ setMethod("getDesign", "unmarkedFrameGMM",
     T <- umf@numPrimary
     R <- obsNum(umf)
     J <- R/T
-
   
     ## Compute phi design matrices
     if(is.null(umf@yearlySiteCovs)) {
@@ -417,7 +416,7 @@ setMethod("handleNA", "unmarkedFrameGMM",
 	
     if(sum(y.new.na) > 0) {
     		y.long[y.new.na] <- NA
-    		warning("Some observations have been discarded because correspoding covariates were missing.")
+    		warning("Some observations have been discarded because correspoding covariates were missing.", call. = FALSE)
 	     }
 	
     y <- matrix(y.long, M, numY(umf), byrow = TRUE)
@@ -426,7 +425,7 @@ setMethod("handleNA", "unmarkedFrameGMM",
     num.to.remove <- sum(sites.to.remove)
     if(num.to.remove > 0) {
     		y <- y[!sites.to.remove, ,drop = FALSE]
-        Xlam <- Xlam[!sites.to.remove, drop = FALSE]
+        Xlam <- Xlam[!sites.to.remove,, drop = FALSE]
     		Xlam.offset <- Xlam.offset[!sites.to.remove]
     		Xphi <- Xphi[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
     		Xphi.offset <- Xphi.offset[!sites.to.remove[rep(1:M, each = J)]]
