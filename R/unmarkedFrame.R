@@ -13,8 +13,8 @@ validunmarkedFrame <- function(object)
             errors <- c(errors, 
                 "siteCovData does not have same size number of sites as y.")
     if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
-    if(nrow(object@obsCovs) != M*obsNum(object))
-        errors <- c(errors, "obsCovData does not have M*obsNum rows.")
+        if(nrow(object@obsCovs) != M*obsNum(object))
+            errors <- c(errors, "obsCovData does not have M*obsNum rows.")
     if(length(errors) == 0)
         TRUE
     else
@@ -92,31 +92,27 @@ setClass("unmarkedFrameGMM",
 
 # Constructor for unmarkedFrames.
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
-    obsToY) {
-
-  if(class(obsCovs) == "list") {
-    obsVars <- names(obsCovs)
-    for(i in seq(length(obsVars))) {
-      if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
-        stop("At least one element of obsCovs is not a matrix or data frame.")
-      if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
-        stop("At least one matrix in obsCovs has incorrect number of dimensions.")
-    }
-    if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
-    obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
-  }
-
-  if(("data.frame" %in% class(y)) |
-      ("cast_matrix" %in% class(y))) y <- as.matrix(y)
-
-	if(missing(obsToY)) obsToY <- NULL
-	if(missing(mapInfo)) mapInfo <- NULL
-	
-  umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs,
-      siteCovs = siteCovs, mapInfo = mapInfo, 
-	  obsToY = obsToY)
-
-  return(umf)
+    obsToY) 
+{
+    if(class(obsCovs) == "list") {
+        obsVars <- names(obsCovs)
+        for(i in seq(length(obsVars))) {
+            if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
+                stop("At least one element of obsCovs is not a matrix or data frame.")
+            if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
+                stop("At least one matrix in obsCovs has incorrect number of dimensions.")
+            }
+        if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]]) #??
+        obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
+        }    
+    if(("data.frame" %in% class(y)) | ("cast_matrix" %in% class(y))) 
+        y <- as.matrix(y)    
+    if(missing(obsToY)) obsToY <- NULL
+    if(missing(mapInfo)) mapInfo <- NULL
+	   
+    umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs, siteCovs = siteCovs, 
+        mapInfo = mapInfo, obsToY = obsToY)
+    return(umf)
 }
 
 
@@ -149,10 +145,25 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
 unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 	yearlySiteCovs = NULL) 
 {
-	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
-	umf <- as(umf, "unmarkedMultFrame")
-	umf@numPrimary <- numPrimary
+    J <- ncol(y)
+	  umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+    umf <- as(umf, "unmarkedMultFrame")
+    umf@numPrimary <- numPrimary
+	
+    if(class(yearlySiteCovs) == "list") {
+        yearlySiteVars <- names(yearlySiteCovs)
+        for(i in seq(length(yearlySiteVars))) {
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
+                stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
+            if(ncol(yearlySiteCovs[[i]]) != (ncol(y) / numPrimary) | 
+                nrow(yearlySiteCovs[[i]]) != nrow(y))
+                    stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
+            }
+        if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
+        yearlySiteCovs <- data.frame(lapply(obsCovs, function(x) 
+            as.vector(t(x))))
+        }    
+
 	umf@yearlySiteCovs <- yearlySiteCovs
 	umf
 }
@@ -184,6 +195,20 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
     umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
+    J <- ncol(y) / numPrimary
+    if(class(yearlySiteCovs) == "list") {
+        yearlySiteVars <- names(yearlySiteCovs)
+        for(i in seq(length(yearlySiteVars))) {
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
+                stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
+            if(ncol(yearlySiteCovs[[i]]) != numPrimary | 
+                nrow(yearlySiteCovs[[i]]) != nrow(y))
+                    stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
+            }
+        if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
+        yearlySiteCovs <- data.frame(lapply(obsCovs, function(x) 
+            as.vector(t(x))))
+        }    
     umf@yearlySiteCovs <- yearlySiteCovs
     umf <- as(umf, "unmarkedFrameGMM")
     umf@piFun <- piFun

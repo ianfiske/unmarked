@@ -147,5 +147,5 @@ checkEqualsNumeric(coef(m3), c(-1.2513974, 1.3585940, 2.2889517, -2.1197854,
 umf4 <- unmarkedFrameGMM(y=matrix(y, nrow=n), 
     siteCovs = data.frame(sc=sc), 
     obsCovs=list(oc=matrix(oc, nrow=n), int=int),
-    #yearlySiteCovs=list(ysc=ysc), 
+    yearlySiteCovs=list(ysc=ysc), 
     numPrimary=T, type="removal")
