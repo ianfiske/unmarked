@@ -36,7 +36,7 @@ the Poisson or negative binomial distribution respectively.  The mean of
 additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 \eqn{\alpha}{alpha} implies higher variance).
 
-The number of individuals available for detection at time \eqn{\t}{t} 
+The number of individuals available for detection at time t 
 is a modeled as binomial: 
 \eqn{N_{it} \sim Binomial(M_i, \mathbf{\phi_ij})}{M_i ~ Binomial(M_i, phi_ij)}.
 
@@ -82,6 +82,9 @@ described \code{\link{piFuns}}
 }
 \examples{
 
+# Simulate data using the multinomial-Poisson model with a 
+# repeated constant-interval removal design. 
+
 n <- 100  # number of sites
 T <- 4    # number of primary periods
 J <- 3    # number of secondary periods
@@ -93,83 +96,34 @@ p <- 0.3
 #set.seed(26)
 y <- array(NA, c(n, T, J))
 M <- rpois(n, lam)          # Local population size
-N <- matrix(NA, n, T)       # Individuals availabe for detection
+N <- matrix(NA, n, T)       # Individuals available for detection
     
 for(i in 1:n) {
     N[i,] <- rbinom(T, M[i], phi)
-    y[i,,1] <- rbinom(T, N[i,], p)
-    Nleft1 <- N[i,] - y[i,,1]
-    y[i,,2] <- rbinom(T, Nleft1, p)
+    y[i,,1] <- rbinom(T, N[i,], p)    # Observe some
+    Nleft1 <- N[i,] - y[i,,1]         # Remove them
+    y[i,,2] <- rbinom(T, Nleft1, p)   # ...
     Nleft2 <- Nleft1 - y[i,,2]
     y[i,,3] <- rbinom(T, Nleft2, p)
     }
     
-apply(y, 3, sum)    
-
 y.ijt <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
 
 
 umf1 <- unmarkedFrameGMM(y=y.ijt, numPrimary=T, type="removal")
 
+(m1 <- gmm(~1, ~1, ~1, data=umf1))
 
-system.time(m1 <- gmm(~1, ~1, ~1, data=umf1)) #2.9
-e <- coef(m1)
-# Should be 3, 0.5, 0.3
-round(c(exp(e[1]), plogis(e[2]), plogis(e[3])), 2)
+backTransform(m1, type="lambda")        # Individuals per plot
+backTransform(m1, type="phi")           # Probability of being avilable
+(p <- backTransform(m1, type="det"))    # Probability of detection
+p <- coef(p)
 
+# Multinomial cell probabilities under removal design
+c(p, (1-p) * p, (1-p)^2 * p)
 
-
-
-# An example with covariates
-
-
-set.seed(37)
-
-n <- 50   # number of sites
-T <- 4    # number of primary periods
-J <- 3    # number of secondary periods
-
-sc <- rnorm(n)
-ysc <- rnorm(n*T)
-ysc <- matrix(ysc, n, T)
-yr <- factor(rep(1:T, n))
-oc <- rnorm(n*J*T)
-oc <- array(oc, c(n, J, T))
-pi <- array(NA, c(n, J, T))
-
-lam <- exp(-1 + 1*sc)
-phi <- plogis(2 + -2*ysc)
-p <- plogis(1 + -1*oc)
-
-y <- array(NA, c(n,J,T))
-M <- rpois(n, lam)
-N <- matrix(NA, n, T)
-
-for(i in 1:n) {
-    N[i,] <- rbinom(T, M[i], phi[i,])
-    y[i,1,] <- rbinom(T, N[i,], p[i,1,])
-    Nleft1 <- N[i,] - y[i,1,]
-    y[i,2,] <- rbinom(T, Nleft1, p[i,2,])
-    Nleft2 <- Nleft1 - y[i,2,]
-    y[i,3,] <- rbinom(T, Nleft2, p[i,3,])
-    }
-    
-apply(y, 2, sum)
-
-
-y[1, 1, 1] <- NA
-
-
-umf <- unmarkedFrameGMM(y=matrix(y, nrow=n), 
-    siteCovs = data.frame(sc=sc), 
-    obsCovs=list(oc=matrix(oc, nrow=n)),
-    yearlySiteCovs=data.frame(ysc=as.numeric(ysc), yr=yr), 
-    numPrimary=T, type="removal")
-    
-summary(umf)
-
-system.time(m2 <- gmm(~sc, ~ysc, ~oc, umf)) # 4.8
-summary(m2)
+# More generally:
+getP(m1)
 
 
 }
