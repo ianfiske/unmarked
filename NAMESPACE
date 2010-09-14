@@ -6,7 +6,7 @@ importFrom(utils, head)
 importFrom(reshape, melt, cast, recast)
 
 # Fitting functions
-export(occu, occuRN, pcount, multinomPois, distsamp, colext, gmm)
+export(occu, occuRN, pcount, multinomPois, distsamp, colext, gmultmix)
 export(removalPiFun, doublePiFun)
 
 # S4 classes

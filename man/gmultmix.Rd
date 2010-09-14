@@ -1,5 +1,5 @@
-\name{gmm}
-\alias{gmm}
+\name{gmultmix}
+\alias{gmultmix}
 \title{Generalized multinomial-mixture model}
 \description{
 A three level hierarchical model for designs involving 
@@ -112,7 +112,7 @@ y.ijt <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
 
 umf1 <- unmarkedFrameGMM(y=y.ijt, numPrimary=T, type="removal")
 
-(m1 <- gmm(~1, ~1, ~1, data=umf1))
+(m1 <- gmultmix(~1, ~1, ~1, data=umf1))
 
 backTransform(m1, type="lambda")        # Individuals per plot
 backTransform(m1, type="phi")           # Probability of being avilable
@@ -122,8 +122,8 @@ p <- coef(p)
 # Multinomial cell probabilities under removal design
 c(p, (1-p) * p, (1-p)^2 * p)
 
-# More generally:
-getP(m1)
+# Or more generally:
+head(getP(m1))
 
 
 }

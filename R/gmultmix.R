@@ -1,7 +1,7 @@
 
 # data will need to be an unmarkedMultFrame
-gmm <- function(lambdaformula, phiformula, pformula, data, mixture=c('P', 'NB'),
-    K, starts, method = "BFGS", control = list(), se = TRUE)
+gmultmix <- function(lambdaformula, phiformula, pformula, data, 
+    mixture=c('P', 'NB'), K, starts, method = "BFGS", control = list(), se = TRUE)
 {
 if(!is(data, "unmarkedFrameGMM"))
     stop("Data is not of class unmarkedFrameGMM.")
