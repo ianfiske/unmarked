@@ -38,7 +38,7 @@ additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 
 The number of individuals available for detection at time t 
 is a modeled as binomial: 
-\eqn{N_{it} \sim Binomial(M_i, \mathbf{\phi_ij})}{M_i ~ Binomial(M_i, phi_ij)}.
+\eqn{N_{it} \sim Binomial(M_i, \mathbf{\phi_ij})}{N_it ~ Binomial(M_i, phi_ij)}.
 
 The detection process is modeled as multinomial: 
 \eqn{y_{ij} \sim 

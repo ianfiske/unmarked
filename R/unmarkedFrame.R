@@ -187,10 +187,11 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 				  piFun <- "doublePiFun"
           })
       }
-    else if(missing(obsToY)) { 
-      stop("obsToY is required for gmultmix data with no specified type.")
-		  type <- "userDefined"
-		  }
+    else {
+        type <- "userDefined" 
+        if(missing(obsToY)) 
+            stop("obsToY is required for gmultmix data with no specified type.")
+		}
        
     umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
