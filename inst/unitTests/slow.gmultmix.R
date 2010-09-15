@@ -1,7 +1,4 @@
 
-library(unmarked)
-
-
 # -------------------------- Null Poisson removal model ------------------------
 
 set.seed(26)

@@ -70,11 +70,8 @@ pp. 777--790.
 Royle, J. A. (2004a) N-Mixture Models for Estimating Population Size from
 Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 
-Royle, J. A. (2004b) Generalized estimators of avian abundance from count survey 
-data. \emph{Animal Biodiversity and Conservation} 27, pp. 375–386. 
-
 Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
-abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
+abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591--1597.
 
 KÃ©ry, M., Royle, J. A., and Schmid, H. (2005) Modeling Avaian Abundance from
 Replicated Counts Using Binomial Mixture Models. \emph{Ecological
@@ -84,5 +81,5 @@ Royle, J. A. and Link W. A. (2005) A general class of multinomial
 mixture models for anuran calling survey data. \emph{Ecology}, \bold{86}(9),
 pp. 2505--2512.}
 \docType{package}
-\author{Ian Fiske \email{ijfiske@ncsu.edu} and Richard Chandler \email{richard.chandlers@gmail.com} and Andy Royle}
+\author{Ian Fiske, Richard Chandler, and Andy Royle}
 \keyword{package}
