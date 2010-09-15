@@ -38,7 +38,7 @@ the the survey design used that resulted in multinomial outcomes. For
 constant-interval removal sampling, you can set type="removal" and ignore
 the arguments obsToY and piFun. Similarly, for double-observer sampling, 
 setting type="double" will automatically create an appropiate obsToY matrix and
-\code{\link{piFun}}. For all other situations, the type argument should be 
+\code{\link{piFuns}}. For all other situations, the type argument should be 
 ignored and the obsToY and piFun arguments must be specified. piFun must be a 
 function that converts an MxJ matrix of detection probabilities into an MxJ
 matrix of multinomial cell probabilities. obsToY is a matrix describing how

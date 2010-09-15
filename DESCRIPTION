@@ -19,6 +19,6 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'unmarkedFitList.R' 'unmarkedLinComb.R'
 Encoding: UTF-8
 URL: http://groups.google.com/group/unmarked, 
-     http://github.com/ianfiske/unmarked
+     http://github.com/ianfiske/unmarked,
      http://github.com/rbchan/unmarked
      
