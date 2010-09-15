@@ -9,7 +9,7 @@ period. Examples include removal sampling and double observer sampling.
 The three model parameters are abundance, availability, and detection probability.
 }
 \usage{
-gmm(lambdaformula, phiformula, pformula, data, mixture = c("P", "NB"), K, 
+gmultmix(lambdaformula, phiformula, pformula, data, mixture = c("P", "NB"), K, 
     starts, method = "BFGS", control = list(), se = TRUE)
 }
 \arguments{
