@@ -6,24 +6,33 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.8-6\cr
-License: \tab GPL (>= 2)\cr
+Version: \tab 0.8-7\cr
+License: \tab GPL (>= 3)\cr
 }
 
 Unmarked estimates wildlife parameters for many popular sampling methods including occurrence and point count data.
 
 \strong{Overview of Model-fitting Functions:}  Unmarked provides
 several functions for fitting integrated likelihood models for wildlife
-abundance and occurrence to replicated survey data.  \command{\link{occu}}
-fits occurrence models with no linkage between abundance and detection
-(MacKenzie et al. 2006).  \command{\link{occuRN}} fits abundance models to
-presence/absence data by exploiting the link between detection
-probability and abundance (Royle and Nichols 2003).
-\command{\link{pcount}} fits N-mixture models for repeated count data
-(Royle 2004, Kéry et al 2005).  \command{\link{distsamp}} fits the distsance sampling model of 
-Royle et al. (2004) to distance data recorded in discrete intervals. All of 
-these functions allow the user to specify covariates that affect the detection
-process and several also allow covariates for the state process.
+abundance and occurrence to replicated survey data.  
+
+\code{\link{occu}} fits occurrence models with no linkage between abundance and detection (MacKenzie et al. 2006).  
+
+\code{\link{occuRN}} fits abundance models to presence/absence data by exploiting the link between detection probability and abundance (Royle and Nichols 2003).
+
+\code{\link{colext}} fits the mutli-season occupancy model of MacKenzie et al. 2003.
+
+\code{\link{pcount}} fits N-mixture models for repeated count data
+(Royle 2004a, Kéry et al 2005).  
+
+\code{\link{distsamp}} fits the distsance sampling model of 
+Royle et al. (2004) to distance data recorded in discrete intervals. 
+
+\code{\link{multinomPois}} fits the multinomial-Poisson model of Royle 2004b.
+
+\code{\link{gmultmix}} fits a generalized form of the multinomial-mixture model of Royle 2004a that allows for estimating availability and detection probability.  
+
+All of these functions allow the user to specify covariates that affect the detection and state processes.
 
 \strong{Data:} All data is passed to unmarked's estimation functions
 as a formal S4 class called an unmarkedFrame, which has child classes for each
@@ -58,8 +67,11 @@ Royle, J. A. and Nichols, J. D. (2003) Estimating Abundance from
 Repeated Presence-Absence Data or Point Counts. \emph{Ecology}, 84(3)
 pp. 777--790.
 
-Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from
+Royle, J. A. (2004a) N-Mixture Models for Estimating Population Size from
 Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
+
+Royle, J. A. (2004b) Generalized estimators of avian abundance from count survey 
+data. \emph{Animal Biodiversity and Conservation} 27, pp. 375�386. 
 
 Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
@@ -72,5 +84,5 @@ Royle, J. A. and Link W. A. (2005) A general class of multinomial
 mixture models for anuran calling survey data. \emph{Ecology}, \bold{86}(9),
 pp. 2505--2512.}
 \docType{package}
-\author{Ian Fiske \email{ijfiske@ncsu.edu} and Richard Chandler \email{rchandler@nrc.umass.edu}}
+\author{Ian Fiske \email{ijfiske@ncsu.edu} and Richard Chandler \email{richard.chandlers@gmail.com} and Andy Royle}
 \keyword{package}
