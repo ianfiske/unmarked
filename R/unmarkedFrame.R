@@ -423,9 +423,11 @@ setMethod("summary", "unmarkedFrameDS",
 # TODO:  come up with nice show/summary/plot methods for each of these data types.
 
 setMethod("plot", c(x="unmarkedFrame", y="missing"),
-	function (x, y, panels = 1, ...)
+	function (x, y, panels = 1, colorkey, strip=FALSE, 
+    ylab="Site", xlab="Observation", ...)
 {
     y <- getY(x)
+    ym <- max(y, na.rm=TRUE)
     M <- nrow(y)
     J <- ncol(y)
     y <- as.data.frame(y)
@@ -435,8 +437,12 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
     y$group <- as.factor(round(seq(1,panels,length=M)))
     y2 <- melt(y, #measure.var = c("V1", "V2", "V3"),
         id.var=c("site","group"))
+    if(missing(colorkey))
+        colorkey <- list(at=0:(ym+1), labels=list(labels=as.character(0:ym), 
+            at=(0:ym)+0.5))    
     levelplot(value ~ variable*site | group, y2,
-        scales=list(relation="free", x=list(labels=1:J)), ...)
+        scales=list(relation="free", x=list(labels=1:J)), 
+        colorkey=colorkey, strip=strip, xlab=xlab, ylab=ylab, ...)
 })
 
 
