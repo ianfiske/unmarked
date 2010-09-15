@@ -133,7 +133,7 @@ umf3 <- unmarkedFrameGMM(y=matrix(y, nrow=n),
     numPrimary=T, type="removal")
 
 (m3 <- gmultmix(~sc, ~ysc, ~oc, umf3))
-system.time(m3 <- gmultmix(~sc, ~ysc, ~oc, umf3)) # 4.8
+#system.time(m3 <- gmultmix(~sc, ~ysc, ~oc, umf3)) # 4.8
             
 # Test
 checkEqualsNumeric(coef(m3), c(-1.2513974, 1.3585940, 2.2889517, -2.1197854, 
