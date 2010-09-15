@@ -45,8 +45,8 @@ setMethod("getDesign", "unmarkedFrame",
 	colnames(obsCovs) <- colNames
 	
 	## add observation number if not present
-	if(!("obs" %in% names(obsCovs))) {
-		obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
+	if(!("obsNum" %in% names(obsCovs))) {
+		obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:R, M)))
 	}
 	
 	V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
@@ -204,8 +204,8 @@ setMethod("getDesign", "unmarkedMultFrame",
                          siteCovs[rep(1:M, each = R), ])
 	
 	## add observation number if not present
-	if(!("obs" %in% names(obsCovs))) {
-		obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
+	if(!("obsNum" %in% names(obsCovs))) {
+		obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:R, M)))
 	}
 	
 	V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
@@ -352,8 +352,8 @@ setMethod("getDesign", "unmarkedFrameGMM",
     # add observation number if not present
     # FIXME. obs is often used as abbreviation for observer. 
     # This can cause conflict
-    if(!("obs" %in% names(obsCovs)))
-        obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:R, M)))
+    if(!("obsNum" %in% names(obsCovs)))
+        obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:R, M)))
 	
     Xdet.mf <- model.frame(detformula, obsCovs, na.action = NULL)
     Xdet <- model.matrix(detformula, Xdet.mf)
