@@ -267,6 +267,17 @@ setMethod("show", "unmarkedFrame",
 			cat("Data frame representation of unmarkedFrame object.\n")
 			print(df)
 		})
+		
+		
+setMethod("show", "unmarkedMultFrame",
+		function(object) {
+			df <- as(object, "data.frame")
+			ysc <- yearlySiteCovs(object)
+			df <- data.frame(df, ysc)
+			cat("Data frame representation of unmarkedFrame object.\n")
+			print(df)
+		})
+		
 
 ############################ EXTRACTORS ########################################
 
@@ -417,6 +428,36 @@ setMethod("summary", "unmarkedFrameDS",
 		warning("Observation-level covariates cannot be used by distsamp()")
 		}
 })
+
+
+
+
+setMethod("summary", "unmarkedMultFrame",
+	function(object,...) {
+		cat("unmarkedFrame Object\n\n")
+		cat(nrow(object@y), "sites\n")
+		cat("Maximum number of observations per site:",obsNum(object),"\n")
+			mean.obs <- mean(rowSums(!is.na(getY(object))))
+		cat("Mean number of observations per site:",round(mean.obs,2),"\n")
+		cat("Number of primary survey periods:", object@numPrimary, "\n")
+		cat("Number of secondary survey periods:", 
+            obsNum(object) / object@numPrimary, "\n")
+        cat("Sites with at least one detection:", 
+			sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))), 
+				"\n\n")
+		cat("Tabulation of y observations:")
+		print(table(object@y, exclude=NULL))
+		if(!is.null(object@siteCovs)) {
+			cat("\nSite-level covariates:\n")
+			print(summary(object@siteCovs))
+			}
+		if(!is.null(object@obsCovs)) {
+			cat("\nObservation-level covariates:\n")
+			print(summary(object@obsCovs))
+			}
+	})
+
+
 
 
 ################################# PLOT METHODS #################################

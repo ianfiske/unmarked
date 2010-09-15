@@ -105,7 +105,7 @@ setMethod("summary", "unmarkedFit",
             cat("\n")
             summary(object@estimates)      	
             cat("AIC:", object@AIC,"\n")
-            cat("Sample size:", sampleSize(object))
+            cat("Number of sites:", sampleSize(object))
             if(length(object@sitesRemoved) > 0)
               cat("\nSites removed:", object@sitesRemoved)
             cat("\noptim convergence code:", object@opt$convergence)
