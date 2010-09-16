@@ -273,9 +273,15 @@ setMethod("show", "unmarkedMultFrame",
 		function(object) {
 			df <- as(object, "data.frame")
 			ysc <- yearlySiteCovs(object)
-			df <- data.frame(df, ysc)
-			cat("Data frame representation of unmarkedFrame object.\n")
-			print(df)
+			if(is.null(ysc)) { 
+    			cat("Data frame representation of unmarkedFrame object.\n")
+          print(df)
+          }
+      else {
+          df <- data.frame(df, ysc)
+          cat("Data frame representation of unmarkedFrame object.\n")
+          print(df)
+          }
 		})
 		
 
