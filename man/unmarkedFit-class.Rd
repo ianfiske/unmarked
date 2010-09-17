@@ -18,6 +18,7 @@
 \alias{predict,unmarkedFit-method}
 \alias{predict,unmarkedFitColExt-method}
 \alias{predict,unmarkedFitPCountOpen-method}
+\alias{predict,unmarkedFitGMM-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{residuals,unmarkedFitOccu-method}
@@ -25,6 +26,7 @@
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
 \alias{update,unmarkedFitPCountOpen-method}
+\alias{update,unmarkedFitGMM-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
@@ -32,6 +34,7 @@
 \alias{unmarkedFitDS-class}
 \alias{unmarkedFitMPois-class}
 \alias{unmarkedFitPCountOpen-class}
+\alias{unmarkedFitGMM-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}

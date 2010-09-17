@@ -159,3 +159,5 @@ setAs("unmarkedLinComb", "data.frame",
         lcTable <- cbind(lcTable, df.coefs)
         lcTable
       })
+      
+      
