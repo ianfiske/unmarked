@@ -13,6 +13,10 @@ Description: Unmarked estimates wildlife parameters for many popular
 License: GPL (>=3)
 LazyLoad: yes
 LazyData: yes
+Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
+    'unmarkedFit.R' 'utils.R' 'getDesign.R' 'colext.R' 'distsamp.R'
+    'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R' 'pcountOpen.R' 'gmultmix.R'
+    'unmarkedFitList.R' 'unmarkedLinComb.R'
 Encoding: UTF-8
 URL: http://groups.google.com/group/unmarked, 
      http://github.com/ianfiske/unmarked,
