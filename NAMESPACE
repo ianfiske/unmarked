@@ -13,7 +13,7 @@ export(removalPiFun, doublePiFun)
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS, unmarkedFitPCount,
 	unmarkedFitMPois, unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCO, 
 	unmarkedFramePCount, unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame, 
-	unmarkedFrameGMM unmarkedEstimate, unmarkedFitList, unmarkedModSel)
+	unmarkedFrameGMM, unmarkedEstimate, unmarkedFitList, unmarkedModSel)
 
 # Methods
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData, getP, 

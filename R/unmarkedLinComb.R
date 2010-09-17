@@ -158,6 +158,5 @@ setAs("unmarkedLinComb", "data.frame",
         lcTable <- data.frame(Estimate = from@estimate, SE = SE(from))
         lcTable <- cbind(lcTable, df.coefs)
         lcTable
-      })
-      
-      
+})
+
