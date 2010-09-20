@@ -2,7 +2,7 @@
 \alias{pcountOpen}
 \title{Fit the open N-mixture model of Dail and Madsen}
 \description{Fit the model of Dail and Madsen, which is 
-a generalized form of the Royle (2004) binomial mixture model that allows for
+a generalized form of the Royle (2004) binomial mixture model allowing for
 estimation of gains (recruitment) and losses (mortality/emigration).}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data, 
@@ -37,7 +37,7 @@ additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 
 The latent abundance state following the initial sampling period arises from a
 Markovian process in which survivors are modeled as \eqn{S_it \sim 
-Binomial(N_it-1, omega_it)}{G_it ~ Binomial(N_it-1, omega_it)}, and recruits
+Binomial(N_it-1, omega_it)}{S_it ~ Binomial(N_it-1, omega_it)}, and recruits
 follow \eqn{G_it \sim Poisson(gamma_it)}{G_it ~ Poisson(gamma_it)}.
 
 The detection process is modeled as binomial: \eqn{y_{it} \sim
