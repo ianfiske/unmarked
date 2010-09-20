@@ -11,15 +11,9 @@ export(removalPiFun, doublePiFun)
 
 # S4 classes
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS, unmarkedFitPCount,
-<<<<<<< HEAD
-	unmarkedFitMPois, unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCO, 
-	unmarkedFramePCount, unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame, 
-	unmarkedFrameGMM, unmarkedEstimate, unmarkedFitList, unmarkedModSel)
-=======
     unmarkedFitMPois, unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount, 
     unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
     unmarkedFramePCO, unmarkedEstimate, unmarkedFitList, unmarkedModSel)
->>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 
 # Methods
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData, getP, 
@@ -33,11 +27,7 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData, getP,
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame, unmarkedFrameOccu,
     unmarkedFramePCount, unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
-<<<<<<< HEAD
-    unmarkedFramePCO, unmarkedFrameGMM)
-=======
     unmarkedFrameGMM, unmarkedFramePCO)
->>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 
 # Formatting
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)

@@ -283,12 +283,6 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
              V = V,
              removed.sites = which(sites.to.remove))
     })
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 
 
 
@@ -357,15 +351,6 @@ setMethod("getDesign", "unmarkedFramePCO",
     })
 
 
-<<<<<<< HEAD
-
-    
-    
-    
-    
-    
-=======
->>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
     
     
     
@@ -450,22 +435,11 @@ setMethod("getDesign", "unmarkedFrameGMM",
         Xlam.offset = out$Xlam.offset, Xphi.offset = out$Xphi.offset, 
         Xdet.offset = out$Xdet.offset, removed.sites = out$removed.sites))
 })
-<<<<<<< HEAD
-
-=======
->>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 
 
 
 
 
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 setMethod("handleNA", "unmarkedFramePCO", 
     function(umf, Xlam, Xgam, Xom, Xp, delta) 
 {
@@ -535,10 +509,7 @@ setMethod("handleNA", "unmarkedFramePCO",
 
 
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 setMethod("handleNA", "unmarkedFrameGMM", 
     function(umf, Xlam, Xlam.offset, Xphi, Xphi.offset, Xdet, Xdet.offset) 
 {
@@ -599,9 +570,4 @@ setMethod("handleNA", "unmarkedFrameGMM",
         Xphi.offset = Xphi.offset, Xdet = Xdet, Xdet.offset = Xdet.offset,
         removed.sites = which(sites.to.remove))
 })
-<<<<<<< HEAD
-    
-
-=======
   
->>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
