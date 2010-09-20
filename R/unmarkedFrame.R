@@ -78,8 +78,11 @@ setClass("unmarkedFrameMPois",
 			piFun = "character"),
 		contains = "unmarkedFrame")
 
+<<<<<<< HEAD
 
 		
+=======
+>>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 setClass("unmarkedFramePCO",
 		representation(
 			delta = "matrix"),
@@ -92,6 +95,10 @@ setClass("unmarkedFrameGMM",
         piFun = "character",
         samplingMethod = "character"),
     contains = "unmarkedMultFrame")    
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 
 
 

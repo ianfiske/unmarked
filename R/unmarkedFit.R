@@ -306,7 +306,10 @@ setMethod("predict", "unmarkedFitColExt",
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 setMethod("predict", "unmarkedFitPCountOpen", 
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
         appendData = FALSE, ...) 
@@ -349,6 +352,13 @@ setMethod("predict", "unmarkedFitPCountOpen",
         out$SE <- SE(lc)
         if(appendData)
             out <- data.frame(out, newdata)
+<<<<<<< HEAD
+=======
+        return(out)
+        })
+
+
+>>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 
 
 
@@ -416,10 +426,18 @@ setMethod("predict", "unmarkedFitGMM",
         })
 
 
+<<<<<<< HEAD
 # ---------------------- coef, vcov, and SE -----------------------------------
 
 
 
+=======
+
+
+# ---------------------- coef, vcov, and SE -----------------------------------
+
+
+>>>>>>> 2781d25e712915dad3eae6a29bae64759f683565
 setMethod("coef", "unmarkedFit",
           function(object, type, altNames = TRUE) {
             if(missing(type)) {
