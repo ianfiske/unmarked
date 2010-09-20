@@ -2,10 +2,12 @@
 
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
-    data, mixture=c("P", "NB"), K, fix=c("none", "gamma", "omega"), 
+    data, mixture=c("P", "NB"), K, dynamics=c("constant", "autoreg", "notrend"), 
+    fix=c("none", "gamma", "omega"), 
     starts, method="BFGS", se=TRUE, ...)
 {
 mixture <- match.arg(mixture)
+dynamics <- match.arg(dynamics)
 fix <- match.arg(fix)
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
@@ -53,7 +55,7 @@ nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 # identical() returns FALSE b/c of environment differences
 equal.ints <- identical(length(table(delta)), 1L)
 if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)) & 
-    equal.ints)
+    equal.ints & dynamics != "notrend")
     goDims <- "scalar"
     else {
         goParms <- unique(c(all.vars(gammaformula), all.vars(omegaformula)))
@@ -69,8 +71,11 @@ expand.ki <- numeric(0)
 s <- seq(0, lk*lk*nrow(y), by=lk)
 for(i in 1:nrow(y)) expand.ki <- c(expand.ki, rep((s[i]+1) : s[i+1], lk))
 
+#N.itm1 <- rep(rep(k, each=lk), lgo) # lgo is length of gamma (and omega)
+#N.it <- rep(rep(k, times=lk), lgo)
+
 nll <- function(parms) { # No survey-specific NA handling.
-    lambda <- exp(Xlam %*% parms[1 : nAP])
+    lambda <- drop(exp(Xlam %*% parms[1 : nAP]))
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         M, T, byrow=TRUE)
     switch(goDims,
@@ -91,7 +96,9 @@ nll <- function(parms) { # No survey-specific NA handling.
             M, T, byrow=TRUE)[,-T] ^ delta
         })
     if(identical(fix, "gamma")) gamma[] <- 0
-        else if(identical(fix, "omega")) omega[] <- 1    
+        else if(identical(fix, "omega")) omega[] <- 1
+            else if(dynamics == "notrend")
+                gamma[] <- (1-omega)*lambda    
     g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))    
     g1[is.na(g1)] <- 1 # Double check this
     switch(mixture,
@@ -102,9 +109,14 @@ nll <- function(parms) { # No survey-specific NA handling.
     g3args <- cbind(rep(k, times=lk), rep(k, each=lk), 
         rep(omega, each=lk*lk), 
         rep(gamma, each=lk*lk)) # recycle
+    if(dynamics == "autoreg" & fix != "gamma")
+        g3args[,4] <- g3args[,4] * g3args[,2]
+    else
+        if(dynamics == "notrend" & fix == "none")
+            
     convMat <- matrix(0, nrow(g3args), K+1)
     for(i in k) {
-        nonzero <- which(g3args[,2] >= i & g3args[,1] >= i)
+        nonzero <- which(g3args[,2] >= i & g3args[,1] >= i) # this could be pulled out of likelihood
         convMat[nonzero,i+1] <- dbinom(i, g3args[nonzero,2], g3args[nonzero,3]) * 
             dpois(g3args[nonzero,1] - i, g3args[nonzero,4])
         }

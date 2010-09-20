@@ -180,8 +180,43 @@ backTransform(m3, "gamma")
 backTransform(m3, "omega")
 backTransform(m3, "det")
 
+
+
+
+
+# Auto-regressive model
+
+
+set.seed(3)
+M <- 50
+T <- 5
+lambda <- 1
+gamma <- 0.5
+omega <- 0.8
+p <- 0.7
+y <- N <- matrix(NA, M, T)
+S <- G <- matrix(NA, M, T-1)
+N[,1] <- rpois(M, lambda)
+for(t in 1:(T-1)) {
+	S[,t] <- rbinom(M, N[,t], omega)
+	G[,t] <- rpois(M, gamma * N[,t])
+	N[,t+1] <- S[,t] + G[,t]
+	}
+y[] <- rbinom(M*T, N, p)
+
+
+# Prepare data
+umf4 <- unmarkedFramePCO(y = y)
+umf4
+
+# Fit model
+(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=15, dynamics="autoreg", se=FALSE, 
+    starts=c(2,-3,3,0.85), control=list(maxit=15, trace=T, REPORT=1)))
+
+
        
 }
 
 }
+
 \keyword{models}
