@@ -20,9 +20,6 @@ T <- ncol(y)
 y <- matrix(y,  M, T)
 yind <- matrix(1:(M*T), M, T)
 first <- 1:M
-#for(i in 1:M) 
-#    if(any(is.na(y[i,])))
-#        first[i] <- yind[i, min(which(!is.na(y[i,])))]
 if(missing(K)) K <- max(y, na.rm=T) + 20
 if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
@@ -30,10 +27,6 @@ k <- 0:K
 lk <- length(k)
 k.times <- rep(k, times=lk)
 k.each <- rep(k, each=lk)
-
-y.k <- apply(y, 2, rep, each=lk)
-#if(all(delta==1)) delta <- 1
-    # delta.kk <- 1 else delta.kk <- apply(delta, 2, rep, each=lk*lk)
 
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)
@@ -51,65 +44,38 @@ if(identical(fix, "omega")) {
     if(nOP > 1) stop("omega covariates not allowed when fix==omega")
     else { nOP <- 0; omParms <- character(0) }
     }
-
 nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
 
-# Save time in likelihood evaluation
-# identical() returns FALSE b/c of environment differences
-equal.ints <- identical(length(table(delta)), 1L)
-if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)) & 
-    equal.ints & dynamics != "notrend")
-    goDims <- "scalar"
-    else {
-        goParms <- unique(c(all.vars(gammaformula), all.vars(omegaformula)))
-        if(!any(goParms %in% colnames(obsCovs(data))) & equal.ints)
-            goDims <- "vector"
-            else goDims <- "matrix"
-        }
-mk.order <- matrix(1:(M*lk), M, lk)
-mat.to.vec <- as.numeric(apply(mk.order, 1, rep, times=lk))
-g.star <- matrix(NA, lk, T-1)
-
-expand.ki <- numeric(0)
-s <- seq(0, lk*lk*nrow(y), by=lk)
-for(i in 1:nrow(y)) expand.ki <- c(expand.ki, rep((s[i]+1) : s[i+1], lk))
-
-#N.itm1 <- rep(rep(k, each=lk), lgo) # lgo is length of gamma (and omega)
-#N.it <- rep(rep(k, times=lk), lgo)
-
-nll <- function(parms) { # No survey-specific NA handling.
+nll <- function(parms) {
     lambda <- drop(exp(Xlam %*% parms[1 : nAP]))
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
-        M, T, byrow=TRUE)
+                M, T, byrow=TRUE)
     gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])), 
-        M, T, byrow=TRUE)[,-T] * delta
+                M, T, byrow=TRUE)[,-T] * delta
     omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])),
-        M, T, byrow=TRUE)[,-T] ^ delta
+                M, T, byrow=TRUE)[,-T] ^ delta
     if(identical(fix, "gamma")) gamma[] <- 0
         else if(identical(fix, "omega")) omega[] <- 1
             else if(dynamics == "notrend")
                 gamma[] <- (1-omega)*lambda    
-    g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))    
-    switch(mixture,
-        P = g2 <- sapply(k, function(x) dpois(x, lambda)),
-        NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
-           mu=lambda)))
     L <- numeric(M)
+    g.star <- matrix(NA, lk, T-1)
     for(i in 1:M) {
-    
+        g1 <- dbinom(y[i,1], k, p[i,1])
+        switch(mixture, 
+            P = g2 <- dpois(k, lambda[i]),
+            NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
         g3args <- cbind(k.times, k.each, 
             rep(omega[i,], each=lk*lk), 
             rep(gamma[i,], each=lk*lk)) # recycle
         if(dynamics == "autoreg" & fix != "gamma")
             g3args[,4] <- g3args[,4] * g3args[,2]
-        #else if(dynamics == "notrend" & fix == "none")
-            
         convMat <- matrix(0, nrow(g3args), K+1)
-        for(ki in k) {
+        for(z in k) {
             # this could be pulled out of likelihood
-            nonzero <- which(g3args[,2] >= ki & g3args[,1] >= ki) 
-            convMat[nonzero, ki+1] <- dbinom(ki, g3args[nonzero,2], 
-                g3args[nonzero,3]) * dpois(g3args[nonzero,1] - ki, 
+            nonzero <- which(g3args[,2] >= z & g3args[,1] >= z) 
+            convMat[nonzero, z+1] <- dbinom(z, g3args[nonzero,2], 
+                g3args[nonzero,3]) * dpois(g3args[nonzero,1] - z, 
                 g3args[nonzero,4])
             }
         g3 <- rowSums(convMat)
@@ -119,14 +85,14 @@ nll <- function(parms) { # No survey-specific NA handling.
         y.Tk <- rep(y[i, T], each=lk)
         g1.T <- dbinom(y.Tk, k, p.Tk)
         g3.T <- g3[,, T-1]
-        g.star[, T-1] <- rowSums(g1.T * g3.T)	# or rowSums?
+        g.star[, T-1] <- colSums(g1.T * g3.T)	# or rowSums?
         # NA handling: this will properly determine last obs for each site
         g.star[,T-1][is.na(g.star[, T-1])] <- 1
         for(t in (T-1):2) {
             p.tk <- rep(p[i, t], each=lk)
             y.tk <- rep(y[i, t], each=lk)
             g1.t <- dbinom(y.tk, k, p.tk)
-            g.star[, t-1] <- rowSums(g1.t * g3[,,t-1] * g.star[,t])
+            g.star[, t-1] <- colSums(g1.t * g3[,,t-1] * g.star[,t])
             g.star.na <- is.na(g.star[, t-1])
             g.star[,t-1][g.star.na] <- g.star[,t][g.star.na]
             }
