@@ -28,6 +28,9 @@ if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
 k <- 0:K
 lk <- length(k)
+k.times <- rep(k, times=lk)
+k.each <- rep(k, each=lk)
+
 y.k <- apply(y, 2, rep, each=lk)
 #if(all(delta==1)) delta <- 1
     # delta.kk <- 1 else delta.kk <- apply(delta, 2, rep, each=lk*lk)
@@ -65,7 +68,7 @@ if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)) &
         }
 mk.order <- matrix(1:(M*lk), M, lk)
 mat.to.vec <- as.numeric(apply(mk.order, 1, rep, times=lk))
-g.star <- array(NA, c(M, lk, T-1))
+g.star <- matrix(NA, lk, T-1)
 
 expand.ki <- numeric(0)
 s <- seq(0, lk*lk*nrow(y), by=lk)
@@ -78,67 +81,57 @@ nll <- function(parms) { # No survey-specific NA handling.
     lambda <- drop(exp(Xlam %*% parms[1 : nAP]))
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         M, T, byrow=TRUE)
-    switch(goDims,
-    scalar = {
-        gamma <- drop(exp(parms[(nAP+1) : (nAP+nGP)]))
-        omega <- drop(plogis(parms[(nAP+nGP+1) : (nAP+nGP+nOP)]))
-        },
-    vector = {
-        gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])), 
-            M, T, byrow=TRUE)[,1]
-        omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])), 
-            M, T, byrow=TRUE)[,1]
-        },
-    matrix = {
-        gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])),
-            M, T, byrow=TRUE)[,-T] * delta
-        omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])),
-            M, T, byrow=TRUE)[,-T] ^ delta
-        })
+    gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])), 
+        M, T, byrow=TRUE)[,-T] * delta
+    omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])),
+        M, T, byrow=TRUE)[,-T] ^ delta
     if(identical(fix, "gamma")) gamma[] <- 0
         else if(identical(fix, "omega")) omega[] <- 1
             else if(dynamics == "notrend")
                 gamma[] <- (1-omega)*lambda    
     g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))    
-    g1[is.na(g1)] <- 1 # Double check this
     switch(mixture,
         P = g2 <- sapply(k, function(x) dpois(x, lambda)),
         NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
            mu=lambda)))
-    g2[is.na(g2)] <- 1 # Double check this
-    g3args <- cbind(rep(k, times=lk), rep(k, each=lk), 
-        rep(omega, each=lk*lk), 
-        rep(gamma, each=lk*lk)) # recycle
-    if(dynamics == "autoreg" & fix != "gamma")
-        g3args[,4] <- g3args[,4] * g3args[,2]
-    else
-        if(dynamics == "notrend" & fix == "none")
+    L <- numeric(M)
+    for(i in 1:M) {
+    
+        g3args <- cbind(k.times, k.each, 
+            rep(omega[i,], each=lk*lk), 
+            rep(gamma[i,], each=lk*lk)) # recycle
+        if(dynamics == "autoreg" & fix != "gamma")
+            g3args[,4] <- g3args[,4] * g3args[,2]
+        #else if(dynamics == "notrend" & fix == "none")
             
-    convMat <- matrix(0, nrow(g3args), K+1)
-    for(i in k) {
-        nonzero <- which(g3args[,2] >= i & g3args[,1] >= i) # this could be pulled out of likelihood
-        convMat[nonzero,i+1] <- dbinom(i, g3args[nonzero,2], g3args[nonzero,3]) * 
-            dpois(g3args[nonzero,1] - i, g3args[nonzero,4])
+        convMat <- matrix(0, nrow(g3args), K+1)
+        for(ki in k) {
+            # this could be pulled out of likelihood
+            nonzero <- which(g3args[,2] >= ki & g3args[,1] >= ki) 
+            convMat[nonzero, ki+1] <- dbinom(ki, g3args[nonzero,2], 
+                g3args[nonzero,3]) * dpois(g3args[nonzero,1] - ki, 
+                g3args[nonzero,4])
+            }
+        g3 <- rowSums(convMat)
+        g3 <- array(g3, c(lk, lk, T-1))
+        p.Tk <- rep(p[i, T], each=lk)
+        p.Tk <- rep(p[i, T], each=lk)
+        y.Tk <- rep(y[i, T], each=lk)
+        g1.T <- dbinom(y.Tk, k, p.Tk)
+        g3.T <- g3[,, T-1]
+        g.star[, T-1] <- rowSums(g1.T * g3.T)	# or rowSums?
+        # NA handling: this will properly determine last obs for each site
+        g.star[,T-1][is.na(g.star[, T-1])] <- 1
+        for(t in (T-1):2) {
+            p.tk <- rep(p[i, t], each=lk)
+            y.tk <- rep(y[i, t], each=lk)
+            g1.t <- dbinom(y.tk, k, p.tk)
+            g.star[, t-1] <- rowSums(g1.t * g3[,,t-1] * g.star[,t])
+            g.star.na <- is.na(g.star[, t-1])
+            g.star[,t-1][g.star.na] <- g.star[,t][g.star.na]
+            }
+        L[i] <- sum(g1 * g2 * g.star[,1])
         }
-    g3 <- rowSums(convMat)
-    g3 <- array(g3, c(lk, lk, M, T-1))
-    pT.k <- rep(p[, T], each=lk)
-    g1.T <- dbinom(y.k[,T], k, pT.k) # recycle
-    g1.T <- g1.T[expand.ki]
-    g3.T <- g3[,,, T-1]
-    g.star[,, T-1] <- apply(g1.T * g3.T, 2, colSums)	# recycle
-    # NA handling: this will properly determine last obs for each site
-    g.star[,,T-1][is.na(g.star[,, T-1])] <- 1
-    for(t in (T-1):2) {
-        pt.k <- rep(p[, t], each=lk)
-        g1.t <- dbinom(y.k[,t], k, pt.k)
-        g1.t <- g1.t[expand.ki]
-        g.star.vec <- g.star[,, t][mat.to.vec]
-        g3.t <- g3[,,, t-1]
-        g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
-        g.star[,,t-1][is.na(g.star[,, t-1])] <- g.star[,,t][is.na(g.star[,, t-1])]
-        }
-    L <- rowSums(g1 * g2 * g.star[,, 1])                             
     -sum(log(L))
     }
 if(missing(starts))
