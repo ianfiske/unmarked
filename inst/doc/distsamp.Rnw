@@ -166,11 +166,11 @@ pb <- parboot(hn_Hab.Ht, statistic=getN.hat, nsim=25, report=5)
 pb
 @
 
-Here, \code{t\_B} is an approximation of the sampling distribution for \code{N.hat}, conditioned on our fitted model. The standard deviation of \code{t\_B} is the standard error of N.hat and confidence intervals can be calculated from its quantiles. Note that in practice nsim should be set to a much larger value and a goodness-of-fit test should be performed before making inference from a fitted model. Parameteric bootstrapping can be used for the latter by supplying a fit statistic such as \code{SSE} instead of \code{getN.hat}. See ?parboot and vignette('Overview') for examples.
+Here, \code{t\_B} is an approximation of the sampling distribution for \code{N.hat}, conditioned on our fitted model. The standard deviation of \code{t\_B} is the standard error of N.hat and confidence intervals can be calculated from its quantiles. Note that in practice nsim should be set to a much larger value and a goodness-of-fit test should be performed before making inference from a fitted model. Parameteric bootstrapping can be used for the latter by supplying a fit statistic such as \code{SSE} instead of \code{getN.hat}. See ?parboot and vignette('unmarked') for examples.
 
 \section{Prediction and plotting}
 
-A \code{predict} method exits for all \code{unmarkedFit} objects, which is useful when multiple covariate combinations exist. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need make new data.frames holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
+A \code{predict} method exits for all \code{unmarkedFit} objects, which is useful when multiple covariate combinations exist. This method also facilitates plotting. Suppose we wanted model predictions from the covariate model along the range of covariate values studied. First we need to make new \code{data.frame}s holding the desired covariate combinations. Note that column names must match those of the original data, and factor variables must contain the same levels.
 
 <<>>=
 head(habConstant <- data.frame(canopyHt = seq(2, 8, length=20), 
@@ -179,7 +179,7 @@ head(habConstant <- data.frame(canopyHt = seq(2, 8, length=20),
 	habitat=factor(c("A", "B"))))
 @
 
-Now predict can be used to estimate density and $\bm{\sigma}$ for each row of our new data.frames. 
+Now predict can be used to estimate density and $\bm{\sigma}$ for each row of our new \code{data.frame}s. 
 
 <<>>=
 (Elambda <- predict(hn_Hab.Ht, type="state", newdata=htConstant, 
