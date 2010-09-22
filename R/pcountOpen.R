@@ -17,9 +17,7 @@ y <- D$y; Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
 delta <- D$delta
 M <- nrow(y)
 T <- ncol(y)
-y <- matrix(y,  M, T)
-yind <- matrix(1:(M*T), M, T)
-first <- 1:M
+y <- matrix(y, M, T)
 if(missing(K)) K <- max(y, na.rm=T) + 20
 if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
@@ -37,10 +35,14 @@ nGP <- ncol(Xgam)
 nOP <- ncol(Xom)
 nDP <- ncol(Xp)
 if(identical(fix, "gamma")) {
+    if(!identical(dynamics, "constant")) 
+        stop("dynamics must be constant when fixing gamma or omega")
     if(nGP > 1) stop("gamma covariates not allowed when fix==gamma")
     else { nGP <- 0; gamParms <- character(0) }
     }
 if(identical(fix, "omega")) {
+    if(!identical(dynamics, "constant")) 
+        stop("dynamics must be constant when fixing gamma or omega")    
     if(nOP > 1) stop("omega covariates not allowed when fix==omega")
     else { nOP <- 0; omParms <- character(0) }
     }
@@ -50,14 +52,20 @@ nll <- function(parms) {
     lambda <- drop(exp(Xlam %*% parms[1 : nAP]))
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
                 M, T, byrow=TRUE)
-    gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])), 
+    if(identical(fix, "omega"))
+        omega <- matrix(1, M, T-1)
+    else
+        omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]),
+            M, T, byrow=TRUE)[,-T] ^ delta
+    if(dynamics == "notrend")
+        gamma <- (1-omega)*lambda
+    else {
+        if(identical(fix, "gamma")) 
+            gamma <- matrix(0, M, T-1)
+        else 
+            gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])),
                 M, T, byrow=TRUE)[,-T] * delta
-    omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])),
-                M, T, byrow=TRUE)[,-T] ^ delta
-    if(identical(fix, "gamma")) gamma[] <- 0
-        else if(identical(fix, "omega")) omega[] <- 1
-            else if(dynamics == "notrend")
-                gamma[] <- (1-omega)*lambda    
+        }
     L <- numeric(M)
     g.star <- matrix(NA, lk, T-1)
     for(i in 1:M) {
