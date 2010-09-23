@@ -65,7 +65,7 @@ nll <- function(parms) {
         omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]),
             M, T, byrow=TRUE)[,-T]
         if(!equal.ints)
-            omega <- omega^ delta
+            omega <- omega ^ delta
         }
     if(dynamics == "notrend")
         gamma <- (1-omega)*lambda
@@ -87,16 +87,15 @@ nll <- function(parms) {
         switch(mixture, 
             P = g2 <- dpois(k, lambda[i]),
             NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
-        g3args <- cbind(k.times, k.each, 
-            rep(omega[i,], each=lk*lk), 
-            rep(gamma[i,], each=lk*lk)) # recycle
+        omega.itkk <- rep(omega[i,], each=lk*lk)
+        gamma.itkk <- rep(gamma[i,], each=lk*lk)
         if(dynamics == "autoreg")
             g3args[,4] <- g3args[,4] * g3args[,2]
         convMat <- matrix(0, nrow(g3args), K+1)
-        for(z in k) {
-            convMat[nonzero[,z+1], z+1] <- dbinom(z, g3args[nonzero[,z+1], 2], 
-                g3args[nonzero[,z+1], 3]) * dpois(g3args[nonzero[,z+1], 1] - z, 
-                g3args[nonzero[,z+1], 4])
+        for(q in k) {
+            nz <- which(nonzero[,q+1])
+            convMat[nz, q+1] <- dbinom(q, k.each[nz], omega.itkk[nz]) * 
+                dpois(k.times[nz] - q, gamma.itkk[nz])
             }
         g3 <- rowSums(convMat)
         g3 <- array(g3, c(lk, lk, T-1))
