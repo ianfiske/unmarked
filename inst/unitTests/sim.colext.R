@@ -1,60 +1,63 @@
 
-
-
-## Multiseason occupancy
-
-	
-n <- 100
-J <- 5
-T <- 10
-dbhMat <- matrix(rnorm(n*T), n, T, byrow=T)
-yearMat <- matrix(1:T, n, T, byrow=T)
-yearlyCovs <- data.frame(dbh=matrix(t(dbhMat), n*T, 1), 
-	year=matrix(t(yearMat), ncol=1))
-detCovs <- data.frame(wind=rnorm(n * J * T))
-treatment <- gl(2, 50, labels = c("Burned", "Mechanical"))
-year <- matrix(1:T, n, T, byrow=T)
-wind <- array(rnorm(n*J*T), c(n, J, T))
-y <- p <- array(NA, c(n, J, T))
-p[] <- 0.5
-
-
-Xpsi <- model.matrix(~treatment + yearlyCovs[1:n, "dbh"])
-Xyearly <- model.matrix(~year + dbh, yearlyCovs)
-
-psi <- 0.6 #plogis(Xpsi %*% c(-1, 1, 0.5))
-gamma <- matrix(plogis(Xyearly %*% c(-1, -0.1, 0)), n, T, byrow=T)
-phi <- matrix(plogis(Xyearly %*% c(3, -0.5, 0)), n, T, byrow=T)
-
-
-colMeans(gamma)
-colMeans(phi)
-
-#gamma <- runif(T-1)
-#phi <- runif(T-1)
-
-Z <- matrix(NA, n, T)
-Z[,1] <- rbinom(n, 1, psi)
-for(t in 2:T) {
-	muZ <- Z[,t-1] * phi[,t] + (1 - Z[,t-1]) * gamma[,t]
-	Z[,t] <- rbinom(n, 1, muZ)
-	}
-str(Z)
-colSums(Z)
-
-for(j in 1:J)
-for(t in 1:T)
-	y[,j,t] <- rbinom(n, 1, Z[,t]*p[,j,t])
-
-
 library(unmarked)
-
-mowaUMF <- unmarkedMultFrame(y = matrix(y, n, J*T), 
-	siteCovs = data.frame(treatment),
-	obsCovs = detCovs,
-	yearlySiteCovs = yearlyCovs, 
-	numPrimary = T)
+library(RUnit)
 
 
-#null <- colext(~1~1, mowaUMF, control=list(trace=1))	
-(m1 <- colext(~1 ~ year + dbh, mowaUMF, control=list(trace=T)))
+# ----------------------------- simulate --------------------------------------
+
+
+sim <- function(nSites=100, nReps=5, nYears=5, psi=0.5, gamma=0.2, epsilon=0.8, 
+    p=0.4)
+{
+
+    y <- array(NA, c(nSites, nReps, nYears))
+    Z <- matrix(NA, nSites, nYears)
+
+    phi <- 1-epsilon
+
+    Z[,1] <- rbinom(nSites, 1, psi)
+    for(t in 2:nYears) {
+        muZ <- Z[,t-1] * phi + (1 - Z[,t-1]) * gamma
+        Z[,t] <- rbinom(n, 1, muZ)
+        }
+    for(j in 1:nReps)
+        for(t in 1:nYears)
+            y[,j,t] <- rbinom(n, 1, Z[,t]*p)
+    
+    y <- matrix(y, nSites, nReps*nYears)
+    return(y)
+}
+
+# sim()
+
+
+# ------------------------------- unmarked ------------------------------------
+
+
+
+
+set.seed(3)
+sim1 <- sim()
+umf <- unmarkedMultFrame(y = sim1, numPrimary = nYears)
+
+(m <- colext(~1, ~1, ~1, ~1, umf, control=list(trace=T, REPORT=1)))
+
+backTransform(m, type="psi")
+backTransform(m, type="col")
+backTransform(m, type="ext")
+backTransform(m, type="det")
+
+checkEqualsNumeric(coef(m), c(-0.1047112, -1.3000613, 1.5203993, -0.3634747),
+    tol=1e-5)
+
+
+
+
+
+
+
+
+
+
+
+
