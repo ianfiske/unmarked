@@ -23,8 +23,11 @@ if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
 k <- 0:K
 lk <- length(k)
-k.times <- rep(k, times=lk)
-k.each <- rep(k, each=lk)
+k.times <- rep(rep(k, times=lk), T-1)
+k.each <- rep(rep(k, each=lk), T-1)
+
+nonzero <- matrix(NA, lk*lk*(T-1), lk)
+for(i in k) nonzero[,i+1] <- k.each >= i & k.times >= i
 
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)
@@ -34,6 +37,10 @@ nAP <- ncol(Xlam)
 nGP <- ncol(Xgam)
 nOP <- ncol(Xom)
 nDP <- ncol(Xp)
+
+#FIXME: what about internal NAs?
+equal.ints <- identical(length(table(delta)), 1L) 
+
 if(identical(fix, "gamma")) {
     if(!identical(dynamics, "constant")) 
         stop("dynamics must be constant when fixing gamma or omega")
@@ -54,46 +61,50 @@ nll <- function(parms) {
                 M, T, byrow=TRUE)
     if(identical(fix, "omega"))
         omega <- matrix(1, M, T-1)
-    else
+    else {
         omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]),
-            M, T, byrow=TRUE)[,-T] ^ delta
+            M, T, byrow=TRUE)[,-T]
+        if(!equal.ints)
+            omega <- omega^ delta
+        }
     if(dynamics == "notrend")
         gamma <- (1-omega)*lambda
     else {
         if(identical(fix, "gamma")) 
             gamma <- matrix(0, M, T-1)
-        else 
+        else { 
             gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])),
-                M, T, byrow=TRUE)[,-T] * delta
+                M, T, byrow=TRUE)[,-T]
+            if(!equal.ints)
+                gamma <- gamma * delta
+            }
         }
     L <- numeric(M)
     g.star <- matrix(NA, lk, T-1)
     for(i in 1:M) {
         g1 <- dbinom(y[i,1], k, p[i,1])
+        if(any(is.na(g1))) g1[] <- 1    # FIXME! Temporary work-around.
         switch(mixture, 
             P = g2 <- dpois(k, lambda[i]),
             NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
         g3args <- cbind(k.times, k.each, 
             rep(omega[i,], each=lk*lk), 
             rep(gamma[i,], each=lk*lk)) # recycle
-        if(dynamics == "autoreg" & fix != "gamma")
+        if(dynamics == "autoreg")
             g3args[,4] <- g3args[,4] * g3args[,2]
         convMat <- matrix(0, nrow(g3args), K+1)
         for(z in k) {
-            # this could be pulled out of likelihood
-            nonzero <- which(g3args[,2] >= z & g3args[,1] >= z) 
-            convMat[nonzero, z+1] <- dbinom(z, g3args[nonzero,2], 
-                g3args[nonzero,3]) * dpois(g3args[nonzero,1] - z, 
-                g3args[nonzero,4])
+            convMat[nonzero[,z+1], z+1] <- dbinom(z, g3args[nonzero[,z+1], 2], 
+                g3args[nonzero[,z+1], 3]) * dpois(g3args[nonzero[,z+1], 1] - z, 
+                g3args[nonzero[,z+1], 4])
             }
         g3 <- rowSums(convMat)
         g3 <- array(g3, c(lk, lk, T-1))
         p.Tk <- rep(p[i, T], each=lk)
-        p.Tk <- rep(p[i, T], each=lk)
         y.Tk <- rep(y[i, T], each=lk)
         g1.T <- dbinom(y.Tk, k, p.Tk)
         g3.T <- g3[,, T-1]
-        g.star[, T-1] <- colSums(g1.T * g3.T)	# or rowSums?
+        g.star[, T-1] <- colSums(g1.T * g3.T)
         # NA handling: this will properly determine last obs for each site
         g.star[,T-1][is.na(g.star[, T-1])] <- 1
         for(t in (T-1):2) {
