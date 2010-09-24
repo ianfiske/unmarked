@@ -49,6 +49,10 @@ if(identical(fix, "gamma")) {
     if(nGP > 1) stop("gamma covariates not allowed when fix==gamma")
     else { nGP <- 0; gamParms <- character(0) }
     }
+else if(identical(dynamics, "notrend")) {
+        if(nGP > 1) stop(gamma covariates no allowed when dyamics=="notrend")
+        else { nGP <- 0; gamParms <- character(0) }
+        }
 if(identical(fix, "omega")) {
     if(!identical(dynamics, "constant")) 
         stop("dynamics must be constant when fixing gamma or omega")    
@@ -75,7 +79,7 @@ nll <- function(parms) {
         if(identical(fix, "gamma")) 
             gamma <- matrix(0, M, T-1)
         else { 
-            gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])),
+            gamma <- matrix(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)]),
                 M, T-1, byrow=TRUE)
             if(!equal.ints)
                 gamma <- gamma * delta
@@ -87,7 +91,7 @@ nll <- function(parms) {
         g1 <- dbinom(y[i,1], k, p[i,1])
         if(any(is.na(g1))) g1[] <- 1    # FIXME! Temporary work-around.
         switch(mixture, 
-            P = g2 <- dpois(k, lambda[i]),
+            P = g2 <- dpois(k, lambda[i]), # This could be NA too!
             NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
         omega.itkk <- rep(omega[i,], each=lk*lk)
         gamma.itkk <- rep(gamma[i,], each=lk*lk)
