@@ -26,6 +26,8 @@ lk <- length(k)
 k.times <- rep(rep(k, times=lk), T-1)
 k.each <- rep(rep(k, each=lk), T-1)
 
+first <- apply(y, 1, function(x) min(which(!is.na(x))))
+
 nonzero <- matrix(NA, lk*lk*(T-1), lk)
 for(i in k) nonzero[,i+1] <- k.each >= i & k.times >= i
 
@@ -90,8 +92,8 @@ nll <- function(parms) {
         omega.itkk <- rep(omega[i,], each=lk*lk)
         gamma.itkk <- rep(gamma[i,], each=lk*lk)
         if(dynamics == "autoreg")
-            g3args[,4] <- g3args[,4] * g3args[,2]
-        convMat <- matrix(0, nrow(g3args), K+1)
+            gamma.itkk <- omega.itkk * k.each
+        convMat <- matrix(0, lk*lk*(T-1), K+1)
         for(q in k) {
             nz <- which(nonzero[,q+1])
             convMat[nz, q+1] <- dbinom(q, k.each[nz], omega.itkk[nz]) * 
@@ -99,22 +101,18 @@ nll <- function(parms) {
             }
         g3 <- rowSums(convMat)
         g3 <- array(g3, c(lk, lk, T-1))
-        p.Tk <- rep(p[i, T], each=lk)
-        y.Tk <- rep(y[i, T], each=lk)
-        g1.T <- dbinom(y.Tk, k, p.Tk)
+        g1.T <- dbinom(y[i, T], k, p[i, T])
         g3.T <- g3[,, T-1]
         g.star[, T-1] <- colSums(g1.T * g3.T)
         # NA handling: this will properly determine last obs for each site
         g.star[,T-1][is.na(g.star[, T-1])] <- 1
-        for(t in (T-1):2) {
-            p.tk <- rep(p[i, t], each=lk)
-            y.tk <- rep(y[i, t], each=lk)
-            g1.t <- dbinom(y.tk, k, p.tk)
+        for(t in (T-1):(first[i]+1)) {
+            g1.t <- dbinom(y[i, t], k, p[i, t])
             g.star[, t-1] <- colSums(g1.t * g3[,,t-1] * g.star[,t])
             g.star.na <- is.na(g.star[, t-1])
             g.star[,t-1][g.star.na] <- g.star[,t][g.star.na]
             }
-        L[i] <- sum(g1 * g2 * g.star[,1])
+        L[i] <- sum(g1 * g2 * g.star[,first[i]])
         }
     -sum(log(L))
     }

@@ -102,10 +102,10 @@ summary(umf)
 
 # Fit model and backtransform
 (m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))   # K might be too small
-backTransform(m1, "lambda")
-backTransform(m1, "gamma")
-backTransform(m1, "omega")
-backTransform(m1, "det")
+backTransform(m1, "lambda") # 0.71 initial abundance
+backTransform(m1, "gamma")  # 0.45 recruitment rate
+backTransform(m1, "omega")  # 0.751 survival rate
+backTransform(m1, "det")    # 0.718 detection probability
 
 \dontrun{
 
