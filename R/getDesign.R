@@ -329,7 +329,7 @@ setMethod("getDesign", "unmarkedFramePCO",
     if(!("obs" %in% names(obsCovs)))
         obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:T, M)))
         
-    transCovs <- obsCovs[seq(T, M*T, by=T),] # Ignore last year of data
+    transCovs <- obsCovs[-seq(T, M*T, by=T),] # Ignore last year of data
     for(i in 1:ncol(transCovs))
         if(is.factor(transCovs[,i])) 
             transCovs[,i] <- factor(transCovs[,i]) # drop unused levels

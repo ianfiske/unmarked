@@ -65,7 +65,7 @@ nll <- function(parms) {
         omega <- matrix(1, M, T-1)
     else {
         omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]),
-            M, T, byrow=TRUE)[,-T]
+            M, T-1, byrow=TRUE)
         if(!equal.ints)
             omega <- omega ^ delta
         }
@@ -76,7 +76,7 @@ nll <- function(parms) {
             gamma <- matrix(0, M, T-1)
         else { 
             gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])),
-                M, T, byrow=TRUE)[,-T]
+                M, T-1, byrow=TRUE)
             if(!equal.ints)
                 gamma <- gamma * delta
             }
