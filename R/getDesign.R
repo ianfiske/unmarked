@@ -410,7 +410,6 @@ setMethod("handleNA", "unmarkedFramePCO",
 	
 	if(sum(y.new.na) > 0) {
         y.long[y.new.na] <- NA
-        delta.long[y.new.na] <- NA
         warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
         }
 	

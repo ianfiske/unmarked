@@ -1383,6 +1383,8 @@ setMethod("simulate", "unmarkedFitPCount",
           })
 
 
+
+
 setMethod("simulate", "unmarkedFitPCountOpen", 
     function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
         formlist <- object@formlist
@@ -1395,13 +1397,11 @@ setMethod("simulate", "unmarkedFitPCountOpen",
         T <- ncol(y)
         ## FIXME: Add NA handlilng when first obs is missing
         lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
-#        if(any(is.na(lambda)))
-#            stop("Simulate method not written yet for case of missing values in first sampling period.")
-        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, 
-            byrow=TRUE)[,-T]
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, 
+            byrow=TRUE)
         gamma <- gamma*delta
-        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T, 
-            byrow=TRUE)[,-T]
+        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T-1, 
+            byrow=TRUE)
         omega <- omega^delta
         p <- getP(object, na.rm = na.rm)
         mix <- object@mixture
@@ -1409,20 +1409,26 @@ setMethod("simulate", "unmarkedFitPCountOpen",
         S <- G <- matrix(NA, M, T-1)
         simList <- list()
         for(i in 1:nsim) {
+            y <- matrix(NA, M, T)
             switch(mix, 
                 P = N[,1] <- rpois(M, lambda),
                 NB = N[,1] <- rnbinom(M, size = exp(coef(object["alpha"])), 
                     mu = lambda)
                 )
+            na.p <- is.na(p[,1])
+            y[!na.p, 1] <- rbinom(sum(!na.p), N[!na.p, 1], p[!na.p, 1])
             for(t in 2:T) {
-            	S[,t-1] <- rbinom(M, N[,t-1], omega[,t-1])
-                G[,t-1] <- rpois(M, gamma[,t-1])
-                N[,t] <- S[,t-1] + G[,t-1]
-                N[,t][is.na(N[,t])]
-                
-	            }
-            yvec <- rbinom(M * T, N, prob = p)
-            simList[[i]] <- matrix(yvec, M, T)
+                na <- is.na(omega[,t-1]) | is.na(gamma[,t-1])
+            	  S[!na, t-1] <- rbinom(sum(!na), N[!na, t-1], omega[!na, t-1])
+                G[!na, t-1] <- rpois(sum(!na), gamma[!na, t-1])
+                N[!na, t] <- S[!na, t-1] + G[!na, t-1]
+                N[na, t] <- N[na, t-1]
+                na.p <- is.na(p[,t])
+                y[!na.p, t] <- rbinom(sum(!na.p), N[na.p, t], p[!na.p, t])   
+                }
+            #yvec <- rbinom(M * T, N, prob = p)
+            #simList[[i]] <- matrix(yvec, M, T)
+            simList[[i]] <- y
             }
         return(simList)
         })

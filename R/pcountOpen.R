@@ -50,7 +50,7 @@ if(identical(fix, "gamma")) {
     else { nGP <- 0; gamParms <- character(0) }
     }
 else if(identical(dynamics, "notrend")) {
-        if(nGP > 1) stop(gamma covariates no allowed when dyamics=="notrend")
+        if(nGP > 1) stop("gamma covariates not allowed when dyamics==notrend")
         else { nGP <- 0; gamParms <- character(0) }
         }
 if(identical(fix, "omega")) {
