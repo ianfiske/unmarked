@@ -641,11 +641,11 @@ setMethod("fitted", "unmarkedFitPCountOpen",
         T <- ncol(y)
         ### FIXME: Add NA handling when first obs is missing
         lambda <- exp(Xlam %*% coef(object, 'lambda'))
-        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T, 
-            byrow=TRUE)[,-T]
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, 
+            byrow=TRUE)
         gamma <- gamma*delta
-        omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T, 
-            byrow=TRUE)[,-T]
+        omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, 
+            byrow=TRUE)
         omega <- omega^delta
         p <- getP(object, na.rm = na.rm)
         state <- matrix(NA, M, T)
