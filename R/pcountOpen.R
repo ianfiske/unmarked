@@ -40,7 +40,7 @@ nGP <- ncol(Xgam)
 nOP <- ncol(Xom)
 nDP <- ncol(Xp)
 
-#FIXME: what about internal NAs?
+#Note, internal NAs are handled by formatDelta(). Treated as time gaps.
 equal.ints <- identical(length(table(delta)), 1L) 
 
 if(identical(fix, "gamma")) {
@@ -96,7 +96,7 @@ nll <- function(parms) {
         omega.itkk <- rep(omega[i,], each=lk*lk)
         gamma.itkk <- rep(gamma[i,], each=lk*lk)
         if(dynamics == "autoreg")
-            gamma.itkk <- omega.itkk * k.each
+            gamma.itkk <- gamma.itkk * k.each
         convMat <- matrix(0, lk*lk*(T-1), K+1)
         for(q in k) {
             nz <- which(nonzero[,q+1])
@@ -148,7 +148,7 @@ detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates))
-if(!identical(fix, "gamma")) 
+if(!(identical(fix, "gamma") | identical(dynamics, "notrend"))) 
     estimateList@estimates$gamma <- unmarkedEstimate(name = "Recruitment", 
         short.name = "gam", estimates = ests[(nAP+1) : (nAP+nGP)],
         covMat = as.matrix(covMat[(nAP+1) : (nAP+nGP), (nAP+1) : (nAP+nGP)]),
