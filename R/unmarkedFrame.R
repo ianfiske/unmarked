@@ -463,6 +463,10 @@ setMethod("summary", "unmarkedMultFrame",
 			cat("\nObservation-level covariates:\n")
 			print(summary(object@obsCovs))
 			}
+		if(!is.null(object@yearlySiteCovs)) {
+			cat("\nYearly-site-level covariates:\n")
+			print(summary(object@yearlySiteCovs))
+			}
 	})
 
 
