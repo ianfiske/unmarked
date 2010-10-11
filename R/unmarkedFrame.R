@@ -146,7 +146,7 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 	yearlySiteCovs = NULL) 
 {
     J <- ncol(y)
-	  umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
 	
@@ -160,7 +160,7 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
                     stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
             }
         if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
-        yearlySiteCovs <- data.frame(lapply(obsCovs, function(x) 
+        yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x) 
             as.vector(t(x))))
         }    
 
@@ -207,7 +207,7 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
                     stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
             }
         if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
-        yearlySiteCovs <- data.frame(lapply(obsCovs, function(x) 
+        yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x) 
             as.vector(t(x))))
         }    
     umf@yearlySiteCovs <- yearlySiteCovs
@@ -262,28 +262,30 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, obsToY,
 
 
 setMethod("show", "unmarkedFrame",
-		function(object) {
-			df <- as(object, "data.frame")
-			cat("Data frame representation of unmarkedFrame object.\n")
-			print(df)
-		})
-		
-		
+        function(object) {
+            df <- as(object, "data.frame")
+            cat("Data frame representation of unmarkedFrame object.\n")
+            print(df)
+        })
+
+
 setMethod("show", "unmarkedMultFrame",
-		function(object) {
-			df <- as(object, "data.frame")
-			ysc <- yearlySiteCovs(object)
-			if(is.null(ysc)) { 
-    			cat("Data frame representation of unmarkedFrame object.\n")
-          print(df)
-          }
-      else {
-          df <- data.frame(df, ysc)
-          cat("Data frame representation of unmarkedFrame object.\n")
-          print(df)
-          }
-		})
-		
+        function(object) {
+            df <- as(object, "data.frame")
+            ysc <- yearlySiteCovs(object)
+            if(is.null(ysc)) { 
+                cat("Data frame representation of unmarkedFrame object.\n")
+                print(df)
+                }
+            else {
+                T <- object@numPrimary
+                yscwide <- data.frame(lapply(ysc, matrix, ncol=T))
+                df <- data.frame(df, yscwide)
+                cat("Data frame representation of unmarkedFrame object.\n")
+                print(df)
+                }
+        })
+
 
 ############################ EXTRACTORS ########################################
 
