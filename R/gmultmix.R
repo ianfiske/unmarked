@@ -18,7 +18,7 @@ Xphi <- D$Xphi
 Xdet <- D$Xdet
 y <- D$y  # MxJT 
 
-Xlam.offset <- D$X.offset
+Xlam.offset <- D$Xlam.offset
 Xphi.offset <- D$Xphi.offset
 Xdet.offset <- D$Xdet.offset
 if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
