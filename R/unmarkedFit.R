@@ -1425,24 +1425,24 @@ setMethod("simulate", "unmarkedFitGMM",
     detParms <- coef(object, type = "det")        
     lam <- drop(exp(Xlam %*% lamParms + Xlam.offset))
     phi <- as.numeric(plogis(Xphi %*% phiParms + Xphi.offset))
+    phi.mat <- matrix(phi, nrow=n, byrow=TRUE)
     p <- as.numeric(plogis(Xdet %*% detParms + Xdet.offset))    
 
-    if(identical(mixture, "P")) M <- rpois(n=n, lambda=lam)
-    else if(identical(mixture, "NB")) {
-        alpha <- coef(object, type="alpha")
-        M <- rnbinom(n=n, mu=lam, size=exp(alpha))
-        }
-    phi.mat <- matrix(phi, nrow=n, byrow=TRUE)
-    N <- rbinom(n*T, size=M, prob=phi.mat)
-    N <- matrix(N, nrow=n, ncol=T, byrow=TRUE)
-    
     cp.arr <- array(NA, c(n, T, J+1))  
     cp.mat <- getP(object, na.rm = na.rm)
     cp.temp <- array(cp.mat, c(n, J, T))
     cp.arr[,,1:J] <- aperm(cp.temp, c(1,3,2))
     cp.arr[,,J+1] <- 1 - apply(cp.arr[,,1:J], 1:2, sum, na.rm=TRUE)
+
     simList <- list()
     for(s in 1:nsim) {
+        switch(mixture, 
+            P = M <- rpois(n=n, lambda=lam),
+            NB = M <- rnbinom(n=n, mu=lam, size=exp(coef(object, type="alpha"))))
+
+        N <- rbinom(n*T, size=M, prob=phi.mat)
+        N <- matrix(N, nrow=n, ncol=T, byrow=TRUE)
+    
         y <- array(NA, c(n, J, T))
         for(i in 1:n)
             for(t in 1:T)
