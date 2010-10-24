@@ -1424,7 +1424,7 @@ setMethod("simulate", "unmarkedFitPCountOpen",
                 N[!na, t] <- S[!na, t-1] + G[!na, t-1]
                 N[na, t] <- N[na, t-1]
                 na.p <- is.na(p[,t])
-                y[!na.p, t] <- rbinom(sum(!na.p), N[na.p, t], p[!na.p, t])   
+                y[!na.p, t] <- rbinom(sum(!na.p), N[!na.p, t], p[!na.p, t])   
                 }
             #yvec <- rbinom(M * T, N, prob = p)
             #simList[[i]] <- matrix(yvec, M, T)
