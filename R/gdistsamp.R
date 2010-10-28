@@ -92,14 +92,14 @@ for(i in 1:M) {
 nll <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
     phi <- drop(plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset))
-    p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
+    shape <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
 
     phi.mat <- matrix(phi, M, T, byrow=TRUE)
     phi <- as.numeric(phi.mat)
     
-    p <- matrix(p, nrow=M, byrow=TRUE)
-    p <- array(p, c(M, J, T))
-    p <- aperm(p, c(1,3,2))     
+    shape <- matrix(p, nrow=M, byrow=TRUE)
+    shape <- array(shape, c(M, J, T))
+    shape <- aperm(shape, c(1,3,2))     
     cp <- array(as.numeric(NA), c(M, T, J+1))
     
     for(t in 1:T) cp[,t,1:J] <- do.call(piFun, list(p[,t,]))
