@@ -91,6 +91,7 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
 # Condition number
 cn <- function(object) {
     h <- hessian(object)
+    if(is.null(h)) return(NA)
     if(any(is.na(h))) return(NA)
         else {
    	        ev <- eigen(h)$value
