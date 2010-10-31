@@ -60,6 +60,8 @@ if(identical(fix, "omega")) {
     else { nOP <- 0; omParms <- character(0) }
     }
 nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
+if(!missing(starts) & length(starts) != nP)
+    stop(paste("The number of starting values should be", nP)) 
 
 nll <- function(parms) {
     lambda <- drop(exp(Xlam %*% parms[1 : nAP]))
