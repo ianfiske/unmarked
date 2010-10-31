@@ -58,6 +58,43 @@ setMethod("summary", "unmarkedFitList", function(object) {
     for(i in 1:length(fits))
         summary(fits[[i]])
     })
+    
+    
+setMethod("coef", "unmarkedFitList", function(object) 
+{
+    fits <- object@fits
+    coef.list <- lapply(fits, coef)
+    coef.names <- unique(unlist(lapply(coef.list, names)))
+    coef.out <- matrix(NA, length(fits), length(coef.names))
+    colnames(coef.out) <- coef.names
+    if(!is.null(names(fits)))
+        rownames(coef.out) <- names(fits)
+    for(i in 1:length(coef.list))
+        coef.out[i, names(coef.list[[i]])] <- coef.list[[i]]
+    return(coef.out)
+})
+
+
+setMethod("SE", "unmarkedFitList", function(obj) 
+{
+    fits <- obj@fits
+    se.list <- lapply(fits, function(x) {
+        tr <- try(SE(x))
+        if(class(tr)[1] == "try-error")
+            return(rep(NA, length(coef(x))))
+        else
+            return(tr)
+        })
+    se.names <- unique(unlist(lapply(se.list, names)))
+    se.out <- matrix(NA, length(fits), length(se.names))
+    colnames(se.out) <- se.names
+    if(!is.null(names(fits)))
+        rownames(se.out) <- names(fits)
+    for(i in 1:length(se.list))
+        se.out[i, names(se.list[[i]])] <- se.list[[i]]
+    return(se.out)
+})
+    
 
 
 
