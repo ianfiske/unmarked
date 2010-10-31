@@ -112,6 +112,8 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
         parav <- as.numeric(E %*% wts)
         seav <- as.numeric((SE + (E - parav)^2) %*% wts) # Double check this
         out <- data.frame(Predicted = parav, SE = seav)
+        out$lower <- out$Predicted - 1.96*out$SE
+        out$upper <- out$Predicted - 1.96*out$SE
         if(appendData) {
             if(missing(newdata))
                 newdata <- getData(object@fits[[1]])
