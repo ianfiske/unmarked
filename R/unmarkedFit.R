@@ -142,7 +142,8 @@ setMethod("linearComb",
 })
 
 
-setMethod("backTransform", "unmarkedFit", function(obj, type) {
+setMethod("backTransform", "unmarkedFit", function(obj, type) 
+{
     est <- obj[type]
     if(length(est@estimates) == 1) {
         lc <- linearComb(est, 1)
@@ -396,7 +397,7 @@ setMethod("vcov", "unmarkedFit",
             },
         nonparboot = {
             if (is.null(object@bootstrapSamples)) {
-                stop("No bootstrap samples have been drawn.  Use nonparboot first.")
+               stop("No bootstrap samples have been drawn. Use nonparboot first.")
                 }
             v <- object@covMatBS
         })
@@ -1207,201 +1208,202 @@ setMethod("simulate", "unmarkedFitDS",
 
 
 setMethod("simulate", "unmarkedFitPCount", 
-          function(object, nsim = 1, seed = NULL, na.rm = TRUE)
-          {
-            formula <- object@formula
-            umf <- object@data
-            designMats <- getDesign(umf, formula, na.rm = na.rm)
-            y <- designMats$y
-            X <- designMats$X
-            X.offset <- designMats$X.offset
-            if (is.null(X.offset)) {
-              X.offset <- rep(0, nrow(X))
-            }
-            M <- nrow(y)
-            J <- ncol(y)
-            allParms <- coef(object, altNames = FALSE)
-            lamParms <- coef(object, type = "state")
-            lam <- as.numeric(exp(X %*% lamParms + X.offset)) 
-            lamvec <- rep(lam, each = J)
-            pvec <- c(t(getP(object, na.rm = na.rm)))
-            mix <- object@mixture
-            simList <- list()
-            for(i in 1:nsim) {
-              switch(mix, 
-                     P = yvec <- rpois(M * J, lamvec * pvec),
-                     NB = {
-                       N <- rnbinom(M, size = exp(coef(object["alpha"])), mu = lam)
-                       yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
-                     }
-                     )
-              simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
-            }
-            return(simList)
-          })
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+    formula <- object@formula
+    umf <- object@data
+    designMats <- getDesign(umf, formula, na.rm = na.rm)
+    y <- designMats$y
+    X <- designMats$X
+    X.offset <- designMats$X.offset
+    if (is.null(X.offset)) {
+        X.offset <- rep(0, nrow(X))
+        }
+    M <- nrow(y)
+    J <- ncol(y)
+    allParms <- coef(object, altNames = FALSE)
+    lamParms <- coef(object, type = "state")
+    lam <- as.numeric(exp(X %*% lamParms + X.offset)) 
+    lamvec <- rep(lam, each = J)
+    pvec <- c(t(getP(object, na.rm = na.rm)))
+    mix <- object@mixture
+    simList <- list()
+    for(i in 1:nsim) {
+        switch(mix, 
+            P = yvec <- rpois(M * J, lamvec * pvec),
+            NB = {
+                N <- rnbinom(M, size = exp(coef(object["alpha"])), mu = lam)
+                    yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
+                })
+        simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+        }
+    return(simList)
+})
 
 
 
 setMethod("simulate", "unmarkedFitMPois", 
-          function(object, nsim = 1, seed = NULL, na.rm = TRUE)
-          {
-            formula <- object@formula
-            umf <- object@data
-            designMats <- getDesign(umf, formula, na.rm = na.rm)
-            y <- designMats$y
-            X <- designMats$X
-            X.offset <- designMats$X.offset
-            if (is.null(X.offset)) {
-              X.offset <- rep(0, nrow(X))
-            }
-            M <- nrow(y)
-            J <- ncol(y)
-            lamParms <- coef(object, type = "state")
-            lam <- as.numeric(exp(X %*% lamParms + X.offset))
-            lamvec <- rep(lam, each = J)
-            pivec <- as.vector(t(getP(object, na.rm = na.rm)))
-            simList <- list()
-            for(i in 1:nsim) {
-              yvec <- rpois(M * J, lamvec * pivec)
-              simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
-            }
-            return(simList)
-          })
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+    formula <- object@formula
+    umf <- object@data
+    designMats <- getDesign(umf, formula, na.rm = na.rm)
+    y <- designMats$y
+    X <- designMats$X
+    X.offset <- designMats$X.offset
+    if (is.null(X.offset)) {
+        X.offset <- rep(0, nrow(X))
+        }
+    M <- nrow(y)
+    J <- ncol(y)
+    lamParms <- coef(object, type = "state")
+    lam <- as.numeric(exp(X %*% lamParms + X.offset))
+    lamvec <- rep(lam, each = J)
+    pivec <- as.vector(t(getP(object, na.rm = na.rm)))
+    simList <- list()
+    for(i in 1:nsim) {
+        yvec <- rpois(M * J, lamvec * pivec)
+        simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+        }
+    return(simList)
+})
 
 
 
 
 setMethod("simulate", "unmarkedFitOccu", 
-          function(object, nsim = 1, seed = NULL, na.rm = TRUE)
-          {
-            formula <- object@formula
-            umf <- object@data
-            designMats <- getDesign(umf, formula, na.rm = na.rm)
-            y <- designMats$y
-            X <- designMats$X
-            X.offset <- designMats$X.offset
-            if (is.null(X.offset)) {
-              X.offset <- rep(0, nrow(X))
-            }
-            M <- nrow(y)
-            J <- ncol(y)
-            allParms <- coef(object, altNames = FALSE)
-            psiParms <- coef(object, type = "state")
-            psi <- as.numeric(plogis(X %*% psiParms + X.offset))
-            p <- c(t(getP(object,na.rm = na.rm)))
-            simList <- list()
-            for(i in 1:nsim) {
-              Z <- rbinom(M, 1, psi)
-              Z[object@knownOcc] <- 1
-              yvec <- rep(Z, each = J)*rbinom(M * J, 1, prob = p)
-              simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
-            }
-            return(simList)
-          })
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+    formula <- object@formula
+    umf <- object@data
+    designMats <- getDesign(umf, formula, na.rm = na.rm)
+    y <- designMats$y
+    X <- designMats$X
+    X.offset <- designMats$X.offset
+    if (is.null(X.offset)) {
+        X.offset <- rep(0, nrow(X))
+        }
+    M <- nrow(y)
+    J <- ncol(y)
+    allParms <- coef(object, altNames = FALSE)
+    psiParms <- coef(object, type = "state")
+    psi <- as.numeric(plogis(X %*% psiParms + X.offset))
+    p <- c(t(getP(object,na.rm = na.rm)))
+    simList <- list()
+    for(i in 1:nsim) {
+        Z <- rbinom(M, 1, psi)
+        Z[object@knownOcc] <- 1
+        yvec <- rep(Z, each = J)*rbinom(M * J, 1, prob = p)
+            simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
+        }
+    return(simList)
+})
+
 
 
 setMethod("simulate", "unmarkedFitColExt",
-          function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
-            data <- object@data
-            psiParms <- coef(object, 'psi')
-            detParms <- coef(object, 'det')
-            colParms <- coef(object, 'col')
-            extParms <- coef(object, 'ext')
-            formulaList <- list(psiformula=object@psiformula,
-                                gammaformula=object@gamformula,
-                                epsilonformula=object@epsformula,
-                                pformula=object@detformula)
-            designMats <- getDesign(object@data, formlist = formulaList)
-            V.itj <- designMats$V
-            X.it.gam <- designMats$X.gam
-            X.it.eps <- designMats$X.eps
-            W.i <- designMats$W
-            y <- designMats$y
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE) 
+{
+    data <- object@data
+    psiParms <- coef(object, 'psi')
+    detParms <- coef(object, 'det')
+    colParms <- coef(object, 'col')
+    extParms <- coef(object, 'ext')
+    formulaList <- list(psiformula=object@psiformula,
+        gammaformula=object@gamformula,
+        epsilonformula=object@epsformula,
+        pformula=object@detformula)
+    designMats <- getDesign(object@data, formlist = formulaList)
+    V.itj <- designMats$V
+    X.it.gam <- designMats$X.gam
+    X.it.eps <- designMats$X.eps
+    W.i <- designMats$W
+    y <- designMats$y
 
-            M <- nrow(y)	# M <- nrow(X.it)
-            nY <- data@numPrimary
-            J <- obsNum(data)/nY
+    M <- nrow(y)	# M <- nrow(X.it)
+    nY <- data@numPrimary
+    J <- obsNum(data)/nY
 
-            psiP <- plogis(W.i %*% psiParms)
-            detP <- plogis(V.itj %*% detParms)
-            colP <- plogis(X.it.gam  %*% colParms)
-            extP <- plogis(X.it.eps %*% extParms)
+    psiP <- plogis(W.i %*% psiParms)
+    detP <- plogis(V.itj %*% detParms)
+    colP <- plogis(X.it.gam  %*% colParms)
+    extP <- plogis(X.it.eps %*% extParms)
             
-            detP <- array(detP, c(J, nY, M))
-            detP <- aperm(detP, c(3, 1, 2))
-            colP <- matrix(colP, M, nY, byrow = TRUE)
-            extP <- matrix(extP, M, nY, byrow = TRUE)
+    detP <- array(detP, c(J, nY, M))
+    detP <- aperm(detP, c(3, 1, 2))
+    colP <- matrix(colP, M, nY, byrow = TRUE)
+    extP <- matrix(extP, M, nY, byrow = TRUE)
             
-            simList <- list()
-            for(s in 1:nsim) {
-              ## generate first year's data
-              x <- matrix(0, M, nY)
-              x[,1] <- rbinom(M, 1, psiP) 
+    simList <- list()
+    for(s in 1:nsim) {
+        ## generate first year's data
+        x <- matrix(0, M, nY)
+        x[,1] <- rbinom(M, 1, psiP) 
               
-              ## create transition matrices (phi^T)
-              phis <- array(NA,c(2,2,nY-1,M)) #array of phis for each
-              for(i in 1:M) {
-                for(t in 1:(nY-1)) {
-                  phis[,,t,i] <- matrix(c(1-colP[i,t], colP[i,t], extP[i,t], 1-extP[i,t])) 
+        ## create transition matrices (phi^T)
+        phis <- array(NA,c(2,2,nY-1,M)) #array of phis for each
+        for(i in 1:M) {
+            for(t in 1:(nY-1)) {
+                phis[,,t,i] <- matrix(c(1-colP[i,t], colP[i,t], extP[i,t], 
+                    1-extP[i,t])) 
                 }
-              }
-              
-              ## generate latent years 2:T
-              for(i in 1:M) {
-                for(t in 2:nY) {
-                  x[i,t] <- rbinom(1, 1, phis[2,x[i,t-1]+1,t-1,i])
-                }
-              }
-              
-              ## generate observations
-              y <- array(NA, c(M, J, nY))
-              for(t in 1:nY) {
-                y[,,t] <- rbinom(M*J, 1, x[,t]*detP[,,t])
-              }
-              
-              y.mat <- y[,,1]
-              for(i in 2:dim(y)[3]) {
-                y.mat <- cbind(y.mat,y[,,i])
-              }
-              simList[[s]] <- y.mat
             }
-            
-            return(simList)
-            
-          })
+              
+        ## generate latent years 2:T
+        for(i in 1:M) {
+            for(t in 2:nY) {
+                x[i,t] <- rbinom(1, 1, phis[2,x[i,t-1]+1,t-1,i])
+                }
+            }
+              
+        ## generate observations
+        y <- array(NA, c(M, J, nY))
+        for(t in 1:nY) {
+            y[,,t] <- rbinom(M*J, 1, x[,t]*detP[,,t])
+            }
+              
+        y.mat <- y[,,1]
+        for(i in 2:dim(y)[3]) {
+            y.mat <- cbind(y.mat,y[,,i])
+            }
+        simList[[s]] <- y.mat
+        }            
+    return(simList)
+})
 
 
 
 
 setMethod("simulate", "unmarkedFitOccuRN",
-          function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
-            formula <- object@formula
-            umf <- object@data
-            designMats <- unmarked:::getDesign(umf, formula, na.rm = na.rm)
-            y <- designMats$y; X <- designMats$X; V <- designMats$V
-            X.offset <- designMats$X.offset
-            if (is.null(X.offset)) {
-              X.offset <- rep(0, nrow(X))
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE) 
+{
+    formula <- object@formula
+    umf <- object@data
+    designMats <- unmarked:::getDesign(umf, formula, na.rm = na.rm)
+    y <- designMats$y; X <- designMats$X; V <- designMats$V
+    X.offset <- designMats$X.offset
+    if (is.null(X.offset)) {
+        X.offset <- rep(0, nrow(X))
+        }
+    M <- nrow(y)
+    J <- ncol(y)
+    detParms <- coef(object, 'det')
+    r.ij <- plogis(V %*% detParms)
+    r <- matrix(r.ij, M, J, byrow = TRUE)
+    lamParms <- coef(object, 'state')
+    lambda <- exp(X %*% lamParms + X.offset)
+    simList <- list()
+    for(s in 1:nsim) {
+        N.i <- rpois(M, lambda)
+        N.ij <- rep(N.i, each = J)
+        y <- matrix(NA, M, J)
+        for(i in 1:J) {
+            y[,i] <- rbinom(M, N.i, r[,i])
             }
-            M <- nrow(y)
-            J <- ncol(y)
-            detParms <- coef(object, 'det')
-            r.ij <- plogis(V %*% detParms)
-            r <- matrix(r.ij, M, J, byrow = TRUE)
-            lamParms <- coef(object, 'state')
-            lambda <- exp(X %*% lamParms + X.offset)
-            simList <- list()
-            for(s in 1:nsim) {
-              N.i <- rpois(M, lambda)
-              N.ij <- rep(N.i, each = J)
-              y <- matrix(NA, M, J)
-              for(i in 1:J) {
-                y[,i] <- rbinom(M, N.i, r[,i])
-              }
-              simList[[s]] <- ifelse(y > 0, 1, 0)
-            }
-            return(simList)
-          })
+        simList[[s]] <- ifelse(y > 0, 1, 0)
+        }
+    return(simList)
+})
           
           
           
@@ -1480,7 +1482,7 @@ setClass("parboot",
 
 setMethod("parboot", "unmarkedFit", 
     function(object, statistic=SSE, nsim=10, report=2, ...) 
-    {
+{
     statistic <- match.fun(statistic)
     call <- match.call(call = sys.call(-1))
     formula <- object@formula
@@ -1513,7 +1515,7 @@ setMethod("parboot", "unmarkedFit",
         }
     out <- new("parboot", call=call, t0 = t0, t.star = t.star)
     return(out)
-    })
+})
 
 
 
@@ -1521,49 +1523,52 @@ setMethod("parboot", "unmarkedFit",
 
 
 setMethod("show", "parboot", function(object) 
-          {
-            t.star <- object@t.star
-            t0 <- object@t0
-            nsim <- nrow(t.star)
-            biasMat <- pMat <- matrix(NA, nsim, length(t0))
-            for(i in 1:nsim) {
-                biasMat[i,] <- t0 - t.star[i,]
-                pMat[i,] <- abs(t.star[i,] - 1) > abs(t0 - 1)
-                }
-            bias <- colMeans(biasMat)
-            bias.se <- apply(biasMat, 2, sd)
-            p.val <- colSums(pMat) / (1 + nsim)
-            stats <- data.frame("t0" = t0, "mean(t0 - t_B)" = bias, 
-                "StdDev(t0 - t_B)" = bias.se, "Pr(t_B > t0)" = p.val, 
-                check.names = FALSE)
-            cat("\nCall:", deparse(object@call, width=500), fill=T)
-            cat("\nParametric Bootstrap Statistics:\n")
-            print(stats, digits=3)
-            cat("\nt_B quantiles:\n")
-            print(t(apply(t.star, 2, quantile, 
-                probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
-            cat("\nt0 = Original statistic compuated from data\n")
-            cat("t_B = Vector of bootstrap samples\n\n")
-          })
+{
+    t.star <- object@t.star
+    t0 <- object@t0
+    nsim <- nrow(t.star)
+    biasMat <- pMat <- matrix(NA, nsim, length(t0))
+    for(i in 1:nsim) {
+        biasMat[i,] <- t0 - t.star[i,]
+        pMat[i,] <- abs(t.star[i,] - 1) > abs(t0 - 1)
+        }
+    bias <- colMeans(biasMat)
+    bias.se <- apply(biasMat, 2, sd)
+    p.val <- colSums(pMat) / (1 + nsim)
+    stats <- data.frame("t0" = t0, "mean(t0 - t_B)" = bias, 
+        "StdDev(t0 - t_B)" = bias.se, "Pr(t_B > t0)" = p.val, 
+        check.names = FALSE)
+    cat("\nCall:", deparse(object@call, width=500), fill=T)
+    cat("\nParametric Bootstrap Statistics:\n")
+    print(stats, digits=3)
+    cat("\nt_B quantiles:\n")
+    print(t(apply(t.star, 2, quantile, 
+        probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
+    cat("\nt0 = Original statistic compuated from data\n")
+    cat("t_B = Vector of bootstrap samples\n\n")
+})
 
 
 
 
 setMethod("plot", signature(x="parboot", y="missing"), 
-    function(x, y, main = "Parametric Bootstrapped Samples", ...)
-    {
-        t.star <- x@t.star
-        t0 <- x@t0
-        for(i in 1:length(t0)) {
-          h <- hist(t.star[,i], plot = FALSE)
-          hist(t.star[,i], xlab=colnames(t.star)[i],
-               xlim = c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i])),
-               main = main, ...)
-            abline(v=t0[i], lty=2)
-            devAskNewPage(ask = TRUE)
-            }
-        devAskNewPage(ask = FALSE)
-    })
+    function(x, y, xlab, main = "Parametric Bootstrapped Samples", xlim, ...)
+{
+    t.star <- x@t.star
+    t0 <- x@t0
+    for(i in 1:length(t0)) {
+        if(missing(xlab))
+            xlab <- colnames(t.star)[i]
+        h <- hist(t.star[,i], plot = FALSE)
+        if(missing(xlim))
+            xlim <- c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i]))
+        hist(t.star[,i], xlab=xlab,
+            xlim = xlim, main = main, ...)
+        abline(v=t0[i], lty=2)
+        devAskNewPage(ask = TRUE)
+        }
+    devAskNewPage(ask = FALSE)
+})
 
 
 # ----------------------- Nonparametric bootstrapping --------------------------
