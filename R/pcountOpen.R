@@ -60,7 +60,7 @@ if(identical(fix, "omega")) {
     else { nOP <- 0; omParms <- character(0) }
     }
 nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
-if(!missing(starts) & length(starts) != nP)
+if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP)) 
 
 nll <- function(parms) {
@@ -169,10 +169,10 @@ if(identical(mixture, "NB")) {
         invlinkGrad = "exp")
     }
 umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", call = match.call(),
-    formula = formula,
-    formlist = formlist, data = data, sitesRemoved=D$removed.sites,
-    estimates = estimateList, AIC = fmAIC, opt = opt, negLogLike = fm$value,
-    nllFun = nll, K = K, mixture = mixture)
+    formula = formula, formlist = formlist, data = data, 
+    sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC, 
+    opt = opt, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture, 
+    dynamics = dynamics)
 return(umfit)
 }
 

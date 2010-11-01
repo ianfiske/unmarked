@@ -45,7 +45,8 @@ setClass("unmarkedFitPCount",
 
 setClass("unmarkedFitPCountOpen", 
         representation(
-            formlist = "list"),
+            formlist = "list",
+            dynamics = "character"),
         contains = "unmarkedFitPCount")
 
 
