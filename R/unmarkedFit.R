@@ -1411,7 +1411,7 @@ setMethod("simulate", "unmarkedFitPCountOpen",
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, 
             byrow=TRUE)
         gamma <- gamma*delta
-        omega <- matrix(plogis(Xgam %*% coef(object, 'omega')), M, T-1, 
+        omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, 
             byrow=TRUE)
         omega <- omega^delta
         p <- getP(object, na.rm = na.rm)
