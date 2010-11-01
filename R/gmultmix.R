@@ -51,6 +51,9 @@ nLP <- ncol(Xlam)
 nPP <- ncol(Xphi)
 nDP <- ncol(Xdet)
 nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
+if(!missing(starts) && length(starts) != nP)
+    stop(paste("The number of starting values should be", nP))
+
 
 cp <- array(as.numeric(NA), c(M, T, J+1))
 g <- matrix(as.numeric(NA), M, lk)
