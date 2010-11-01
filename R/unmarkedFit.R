@@ -1398,8 +1398,11 @@ setMethod("simulate", "unmarkedFitPCount",
 
 
 setMethod("simulate", "unmarkedFitPCountOpen", 
-    function(object, nsim = 1, seed = NULL, na.rm = TRUE) {
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE) 
+{
         formlist <- object@formlist
+        mix <- object@mixture
+        dynamics <- object@dynamics
         umf <- object@data
         D <- getDesign(umf, object@formula, na.rm = na.rm)
         Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
@@ -1409,14 +1412,15 @@ setMethod("simulate", "unmarkedFitPCountOpen",
         T <- ncol(y)
         ## FIXME: Add NA handlilng when first obs is missing
         lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
-        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, 
-            byrow=TRUE)
-        gamma <- gamma*delta
+        if(dynamics != "notrend") {
+            gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, 
+                byrow=TRUE)
+            gamma <- gamma*delta
+            } else gamma <- matrix(NA, M, T-1)
         omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, 
             byrow=TRUE)
         omega <- omega^delta
         p <- getP(object, na.rm = na.rm)
-        mix <- object@mixture
         N <- matrix(NA, M, T)
         S <- G <- matrix(NA, M, T-1)
         simList <- list()
@@ -1432,6 +1436,10 @@ setMethod("simulate", "unmarkedFitPCountOpen",
             for(t in 2:T) {
                 na <- is.na(omega[,t-1]) | is.na(gamma[,t-1])
             	  S[!na, t-1] <- rbinom(sum(!na), N[!na, t-1], omega[!na, t-1])
+            	  if(identical(dynamics, "autoreg"))
+            	     gamma[!na, t-1] <- gamma[!na, t-1] * N[!na, t-1]
+            	  if(identical(dynamics, "notrend")) # is this true for t>2??
+            	     gamma[!na, t-1] <- (1-omega[!na, t-1]) * lambda[!na]
                 G[!na, t-1] <- rpois(sum(!na), gamma[!na, t-1])
                 N[!na, t] <- S[!na, t-1] + G[!na, t-1]
                 N[na, t] <- N[na, t-1]
