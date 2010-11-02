@@ -1482,7 +1482,7 @@ setClass("parboot",
          
 
 setMethod("parboot", "unmarkedFit", 
-    function(object, statistic=SSE, nsim=10, report=2, ...) 
+    function(object, statistic=SSE, nsim=10, report, ...) 
 {
     statistic <- match.fun(statistic)
     call <- match.call(call = sys.call(-1))
@@ -1499,7 +1499,8 @@ setMethod("parboot", "unmarkedFit",
     if(!is.null(names(t0)))
         colnames(t.star) <- names(t0)
     else colnames(t.star) <- paste("t*", 1:lt0, sep="")
-    cat("t0 =", t0, "\n")      
+    if(!missing(report))
+        cat("t0 =", t0, "\n")      
     fits <- list()
     simdata <- umf
     simList <- simulate(object, nsim = nsim, na.rm = FALSE)
@@ -1509,10 +1510,12 @@ setMethod("parboot", "unmarkedFit",
         simdata@y <- y.sim
         fits[[i]] <- update(object, data=simdata, starts=ests, se=FALSE, ...)
         t.star[i,] <- statistic(fits[[i]], ...)
-        if(nsim > report && i %in% seq(report, nsim, by=report))
-            cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=", "), 
-                fill=TRUE)
-        flush.console()
+        if(!missing(report)) {
+            if(nsim > report && i %in% seq(report, nsim, by=report))
+                cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=", "), 
+                    fill=TRUE)
+            flush.console()
+            }
         }
     out <- new("parboot", call=call, t0 = t0, t.star = t.star)
     return(out)
@@ -1562,9 +1565,8 @@ setMethod("plot", signature(x="parboot", y="missing"),
             xlab <- colnames(t.star)[i]
         h <- hist(t.star[,i], plot = FALSE)
         if(missing(xlim))
-            xlim <- c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i]))
-        hist(t.star[,i], xlab=xlab,
-            xlim = xlim, main = main, ...)
+            xl <- c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i]))
+        hist(t.star[,i], xlab=xlab, xlim = xl, main = main, ...)
         abline(v=t0[i], lty=2)
         devAskNewPage(ask = TRUE)
         }
