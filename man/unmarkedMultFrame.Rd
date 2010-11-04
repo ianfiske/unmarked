@@ -89,7 +89,7 @@ umf <- unmarkedMultFrame(y=y,
 umfGMM1 <- unmarkedFrameGMM(y=y, 
     siteCovs = data.frame(site=site), 
     obsCovs=list(occasion=occasions),
-    yearlySiteCovs=data.frame(year=years), 
+    yearlySiteCovs=data.frame(year=c(t(years))), 
     numPrimary=T, type="removal")   
 
 
