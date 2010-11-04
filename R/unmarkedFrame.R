@@ -146,7 +146,7 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 	yearlySiteCovs = NULL) 
 {
     J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
+	  umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
 	
@@ -279,7 +279,7 @@ setMethod("show", "unmarkedMultFrame",
                 }
             else {
                 T <- object@numPrimary
-                yscwide <- data.frame(lapply(ysc, matrix, ncol=T))
+                yscwide <- data.frame(lapply(ysc, matrix, ncol=T, byrow=TRUE))
                 df <- data.frame(df, yscwide)
                 cat("Data frame representation of unmarkedFrame object.\n")
                 print(df)
