@@ -93,7 +93,7 @@ nll <- function(pars) {
     
     for(t in 1:T) cp[,t,1:J] <- do.call(piFun, list(p[,t,]))
     cp[,,1:J] <- cp[,,1:J] * phi
-    cp[,,J+1] <- 1 - apply(cp[,,1:J], 1:2, sum, na.rm=TRUE) # is na.rm=T valid?
+    cp[,,J+1] <- 1 - apply(cp[,,1:J], 1:2, sum, na.rm=TRUE) # Double-check
     
     switch(mixture, 
         P = f <- sapply(k, function(x) dpois(x, lambda)),
@@ -102,12 +102,10 @@ nll <- function(pars) {
     for(i in 1:M) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
-            if(all(naflag[i,t,])) 
-                A[,t] <- 0 
-            else                 
+            na <- naflag[i,t,]
+            if(!all(na))            
                 A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
-                    sum(y[i, t, !naflag[i,t,]] * 
-                    log(cp[i, t, which(!naflag[i,t,])])) + 
+                    sum(y[i, t, !na] * log(cp[i, t, which(!na)])) + 
                     kmyt[i, t,] * log(cp[i, t, J+1])
             }
         g[i,] <- exp(rowSums(A))

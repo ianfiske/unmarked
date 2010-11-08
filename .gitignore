@@ -1,6 +1,7 @@
 *.so
 *.o
 *.pdf
+*.dll
 runit
 bc
 .Rhistory
