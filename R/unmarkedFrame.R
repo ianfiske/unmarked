@@ -178,9 +178,10 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
         stop("if specifying type, it should either be 'removal' or 'double'")
       switch(type,
         removal = {
-          obsToY <- matrix(1, ncol(y), ncol(y))
-				  obsToY[col(obsToY) < row(obsToY)] <- 0
-				  piFun <- "removalPiFun"
+          #obsToY <- matrix(1, ncol(y), ncol(y))
+				  #obsToY[col(obsToY) < row(obsToY)] <- 0
+				  obsToY <- diag(ncol(y))
+          piFun <- "removalPiFun"
           },
         double = {
 				  obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)

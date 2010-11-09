@@ -74,10 +74,6 @@ for(i in 1:M) {
         }
     }
     
-## NA handling
-# Sites w/ missing siteCovs should be removed beforehand
-# Sites w/ some missing yearlySiteCovs shoul be retained but      
-
 nll <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
     phi <- drop(plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset))
@@ -102,7 +98,7 @@ nll <- function(pars) {
     for(i in 1:M) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
-            na <- naflag[i,t,]
+            na <- naflag[i,t,] | is.na(cp[i, t, 1:J]) # Temporary fix. piFun can induce new NAs
             if(!all(na))            
                 A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
                     sum(y[i, t, !na] * log(cp[i, t, which(!na)])) + 
