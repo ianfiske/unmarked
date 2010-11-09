@@ -237,9 +237,10 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
 	if(!missing(type)) {
 		switch(type,
 			removal = {
-				obsToY <- matrix(1, ncol(y), ncol(y))
-				obsToY[col(obsToY) < row(obsToY)] <- 0
-				piFun <- "removalPiFun"
+				#obsToY <- matrix(1, ncol(y), ncol(y))
+				#obsToY[col(obsToY) < row(obsToY)] <- 0
+				obsToY <- diag(ncol(y))
+        piFun <- "removalPiFun"
 			},
 			double = {
 				obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
@@ -680,12 +681,14 @@ setMethod("[", c("unmarkedMultFrame", "missing", "numeric", "missing"),
     numPrimary <- length(j)
     obsj <- match(obs, j)
     j2 <- which(!is.na(obsj))
-    ysc <- yearlySiteCovs(x)
-    ysc <- ysc[rep(!is.na(match(years, j)), nrow(getY(x))),, drop=FALSE]
     u <- callNextMethod(x, i, j2)
-    u@yearlySiteCovs <- ysc
+    ysc <- yearlySiteCovs(x)
+    if(!is.null(ysc)) {
+        ysc <- ysc[rep(!is.na(match(years, j)), nrow(getY(x))),, drop=FALSE]
+        u@yearlySiteCovs <- ysc
+        }
     u@numPrimary <- numPrimary
-    u
+    return(u)
 })
 
 
@@ -695,12 +698,14 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 {  
     u <- callNextMethod(x, i, j)
     ysc <- u@yearlySiteCovs
-    sites <- 1:nrow(ysc)
-    T <- x@numPrimary
-    keep <- sites %in% i
-    ysc <- ysc[rep(keep, each=T),, drop=FALSE]
-    u@yearlySiteCovs <- ysc
-    u
+    if(!is.null(ysc)) {
+        sites <- 1:nrow(ysc)
+        T <- x@numPrimary
+        keep <- sites %in% i
+        ysc <- ysc[rep(keep, each=T),, drop=FALSE]
+        u@yearlySiteCovs <- ysc
+        }
+    return(u)
 })
 
 
