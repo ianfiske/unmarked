@@ -39,7 +39,7 @@ Objects can be created by using the \code{\link{fitList}} function.
 \examples{
 showClass("unmarkedFitList")
 
-a(linetran)
+data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 
 lengths <- linetran$Length * 1000
 

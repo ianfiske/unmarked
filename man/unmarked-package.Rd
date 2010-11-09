@@ -50,7 +50,7 @@ and how to create them.
 model-fitting functions allow specification of covariates for both the
 state process and the detection process.  For two-level hierarchical models, 
 (eg \code{\link{occu}}, \code{\link{occuRN}}, \code{\link{pcount}}, 
-\code{\link{multinomPois}}, \code{\link{distsampe}}) covariates for the 
+\code{\link{multinomPois}}, \code{\link{distsamp}}) covariates for the 
 detection process (at the site or observation level) and the state process (at 
 the site level) are specified with a double right-hand sided formula, in that 
 order.  Such a formula looks like
