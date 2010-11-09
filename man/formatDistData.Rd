@@ -14,12 +14,14 @@ Must have at least 2 columns. One for distances and the other for transect names
 \item{dist.breaks}{numeric vector of distance interval cutpoints. Length must
 equal J+1.}
 }
-\details{This function creates a site (M) by distance interval (J) response matrix
-from a data.frame containing the detection distances for each individual and
-the transect names.}
-\value{An M x J data.frame containing the tabulated detections in each distance
+\details{This function creates a site (M) by distance interval (J) response 
+matrix from a data.frame containing the detection distances for each individual 
+and the transect names.}
+
+\value{An M x J matrix containing the tabulated detections in each distance
 interval for each transect. Transect names will become rownames and 
 colnames will be y.1, y.2, ..., y.J.}
+
 \note{It is very important that the factor containing transect names contains
 levels for all the transects surveyed. This includes those where no individuals 
 were detected. See the example for how to add levels to a factor.}
@@ -41,7 +43,7 @@ levels(dat$transect)
 # Distance cut points defining distance intervals
 cp <- c(6, 8, 10, 12, 14, 18)
 
-# Create formated response data.frame
+# Create formated response matrix
 yDat <- formatDistData(dat, "distance", "transect", cp) 
 yDat
 

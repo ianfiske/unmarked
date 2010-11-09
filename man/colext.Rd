@@ -2,8 +2,7 @@
 \alias{colext}
 \title{Fit the colonization-extinction model.}
 \usage{colext(psiformula= ~1, gammaformula =  ~ 1, epsilonformula = ~ 1,
-pformula = ~ 1, data, starts, method="BFGS", control=list(),
-    se=TRUE)}
+    pformula = ~ 1, data, starts, method="BFGS", control=list(), se=TRUE)}
 
 \description{Estimate parameters of the colonization-extinction model,
 including covariate-dependent rates and detection process.}
@@ -30,7 +29,13 @@ obtained from the \code{smoothed.mean} and \code{projected.mean} slots
 \seealso{\code{\link{nonparboot}}, \code{\link{unmarkedMultFrame}}, and \code{\link{formatMult}}}
 \value{unmarkedFitColExt object describing model fit.}
 \keyword{models}
-\references{MacKenzie, D.I. et al. (2002) Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology, 83(8), 2248-2255.
+\references{
+
+MacKenzie, D.I. et al. (2002) Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology, 83(8), 2248-2255.
+
+MacKenzie, D. I., J. D. Nichols, J. E. Hines, M. G. Knutson, and A. B. Franklin.
+  2003. Estimating site occupancy, colonization, and local extinction when a 
+  species is detected imperfectly. \emph{Ecology} 84:2200--2207.
 
 MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.Amsterdam: Academic Press.
 

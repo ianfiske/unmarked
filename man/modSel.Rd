@@ -31,7 +31,7 @@ A S4 object with the following slots
 } 
 \references{Nagelkerke, N.J.D. (2004) A Note on a General Definition of the 
 	Coefficient of Determination. \emph{Biometrika} 78, pp. 691-692.}
-\author{Richard Chandler \email{rchandler@nrc.umass.edu}}
+\author{Richard Chandler \email{rchandler@usgs.gov}}
 \examples{
 data(linetran)
 (dbreaksLine <- c(0, 5, 10, 15, 20)) 
@@ -51,12 +51,10 @@ fl <- fitList(Null=fm1, A.=fm2, .A=fm3)
 fl
 
 ms <- modSel(fl, nullmod="Null")
-
 ms
-summary(ms) 
 
 coef(ms)                            # Estimates only
 SE(ms)                              # Standard errors only
-(toExport <- as(ms, "data.frame"))  # Estimates, SEs, and AIC.
+(toExport <- as(ms, "data.frame"))  # Everything
 
 }

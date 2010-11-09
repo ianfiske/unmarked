@@ -32,7 +32,7 @@ options(continue=" ")
 
 \maketitle
 
-\abstract{Distance-sampling is a wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line- or point-transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results in package \package{unmarked}. It does not cover the statistical theory and assumptions underlying distance-sampling, which the user is expected to be familiar with. }
+\abstract{Distance-sampling is a wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line- or point-transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results in package \package{unmarked}. It does not cover the statistical theory and assumptions underlying distance-sampling \citep{buckland_distsamp_2001}, which the user is expected to be familiar with. }
 
 \section{Introduction}
 
@@ -92,10 +92,9 @@ umf <- unmarkedFrameDS(y=as.matrix(yDat), siteCovs=covs, survey="line",
 
 Note that there is no \code{obsCovs} argument, meaning that distance-interval-level covariates cannot be included in the analysis. The call to \code{unmarkedFrameDS} indicates that the data were collected on seven line transects, each 100 meters long, and detections were tabulated into distance intervals defined by the \code{dist.breaks} cutpoints. It is important that both transect lengths and distance break points are provided in the same units specified by \code{unitsIn}.
 
-We can look at these data, summarize them, and plot them usng a variety of methods.
+We can look at these data using a variety of methods.
 
 <<umfhist,fig=TRUE,include=FALSE,width=4,height=4>>=
-umf
 summary(umf)
 hist(umf, xlab="distance (m)", main="", cex.lab=0.8, cex.axis=0.8)
 @
@@ -127,7 +126,7 @@ The first two models are the same, a null half-normal detection function with de
 Once a model has been fit, typing its name will display parameter estimate information and AIC. A summary method shows extra details including the scale on which parameters were estimated and convergence results. 
 
 <<>>=
-summary(haz_Null)
+haz_Null
 @
 
 \section{Manipulating results}
@@ -153,7 +152,7 @@ site.level.abundance <- site.level.density * plotArea.inHectares
 (N.hat <- sum(site.level.abundance))
 @
 
-To estimate the standard error of N.hat, or any other derived parameter, we can use a parametric bootstrap approach. First we define a function to estimate N.hat, and then we apply this function to numerous models fit to data simulated from our original model. 
+To describe the uncertainty of N.hat, or any other derived parameter, we can use a parametric bootstrap approach. First we define a function to estimate N.hat, and then we apply this function to numerous models fit to data simulated from our original model. 
 
 <<>>=
 getN.hat <- function(fit) {
@@ -162,11 +161,11 @@ getN.hat <- function(fit) {
     N.hat <- c(N.hat = sum(a))
     return(N.hat)
     }
-pb <- parboot(hn_Hab.Ht, statistic=getN.hat, nsim=25, report=5)
+pb <- parboot(hn_Hab.Ht, statistic=getN.hat, nsim=25)
 pb
 @
 
-Here, \code{t\_B} is an approximation of the sampling distribution for \code{N.hat}, conditioned on our fitted model. The standard deviation of \code{t\_B} is the standard error of N.hat and confidence intervals can be calculated from its quantiles. Note that in practice nsim should be set to a much larger value and a goodness-of-fit test should be performed before making inference from a fitted model. Parameteric bootstrapping can be used for the latter by supplying a fit statistic such as \code{SSE} instead of \code{getN.hat}. See ?parboot and vignette('unmarked') for examples.
+Here, \code{t\_B} is an approximation of the sampling distribution for \code{N.hat}, conditioned on our fitted model. Confidence intervals can be calculated from the quantiles of \code{t\B}. Note that in practice nsim should be set to a much larger value and a goodness-of-fit test should be performed before making inference from a fitted model. Parameteric bootstrapping can be used for the latter by supplying a fit statistic such as \code{SSE} instead of \code{getN.hat}. See ?parboot and vignette('unmarked') for examples.
 
 \section{Prediction and plotting}
 
