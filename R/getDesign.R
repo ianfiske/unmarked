@@ -171,8 +171,12 @@ setMethod("getDesign", "unmarkedMultFrame",
         yearlySiteCovs <- cbind(yearlySiteCovs, sC)
         }
     X.mf.gam <- model.frame(gamformula, yearlySiteCovs, na.action = NULL)
+    if(!is.null(model.offset(X.mf.gam)))
+        stop("offsets not currently allowed in colext", call.=FALSE)
     X.gam <- model.matrix(gamformula, X.mf.gam)
     X.mf.eps <- model.frame(epsformula, yearlySiteCovs, na.action = NULL)
+    if(!is.null(model.offset(X.mf.eps)))
+        stop("offsets not currently allowed in colext", call.=FALSE)
     X.eps <- model.matrix(epsformula, X.mf.eps)
   
     ## Compute site-level design matrix for psi
@@ -182,6 +186,8 @@ setMethod("getDesign", "unmarkedMultFrame",
         siteCovs <- siteCovs(umf)
     }
     W.mf <- model.frame(psiformula, siteCovs, na.action = NULL)
+    if(!is.null(model.offset(W.mf)))
+        stop("offsets not currently allowed in colext", call.=FALSE)
     W <- model.matrix(psiformula, W.mf)
 
     #  ## impute missing yearlySiteCovs across years as average
@@ -209,6 +215,8 @@ setMethod("getDesign", "unmarkedMultFrame",
 	}
 	
 	V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
+  if(!is.null(model.offset(V.mf)))
+        stop("offsets not currently allowed in colext", call.=FALSE)
 	V <- model.matrix(detformula, V.mf)
 	
 	if(na.rm)
