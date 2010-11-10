@@ -36,7 +36,7 @@ test.multinomPois.na <- function() {
     umf1@obsToY <- o2y
     
     m3 <- multinomPois(~x2 ~1, umf1)
-    checkEqualsNumeric(m3@sitesRemoved, 4)
+    #checkEqualsNumeric(m3@sitesRemoved, 4)
     
 
     
