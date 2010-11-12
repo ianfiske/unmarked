@@ -99,8 +99,8 @@ nll <- function(pars) {
     
     shape <- matrix(p, nrow=M, byrow=TRUE)
     shape <- array(shape, c(M, J, T))
-    shape <- aperm(shape, c(1,3,2))     
-    cp <- array(as.numeric(NA), c(M, T, J+1))
+    shape <- shape[,1,] #      
+    cp <- matrix(NA, c(M, T))
     
     for(t in 1:T) cp[,t,1:J] <- do.call(piFun, list(p[,t,]))
     cp[,,1:J] <- cp[,,1:J] * phi
@@ -113,13 +113,17 @@ nll <- function(pars) {
     for(i in 1:M) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
-            if(all(naflag[i,t,])) 
-                A[,t] <- 0 
-            else                 
+            if(!all(naflag[i,t,])) {
+                cp <- rep(0, J+1)
+                for(j in 1:J) {
+                    cp[j] <- tdWsq * integrate(grhn, db[j], db[j+1], 
+                        sigma=sigma[i, t])$value
+                        }
+                cp[J+1] <- 1 - sum(cp)
                 A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
                     sum(y[i, t, !naflag[i,t,]] * 
-                    log(cp[i, t, which(!naflag[i,t,])])) + 
-                    kmyt[i, t,] * log(cp[i, t, J+1])
+                    log(cp[which(!naflag[i,t,])])) + kmyt[i, t,] * log(cp[J+1])
+                }
             }
         g[i,] <- exp(rowSums(A))
         }
