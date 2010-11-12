@@ -7,6 +7,7 @@
 \alias{[,unmarkedFrame,numeric,missing,missing-method}
 \alias{[,unmarkedFrame,numeric,numeric,missing-method}
 \alias{[,unmarkedMultFrame,missing,numeric,missing-method}
+\alias{[,unmarkedMultFrame,numeric,missing,missing-method}
 \alias{[,unmarkedFrame,list,missing,missing-method}
 \title{Methods for bracket extraction [ in Package `unmarked'}
 \description{

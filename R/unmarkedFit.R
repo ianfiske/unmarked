@@ -112,7 +112,7 @@ setMethod("summary", "unmarkedFit", function(object)
     cat("\nCall:\n")
     print(object@call)
     cat("\n")
-    summary(object@estimates)      	
+    summaryOut <- summary(object@estimates)      	
     cat("AIC:", object@AIC,"\n")
     cat("Number of sites:", sampleSize(object))
     if(length(object@sitesRemoved) > 0)
@@ -122,6 +122,7 @@ setMethod("summary", "unmarkedFit", function(object)
     if(!identical(object@opt$convergence, 0L))
     warning("Model did not converge. Try providing starting values or increasing maxit control argment.")
     cat("Bootstrap iterations:", length(object@bootstrapSamples), "\n\n")
+    invisible(summaryOut)
 })
 
 
@@ -1402,11 +1403,10 @@ setMethod("simulate", "unmarkedFitPCount",
     simList <- list()
     for(i in 1:nsim) {
         switch(mix, 
-            P = yvec <- rpois(M * J, lamvec * pvec),
-            NB = {
-                N <- rnbinom(M, size = exp(coef(object["alpha"])), mu = lam)
-                    yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
-                })
+            P = N <- rpois(M, lam),
+            NB = N <- rnbinom(M, size = exp(coef(object["alpha"])), mu = lam)
+            )                
+        yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
         simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
         }
     return(simList)
@@ -1706,7 +1706,7 @@ setClass("parboot",
          
 
 setMethod("parboot", "unmarkedFit", 
-    function(object, statistic=SSE, nsim=10, report=2, ...) 
+    function(object, statistic=SSE, nsim=10, report, ...) 
 {
     statistic <- match.fun(statistic)
     call <- match.call(call = sys.call(-1))
@@ -1723,7 +1723,8 @@ setMethod("parboot", "unmarkedFit",
     if(!is.null(names(t0)))
         colnames(t.star) <- names(t0)
     else colnames(t.star) <- paste("t*", 1:lt0, sep="")
-    cat("t0 =", t0, "\n")      
+    if(!missing(report))
+        cat("t0 =", t0, "\n")      
     fits <- list()
     simdata <- umf
     simList <- simulate(object, nsim = nsim, na.rm = FALSE)
@@ -1733,10 +1734,12 @@ setMethod("parboot", "unmarkedFit",
         simdata@y <- y.sim
         fits[[i]] <- update(object, data=simdata, starts=ests, se=FALSE, ...)
         t.star[i,] <- statistic(fits[[i]], ...)
-        if(nsim > report && i %in% seq(report, nsim, by=report))
-            cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=", "), 
-                fill=TRUE)
-        flush.console()
+        if(!missing(report)) {
+            if(nsim > report && i %in% seq(report, nsim, by=report))
+                cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=", "), 
+                    fill=TRUE)
+            flush.console()
+            }
         }
     out <- new("parboot", call=call, t0 = t0, t.star = t.star)
     return(out)
@@ -1786,9 +1789,8 @@ setMethod("plot", signature(x="parboot", y="missing"),
             xlab <- colnames(t.star)[i]
         h <- hist(t.star[,i], plot = FALSE)
         if(missing(xlim))
-            xlim <- c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i]))
-        hist(t.star[,i], xlab=xlab,
-            xlim = xlim, main = main, ...)
+            xl <- c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i]))
+        hist(t.star[,i], xlab=xlab, xlim = xl, main = main, ...)
         abline(v=t0[i], lty=2)
         devAskNewPage(ask = TRUE)
         }

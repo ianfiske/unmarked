@@ -33,8 +33,8 @@ element-by-element.  The number of years must be specified in
 If the data are in long format, the convenience function
 \code{\link{formatMult}} is useful for creating the unmarkedMultFrame.
 
-unmarkedFrameGMM is a superclass of unmarkedMultFrame containing information on  
-the the survey design used that resulted in multinomial outcomes. For 
+unmarkedFrameGMM is a superclass of unmarkedMultFrame containing information on
+the survey design used that resulted in multinomial outcomes. For 
 constant-interval removal sampling, you can set type="removal" and ignore
 the arguments obsToY and piFun. Similarly, for double-observer sampling, 
 setting type="double" will automatically create an appropiate obsToY matrix and
@@ -49,6 +49,9 @@ An unmarkedFrameGMM object can be created from an unmarkedMultFrame using the
 "as" conversion method. See examples.
 
 }
+
+\note{Data used with \link{colext} and \link{gmultmix} may be collected 
+during a single year, so yearlySiteCovs may be a misnomer is some cases. }
 
 \value{an unmarkedMultFrame or unmarkedFrameGMM object}
 \arguments{
@@ -89,7 +92,8 @@ umf <- unmarkedMultFrame(y=y,
 umfGMM1 <- unmarkedFrameGMM(y=y, 
     siteCovs = data.frame(site=site), 
     obsCovs=list(occasion=occasions),
-    yearlySiteCovs=data.frame(year=years), 
+    yearlySiteCovs=data.frame(year=c(t(years))),
+    # or: yearlySiteCovs=list(year=years), 
     numPrimary=T, type="removal")   
 
 

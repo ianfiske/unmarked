@@ -54,7 +54,7 @@ describing the model fit.}
 
 \note{You cannot use obsCovs.}
 
-\author{Richard Chandler \email{richard.chandlers@gmail.com}}
+\author{Richard Chandler \email{rchandler@usgs.gov}}
 
 \references{Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}

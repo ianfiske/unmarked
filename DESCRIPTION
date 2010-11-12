@@ -1,15 +1,13 @@
 Package: unmarked
 Version: 0.8-8
-Date: 2010-10-11
+Date: 2010-11-10
 Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske, Richard Chandler, Andy Royle
-Maintainer: Richard Chandler <richard.chandlers@gmail.com>
-Depends: R (>= 2.9.0), methods, reshape, lattice
+Maintainer: Richard Chandler <rchandler@usgs.gov>
+Depends: R (>= 2.12.0), methods, reshape, lattice
 Imports: graphics, stats, utils
-Description: Unmarked estimates wildlife parameters for many popular
-    sampling methods including occurrence, point count, and distance
-    data using hierarchical models.
+Description: Unmarked fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates.
 License: GPL (>=3)
 LazyLoad: yes
 LazyData: yes
@@ -18,7 +16,9 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R' 'gmultmix.R' 'pcountOpen.R'
     'unmarkedFitList.R' 'unmarkedLinComb.R'
 Encoding: UTF-8
-URL: http://groups.google.com/group/unmarked, 
+URL: http://groups.google.com/group/unmarked,
      http://github.com/ianfiske/unmarked,
-     http://github.com/rbchan/unmarked
+     http://github.com/rbchan/unmarked,
+     https://sites.google.com/site/hierarchicalmodelingcourse/home/r-scripts,
+     https://sites.google.com/site/unmarkedinfo/home
      

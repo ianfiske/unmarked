@@ -31,4 +31,20 @@
 	\code{linearComb}. This is done internally by \code{\link{predict}} but
 	can be done explicitly by user.}
 }}
+
+\examples{
+
+data(mallard)
+mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site, 
+    obsCovs = mallard.obs)
+
+(fm <- pcount(~ 1 ~ forest, mallardUMF))    # Fit a model
+backTransform(fm, type="det")               # This works because there are no detection covariates
+#backTransform(fm, type="state")             # This doesn't work because covariates are present
+lc <- linearComb(fm, c(1, 0), type="state") # Estimate abundance on the log scale when forest=0
+backTransform(lc)                           # Abundance on the original scale
+}
+
+
+
 \keyword{methods}

@@ -3,10 +3,12 @@
 \title{Generalized multinomial-mixture model}
 \description{
 A three level hierarchical model for designs involving 
-primary and secondary sampling periods. Virtually any sampling method that 
-results in multinomial outcomes can be used during the secondary sampling 
-period. Examples include removal sampling and double observer sampling. 
-The three model parameters are abundance, availability, and detection probability.
+repeated counts that yield multinomial outcomes. This model can be useful 
+if sites are not closed with respect to immigration and emigraion over the
+duration of sampling. Possible data collection 
+methods include removal sampling and double observer sampling. 
+The three model parameters are abundance, availability, and detection 
+probability.
 }
 \usage{
 gmultmix(lambdaformula, phiformula, pformula, data, mixture = c("P", "NB"), K, 
@@ -66,7 +68,7 @@ Royle, J. A. (2004) Generalized estimators of avian abundance from count
 survey data. \emph{Animal Biodiversity and Conservation} 27, pp. 375--386.
 }
 \author{
-Richard Chandler \email{richard.chandlers@gmail.com} and Andy Royle
+Richard Chandler \email{rchandler@usgs.gov} and Andy Royle
 }
 \note{
 Three types of covariates can be supplied, site-level, site-by-year-level, and 

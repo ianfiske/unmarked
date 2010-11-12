@@ -7,12 +7,13 @@ vers <- paste("R package version", desc$Version)
 citEntry(entry="Manual",
          title = "unmarked: Models for Data from Unmarked Animals",
          author = personList(as.person("Ian Fiske"),
-                             as.person("Richard Chandler")),
+                             as.person("Richard B. Chandler"),
+                             as.person("J. Andrew Royle")),
          year = year,
          note = vers,
 
          textVersion =
-         paste("Ian Fiske and Richard Chandler (",
+         paste("Ian Fiske, Richard B. Chandler, and Andy Royle (",
                year,
                "). unmarked: Models for Data from Unmarked Animals. ",
                vers, ".", sep=""))

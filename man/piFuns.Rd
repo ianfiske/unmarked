@@ -9,7 +9,7 @@ doublePiFun(p)
 }
 
 \description{Compute the cell probabilities used in the multinomial-Poisson 
-	model \link{multinomPois}.}
+	models \link{multinomPois} and \link{gmultmix}.}
 
 \arguments{\item{p}{
 matrix of detection probabilities at each site for each observation}
@@ -17,8 +17,7 @@ matrix of detection probabilities at each site for each observation}
 
 \details{These two functions are provided as examples of 
 possible functions to calculate multinomial cell probabilities. Users may 
-write their own functions for specific sampling designs and use them in 
-\link{multinomPois}. See the example for a user-defined function.
+write their own functions for specific sampling designs (see the example).
 }
 
 \value{
@@ -59,8 +58,7 @@ instRemPiFun <- function(p) {
 instRemPiFun(pRem)
 
 # Associated obsToY matrix required by unmarkedFrameMPois
-o2y <- diag(3)
-o2y[upper.tri(o2y)] <- 1
+o2y <- diag(3) # if y has 3 columns
 o2y
 
 }		
