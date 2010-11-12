@@ -23,12 +23,19 @@ like \code{~ detform ~ occform} where \code{detform} is a formula for the detect
 formula for the partially observed occupancy state.  See \link{formula} for details on constructing model formulae
 in \R.}
 \value{unmarkedFitOccu object describing the model fit.}
-\references{MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
-  J. Andrew Royle, and C. A. Langtimm. Estimating Site Occupancy Rates
-  When Detection Probabilities Are Less Than One. Ecology 83, no. 8
-  (2002): 2248-2255.
+\references{
+
+MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
+  J. Andrew Royle, and C. A. Langtimm. 2002. Estimating Site Occupancy Rates
+  When Detection Probabilities Are Less Than One. Ecology 83: 2248-2255.
   
-MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amsterdam: Academic Press.  Royle, J. A. and R. Dorazio. (2008).}
+MacKenzie, D. I. et al. 2006. \emph{Occupancy Estimation and Modeling}.  
+  Amsterdam: Academic Press.  
+  
+Royle, J. A. and R. Dorazio. 2008. \emph{Hierarchical Modeling and Inference
+  in Ecology}. Academic Press.
+
+}
 \author{Ian Fiske}
 \keyword{models}
 \arguments{\item{formula}{double right-hand side formula describing covariates of detection and occupancy in that order.}
@@ -38,7 +45,9 @@ MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.  Amster
 \item{method}{Optimization method used by \code{\link{optim}}.}
 \item{control}{Other arguments passed to \code{\link{optim}}.}
 \item{se}{logical specifying whether or not to compute standard errors.}}
-\examples{data(frogs)
+\examples{
+
+data(frogs)
 pferUMF <- unmarkedFrameOccu(pfer.bin)
 plot(pferUMF, panels=4)
 # add some fake covariates for illustration

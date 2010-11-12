@@ -84,7 +84,6 @@ seemlessly handles this situation.
 
 <<>>=
 pcru <- csvToUMF(system.file("csv","frog2001pcru.csv", package="unmarked"), long = TRUE, type = "unmarkedFrameOccu")
-summary(pcru)
 @
 
 To help stabilize the numerical optimization algorithm, we recommend
@@ -97,12 +96,10 @@ standardizing the covariates.
 
 Occupancy models can then be fit with the occu() function:
 
-<<fig=TRUE>>=
+<<fig>>=
 	fm1 <- occu(~1 ~1, pcru)
 	fm2 <- occu(~ MinAfterSunset + Temperature ~ 1, pcru)
-	summary(fm1)
-	summary(fm2)
-	plot(fm2)
+	fm2
 @
 
 Here, we have specified that the detection process is modeled with the
@@ -156,9 +153,9 @@ predict(fms, type='det', newdata = newData, appendData = TRUE)
 
 Parametric bootstrapping can be used to check the adequacy of model fit.
 
-<<fig=TRUE>>=
-	pcru.pb <- parboot(fm2, statistic=SSE, nsim=50, report=5)
-	plot(pcru.pb)
+<<>>=
+	pcru.pb <- parboot(fm2, statistic=SSE, nsim=50)
+	pcru.pb
 @
 
 This example suggests an adequate fit.
