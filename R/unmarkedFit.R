@@ -666,7 +666,7 @@ setMethod("fitted", "unmarkedFitPCountOpen",
                 byrow=TRUE)
         gamma <- gamma*delta
     } else {
-        if(identical(dyanmcis, "notrend")) 
+        if(identical(dynamics, "notrend")) 
             gamma <- (1-omega)*lambda
         else
             stop("fitted method not yet written for dynamics=autoreg case")
