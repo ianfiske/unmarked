@@ -5,8 +5,7 @@ options(continue=" ")
 
 \documentclass[a4paper]{article}
 \usepackage[OT1]{fontenc}
-\usepackage[nogin]{Sweave}
-\usepackage{bm}
+\usepackage{Sweave}
 \usepackage{natbib}
 \usepackage{fullpage}
 \bibliographystyle{plain}
@@ -26,17 +25,16 @@ options(continue=" ")
 
 \begin{document}
 
-\SweaveOpts{eps=FALSE,pdf=TRUE}
 \newcommand{\code}[1]{\texttt{\small{#1}}}
 \newcommand{\package}[1]{\textsf{\small{#1}}}
 
 \maketitle
 
-\abstract{Distance-sampling is a wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_distsamp_2004}, which was developed to overcome this limitation. This model requires that line- or point-transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results in package \package{unmarked}. It does not cover the statistical theory and assumptions underlying distance-sampling \citep{buckland_distsamp_2001}, which the user is expected to be familiar with. }
+\abstract{Distance-sampling is a wildlife sampling technique used to estimate population size or density. Describing how density varies spatially is often of equal interest; however, conventional methods of analysis do not allow for explicit modeling of both density and detection probability. The function \code{distsamp} implements the multinomial-Poisson mixture model of Royle et. al \citep{royle_modeling_2004}, which was developed to overcome this limitation. This model requires that line- or point-transects are spatially replicated and that distance data are recorded in discrete intervals. This document describes how to format data, fit models, and manipulate results in package \package{unmarked}. It does not cover the statistical theory and assumptions underlying distance-sampling \citep{buckland_distsamp_2001}, which the user is expected to be familiar with. }
 
 \section{Introduction}
 
-Spatial variation in density is common to virtually all wildlife populations, and describing this variation is a central objective of much research. To accurately estimate and model density, it is often necessary to account for individuals present but not detected. Distance from observer is a ubiquitous source of variation in detection probability, and thus distance-sampling has become a commonly used survey methodology. Numerous options exist for analyzing distance-sampling data, but here the focus is on the model of Royle et al. \citep{royle_distsamp_2004}, which assumes that multiple transects have been surveyed and distance data are recorded in discrete intervals. The details of the model formulation are as follows: 
+Spatial variation in density is common to virtually all wildlife populations, and describing this variation is a central objective of much research. To accurately estimate and model density, it is often necessary to account for individuals present but not detected. Distance from observer is a ubiquitous source of variation in detection probability, and thus distance-sampling has become a commonly used survey methodology. Numerous options exist for analyzing distance-sampling data, but here the focus is on the model of Royle et al. \citep{royle_modeling_2004}, which assumes that multiple transects have been surveyed and distance data are recorded in discrete intervals. The details of the model formulation are as follows: 
 
 The latent transect-level abundance distribution is currently assumed to be 
 
@@ -243,4 +241,5 @@ This document has emphasized methods tailored to distance-sampling analysis; how
 
 
 \bibliography{unmarked}
+
 \end{document}

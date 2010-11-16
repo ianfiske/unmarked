@@ -1,19 +1,20 @@
 
-# Royel et al. 2004 distance sampling
-
 distsamp <- function(formula, data, 
 	keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
 	output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL, 
-	method="BFGS", control=list(), se = TRUE)
+	method="BFGS", control=list(), se = TRUE,
+  rel.tol=1e-4)
 {
 keyfun <- match.arg(keyfun)
 output <- match.arg(output)
 unitsOut <- match.arg(unitsOut)
 db <- data@dist.breaks
-tdWsq <- 2 / max(db)^2					# only used for pt-transects
-strip.widths <- diff(db)				# only used for line-transects	
 tlength <- data@tlength
 survey <- data@survey
+switch(survey, 
+    line  = u <- 1 / diff(db),
+    point = u <- 2 / max(db)^2
+    ) 
 unitsIn <- data@unitsIn
 designMats <- getDesign(data, formula)
 X <- designMats$X; V <- designMats$V; y <- designMats$y
@@ -57,12 +58,12 @@ switch(keyfun,
 					f.0 <- 2 * dnorm(0, 0, sd=sigma[i])
 					int <- 2 * (pnorm(db[-1], 0, sd=sigma[i]) - 
 						pnorm(db[-(J+1)], 0, sd=sigma[i]))
-					pi[i,] <- int / f.0 / strip.widths 
+					pi[i,] <- u * int / f.0 
 					},
 				point = {   
 					for(j in 1:J) {
-						pi[i, j] <- tdWsq * integrate(grhn, db[j], db[j+1], 
-							sigma = sigma[i])$value
+						pi[i, j] <- u * integrate(grhn, db[j], db[j+1], 
+							sigma = sigma[i], rel.tol=rel.tol)$value
 						}	
 					})
 			}
@@ -87,14 +88,14 @@ switch(keyfun,
 			switch(survey, 
 				line = { 
 					for(j in 1:J) {
-						pi[i, j] <- integrate(gxexp, db[j], db[j+1],
-							rate=rate[i])$value / strip.widths[j]
+						pi[i, j] <- u[j] * integrate(gxexp, db[j], db[j+1],
+							rate=rate[i], rel.tol=rel.tol)$value
 						}
 					},
 				point = {   
 					for(j in 1:J) {
-						pi[i, j] <- tdWsq * integrate(grexp, db[j], db[j+1], 
-							rate = rate[i])$value
+						pi[i, j] <- u * integrate(grexp, db[j], db[j+1], 
+							rate = rate[i], rel.tol=rel.tol)$value
 						}	
 					})
 			}
@@ -122,14 +123,14 @@ switch(keyfun,
 			switch(survey, 
 				line = { 
 					for(j in 1:J) {
-						pi[i, j] <- integrate(gxhaz, db[j], db[j+1],
-							shape=shape[i], scale=scale)$value / strip.widths[j]
+						pi[i, j] <- u[j] * integrate(gxhaz, db[j], db[j+1],
+							shape=shape[i], scale=scale, rel.tol=rel.tol)$value
 						}
 					},
 				point = {   
 					for(j in 1:J) {
-						pi[i, j] <- tdWsq * integrate(grhaz, db[j], db[j+1], 
-							shape = shape[i], scale=scale)$value
+						pi[i, j] <- u * integrate(grhaz, db[j], db[j+1], 
+							shape = shape[i], scale=scale, rel.tol=rel.tol)$value
 						}	
 					})
 			}
