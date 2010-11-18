@@ -59,6 +59,7 @@ instRemPiFun(pRem)
 
 # Associated obsToY matrix required by unmarkedFrameMPois
 o2y <- diag(3) # if y has 3 columns
+o2y[upper.tri(o2y)] <- 1
 o2y
 
 }		
