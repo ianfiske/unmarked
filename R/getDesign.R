@@ -391,7 +391,7 @@ setMethod("handleNA", "unmarkedFrameGMM",
     M <- numSites(umf)
     T <- umf@numPrimary
     R <- obsNum(umf)
-    J <- R/T            # numY(umf) / T
+    J <- numY(umf) / T  # R/T
 	
     # treat Xphi and Xlam together
     X <- cbind(Xphi, Xlam[rep(1:M, each = T), ])
@@ -432,8 +432,8 @@ setMethod("handleNA", "unmarkedFrameGMM",
     		Xlam.offset <- Xlam.offset[!sites.to.remove]
     		Xphi <- Xphi[!sites.to.remove[rep(1:M, each = T)],, drop = FALSE]
     		Xphi.offset <- Xphi.offset[!sites.to.remove[rep(1:M, each = T)]]
-        Xdet <- Xdet[!sites.to.remove[rep(1:M, each = R)],, drop = FALSE]
-        Xdet.offset <- Xdet.offset[!sites.to.remove[rep(1:M, each=R)]]
+        Xdet <- Xdet[!sites.to.remove[rep(1:M, each = numY(umf))],, drop=FALSE]
+        Xdet.offset <- Xdet.offset[!sites.to.remove[rep(1:M, each=numY(umf))]]
     		warning(paste(num.to.remove, 
             "sites have been discarded because of missing data."), call.=FALSE)
 	     }

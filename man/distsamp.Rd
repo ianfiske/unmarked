@@ -4,7 +4,7 @@
 \usage{distsamp(formula, data, keyfun=c("halfnorm", "exp",
     "hazard", "uniform"), output=c("density", "abund"),
     unitsOut=c("ha", "kmsq"), starts, method="BFGS",
-    control=list(), se=TRUE), rel.tol=1e-4}
+    control=list(), se=TRUE, rel.tol=1e-4)}
 
 \description{
 Fit the hierarchical distance sampling model of Royle et al. (2004)
