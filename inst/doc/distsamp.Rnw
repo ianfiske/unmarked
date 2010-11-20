@@ -19,8 +19,7 @@ options(continue=" ")
 %%\VignetteIndexEntry{Overview of distance sampling analysis in unmarked}
 
 \title{Distance sampling analysis in unmarked}
-\author{Richard Chandler\\Department of Natural Resources Conservation\\%
-  University of Massachusetts Amherst}
+\author{Richard Chandler\\USGS Patuxent Wildlife Research Center}
 
 
 \begin{document}
