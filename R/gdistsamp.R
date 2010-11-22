@@ -1,12 +1,12 @@
 
-# data will need to be an unmarkedMultFrame
-gmultmix <- function(lambdaformula, phiformula, detformula, data, 
+gdistsamp <- function(lambdaformula, phiformula, pformula, data, 
     keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
-    output=c("density", "abund"), unitsOut=c("ha", "kmsq"), mixture=c('P', 'NB'), 
-    K, starts, method = "BFGS", control = list(), se = TRUE)
+    output=c("density", "abund"), unitsOut=c("ha", "kmsq"), 
+    mixture=c('P', 'NB'), K, 
+    starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4)
 {
-#if(!is(data, "unmarkedFrameGDS"))
-#    stop("Data is not of class unmarkedFrameGMM.")
+if(!is(data, "unmarkedFrameGDS"))
+    stop("Data is not of class unmarkedFrameGMM.")
 
 keyfun <- match.arg(keyfun)
 output <- match.arg(output)
@@ -174,7 +174,7 @@ if(identical(mixture,"NB"))
         covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
         invlinkGrad = "exp")
 
-umfit <- new("unmarkedFitGMM", fitType = "gmn", 
+umfit <- new("unmarkedFitGDS", fitType = "gdistsamp", 
     call = match.call(), formula = form, formlist = formlist,    
     data = data, estimates = estimateList, sitesRemoved = D$removed.sites, 
     AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll,

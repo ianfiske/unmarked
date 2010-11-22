@@ -85,6 +85,14 @@ setClass("unmarkedFrameGMM",
         samplingMethod = "character"),
     contains = "unmarkedMultFrame")    
 
+setClass("unmarkedFrameGDS", 
+    representation(
+        dist.breaks = "numeric",
+        tlength = "numeric",
+        survey = "character",
+        unitsIn = "character"),
+    contains = "unmarkedMultFrame")    
+
 
 
 # ------------------------------- CONSTRUCTORS --------------------------------
@@ -218,6 +226,46 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
     umf <- as(umf, "unmarkedFrameGMM")
     umf@piFun <- piFun
     umf@samplingMethod <- type
+    umf
+}
+
+
+
+# This function constructs an unmarkedMultFrame object.
+unmarkedFrameGDS <- function(y, siteCovs = NULL, numPrimary,
+	yearlySiteCovs = NULL, dist.breaks, survey, unitsIn, tlength) 
+{
+    J <- ncol(y) / numPrimary
+    obsToY <- matrix(1, 1, J)
+    obsToY <- kronecker(diag(numPrimary), obsToY)
+    
+    umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)
+    umf <- as(umf, "unmarkedMultFrame")
+    umf@numPrimary <- numPrimary
+    if(class(yearlySiteCovs) == "list") {
+        yearlySiteVars <- names(yearlySiteCovs)
+        for(i in seq(length(yearlySiteVars))) {
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
+                stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
+            if(ncol(yearlySiteCovs[[i]]) != numPrimary | 
+                nrow(yearlySiteCovs[[i]]) != nrow(y))
+                    stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
+            }
+        yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x) 
+            as.vector(t(x))))
+        }
+    if(identical(survey, "point")) {
+        if(!missing(tlength))
+            stop("tlength cannot be specified with point transect data")
+        tlength <- rep(1, nrow(y))
+        }
+        
+    umf@yearlySiteCovs <- yearlySiteCovs
+    umf <- as(umf, "unmarkedFrameGDS")
+    umf@dist.breaks <- dist.breaks
+    umf@survey <- survey
+    umf@unitsIn <- unitsIn
+    umf@tlength <- tlength
     umf
 }
 
