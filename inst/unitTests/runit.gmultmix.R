@@ -2,7 +2,7 @@
 
 
 
-test.gmultmix.fit.NA <- function() 
+test.gmultmix.fit <- function() 
 {
     y <- matrix(0:3, 5, 4)
     siteCovs <- data.frame(x = c(0,2,3,4,1))
@@ -37,3 +37,39 @@ test.gmultmix.fit.NA <- function()
 
 
 }
+
+
+
+test.gmultmix.na <- function() {
+    
+    y <- matrix(0:3, 8, 9)
+    oc <- matrix(c(
+        0,1,1,    0,0,0,    1,2,1,
+        0,0,1,    0,1,2,    2,0,3,
+        2,0,0,    0,1,0,    0,0,NA,
+        2,0,NA,   0,0,NA,   0,0,NA,
+        NA,0,0,   NA,0,0,   NA,0,0,
+        1,NA,3,   0,NA,0,   0,NA,0,
+        NA,NA,NA, 1,2,0,    0,0,0,
+        NA,NA,NA, NA,NA,NA, NA,NA,NA), byrow=TRUE, nrow=8, ncol=9)
+    o2y <- diag(3)
+    o2y[upper.tri(o2y)] <- 1
+    m <- matrix(0, 3, 3)
+    
+    kronecker(diag(3), o2y)
+    
+    o2y <- rbind(
+        cbind(o2y, m, m),
+        cbind(m, o2y, m),
+        cbind(m, m, o2y))
+    
+    oc.na <- is.na(oc)
+    oc.na %*% o2y
+    
+    kronecker(diag(3), matrix(1, 3, 2)) 
+    
+    
+    }   
+
+        
+        

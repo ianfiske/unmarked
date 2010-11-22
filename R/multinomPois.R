@@ -26,7 +26,7 @@ doublePiFun <- function(p){
   M <- nrow(p)
   pi <- matrix(NA, M, 3)
   pi[,1] <- p[,1] * (1 - p[,2])
-  pi[,2] <- p[,2] * (1 - p[,2])
+  pi[,2] <- p[,2] * (1 - p[,1])
   pi[,3] <- p[,1] * p[,2]
   return(pi)
 }
@@ -62,7 +62,7 @@ multinomPois <- function(formula, data, starts, method = "BFGS",
         stop(paste("The number of starting values should be", nP))
 	   
     yvec <- as.numeric(y)
-    #navec <- is.na(yvec) # piFun can create new NAs
+    navec <- is.na(yvec)
 
     nll <- function(parms) {
         lambda <- exp(X %*% parms[1 : nAP] + X.offset) 
@@ -70,7 +70,7 @@ multinomPois <- function(formula, data, starts, method = "BFGS",
         p.matrix <- matrix(p, M, R, byrow = TRUE)
         pi <- do.call(piFun, list(p = p.matrix))
         logLikeSite <- dpois(y, matrix(lambda, M, J) * pi, log = TRUE)
-        logLikeSite[is.na(logLikeSite)] <- 0
+        logLikeSite[navec] <- 0
         -sum(logLikeSite)
         }
     if(missing(starts))

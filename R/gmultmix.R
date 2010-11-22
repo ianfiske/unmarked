@@ -30,10 +30,10 @@ k <- 0:K
 lk <- length(k)
 M <- nrow(y)  
 T <- data@numPrimary
-R <- ncol(y)
-J <- R / T
+R <- numY(data) / T
+J <- obsNum(data) / T
 
-y <- array(y, c(M, J, T))
+y <- array(y, c(M, R, T))
 y <- aperm(y, c(1,3,2))
 yt <- apply(y, 1:2, function(x) {
     if(all(is.na(x))) 
@@ -55,14 +55,11 @@ if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
 
 
-cp <- array(as.numeric(NA), c(M, T, J+1))
-g <- matrix(as.numeric(NA), M, lk)
-
 lfac.k <- lgamma(k+1)
 kmyt <- array(NA, c(M, T, lk))
 lfac.kmyt <- array(0, c(M, T, lk))
 fin <- matrix(NA, M, lk)
-naflag <- array(NA, c(M, T, J))
+naflag <- array(NA, c(M, T, R))
 for(i in 1:M) {
     fin[i, ] <- k - max(yt[i,], na.rm=TRUE) >= 0
     for(t in 1:T) {
@@ -85,24 +82,25 @@ nll <- function(pars) {
     p <- matrix(p, nrow=M, byrow=TRUE)
     p <- array(p, c(M, J, T))
     p <- aperm(p, c(1,3,2))     
-    cp <- array(as.numeric(NA), c(M, T, J+1))
+    cp <- array(as.numeric(NA), c(M, T, R+1))
     
-    for(t in 1:T) cp[,t,1:J] <- do.call(piFun, list(p[,t,]))
-    cp[,,1:J] <- cp[,,1:J] * phi
-    cp[,,J+1] <- 1 - apply(cp[,,1:J], 1:2, sum, na.rm=TRUE) # Double-check
+    for(t in 1:T) cp[,t,1:R] <- do.call(piFun, list(p[,t,]))
+    cp[,,1:R] <- cp[,,1:R] * phi
+    cp[,,R+1] <- 1 - apply(cp[,,1:R], 1:2, sum, na.rm=TRUE) # Double-check
     
     switch(mixture, 
         P = f <- sapply(k, function(x) dpois(x, lambda)),
         NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, 
             size=exp(pars[nP]))))
+    g <- matrix(as.numeric(NA), M, lk)
     for(i in 1:M) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
-            na <- naflag[i,t,] | is.na(cp[i, t, 1:J]) # Temporary fix. piFun can induce new NAs
+            na <- naflag[i,t,]
             if(!all(na))            
                 A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
                     sum(y[i, t, !na] * log(cp[i, t, which(!na)])) + 
-                    kmyt[i, t,] * log(cp[i, t, J+1])
+                    kmyt[i, t,] * log(cp[i, t, R+1])
             }
         g[i,] <- exp(rowSums(A))
         }

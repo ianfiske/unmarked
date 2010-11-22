@@ -1154,8 +1154,8 @@ setMethod("getP", "unmarkedFitGMM",
     
     M <- nrow(y)
     T <- object@data@numPrimary
-    R <- ncol(y) 
-    J <- R / T
+    R <- numY(object@data) / T
+    J <- obsNum(object@data) / T
     
     ppars <- coef(object, type = "det")
     p <- plogis(Xdet %*% ppars + Xdet.offset)
@@ -1163,10 +1163,10 @@ setMethod("getP", "unmarkedFitGMM",
     p <- array(p, c(M, J, T))
     p <- aperm(p, c(1,3,2))     
 
-    cp <- array(as.numeric(NA), c(M, T, J))
+    cp <- array(as.numeric(NA), c(M, T, R))
     for(t in 1:T) cp[,t,] <- do.call(piFun, list(p[,t,]))
     cp <- aperm(cp, c(1,3,2))
-    cp <- matrix(cp, nrow=M, ncol=R)
+    cp <- matrix(cp, nrow=M, ncol=numY(object@data))
     
     return(cp)
 })
@@ -1453,11 +1453,11 @@ setMethod("simulate", "unmarkedFitGMM",
         N <- rbinom(n*T, size=M, prob=phi.mat)
         N <- matrix(N, nrow=n, ncol=T, byrow=TRUE)
     
-        y <- array(NA, c(n, J, T))
+        y.sim <- array(NA, c(n, J, T))
         for(i in 1:n)
             for(t in 1:T)
-                y[i,,t] <- drop(rmultinom(1, N[i,t], cp.arr[i,t,]))[1:J] 
-        simList[[s]] <- matrix(y, nrow=n, ncol=J*T) # note, byrow=F
+                y.sim[i,,t] <- drop(rmultinom(1, N[i,t], cp.arr[i,t,]))[1:J] 
+        simList[[s]] <- matrix(y.sim, nrow=n, ncol=J*T) # note, byrow=F
         }
     return(simList)
 })
