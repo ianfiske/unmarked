@@ -78,12 +78,14 @@ setClass("unmarkedFrameMPois",
 			piFun = "character"),
 		contains = "unmarkedFrame")
 
+setClass("unmarkedFrameG3",
+    contains = "unmarkedMultFrame")
 
 setClass("unmarkedFrameGMM", 
     representation(
         piFun = "character",
         samplingMethod = "character"),
-    contains = "unmarkedMultFrame")    
+    contains = "unmarkedFrameG3")    
 
 setClass("unmarkedFrameGDS", 
     representation(
@@ -91,9 +93,9 @@ setClass("unmarkedFrameGDS",
         tlength = "numeric",
         survey = "character",
         unitsIn = "character"),
-    contains = "unmarkedMultFrame")    
-
-
+    contains = "unmarkedFrameG3") 
+    
+    
 
 # ------------------------------- CONSTRUCTORS --------------------------------
 

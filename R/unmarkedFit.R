@@ -79,6 +79,14 @@ setClass("unmarkedFitGMM",
         mixture = "character",
         K = "numeric"),
     contains = "unmarkedFit")
+
+
+setClass("unmarkedFitGDS", 
+    representation(
+        keyfun = "character",
+        unitsOut = "character",
+        output = "character"),
+    contains = "unmarkedFitGMM")
         
 
 # -------------------------- Show and Summary ----------------------------------

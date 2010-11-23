@@ -303,7 +303,7 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
 
 
 
-setMethod("getDesign", "unmarkedFrameGMM", 
+setMethod("getDesign", "unmarkedFrameG3", 
     function(umf, formula, na.rm = TRUE) 
 {
     ac1 <- as.character(formula)
@@ -381,7 +381,7 @@ setMethod("getDesign", "unmarkedFrameGMM",
 
 
 
-setMethod("handleNA", "unmarkedFrameGMM", 
+setMethod("handleNA", "unmarkedFrameG3", 
     function(umf, Xlam, Xlam.offset, Xphi, Xphi.offset, Xdet, Xdet.offset) 
 {
 

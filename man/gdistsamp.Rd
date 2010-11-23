@@ -77,9 +77,8 @@ gdistsamp(lambdaformula, phiformula, detformula, data, keyfun = c("halfnorm", "e
     negative exponential, or hazard rate.  
 
     Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors 
-    affected by transect-specific covariates using the log link.}
-
-}
+    affected by transect-specific covariates using the log link.
+    }
 
 \value{
     An object of class unmarkedFitGDS. 
@@ -137,9 +136,12 @@ y <- matrix(y, nrow=R)
 
 umf <- unmarkedFrameGDS(y = y, survey="point", unitsIn="m", dist.breaks=breaks, 
     numPrimary=3)
+summary(umf)
     
-gdistsamp(~1, ~1, ~1, umf)     
-
+m1 <- gdistsamp(~1, ~1, ~1, umf)
+backTransform(m1, type="lambda")
+backTransform(m1, type="phi")
+backTransform(m1, type="det")
 
 }
 \keyword{ models }

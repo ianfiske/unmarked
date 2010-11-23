@@ -22,7 +22,7 @@ mixture <- match.arg(mixture)
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula, 
     pformula = pformula)
 form <- as.formula(paste(unlist(formlist), collapse=" "))
-D <- unmarked:::getDesign(data, formula = form)
+D <- getDesign(data, formula = form)
 
 Xlam <- D$Xlam
 Xphi <- D$Xphi 
@@ -39,8 +39,8 @@ if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
 a <- calcAreas(dist.breaks = db, tlength = tlength, 
 	survey = survey, output = output, M = numSites(data), 
 	J = ncol(getY(data)), unitsIn = unitsIn, unitsOut = unitsOut)
-if(length(designMats$removed.sites)>0)
-    a <- a[-designMats$removed.sites,]
+if(length(D$removed.sites)>0)
+    a <- a[-D$removed.sites,]
 
 if(missing(K) || is.null(K)) K <- max(y, na.rm=TRUE) + 20
 k <- 0:K
@@ -91,21 +91,12 @@ for(i in 1:M) {
 
 nll <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
-    phi <- drop(plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset))
-    shape <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
+    phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
+    shape <- exp(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
 
-    phi.mat <- matrix(phi, M, T, byrow=TRUE)
-    phi <- as.numeric(phi.mat)
-    
-    shape <- matrix(p, nrow=M, byrow=TRUE)
-    shape <- array(shape, c(M, J, T))
-    shape <- shape[,1,] #      
-    cp <- matrix(NA, c(M, T))
-    
-    for(t in 1:T) cp[,t,1:J] <- do.call(piFun, list(p[,t,]))
-    cp[,,1:J] <- cp[,,1:J] * phi
-    cp[,,J+1] <- 1 - apply(cp[,,1:J], 1:2, sum, na.rm=TRUE) # is na.rm=T valid?
-    
+    phi <- matrix(phi, M, T, byrow=TRUE)
+    shape <- matrix(shape, M, T, byrow=TRUE)
+
     switch(mixture, 
         P = f <- sapply(k, function(x) dpois(x, lambda)),
         NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, 
@@ -117,12 +108,14 @@ nll <- function(pars) {
                 cp <- rep(0, J+1)
                 for(j in 1:J) {
                     cp[j] <- tdWsq * integrate(grhn, db[j], db[j+1], 
-                        sigma=sigma[i, t])$value
-                        }
+                        sigma=shape[i, t], rel.tol=rel.tol)$value
+                    }
+                cp <- cp * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
                 A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
                     sum(y[i, t, !naflag[i,t,]] * 
-                    log(cp[which(!naflag[i,t,])])) + kmyt[i, t,] * log(cp[J+1])
+                    log(cp[which(!naflag[i,t,])])) + 
+                    kmyt[i, t,] * log(cp[J+1])
                 }
             }
         g[i,] <- exp(rowSums(A))
@@ -132,7 +125,10 @@ nll <- function(pars) {
     -sum(log(ll))
     }
     
-if(missing(starts)) starts <- rep(0, nP)
+if(missing(starts)) {
+    starts <- rep(0, nP)
+    starts[nLP+nPP+1] <- log(max(db))
+    }
 fm <- optim(starts, nll, method = method, hessian = se, control = control)
 opt <- fm
 if(se) {
@@ -164,7 +160,7 @@ detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     estimates = ests[(nLP+nPP+1):(nLP+nPP+nDP)],
     covMat = as.matrix(
         covMat[(nLP+nPP+1):(nLP+nPP+nDP), (nLP+nPP+1):(nLP+nPP+nDP)]), 
-    invlink = "logistic", invlinkGrad = "logistic.grad")
+    invlink = "exp", invlinkGrad = "exp")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
     phi=phiEstimates, det=detEstimates))
 
@@ -178,7 +174,7 @@ umfit <- new("unmarkedFitGDS", fitType = "gdistsamp",
     call = match.call(), formula = form, formlist = formlist,    
     data = data, estimates = estimateList, sitesRemoved = D$removed.sites, 
     AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll,
-    mixture=mixture, K=K)
+    mixture=mixture, K=K, keyfun=keyfun, unitsOut=unitsOut, output=output)
 
 return(umfit)
 }
