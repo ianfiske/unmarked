@@ -9,7 +9,7 @@ setGeneric("handleNA", function(umf, ...) standardGeneric("handleNA"))
 
 setMethod("getDesign", "unmarkedFrame",
     function(umf, formula, na.rm=TRUE) 
-    {
+{
 	detformula <- as.formula(formula[[2]])
 	stateformula <- as.formula(paste("~", formula[3], sep=""))
 	detVars <- all.vars(detformula)
@@ -69,69 +69,67 @@ setMethod("getDesign", "unmarkedFrame",
           removed.sites=integer(0)
         }
 
-	return(list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset, 
-		removed.sites = removed.sites))
+    return(list(y = y, X = X, X.offset = X.offset, V = V, 
+        V.offset = V.offset, removed.sites = removed.sites))
 	})
-	
-	
-	
+
 
 setMethod("handleNA", "unmarkedFrame", function(umf, X, X.offset, V, V.offset) 
-    {
-	obsToY <- obsToY(umf)
-	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
-	
-	J <- numY(umf)
-	R <- obsNum(umf)
-	M <- numSites(umf)
-	
-	X.long <- X[rep(1:M, each = J),]
-	X.long.na <- is.na(X.long)
-	
-	V.long.na <- apply(V, 2, function(x) {
-				x.mat <- matrix(x, M, R, byrow = TRUE)
-				x.mat <- is.na(x.mat)
-				x.mat <- x.mat %*% obsToY
-				x.long <- as.vector(t(x.mat))
-				x.long == 1
-			})
-	V.long.na <- apply(V.long.na, 1, any)
-	
-	y.long <- as.vector(t(getY(umf)))
-	y.long.na <- is.na(y.long)
-	
-	covs.na <- apply(cbind(X.long.na, V.long.na), 1, any)
-	
-	## are any NA in covs not in y already?
-	y.new.na <- covs.na & !y.long.na
-	
-	if(sum(y.new.na) > 0) {
-		y.long[y.new.na] <- NA
-		warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
-	}
-	
-	y <- matrix(y.long, M, J, byrow = TRUE)
-	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
-	
-	num.to.remove <- sum(sites.to.remove)
-	if(num.to.remove > 0) {
-		y <- y[!sites.to.remove, ,drop = FALSE]
-		X <- X[!sites.to.remove, ,drop = FALSE]
-                X.offset <- X.offset[!sites.to.remove]
-		V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
-                V.offset <- V.offset[!sites.to.remove[rep(1:M, each = R)], ]
-		warning(paste(num.to.remove,"sites have been discarded because of missing data."), call. = FALSE)
-	}
-	
-	list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset,
-             removed.sites = which(sites.to.remove))
+{
+    obsToY <- obsToY(umf)
+    if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
+
+    J <- numY(umf)
+    R <- obsNum(umf)
+    M <- numSites(umf)
+
+    X.long <- X[rep(1:M, each = J),]
+    X.long.na <- is.na(X.long)
+
+    V.long.na <- apply(V, 2, function(x) {
+        x.mat <- matrix(x, M, R, byrow = TRUE)
+        x.mat <- is.na(x.mat)
+        x.mat <- x.mat %*% obsToY
+        x.long <- as.vector(t(x.mat))
+        x.long > 0
+        })
+    V.long.na <- apply(V.long.na, 1, any)
+
+    y.long <- as.vector(t(getY(umf)))
+    y.long.na <- is.na(y.long)
+
+    covs.na <- apply(cbind(X.long.na, V.long.na), 1, any)
+
+    ## are any NA in covs not in y already?
+    y.new.na <- covs.na & !y.long.na
+
+    if(sum(y.new.na) > 0) {
+        y.long[y.new.na] <- NA
+        warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
+    }
+
+    y <- matrix(y.long, M, J, byrow = TRUE)
+    sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+
+    num.to.remove <- sum(sites.to.remove)
+    if(num.to.remove > 0) {
+        y <- y[!sites.to.remove, ,drop = FALSE]
+        X <- X[!sites.to.remove, ,drop = FALSE]
+        X.offset <- X.offset[!sites.to.remove]
+        V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
+        V.offset <- V.offset[!sites.to.remove[rep(1:M, each = R)], ]
+        warning(paste(num.to.remove,"sites have been discarded because of missing data."), call. = FALSE)
+        }
+
+    list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset, 
+        removed.sites = which(sites.to.remove))
     })
     
     
 
 
 # UnmarkedMultFrame    
-	
+
 
 
 
@@ -258,7 +256,7 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
         x.mat <- is.na(x.mat)
 				x.mat <- x.mat %*% obsToY
 				x.long <- as.vector(t(x.mat))
-				x.long == 1
+				x.long > 0
         })
     V.long.na <- apply(V.long.na, 1, any)
 	
@@ -541,7 +539,7 @@ setMethod("handleNA", "unmarkedFrameGMM",
     M <- numSites(umf)
     T <- umf@numPrimary
     R <- obsNum(umf)
-    J <- R/T            # numY(umf) / T
+    J <- numY(umf) / T  # R/T
 	
     # treat Xphi and Xlam together
     X <- cbind(Xphi, Xlam[rep(1:M, each = T), ])
@@ -554,7 +552,7 @@ setMethod("handleNA", "unmarkedFrameGMM",
         x.mat <- is.na(x.mat)
         x.mat <- x.mat %*% obsToY
         x.long <- as.vector(t(x.mat))
-        x.long == 1
+        x.long > 0
         })
 
     Xdet.long.na <- apply(Xdet.long.na, 1, any)
@@ -582,8 +580,8 @@ setMethod("handleNA", "unmarkedFrameGMM",
     		Xlam.offset <- Xlam.offset[!sites.to.remove]
     		Xphi <- Xphi[!sites.to.remove[rep(1:M, each = T)],, drop = FALSE]
     		Xphi.offset <- Xphi.offset[!sites.to.remove[rep(1:M, each = T)]]
-        Xdet <- Xdet[!sites.to.remove[rep(1:M, each = R)],, drop = FALSE]
-        Xdet.offset <- Xdet.offset[!sites.to.remove[rep(1:M, each=R)]]
+        Xdet <- Xdet[!sites.to.remove[rep(1:M, each = numY(umf))],, drop=FALSE]
+        Xdet.offset <- Xdet.offset[!sites.to.remove[rep(1:M, each=numY(umf))]]
     		warning(paste(num.to.remove, 
             "sites have been discarded because of missing data."), call.=FALSE)
 	     }

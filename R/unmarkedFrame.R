@@ -84,7 +84,6 @@ setClass("unmarkedFramePCO",
 		contains = "unmarkedFrame")
 
 
-# for gmm aka gmultmix     
 setClass("unmarkedFrameGMM", 
     representation(
         piFun = "character",
@@ -93,19 +92,21 @@ setClass("unmarkedFrameGMM",
 
 
 
+# ------------------------------- CONSTRUCTORS --------------------------------
 
-################### CONSTRUCTORS ###############################################
 
 # Constructor for unmarkedFrames.
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
     obsToY) 
 {
+    if(!missing(obsToY))
+        obsNum <- nrow(obsToY)
     if(class(obsCovs) == "list") {
         obsVars <- names(obsCovs)
         for(i in seq(length(obsVars))) {
             if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
                 stop("At least one element of obsCovs is not a matrix or data frame.")
-            if(ncol(obsCovs[[i]]) != ncol(y) | nrow(obsCovs[[i]]) != nrow(y))
+            if(ncol(obsCovs[[i]]) != obsNum | nrow(obsCovs[[i]]) != nrow(y))
                 stop("At least one matrix in obsCovs has incorrect number of dimensions.")
             }
         if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]]) #??
@@ -127,8 +128,8 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
 {
 	if(missing(survey))
         stop("survey argument must be specified")
-    if(missing(tlength) & survey == "point")
-		tlength <- numeric(0)
+  if(missing(tlength) & survey == "point")
+  tlength <- numeric(0)
 	umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
 			siteCovs = siteCovs, dist.breaks = dist.breaks, tlength = tlength,
 			survey = survey, unitsIn = unitsIn,
@@ -146,6 +147,7 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
 	umf <- as(umf, "unmarkedFrameOccu")
 	umf
 }
+
 
 # This function constructs an unmarkedMultFrame object.
 unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
@@ -170,8 +172,8 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
             as.vector(t(x))))
         }    
 
-	umf@yearlySiteCovs <- yearlySiteCovs
-	umf
+    umf@yearlySiteCovs <- yearlySiteCovs
+    umf
 }
 
 
@@ -179,31 +181,32 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 	yearlySiteCovs = NULL, type, obsToY, piFun) 
 {
+    J <- ncol(y) / numPrimary
     if(!missing(type)) {
       if(!type %in% c("removal", "double"))
         stop("if specifying type, it should either be 'removal' or 'double'")
       switch(type,
         removal = {
-          #obsToY <- matrix(1, ncol(y), ncol(y))
-				  #obsToY[col(obsToY) < row(obsToY)] <- 0
-				  obsToY <- diag(ncol(y))
+          obsToY <- diag(J)
+          obsToY[upper.tri(obsToY)] <- 1
+          obsToY <- kronecker(diag(numPrimary), obsToY)
           piFun <- "removalPiFun"
           },
         double = {
-				  obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
-				  piFun <- "doublePiFun"
+          #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
+          obsToY <- matrix(1, 2, 3)
+          obsToY <- kronecker(diag(numPrimary), obsToY) 
+          piFun <- "doublePiFun"
           })
-      }
-    else {
+    } else {
         type <- "userDefined" 
         if(missing(obsToY)) 
             stop("obsToY is required for gmultmix data with no specified type.")
-		}
+        } 
        
     umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
-    J <- ncol(y) / numPrimary
     if(class(yearlySiteCovs) == "list") {
         yearlySiteVars <- names(yearlySiteCovs)
         for(i in seq(length(yearlySiteVars))) {
@@ -240,30 +243,31 @@ unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
 unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type, 
     obsToY, mapInfo, piFun) 
 {
-	if(!missing(type)) {
-		switch(type,
-			removal = {
-				#obsToY <- matrix(1, ncol(y), ncol(y))
-				#obsToY[col(obsToY) < row(obsToY)] <- 0
-				obsToY <- diag(ncol(y))
-        piFun <- "removalPiFun"
-			},
-			double = {
-				obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
-				piFun <- "doublePiFun"
-			})
-		}
-	else {
-		if(missing(obsToY)) 
-			stop("obsToY is required for multinomial-Poisson data with no specified type.")
-		type <- "userDefined"
-		}
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY, 
-		mapInfo = mapInfo)
-	umf <- as(umf, "unmarkedFrameMPois")
-	umf@piFun <- piFun
-	umf@samplingMethod <- type
-	umf
+    if(!missing(type)) {
+        switch(type,
+            removal = {
+                obsToY <- matrix(1, ncol(y), ncol(y))
+                obsToY[col(obsToY) < row(obsToY)] <- 0
+                #obsToY <- diag(ncol(y))
+                #obsToY[upper.tri(obsToY)] <- 1
+                piFun <- "removalPiFun"
+                },
+            double = {
+                #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
+                obsToY <- matrix(1, 2, 3)
+                piFun <- "doublePiFun"
+                })
+    } else {
+        if(missing(obsToY)) 
+            stop("obsToY is required for multinomial-Poisson data with no specified type.")
+        type <- "userDefined"
+        }
+    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY, 
+        mapInfo = mapInfo)
+    umf <- as(umf, "unmarkedFrameMPois")
+    umf@piFun <- piFun
+    umf@samplingMethod <- type
+    umf
 }
 
 
@@ -314,12 +318,12 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 ################ SHOW METHODS ##################################################
 
 
-setMethod("show", "unmarkedFrame",
-        function(object) {
-            df <- as(object, "data.frame")
-            cat("Data frame representation of unmarkedFrame object.\n")
-            print(df)
-        })
+setMethod("show", "unmarkedFrame", function(object) 
+{
+    df <- as(object, "data.frame")
+    cat("Data frame representation of unmarkedFrame object.\n")
+    print(df)
+})
 
 
 setMethod("show", "unmarkedMultFrame",

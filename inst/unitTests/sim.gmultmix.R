@@ -146,3 +146,110 @@ umf4 <- unmarkedFrameGMM(y=matrix(y, nrow=n),
     obsCovs=list(oc=matrix(oc, nrow=n), int=int),
     yearlySiteCovs=list(ysc=ysc), 
     numPrimary=T, type="removal")
+
+
+
+
+
+
+
+
+
+
+# ------------------------- double observer -----------------------------------
+
+
+
+sim.doub <- function(nSites=200, nReps=2, lambda=1, phi=0.6, pA=0.8, pB=0.6, 
+    alpha=0.5)
+{ 
+
+    N <- matrix(NA, nSites, nReps)
+    y <- array(NA, c(nSites, 3, nReps))
+
+    # Abundance at each site (quadrat)
+    M <- rnbinom(nSites, size=alpha, mu=lambda)
+
+    # Number available during each rep (pass)
+    for(i in 1:nSites) {
+        N[i,] <- rbinom(nReps, M[i], phi)
+        }
+
+    # Number observed
+    for(i in 1:nSites) {
+        for(t in 1:nReps) {
+            cp <- c(pA * (1 - pB), pB * (1 - pA), pA * pB)
+            cp[4] <- 1 - sum(cp)
+            y[i,,t] <- c(rmultinom(1, N[i,t], cp)[1:3])
+            }
+        }
+    return(matrix(y, nSites))
+}
+
+str(sim.doub())    
+    
+# Fit the model
+
+set.seed(4)
+y.sim <- sim.doub()
+T <- ncol(y.sim) / 3
+observer <- matrix(c("A", "B"), 200, T*2, byrow=TRUE)
+umf <- unmarkedFrameGMM(y = y.sim, 
+    obsCovs = list(observer=observer),
+    numPrimary=2, type="double")
+summary(umf)
+
+m4 <- gmultmix(~1, ~1, ~observer, umf, mixture="NB")
+m4
+
+checkEqualsNumeric(coef(m4), c(-0.06998556, 0.77150482, 1.31340048, 
+    -0.94099309, -1.14215950), tol=1e-5)
+
+backTransform(m4, type="lambda")  # Average abundance per site
+backTransform(m4, type="phi")     # Availability    
+backTransform(linearComb(m4, c(1,0), type="det"))     # obsA detection prob
+backTransform(linearComb(m4, c(1,1), type="det"))     # obsB detection prob
+backTransform(m4, type="alpha")   # Over-dispersion
+
+# Total pop size
+coef(backTransform(m4, type="lambda")) * nrow(y.sim)
+
+
+pb4 <- parboot(m4, nsim=5, report=1)
+
+
+
+nsim <- 20
+simout <- matrix(NA, nsim, 5)
+colnames(simout) <- c("lambda", "phi", "pA", "pB", "alpha")
+for(i in 1:nsim) {
+    cat("sim", i, "\n"); flush.console()
+    y.sim <- sim.doub()
+    T <- ncol(y.sim)/3
+    observer <- matrix(c("A", "B"), nrow(y.sim), T*2, byrow=TRUE)
+    umf <- unmarkedFrameGMM(y = y.sim, obsCovs=list(observer=observer), 
+        type="double", numPrimary=T)
+    m.sim4 <- gmultmix(~1, ~1, ~observer, umf, mixture="NB")
+    e <- coef(m.sim4)
+    simout[i,] <- c(exp(e[1]), plogis(e[2:3]), plogis(sum(e[3:4])), exp(e[5]))
+    }
+
+hist(simout[,1]); abline(v=1, col=4)
+hist(simout[,2]); abline(v=0.6, col=4)
+hist(simout[,3]); abline(v=0.8, col=4)
+hist(simout[,4]); abline(v=0.6, col=4)
+hist(simout[,5]); abline(v=0.5, col=4)
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
