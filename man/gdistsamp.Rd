@@ -98,6 +98,8 @@ gdistsamp(lambdaformula, phiformula, detformula, data, keyfun = c("halfnorm", "e
     }
 \examples{
 
+set.seed(3)
+
 R <- 50
 T <- 3
 radius <- 50
@@ -112,7 +114,7 @@ A <- (2*radius)^2 / 10000     # Area (ha) of square containing circle
 y <- array(0, c(R, J, T))
 for(i in 1:R) {
     M <- rpois(1, lambda * A) # Individuals within the square
-    N <- rbinom(T, M, phi)    # Individualss available for detection at time t
+    N <- rbinom(T, M, phi)    # Individuals available for detection at time t
         
     for(t in 1:T) {
         # coordinates of each individual
