@@ -93,28 +93,19 @@ nll <- function(parms) {
         g1 <- dbinom(y[i,1], k, p[i,1])
         if(any(is.na(g1))) g1[] <- 1    # FIXME! Temporary work-around.
         switch(mixture, 
-            P = g2 <- dpois(k, lambda[i]), # This could be NA too!
+            P = g2 <- dpois(k, lambda[i]),
             NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
-        omega.itkk <- rep(omega[i,], each=lk*lk)
-        gamma.itkk <- rep(gamma[i,], each=lk*lk)
         if(dynamics == "autoreg")
             gamma.itkk <- gamma.itkk * k.each
-        convMat <- matrix(0, lk*lk*(T-1), K+1)
-        for(q in k) {
-            nz <- which(nonzero[,q+1])
-            convMat[nz, q+1] <- dbinom(q, k.each[nz], omega.itkk[nz]) * 
-                dpois(k.times[nz] - q, gamma.itkk[nz])
-            }
-        g3 <- rowSums(convMat)
-        g3 <- array(g3, c(lk, lk, T-1))
+        g3.T <- tranProbs(k, omega[i, T-1], gamma[i, T-1])
         g1.T <- dbinom(y[i, T], k, p[i, T])
-        g3.T <- g3[,, T-1]
         g.star[, T-1] <- colSums(g1.T * g3.T)
         # NA handling: this will properly determine last obs for each site
         g.star[,T-1][is.na(g.star[, T-1])] <- 1
         for(t in (T-1):(first[i]+1)) {
             g1.t <- dbinom(y[i, t], k, p[i, t])
-            g.star[, t-1] <- colSums(g1.t * g3[,,t-1] * g.star[,t])
+            g3.t <- tranProbs(k, omega[i, t], gamma[i, t])
+            g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
             g.star.na <- is.na(g.star[, t-1])
             g.star[,t-1][g.star.na] <- g.star[,t][g.star.na]
             }
@@ -175,6 +166,22 @@ umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", call = match.call(
     dynamics = dynamics)
 return(umfit)
 }
+
+
+
+
+
+tranProbs <- function(Kr, omegaR, gammaR) {
+    .Call("tranProbs", 
+        as.integer(Kr),
+        as.double(omegaR),
+        as.double(gammaR),
+        PACKAGE = "unmarked")
+    }
+    
+    
+    
+    
 
 
 
