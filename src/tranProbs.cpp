@@ -15,8 +15,8 @@ SEXP tranProbs( SEXP Kr, SEXP omegaR, SEXP gammaR ){
             int Km = std::min(K[i], K[j]);
             IntegerVector cmin0 = seq(0, Km);
             bpsum(i, j) = sum(
-                dbinom(cmin0, K[i], omega, false) *
-                dpois(K[j]-cmin0, gamma, false)
+                dbinom(cmin0, K[j], omega, false) *
+                dpois(K[i]-cmin0, gamma, false)
                 );
             }
         }
