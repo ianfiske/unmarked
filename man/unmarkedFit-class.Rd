@@ -140,7 +140,7 @@ ovenFrame <- unmarkedFrameMPois(y = ovendata.list$data,
 	siteCovs = as.data.frame(scale(ovendata.list$covariates[,-1])), 
 	type = "removal")
 
-# Fit a model
+# Fit a couple of models
 (fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
 summary(fm1)
 
@@ -189,9 +189,11 @@ predict(fm1, type='state', newdata=newdat)
 # Number of sites in the sample
 sampleSize(fm1)
 
-
 # Fit a new model without covariates
 (fmNull <- update(fm1, formula = ~1 ~1))
+
+# Likelihood ratio test
+LRT(fm1, fmNull)
 
 
 }
