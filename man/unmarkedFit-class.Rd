@@ -140,7 +140,7 @@ ovenFrame <- unmarkedFrameMPois(y = ovendata.list$data,
 	siteCovs = as.data.frame(scale(ovendata.list$covariates[,-1])), 
 	type = "removal")
 
-# Fit a model
+# Fit a couple of models
 (fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
 summary(fm1)
 
@@ -169,6 +169,9 @@ getData(fm1)
 # Detection probabilities
 getP(fm1)
 
+# log-likelihood
+logLik(fm1)
+
 # Back-transform detection probability to original scale
 # backTransform only works on models with no covariates or 
 #     in conjunction with linearComb (next example)
@@ -189,9 +192,11 @@ predict(fm1, type='state', newdata=newdat)
 # Number of sites in the sample
 sampleSize(fm1)
 
-
 # Fit a new model without covariates
 (fmNull <- update(fm1, formula = ~1 ~1))
+
+# Likelihood ratio test
+LRT(fm1, fmNull)
 
 
 }

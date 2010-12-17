@@ -442,8 +442,10 @@ setMethod("logLik", "unmarkedFit", function(object, ...)
 
 setMethod("LRT", c(m1="unmarkedFit", m2="unmarkedFit"), function(m1, m2)
 {
-    chisq <- 2 * diff(c(logLik(m1), logLik(m2)))
-    DF <- diff(c(length(coef(m1)), length(coef(m2))))
+    ll1 <- unmarked:::logLik(m1)
+    ll2 <- unmarked:::logLik(m2)
+    chisq <- 2 * abs(ll1 - ll2)
+    DF <- abs(length(coef(m1)) - length(coef(m2)))
     pval <- pchisq(chisq, DF, lower=FALSE)
     return(data.frame(Chisq=chisq, DF = DF, 'Pr(>Chisq)' = pval, check.names=F))
 }) 
