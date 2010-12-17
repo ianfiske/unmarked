@@ -169,6 +169,9 @@ getData(fm1)
 # Detection probabilities
 getP(fm1)
 
+# log-likelihood
+logLik(fm1)
+
 # Back-transform detection probability to original scale
 # backTransform only works on models with no covariates or 
 #     in conjunction with linearComb (next example)
