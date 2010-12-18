@@ -4,13 +4,13 @@
 
 # Simulate with half-normal detection function
 
-simDSpt <- function(lambda=5, sigma=20, nts=100, radius=50,
+simDSpt <- function(lambda=5, sigma=20, npts=100, radius=50,
     breaks=seq(0, 50, by=10))
 {      
     A <- (2*radius)^2 / 10000 # Area (ha) of square containing circle
     y <- matrix(0, npts, length(breaks)-1)
     for(i in 1:npts) {
-        M <- rpois(1, lambda * A) # Individuals within the rectangle
+        M <- rpois(1, lambda * A) # Individuals within the square
         # coordinates of each individual
         xy <- cbind(x=runif(M, -radius, radius), y=runif(M, -radius, radius))
         
@@ -37,20 +37,25 @@ umf1 <- unmarkedFrameDS(y = simDSpt(), survey="point",
 m2 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)), output="abund")
 
 
-checkEqualsNumeric(coef(m1), c(1.813819, 2.893771), tol=1e-5)
+cxcheckEqualsNumeric(coef(m1), c(1.813819, 2.893771), tol=1e-5)
 checkEquals(exp(coef(m1, type="state")), 
     exp(coef(m2, type="state")) / (pi * 50^2 / 10000), tol=0.01)
 
 
-nsims <- 10
+nsims <- 100
 simout1 <- matrix(NA, nsims, 2)
+lam <- 20
+sig <- 30
 for(i in 1:nsims) {
     cat("sim", i, "\n"); flush.console()
-    umf <- unmarkedFrameDS(y = simDSpt(), survey="point", 
+    umf <- unmarkedFrameDS(y = simDSpt(lambda=lam, sigma=sig), survey="point", 
         dist.breaks=seq(0, 50, by=10), unitsIn="m")
-    m <- distsamp(~1 ~1, umf, starts=c(log(5), log(20)))
-    simout1[i,] <- c(exp(coef(m, type="state")), exp(coef(m, type="det")))
+    m <- distsamp(~1 ~1, umf, starts=c(log(lam), log(sig)), rel.tol=1e-3)
+    simout1[i,] <- exp(coef(m))
     }
+hist(simout1[,1]); abline(v=lam, lwd=2, col=3)
+hist(simout1[,2]); abline(v=sig, lwd=2, col=3)
 
-hist(simout1[,1]); abline(v=5, lwd=2, col=3)
-hist(simout1[,2]); abline(v=20, lwd=2, col=3)
+
+
+
