@@ -59,3 +59,23 @@ hist(simout1[,2]); abline(v=sig, lwd=2, col=3)
 
 
 
+
+b <- seq(0, 50, by=10)
+p1 <- p2 <- a <- rep(NA, length(b)-1) 
+
+for(i in 1:(length(b)-1)) {
+    p1[i] <- integrate(unmarked:::grhn, b[i], b[i+1], sigma=10)$value * 
+        2 / max(b)^2
+    p2[i] <- integrate(unmarked:::gxhn, b[i], b[i+1], sigma=10)$value / 10    
+    a[i] <- pi*b[i+1]^2 - pi*b[i]^2
+    }
+au <- a / sum(a)   
+
+p1
+p2 * au
+
+
+
+
+
+
