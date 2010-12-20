@@ -12,8 +12,7 @@ keyfun <- match.arg(keyfun)
 output <- match.arg(output)
 unitsOut <- match.arg(unitsOut)
 db <- data@dist.breaks
-tdWsq <- 2 / max(db)^2					# only used for pt-transects
-strip.widths <- diff(db)				# only used for line-transects	
+w <- diff(db)	
 tlength <- data@tlength
 survey <- data@survey
 unitsIn <- data@unitsIn
@@ -36,11 +35,9 @@ if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
 if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
 if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
 
-a <- calcAreas(dist.breaks = db, tlength = tlength, 
-	survey = survey, output = output, M = numSites(data), 
-	J = ncol(getY(data)), unitsIn = unitsIn, unitsOut = unitsOut)
-if(length(D$removed.sites)>0)
-    a <- a[-D$removed.sites,]
+#a <- calcAreas(dist.breaks = db, tlength = tlength, 
+#	survey = survey, output = output, M = numSites(data), 
+#	J = ncol(getY(data)), unitsIn = unitsIn, unitsOut = unitsOut)
 
 if(missing(K) || is.null(K)) K <- max(y, na.rm=TRUE) + 20
 k <- 0:K
@@ -57,6 +54,14 @@ yt <- apply(y, 1:2, function(x) {
         return(NA)
     else return(sum(x, na.rm=TRUE))
     })
+    
+a <- rep(NA, J)
+a[1] <- pi*db[2]^2
+for(j in 2:J) {
+   a[j] <- pi*db[j+1]^2 - a[j-1]
+   }
+a <- a / sum(a) 
+    
 
 lamPars <- colnames(Xlam)
 phiPars <- colnames(Xphi)
@@ -105,11 +110,12 @@ nll <- function(pars) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
             if(!all(naflag[i,t,])) {
-                cp <- rep(0, J+1)
+                cp <- rep(0, J)
                 for(j in 1:J) {
-                    cp[j] <- tdWsq * integrate(grhn, db[j], db[j+1], 
-                        sigma=shape[i, t], rel.tol=rel.tol)$value
+                    cp[j] <- integrate(gxhn, db[j], db[j+1], sigma=shape[i, t],
+                        rel.tol=rel.tol)$value / w[j]
                     }
+                cp <- cp * a
                 cp <- cp * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
                 A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
