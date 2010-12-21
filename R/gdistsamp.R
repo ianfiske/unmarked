@@ -21,7 +21,7 @@ mixture <- match.arg(mixture)
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula, 
     pformula = pformula)
 form <- as.formula(paste(unlist(formlist), collapse=" "))
-D <- getDesign(data, formula = form)
+D <- unmarked:::getDesign(data, formula = form)
 
 Xlam <- D$Xlam
 Xphi <- D$Xphi 
@@ -34,10 +34,6 @@ Xdet.offset <- D$Xdet.offset
 if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
 if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
 if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
-
-#a <- calcAreas(dist.breaks = db, tlength = tlength, 
-#	survey = survey, output = output, M = numSites(data), 
-#	J = ncol(getY(data)), unitsIn = unitsIn, unitsOut = unitsOut)
 
 if(missing(K) || is.null(K)) K <- max(y, na.rm=TRUE) + 20
 k <- 0:K
@@ -54,7 +50,8 @@ yt <- apply(y, 1:2, function(x) {
         return(NA)
     else return(sum(x, na.rm=TRUE))
     })
-    
+
+# point counts only    
 a <- rep(NA, J)
 a[1] <- pi*db[2]^2
 for(j in 2:J) {
@@ -110,13 +107,13 @@ nll <- function(pars) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
             if(!all(naflag[i,t,])) {
-                cp <- rep(0, J)
-                for(j in 1:J) {
-                    cp[j] <- integrate(gxhn, db[j], db[j+1], sigma=shape[i, t],
-                        rel.tol=rel.tol)$value / w[j]
-                    }
-                cp <- cp * a
-                cp <- cp * phi[i, t]
+                int <- 2 * (pnorm(db[-1], 0, sd=shape[i, t]) -
+                    pnorm(db[-(J+1)], 0, sd=shape[i, t])) 
+                f.0 <- 2 * dnorm(0, 0, shape[i, t])
+                cp <- int / f.0 / w
+                cp <- cp * a * phi[i, t]
+                #if(sum(cp)>1) 
+                #    cat("a =", a, "\ncp =", cp, "\nphi =", phi[i,t], "\n")
                 cp[J+1] <- 1 - sum(cp)
                 A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
                     sum(y[i, t, !naflag[i,t,]] * 

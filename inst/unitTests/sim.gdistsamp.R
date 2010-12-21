@@ -46,24 +46,25 @@ umf <- unmarkedFrameGDS(y = sim(T=T, breaks=breaks), survey="point",
     unitsIn="m", dist.breaks=breaks, numPrimary=T)
 summary(umf)
     
-system.time(m1 <- gdistsamp(~1, ~1, ~1, umf))
+system.time(m1 <- gdistsamp(~1, ~1, ~1, umf)) # 28s
 
 backTransform(m1, type="lambda")
 backTransform(m1, type="phi")
 backTransform(m1, type="det")
 
 
-nsim <- 10
+nsim <- 100
 simout <- matrix(NA, nsim, 3)
 colnames(simout) <- c('lambda', 'phi', 'sigma')
 for(i in 1:nsim) {
     cat("sim", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y <- sim(phi=0.7, R=200, T=T, breaks=breaks)
+    y <- sim(lambda=20, phi=0.7, R=200, T=T, breaks=breaks)
     umf <- unmarkedFrameGDS(y = y, survey="point", 
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m <- gdistsamp(~1, ~1, ~1, umf, rel.tol=0.001)
+    m <- gdistsamp(~1, ~1, ~1, umf, rel.tol=0.001, 
+        starts=c(1.5, 0.5, 3))
     e <- coef(m)
     simout[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3]))
     }
@@ -72,9 +73,37 @@ png('c:/work/pwrc/manuscripts/flevoland/figs/simout.png', width=4, height=8,
     units='in', res=360)
 par(mfrow=c(3, 1))       
 hist(simout[,1], xlab=expression(lambda), main="")
-abline(v=5*(pi*50^2/10000), col=4)    
+abline(v=20*(pi*50^2/10000), col=4)    
 hist(simout[,2], xlab=expression(phi), main=""); abline(v=0.7, col=4)    
 hist(simout[,3], xlab=expression(sigma), main=""); abline(v=20, col=4)        
 
 dev.off()    
+
+
+
+
+
+
+
+b <- seq(0, 50, by=10)
+w <- diff(b)
+J <- length(w)
+p1 <- p2 <- p3 <- a <- rep(NA, length(b)-1)
+sigma <- 10
+for(i in 1:(length(b)-1)) {
+    p1[i] <- integrate(unmarked:::grhn, b[i], b[i+1], sigma=sigma)$value *
+        2 / max(b)^2
+    p2[i] <- integrate(unmarked:::gxhn, b[i], b[i+1], sigma=sigma)$value / 10
+    a[i] <- pi*b[i+1]^2 - pi*b[i]^2
+    }
+f.0 <- 2 * dnorm(0, 0, sd=sigma)
+int <- 2 * (pnorm(b[-1], 0, sd=sigma) - pnorm(b[-(J+1)], 0, sd=sigma))
+
+
+au <- a / sum(a)
+
+p1
+p2 * au
+p3 <- int / f.0 / w * au
+p3
 
