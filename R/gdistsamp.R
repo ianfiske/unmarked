@@ -58,7 +58,7 @@ yt <- apply(y, 1:2, function(x) {
 a <- rep(NA, J)
 a[1] <- pi*db[2]^2
 for(j in 2:J) {
-   a[j] <- pi*db[j+1]^2 - a[j-1]
+   a[j] <- pi*db[j+1]^2 - sum(a[1:(j-1)])
    }
 a <- a / sum(a) 
     

@@ -35,37 +35,6 @@ sim <- function(lambda=5, phi=0.5, sigma=20, R=100, T=3, radius=50,
 
 
 
-# No spatial component. point transects
-# cell probs should be p * prob of occurence
-sim <- function(lambda=5, phi=0.5, sigma=20, R=100, T=3, 
-    breaks=seq(0, 50, by=10))
-{    
-    J <- length(breaks)-1
-    y <- array(0, c(R, J, T))
-    u <- 1 / (length(breaks)-1)
-    a <- p <- numeric(length(breaks)-1)
-    for(d in 1:(length(breaks)-1)) {
-        a[d] <- pi*breaks[d+1]^2 - pi*breaks[d]^2
-        p[d] <- integrate(unmarked:::gxhn, breaks[d], breaks[d+1], 
-							sigma=100, rel.tol=1e-3)$value / 10
-        }
-    a <- a / sum(a) 
-
-    pi1 <- 
-    for(i in 1:R) {
-        M <- rpois(1, lambda) 
-        N <- rbinom(T, M, phi)    # Individuals available at time t
-        for(t in 1:T) {
-          
-            
-                }
-            }
-        }
-    y <- matrix(y, nrow=R)
-    return(y)
-}
-
-
 
 
 library(unmarked)
@@ -94,7 +63,7 @@ for(i in 1:nsim) {
     y <- sim(phi=0.7, R=200, T=T, breaks=breaks)
     umf <- unmarkedFrameGDS(y = y, survey="point", 
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m <- gdistsamp(~1, ~1, ~1, umf, rel.tol=0.01)
+    m <- gdistsamp(~1, ~1, ~1, umf, rel.tol=0.001)
     e <- coef(m)
     simout[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3]))
     }
