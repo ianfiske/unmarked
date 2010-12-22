@@ -60,10 +60,10 @@ for(i in 1:nsim) {
     cat("sim", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y <- sim(lambda=20, phi=0.7, R=200, T=T, breaks=breaks)
+    y <- sim(lambda=20, phi=0.7, R=100, T=T, breaks=breaks)
     umf <- unmarkedFrameGDS(y = y, survey="point", 
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m <- gdistsamp(~1, ~1, ~1, umf, rel.tol=0.001, 
+    m <- gdistsamp(~1, ~1, ~1, umf, rel.tol=0.01, 
         starts=c(1.5, 0.5, 3))
     e <- coef(m)
     simout[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3]))

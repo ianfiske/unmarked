@@ -57,7 +57,7 @@ a[1] <- pi*db[2]^2
 for(j in 2:J) {
    a[j] <- pi*db[j+1]^2 - sum(a[1:(j-1)])
    }
-a <- a / sum(a) 
+asum <- a / sum(a) 
     
 
 lamPars <- colnames(Xlam)
@@ -107,11 +107,12 @@ nll <- function(pars) {
         A <- matrix(0, lk, T)
         for(t in 1:T) {
             if(!all(naflag[i,t,])) {
-                int <- 2 * (pnorm(db[-1], 0, sd=shape[i, t]) -
-                    pnorm(db[-(J+1)], 0, sd=shape[i, t])) 
-                f.0 <- 2 * dnorm(0, 0, shape[i, t])
-                cp <- int / f.0 / w
-                cp <- cp * a * phi[i, t]
+                cp <- rep(NA, J)
+                for(j in 1:J) {
+                    cp[j] <- integrate(grhn, db[j], db[j+1], 
+                        sigma=shape[i, t])$value * 2 * pi / a[j]
+                    }
+                cp <- cp * asum * phi[i, t]
                 #if(sum(cp)>1) 
                 #    cat("a =", a, "\ncp =", cp, "\nphi =", phi[i,t], "\n")
                 cp[J+1] <- 1 - sum(cp)
