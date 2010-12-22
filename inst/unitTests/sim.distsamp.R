@@ -61,21 +61,28 @@ hist(simout1[,2]); abline(v=sig, lwd=2, col=3)
 
 
 b <- seq(0, 50, by=10)
-p1 <- p2 <- a <- rep(NA, length(b)-1) 
+w <- diff(b)
+cp1 <- cp2 <- a <- rep(NA, length(b)-1) 
 
-for(i in 1:(length(b)-1)) {
-    p1[i] <- integrate(unmarked:::grhn, b[i], b[i+1], sigma=10)$value * 
-        2 / max(b)^2
-    p2[i] <- integrate(unmarked:::gxhn, b[i], b[i+1], sigma=10)$value / 10    
-    a[i] <- pi*b[i+1]^2 - pi*b[i]^2
+a[1] <- pi*b[2]^2
+cp1[1] <- integrate(unmarked:::grhn, b[1], b[2], sigma=10)$value * 2 * pi / a[1]
+cp2[1] <- integrate(unmarked:::gxhn, b[1], b[2], sigma=10)$value / w[1]
+
+for(i in 2:(length(b)-1)) {
+    a[i] <- pi*b[i+1]^2 - sum(a[1:(i-1)])
+    cp1[i] <- integrate(unmarked:::grhn, b[i], b[i+1], sigma=10)$value * 
+        2 * pi / a[i]
+    cp2[i] <- integrate(unmarked:::gxhn, b[i], b[i+1], sigma=10)$value / w[i]
+
     }
 au <- a / sum(a)   
 
-p1
-p2 * au
+cp1 * au
+cp2 * au
 
 
 
 
 
-
+integrate(unmarked:::grhn, 0, 10, sigma=1000)$value * 2 * pi
+integrate(unmarked:::grhn, 10, 20, sigma=1000)$value * 2 * pi
