@@ -43,47 +43,89 @@ for(i in 1:nsim1) {
     p <- 0.7
     y.sim1 <- sim1(lambda, gamma, omega, p)
     umf1 <- unmarkedFramePCO(y = y.sim1)
-    m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10)
+    m1 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=10)
     e <- coef(m1)
     simout1[i, 1:2] <- exp(e[1:2])
     simout1[i, 3:4] <- plogis(e[3:4])
     }
-    
+
+par(mfrow=c(2,2))
+hist(simout1[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout1[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout1[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout1[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
     
 
 
 # Fix omega at 1 (no losses)
 m1.fixo <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10, fix="omega")
 
+
+
 ## Simulate covariate model with constant intervals
-set.seed(33)
-M <- 50
-T <- 5
-veght <- rnorm(M)
-isolation <- matrix(rnorm(M*T), M, T)
-time <- matrix(rnorm(M*T, 1), M, T)
-y <- p <- N <- gamma <- matrix(NA, M, T)
-S <- G <- matrix(NA, M, T-1)
-lambda <- exp(-1)   # + 0.5*veght)
-gamma[] <- exp(-1 + -1*isolation)
-omega <- 0.8
-p[] <- plogis(-1 + 1*time)
-N[,1] <- rpois(M, lambda)
-for(t in 1:(T-1)) {
-	S[,t] <- rbinom(M, N[,t], omega)
-	G[,t] <- rpois(M, gamma[,t])
-	N[,t+1] <- S[,t] + G[,t]
-	}
-y[] <- rbinom(M*T, N, p)
 
 
-# Prepare data
-umfC <- unmarkedFramePCO(y = y, siteCovs = data.frame(veght), 
-	obsCovs = list(isolation=isolation, time=time))
 
-# Fit covariate model
-(m2 <- pcountOpen(~1, ~isolation, ~1, ~time, umfC, K=15, se=FALSE,
-	control=list(maxit=30, trace=TRUE, REPORT=1), starts=c(-1,-1,-1,1.5,-1,1)))
+sim2 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=50, T=5)
+{
+    y <- gamma <- omega <- det <- N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    veght <- rnorm(M)
+    isolation <- matrix(rnorm(M*T), M, T)
+    time <- matrix(rnorm(M*T, 1), M, T)
+    lambda <- exp(lam[1] + lam[2]*veght)
+    gamma[] <- exp(gam[1] + gam[2]*isolation)
+    omega[] <- plogis(om[2] + om[2]*isolation)
+    det[] <- plogis(p[1] + p[2]*time)
+
+    N[,1] <- rpois(M, lambda)
+    for(t in 1:(T-1)) {
+        S[,t] <- rbinom(M, N[,t], omega[,t])
+        G[,t] <- rpois(M, gamma[,t])
+        N[,t+1] <- S[,t] + G[,t]
+        }
+    y[] <- rbinom(M*T, N, det)
+    return(list(y=y, covs=data.frame(veght=veght, 
+        isolation=isolation, time=time)))
+}
+                            
+sim2()
+
+
+
+nsim2 <- 5
+simout2 <- matrix(NA, nsim2, 8)
+colnames(simout2) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1', 'p0', 'p1')
+for(i in 1:nsim2) {
+    cat("sim", i, "\n"); flush.console()
+    lam <- c(-2, 1)
+    gam <- c(-1,-1)
+    om <- c(2,-1)
+    p <- c(-1,1)
+    sim2out <- sim2(lam, gam, om, p)
+    y.sim2 <- sim2out$y
+    covs <- sim2out$covs
+    cn <- colnames(covs)
+    siteCovs <- covs[,grep("veght", cn), drop=FALSE]
+    obsCovs <- list(time = covs[,grep("time", cn)], 
+        isolation = covs[,grep("isolation", cn)])     
+    umf2 <- unmarkedFramePCO(y = y.sim2, siteCovs=siteCovs, obsCovs=obsCovs)
+    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=10)
+    e <- coef(m2)
+    simout2[i, ] <- e
+    }
+
+par(mfrow=c(4,2))
+hist(simout2[,1], xlab=expression(lambda)); abline(v=lam[1], lwd=2, col=4)
+hist(simout2[,2], xlab=expression(lambda)); abline(v=lam[2], lwd=2, col=4)
+hist(simout2[,3], xlab=expression(gamma)); abline(v=gam[1], lwd=2, col=4)
+hist(simout2[,4], xlab=expression(gamma)); abline(v=gam[2], lwd=2, col=4)
+hist(simout2[,5], xlab=expression(omega)); abline(v=om[1], lwd=2, col=4)
+hist(simout2[,6], xlab=expression(omega)); abline(v=om[2], lwd=2, col=4)
+hist(simout2[,7], xlab=expression(p)); abline(v=p[1], lwd=2, col=4)    
+hist(simout2[,8], xlab=expression(p)); abline(v=p[2], lwd=2, col=4)     
+
+
 
 
 ## Simulate uneven sampling period intervals

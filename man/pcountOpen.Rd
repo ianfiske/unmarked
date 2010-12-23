@@ -67,7 +67,7 @@ If time intervals vary among survey occasions (sampling periods), an M by T matr
 At this time, the robust design is not available. However, if you have multiple seasons of data, you can model within vs. among rates by creating an MxT observation-level covariate identifying the transition periods and include it the gamma and omega formulas.
 }
 
-\section{Warning}{This function can be extremely slow, especially when there are covariates on gamma or omega, or when sampling intervals are not constant. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates (MLEs) will also help with speed. }
+\section{Warning}{This function can be extremely slow. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates will also help with speed. }
 
 \seealso{
 \code{\link{pcount}}
