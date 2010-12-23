@@ -34,7 +34,7 @@ set.seed(3)
 umf1 <- unmarkedFrameDS(y = simDSpt(), survey="point", 
     dist.breaks=seq(0, 50, by=10), unitsIn="m")
 (m1 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20))))
-m2 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)), output="abund")
+(m2 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)), output="abund"))
 
 
 checkEqualsNumeric(coef(m1), c(1.813819, 2.893771), tol=1e-5)
@@ -42,7 +42,8 @@ checkEquals(exp(coef(m1, type="state")),
     exp(coef(m2, type="state")) / (pi * 50^2 / 10000), tol=0.01)
 
 
-nsims <- 100
+set.seed(11)
+nsims <- 50
 simout1 <- matrix(NA, nsims, 2)
 lam <- 20
 sig <- 30
@@ -50,35 +51,13 @@ for(i in 1:nsims) {
     cat("sim", i, "\n"); flush.console()
     umf <- unmarkedFrameDS(y = simDSpt(lambda=lam, sigma=sig), survey="point", 
         dist.breaks=seq(0, 50, by=10), unitsIn="m")
-    m <- distsamp(~1 ~1, umf, starts=c(log(lam), log(sig)), rel.tol=1e-3)
+    m <- distsamp(~1 ~1, umf, starts=c(log(lam), log(sig)), rel.tol=1e-3, 
+        output="abund")
     simout1[i,] <- exp(coef(m))
     }
-hist(simout1[,1]); abline(v=lam, lwd=2, col=3)
+hist(simout1[,1]); abline(v=lam*pi*50^2/10000, lwd=2, col=3)
 hist(simout1[,2]); abline(v=sig, lwd=2, col=3)
 
-
-
-
-
-b <- seq(0, 50, by=10)
-w <- diff(b)
-cp1 <- cp2 <- a <- rep(NA, length(b)-1) 
-
-a[1] <- pi*b[2]^2
-cp1[1] <- integrate(unmarked:::grhn, b[1], b[2], sigma=10)$value * 2 * pi / a[1]
-cp2[1] <- integrate(unmarked:::gxhn, b[1], b[2], sigma=10)$value / w[1]
-
-for(i in 2:(length(b)-1)) {
-    a[i] <- pi*b[i+1]^2 - sum(a[1:(i-1)])
-    cp1[i] <- integrate(unmarked:::grhn, b[i], b[i+1], sigma=10)$value * 
-        2 * pi / a[i]
-    cp2[i] <- integrate(unmarked:::gxhn, b[i], b[i+1], sigma=10)$value / w[i]
-
-    }
-au <- a / sum(a)   
-
-cp1 * au
-cp2 * au
 
 
 
