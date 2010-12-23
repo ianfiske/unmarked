@@ -37,7 +37,7 @@ umf1 <- unmarkedFrameDS(y = simDSpt(), survey="point",
 m2 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)), output="abund")
 
 
-cxcheckEqualsNumeric(coef(m1), c(1.813819, 2.893771), tol=1e-5)
+checkEqualsNumeric(coef(m1), c(1.813819, 2.893771), tol=1e-5)
 checkEquals(exp(coef(m1, type="state")), 
     exp(coef(m2, type="state")) / (pi * 50^2 / 10000), tol=0.01)
 

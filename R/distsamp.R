@@ -13,7 +13,7 @@ distsamp <- function(formula, data,
     survey <- data@survey
     w <- diff(db)
     unitsIn <- data@unitsIn
-    designMats <- getDesign(data, formula)
+    designMats <- unmarked:::getDesign(data, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
     X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
     if(is.null(X.offset))
@@ -22,17 +22,43 @@ distsamp <- function(formula, data,
         V.offset <- rep(0, nrow(V))
     M <- nrow(y)
     J <- ncol(y)
-    namat <- is.na(y)
+    
+    u <- a <- matrix(NA, M, J)
+    switch(survey,
+        line = {
+            for(i in 1:M) {
+                a[i,] <- tlength[i] * w
+                u[i,] <- a[i,] / sum(a[i,])
+                }
+            }, 
+        point = {
+            for(i in 1:M) {
+                a[i, 1] <- pi*db[2]^2
+                for(j in 2:J)
+                    a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+                u[i,] <- a[i,] / sum(a[i,])
+                }
+            })
+    switch(survey, 
+        line = A <- rowSums(a) * 2,
+        point = A <- rowSums(a))
+    switch(unitsIn, 
+        m = A <- A / 1e6,
+        km = A <- A)
+    switch(unitsOut, 
+        ha = A <- A * 100,
+        kmsq = A <- A)
+        
     lamParms <- colnames(X)
     detParms <- colnames(V)
     nAP <- length(lamParms)
     nDP <- length(detParms)
     nP <- nAP + nDP
-    pi <- matrix(NA, M, J)
+    cp <- matrix(NA, M, J)
     switch(keyfun,
     halfnorm = { 
-		    altdetParms <- paste("sigma", colnames(V), sep="")
-		    if(is.null(starts)) {
+        altdetParms <- paste("sigma", colnames(V), sep="")
+        if(is.null(starts)) {
             starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
             names(starts) <- c(lamParms, detParms)
             } 
@@ -41,25 +67,26 @@ distsamp <- function(formula, data,
         nll <- function(param) {
             sigma <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
             lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
+            if(identical(output, "density"))
+                lambda <- lambda * A
             for(i in 1:M) {
                 switch(survey, 
                 line = { 
                     f.0 <- 2 * dnorm(0, 0, sd=sigma[i])
                     int <- 2 * (pnorm(db[-1], 0, sd=sigma[i]) - 
                         pnorm(db[-(J+1)], 0, sd=sigma[i]))
-                    pi[i,] <- int / f.0 / w 
+                    cp[i,] <- int / f.0 / w 
                     },
                 point = {
                     for(j in 1:J) {
-						            pi[i, j] <- integrate(grhn, db[j], db[j+1], 
+                        cp[i, j] <- integrate(grhn, db[j], db[j+1], 
                             sigma=sigma[i], rel.tol=rel.tol)$value * 
-                            2 * pi / a[j]
-						            }
+                            2 * pi / a[i, j]
+                        }
                     })
-                pi[i,] <- pi[i,] * A
+                cp[i,] <- cp[i,] * u[i,]
                 }
-            ll <- dpois(y, lambda * pi, log=TRUE)
-            ll[namat] <- 0
+            ll <- dpois(y, lambda * cp, log=TRUE)
             -sum(ll)
             }},
     exp = { 
@@ -73,34 +100,35 @@ distsamp <- function(formula, data,
         nll <- function(param) {
             rate <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
             lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
+            if(identical(output, "density"))
+                lambda <- lambda * A
             for(i in 1:M) {
                 switch(survey, 
-				        line = {
+                line = {
                     for(j in 1:J) {
-                        pi[i, j] <- integrate(gxexp, db[j], db[j+1], 
+                        cp[i, j] <- integrate(gxexp, db[j], db[j+1], 
                             rate=rate[i], rel.tol=rel.tol)$value / w[j]
                         }},
                 point = {
                     for(j in 1:J) {
-                        pi[i, j] <- u * integrate(grexp, db[j], db[j+1], 
+                        cp[i, j] <- u * integrate(grexp, db[j], db[j+1], 
                             rate=rate[i], rel.tol=rel.tol)$value * 
-                            2 * pi * a[j]
+                            2 * pi * a[i, j]
                         }	
                     })
-                pi[i,] <- pi[i,] * A
+                cp[i,] <- cp[i,] * u[i,]
                 }
-            ll <- dpois(y, lambda * pi, log=TRUE)
-		        ll[namat] <- 0
-		        -sum(ll)
-		        }},
+            ll <- dpois(y, lambda * cp, log=TRUE)
+            -sum(ll)
+            }},
     hazard = {	
         nDP <- length(detParms)
-		    nP <- nAP + nDP + 1
-		    altdetParms <- paste("shape", colnames(V), sep="")
-		    if(is.null(starts)) {
+        nP <- nAP + nDP + 1
+        altdetParms <- paste("shape", colnames(V), sep="")
+        if(is.null(starts)) {
             starts <- c(rep(0, nAP), log(median(db)), rep(0, nDP-1), 1)
             names(starts) <- c(lamParms, detParms, "scale")
-		        } 
+            } 
         else
             if(is.null(names(starts))) 
                 names(starts) <- c(lamParms, detParms, "scale")
@@ -108,26 +136,27 @@ distsamp <- function(formula, data,
             shape <- drop(exp(V %*% param[(nAP+1):(nP-1)] + V.offset))
             scale <- drop(exp(param[nP]))
             lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
+            if(identical(output, "density"))
+                lambda <- lambda * A
             for(i in 1:M) {
                 switch(survey, 
                 line = {
                     for(j in 1:J) {
-                        pi[i, j] <- integrate(gxhaz, db[j], db[j+1], 
+                        cp[i, j] <- integrate(gxhaz, db[j], db[j+1], 
                             shape=shape[i], scale=scale, 
-                            rel.tol=rel.tol)$value / w[i]
+                            rel.tol=rel.tol)$value / w[j]
                         }},
                 point = {   
                     for(j in 1:J) {
-                        pi[i, j] <- integrate(grhaz, db[j], db[j+1], 
+                        cp[i, j] <- integrate(grhaz, db[j], db[j+1], 
                             shape = shape[i], scale=scale, 
-                            rel.tol=rel.tol)$value * 2 * pi / a[j]
-						                }})
-                pi[i,] <- pi[i,] * A
+                            rel.tol=rel.tol)$value * 2 * pi / a[i, j]
+                    }})
+                cp[i,] <- cp[i,] * u[i,]
                 }
-            ll <- dpois(y, lambda * pi, log=TRUE)
-		        ll[namat] <- 0
-		        -sum(ll)
-		        }}, 
+            ll <- dpois(y, lambda * cp, log=TRUE)
+            -sum(ll)
+            }}, 
     uniform = {
         detParms <- character(0)
         altdetParms <- character(0)
@@ -140,8 +169,9 @@ distsamp <- function(formula, data,
             if(is.null(names(starts))) names(starts) <- lamParms
         nll <- function(param) {
             lambda <- drop(exp(X %*% param + X.offset))
-            ll <- dpois(y, lambda, log=TRUE) # FIXME: lambda*A
-            ll[namat] <- 0
+            if(identical(output, "density"))
+                lambda <- lambda * A
+            ll <- dpois(y, lambda * u, log=TRUE)
             -sum(ll)
             }
         })
@@ -183,18 +213,18 @@ distsamp <- function(formula, data,
         estimates = estsDP, covMat = covMatDP, invlink = "exp", 
         invlinkGrad = "exp")
         if(keyfun != "hazard")
-            estimateList <- unmarkedEstimateList(list(state=stateEstimates, 
+            estimateList <- unmarked:::unmarkedEstimateList(list(state=stateEstimates, 
                 det=detEstimates))
         else {
             scaleEstimates <- unmarkedEstimate(name = "Hazard-rate(scale)", 
-            short.name = "p", estimates = estsScale, 
-            covMat = covMatScale, invlink = "exp", invlinkGrad = "exp")
-            estimateList <- unmarkedEstimateList(list(state=stateEstimates, 
-            det=detEstimates, scale=scaleEstimates))
+                short.name = "p", estimates = estsScale, 
+                covMat = covMatScale, invlink = "exp", invlinkGrad = "exp")
+            estimateList <- unmarked:::unmarkedEstimateList(list(state=stateEstimates, 
+                det=detEstimates, scale=scaleEstimates))
             }			
         } 
     else
-        estimateList <- unmarkedEstimateList(list(state=stateEstimates))
+        estimateList <- unmarked:::unmarkedEstimateList(list(state=stateEstimates))
     dsfit <- new("unmarkedFitDS", fitType = "distsamp", call = match.call(), 
         opt = opt, formula = formula, data = data, keyfun=keyfun, 
         sitesRemoved = designMats$removed.sites, unitsOut=unitsOut, 
@@ -229,76 +259,3 @@ drhaz <- function(r, shape, scale)
 		shape=shape, scale=scale)$value
 
 
-
-
-# Vectorized version of integrate()
-vIntegrate <- Vectorize(integrate, c("lower", "upper"))
-
-
-# Multinomial cell probabilities for line or point transects under half-normal model. These are still used by getP but not distsamp.
-cp.hn <- function(d, s, survey) 
-{
-	switch(survey, 
-		line = {
-			strip.widths <- diff(d)
-			f.0 <- 2 * dnorm(0, 0, sd=s)
-			int <- 2 * (pnorm(d[-1], 0, sd=s) - pnorm(d[-length(d)], 0, sd=s))
-			cp <- int / f.0 / strip.widths 
-		},
-		point = {
-			W <- max(d)
-			int <- as.numeric(vIntegrate(grhn, d[-length(d)], d[-1], 
-				sigma=s)["value",])
-			cp <- 2 / W^2 * int
-		})
-	return(cp)
-}
-
-
-
-cp.exp <- function(d, rate, survey) 
-{
-	switch(survey, 
-		line = {
-			strip.widths <- diff(d)
-#			f.0 <- dexp(0, rate=rate)
-#			int <- pexp(d[-1], rate=rate) - pexp(d[-length(d)], rate=rate)
-			int <- as.numeric(vIntegrate(gxexp, d[-length(d)], d[-1],
-				rate=rate)["value",])
-			cp <- int / strip.widths
-		},
-		point = {
-			W <- max(d)
-			int <- as.numeric(vIntegrate(grexp, d[-length(d)], d[-1], 
-				rate=rate)["value",])
-			cp <- 2 / W^2 * int
-		})
-	return(cp)
-}
-
-
-
-cp.haz <- function(d, shape, scale, survey)
-{
-	switch(survey, 
-		line = {
-			strip.widths <- diff(d)
-			int <- as.numeric(vIntegrate(gxhaz, d[-length(d)], d[-1], 
-				shape=shape, scale=scale)["value",])
-			cp <- int / strip.widths
-		},
-		point = {
-			W <- max(d)
-			int <- as.numeric(vIntegrate(grhaz, d[-length(d)], d[-1], 
-				shape=shape, scale=scale)["value",])
-			cp <- 2 / W^2 * int
-		})
-	return(cp)
-}
-
-
-
-
-
-
- 

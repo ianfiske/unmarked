@@ -512,20 +512,36 @@ setMethod("fitted", "unmarkedFit",
 setMethod("fitted", "unmarkedFitDS", function(object, na.rm = FALSE) 
 {
     data <- object@data
-    D <- getDesign(data, object@formula, na.rm = na.rm)
+    db <- data@dist.breaks
+    w <- diff(db)
+    D <- unmarked:::getDesign(data, object@formula, na.rm = na.rm)
     X <- D$X
     X.offset <- D$X.offset
-    if (is.null(X.offset)) {
-      X.offset <- rep(0, nrow(X))
-    }
+    if (is.null(X.offset))
+        X.offset <- rep(0, nrow(X))
+    M <- nrow(X)
+    J <- length(w)
     lambda <- drop(exp(X %*% coef(object, 'state') + X.offset))
-    a <- calcAreas(dist.breaks = data@dist.breaks, tlength = data@tlength, 
-	   survey = data@survey, output = object@output, M = numSites(data), 
-	   J = ncol(getY(data)), unitsIn = data@unitsIn, unitsOut = object@unitsOut)
-    if(length(D$removed.sites)>0)
-        a <- a[-D$removed.sites,]
-    p <- getP(object, na.rm = na.rm)
-    fitted <- lambda * p * a
+    if(identical(object@output, "density")) {
+        a <- matrix(NA, M, J)
+        switch(data@survey, 
+            line = {
+                tlength <- data@tlength
+                A <- tlength * max(db) * 2
+                },
+            point = {
+                A <- pi * max(db)^2
+                })
+        switch(data@unitsIn, 
+            m = A <- A / 1e6,
+            km = A <- A)
+        switch(object@unitsOut, 
+            ha = A <- A * 100,
+            kmsq = A <- A)
+        lambda <- lambda * A
+        }
+    cp <- getP(object, na.rm = na.rm)
+    fitted <- lambda * cp
     fitted
 })		
 
@@ -1068,42 +1084,107 @@ setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE)
 
 
 setMethod("getP", "unmarkedFitDS", 
-    function(object, na.rm = TRUE) {
-        formula <- object@formula
-        detformula <- as.formula(formula[[2]])
-        umf <- object@data
-        designMats <- getDesign(umf, formula, na.rm = na.rm)
-        y <- designMats$y
-        V <- designMats$V
-        V.offset <- designMats$V.offset
-        if (is.null(V.offset)) {
-          V.offset <- rep(0, nrow(V))
-        }
-        M <- nrow(y)
-        J <- ncol(y)
-        ppars <- coef(object, type = "det")
-        d <- umf@dist.breaks
-        survey <- umf@survey
-        key <- object@keyfun
-        switch(key, 
+    function(object, na.rm = TRUE) 
+{
+    formula <- object@formula
+    detformula <- as.formula(formula[[2]])
+    umf <- object@data
+    designMats <- getDesign(umf, formula, na.rm = na.rm)
+    y <- designMats$y
+    V <- designMats$V
+    V.offset <- designMats$V.offset
+    if (is.null(V.offset))
+        V.offset <- rep(0, nrow(V))
+    M <- nrow(y)
+    J <- ncol(y)
+    ppars <- coef(object, type = "det")
+    db <- umf@dist.breaks
+    w <- diff(db)
+    survey <- umf@survey
+    key <- object@keyfun
+    tlength <- umf@tlength
+
+    cp <- u <- a <- matrix(NA, M, J)
+    switch(survey,
+    line = {
+        for(i in 1:M) {
+            a[i,] <- tlength[i] * w
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        }, 
+    point = {
+        for(i in 1:M) {
+            a[i, 1] <- pi*db[2]^2
+            for(j in 2:J)
+                a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        })
+
+
+    switch(key, 
         halfnorm = {
             sigma <- exp(V %*% ppars + V.offset)
-            p <- sapply(sigma, function(x) cp.hn(d = d, s = x, survey = survey))
+            for(i in 1:M) {
+                switch(survey, 
+                line = { 
+                    f.0 <- 2 * dnorm(0, 0, sd=sigma[i])
+                    int <- 2 * (pnorm(db[-1], 0, sd=sigma[i]) - 
+                        pnorm(db[-(J+1)], 0, sd=sigma[i]))
+                    cp[i,] <- int / f.0 / w 
+                    },
+                point = {
+                    for(j in 1:J) {
+                        cp[i, j] <- integrate(grhn, db[j], db[j+1], 
+                            sigma=sigma[i], rel.tol=1e-4)$value * 
+                            2 * pi / a[i, j]
+                        }
+                    })
+                cp[i,] <- cp[i,] * u[i,]
+                }
             }, 
         exp = {
             rate <- exp(V %*% ppars + V.offset)
-            p <- sapply(rate, function(x) cp.exp(d = d, r = x, survey = survey))
+            for(i in 1:M) {
+                switch(survey, 
+                line = {
+                    for(j in 1:J) {
+                        cp[i, j] <- integrate(gxexp, db[j], db[j+1], 
+                            rate=rate[i], rel.tol=1e-4)$value / w[j]
+                        }},
+                point = {
+                    for(j in 1:J) {
+                        cp[i, j] <- u * integrate(grexp, db[j], db[j+1], 
+                            rate=rate[i], rel.tol=1e-4)$value * 
+                            2 * pi * a[i, j]
+                        }	
+                    })
+                cp[i,] <- cp[i,] * u[i,]
+                }
             }, 
         hazard = {
             shape <- exp(V %*% ppars + V.offset)
             scale <- exp(coef(object, type="scale"))
-            p <- sapply(shape, function(x) cp.haz(d = d, shape = x, 
-            scale = scale, survey = survey))
+            for(i in 1:M) {
+                switch(survey, 
+                line = {
+                    for(j in 1:J) {
+                        cp[i, j] <- integrate(gxhaz, db[j], db[j+1], 
+                            shape=shape[i], scale=scale, 
+                            rel.tol=1e-4)$value / w[j]
+                        }},
+                point = {   
+                    for(j in 1:J) {
+                        cp[i, j] <- integrate(grhaz, db[j], db[j+1], 
+                            shape = shape[i], scale=scale, 
+                            rel.tol=1e-4)$value * 2 * pi / a[i, j]
+                    }})
+                cp[i,] <- cp[i,] * u[i,]
+                }
             },
-		uniform = p <-1)
-        p <- matrix(p, M, J, byrow = TRUE)
-        return(p)
-        })
+		uniform = cp <- u)
+    return(cp)
+})
 
 
 
@@ -1182,26 +1263,39 @@ setMethod("simulate", "unmarkedFitDS",
     {
     formula <- object@formula
     umf <- object@data
+    db <- umf@dist.breaks
+    w <- diff(db)
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
     X <- designMats$X
     X.offset <- designMats$X.offset
-    if (is.null(X.offset)) {
-      X.offset <- rep(0, nrow(X))
-    }
-    a <- calcAreas(dist.breaks = umf@dist.breaks, tlength = umf@tlength, 
-	   survey = umf@survey, output = object@output, M = numSites(umf), 
-	   J = ncol(getY(umf)), unitsIn = umf@unitsIn, unitsOut = object@unitsOut)
-    if(length(designMats$removed.sites)>0)
-        a <- a[-designMats$removed.sites,]
+    if (is.null(X.offset))
+        X.offset <- rep(0, nrow(X))
     M <- nrow(y)
     J <- ncol(y)
     lamParms <- coef(object, type = "state")
-    lam <- drop(exp(X %*% lamParms + X.offset))
-    pmat <- getP(object, na.rm = na.rm)
+    lambda <- drop(exp(X %*% lamParms + X.offset))
+    if(identical(object@output, "density")) {
+        switch(umf@survey, 
+            line = {
+                tlength <- umf@tlength
+                A <- tlength * max(db) * 2
+                },
+            point = {
+                A <- pi * max(db)^2
+                })
+        switch(umf@unitsIn, 
+            m = A <- A / 1e6,
+            km = A <- A)
+        switch(object@unitsOut, 
+            ha = A <- A * 100,
+            kmsq = A <- A)
+        lambda <- lambda * A
+        }
+    cp <- getP(object, na.rm = na.rm)
     simList <- list()
     for(i in 1:nsim) {
-        yvec <- rpois(M * J, lam * pmat * a)
+        yvec <- rpois(M * J, lambda * cp)
         simList[[i]] <- matrix(yvec, M, J)
         }
     return(simList)
