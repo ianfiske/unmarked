@@ -95,7 +95,7 @@ nll <- function(parms) {
         switch(mixture, 
             P = g2 <- dpois(k, lambda[i]),
             NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
-        if(dynamics == "autoreg")
+        if(dynamics == "autoreg") # This should be an argument of tranProbs
             gamma.itkk <- gamma.itkk * k.each
         g3.T <- tranProbs(k, omega[i, T-1], gamma[i, T-1])
         g1.T <- dbinom(y[i, T], k, p[i, T])
@@ -147,7 +147,7 @@ if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
         covMat = as.matrix(covMat[(nAP+1) : (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")
 if(!identical(fix, "omega")) 
-    estimateList@estimates$omega <- unmarkedEstimate(name = "Survival", 
+    estimateList@estimates$omega <- unmarkedEstimate(name="Apparent Survival", 
         short.name = "omega", estimates = ests[(nAP+nGP+1) : (nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),

@@ -1,36 +1,55 @@
-## Simulate no covariates, constant sampling period intervals	
-set.seed(3)
-M <- 50
-T <- 5
-lambda <- 1
-gamma <- 0.5
-omega <- 0.8
-p <- 0.7
-y <- N <- matrix(NA, M, T)
-S <- G <- matrix(NA, M, T-1)
-N[,1] <- rpois(M, lambda)
-for(t in 1:(T-1)) {
-	S[,t] <- rbinom(M, N[,t], omega)
-	G[,t] <- rpois(M, gamma)
-	N[,t+1] <- S[,t] + G[,t]
-	}
-y[] <- rbinom(M*T, N, p)
-# y[M-5, 1:4] <- y[M-4, 2:5] <- y[M-3, 2:4] <- y[M-2, c(2,4)] <- y[M-1, 1] <- y[M, T] <- NA
 
+library(unmarked)
+
+## Simulate no covariates, constant sampling period intervals	
+
+sim1 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=50, T=5)
+{
+    y <- N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    for(t in 1:(T-1)) {
+        S[,t] <- rbinom(M, N[,t], omega)
+        G[,t] <- rpois(M, gamma)
+        N[,t+1] <- S[,t] + G[,t]
+        }
+    y[] <- rbinom(M*T, N, p)
+    return(y)
+}
                             
 # Prepare data                               
-umf <- unmarkedFramePCO(y = y)
+set.seed(3)
+umf <- unmarkedFramePCO(y = sim1())
 
 summary(umf)
 
 # Fit model and backtransform
-system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, 
-    K=10))  # 14s on 64bit. K might be too small
+system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))  # 14s on 64bit.
 
 backTransform(m1, "lambda") # 0.71 initial abundance
 backTransform(m1, "gamma")  # 0.45 recruitment rate
 backTransform(m1, "omega")  # 0.751 survival rate
 backTransform(m1, "det")    # 0.718 detection probability
+
+
+nsim1 <- 50
+simout1 <- matrix(NA, nsim1, 4)
+colnames(simout1) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim1) {
+    cat("sim", i, "\n"); flush.console()
+    lambda <- 1
+    gamma <- 0.5
+    omega <- 0.8
+    p <- 0.7
+    y.sim1 <- sim1(lambda, gamma, omega, p)
+    umf1 <- unmarkedFramePCO(y = y.sim1)
+    m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10)
+    e <- coef(m1)
+    simout1[i, 1:2] <- exp(e[1:2])
+    simout1[i, 3:4] <- plogis(e[3:4])
+    }
+    
+    
 
 
 # Fix omega at 1 (no losses)
