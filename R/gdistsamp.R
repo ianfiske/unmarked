@@ -110,7 +110,9 @@ nll <- function(pars) {
                 cp <- rep(NA, J)
                 for(j in 1:J) {
                     cp[j] <- integrate(grhn, db[j], db[j+1], 
-                        sigma=shape[i, t])$value * 2 * pi / a[j]
+                        sigma=shape[i, t], rel.tol=rel.tol, 
+                        stop.on.error=FALSE, subdivisions=50)$value * 2 * 
+                        pi / a[j]
                     }
                 cp <- cp * asum * phi[i, t]
                 #if(sum(cp)>1) 
