@@ -111,9 +111,9 @@ distsamp <- function(formula, data,
                         }},
                 point = {
                     for(j in 1:J) {
-                        cp[i, j] <- u * integrate(grexp, db[j], db[j+1], 
+                        cp[i, j] <- integrate(grexp, db[j], db[j+1], 
                             rate=rate[i], rel.tol=rel.tol)$value * 
-                            2 * pi * a[i, j]
+                            2 * pi / a[i, j]
                         }	
                     })
                 cp[i,] <- cp[i,] * u[i,]
