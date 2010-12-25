@@ -53,7 +53,7 @@ backTransform(m1, type="phi")
 backTransform(m1, type="det")
 
 
-nsim <- 100
+nsim <- 500
 simout <- matrix(NA, nsim, 3)
 colnames(simout) <- c('lambda', 'phi', 'sigma')
 for(i in 1:nsim) {
