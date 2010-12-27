@@ -98,11 +98,14 @@ nll <- function(parms) {
         g.star[, last.i-1] <- colSums(g1.T * g3.T)
         for(t in (last.i-1):(first.i+1)) {
             g1.t <- dbinom(y[i, t], k, p[i, t])
-            g3.t <- tranProbs(k, omega[i, t], gamma[i, t], delta[i, t], 
+            g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], delta[i, t-1], 
                 dynamics)
             g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
             }
-        L[i] <- sum(g1 * g2 * g.star[,first.i])
+        if(first.i==1)
+            L[i] <- sum(g1 * g2 * g.star[,first.i])
+        else
+            L[i] <- sum(g2 * colSums(g1.t * g3.t  * g.star[,first.i]))
         }
     -sum(log(L))
     }

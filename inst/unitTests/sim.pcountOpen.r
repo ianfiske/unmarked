@@ -134,9 +134,9 @@ set.seed(333)
 M <- 25
 T <- 5
 date <- matrix(NA, M, T)
-date[,1] <- rpois(M, 2)
+date[,1] <- pmax(rpois(M, 2), 1)
 for(t in 2:T) {
-    date[,t] <- date[,t-1] + rpois(M, 10)
+    date[,t] <- date[,t-1] + pmax(rpois(M, 10), 1)
     }
 datediff <- t(apply(date, 1, diff))    
 lambda <- 4
@@ -153,14 +153,17 @@ for(t in 1:(T-1)) {
 	}
 y[] <- rbinom(M*T, N, p)
 
+# y[1, 1] <- NA
+
 
 # Prepare data
 umfO <- unmarkedFramePCO(y = y, delta = date)
 umfO
 
 # Fit model
-(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=FALSE, starts=c(2,-3,3,0.85),
-    control=list(maxit=15, trace=T, REPORT=1)))
+(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=TRUE, 
+    starts=c(1.3, -3, 5, 0.5),
+    control=list(maxit=30, trace=T, REPORT=1)))
 backTransform(m3, "lambda")
 backTransform(m3, "gamma")
 backTransform(m3, "omega")
