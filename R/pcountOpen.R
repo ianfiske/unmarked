@@ -27,6 +27,7 @@ k.times <- rep(rep(k, times=lk), T-1)
 k.each <- rep(rep(k, each=lk), T-1)
 
 first <- apply(y, 1, function(x) min(which(!is.na(x))))
+last  <- apply(y, 1, function(x) max(which(!is.na(x)))) 
 
 nonzero <- matrix(NA, lk*lk*(T-1), lk)
 for(i in k) nonzero[,i+1] <- k.each >= i & k.times >= i
@@ -49,7 +50,8 @@ if(identical(fix, "gamma")) {
     if(nGP > 1) stop("gamma covariates not allowed when fix==gamma")
     else { nGP <- 0; gamParms <- character(0) }
     }
-else if(identical(dynamics, "notrend")) {
+else 
+    if(identical(dynamics, "notrend")) {
         if(nGP > 1) stop("gamma covariates not allowed when dyamics==notrend")
         else { nGP <- 0; gamParms <- character(0) }
         }
@@ -82,26 +84,25 @@ nll <- function(parms) {
                 M, T-1, byrow=TRUE)
         }
     L <- numeric(M)
-    g.star <- matrix(NA, lk, T-1)
     for(i in 1:M) {
-        g1 <- dbinom(y[i,1], k, p[i,1])
-        if(any(is.na(g1))) g1[] <- 1    # FIXME! Temporary work-around.
+        first.i <- first[i]
+        last.i <- last[i]
+        g.star <- matrix(NA, lk, last.i-1)
+        g1 <- dbinom(y[i, first.i], k, p[i, first.i])
         switch(mixture, 
             P = g2 <- dpois(k, lambda[i]),
             NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
-        g3.T <- tranProbs(k, omega[i, T-1], gamma[i, T-1], delta[i, T-1])
-        g1.T <- dbinom(y[i, T], k, p[i, T])
-        g.star[, T-1] <- colSums(g1.T * g3.T)
-        # NA handling: this will properly determine last obs for each site
-        g.star[,T-1][is.na(g.star[, T-1])] <- 1
-        for(t in (T-1):(first[i]+1)) {
+        g3.T <- tranProbs(k, omega[i, last.i-1], gamma[i, last.i-1], 
+            delta[i, last.i-1], dynamics)
+        g1.T <- dbinom(y[i, last.i], k, p[i, last.i])
+        g.star[, last.i-1] <- colSums(g1.T * g3.T)
+        for(t in (last.i-1):(first.i+1)) {
             g1.t <- dbinom(y[i, t], k, p[i, t])
-            g3.t <- tranProbs(k, omega[i, t], gamma[i, t], delta[i, t])
+            g3.t <- tranProbs(k, omega[i, t], gamma[i, t], delta[i, t], 
+                dynamics)
             g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
-            g.star.na <- is.na(g.star[, t-1])
-            g.star[,t-1][g.star.na] <- g.star[,t][g.star.na]
             }
-        L[i] <- sum(g1 * g2 * g.star[,first[i]])
+        L[i] <- sum(g1 * g2 * g.star[,first.i])
         }
     -sum(log(L))
     }
@@ -151,8 +152,8 @@ if(identical(mixture, "NB")) {
         covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
         invlinkGrad = "exp")
     }
-umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", call = match.call(),
-    formula = formula, formlist = formlist, data = data, 
+umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", 
+    call = match.call(), formula = formula, formlist = formlist, data = data, 
     sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC, 
     opt = opt, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture, 
     dynamics = dynamics)
@@ -163,12 +164,13 @@ return(umfit)
 
 
 
-tranProbs <- function(Kr, omegaR, gammaR, deltaR) {
+tranProbs <- function(Kr, omegaR, gammaR, deltaR, dynamics) {
     .Call("tranProbs", 
         as.integer(Kr),
         as.double(omegaR),
         as.double(gammaR),
         as.integer(deltaR),
+        as.character(dynamics),
         PACKAGE = "unmarked")
     }
     

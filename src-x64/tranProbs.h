@@ -3,6 +3,7 @@
 
 #include <RcppArmadillo.h>
 
-RcppExport SEXP tranProbs( SEXP Kr, SEXP omegaR, SEXP gammaR, SEXP deltaR ) ;
+RcppExport SEXP tranProbs( SEXP Kr, SEXP omegaR, SEXP gammaR, SEXP deltaR, 
+    SEXP dynamicsR) ;
 
 #endif

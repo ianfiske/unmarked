@@ -43,7 +43,8 @@ for(i in 1:nsim1) {
     p <- 0.7
     y.sim1 <- sim1(lambda, gamma, omega, p)
     umf1 <- unmarkedFramePCO(y = y.sim1)
-    m1 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=10)
+    m1 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=10, 
+        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
     e <- coef(m1)
     simout1[i, 1:2] <- exp(e[1:2])
     simout1[i, 3:4] <- plogis(e[3:4])
@@ -195,8 +196,13 @@ umf4 <- unmarkedFramePCO(y = y)
 umf4
 
 # Fit model
-(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=15, dynamics="autoreg", se=FALSE, 
-    starts=c(2,-3,3,0.85), control=list(maxit=15, trace=T, REPORT=1)))
+(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20, dynamics="autoreg", se=TRUE, 
+    starts=c(0, 0.5, 0.5, 0.6), 
+    control=list(maxit=50, trace=T, REPORT=1)))
+backTransform(m4, "lambda") # 0.79 initial abundance
+backTransform(m4, "gamma")  # 0.43 recruitment rate
+backTransform(m4, "omega")  # 0.88 survival rate
+backTransform(m4, "det")    # 0.60 detection probability
 
 
        
