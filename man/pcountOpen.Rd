@@ -2,8 +2,9 @@
 \alias{pcountOpen}
 \title{Fit the open N-mixture model of Dail and Madsen}
 \description{Fit the model of Dail and Madsen, which is 
-a generalized form of the Royle (2004) binomial mixture model allowing for
-estimation of gains (recruitment) and losses (mortality/emigration).}
+a generalized form of the Royle (2004) N-mixture model allowing for
+estimation of recruitment (births/imigrants) and 
+apparent survival (mortality/emigration).}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data, 
 	mixture = c("P", "NB"), K, fix=c("none", "gamma", "omega"), starts, 
@@ -24,7 +25,8 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
   \item{\dots}{additional arguments to be passed to \code{\link{optim}}.}
 }
 \details{
-This model generalizes the Royle (2004) N-mixture model by relaxing the closure assumption.
+This model generalizes the Royle (2004) N-mixture model by relaxing the 
+closure assumption.
 
 The latent initial abundance distribution, 
 \eqn{f(N | \mathbf{\theta})}{f(N | theta)} can be set as either a 
@@ -62,7 +64,7 @@ Dail, D. and L. Madsen (In press) Models for Estimating Abundance from Repeated 
 \note{
 When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, they must be supplied.
 
-If time intervals vary among survey occasions (sampling periods), an M by T matrix of dates should be supplied to unmarkedFramePCO using the dates argument. Currently, the handling of non-constant survey intervals differs from the methods described in the original paper. Specifically, omega and gamma are modeled as omega^time and gamma*time, where time is the time between successive survey occasions. This allows for continuous (non-integer) time increments. Fractional time intervals can be useful if, for instance, survey were conducted over many days, but monthly rates are desired. For this case, one could simply use dates=dates/30 in the call to unmarkedFramePCO.
+If time intervals vary among survey occasions (sampling periods), an M by T matrix of dates (integer values) should be supplied to unmarkedFramePCO using the dates argument. Currently, the handling of non-constant survey intervals differs from the methods described in the original paper. 
 
 At this time, the robust design is not available. However, if you have multiple seasons of data, you can model within vs. among rates by creating an MxT observation-level covariate identifying the transition periods and include it the gamma and omega formulas.
 }
@@ -102,10 +104,10 @@ summary(umf)
 
 # Fit model and backtransform
 (m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10)) # 14s on 64bit.
-backTransform(m1, "lambda") # 0.71 initial abundance
-backTransform(m1, "gamma")  # 0.45 recruitment rate
-backTransform(m1, "omega")  # 0.751 survival rate
-backTransform(m1, "det")    # 0.718 detection probability
+backTransform(m1, "lambda")
+backTransform(m1, "gamma")
+backTransform(m1, "omega")
+backTransform(m1, "det")
 
 
 }

@@ -66,26 +66,20 @@ if(!missing(starts) && length(starts) != nP)
 nll <- function(parms) {
     lambda <- drop(exp(Xlam %*% parms[1 : nAP]))
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
-                M, T, byrow=TRUE)
+        M, T, byrow=TRUE)
     if(identical(fix, "omega"))
         omega <- matrix(1, M, T-1)
-    else {
+    else
         omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]),
             M, T-1, byrow=TRUE)
-        if(!equal.ints)
-            omega <- omega ^ delta
-        }
     if(dynamics == "notrend")
         gamma <- (1-omega)*lambda
     else {
         if(identical(fix, "gamma")) 
             gamma <- matrix(0, M, T-1)
-        else { 
+        else 
             gamma <- matrix(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)]),
                 M, T-1, byrow=TRUE)
-            if(!equal.ints)
-                gamma <- gamma * delta
-            }
         }
     L <- numeric(M)
     g.star <- matrix(NA, lk, T-1)
@@ -95,16 +89,14 @@ nll <- function(parms) {
         switch(mixture, 
             P = g2 <- dpois(k, lambda[i]),
             NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
-        if(dynamics == "autoreg") # This should be an argument of tranProbs
-            gamma.itkk <- gamma.itkk * k.each
-        g3.T <- tranProbs(k, omega[i, T-1], gamma[i, T-1])
+        g3.T <- tranProbs(k, omega[i, T-1], gamma[i, T-1], delta[i, T-1])
         g1.T <- dbinom(y[i, T], k, p[i, T])
         g.star[, T-1] <- colSums(g1.T * g3.T)
         # NA handling: this will properly determine last obs for each site
         g.star[,T-1][is.na(g.star[, T-1])] <- 1
         for(t in (T-1):(first[i]+1)) {
             g1.t <- dbinom(y[i, t], k, p[i, t])
-            g3.t <- tranProbs(k, omega[i, t], gamma[i, t])
+            g3.t <- tranProbs(k, omega[i, t], gamma[i, t], delta[i, t])
             g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
             g.star.na <- is.na(g.star[, t-1])
             g.star[,t-1][g.star.na] <- g.star[,t][g.star.na]
@@ -171,11 +163,12 @@ return(umfit)
 
 
 
-tranProbs <- function(Kr, omegaR, gammaR) {
+tranProbs <- function(Kr, omegaR, gammaR, deltaR) {
     .Call("tranProbs", 
         as.integer(Kr),
         as.double(omegaR),
         as.double(gammaR),
+        as.integer(deltaR),
         PACKAGE = "unmarked")
     }
     

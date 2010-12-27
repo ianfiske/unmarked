@@ -28,8 +28,8 @@ system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))  # 14s on 64bit.
 
 backTransform(m1, "lambda") # 0.71 initial abundance
 backTransform(m1, "gamma")  # 0.45 recruitment rate
-backTransform(m1, "omega")  # 0.751 survival rate
-backTransform(m1, "det")    # 0.718 detection probability
+backTransform(m1, "omega")  # 0.75 survival rate
+backTransform(m1, "det")    # 0.72 detection probability
 
 
 nsim1 <- 50
