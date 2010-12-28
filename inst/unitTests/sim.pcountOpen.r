@@ -98,7 +98,7 @@ for(i in 1:nsim2) {
     cat("sim", i, "\n"); flush.console()
     lam <- c(-2, 1)
     gam <- c(-1, -1)
-    om <- c(1, -1)
+    om <- c(0, -1)
     p <- c(-1, 1)
     sim2out <- sim2(lam, gam, om, p)
     y.sim2 <- sim2out$y
@@ -108,7 +108,7 @@ for(i in 1:nsim2) {
     obsCovs <- list(time = covs[,grep("time", cn)], 
         isolation = covs[,grep("isolation", cn)])     
     umf2 <- unmarkedFramePCO(y = y.sim2, siteCovs=siteCovs, obsCovs=obsCovs)
-    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=10, se=F, 
+    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=20, se=F, 
         starts=c(lam, gam, om, p))
     e <- coef(m2)
     simout2[i, ] <- e
@@ -132,33 +132,49 @@ dev.off()
 
 ## Simulate uneven sampling period intervals
 set.seed(333)
-M <- 25
+M <- 50
 T <- 5
 date <- matrix(NA, M, T)
-date[,1] <- pmax(rpois(M, 2), 1)
+#date[,1] <- pmax(rpois(M, 2), 1)
+date[,1] <- 1
 for(t in 2:T) {
     date[,t] <- date[,t-1] + pmax(rpois(M, 10), 1)
     }
 datediff <- t(apply(date, 1, diff))    
 lambda <- 4
-gamma <- 0.05   # Daily survival rate
-omega <- 0.95   # Daily recruitment rate
+gamma <- 0.2   # Daily survival rate
+omega <- 0.8   # Daily recruitment rate
 p <- 0.7
 y <- N <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
-N[,1] <- rpois(M, lambda)
-for(t in 1:(T-1)) {
-	S[,t] <- rbinom(M, N[,t], omega^datediff[,t])   
-	G[,t] <- rpois(M, gamma*datediff[,t])           
-	N[,t+1] <- S[,t] + G[,t]
-	}
+for(i in 1:M) {
+    N[i, 1] <- rpois(1, lambda)
+    if(date[i, 1] > 1)
+        for(d in 2:date[i, 1]) {
+            Si1 <- rbinom(1, N[i, 1], omega)
+            Gi1 <- rpois(1, gamma)  
+            N[i, 1] <- Si1 + Gi1
+            }
+    for(t in 1:(T-1)) {
+        S[i, t] <- rbinom(1, N[i, t], omega)   
+        G[i, t] <- rpois(1, gamma)           
+        N[i, t+1] <- S[i,t] + G[i,t]
+        if(datediff[i, t]>1) {
+            for(d in 2:datediff[i, t]) {
+                S[i, t] <- rbinom(1, N[i, t+1], omega)
+                G[i, t] <- rpois(1, gamma)
+                N[i, t+1] <- S[i, t] + G[i, t]
+                }
+            }
+        }
+    }
 y[] <- rbinom(M*T, N, p)
-
+y
 
 formatDelta <- unmarked:::formatDelta
 
 
-y[1, 1] <- y[2,1] <- y[3,2] <- NA
+# y[1, 1] <- y[2,1] <- y[3,2] <- NA
 
 head(y)
 head(date)
@@ -167,13 +183,13 @@ head(formatDelta(date, y))
 
 
 # Prepare data
-umfO <- unmarkedFramePCO(y = y, delta = date)
+umfO <- unmarkedFramePCO(y = y, dates = date)
 umfO
 
 # Fit model
-(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=TRUE, 
+(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=50, se=TRUE, 
     starts=c(1.3, -3, 5, 0.5),
-    control=list(maxit=30, trace=T, REPORT=1)))
+    control=list(maxit=10, trace=T, REPORT=1)))
 backTransform(m3, "lambda")
 backTransform(m3, "gamma")
 backTransform(m3, "omega")
@@ -219,3 +235,7 @@ backTransform(m4, "det")    # 0.60 detection probability
 
 
        
+simulate(m4)
+plot(m4)
+parboot(m4, report=1)
+

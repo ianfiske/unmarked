@@ -56,7 +56,7 @@ test.pcountOpen.na <- function()
       5, 1, 3, 1,
       1, 1, 3, 1, 
       2, 1, 1, 1), 6, 4, byrow=TRUE)
-  oc <- y1 + rnorm(6*4)
+  oc <- y1 + -2:3
       
   siteCovs <- data.frame(x = c(0,2,3,4,1,1))
   obsCovs <- list(o1 = oc)
@@ -64,8 +64,8 @@ test.pcountOpen.na <- function()
 
   fm2 <- pcountOpen(~1, ~1, ~1, ~o1, data = umf2, se=FALSE, K=10, 
       starts=c(1.5, 1, -6, -1, 1))
-  checkEqualsNumeric(coef(fm2), c(1.474511, 1.387706, -5.998156, -2.571699, 
-      1.029861), tol = 1e-5)
+  checkEqualsNumeric(coef(fm2), c(1.3000908, -9.5548411, 2.3858981, -0.6812891, 
+      1.1473823), tol = 1e-5)
 
   y3 <- matrix(c(
       NA, 2, 1, 4,

@@ -669,41 +669,45 @@ setMethod("fitted", "unmarkedFitPCountOpen",
 {
     dynamics <- object@dynamics
     data <- getData(object)
-    D <- getDesign(data, object@formula, na.rm = na.rm)
+    D <- unmarked:::getDesign(data, object@formula, na.rm = na.rm)
     Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
     delta <- D$delta #FIXME this isn't returned propertly when na.rm=F
     y <- D$y
     M <- nrow(y)
     T <- ncol(y)
     lambda <- exp(Xlam %*% coef(object, 'lambda'))
-    omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, 
-        byrow=TRUE)
+    omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, byrow=TRUE)
     if(!identical(dynamics, "notrend"))
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, byrow=TRUE)
     else {
         if(identical(dynamics, "notrend")) 
             gamma <- (1-omega)*lambda
-        else
-            stop("fitted method not yet written for dynamics=autoreg case")
         }
     p <- getP(object, na.rm = na.rm)
-    state <- matrix(NA, M, T)
-    switch(object@mixture,
-    P = state[,1] <- lambda,
-    NB = {
-        if(missing(K)) K <- max(y, na.rm = TRUE) + 20
-        k <- 0:K
-        alpha <- exp(coef(object['alpha']))
-        den.ik <- sapply(k, function(x) dnbinom(x, size=alpha, mu=lambda))
-        state[,1] <- den.ik %*% k
-        })
-    for(t in 2:T) {
-        if(!identical(dynamics, "autoreg"))
-            state[,t] <- omega[,t-1] * state[,t-1] + gamma[,t-1]
-        else
-            stop("fitted method not yet writted for dynamics=autreg case")
+    N <- matrix(NA, M, T)
+    for(i in 1:M) {
+        N[i, 1] <- lambda[i]
+        if(delta[i, 1] > 1) {
+            for(d in 2:delta[i ,1]) {
+                if(identical(dynamics, "autoreg"))
+                    gamma[i, 1] <- N[i, 1] * gamma[i, 1]
+                N[i, 1] <- N[i, 1] * omega[i, 1] + gamma[i, 1]
+                }
+            }
+        for(t in 2:T) {
+            if(identical(dynamics, "autoreg"))
+                gamma[i, t-1] <- N[i, t-1] * gamma[i, t-1]
+            N[i, t] <- N[i, t-1] * omega[i, t-1] + gamma[i, t-1]
+            if(delta[i, t] > 1) {
+                for(d in 2:delta[i, t]) {
+                    if(identical(dynamics, "autoreg"))
+                        gamma[i, t-1] <- N[i, t] * gamma[i, t-1]
+                    N[i, t] <- N[i, t] * omega[i, t-1] + gamma[i, t-1]
+                    }
+                }
+            }
         }
-    fitted <- state * p
+    fitted <- N * p
     return(fitted)
 })
 
@@ -1212,24 +1216,23 @@ setGeneric("getP", function(object, ...) standardGeneric("getP"))
 
 
 setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE) 
-          {
-            formula <- object@formula
-            detformula <- as.formula(formula[[2]])
-            umf <- object@data
-            designMats <- getDesign(umf, formula, na.rm = na.rm)
-            y <- designMats$y
-            V <- designMats$V
-            V.offset <- designMats$V.offset
-            if (is.null(V.offset)) {
-              V.offset <- rep(0, nrow(V))
-            }
-            M <- nrow(y)
-            J <- ncol(y)
-            ppars <- coef(object, type = "det")
-            p <- plogis(V %*% ppars + V.offset)
-            p <- matrix(p, M, J, byrow = TRUE)
-            return(p)
-          })
+{
+    formula <- object@formula
+    detformula <- as.formula(formula[[2]])
+    umf <- object@data
+    designMats <- getDesign(umf, formula, na.rm = na.rm)
+    y <- designMats$y
+    V <- designMats$V
+    V.offset <- designMats$V.offset
+    if (is.null(V.offset))
+        V.offset <- rep(0, nrow(V))
+    M <- nrow(y)
+    J <- ncol(y)
+    ppars <- coef(object, type = "det")
+    p <- plogis(V %*% ppars + V.offset)
+    p <- matrix(p, M, J, byrow = TRUE)
+    return(p)
+})
 
 
 
@@ -1343,26 +1346,25 @@ setMethod("getP", "unmarkedFitDS",
 
 
 setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE) 
-          {
-            formula <- object@formula
-            detformula <- as.formula(formula[[2]])
-            piFun <- object@data@piFun
-            umf <- object@data
-            designMats <- getDesign(umf, formula, na.rm = na.rm)
-            y <- designMats$y
-            V <- designMats$V
-            V.offset <- designMats$V.offset
-            if (is.null(V.offset)) {
-              V.offset <- rep(0, nrow(V))
-            }
-            M <- nrow(y)
-            J <- ncol(y)
-            ppars <- coef(object, type = "det")
-            p <- plogis(V %*% ppars + V.offset)
-            p <- matrix(p, M, J, byrow = TRUE)
-            pi <- do.call(piFun, list(p = p))
-            return(pi)
-          })
+{
+    formula <- object@formula
+    detformula <- as.formula(formula[[2]])
+    piFun <- object@data@piFun
+    umf <- object@data
+    designMats <- getDesign(umf, formula, na.rm = na.rm)
+    y <- designMats$y
+    V <- designMats$V
+    V.offset <- designMats$V.offset
+    if (is.null(V.offset))
+        V.offset <- rep(0, nrow(V))
+    M <- nrow(y)
+    J <- ncol(y)
+    ppars <- coef(object, type = "det")
+    p <- plogis(V %*% ppars + V.offset)
+    p <- matrix(p, M, J, byrow = TRUE)
+    pi <- do.call(piFun, list(p = p))
+    return(pi)
+})
 
 
 
@@ -1384,9 +1386,9 @@ setMethod("getP", "unmarkedFitPCountOpen", function(object, na.rm = TRUE)
 
 
 setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
-          {
-            stop("getP is not yet implemented for colext fits.")
-          })
+{
+    stop("getP is not yet implemented for colext fits.")
+})
 
 
 
@@ -1515,7 +1517,7 @@ setMethod("simulate", "unmarkedFitPCountOpen",
     mix <- object@mixture
     dynamics <- object@dynamics
     umf <- object@data
-    D <- getDesign(umf, object@formula, na.rm = na.rm)
+    D <- unmarked:::getDesign(umf, object@formula, na.rm = na.rm)
     Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
     delta <- D$delta
     y <- D$y
@@ -1531,28 +1533,41 @@ setMethod("simulate", "unmarkedFitPCountOpen",
     N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
     simList <- list()
-    for(i in 1:nsim) {
-        y <- matrix(NA, M, T)
-        switch(mix, 
-            P = N[,1] <- rpois(M, lambda),
-            NB = N[,1] <- rnbinom(M, size = exp(coef(object["alpha"])), 
-                mu = lambda))
-        na.p <- is.na(p[,1])
-        y[!na.p, 1] <- rbinom(sum(!na.p), N[!na.p, 1], p[!na.p, 1])
-        for(t in 2:T) {
-            na <- is.na(omega[,t-1]) | is.na(gamma[,t-1])
-            S[!na, t-1] <- rbinom(sum(!na), N[!na, t-1], omega[!na, t-1])
-            if(identical(dynamics, "autoreg"))
-                gamma[!na, t-1] <- gamma[!na, t-1] * N[!na, t-1]
-            if(identical(dynamics, "notrend")) # is this true for t>2??
-                gamma[!na, t-1] <- (1-omega[!na, t-1]) * lambda[!na]
-            G[!na, t-1] <- rpois(sum(!na), gamma[!na, t-1])
-            N[!na, t] <- S[!na, t-1] + G[!na, t-1]
-            N[na, t] <- N[na, t-1]
-            na.p <- is.na(p[,t])
-            y[!na.p, t] <- rbinom(sum(!na.p), N[!na.p, t], p[!na.p, t])   
+    for(s in 1:nsim) {
+        y.sim <- matrix(NA, M, T)
+        for(i in 1:M) {
+            switch(mix, 
+                P = N[i, 1] <- rpois(1, lambda),
+                NB = N[i, 1] <- rnbinom(1, size = exp(coef(object["alpha"])), 
+                    mu = lambda))
+            if(delta[i, 1] > 1) {
+                for(d in 2:delta[i, 1]) 
+                    N[i, 1] <- N[i, 1] * omega[i, 1] + gamma[i, 1]
+                }
+            for(t in 2:T) {
+                if(is.na(omega[i, t-1]) | is.na(gamma[i,t-1])) 
+                    N[i, t] <- N[i, t-1] # just a place holder
+                else{
+                    S[i, t-1] <- rbinom(1, N[i, t-1], omega[i, t-1])
+                    if(identical(dynamics, "autoreg"))
+                        gamma[i, t-1] <- gamma[i, t-1] * N[i, t-1]
+                    if(identical(dynamics, "notrend")) # is this true for t>2??
+                        gamma[i, t-1] <- (1-omega[i, t-1]) * lambda[i]
+                    G[i, t-1] <- rpois(1, gamma[i, t-1])
+                    N[i, t] <- S[i, t-1] + G[i, t-1]
+                    if(delta[i, t] > 1) {
+                        for(d in 2:delta[i, 1]) {
+                            S[i, t-1] <- rbinom(N[i, t], omega[i, t-1])
+                            G[i, t-1] <- rpois(1, gamma[i, t-1])
+                            N[i, t] <- S[i, t-1] + G[i, t-1]
+                            }
+                        }
+                    }
+                }
             }
-        simList[[i]] <- y
+        y.na <- is.na(y)
+        y.sim[!y.na] <- rbinom(sum(!y.na), N[!y.na], p[!y.na])
+        simList[[s]] <- y.sim
         }
     return(simList)
 })
