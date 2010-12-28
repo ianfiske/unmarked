@@ -309,7 +309,7 @@ setMethod("getDesign", "unmarkedFramePCO",
     y <- getY(umf)
     M <- nrow(y)
     T <- ncol(y)
-    delta <- umf@delta  
+    delta <- umf@dates  
     
     if(is.null(siteCovs(umf)))
 	     siteCovs <- data.frame(placeHolder = rep(1, M))

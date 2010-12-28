@@ -2,7 +2,8 @@
 
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
-    data, mixture=c("P", "NB"), K, dynamics=c("constant", "autoreg", "notrend"), 
+    data, mixture=c("P", "NB"), K, 
+    dynamics=c("constant", "autoreg", "notrend"), 
     fix=c("none", "gamma", "omega"), 
     starts, method="BFGS", se=TRUE, ...)
 {
@@ -23,14 +24,9 @@ if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
 k <- 0:K
 lk <- length(k)
-k.times <- rep(rep(k, times=lk), T-1)
-k.each <- rep(rep(k, each=lk), T-1)
 
 first <- apply(y, 1, function(x) min(which(!is.na(x))))
 last  <- apply(y, 1, function(x) max(which(!is.na(x)))) 
-
-nonzero <- matrix(NA, lk*lk*(T-1), lk)
-for(i in k) nonzero[,i+1] <- k.each >= i & k.times >= i
 
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)
@@ -87,25 +83,39 @@ nll <- function(parms) {
     for(i in 1:M) {
         first.i <- first[i]
         last.i <- last[i]
-        g.star <- matrix(NA, lk, last.i-1)
         g1 <- dbinom(y[i, first.i], k, p[i, first.i])
         switch(mixture, 
             P = g2 <- dpois(k, lambda[i]),
             NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
+        if(first.i == last.i & first.i == 1) {
+            L[i] <- sum(g1 * g2)
+            next
+            }
+        g.star <- matrix(NA, lk, last.i-1)
         g3.T <- tranProbs(k, omega[i, last.i-1], gamma[i, last.i-1], 
-            delta[i, last.i-1], dynamics)
+            delta[i, last.i], dynamics) # not delta[i, last.i-1]        
         g1.T <- dbinom(y[i, last.i], k, p[i, last.i])
         g.star[, last.i-1] <- colSums(g1.T * g3.T)
-        for(t in (last.i-1):(first.i+1)) {
-            g1.t <- dbinom(y[i, t], k, p[i, t])
-            g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], delta[i, t-1], 
-                dynamics)
-            g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
+        if(first.i == last.i & first.i > 1) {
+            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[, last.i-1]))
+            next
             }
-        if(first.i==1)
+        if((last.i - first.i) > 1) { 
+            for(t in (last.i-1):(first.i+1)) {
+                if(is.na(y[i, t])) # time gap dealt with by delta
+                    g.star[,t-1] <- g.star[,t]
+                else {
+                    g1.t <- dbinom(y[i, t], k, p[i, t])
+                    g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], 
+                        delta[i, t], dynamics)
+                    g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
+                    }
+                }
+            }
+        if(first.i == 1)
             L[i] <- sum(g1 * g2 * g.star[,first.i])
         else
-            L[i] <- sum(g2 * colSums(g1.t * g3.t  * g.star[,first.i]))
+            L[i] <- sum(g2 * colSums(g1 * g3.t  * g.star[,first.i]))
         }
     -sum(log(L))
     }
@@ -167,13 +177,13 @@ return(umfit)
 
 
 
-tranProbs <- function(Kr, omegaR, gammaR, deltaR, dynamics) {
+tranProbs <- function(Kr, omegaR, gammaR, deltaR, dynamicsR) {
     .Call("tranProbs", 
         as.integer(Kr),
         as.double(omegaR),
         as.double(gammaR),
         as.integer(deltaR),
-        as.character(dynamics),
+        as.character(dynamicsR),
         PACKAGE = "unmarked")
     }
     

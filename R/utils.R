@@ -672,38 +672,32 @@ SSE <- function(fit)
 
 
 # For pcountOpen. Calculate time intervals acknowledging gaps due to NAs
+# The first column indicates is time since first primary period + 1
 formatDelta <- function(d, y)
 {
     M <- nrow(y)
     T <- ncol(y)
+    d <- d - min(d, na.rm=TRUE) + 1
     dtab <- table(d)
-    equalInts <- identical(length(dtab), 1L)
-    if(equalInts)
-        dout <- matrix(1, M, T-1)
-    else 
-        dout <- t(apply(d, 1, diff))
+    dout <- matrix(NA, M, T)
+    dout[,1] <- d[,1]
+    dout[,2:T] <- t(apply(d, 1, diff))
     for(i in 1:M) {
         if(any(is.na(y[i,])) & !all(is.na(y[i,]))) { # 2nd test for simulate
-            first <- 1  #min(which(!is.na(y[i,])))
-        last <- max(which(!is.na(y[i,])))
-        y.in <- y[i, first:last]
-        d.in <- d[i, first:last]
-        if(any(is.na(y.in))) {
-            for(j in last:first) {
-                v <- y[i, 1:j-1]
-                if(any(is.na(v))) {
-                    nextReal <- which(!is.na(v))
+            last <- max(which(!is.na(y[i,])))
+            y.in <- y[i, 1:last]
+            d.in <- d[i, 1:last]
+            if(any(is.na(y.in))) {
+                for(j in last:3) { # first will always be time since 1
+                    nextReal <- which(!is.na(y[i, 1:(j-1)]))
                     nextReal <- ifelse(length(nextReal) > 0, max(nextReal), 1)
-                    if(equalInts)
-                        dout[i,j-1] <- j - nextReal
-                    else 
-                        dout[i,j-1] <- d[i,j] - d[i, nextReal]
+                    dout[i, j] <- d[i, j] - d[i, nextReal]
                     }
+                first <- ifelse(is.na(y[i, 1]), 1, d[i, 1])
+                dout[i, 2] <- d[i, 2] - first
                 }
             }
         }
-    }
     return(dout)
 }
                         
-
