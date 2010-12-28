@@ -678,12 +678,9 @@ setMethod("fitted", "unmarkedFitPCountOpen",
     lambda <- exp(Xlam %*% coef(object, 'lambda'))
     omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, 
         byrow=TRUE)
-    omega <- omega^delta
-    if(!identical(dynamics, "notrend")) {
-        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, 
-                byrow=TRUE)
-        gamma <- gamma*delta
-    } else {
+    if(!identical(dynamics, "notrend"))
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, byrow=TRUE)
+    else {
         if(identical(dynamics, "notrend")) 
             gamma <- (1-omega)*lambda
         else
@@ -1525,12 +1522,11 @@ setMethod("simulate", "unmarkedFitPCountOpen",
     M <- nrow(y)
     T <- ncol(y)
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
-    if(dynamics != "notrend") {
+    if(dynamics != "notrend")
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, byrow=TRUE)
-        gamma <- gamma*delta
-    } else gamma <- matrix(NA, M, T-1)
+    else 
+        gamma <- matrix(NA, M, T-1)
     omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, byrow=TRUE)
-    omega <- omega^delta
     p <- getP(object, na.rm = na.rm)
     N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
