@@ -2,8 +2,9 @@
 \alias{pcountOpen}
 \title{Fit the open N-mixture model of Dail and Madsen}
 \description{Fit the model of Dail and Madsen, which is 
-a generalized form of the Royle (2004) binomial mixture model that allows for
-estimation of gains (recruitment) and losses (mortality/emigration).}
+a generalized form of the Royle (2004) N-mixture model allowing for
+estimation of recruitment (births/imigrants) and 
+apparent survival (mortality/emigration).}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data, 
 	mixture = c("P", "NB"), K, fix=c("none", "gamma", "omega"), starts, 
@@ -24,7 +25,8 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
   \item{\dots}{additional arguments to be passed to \code{\link{optim}}.}
 }
 \details{
-This model generalizes the Royle (2004) N-mixture model by relaxing the closure assumption.
+This model generalizes the Royle (2004) N-mixture model by relaxing the 
+closure assumption.
 
 The latent initial abundance distribution, 
 \eqn{f(N | \mathbf{\theta})}{f(N | theta)} can be set as either a 
@@ -37,7 +39,7 @@ additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 
 The latent abundance state following the initial sampling period arises from a
 Markovian process in which survivors are modeled as \eqn{S_it \sim 
-Binomial(N_it-1, omega_it)}{G_it ~ Binomial(N_it-1, omega_it)}, and recruits
+Binomial(N_it-1, omega_it)}{S_it ~ Binomial(N_it-1, omega_it)}, and recruits
 follow \eqn{G_it \sim Poisson(gamma_it)}{G_it ~ Poisson(gamma_it)}.
 
 The detection process is modeled as binomial: \eqn{y_{it} \sim
@@ -62,12 +64,12 @@ Dail, D. and L. Madsen (In press) Models for Estimating Abundance from Repeated 
 \note{
 When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, they must be supplied.
 
-If time intervals vary among survey occasions (sampling periods), an M by T matrix of dates should be supplied to unmarkedFramePCO using the dates argument. Currently, the handling of non-constant survey intervals differs from the methods described in the original paper. Specifically, omega and gamma are modeled as omega^time and gamma*time, where time is the time between successive survey occasions. This allows for continuous (non-integer) time increments. Fractional time intervals can be useful if, for instance, survey were conducted over many days, but monthly rates are desired. For this case, one could simply use dates=dates/30 in the call to unmarkedFramePCO.
+If time intervals vary among survey occasions (sampling periods), an M by T matrix of dates (integer values) should be supplied to unmarkedFramePCO using the dates argument. Currently, the handling of non-constant survey intervals differs from the methods described in the original paper. 
 
 At this time, the robust design is not available. However, if you have multiple seasons of data, you can model within vs. among rates by creating an MxT observation-level covariate identifying the transition periods and include it the gamma and omega formulas.
 }
 
-\section{Warning}{This function can be extremely slow, especially when there are covariates on gamma or omega, or when sampling intervals are not constant. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates (MLEs) will also help with speed. }
+\section{Warning}{This function can be extremely slow. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates will also help with speed. }
 
 \seealso{
 \code{\link{pcount}}
@@ -101,87 +103,13 @@ umf <- unmarkedFramePCO(y = y)
 summary(umf)
 
 # Fit model and backtransform
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))   # K might be too small
+(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10)) # 14s on 64bit.
 backTransform(m1, "lambda")
 backTransform(m1, "gamma")
 backTransform(m1, "omega")
 backTransform(m1, "det")
 
-\dontrun{
-
-# Fix omega at 1 (no losses)
-m1.fixo <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10, fix="omega")
-
-## Simulate covariate model with constant intervals
-set.seed(33)
-M <- 50
-T <- 5
-veght <- rnorm(M)
-isolation <- matrix(rnorm(M*T), M, T)
-time <- matrix(rnorm(M*T, 1), M, T)
-y <- p <- N <- gamma <- matrix(NA, M, T)
-S <- G <- matrix(NA, M, T-1)
-lambda <- exp(-1)   # + 0.5*veght)
-gamma[] <- exp(-1 + -1*isolation)
-omega <- 0.8
-p[] <- plogis(-1 + 1*time)
-N[,1] <- rpois(M, lambda)
-for(t in 1:(T-1)) {
-	S[,t] <- rbinom(M, N[,t], omega)
-	G[,t] <- rpois(M, gamma[,t])
-	N[,t+1] <- S[,t] + G[,t]
-	}
-y[] <- rbinom(M*T, N, p)
-
-
-# Prepare data
-umfC <- unmarkedFramePCO(y = y, siteCovs = data.frame(veght), 
-	obsCovs = list(isolation=isolation, time=time))
-
-# Fit covariate model
-(m2 <- pcountOpen(~1, ~isolation, ~1, ~time, umfC, K=15, se=FALSE,
-	control=list(maxit=30, trace=TRUE, REPORT=1), starts=c(-1,-1,-1,1.5,-1,1)))
-
-
-## Simulate uneven sampling period intervals
-set.seed(333)
-M <- 25
-T <- 5
-date <- matrix(NA, M, T)
-date[,1] <- rpois(M, 2)
-for(t in 2:T) {
-    date[,t] <- date[,t-1] + rpois(M, 10)
-    }
-datediff <- t(apply(date, 1, diff))    
-lambda <- 4
-gamma <- 0.05   # Daily survival rate
-omega <- 0.95   # Daily recruitment rate
-p <- 0.7
-y <- N <- matrix(NA, M, T)
-S <- G <- matrix(NA, M, T-1)
-N[,1] <- rpois(M, lambda)
-for(t in 1:(T-1)) {
-	S[,t] <- rbinom(M, N[,t], omega^datediff[,t])   
-	G[,t] <- rpois(M, gamma*datediff[,t])           
-	N[,t+1] <- S[,t] + G[,t]
-	}
-y[] <- rbinom(M*T, N, p)
-
-
-# Prepare data
-umfO <- unmarkedFramePCO(y = y, delta = date)
-umfO
-
-# Fit model
-(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=FALSE, starts=c(2,-3,3,0.85),
-    control=list(maxit=15, trace=T, REPORT=1)))
-backTransform(m3, "lambda")
-backTransform(m3, "gamma")
-backTransform(m3, "omega")
-backTransform(m3, "det")
-
-       
-}
 
 }
+
 \keyword{models}

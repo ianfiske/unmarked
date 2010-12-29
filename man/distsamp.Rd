@@ -4,7 +4,7 @@
 \usage{distsamp(formula, data, keyfun=c("halfnorm", "exp",
     "hazard", "uniform"), output=c("density", "abund"),
     unitsOut=c("ha", "kmsq"), starts, method="BFGS",
-    control=list(), se=TRUE)}
+    control=list(), se=TRUE, rel.tol=1e-4)}
 
 \description{
 Fit the hierarchical distance sampling model of Royle et al. (2004)
@@ -27,6 +27,9 @@ square kilometers, respectively.}
 \item{method}{Optimization method used by \code{\link{optim}}.}
 \item{control}{Other arguments passed to \code{\link{optim}}.}
 \item{se}{logical specifying whether or not to compute standard errors.}
+\item{rel.tol}{relative accuracy for the integration of the detection function. 
+    See \link{integrate}. You might try adjusting this if you get an error 
+    message related to the integral.}
 }
 
 \details{
@@ -52,9 +55,11 @@ affected by transect-specific covariates using the log link.}
 \value{unmarkedFitDS object (child class of \code{\link{unmarkedFit-class}}) 
 describing the model fit.}
 
-\note{You cannot use obsCovs.}
+\note{
+You cannot use obsCovs.
+}
 
-\author{Richard Chandler \email{rchandler@nrc.umass.edu}}
+\author{Richard Chandler \email{rchandler@usgs.gov}}
 
 \references{Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling 
 abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.}

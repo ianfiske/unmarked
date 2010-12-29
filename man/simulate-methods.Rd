@@ -8,6 +8,7 @@
 \alias{simulate,unmarkedFitOccuRN-method}
 \alias{simulate,unmarkedFitPCount-method}
 \alias{simulate,unmarkedFitPCountOpen-method}
+\alias{simulate,unmarkedFitGMM-method}
 \title{Methods for Function simulate in Package `unmarked'}
 \description{
 Simulate data from a fitted model.

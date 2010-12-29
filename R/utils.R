@@ -1,38 +1,39 @@
 
-genFixedNLL <- function(nll, whichFixed, fixedValues) {
-  function(params) {
-    params[whichFixed] <- fixedValues
-    do.call(nll, list(params))
-  }
+genFixedNLL <- function(nll, whichFixed, fixedValues) 
+{
+    function(params) {
+        params[whichFixed] <- fixedValues
+        do.call(nll, list(params))
+        }
 }
 
 # nll the original negative log likelihood function
 # MLE the full vector of MLE values
-profileCI <- function(nll, whichPar, MLE, interval, level){
-  stopifnot(length(whichPar) == 1)
-  MLEnll <- nll(MLE)
-  nPar <- length(MLE)
+profileCI <- function(nll, whichPar, MLE, interval, level)
+{
+    stopifnot(length(whichPar) == 1)
+    MLEnll <- nll(MLE)
+    nPar <- length(MLE)
 	chsq <- qchisq(level, 1)/2
-  f <- function(value) {
-    fixedNLL <- genFixedNLL(nll, whichPar, value)
-		mleRestricted <- optim(MLE, fixedNLL)$value
-    mleRestricted - MLEnll - chsq
-  }
-  lower <- tryCatch(uniroot(f, c(interval[1],MLE[whichPar]))$root,
-                    error = function(e) {
-                      warning("Lower endpoint of profile confidence interval is on the boundary.",
-                              call. = FALSE)
-                      -Inf
-                    })
-           
-  upper <- tryCatch(upper <- uniroot(f, c(MLE[whichPar], interval[2]))$root,
-                    error = function(e) {
-                      warning("Upper endpoint of profile confidence interval is on the boundary.",
-                              call. = FALSE)
-                      Inf
-                    })
+    f <- function(value) {
+        fixedNLL <- genFixedNLL(nll, whichPar, value)
+            mleRestricted <- optim(MLE, fixedNLL)$value
+        mleRestricted - MLEnll - chsq
+        }
+    lower <- tryCatch(uniroot(f, c(interval[1],MLE[whichPar]))$root,
+        error = function(e) {
+            warning("Lower endpoint of profile confidence interval is on the boundary.", 
+        call. = FALSE)
+        -Inf
+        })
+    upper <- tryCatch(upper <- uniroot(f, c(MLE[whichPar], interval[2]))$root,
+        error = function(e) {
+            warning("Upper endpoint of profile confidence interval is on the boundary.",
+        call. = FALSE)
+        Inf
+        })
 	
-  return(c(lower,upper))
+    return(c(lower,upper))
 }
 
 ## link functions and their gradients
@@ -637,16 +638,16 @@ as.numeric(1 - exp(-lambda))
 
 formatDistData <- function(distData, distCol, transectNameCol, dist.breaks)
 {
-transects <- distData[,transectNameCol]
-M <- nlevels(transects)
-J <- length(dist.breaks) - 1
-y <- matrix(NA, M, J, 
-	dimnames = list(levels(transects), paste("y", 1:J, sep=".")))
-for(i in 1:M) {
-	sub <- subset(distData, transects==rownames(y)[i])
-	y[i,] <- table(cut(sub[,distCol], dist.breaks, include.lowest=TRUE))
-	}
-return(data.frame(y))
+    transects <- distData[,transectNameCol]
+    M <- nlevels(transects)
+    J <- length(dist.breaks) - 1
+    y <- matrix(NA, M, J, 
+	   dimnames = list(levels(transects), paste("y", 1:J, sep=".")))
+    for(i in 1:M) {
+	   sub <- subset(distData, transects==rownames(y)[i])
+	   y[i,] <- table(cut(sub[,distCol], dist.breaks, include.lowest=TRUE))
+	   }
+    return(y)
 }
 
 
@@ -655,103 +656,48 @@ return(data.frame(y))
 
 sight2perpdist <- function(sightdist, sightangle) 
 {
-if(any(0 > sightangle | sightangle > 180))
-	stop("sightangle must be degrees in [0, 180]")
-sightdist * sin(sightangle * pi / 180)
+    if(any(0 > sightangle | sightangle > 180))
+	   stop("sightangle must be degrees in [0, 180]")
+    sightdist * sin(sightangle * pi / 180)
 }
 
 
 
-SSE <- function(fit) {
+SSE <- function(fit) 
+{
     sse <- sum(residuals(fit)^2, na.rm=TRUE)
     return(c(SSE=sse))
-    }
-
-
-
-# Prepare area argument for distsamp(). This is primarily for internal use
-
-calcAreas <- function(dist.breaks, tlength, survey, output, M, J, unitsIn, 
-	unitsOut)
-{
-switch(output, 	
-	density = {
-        switch(unitsIn, 
-            km = conv <- 1,
-            m = conv <- 1000
-            )
-		switch(survey, 
-			line = {
-				stripwidths <- (((dist.breaks*2)[-1] - 
-                    (dist.breaks*2)[-(J+1)])) / conv
-				tl <- tlength / conv
-				a <- rep(tl, each=J) * stripwidths						# km^2
-				a <- matrix(a, nrow=M, ncol=J, byrow=TRUE)
-				if(unitsOut == "ha") a <- a * 100
-				},
-			point = {
-				W <- max(dist.breaks) / conv
-				a <- matrix(rep(pi * W^2, each=J), M, J, byrow=TRUE) 	# km^2
-				if(unitsOut == "ha") a <- a * 100			
-				})
-			},
-	abund = {
-        ndi <- length(unique(diff(dist.breaks)))
-        if(!isTRUE(all.equal(ndi, 1)))
-            stop("output cannot equal 'abund' when distance intervals differ. Use output='density' instead.")
-        switch(survey, 
-            line = {
-                ntl <- length(unique(tlength))
-                if(!isTRUE(all.equal(ntl, 1)))
-                    stop("output cannot equal 'abund' when transect lengths differ. Use output='density' instead.")
-                a <- matrix(1 / J, M, J)
-                },
-            point = a <- matrix(1, M, J)
-            )
-        })
-return(a)
 }
-
-
-
-
 
 
 
 # For pcountOpen. Calculate time intervals acknowledging gaps due to NAs
+# The first column indicates is time since first primary period + 1
 formatDelta <- function(d, y)
 {
-M <- nrow(y)
-T <- ncol(y)
-dtab <- table(d)
-equalInts <- identical(length(dtab), 1L)
-if(equalInts)
-    dout <- matrix(1, M, T-1)
-else 
-    dout <- t(apply(d, 1, diff))
-for(i in 1:M) {
-    if(any(is.na(y[i,])) & !all(is.na(y[i,]))) { # 2nd test deals w/ simulated y
-        first <- 1  #min(which(!is.na(y[i,])))
-        last <- max(which(!is.na(y[i,])))
-        y.in <- y[i, first:last]
-        d.in <- d[i, first:last]
-        if(any(is.na(y.in))) {
-            for(j in last:first) {
-                v <- y[i, 1:j-1]
-                if(any(is.na(v))) {
-                    nextReal <- which(!is.na(v))
+    M <- nrow(y)
+    T <- ncol(y)
+    d <- d - min(d, na.rm=TRUE) + 1
+    dtab <- table(d)
+    dout <- matrix(NA, M, T)
+    dout[,1] <- d[,1]
+    dout[,2:T] <- t(apply(d, 1, diff))
+    for(i in 1:M) {
+        if(any(is.na(y[i,])) & !all(is.na(y[i,]))) { # 2nd test for simulate
+            last <- max(which(!is.na(y[i,])))
+            y.in <- y[i, 1:last]
+            d.in <- d[i, 1:last]
+            if(any(is.na(y.in))) {
+                for(j in last:3) { # first will always be time since 1
+                    nextReal <- which(!is.na(y[i, 1:(j-1)]))
                     nextReal <- ifelse(length(nextReal) > 0, max(nextReal), 1)
-                    if(equalInts)
-                        dout[i,j-1] <- j - nextReal
-                    else 
-                        dout[i,j-1] <- d[i,j] - d[i, nextReal]
+                    dout[i, j] <- d[i, j] - d[i, nextReal]
                     }
+                first <- ifelse(is.na(y[i, 1]), 1, d[i, 1])
+                dout[i, 2] <- d[i, 2] - first
                 }
             }
         }
-    }
-dout    
+    return(dout)
 }
                         
-
-

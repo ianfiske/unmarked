@@ -58,6 +58,43 @@ setMethod("summary", "unmarkedFitList", function(object) {
     for(i in 1:length(fits))
         summary(fits[[i]])
     })
+    
+    
+setMethod("coef", "unmarkedFitList", function(object) 
+{
+    fits <- object@fits
+    coef.list <- lapply(fits, coef)
+    coef.names <- unique(unlist(lapply(coef.list, names)))
+    coef.out <- matrix(NA, length(fits), length(coef.names))
+    colnames(coef.out) <- coef.names
+    if(!is.null(names(fits)))
+        rownames(coef.out) <- names(fits)
+    for(i in 1:length(coef.list))
+        coef.out[i, names(coef.list[[i]])] <- coef.list[[i]]
+    return(coef.out)
+})
+
+
+setMethod("SE", "unmarkedFitList", function(obj) 
+{
+    fits <- obj@fits
+    se.list <- lapply(fits, function(x) {
+        tr <- try(SE(x))
+        if(class(tr)[1] == "try-error")
+            return(rep(NA, length(coef(x))))
+        else
+            return(tr)
+        })
+    se.names <- unique(unlist(lapply(se.list, names)))
+    se.out <- matrix(NA, length(fits), length(se.names))
+    colnames(se.out) <- se.names
+    if(!is.null(names(fits)))
+        rownames(se.out) <- names(fits)
+    for(i in 1:length(se.list))
+        se.out[i, names(se.list[[i]])] <- se.list[[i]]
+    return(se.out)
+})
+    
 
 
 
@@ -73,8 +110,10 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
         wts <- exp(-deltaic / 2)
         wts <- wts / sum(wts)
         parav <- as.numeric(E %*% wts)
-        seav <- as.numeric((SE + (E - parav)^2) %*% wts) # Double check this
+        seav <- as.numeric(sqrt(SE^2 + (E - parav)^2) %*% wts)
         out <- data.frame(Predicted = parav, SE = seav)
+        out$lower <- out$Predicted - 1.96*out$SE
+        out$upper <- out$Predicted + 1.96*out$SE
         if(appendData) {
             if(missing(newdata))
                 newdata <- getData(object@fits[[1]])
@@ -91,6 +130,7 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
 # Condition number
 cn <- function(object) {
     h <- hessian(object)
+    if(is.null(h)) return(NA)
     if(any(is.na(h))) return(NA)
         else {
    	        ev <- eigen(h)$value
@@ -202,7 +242,7 @@ setMethod("show", "unmarkedModSel", function(object)
 {
     out <- as(object, "data.frame")
     rownames(out) <- out$model
-    out <- out[,c('n', 'nPars', 'AIC', 'delta', 'AICwt', 'cumltvWt', 'Rsq')]
+    out <- out[,c('nPars', 'AIC', 'delta', 'AICwt', 'cumltvWt', 'Rsq')]
     if (all(is.na(out$Rsq))) out$Rsq <- NULL
     print(format(out, digits=2, nsmall=2))
 })

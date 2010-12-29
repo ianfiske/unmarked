@@ -2,10 +2,13 @@
 
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
-    data, mixture=c("P", "NB"), K, fix=c("none", "gamma", "omega"), 
+    data, mixture=c("P", "NB"), K, 
+    dynamics=c("constant", "autoreg", "notrend"), 
+    fix=c("none", "gamma", "omega"), 
     starts, method="BFGS", se=TRUE, ...)
 {
 mixture <- match.arg(mixture)
+dynamics <- match.arg(dynamics)
 fix <- match.arg(fix)
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
@@ -15,20 +18,15 @@ y <- D$y; Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
 delta <- D$delta
 M <- nrow(y)
 T <- ncol(y)
-y <- matrix(y,  M, T)
-yind <- matrix(1:(M*T), M, T)
-first <- 1:M
-#for(i in 1:M) 
-#    if(any(is.na(y[i,])))
-#        first[i] <- yind[i, min(which(!is.na(y[i,])))]
+y <- matrix(y, M, T)
 if(missing(K)) K <- max(y, na.rm=T) + 20
 if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
 k <- 0:K
 lk <- length(k)
-y.k <- apply(y, 2, rep, each=lk)
-#if(all(delta==1)) delta <- 1
-    # delta.kk <- 1 else delta.kk <- apply(delta, 2, rep, each=lk*lk)
+
+first <- apply(y, 1, function(x) min(which(!is.na(x))))
+last  <- apply(y, 1, function(x) max(which(!is.na(x)))) 
 
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)
@@ -38,95 +36,87 @@ nAP <- ncol(Xlam)
 nGP <- ncol(Xgam)
 nOP <- ncol(Xom)
 nDP <- ncol(Xp)
+
+#Note, internal NAs are handled by formatDelta(). Treated as time gaps.
+equal.ints <- identical(length(table(delta)), 1L) 
+
 if(identical(fix, "gamma")) {
+    if(!identical(dynamics, "constant")) 
+        stop("dynamics must be constant when fixing gamma or omega")
     if(nGP > 1) stop("gamma covariates not allowed when fix==gamma")
     else { nGP <- 0; gamParms <- character(0) }
     }
+else 
+    if(identical(dynamics, "notrend")) {
+        if(nGP > 1) stop("gamma covariates not allowed when dyamics==notrend")
+        else { nGP <- 0; gamParms <- character(0) }
+        }
 if(identical(fix, "omega")) {
+    if(!identical(dynamics, "constant")) 
+        stop("dynamics must be constant when fixing gamma or omega")    
     if(nOP > 1) stop("omega covariates not allowed when fix==omega")
     else { nOP <- 0; omParms <- character(0) }
     }
-
 nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
+if(!missing(starts) && length(starts) != nP)
+    stop(paste("The number of starting values should be", nP)) 
 
-# Save time in likelihood evaluation
-# identical() returns FALSE b/c of environment differences
-equal.ints <- identical(length(table(delta)), 1L)
-if(isTRUE(all.equal(gammaformula, ~1)) & isTRUE(all.equal(omegaformula, ~1)) & 
-    equal.ints)
-    goDims <- "scalar"
-    else {
-        goParms <- unique(c(all.vars(gammaformula), all.vars(omegaformula)))
-        if(!any(goParms %in% colnames(obsCovs(data))) & equal.ints)
-            goDims <- "vector"
-            else goDims <- "matrix"
-        }
-mk.order <- matrix(1:(M*lk), M, lk)
-mat.to.vec <- as.numeric(apply(mk.order, 1, rep, times=lk))
-g.star <- array(NA, c(M, lk, T-1))
-
-expand.ki <- numeric(0)
-s <- seq(0, lk*lk*nrow(y), by=lk)
-for(i in 1:nrow(y)) expand.ki <- c(expand.ki, rep((s[i]+1) : s[i+1], lk))
-
-nll <- function(parms) { # No survey-specific NA handling.
-    lambda <- exp(Xlam %*% parms[1 : nAP])
+nll <- function(parms) {
+    lambda <- drop(exp(Xlam %*% parms[1 : nAP]))
     p <- matrix(plogis(Xp %*% parms[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         M, T, byrow=TRUE)
-    switch(goDims,
-    scalar = {
-        gamma <- drop(exp(parms[(nAP+1) : (nAP+nGP)]))
-        omega <- drop(plogis(parms[(nAP+nGP+1) : (nAP+nGP+nOP)]))
-        },
-    vector = {
-        gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])), 
-            M, T, byrow=TRUE)[,1]
-        omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])), 
-            M, T, byrow=TRUE)[,1]
-        },
-    matrix = {
-        gamma <- matrix(drop(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)])),
-            M, T, byrow=TRUE)[,-T] * delta
-        omega <- matrix(drop(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)])),
-            M, T, byrow=TRUE)[,-T] ^ delta
-        })
-    if(identical(fix, "gamma")) gamma[] <- 0
-        else if(identical(fix, "omega")) omega[] <- 1    
-    g1 <- sapply(k, function(x) dbinom(y[,1], x, p[,1]))    
-    g1[is.na(g1)] <- 1 # Double check this
-    switch(mixture,
-        P = g2 <- sapply(k, function(x) dpois(x, lambda)),
-        NB = g2 <- sapply(k, function(x) dnbinom(x, size=exp(parms[nP]),
-           mu=lambda)))
-    g2[is.na(g2)] <- 1 # Double check this
-    g3args <- cbind(rep(k, times=lk), rep(k, each=lk), 
-        rep(omega, each=lk*lk), 
-        rep(gamma, each=lk*lk)) # recycle
-    convMat <- matrix(0, nrow(g3args), K+1)
-    for(i in k) {
-        nonzero <- which(g3args[,2] >= i & g3args[,1] >= i)
-        convMat[nonzero,i+1] <- dbinom(i, g3args[nonzero,2], g3args[nonzero,3]) * 
-            dpois(g3args[nonzero,1] - i, g3args[nonzero,4])
+    if(identical(fix, "omega"))
+        omega <- matrix(1, M, T-1)
+    else
+        omega <- matrix(plogis(Xom %*% parms[(nAP+nGP+1) : (nAP+nGP+nOP)]),
+            M, T-1, byrow=TRUE)
+    if(dynamics == "notrend")
+        gamma <- (1-omega)*lambda
+    else {
+        if(identical(fix, "gamma")) 
+            gamma <- matrix(0, M, T-1)
+        else 
+            gamma <- matrix(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)]),
+                M, T-1, byrow=TRUE)
         }
-    g3 <- rowSums(convMat)
-    g3 <- array(g3, c(lk, lk, M, T-1))
-    pT.k <- rep(p[, T], each=lk)
-    g1.T <- dbinom(y.k[,T], k, pT.k) # recycle
-    g1.T <- g1.T[expand.ki]
-    g3.T <- g3[,,, T-1]
-    g.star[,, T-1] <- apply(g1.T * g3.T, 2, colSums)	# recycle
-    # NA handling: this will properly determine last obs for each site
-    g.star[,,T-1][is.na(g.star[,, T-1])] <- 1
-    for(t in (T-1):2) {
-        pt.k <- rep(p[, t], each=lk)
-        g1.t <- dbinom(y.k[,t], k, pt.k)
-        g1.t <- g1.t[expand.ki]
-        g.star.vec <- g.star[,, t][mat.to.vec]
-        g3.t <- g3[,,, t-1]
-        g.star[,, t-1] <- apply(g1.t * g3.t * g.star.vec, 2, colSums)
-        g.star[,,t-1][is.na(g.star[,, t-1])] <- g.star[,,t][is.na(g.star[,, t-1])]
+    L <- numeric(M)
+    for(i in 1:M) {
+        first.i <- first[i]
+        last.i <- last[i]
+        g1 <- dbinom(y[i, first.i], k, p[i, first.i])
+        switch(mixture, 
+            P = g2 <- dpois(k, lambda[i]),
+            NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
+        if(first.i == last.i & first.i == 1) {
+            L[i] <- sum(g1 * g2)
+            next
+            }
+        g.star <- matrix(NA, lk, last.i-1)
+        g3.T <- tranProbs(k, omega[i, last.i-1], gamma[i, last.i-1], 
+            delta[i, last.i], dynamics) # not delta[i, last.i-1]        
+        g1.T <- dbinom(y[i, last.i], k, p[i, last.i])
+        g.star[, last.i-1] <- colSums(g1.T * g3.T)
+        if(first.i == last.i & first.i > 1) {
+            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[, last.i-1]))
+            next
+            }
+        if((last.i - first.i) > 1) { 
+            for(t in (last.i-1):(first.i+1)) {
+                if(is.na(y[i, t])) # time gap dealt with by delta
+                    g.star[,t-1] <- g.star[,t]
+                else {
+                    g1.t <- dbinom(y[i, t], k, p[i, t])
+                    g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], 
+                        delta[i, t], dynamics)
+                    g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
+                    }
+                }
+            }
+        if(first.i == 1)
+            L[i] <- sum(g1 * g2 * g.star[,first.i])
+        else
+            L[i] <- sum(g2 * colSums(g1 * g3.t  * g.star[,first.i]))
         }
-    L <- rowSums(g1 * g2 * g.star[,, 1])                             
     -sum(log(L))
     }
 if(missing(starts))
@@ -157,13 +147,13 @@ detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates))
-if(!identical(fix, "gamma")) 
+if(!(identical(fix, "gamma") | identical(dynamics, "notrend"))) 
     estimateList@estimates$gamma <- unmarkedEstimate(name = "Recruitment", 
         short.name = "gam", estimates = ests[(nAP+1) : (nAP+nGP)],
         covMat = as.matrix(covMat[(nAP+1) : (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")
 if(!identical(fix, "omega")) 
-    estimateList@estimates$omega <- unmarkedEstimate(name = "Survival", 
+    estimateList@estimates$omega <- unmarkedEstimate(name="Apparent Survival", 
         short.name = "omega", estimates = ests[(nAP+nGP+1) : (nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
@@ -175,13 +165,31 @@ if(identical(mixture, "NB")) {
         covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
         invlinkGrad = "exp")
     }
-umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", call = match.call(),
-    formula = formula,
-    formlist = formlist, data = data, sitesRemoved=D$removed.sites,
-    estimates = estimateList, AIC = fmAIC, opt = opt, negLogLike = fm$value,
-    nllFun = nll, K = K, mixture = mixture)
+umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", 
+    call = match.call(), formula = formula, formlist = formlist, data = data, 
+    sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC, 
+    opt = opt, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture, 
+    dynamics = dynamics)
 return(umfit)
 }
+
+
+
+
+
+tranProbs <- function(Kr, omegaR, gammaR, deltaR, dynamicsR) {
+    .Call("tranProbs", 
+        as.integer(Kr),
+        as.double(omegaR),
+        as.double(gammaR),
+        as.integer(deltaR),
+        as.character(dynamicsR),
+        PACKAGE = "unmarked")
+    }
+    
+    
+    
+    
 
 
 
