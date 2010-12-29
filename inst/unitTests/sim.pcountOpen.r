@@ -142,8 +142,8 @@ for(t in 2:T) {
     }
 datediff <- t(apply(date, 1, diff))    
 lambda <- 4
-gamma <- 0.2   # Daily survival rate
-omega <- 0.8   # Daily recruitment rate
+gamma <- 0.5   
+omega <- 0.5   
 p <- 0.7
 y <- N <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
@@ -185,11 +185,12 @@ head(formatDelta(date, y))
 # Prepare data
 umfO <- unmarkedFramePCO(y = y, dates = date)
 umfO
+max(y)
 
 # Fit model
-(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=50, se=TRUE, 
-    starts=c(1.3, -3, 5, 0.5),
-    control=list(maxit=10, trace=T, REPORT=1)))
+(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=TRUE, 
+    starts=c(1.4, -0.7, 0.6, 0.6),
+    control=list(maxit=50, trace=T, REPORT=1)))
 backTransform(m3, "lambda")
 backTransform(m3, "gamma")
 backTransform(m3, "omega")
