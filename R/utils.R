@@ -60,14 +60,15 @@ identLink <- function(x) x
 
 identLinkGrad <- function(x) 1
 
+# !!! This is now done in C++. See rowProds() below
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))
 
-rowProds <-
-function(x, na.rm = FALSE)
-{
-  exp(rowSums(log(x), na.rm = na.rm))
-}
+#rowProds <-
+#function(x, na.rm = FALSE)
+#{
+#  exp(rowSums(log(x), na.rm = na.rm))
+#}
 
 # helper function to coerce an array of matrices to a list
 
@@ -701,3 +702,35 @@ formatDelta <- function(d, y)
     return(dout)
 }
                         
+
+
+
+
+
+
+
+# Markov transition probs for pcountOpen
+tranProbs <- function(Kr, omegaR, gammaR, deltaR, dynamicsR) 
+{
+    .Call("tranProbs", 
+        as.integer(Kr),
+        as.double(omegaR),
+        as.double(gammaR),
+        as.integer(deltaR),
+        as.character(dynamicsR),
+        PACKAGE = "unmarked")
+}
+    
+    
+    
+    
+# much faster than apply(m, 1, prod) or exp(rowSums(log(m)))    
+rowProds <- function(m) 
+{
+    .Call("rowProds", 
+        as.matrix(m),
+        PACKAGE = "unmarked")
+}    
+    
+    
+ 
