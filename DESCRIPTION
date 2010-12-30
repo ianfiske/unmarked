@@ -17,10 +17,10 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R' 'gmultmix.R' 'pcountOpen.R'
     'unmarkedFitList.R' 'unmarkedLinComb.R'
 Encoding: UTF-8
+LinkingTo: Rcpp
+SystemRequirements: GNU make
 URL: http://groups.google.com/group/unmarked,
      https://sites.google.com/site/unmarkedinfo/home,
      http://github.com/ianfiske/unmarked,
      http://github.com/rbchan/unmarked
 LinkingTo: Rcpp, RcppArmadillo
-
-     

@@ -108,6 +108,13 @@ nll <- function(parms) {
                     g1.t <- dbinom(y[i, t], k, p[i, t])
                     g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], 
                         delta[i, t], dynamics)
+                    cs <- colSums(g3.T)
+                    if(any(cs>1)) {
+                        g3.t <- tranProbsR(k, omega[i, t-1], gamma[i, t-1], 
+                            delta[i, t], dynamics)
+                        warning("double precision not sufficient. transition probabilities had to be corrected the slow way.")
+                        flush.console()
+                        }
                     g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
                     }
                 }
@@ -191,5 +198,40 @@ tranProbs <- function(Kr, omegaR, gammaR, deltaR, dynamicsR) {
     
     
 
+tranProbsR <- function(N, omega, gamma, delta, dynamics) {
+    lN <- length(N)
+    tp <- matrix(NA, lN, lN)
+    for(j in N+1) {
+        for(k in N+1) {
+            cmin <- 0:min(j, k)
+            gamma2 <- ifelse(dynamics=="autoreg", gamma*N[k], gamma)
+            tp[j, k] <- sum(dbinom(cmin, N[k], omega) * 
+                dpois(N[j]-cmin, gamma2))
+            }
+        }
+    if(delta > 1) {
+        for(d in 2:delta) {
+            tp <- tp %*% tp
+            cs <- colSums(tp)
+            if(any(cs>1))
+                tp <- tp / cs
+            }
+        }
+    return(tp)
+    }
+
+#all.equal(
+#tranProbsR(0:50, 0.5, 2, 1, "") ,
+#tranProbs(0:50, 0.5, 2, 1, "")
+#)
 
 
+#all.equal(
+#tranProbsR(0:50, 0.5, 2, 10, "") ,
+#tranProbs(0:50, 0.5, 2, 10, "")
+#)
+
+#all.equal(
+#tranProbsR(0:50, 0.5, 2, 100, "") ,
+#tranProbs(0:50, 0.5, 2, 100, "")
+#)
