@@ -83,21 +83,23 @@ nll <- function(parms) {
     for(i in 1:M) {
         first.i <- first[i]
         last.i <- last[i]
-        g1 <- dbinom(y[i, first.i], k, p[i, first.i])
+        cand <- k >= y[i, first.i]
+        N.i1 <- k[cand]
+        g1 <- dbinom(y[i, first.i], N.i1, p[i, first.i])
         switch(mixture, 
-            P = g2 <- dpois(k, lambda[i]),
-            NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
+            P = g2 <- dpois(N.i1, lambda[i]),
+            NB = g2 <- dnbinom(N.i1, size=exp(parms[nP]), mu=lambda[i]))    
         if(first.i == last.i & first.i == 1) {
             L[i] <- sum(g1 * g2)
             next
             }
         g.star <- matrix(NA, lk, last.i-1)
         g3.T <- tranProbs(k, omega[i, last.i-1], gamma[i, last.i-1], 
-            delta[i, last.i], dynamics) # not delta[i, last.i-1]        
+            delta[i, last.i], dynamics) # not delta[i, last.i-1]
         g1.T <- dbinom(y[i, last.i], k, p[i, last.i])
         g.star[, last.i-1] <- colSums(g1.T * g3.T)
         if(first.i == last.i & first.i > 1) {
-            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[, last.i-1]))
+            L[i] <- sum(g2 * colSums(g1 * g3.T[,cand] * g.star[cand, last.i-1]))
             next
             }
         if((last.i - first.i) > 1) { 
@@ -113,9 +115,9 @@ nll <- function(parms) {
                 }
             }
         if(first.i == 1)
-            L[i] <- sum(g1 * g2 * g.star[,first.i])
+            L[i] <- sum(g1 * g2 * g.star[cand, first.i])
         else
-            L[i] <- sum(g2 * colSums(g1 * g3.t  * g.star[,first.i]))
+            L[i] <- sum(g2 * colSums(g1 * g3.t[,cand]  * g.star[cand, first.i]))
         }
     -sum(log(L))
     }

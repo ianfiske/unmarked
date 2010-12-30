@@ -709,6 +709,10 @@ formatDelta <- function(d, y)
 
 
 
+
+
+
+
 # Markov transition probs for pcountOpen
 tranProbs <- function(Kr, omegaR, gammaR, deltaR, dynamicsR) 
 {
@@ -720,6 +724,27 @@ tranProbs <- function(Kr, omegaR, gammaR, deltaR, dynamicsR)
         as.character(dynamicsR),
         PACKAGE = "unmarked")
 }
+
+
+# The slow way
+tranProbsR <- function(N, omega, gamma, delta, dynamics) {
+    lN <- length(N)
+    bpsum <- matrix(NA, lN, lN)
+    for(j in 1:lN) {
+        for(k in 1:lN) {
+            cmin0 <- 0:min(N[j], N[k])
+            gamma2 <- ifelse(identical(dynamics, "autoreg"), gamma*N[j], gamma)
+            bpsum[k, j] <- sum(dbinom(cmin0, N[j], omega) * 
+                dpois(N[k]-cmin0, gamma2))
+            }}
+    if(delta>1) {
+        for(d in 2:delta) {
+            bpsum <- bpsum %*% bpsum
+            bpsum <- t(t(bpsum) / colSums(bpsum))
+            }
+        }
+    return(bpsum)
+    }
     
     
     
