@@ -108,7 +108,7 @@ for(i in 1:nsim2) {
     obsCovs <- list(time = covs[,grep("time", cn)], 
         isolation = covs[,grep("isolation", cn)])     
     umf2 <- unmarkedFramePCO(y = y.sim2, siteCovs=siteCovs, obsCovs=obsCovs)
-    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=20, se=F, 
+    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=40, se=F, 
         starts=c(lam, gam, om, p))
     e <- coef(m2)
     simout2[i, ] <- e
@@ -132,18 +132,18 @@ dev.off()
 
 ## Simulate uneven sampling period intervals
 set.seed(333)
-M <- 50
+M <- 100
 T <- 5
 date <- matrix(NA, M, T)
 #date[,1] <- pmax(rpois(M, 2), 1)
 date[,1] <- 1
 for(t in 2:T) {
-    date[,t] <- date[,t-1] + pmax(rpois(M, 10), 1)
+    date[,t] <- date[,t-1] + pmax(rpois(M, 5), 1)
     }
 datediff <- t(apply(date, 1, diff))    
 lambda <- 4
-gamma <- 0.2   # Daily survival rate
-omega <- 0.8   # Daily recruitment rate
+gamma <- 0.2   
+omega <- 0.6   
 p <- 0.7
 y <- N <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
@@ -187,9 +187,9 @@ umfO <- unmarkedFramePCO(y = y, dates = date)
 umfO
 
 # Fit model
-(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=50, se=TRUE, 
-    starts=c(1.3, -3, 5, 0.5),
-    control=list(maxit=10, trace=T, REPORT=1)))
+(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=20, se=TRUE, 
+    starts=c(1.3, -1, 1, 0.6),
+    control=list(maxit=30, trace=T, REPORT=1)))
 backTransform(m3, "lambda")
 backTransform(m3, "gamma")
 backTransform(m3, "omega")
@@ -199,43 +199,148 @@ backTransform(m3, "det")
 
 
 
+
+
+
+
+
 # Auto-regressive model
 
 
-set.seed(3)
-M <- 50
-T <- 5
-lambda <- 1
-gamma <- 0.5
-omega <- 0.8
-p <- 0.7
-y <- N <- matrix(NA, M, T)
-S <- G <- matrix(NA, M, T-1)
-N[,1] <- rpois(M, lambda)
-for(t in 1:(T-1)) {
-	S[,t] <- rbinom(M, N[,t], omega)
-	G[,t] <- rpois(M, gamma * N[,t])
-	N[,t+1] <- S[,t] + G[,t]
-	}
-y[] <- rbinom(M*T, N, p)
 
 
-# Prepare data
-umf4 <- unmarkedFramePCO(y = y)
-umf4
+sim4 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=50, T=5)
+{
+    y <- N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    for(t in 1:(T-1)) {
+        S[,t] <- rbinom(M, N[,t], omega)
+        G[,t] <- rpois(M, gamma*N[,t])
+        N[,t+1] <- S[,t] + G[,t]
+        }
+    y[] <- rbinom(M*T, N, p)
+    return(y)
+}
+                            
+# Prepare data                               
+set.seed(434)
+umf4 <- unmarkedFramePCO(y = sim4())
 
-# Fit model
-(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20, dynamics="autoreg", se=TRUE, 
-    starts=c(0, 0.5, 0.5, 0.6), 
-    control=list(maxit=50, trace=T, REPORT=1)))
-backTransform(m4, "lambda") # 0.79 initial abundance
-backTransform(m4, "gamma")  # 0.43 recruitment rate
-backTransform(m4, "omega")  # 0.88 survival rate
-backTransform(m4, "det")    # 0.60 detection probability
+summary(umf4)
+
+# Fit model and backtransform
+system.time(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20, 
+    dynamics="autoreg"))  # 52s on 64bit.
+
+backTransform(m4, "lambda") # 1.1 initial abundance
+backTransform(m4, "gamma")  # 0.47 recruitment rate
+backTransform(m4, "omega")  # 0.84 survival rate
+backTransform(m4, "det")    # 0.76 detection probability
 
 
-       
-simulate(m4)
-plot(m4)
-parboot(m4, report=1)
+set.seed(3223)
+nsim4 <- 5
+simout4 <- matrix(NA, nsim4, 4)
+colnames(simout4) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim4) {
+    cat("sim4", i, "\n"); flush.console()
+    lambda <- 1
+    gamma <- 0.5
+    omega <- 0.7
+    p <- 0.7
+    y.sim4 <- sim4(lambda, gamma, omega, p, M=100)
+    umf4 <- unmarkedFramePCO(y = y.sim4)
+    m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=30, dynamics="autoreg",
+        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
+    e <- coef(m4)
+    simout4[i, 1:2] <- exp(e[1:2])
+    simout4[i, 3:4] <- plogis(e[3:4])
+    }
+
+png("pcountOpenSim4.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout4[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout4[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout4[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout4[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
+dev.off()    
+
+
+
+
+
+
+
+
+
+
+# No trend model
+
+
+
+
+sim5 <- function(lambda=1, omega=0.8, p=0.7, M=50, T=5)
+{
+    y <- N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    gamma <- (1-omega)*lambda
+    for(t in 1:(T-1)) {
+        S[,t] <- rbinom(M, N[,t], omega)
+        G[,t] <- rpois(M, gamma*N[,t])
+        N[,t+1] <- S[,t] + G[,t]
+        }
+    y[] <- rbinom(M*T, N, p)
+    return(y)
+}
+                            
+# Prepare data                               
+set.seed(434)
+umf4 <- unmarkedFramePCO(y = sim4())
+
+summary(umf4)
+
+# Fit model and backtransform
+system.time(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20, 
+    dynamics="autoreg"))  # 52s on 64bit.
+
+backTransform(m4, "lambda") # 1.1 initial abundance
+backTransform(m4, "gamma")  # 0.47 recruitment rate
+backTransform(m4, "omega")  # 0.84 survival rate
+backTransform(m4, "det")    # 0.76 detection probability
+
+
+set.seed(3223)
+nsim4 <- 5
+simout4 <- matrix(NA, nsim4, 4)
+colnames(simout4) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim4) {
+    cat("sim4", i, "\n"); flush.console()
+    lambda <- 1
+    gamma <- 0.5
+    omega <- 0.7
+    p <- 0.7
+    y.sim4 <- sim4(lambda, gamma, omega, p, M=100)
+    umf4 <- unmarkedFramePCO(y = y.sim4)
+    m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=30, dynamics="autoreg",
+        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
+    e <- coef(m4)
+    simout4[i, 1:2] <- exp(e[1:2])
+    simout4[i, 3:4] <- plogis(e[3:4])
+    }
+
+png("pcountOpenSim4.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout4[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout4[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout4[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout4[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
+dev.off()    
+
+
+
+
+
+
 
