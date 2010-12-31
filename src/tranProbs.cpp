@@ -27,10 +27,9 @@ SEXP tranProbs( SEXP Kr, SEXP omegaR, SEXP gammaR, SEXP deltaR, SEXP dynamicsR)
     if(delta > 1) {    
         for(int d=1; d<delta; d++) {
             bpsum *= bpsum;
-            arma::rowvec cs = sum(bpsum, 0);
-            for(int i=0; i<lk; i++) {
-                bpsum.row(i) = bpsum.row(i) / cs;
-                }
+            arma::mat cs = sum(bpsum, 0);
+            arma::mat csm = arma::repmat(cs, lk, 1);
+            bpsum = bpsum / csm;
             }
         }
     return wrap(bpsum);
