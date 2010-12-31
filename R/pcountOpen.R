@@ -10,6 +10,8 @@ pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
 mixture <- match.arg(mixture)
 dynamics <- match.arg(dynamics)
 fix <- match.arg(fix)
+if(identical(dynamics, "notrend") & !identical(lambdaformula, omegaformula))
+    stop("lambdaformula and omegaformula must be identical for notrend model") 
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))

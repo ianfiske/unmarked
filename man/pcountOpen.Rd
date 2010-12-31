@@ -2,22 +2,21 @@
 \alias{pcountOpen}
 \title{Fit the open N-mixture model of Dail and Madsen}
 \description{Fit the model of Dail and Madsen, which is 
-a generalized form of the Royle (2004) N-mixture model allowing for
-estimation of recruitment (births/imigrants) and 
-apparent survival (mortality/emigration).}
+a generalized form of the Royle (2004) N-mixture model for open populations.}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data, 
-	mixture = c("P", "NB"), K, fix=c("none", "gamma", "omega"), starts, 
-    method = "BFGS", se = TRUE, ...)
+	mixture = c("P", "NB"), K, dynamics=c("constant", "autoreg", "notrend"),
+    fix=c("none", "gamma", "omega"), starts, method = "BFGS", se = TRUE, ...)
 }
 \arguments{
   \item{lambdaformula}{Right-hand sided formula for initial abundance}
   \item{gammaformula}{Right-hand sided formula for recruitment rate}
-  \item{omegaformula}{Right-hand sided formula for survival probability}
+  \item{omegaformula}{Right-hand sided formula for apparent survival probability}
   \item{pformula}{Right-hand sided formula for detection probability}
   \item{data}{An object of class unmarkedFramePCountOpen. See details}
   \item{mixture}{character specifying mixture: either "P" or "NB".}
-  \item{K}{Integer upper index of integration for N-mixture.}
+  \item{K}{Integer defining upper bound of integration. This should be higher than the maximum observed count and high enough that it does not affect the parameter estimates. However, the higher the value the slower the compuatation.}
+  \item{dynamics}{Character string describing the type of population dynamics. "constant" indicates that there is no relationship between omega and gamma. "autoreg" is an auto-regressive model in which recruitment is modeled as gamma*N[i,t-1]. "notrend" model gamma as lambda*(1-omega) such that there is no temporal trend.}
   \item{fix}{If "omega", omega is fixed at 1. If "gamma", gamma is fixed at 0.}
   \item{starts}{vector of starting values}
   \item{method}{Optimization method used by \code{\link{optim}}.}
@@ -26,7 +25,11 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
 }
 \details{
 This model generalizes the Royle (2004) N-mixture model by relaxing the 
-closure assumption.
+closure assumption. The model includes two additional parameters: gamma, 
+the recruitment rate (births and immigrations), and omega, 
+the apparent survival rate (deaths and emigrations). Estimates of population size
+at each time period can be derived from these parameters, and thus so can trend
+estimates.
 
 The latent initial abundance distribution, 
 \eqn{f(N | \mathbf{\theta})}{f(N | theta)} can be set as either a 
@@ -103,7 +106,7 @@ umf <- unmarkedFramePCO(y = y)
 summary(umf)
 
 # Fit model and backtransform
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10)) # 14s on 64bit.
+(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))
 backTransform(m1, "lambda")
 backTransform(m1, "gamma")
 backTransform(m1, "omega")
