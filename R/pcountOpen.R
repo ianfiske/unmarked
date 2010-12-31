@@ -85,8 +85,8 @@ nll <- function(parms) {
     for(i in 1:M) {
         first.i <- first[i]
         last.i <- last[i]
-        cand <- k >= y[i, first.i]
-        N.i1 <- k[cand]
+        cand.i1 <- k >= y[i, first.i]
+        N.i1 <- k[cand.i1]
         g1 <- dbinom(y[i, first.i], N.i1, p[i, first.i])
         switch(mixture, 
             P = g2 <- dpois(N.i1, lambda[i]),
@@ -95,13 +95,13 @@ nll <- function(parms) {
             L[i] <- sum(g1 * g2)
             next
             }
-        g.star <- matrix(NA, lk, last.i-1)
-        g3.T <- tranProbs(k, omega[i, last.i-1], gamma[i, last.i-1], 
+        g.star <- matrix(NA, lk, last.i-1) # must have lk rows
+        g3.T <- tranProbs(k, N.i1, omega[i, last.i-1], gamma[i, last.i-1], 
             delta[i, last.i], dynamics) # not delta[i, last.i-1]
-        g1.T <- dbinom(y[i, last.i], k, p[i, last.i])
+        g1.T <- dbinom(y[i, last.i], N.i1, p[i, last.i])
         g.star[, last.i-1] <- colSums(g1.T * g3.T)
         if(first.i == last.i & first.i > 1) {
-            L[i] <- sum(g2 * colSums(g1 * g3.T[,cand] * g.star[cand, last.i-1]))
+            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[cand.i1, last.i-1]))
             next
             }
         if((last.i - first.i) > 1) { 
@@ -109,17 +109,19 @@ nll <- function(parms) {
                 if(is.na(y[i, t])) # time gap dealt with by delta
                     g.star[,t-1] <- g.star[,t]
                 else {
-                    g1.t <- dbinom(y[i, t], k, p[i, t])
-                    g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], 
+                    cand <- k >= y[i, t]
+                    N.it <- k[cand]
+                    g1.t <- dbinom(y[i, t], N.it, p[i, t])
+                    g3.t <- tranProbs(k, N.it, omega[i, t-1], gamma[i, t-1], 
                         delta[i, t], dynamics)
-                    g.star[, t-1] <- colSums(g1.t * g3.t * g.star[,t])
+                    g.star[, t-1] <- colSums(g1.t * g3.t * g.star[cand, t]) 
                     }
                 }
             }
         if(first.i == 1)
-            L[i] <- sum(g1 * g2 * g.star[cand, first.i])
+            L[i] <- sum(g1 * g2 * g.star[cand.i1, first.i])
         else
-            L[i] <- sum(g2 * colSums(g1 * g3.t[,cand]  * g.star[cand, first.i]))
+            L[i] <- sum(g2 * colSums(g1 * g3.t  * g.star[cand, first.i]))
         }
     -sum(log(L))
     }
