@@ -714,11 +714,10 @@ formatDelta <- function(d, y)
 
 
 # Markov transition probs for pcountOpen
-tranProbs <- function(Ni1, Ni2, omegaR, gammaR, deltaR, dynamicsR) 
+tranProbs <- function(Nr, omegaR, gammaR, deltaR, dynamicsR) 
 {
     .Call("tranProbs", 
-        as.integer(Ni1),
-        as.integer(Ni2),
+        as.integer(Nr),
         as.double(omegaR),
         as.double(gammaR),
         as.integer(deltaR),
