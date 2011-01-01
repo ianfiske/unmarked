@@ -34,25 +34,25 @@ test.tranProbs <- function()
     checkTrue(all.equal(colSums(tp1), rep(1, 101)))
 
 
-    tp1 <- tranProbs(Kr=0:4, omegaR=0.5, gammaR=1, deltaR=1, 
+    tp1 <- tranProbs(Nr=0:4, omegaR=0.5, gammaR=1, deltaR=1, 
         dynamicsR="constant")
     tp1r <- tranProbsR(0:4, omega=0.5, gamma=1, delta=1, 
         dynamics="constant")
     checkEquals(tp1, tp1r)
     
-    tp2 <- tranProbs(Kr=0:4, omegaR=0.5, gammaR=1, deltaR=3, 
+    tp2 <- tranProbs(Nr=0:4, omegaR=0.5, gammaR=1, deltaR=3, 
         dynamicsR="constant")
     tp2r <- tranProbsR(0:4, omega=0.5, gamma=1, delta=3, 
         dynamics="constant")
     checkEquals(tp2, tp2r)
     
-    tp3 <- tranProbs(Kr=0:4, omegaR=0.5, gammaR=1, deltaR=1, 
+    tp3 <- tranProbs(Nr=0:4, omegaR=0.5, gammaR=1, deltaR=1, 
         dynamicsR="autoreg")
     tp3r <- tranProbsR(0:4, omega=0.5, gamma=1, delta=1, 
         dynamics="autoreg")
     checkEquals(tp3, tp3r)
     
-    tp4 <- tranProbs(Kr=0:4, omegaR=0.5, gammaR=1, deltaR=5, 
+    tp4 <- tranProbs(Nr=0:4, omegaR=0.5, gammaR=1, deltaR=5, 
         dynamicsR="autoreg")
     tp4r <- tranProbsR(0:4, omega=0.5, gamma=1, delta=5, 
         dynamics="autoreg")

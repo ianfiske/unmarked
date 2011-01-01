@@ -110,7 +110,7 @@ nll <- function(parms) {
         g1.T <- dbinom(y[i, last.i], NT, p[i, last.i])
         g.star[, last.i-1] <- colSums(g1.T * g3.T)
         if(first.i == last.i & first.i > 1) {
-            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[Nsub1, last.i-1]))
+            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[NsubT,last.i-1])[NsubT])
             next
             }
         if((last.i - first.i) > 1) { 
@@ -122,18 +122,19 @@ nll <- function(parms) {
                     N <- k[Nsub]
                     g1.t <- dbinom(y[i, t], N, p[i, t])
                     if(identical(go.dims, "scalar"))
-                        g3.t <- g3[Nsub,]
+                        g3.t <- g3
                     else
                         g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], 
-                            delta[i, t], dynamics)[Nsub,]
-                    g.star[, t-1] <- colSums(g1.t * g3.t * g.star[Nsub, t]) 
+                            delta[i, t], dynamics)
+                    g.star[,t-1] <- colSums(g1.t * g3.t[Nsub,] * g.star[Nsub,t])
                     }
                 }
             }
         if(first.i == 1)
             L[i] <- sum(g1 * g2 * g.star[Nsub1, first.i])
         else
-            L[i] <- sum(g2 * colSums(g1 * g3.t  * g.star[Nsub1, first.i]))
+            L[i] <- sum(g2 * colSums(g1 * g3.t[Nsub1,] * 
+                g.star[Nsub1,first.i])[Nsub1])
         }
     -sum(log(L))
     }

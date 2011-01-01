@@ -737,6 +737,7 @@ tranProbsR <- function(N, omega, gamma, delta, dynamics) {
             bpsum[k, j] <- sum(dbinom(cmin0, N[j], omega) * 
                 dpois(N[k]-cmin0, gamma2))
             }}
+    bpsum <- t(t(bpsum) / colSums(bpsum))
     if(delta>1) {
         for(d in 2:delta) {
             bpsum <- bpsum %*% bpsum
