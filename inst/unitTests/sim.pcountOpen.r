@@ -33,7 +33,7 @@ backTransform(m1, "det")    # 0.72 detection probability
 
 
 set.seed(3223)
-nsim1 <- 50
+nsim1 <- 500
 simout1 <- matrix(NA, nsim1, 4)
 colnames(simout1) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim1) {
@@ -290,7 +290,7 @@ backTransform(m4, "det") # 0.76 detection probability
 
 
 set.seed(3223)
-nsim4 <- 5
+nsim4 <- 500
 simout4 <- matrix(NA, nsim4, 4)
 colnames(simout4) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim4) {
@@ -347,45 +347,42 @@ sim5 <- function(lambda=1, omega=0.8, p=0.7, M=50, T=5)
                             
 # Prepare data                               
 set.seed(434)
-umf4 <- unmarkedFramePCO(y = sim4())
+umf5 <- unmarkedFramePCO(y = sim5())
 
-summary(umf4)
+summary(umf5)
 
 # Fit model and backtransform
-system.time(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20, 
-    dynamics="autoreg"))  # 52s on 64bit.
+system.time(m5 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20, 
+    dynamics="notrend"))  # 5.2s on 64bit.
 
-backTransform(m4, "lambda") # 1.1 initial abundance
-backTransform(m4, "gamma")  # 0.47 recruitment rate
-backTransform(m4, "omega")  # 0.84 survival rate
-backTransform(m4, "det")    # 0.76 detection probability
+backTransform(m5, "lambda") #
+backTransform(m5, "omega")  # 
+backTransform(m5, "det")    # 
 
 
 set.seed(3223)
-nsim4 <- 5
-simout4 <- matrix(NA, nsim4, 4)
-colnames(simout4) <- c('lambda', 'gamma', 'omega', 'p')
-for(i in 1:nsim4) {
-    cat("sim4", i, "\n"); flush.console()
+nsim5 <- 500
+simout5 <- matrix(NA, nsim5, 3)
+colnames(simout5) <- c('lambda', 'omega', 'p')
+for(i in 1:nsim5) {
+    cat("sim5", i, "\n"); flush.console()
     lambda <- 1
-    gamma <- 0.5
     omega <- 0.7
     p <- 0.7
-    y.sim4 <- sim4(lambda, gamma, omega, p, M=100)
-    umf4 <- unmarkedFramePCO(y = y.sim4)
-    m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=30, dynamics="autoreg",
-        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
-    e <- coef(m4)
-    simout4[i, 1:2] <- exp(e[1:2])
-    simout4[i, 3:4] <- plogis(e[3:4])
+    y.sim5 <- sim5(lambda, omega, p, M=100)
+    umf5 <- unmarkedFramePCO(y = y.sim5)
+    m5 <- pcountOpen(~1, ~1, ~1, ~1, umf5, K=30, dynamics="notrend",
+        starts=c(log(lambda), plogis(omega), plogis(p)), se=FALSE)
+    e <- coef(m5)
+    simout5[i, 1] <- exp(e[1])
+    simout5[i, 2:3] <- plogis(e[2:3])
     }
 
-png("pcountOpenSim4.png", width=6, height=6, units="in", res=360)
+png("pcountOpenSim5.png", width=6, height=6, units="in", res=360)
 par(mfrow=c(2,2))
 hist(simout4[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
-hist(simout4[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
-hist(simout4[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
-hist(simout4[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
+hist(simout4[,2], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout4[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
 dev.off()    
 
 
