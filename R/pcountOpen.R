@@ -18,6 +18,7 @@ formula <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- unmarked:::getDesign(data, formula)
 y <- D$y; Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
 delta <- D$delta
+deltamax <- max(delta, na.rm=TRUE)
 M <- nrow(y)
 T <- ncol(y)
 y <- matrix(y, M, T)
@@ -42,7 +43,7 @@ nDP <- ncol(Xp)
 #Note, internal NAs are handled by formatDelta(). Treated as time gaps.
 equal.ints <- identical(length(table(delta)), 1L)
 go.dims <- ifelse(isTRUE(all.equal(gammaformula, ~1)) & 
-    isTRUE(all.equal(omegaformula, ~1)) & equal.ints, "scalar", "vector")
+    isTRUE(all.equal(omegaformula, ~1)), "scalar", "vector")
 
 if(identical(fix, "gamma")) {
     if(!identical(dynamics, "constant")) 
@@ -83,8 +84,14 @@ nll <- function(parms) {
             gamma <- matrix(exp(Xgam %*% parms[(nAP+1) : (nAP+nGP)]),
                 M, T-1, byrow=TRUE)
         }
-    if(identical(go.dims, "scalar"))
-        g3 <- tranProbs(k, omega[1,1], gamma[1,1], 1, dynamics)
+    if(identical(go.dims, "scalar")) {
+        g3 <- array(NA, c(lk, lk, deltamax))
+        g3[,,1] <- tranProbs(k, omega[1,1], gamma[1,1], 1, dynamics)
+        if(deltamax > 1) {
+            for(d in 2:deltamax)
+                g3[,,d] <- g3[,,d-1] %*% g3[,,d-1]
+            }
+        }
     L <- numeric(M)
     for(i in 1:M) {
         first.i <- first[i]
@@ -103,7 +110,7 @@ nll <- function(parms) {
         NT <- k[NsubT]
         g.star <- matrix(NA, lk, last.i-1) # must have lk rows
         if(identical(go.dims, "scalar"))
-            g3.T <- g3[NsubT,]
+            g3.T <- g3[NsubT,, delta[i, last.i]]
         else
             g3.T <- tranProbs(k, omega[i, last.i-1], gamma[i, last.i-1], 
                 delta[i, last.i], dynamics)[NsubT,] # not delta[i, last.i-1]
@@ -122,7 +129,7 @@ nll <- function(parms) {
                     N <- k[Nsub]
                     g1.t <- dbinom(y[i, t], N, p[i, t])
                     if(identical(go.dims, "scalar"))
-                        g3.t <- g3
+                        g3.t <- g3[,,delta[i, t]]
                     else
                         g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], 
                             delta[i, t], dynamics)
