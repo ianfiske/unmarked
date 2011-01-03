@@ -91,28 +91,29 @@ nll <- function(parms) {
     for(i in 1:M) {
         first.i <- first[i]
         last.i <- last[i]
-        Nsub1 <- k >= y[i, first.i]
-        N1 <- k[Nsub1]
-        g1 <- dbinom(y[i, first.i], N1, p[i, first.i])
+        delta.i1 <- delta[i, first.i]
+#        Nsub1 <- k >= y[i, first.i]
+#        N1 <- k[Nsub1]
+        g1 <- dbinom(y[i, first.i], k, p[i, first.i])
         switch(mixture, 
-            P = g2 <- dpois(N1, lambda[i]),
-            NB = g2 <- dnbinom(N1, size=exp(parms[nP]), mu=lambda[i]))    
-        if(first.i == last.i & first.i == 1) {
+            P = g2 <- dpois(k, lambda[i]),
+            NB = g2 <- dnbinom(k, size=exp(parms[nP]), mu=lambda[i]))    
+        if(first.i == last.i & delta.i1 == 1) {
             L[i] <- sum(g1 * g2)
             next
             }
-        NsubT <- k >= y[i, last.i]
-        NT <- k[NsubT]
+#        NsubT <- k >= y[i, last.i]
+#        NT <- k[NsubT]
         g.star <- matrix(NA, lk, last.i-1) # must have lk rows
         if(identical(go.dims, "scalar"))
-            g3.T <- g3[NsubT,, delta[i, last.i]]
+            g3.T <- g3[,, delta[i, last.i]]
         else
             g3.T <- tranProbs(k, omega[i, last.i-1], gamma[i, last.i-1], 
-                delta[i, last.i], dynamics)[NsubT,] # not delta[i, last.i-1]
-        g1.T <- dbinom(y[i, last.i], NT, p[i, last.i])
+                delta[i, last.i], dynamics)#[NsubT,] # not delta[i, last.i-1]
+        g1.T <- dbinom(y[i, last.i], k, p[i, last.i])
         g.star[, last.i-1] <- colSums(g1.T * g3.T)
-        if(first.i == last.i & first.i > 1) {
-            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[NsubT,last.i-1])[NsubT])
+        if(first.i == last.i & delta.i1 > 1) {
+            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[,last.i-1]))
             next
             }
         if((last.i - first.i) > 1) { 
@@ -120,29 +121,28 @@ nll <- function(parms) {
                 if(is.na(y[i, t])) # time gap dealt with by delta
                     g.star[,t-1] <- g.star[,t]
                 else {
-                    Nsub <- k >= y[i, t]
-                    N <- k[Nsub]
-                    g1.t <- dbinom(y[i, t], N, p[i, t])
+#                    Nsub <- k >= y[i, t]
+#                    N <- k[Nsub]
+                    g1.t <- dbinom(y[i, t], k, p[i, t])
                     if(identical(go.dims, "scalar"))
                         g3.t <- g3[,,delta[i, t]]
                     else
                         g3.t <- tranProbs(k, omega[i, t-1], gamma[i, t-1], 
                             delta[i, t], dynamics)
-                    g.star[,t-1] <- colSums(g1.t * g3.t[Nsub,] * g.star[Nsub,t])
+                    g.star[,t-1] <- colSums(g1.t * g3.t * g.star[,t])
                     }
                 }
             }
-        if(first.i == 1)
-            L[i] <- sum(g1 * g2 * g.star[Nsub1, first.i])
+        if(delta.i1 == 1)
+            L[i] <- sum(g1 * g2 * g.star[, first.i])
         else {
             # g3.t should use delta[i, first.i]
             if(identical(go.dims, "scalar"))
-                g3.1 <- g3[,,delta[i, first.i]]
+                g3.1 <- g3[,,delta.i1]
             else
                 g3.1 <- tranProbs(k, omega[i, first.i], gamma[i, first.i], 
-                    delta[i, first.i], dynamics)
-            L[i] <- sum(g2 * colSums(g1 * g3.1[Nsub1,] * 
-                g.star[Nsub1,first.i])[Nsub1])
+                    delta.i1, dynamics)
+            L[i] <- sum(g2 * colSums(g1 * g3.1 * g.star[,first.i]))
             }
         }
     -sum(log(L))

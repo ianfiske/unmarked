@@ -24,7 +24,7 @@ umf <- unmarkedFramePCO(y = sim1())
 summary(umf)
 
 # Fit model and backtransform
-system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))  # 14s on 64bit.
+system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))  # 3.7s on 64bit.
 
 backTransform(m1, "lambda") # 0.71 initial abundance
 backTransform(m1, "gamma")  # 0.45 recruitment rate
@@ -111,7 +111,7 @@ for(i in 1:nsim2) {
     obsCovs <- list(time = covs[,grep("time", cn)], 
         isolation = covs[,grep("isolation", cn)])     
     umf2 <- unmarkedFramePCO(y = y.sim2, siteCovs=siteCovs, obsCovs=obsCovs)
-    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=40, se=F, 
+    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=20, se=F, 
         starts=c(lam, gam, om, p))
     e <- coef(m2)
     simout2[i, ] <- e
@@ -141,7 +141,7 @@ dev.off()
 
 
 
-## Simulate uneven sampling period intervals
+## Simulate uneven sampling period intervals with all dates[i,1]==1
 set.seed(333)
 
 sim3 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=50, T=5)
@@ -196,7 +196,7 @@ max(y)
 system.time(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=TRUE, 
     starts=c(1.4, -0.7, 0.6, 0.6),
     control=list(maxit=50, trace=T, REPORT=1))) # 30 min using pure R
-                                                #  1 min using C++
+                                                #  4s using C++ and scalars
 backTransform(m3, "lambda")
 backTransform(m3, "gamma")
 backTransform(m3, "omega")
@@ -211,7 +211,7 @@ backTransform(m3, "det")
 
 
 set.seed(3223)
-nsim3 <- 50
+nsim3 <- 500
 simout3 <- matrix(NA, nsim3, 4)
 colnames(simout3) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim3) {
@@ -224,7 +224,7 @@ for(i in 1:nsim3) {
     y.sim3 <- yd$y
     dates3 <- yd$dates
     umf3 <- unmarkedFramePCO(y = y.sim3, dates=dates3)
-    m3 <- pcountOpen(~1, ~1, ~1, ~1, umf3, K=15, 
+    m3 <- pcountOpen(~1, ~1, ~1, ~1, umf3, K=15, # too low? 
         starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
     e <- coef(m3)
     simout3[i, 1:2] <- exp(e[1:2])
@@ -284,9 +284,9 @@ system.time(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20,
     dynamics="autoreg")) # 52s on 64bit.
 
 backTransform(m4, "lambda") # 1.1 initial abundance
-backTransform(m4, "gamma") # 0.47 recruitment rate
-backTransform(m4, "omega") # 0.84 survival rate
-backTransform(m4, "det") # 0.76 detection probability
+backTransform(m4, "gamma")  # 0.47 recruitment rate
+backTransform(m4, "omega")  # 0.84 survival rate
+backTransform(m4, "det")    # 0.76 detection probability
 
 
 set.seed(3223)
@@ -338,7 +338,7 @@ sim5 <- function(lambda=1, omega=0.8, p=0.7, M=50, T=5)
     gamma <- (1-omega)*lambda
     for(t in 1:(T-1)) {
         S[,t] <- rbinom(M, N[,t], omega)
-        G[,t] <- rpois(M, gamma*N[,t])
+        G[,t] <- rpois(M, gamma)
         N[,t+1] <- S[,t] + G[,t]
         }
     y[] <- rbinom(M*T, N, p)
@@ -352,8 +352,8 @@ umf5 <- unmarkedFramePCO(y = sim5())
 summary(umf5)
 
 # Fit model and backtransform
-system.time(m5 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20, 
-    dynamics="notrend"))  # 5.2s on 64bit.
+system.time(m5 <- pcountOpen(~1, ~1, ~1, ~1, umf5, K=20, 
+    dynamics="notrend"))  # 3.4s on 64bit.
 
 backTransform(m5, "lambda") #
 backTransform(m5, "omega")  # 
@@ -371,7 +371,7 @@ for(i in 1:nsim5) {
     p <- 0.7
     y.sim5 <- sim5(lambda, omega, p, M=100)
     umf5 <- unmarkedFramePCO(y = y.sim5)
-    m5 <- pcountOpen(~1, ~1, ~1, ~1, umf5, K=30, dynamics="notrend",
+    m5 <- pcountOpen(~1, ~1, ~1, ~1, umf5, K=20, dynamics="notrend",
         starts=c(log(lambda), plogis(omega), plogis(p)), se=FALSE)
     e <- coef(m5)
     simout5[i, 1] <- exp(e[1])
@@ -380,14 +380,114 @@ for(i in 1:nsim5) {
 
 png("pcountOpenSim5.png", width=6, height=6, units="in", res=360)
 par(mfrow=c(2,2))
-hist(simout4[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
-hist(simout4[,2], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
-hist(simout4[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
+hist(simout5[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout5[,2], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout5[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
 dev.off()    
 
 
 
 
 
+
+
+
+
+
+
+
+## Simulate data with some dates[i,1] > 1
+set.seed(333)
+
+sim6 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=50, T=5)
+{
+    y <- N <- date <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    date[,1] <- pmax(rpois(M, 3), 1)
+    
+    for(i in 1:M) {
+    if(date[i,1] > 1) {
+        for(d in 2:date[i, 1]) {
+            S1 <- rbinom(1, N[i, 1], omega)
+            G1 <- rpois(1, gamma)
+            N[i, 1] <- S1 + G1
+            }
+        }
+    for(t in 2:T) {
+        date[i, t] <- date[i, t-1] + 1
+        S[i, t-1] <- rbinom(1, N[i, t-1], omega)
+        G[i, t-1] <- rpois(1, gamma)
+        N[i, t] <- S[i, t-1] + G[i, t-1]
+        }}
+    y[] <- rbinom(M*T, N, p)
+    mode(date) <- "integer"
+    return(list(y=y, dates=date))
+}
+
+yd <- sim6()
+y <- yd$y
+dates <- yd$dates
+
+formatDelta <- unmarked:::formatDelta
+
+
+# y[1, 1] <- y[2,1] <- y[3,2] <- NA
+
+head(y)
+head(dates)
+head(formatDelta(dates, y))
+colSums(y)
+
+
+
+# Prepare data
+umfO <- unmarkedFramePCO(y = y, dates = dates)
+umfO
+max(y)
+
+# Fit model
+system.time(m6 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=25, se=TRUE, 
+    starts=c(1.4, -0.7, 0.6, 0.6),
+    control=list(maxit=50, trace=T, REPORT=1))) #  4s using C++ and scalars
+                                                
+backTransform(m6, "lambda")
+backTransform(m6, "gamma")
+backTransform(m6, "omega")
+backTransform(m6, "det")
+
+
+
+
+set.seed(3223)
+nsim6 <- 500
+simout6 <- matrix(NA, nsim6, 4)
+colnames(simout6) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim6) {
+    cat("sim6", i, "\n"); flush.console()
+    lambda <- 1
+    gamma <- 0.5
+    omega <- 0.8
+    p <- 0.7
+    yd <- sim6(lambda, gamma, omega, p, M=100)
+    y.sim6 <- yd$y
+    dates6 <- yd$dates
+    umf6 <- unmarkedFramePCO(y = y.sim6, dates=dates6)
+    m6 <- pcountOpen(~1, ~1, ~1, ~1, umf6, K=15, 
+        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
+    e <- coef(m6)
+    simout6[i, 1:2] <- exp(e[1:2])
+    simout6[i, 3:4] <- plogis(e[3:4])
+    }
+
+
+
+png("pcountOpenSim6.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout6[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout6[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout6[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout6[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
+dev.off()    
 
 

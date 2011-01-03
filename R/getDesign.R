@@ -349,9 +349,9 @@ setMethod("getDesign", "unmarkedFramePCO",
     Xgo <- cbind(Xgam, Xom)
     getGOdims <- function(x) {
         xm <- matrix(x, M, T-1, byrow=TRUE)
-        if(dims(unique(xm, MARGIN=1)) == c(1, T-1))
+        if(all(dim(unique(xm, MARGIN=1)) == c(1, T-1)))
             return("rowvec")
-        else if(dims(unique(xm, MARGIN=2)) == c(M, 1))
+        else if(all(dim(unique(xm, MARGIN=2)) == c(M, 1)))
             return("colvec")
         else return("matrix")
         }
