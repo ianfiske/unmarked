@@ -17,7 +17,7 @@ formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- unmarked:::getDesign(data, formula)
 y <- D$y; Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
-delta <- D$delta
+delta <- D$delta; go.dims <- D$go.dims
 deltamax <- max(delta, na.rm=TRUE)
 M <- nrow(y)
 T <- ncol(y)
@@ -39,11 +39,6 @@ nAP <- ncol(Xlam)
 nGP <- ncol(Xgam)
 nOP <- ncol(Xom)
 nDP <- ncol(Xp)
-
-#Note, internal NAs are handled by formatDelta(). Treated as time gaps.
-equal.ints <- identical(length(table(delta)), 1L)
-go.dims <- ifelse(isTRUE(all.equal(gammaformula, ~1)) & 
-    isTRUE(all.equal(omegaformula, ~1)), "scalar", "vector")
 
 if(identical(fix, "gamma")) {
     if(!identical(dynamics, "constant")) 
@@ -139,9 +134,16 @@ nll <- function(parms) {
             }
         if(first.i == 1)
             L[i] <- sum(g1 * g2 * g.star[Nsub1, first.i])
-        else
-            L[i] <- sum(g2 * colSums(g1 * g3.t[Nsub1,] * 
+        else {
+            # g3.t should use delta[i, first.i]
+            if(identical(go.dims, "scalar"))
+                g3.1 <- g3[,,delta[i, first.i]]
+            else
+                g3.1 <- tranProbs(k, omega[i, first.i], gamma[i, first.i], 
+                    delta[i, first.i], dynamics)
+            L[i] <- sum(g2 * colSums(g1 * g3.1[Nsub1,] * 
                 g.star[Nsub1,first.i])[Nsub1])
+            }
         }
     -sum(log(L))
     }

@@ -343,17 +343,41 @@ setMethod("getDesign", "unmarkedFramePCO",
     Xgam <- model.matrix(gamformula, Xgam.mf)
     Xom.mf <- model.frame(omformula, transCovs, na.action = NULL)
     Xom <- model.matrix(omformula, Xom.mf)
+    
+    # determine if gamma and omega are scalar, vector, or matrix valued
+    # Runtime is much faster for scalars and vectors
+    Xgo <- cbind(Xgam, Xom)
+    getGOdims <- function(x) {
+        xm <- matrix(x, M, T-1, byrow=TRUE)
+        if(dims(unique(xm, MARGIN=1)) == c(1, T-1))
+            return("rowvec")
+        else if(dims(unique(xm, MARGIN=2)) == c(M, 1))
+            return("colvec")
+        else return("matrix")
+        }
+    if(isTRUE(all.equal(gamformula, ~1)) & isTRUE(all.equal(omformula, ~1)))
+        go.dims <- "scalar"
+    else {
+        go.dims.vec <- apply(Xgo, 2, getGOdims)
+        if(all(go.dims.vec == "rowvec"))
+            go.dims <- "rowvec"
+        else if(all(go.dims.vec == "colvec"))
+            go.dims <- "colvec"
+        else
+            go.dims <- "matrix"
+        }
 	
     if(na.rm)
         out <- handleNA(umf, Xlam, Xgam, Xom, Xp, delta)
     else {   # delta needs to be formatted first
         delta <- formatDelta(delta, y)
         out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
-            delta=delta, removed.sites=integer(0))
+            delta=delta, removed.sites=integer(0), go.dims=go.dims)
         }
 	
     return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam, Xom = out$Xom, 
-        Xp = out$Xp, delta = out$delta, removed.sites = out$removed.sites))
+        Xp = out$Xp, delta = out$delta, removed.sites = out$removed.sites, 
+        go.dims = go.dims))
     })
     
   
