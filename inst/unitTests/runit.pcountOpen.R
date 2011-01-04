@@ -14,15 +14,15 @@ test.pcountOpen.null <- function()
 
   fm1 <- pcountOpen(~1, ~1, ~1, ~1, data = umf, se=FALSE, K=10, 
       starts=c(1, 0, 0, 7))
-  checkEqualsNumeric(coef(fm1), c(0.9565311, 0.2741022, 0.1352888, 7.0041290), 
+  checkEqualsNumeric(coef(fm1), c(0.9565118, 0.2743964, 0.1349845, 7.0041091), 
       tol = 1e-5)
 
   fm2 <- pcountOpen(~1, ~1, ~1, ~1, data = umf, se=FALSE, fix="gamma", K=10)
-  checkEqualsNumeric(coef(fm2), c(1.8219364, 8.7430266, -0.2873533), 
+  checkEqualsNumeric(coef(fm2), c(1.8219331, 8.7406381, -0.2873663), 
       tol = 1e-4)
 
   fm3 <- pcountOpen(~1, ~1, ~1, ~1, data = umf, se=FALSE, fix="omega", K=10)
-  checkEqualsNumeric(coef(fm3), c(1.6937578, -1.4762351, -0.1649877), 
+  checkEqualsNumeric(coef(fm3), c(1.8111032, -0.6342198, -0.4520630), 
       tol = 1e-5)
 }
 
@@ -46,8 +46,8 @@ test.pcountOpen.na <- function()
 
   fm1 <- pcountOpen(~1, ~1, ~1, ~1, data = umf1, se=FALSE, K=10, 
       starts=c(1.6, 0.24, 1.16, -0.268))
-  checkEqualsNumeric(coef(fm1), c(1.6722231, 0.2441238, 1.1623724, -0.2683158), 
-      tol = 1e-5)
+  checkEqualsNumeric(coef(fm1), 
+      c(1.49434036, 0.44381407, 0.80682012, 0.06490056), tol = 1e-5)
 
   y2 <- matrix(c(
       1, 2, 1, 4,
@@ -64,8 +64,8 @@ test.pcountOpen.na <- function()
 
   fm2 <- pcountOpen(~1, ~1, ~1, ~o1, data = umf2, se=FALSE, K=10, 
       starts=c(1.4, -1.3, 1.8, -1.1, 0.7))
-  checkEqualsNumeric(coef(fm2), c(1.4294109, -1.2762155, 1.8922928, -1.1444297, 
-      0.7388486), tol = 1e-4)
+  checkEqualsNumeric(coef(fm2), c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 
+      1.1605447), tol = 1e-4)
 
   y3 <- matrix(c(
       NA, 2, 1, 4,
@@ -79,7 +79,7 @@ test.pcountOpen.na <- function()
   umf3 <- unmarkedFramePCO(y = y3, siteCovs = siteCovs, obsCovs = obsCovs)
   fm3 <- pcountOpen(~1, ~1, ~1, ~1, data = umf3, se=FALSE, K=10, 
       starts=c(1.5, 0, 1, 0))
-  checkEqualsNumeric(coef(fm3), c(1.6931097, 0.2841317, 1.0706006, -0.2417096),
+  checkEqualsNumeric(coef(fm3), c(1.4751002, 0.4217504, 0.7234106, 0.1834803),
       tol = 1e-5)
   checkEquals(fm3@sitesRemoved, 6)
   
@@ -144,7 +144,7 @@ test.pcountOpen.delta <- function()
     umf <- unmarkedFramePCO(y=y, dates=dates4)
     fm <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10, starts=c(1.2, 0, 1.4, 1.2))
     checkEqualsNumeric(coef(fm), 
-        c(1.69726936, -0.31631624, 1.88162678, -0.08689978), tol = 1e-5)
+        c(1.2206233, -0.1280961, 0.5874789, 5.9916012), tol = 1e-5)
     
 }
   
