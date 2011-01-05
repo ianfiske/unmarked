@@ -404,15 +404,15 @@ setMethod("handleNA", "unmarkedFramePCO",
 		x.mat <- is.na(x.mat)
 		x.mat <- x.mat %*% obsToY
 		x.long <- as.vector(t(x.mat))
-		x.long == 1
+		x.long > 0
 		}
 
 	long.na2 <- function(x) {
 		x.mat <- matrix(x, M, T-1, byrow = TRUE)
 		x.mat <- is.na(x.mat)
-		x.mat <- x.mat %*% obsToY[-T,-T]
+		x.mat <- x.mat %*% obsToY[-T,-T] # [,-T]
 		x.long <- as.vector(t(x.mat))
-		x.long == 1
+		x.long > 0
 		}
 	
 	Xp.long.na <- apply(Xp, 2, long.na)
@@ -443,7 +443,7 @@ setMethod("handleNA", "unmarkedFramePCO",
 	y <- matrix(y.long, M, T, byrow = TRUE)
 	delta <- matrix(delta.long, M, T, byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
-	sites.to.remove <- sites.to.remove
+  # Should also remove sites with no omega and gamma before an observation
 	
 	delta <- formatDelta(delta, y)
 	

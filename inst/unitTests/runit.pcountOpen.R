@@ -62,10 +62,20 @@ test.pcountOpen.na <- function()
   obsCovs <- list(o1 = oc)
   umf2 <- unmarkedFramePCO(y = y2, siteCovs = siteCovs, obsCovs = obsCovs)
 
-  fm2 <- pcountOpen(~1, ~1, ~1, ~o1, data = umf2, se=FALSE, K=10, 
+  fm2.1 <- pcountOpen(~1, ~1, ~1, ~o1, data = umf2, se=FALSE, K=10, 
       starts=c(1.4, -1.3, 1.8, -1.1, 0.7))
-  checkEqualsNumeric(coef(fm2), c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 
-      1.1605447), tol = 1e-4)
+  checkEqualsNumeric(coef(fm2.1), 
+      c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 1.1605447), tol = 1e-4)
+
+  fm2.2 <- pcountOpen(~1, ~1, ~o1, ~1, data = umf2, se=FALSE, K=10, 
+      starts=c(1.4, -1.3, 1.8, -1.1, 0.7))
+  checkEqualsNumeric(coef(fm2.2), 
+      c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 1.1605447), tol = 1e-4)
+
+  fm2.3 <- pcountOpen(~1, ~o1, ~1, ~1, data = umf2, se=FALSE, K=10, 
+      starts=c(1, 0, 0, -5, -1))
+  checkEqualsNumeric(coef(fm2.3), 
+      c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 1.1605447), tol = 1e-4)
 
   y3 <- matrix(c(
       NA, 2, 1, 4,
@@ -102,8 +112,10 @@ test.pcountOpen.delta <- function()
         0, 1, NA, 3,
         5, 3, 3, NA,
         NA, 4, NA, NA), M, T, byrow=TRUE)
+    if(!exists("formatDelta"))
+        formatDelta <- unmarked:::formatDelta
     dates <- matrix(c(1,3,5,7), M, T, byrow=TRUE)
-    delta <- unmarked:::formatDelta(dates, y)
+    delta <- formatDelta(dates, y)
     ans <- matrix(c(
         1, 2, 2, 2,
         1, 2, 4, 2,
@@ -119,7 +131,7 @@ test.pcountOpen.delta <- function()
       2, 4, 6, 8,
       1, 4, 6, 8, 
       2, 4, 6, 8), M, T, byrow=TRUE)
-    delta2 <- unmarked:::formatDelta(dates2, y)
+    delta2 <- formatDelta(dates2, y)
     ans2 <- matrix(c(
         2, 3, 2, 2,
         1, 3, 5, 2,
@@ -140,11 +152,36 @@ test.pcountOpen.delta <- function()
     dates4 <- dates2
     dates4[is.na(y)] <- NA
     mode(dates4) <- "integer"
-    delta4 <- unmarked:::formatDelta(dates4, y)
+    delta4 <- formatDelta(dates4, y)
     umf <- unmarkedFramePCO(y=y, dates=dates4)
     fm <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10, starts=c(1.2, 0, 1.4, 1.2))
     checkEqualsNumeric(coef(fm), 
         c(1.2206233, -0.1280961, 0.5874789, 5.9916012), tol = 1e-5)
+
+    y5 <- matrix(c(
+        1, NA, 1, 4,
+        NA, 3, 2, 1,
+        0, 1, 2, NA,
+        NA, NA, 3, NA,
+        NA, 4, NA, NA), M, T, byrow=TRUE)
+    dates5 <- matrix(c(
+        2, NA, 6, 8, 
+        NA, 4, 6, 8,
+        2, 4, 6, NA,
+        NA, NA, 6, NA, 
+        2, 4, 6, 8), M, T, byrow=TRUE)
+    delta5 <- matrix(c(
+        1, NA, 4, 2,
+        NA, 2, 2, 2,
+        1, 2, 2, NA,
+        NA, NA, 4, NA, # 4 not 5 b/c primary period 1 is day 2
+        1, 2, 2, 2), M, T, byrow=TRUE)
+    checkEquals(formatDelta(dates5, y5), delta5)
+
+    dates6 <- y6 <- matrix(c(2L, 1L), 1, 2)
+    checkException(unmarkedFramePCO(y=y6, dates=dates6))
+    
+    
     
 }
   

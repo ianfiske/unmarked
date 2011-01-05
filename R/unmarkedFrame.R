@@ -289,7 +289,7 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
         }
     y.na <- which(is.na(y))
     d.na <- which(is.na(dates))
-    if(any(!d.na %in% y.na))
+    if(!all(d.na %in% y.na))
         stop("dates must be supplied for all non-missing values of y")
     increasing <- function(x) {
         x <- x[!is.na(x)]

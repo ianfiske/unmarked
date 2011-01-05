@@ -679,7 +679,6 @@ formatDelta <- function(d, y)
     M <- nrow(y)
     T <- ncol(y)
     d <- d - min(d, na.rm=TRUE) + 1
-    dtab <- table(d)
     dout <- matrix(NA, M, T)
     dout[,1] <- d[,1]
     dout[,2:T] <- t(apply(d, 1, diff))
@@ -689,13 +688,15 @@ formatDelta <- function(d, y)
             y.in <- y[i, 1:last]
             d.in <- d[i, 1:last]
             if(any(is.na(y.in))) {
-                for(j in last:3) { # first will always be time since 1
+                for(j in last:2) { # first will always be time since 1
                     nextReal <- which(!is.na(y[i, 1:(j-1)]))
-                    nextReal <- ifelse(length(nextReal) > 0, max(nextReal), 1)
-                    dout[i, j] <- d[i, j] - d[i, nextReal]
+                    if(length(nextReal) > 0)
+                        dout[i, j] <- d[i, j] - d[i, max(nextReal)]
+                    else
+                        dout[i, j] <- d[i, j] - 1
                     }
-                first <- ifelse(is.na(y[i, 1]), 1, d[i, 1])
-                dout[i, 2] <- d[i, 2] - first
+#                first <- ifelse(is.na(y[i, 1]), 1, d[i, 1])
+#                dout[i, 1] <- d[i, 2] - first
                 }
             }
         }
@@ -716,6 +717,17 @@ formatDelta <- function(d, y)
 # Markov transition probs for pcountOpen
 tranProbs <- function(Nr, omegaR, gammaR, deltaR, dynamicsR) 
 {
+    if(any(Nr < 0))
+        stop("N should be a non-negative integer")
+    if(any(is.na(omegaR)) | any(is.na(gammaR)))
+        stop("Missing values are not allowed in omega or gamma")
+    if(length(omegaR) != 1 | length(gammaR) != 1 | length(deltaR) != 1)
+        stop("omega, gamma, and delta must be scalars")
+    if(any(is.na(deltaR)))
+        stop("Delta cannot be NA")
+    if(!dynamicsR %in% c("constant", "autoreg", "notrend"))
+        stop("dynamics must be one of: constant, autoreg, or notrend")
+    
     .Call("tranProbs", 
         as.integer(Nr),
         as.double(omegaR),

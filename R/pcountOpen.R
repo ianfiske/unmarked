@@ -81,10 +81,16 @@ nll <- function(parms) {
         }
     if(identical(go.dims, "scalar")) {
         g3 <- array(NA, c(lk, lk, deltamax))
-        g3[,,1] <- tranProbs(k, omega[1,1], gamma[1,1], 1, dynamics)
+        g3[,,1] <- tranProbs(k, omega[1, first[1]], gamma[1, first[1]], 
+            1, dynamics)
         if(deltamax > 1) {
-            for(d in 2:deltamax)
+            for(d in 2:deltamax) {
                 g3[,,d] <- g3[,,d-1] %*% g3[,,d-1]
+                cs <- colSums(g3[,,d])
+                # multiplying small probs can induce error
+                if(!any(is.na(cs)) & any(cs != 1)) 
+                    g3[,,d] <- g3[,,d] / matrix(cs, lk, lk, byrow=TRUE)
+                }
             }
         }
     L <- numeric(M)
@@ -92,8 +98,6 @@ nll <- function(parms) {
         first.i <- first[i]
         last.i <- last[i]
         delta.i1 <- delta[i, first.i]
-#        Nsub1 <- k >= y[i, first.i]
-#        N1 <- k[Nsub1]
         g1 <- dbinom(y[i, first.i], k, p[i, first.i])
         switch(mixture, 
             P = g2 <- dpois(k, lambda[i]),
@@ -102,27 +106,28 @@ nll <- function(parms) {
             L[i] <- sum(g1 * g2)
             next
             }
-#        NsubT <- k >= y[i, last.i]
-#        NT <- k[NsubT]
-        g.star <- matrix(NA, lk, last.i-1) # must have lk rows
+        g1.T <- dbinom(y[i, last.i], k, p[i, last.i])
+        g.star <- matrix(NA, lk, last.i-1) 
         if(identical(go.dims, "scalar"))
             g3.T <- g3[,, delta[i, last.i]]
-        else
-            g3.T <- tranProbs(k, omega[i, last.i-1], gamma[i, last.i-1], 
-                delta[i, last.i], dynamics)#[NsubT,] # not delta[i, last.i-1]
-        g1.T <- dbinom(y[i, last.i], k, p[i, last.i])
-        g.star[, last.i-1] <- colSums(g1.T * g3.T)
+        else {
+            last.gamma.i <- max(which(!is.na(gamma[i,])))
+            last.omega.i <- max(which(!is.na(omega[i,])))
+            g3.T <- tranProbs(k, omega[i, last.omega.i], gamma[i, last.gamma.i],
+                delta[i, last.i], dynamics)
+            }
         if(first.i == last.i & delta.i1 > 1) {
-            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star[,last.i-1]))
+            g.star0 <- colSums(g1.T * g3.T)
+            L[i] <- sum(g2 * colSums(g1 * g3.T * g.star0))
             next
             }
+        g.star[, last.i-1] <- colSums(g1.T * g3.T)
         if((last.i - first.i) > 1) { 
             for(t in (last.i-1):(first.i+1)) {
-                if(is.na(y[i, t])) # time gap dealt with by delta
+                if(is.na(y[i, t]) | is.na(omega[i, t-1]) | is.na(gamma[i, t-1]))
+                    # time gap is dealt with by delta
                     g.star[,t-1] <- g.star[,t]
                 else {
-#                    Nsub <- k >= y[i, t]
-#                    N <- k[Nsub]
                     g1.t <- dbinom(y[i, t], k, p[i, t])
                     if(identical(go.dims, "scalar"))
                         g3.t <- g3[,,delta[i, t]]
