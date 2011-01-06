@@ -92,6 +92,41 @@ test.pcountOpen.na <- function()
   checkEqualsNumeric(coef(fm3), c(1.4751002, 0.4217504, 0.7234106, 0.1834803),
       tol = 1e-5)
   checkEquals(fm3@sitesRemoved, 6)
+
+
+
+  y4 <- matrix(c(
+      NA, 2, 1, 4,
+      3, 1, 2, 1,
+      0, 1, 2, 1,
+      5, 1, 3, 1,
+      1, 1, 3, 1, 
+      2, 1, 1, 1), 6, 4, byrow=TRUE)
+  go4 <- matrix(c(
+      NA, NA, NA, # remove y[1, 2:4]
+      NA, 1, 2,   # remove y[2, 2]
+      0, NA, 2,   # remove y[3, 3]. Creates an interior NA
+      5, 1, NA,   # remove y[4, 4]. Creates an end NA
+      1, NA, NA,  # remove y[5, 3:4] 
+      NA, NA, 1), 6, 3, byrow=TRUE)
+  o2y <- matrix(c(
+      1, 0, 0,
+      0, 1, 0, 
+      0, 0, 1), 3, 3, byrow=TRUE)
+  y4.na <- is.na(go4) %*% o2y
+  y4.2 <- y4
+  y4.2[,-1][y4.na>0] <- NA
+  y4.2
+  
+  umf4 <- unmarkedFramePCO(y=y4, obsCovs=list(go4=cbind(go4, 1)))
+
+  fm4.1 <- pcountOpen(~1, ~go4, ~1, ~1, umf4, se=FALSE, 
+      starts=c(.8, .5, -.3, -1.5, 6))
+  checkEquals(fm4.1@sitesRemoved, 1)
+
+  fm4.2 <- pcountOpen(~1, ~1, ~go4, ~1, umf4, se=FALSE, 
+      starts=c(.8, 0, 5, -5, 7))
+  checkEquals(fm4.2@sitesRemoved, 1)
   
 
 }

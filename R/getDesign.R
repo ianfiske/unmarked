@@ -407,10 +407,15 @@ setMethod("handleNA", "unmarkedFramePCO",
 		x.long > 0
 		}
 
+  o2y2 <- obsToY[-T, -T]
+  #diag(o2y2) <- 0
+  #diag(o2y2[,-1]) <- 1
+  #o2y2 <- o2y2[-T, -T]
+
 	long.na2 <- function(x) {
 		x.mat <- matrix(x, M, T-1, byrow = TRUE)
-		x.mat <- is.na(x.mat)
-		x.mat <- x.mat %*% obsToY[-T,-T] # [,-T]
+		x.mat <- is.na(x.mat)		
+		x.mat <- x.mat %*% o2y2
 		x.long <- as.vector(t(x.mat))
 		x.long > 0
 		}
@@ -430,7 +435,8 @@ setMethod("handleNA", "unmarkedFramePCO",
 	
 	covs.na <- apply(cbind(Xlam.long.na, Xp.long.na, delta.long.na), 1, any)
 	covs.na2 <- apply(cbind(Xgam.long.na, Xom.long.na), 1, any)
-	covs.na[-seq(T, M*T, by=T)] <- covs.na[-seq(T, M*T, by=T)] | covs.na2 
+	# If gamma[1, 1] is NA, remove y[1, 2]
+	covs.na[-seq(1, M*T, by=T)] <- covs.na[-seq(1, M*T, by=T)] | covs.na2 
 	
 	## are any NA in covs not in y already?
 	y.new.na <- covs.na & !y.long.na
@@ -444,6 +450,21 @@ setMethod("handleNA", "unmarkedFramePCO",
 	delta <- matrix(delta.long, M, T, byrow = TRUE)
 	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
   # Should also remove sites with no omega and gamma before an observation
+  # remove all observations before the one after the first real omega/gamma
+#  covs.na2.mat <- matrix(covs.na2, M, T-1, byrow=TRUE)
+#  last.y <- apply(y, 1, function(x) max(which(!is.na(y))))
+#  last.go <- apply(covs.na2.mat, 1, function(x)
+#      if(any(x)) {
+#          if(all(x))
+#              return(0)
+#          else
+#              return(max(which(!x)))
+#          }
+#      else
+#          return(T-1))
+#  no.go.before.y <- last.y <= last.go
+          
+
 	
 	delta <- formatDelta(delta, y)
 	

@@ -124,7 +124,7 @@ nll <- function(parms) {
         g.star[, last.i-1] <- colSums(g1.T * g3.T)
         if((last.i - first.i) > 1) { 
             for(t in (last.i-1):(first.i+1)) {
-                if(is.na(y[i, t]) | is.na(omega[i, t-1]) | is.na(gamma[i, t-1]))
+                if(is.na(y[i, t]))
                     # time gap is dealt with by delta
                     g.star[,t-1] <- g.star[,t]
                 else {
