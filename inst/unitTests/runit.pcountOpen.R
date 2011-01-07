@@ -70,12 +70,13 @@ test.pcountOpen.na <- function()
   fm2.2 <- pcountOpen(~1, ~1, ~o1, ~1, data = umf2, se=FALSE, K=10, 
       starts=c(1.4, -1.3, 1.8, -1.1, 0.7))
   checkEqualsNumeric(coef(fm2.2), 
-      c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 1.1605447), tol = 1e-4)
+      c(1.36621986, 0.88669259, -2.46690971, -8.93330624, 0.02535309),
+      tol = 1e-5)
 
   fm2.3 <- pcountOpen(~1, ~o1, ~1, ~1, data = umf2, se=FALSE, K=10, 
       starts=c(1, 0, 0, -5, -1))
   checkEqualsNumeric(coef(fm2.3), 
-      c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 1.1605447), tol = 1e-4)
+      c(0.7039422, 0.5307081, -0.2339607, -1.8495494, 4.5613312), tol = 1e-4)
 
   y3 <- matrix(c(
       NA, 2, 1, 4,

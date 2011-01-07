@@ -3,7 +3,7 @@ library(unmarked)
 
 ## Simulate no covariates, constant sampling period intervals	
 
-sim1 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=50, T=5)
+sim1 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5)
 {
     y <- N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
@@ -42,7 +42,7 @@ for(i in 1:nsim1) {
     gamma <- 0.5
     omega <- 0.8
     p <- 0.7
-    y.sim1 <- sim1(lambda, gamma, omega, p, M=100)
+    y.sim1 <- sim1(lambda, gamma, omega, p)
     umf1 <- unmarkedFramePCO(y = y.sim1)
     m1 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=15, 
         starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
@@ -67,7 +67,7 @@ dev.off()
 
 
 
-sim2 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=50, T=5)
+sim2 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100, T=5)
 {
     y <- gamma <- omega <- det <- N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
@@ -90,11 +90,11 @@ sim2 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=50, T=5)
         isolation=isolation, time=time)))
 }
                             
-sim2()
 
 
 
-nsim2 <- 50
+
+nsim2 <- 500
 simout2 <- matrix(NA, nsim2, 8)
 colnames(simout2) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1', 'p0', 'p1')
 for(i in 1:nsim2) {
@@ -111,7 +111,7 @@ for(i in 1:nsim2) {
     obsCovs <- list(time = covs[,grep("time", cn)], 
         isolation = covs[,grep("isolation", cn)])     
     umf2 <- unmarkedFramePCO(y = y.sim2, siteCovs=siteCovs, obsCovs=obsCovs)
-    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=20, se=F, 
+    m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2, K=30, se=F, 
         starts=c(lam, gam, om, p))
     e <- coef(m2)
     simout2[i, ] <- e
@@ -144,7 +144,7 @@ dev.off()
 ## Simulate uneven sampling period intervals with all dates[i,1]==1
 set.seed(333)
 
-sim3 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=50, T=5)
+sim3 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=100, T=5)
 {
     y <- N <- date <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
@@ -171,36 +171,6 @@ sim3 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=50, T=5)
     return(list(y=y, dates=date))
 }
 
-yd <- sim3()
-y <- yd$y
-dates <- yd$dates
-
-formatDelta <- unmarked:::formatDelta
-
-
-# y[1, 1] <- y[2,1] <- y[3,2] <- NA
-
-head(y)
-head(dates)
-head(formatDelta(dates, y))
-colSums(y)
-
-
-
-# Prepare data
-umfO <- unmarkedFramePCO(y = y, dates = dates)
-umfO
-max(y)
-
-# Fit model
-system.time(m3 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=15, se=TRUE, 
-    starts=c(1.4, -0.7, 0.6, 0.6),
-    control=list(maxit=50, trace=T, REPORT=1))) # 30 min using pure R
-                                                #  4s using C++ and scalars
-backTransform(m3, "lambda")
-backTransform(m3, "gamma")
-backTransform(m3, "omega")
-backTransform(m3, "det")
 
 
 
@@ -210,21 +180,21 @@ backTransform(m3, "det")
 
 
 
-set.seed(3223)
+set.seed(373)
 nsim3 <- 500
 simout3 <- matrix(NA, nsim3, 4)
 colnames(simout3) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim3) {
     cat("sim3", i, "\n"); flush.console()
-    lambda <- 1
-    gamma <- 0.5
-    omega <- 0.8
+    lambda <- 4
+    gamma <- 0.3
+    omega <- 0.7
     p <- 0.7
     yd <- sim3(lambda, gamma, omega, p, M=100)
     y.sim3 <- yd$y
     dates3 <- yd$dates
     umf3 <- unmarkedFramePCO(y = y.sim3, dates=dates3)
-    m3 <- pcountOpen(~1, ~1, ~1, ~1, umf3, K=15, # too low? 
+    m3 <- pcountOpen(~1, ~1, ~1, ~1, umf3, K=20, 
         starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
     e <- coef(m3)
     simout3[i, 1:2] <- exp(e[1:2])
@@ -259,7 +229,7 @@ dev.off()
 
 
 
-sim4 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=50, T=5)
+sim4 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5)
 {
     y <- N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
@@ -273,20 +243,6 @@ sim4 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=50, T=5)
     return(y)
 }
                             
-# Prepare data
-set.seed(434)
-umf4 <- unmarkedFramePCO(y = sim4())
-
-summary(umf4)
-
-# Fit model and backtransform
-system.time(m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=20,
-    dynamics="autoreg")) # 52s on 64bit.
-
-backTransform(m4, "lambda") # 1.1 initial abundance
-backTransform(m4, "gamma")  # 0.47 recruitment rate
-backTransform(m4, "omega")  # 0.84 survival rate
-backTransform(m4, "det")    # 0.76 detection probability
 
 
 set.seed(3223)
@@ -299,7 +255,7 @@ for(i in 1:nsim4) {
     gamma <- 0.5
     omega <- 0.7
     p <- 0.7
-    y.sim4 <- sim4(lambda, gamma, omega, p, M=100)
+    y.sim4 <- sim4(lambda, gamma, omega, p)
     umf4 <- unmarkedFramePCO(y = y.sim4)
     m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=30, dynamics="autoreg",
         starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
@@ -330,7 +286,7 @@ dev.off()
 
 
 
-sim5 <- function(lambda=1, omega=0.8, p=0.7, M=50, T=5)
+sim5 <- function(lambda=1, omega=0.8, p=0.7, M=100, T=5)
 {
     y <- N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
@@ -345,19 +301,6 @@ sim5 <- function(lambda=1, omega=0.8, p=0.7, M=50, T=5)
     return(y)
 }
                             
-# Prepare data                               
-set.seed(434)
-umf5 <- unmarkedFramePCO(y = sim5())
-
-summary(umf5)
-
-# Fit model and backtransform
-system.time(m5 <- pcountOpen(~1, ~1, ~1, ~1, umf5, K=20, 
-    dynamics="notrend"))  # 3.4s on 64bit.
-
-backTransform(m5, "lambda") #
-backTransform(m5, "omega")  # 
-backTransform(m5, "det")    # 
 
 
 set.seed(3223)
@@ -369,7 +312,7 @@ for(i in 1:nsim5) {
     lambda <- 1
     omega <- 0.7
     p <- 0.7
-    y.sim5 <- sim5(lambda, omega, p, M=100)
+    y.sim5 <- sim5(lambda, omega, p)
     umf5 <- unmarkedFramePCO(y = y.sim5)
     m5 <- pcountOpen(~1, ~1, ~1, ~1, umf5, K=20, dynamics="notrend",
         starts=c(log(lambda), plogis(omega), plogis(p)), se=FALSE)
@@ -399,7 +342,7 @@ dev.off()
 ## Simulate data with some dates[i,1] > 1
 set.seed(333)
 
-sim6 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=50, T=5)
+sim6 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=100, T=5)
 {
     y <- N <- date <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
@@ -424,37 +367,6 @@ sim6 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=50, T=5)
     mode(date) <- "integer"
     return(list(y=y, dates=date))
 }
-
-yd <- sim6()
-y <- yd$y
-dates <- yd$dates
-
-formatDelta <- unmarked:::formatDelta
-
-
-# y[1, 1] <- y[2,1] <- y[3,2] <- NA
-
-head(y)
-head(dates)
-head(formatDelta(dates, y))
-colSums(y)
-
-
-
-# Prepare data
-umfO <- unmarkedFramePCO(y = y, dates = dates)
-umfO
-max(y)
-
-# Fit model
-system.time(m6 <- pcountOpen(~1, ~1, ~1, ~1, umfO, K=25, se=TRUE, 
-    starts=c(1.4, -0.7, 0.6, 0.6),
-    control=list(maxit=50, trace=T, REPORT=1))) #  4s using C++ and scalars
-                                                
-backTransform(m6, "lambda")
-backTransform(m6, "gamma")
-backTransform(m6, "omega")
-backTransform(m6, "det")
 
 
 
