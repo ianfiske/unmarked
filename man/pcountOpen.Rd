@@ -13,10 +13,10 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
   \item{gammaformula}{Right-hand sided formula for recruitment rate}
   \item{omegaformula}{Right-hand sided formula for apparent survival probability}
   \item{pformula}{Right-hand sided formula for detection probability}
-  \item{data}{An object of class unmarkedFramePCountOpen. See details}
+  \item{data}{An object of class \code{\link{unmarkedFramePCO}}. See details}
   \item{mixture}{character specifying mixture: either "P" or "NB" for the Poisson and negative binomial distributions.}
   \item{K}{Integer defining upper bound of discrete integration. This should be higher than the maximum observed count and high enough that it does not affect the parameter estimates. However, the higher the value the slower the compuatation.}
-  \item{dynamics}{Character string describing the type of population dynamics. "constant" indicates that there is no relationship between omega and gamma. "autoreg" is an auto-regressive model in which recruitment is modeled as gamma*N_{it-1}. "notrend" model gamma as lambda*(1-omega) such that there is no temporal trend.}
+  \item{dynamics}{Character string describing the type of population dynamics. "constant" indicates that there is no relationship between omega and gamma. "autoreg" is an auto-regressive model in which recruitment is modeled as gamma*N[i,t-1]. "notrend" model gamma as lambda*(1-omega) such that there is no temporal trend.}
   \item{fix}{If "omega", omega is fixed at 1. If "gamma", gamma is fixed at 0.}
   \item{starts}{vector of starting values}
   \item{method}{Optimization method used by \code{\link{optim}}.}
@@ -53,7 +53,7 @@ covariates of \eqn{p_it}{p_it} use the logit link.
  
 }
 \value{
-An unmarkedFitPCO object.
+An object of class unmarkedFitPCO.
 }
 \references{
 Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
@@ -75,7 +75,7 @@ At this time, the robust design is not available. However, if you have multiple 
 \section{Warning}{This function can be extremely slow, especially if there are covariates of gamma or omega. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates will also help with speed. }
 
 \seealso{
-\code{\link{pcount}}
+\code{\link{pcount}, \link{unmarkedFramePCO}}
 }
 
 \examples{

@@ -1,4 +1,4 @@
-\name{unmarkedFrame}
+\name{unmarkedFramePCO}
 \title{Create an object of class unmarkedFramePCO that contains data used by pcountOpen.}
 \alias{unmarkedFramePCO}
 \usage{unmarkedFramePCO(y, siteCovs=NULL, obsCovs=NULL, dates)}
