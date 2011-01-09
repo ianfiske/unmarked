@@ -2,14 +2,12 @@
 \alias{unmarked}
 \alias{unmarked-package}
 \title{Models for Data from Unmarked Animals}
-\description{\emph{unmarked} fits hierarchical models of occurrence and abundance to data collected on species subject to imperfect detection.  Examples include single- and multi-season site occupancy models, binomial mixture models, and multinomial mixture models. The data can arise from survey methods such occurrence sampling, temporally replicated counts, removal sampling, double-observer sampling, and distance sampling. Parameters governing the state and observation processes can be modeled as functions of covariates. General 
-treatment of these models can be found in MacKenzie et al. (2006) and 
-Royle and Dorazio (2008).}
+\description{\emph{unmarked} fits hierarchical models of animal occurrence and abundance to data collected on species subject to imperfect detection.  Examples include single- and multi-season site occupancy models, binomial mixture models, and multinomial mixture models. The data can arise from survey methods such as occurrence sampling, temporally replicated counts, removal sampling, double observer sampling, and distance sampling. Parameters governing the state and observation processes can be modeled as functions of covariates. General treatment of these models can be found in MacKenzie et al. (2006) and Royle and Dorazio (2008).}
 
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.8-9\cr
+Version: \tab 0.9-0\cr
 License: \tab GPL (>= 3)\cr
 }
 
@@ -39,6 +37,9 @@ sampling.
 of Royle (2004b) that allows for estimating availability and detection 
 probability.  
 
+\code{\link{pcountOpen}} fits the open population model of Dail and Madsen (in press) to repeated count data. This is a genearlized form of the Royle (2004a) N-mixture model that includes parameters for recruitment and apparent survival.
+
+
 \strong{Data:} All data are passed to unmarked's estimation 
 functions as a formal S4 class called an unmarkedFrame, which has child classes 
 for each model type. This allows metadata (eg as distance interval cut points, 
@@ -63,8 +64,9 @@ differs from standard R convention, but it is informative about the model
 being fit. The meaning of these covariates, or what they
 model, is full described in the help files for the individual functions
 and is not the same for all functions. For models with more than two processes
-(eg \code{\link{colext}}, \code{\link{gmultmix}}), single right-hand sided 
-formulas (only one tilda) are used to model each parameter.
+(eg \code{\link{colext}}, \code{\link{gmultmix}}, \code{\link{pcountOpen}}), 
+single right-hand sided formulas (only one tilda) are used to model each 
+parameter.
 
 \strong{Utility Functions:}  \emph{unmarked} contains several utility
 functions for organizing data into the form required by its model-fitting
@@ -152,6 +154,8 @@ with(Ep, {
 }
 
 \references{
+
+Dail, D. and L. Madsen. In press. Models for estimating abundance from repeated counts of an open metapopulation. \emph{Biometrics}
 
 Kéry, M., Royle, J. A., and Schmid, H. 2005 Modeling avian abundance from
   replicated counts using binomial mixture models. \emph{Ecological

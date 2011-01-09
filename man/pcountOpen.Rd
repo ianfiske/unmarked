@@ -14,9 +14,9 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
   \item{omegaformula}{Right-hand sided formula for apparent survival probability}
   \item{pformula}{Right-hand sided formula for detection probability}
   \item{data}{An object of class unmarkedFramePCountOpen. See details}
-  \item{mixture}{character specifying mixture: either "P" or "NB".}
-  \item{K}{Integer defining upper bound of integration. This should be higher than the maximum observed count and high enough that it does not affect the parameter estimates. However, the higher the value the slower the compuatation.}
-  \item{dynamics}{Character string describing the type of population dynamics. "constant" indicates that there is no relationship between omega and gamma. "autoreg" is an auto-regressive model in which recruitment is modeled as gamma*N[i,t-1]. "notrend" model gamma as lambda*(1-omega) such that there is no temporal trend.}
+  \item{mixture}{character specifying mixture: either "P" or "NB" for the Poisson and negative binomial distributions.}
+  \item{K}{Integer defining upper bound of discrete integration. This should be higher than the maximum observed count and high enough that it does not affect the parameter estimates. However, the higher the value the slower the compuatation.}
+  \item{dynamics}{Character string describing the type of population dynamics. "constant" indicates that there is no relationship between omega and gamma. "autoreg" is an auto-regressive model in which recruitment is modeled as gamma*N_{it-1}. "notrend" model gamma as lambda*(1-omega) such that there is no temporal trend.}
   \item{fix}{If "omega", omega is fixed at 1. If "gamma", gamma is fixed at 0.}
   \item{starts}{vector of starting values}
   \item{method}{Optimization method used by \code{\link{optim}}.}
@@ -27,9 +27,9 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula, data,
 This model generalizes the Royle (2004) N-mixture model by relaxing the 
 closure assumption. The model includes two additional parameters: gamma, 
 the recruitment rate (births and immigrations), and omega, 
-the apparent survival rate (deaths and emigrations). Estimates of population size
-at each time period can be derived from these parameters, and thus so can trend
-estimates.
+the apparent survival rate (deaths and emigrations). Estimates of population 
+size at each time period can be derived from these parameters, and thus so can 
+trend estimates.
 
 The latent initial abundance distribution, 
 \eqn{f(N | \mathbf{\theta})}{f(N | theta)} can be set as either a 
@@ -62,17 +62,17 @@ Dail, D. and L. Madsen (In press) Models for Estimating Abundance from Repeated 
 
 }
 
-\author{Richard Chandler \email{richard.chandlers@gmail.com}}
+\author{Richard Chandler \email{rchandler@usgs.gov}}
 
 \note{
 When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, they must be supplied.
 
-If time intervals vary among survey occasions (sampling periods), an M by T matrix of dates (integer values) should be supplied to unmarkedFramePCO using the dates argument. Currently, the handling of non-constant survey intervals differs from the methods described in the original paper. 
+If time intervals vary among survey occasions (sampling periods), an M by T matrix of dates (integer values) should be supplied to unmarkedFramePCO using the \code{dates} argument.
 
 At this time, the robust design is not available. However, if you have multiple seasons of data, you can model within vs. among rates by creating an MxT observation-level covariate identifying the transition periods and include it the gamma and omega formulas.
 }
 
-\section{Warning}{This function can be extremely slow. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates will also help with speed. }
+\section{Warning}{This function can be extremely slow, especially if there are covariates of gamma or omega. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates will also help with speed. }
 
 \seealso{
 \code{\link{pcount}}
@@ -97,7 +97,6 @@ for(t in 1:(T-1)) {
 	N[,t+1] <- S[,t] + G[,t]
 	}
 y[] <- rbinom(M*T, N, p)
-# y[M-5, 1:4] <- y[M-4, 2:5] <- y[M-3, 2:4] <- y[M-2, c(2,4)] <- y[M-1, 1] <- y[M, T] <- NA
 
                             
 # Prepare data                               

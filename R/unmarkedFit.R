@@ -501,7 +501,7 @@ setMethod("LRT", c(m1="unmarkedFit", m2="unmarkedFit"), function(m1, m2)
     ll2 <- unmarked:::logLik(m2)
     chisq <- 2 * abs(ll1 - ll2)
     DF <- abs(length(coef(m1)) - length(coef(m2)))
-    pval <- pchisq(chisq, DF, lower=FALSE)
+    pval <- pchisq(chisq, DF, lower.tail=FALSE)
     return(data.frame(Chisq=chisq, DF = DF, 'Pr(>Chisq)' = pval, check.names=F))
 }) 
     
@@ -1873,7 +1873,7 @@ setMethod("show", "parboot", function(object)
     stats <- data.frame("t0" = t0, "mean(t0 - t_B)" = bias, 
         "StdDev(t0 - t_B)" = bias.se, "Pr(t_B > t0)" = p.val, 
         check.names = FALSE)
-    cat("\nCall:", deparse(object@call, width=500), fill=T)
+    cat("\nCall:", deparse(object@call, width.cutoff=500), fill=T)
     cat("\nParametric Bootstrap Statistics:\n")
     print(stats, digits=3)
     cat("\nt_B quantiles:\n")
