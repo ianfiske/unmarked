@@ -1,7 +1,7 @@
 \name{unmarkedFramePCO}
 \title{Create an object of class unmarkedFramePCO that contains data used by pcountOpen.}
 \alias{unmarkedFramePCO}
-\usage{unmarkedFramePCO(y, siteCovs=NULL, obsCovs=NULL, dates)}
+\usage{unmarkedFramePCO(y, siteCovs=NULL, obsCovs=NULL, mapInfo, dates)}
 \description{Organizes repeated count data along with the covariates and possibly the dates on which each survey was conducted. This S4 class is required by the data argument of \code{\link{pcountOpen}}}
 \arguments{
 	\item{y}{An MxT matrix of the repeated count data, where M is the number 
@@ -11,7 +11,9 @@
 	\item{obsCovs}{Either a named list of \code{\link{data.frame}}s of covariates 
         that vary within sites, or a \code{\link{data.frame}} with MxT rows in 
         site-major order.}
-  \item{dates}{integers indicating the dates of the surveys.}
+    \item{mapInfo}{Currently ignored}
+    \item{dates}{integers indicating the dates of the surveys.}
+  
 }
 \details{unmarkedFramePCO is the S4 class that holds data to be passed 
 to the \code{\link{pcountOpen}} model-fitting function.
