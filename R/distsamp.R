@@ -79,9 +79,19 @@ distsamp <- function(formula, data,
                     },
                 point = {
                     for(j in 1:J) {
-                        cp[i, j] <- integrate(grhn, db[j], db[j+1], 
-                            sigma=sigma[i], rel.tol=rel.tol)$value * 
-                            2 * pi / a[i, j]
+                        int <- integrate(grhn, db[j], db[j+1], sigma=sigma[i], 
+                            stop.on.error=FALSE)
+                        mess <- int$message
+                        if(identical(mess, "OK"))
+                            cp[i, j] <- int$value * 2*pi / a[i,j]
+                        else {
+                            warning(paste("integrate() failed with warning", 
+                                mess, "an approximation was used instead"))
+                            increment <- (db[j+1] - db[j]) / 100
+                            int <- sum(grhn(seq(db[j], db[j+1], by=increment), 
+                                sigma=sigma[i]) * increment)
+                            cp[i, j] <- int * 2*pi / a[i, j]
+                            }
                         }
                     })
                 cp[i,] <- cp[i,] * u[i,]
@@ -106,14 +116,35 @@ distsamp <- function(formula, data,
                 switch(survey, 
                 line = {
                     for(j in 1:J) {
-                        cp[i, j] <- integrate(gxexp, db[j], db[j+1], 
-                            rate=rate[i], rel.tol=rel.tol)$value / w[j]
+                        int <- integrate(gxexp, db[j], db[j+1], rate=rate[i], 
+                            stop.on.error=FALSE)
+                        mess <- int$message
+                        if(identical(mess, "OK"))
+                            cp[i, j] <- int$value / w[j]
+                        else {
+                            warning(paste("integrate() failed with warning", 
+                                mess, "an approximation was used instead"))
+                            increment <- (db[j+1] - db[j]) / 100
+                            int <- sum(gxexp(seq(db[j], db[j+1], by=increment), 
+                                rate=rate[i]) * increment)
+                            cp[i, j] <- int / w[j]
+                            }
                         }},
                 point = {
                     for(j in 1:J) {
-                        cp[i, j] <- integrate(grexp, db[j], db[j+1], 
-                            rate=rate[i], rel.tol=rel.tol)$value * 
-                            2 * pi / a[i, j]
+                        int <- integrate(grexp, db[j], db[j+1], rate=rate[i], 
+                            stop.on.error=FALSE)
+                        mess <- int$message
+                        if(identical(mess, "OK"))
+                            cp[i, j] <- int$value * 2*pi / a[i,j]
+                        else {
+                            warning(paste("integrate() failed with warning", 
+                                mess, "an approximation was used instead"))
+                            increment <- (db[j+1] - db[j]) / 100
+                            int <- sum(grexp(seq(db[j], db[j+1], by=increment), 
+                                rate=rate[i]) * increment)
+                            cp[i, j] <- int * 2*pi / a[i, j]
+                            }
                         }	
                     })
                 cp[i,] <- cp[i,] * u[i,]
@@ -142,16 +173,38 @@ distsamp <- function(formula, data,
                 switch(survey, 
                 line = {
                     for(j in 1:J) {
-                        cp[i, j] <- integrate(gxhaz, db[j], db[j+1], 
-                            shape=shape[i], scale=scale, 
-                            rel.tol=rel.tol)$value / w[j]
+                        int <- integrate(gxhaz, db[j], db[j+1], shape=shape[i], 
+                            scale=scale, stop.on.error=FALSE)
+                        mess <- int$message
+                        if(identical(mess, "OK"))
+                            cp[i, j] <- int$value / w[j]
+                        else {
+                            warning(paste("integrate() failed with warning", 
+                                mess, "an approximation was used instead"))
+                            increment <- (db[j+1] - db[j]) / 100
+                            int <- sum(gxhaz(seq(db[j], db[j+1], by=increment), 
+                                shape=shape[i], scale=scale) * increment)
+                            cp[i, j] <- int / w[j]
+                            }
                         }},
                 point = {   
                     for(j in 1:J) {
-                        cp[i, j] <- integrate(grhaz, db[j], db[j+1], 
-                            shape = shape[i], scale=scale, 
-                            rel.tol=rel.tol)$value * 2 * pi / a[i, j]
-                    }})
+                        int <- integrate(grhaz, db[j], db[j+1], shape=shape[i], 
+                            scale=scale, stop.on.error=FALSE)
+                        mess <- int$message
+                        if(identical(mess, "OK"))
+                            cp[i, j] <- int$value * 2*pi / a[i,j]
+                        else {
+                            warning(paste("integrate() failed with warning", 
+                                mess, "an approximation was used instead"))
+                            increment <- (db[j+1] - db[j]) / 100
+                            int <- sum(grhaz(seq(db[j], db[j+1], by=increment), 
+                                shape=shape[i], scale=scale) * increment)
+                            cp[i, j] <- int * 2*pi / a[i, j]
+                            }
+                        }	
+
+                    })
                 cp[i,] <- cp[i,] * u[i,]
                 }
             ll <- dpois(y, lambda * cp, log=TRUE)
@@ -213,8 +266,8 @@ distsamp <- function(formula, data,
         estimates = estsDP, covMat = covMatDP, invlink = "exp", 
         invlinkGrad = "exp")
         if(keyfun != "hazard")
-            estimateList <- unmarked:::unmarkedEstimateList(list(state=stateEstimates, 
-                det=detEstimates))
+            estimateList <- unmarked:::unmarkedEstimateList(list(
+                state=stateEstimates, det=detEstimates))
         else {
             scaleEstimates <- unmarkedEstimate(name = "Hazard-rate(scale)", 
                 short.name = "p", estimates = estsScale, 
