@@ -8,7 +8,7 @@
 \item{formula}{Double right-hand side formula describing covariates of 
 detection and abundance, in that order}
 \item{data}{an unmarkedFramePCount object supplying data to the model.}
-\item{K}{Integer upper index of integration for N-mixture.}
+\item{K}{Integer upper index of integration for N-mixture. This should be set high enough so that it does not affect the parameter estimates. Note that computation time will increase with K.}
 \item{mixture}{character specifying mixture: either "P" or "NB".}
 \item{starts}{vector of starting values}
 \item{method}{Optimization method used by \code{\link{optim}}.}
@@ -41,10 +41,17 @@ covariates of \eqn{p_{ij}}{p_ij} use the logit link.}
 \author{Ian Fiske \email{ianfiske@gmail.com}}
 \references{Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 
-Kéry, M., Royle, J. A., and Schmid, H. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.}
-\keyword{models}
-\examples{data(mallard)
+Kéry, M., Royle, J. A., and Schmid, H. (2005) Modeling Avaian Abundance from Replicated Counts Using Binomial Mixture Models. \emph{Ecological Applications} 15(4), pp. 1450--1461.
+}
+
+\examples{
+
+data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)
-(fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF))
-(fm.mallard.nb <- pcount(~ date + I(date^2) ~ length + elev, mixture = "NB", mallardUMF))}
+(fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF, K=30))
+(fm.mallard.nb <- pcount(~ date + I(date^2) ~ length + elev, mixture = "NB", mallardUMF, K=30))
+
+}
+
+\keyword{models}
