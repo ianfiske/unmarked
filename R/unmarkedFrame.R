@@ -163,7 +163,7 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
         for(i in seq(length(yearlySiteVars))) {
             if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
                 stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
-            if(ncol(yearlySiteCovs[[i]]) != (ncol(y) / numPrimary) | 
+            if(ncol(yearlySiteCovs[[i]]) != numPrimary | 
                 nrow(yearlySiteCovs[[i]]) != nrow(y))
                     stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
             }
