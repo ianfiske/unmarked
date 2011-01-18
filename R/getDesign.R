@@ -291,9 +291,9 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
   
 
 
+
+
 # pcountOpen
-
-
 setMethod("getDesign", "unmarkedFramePCO", 
     function(umf, formula, na.rm = TRUE) 
 {
@@ -308,8 +308,26 @@ setMethod("getDesign", "unmarkedFramePCO",
 	
     y <- getY(umf)
     M <- nrow(y)
-    T <- ncol(y)
-    delta <- umf@dates  
+    T <- umf@numPrimary
+    J <- ncol(y) / T
+    delta <- umf@primaryPeriod
+    
+    if(is.null(umf@yearlySiteCovs))
+        yearlySiteCovs <- data.frame(placeHolder = rep(1, M*T))
+    else
+        yearlySiteCovs <- umf@yearlySiteCovs
+    
+    ## in order to drop factor levels that only appear in last year,
+    ## replace last year with NAs and use drop=TRUE
+    #yearlySiteCovs[seq(T, M*T, by=T),] <- NA
+    #yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, 
+    #    function(x) x[,drop = TRUE]))
+    
+    ## add siteCovs in so they can be used as well
+    if(!is.null(umf@siteCovs)) {
+        sC <- umf@siteCovs[rep(1:M, each = T),,drop=FALSE]
+        yearlySiteCovs <- cbind(yearlySiteCovs, sC)
+        }
     
     if(is.null(siteCovs(umf)))
 	     siteCovs <- data.frame(placeHolder = rep(1, M))
@@ -320,19 +338,21 @@ setMethod("getDesign", "unmarkedFramePCO",
     Xlam <- model.matrix(lamformula, Xlam.mf)
 
     if(is.null(obsCovs(umf)))
-	     obsCovs <- data.frame(placeHolder = rep(1, M*T))
+	     obsCovs <- data.frame(placeHolder = rep(1, M*J*T))
     else
 	     obsCovs <- obsCovs(umf)
 	
     colNames <- c(colnames(obsCovs), colnames(siteCovs))
 	
-    obsCovs <- cbind(obsCovs, siteCovs[rep(1:M, each = T),])
+	  # Need to add yearlySiteCovs too
+    obsCovs <- cbind(obsCovs, siteCovs[rep(1:M, each = J*T),])
     colnames(obsCovs) <- colNames
 	
-    if(!("obs" %in% names(obsCovs)))
-        obsCovs <- cbind(obsCovs, obs = as.factor(rep(1:T, M)))
+    if(!("obsNum" %in% names(obsCovs)))
+        obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:(J*T), M)))
         
-    transCovs <- obsCovs[-seq(T, M*T, by=T),] # Ignore last year of data
+    # Ignore last year of data
+    transCovs <- yearlySiteCovs[-seq(T, M*T, by=T),,drop=FALSE]
     for(i in 1:ncol(transCovs))
         if(is.factor(transCovs[,i])) 
             transCovs[,i] <- factor(transCovs[,i]) # drop unused levels
@@ -370,7 +390,9 @@ setMethod("getDesign", "unmarkedFramePCO",
     if(na.rm)
         out <- handleNA(umf, Xlam, Xgam, Xom, Xp, delta)
     else {   # delta needs to be formatted first
-        delta <- formatDelta(delta, y)
+        ya <- array(y, c(M, J, T))
+        yna <- apply(is.na(y), c(1,3), all)
+        delta <- formatDelta(delta, yna)
         out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
             delta=delta, removed.sites=integer(0), go.dims=go.dims)
         }
@@ -392,25 +414,25 @@ setMethod("handleNA", "unmarkedFramePCO",
 {
 	obsToY <- obsToY(umf)
 	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
-	
-	T <- obsNum(umf)
-	M <- numSites(umf)
 
-	Xlam.long <- Xlam[rep(1:M, each = T),]
+	M <- numSites(umf)	
+	T <- umf@numPrimary
+	y <- getY(umf)
+	J <- ncol(y) / T
+
+	Xlam.long <- Xlam[rep(1:M, each = J*T),]
 	Xlam.long.na <- is.na(Xlam.long)
 	
 	long.na <- function(x) {
-		x.mat <- matrix(x, M, T, byrow = TRUE)
+		x.mat <- matrix(x, M, J*T, byrow = TRUE)
 		x.mat <- is.na(x.mat)
 		x.mat <- x.mat %*% obsToY
 		x.long <- as.vector(t(x.mat))
 		x.long > 0
 		}
 
-  o2y2 <- obsToY[-T, -T]
-  #diag(o2y2) <- 0
-  #diag(o2y2[,-1]) <- 1
-  #o2y2 <- o2y2[-T, -T]
+  o2y2 <- diag(T)
+  o2y2 <- o2y2[-T, -T]
 
 	long.na2 <- function(x) {
 		x.mat <- matrix(x, M, T-1, byrow = TRUE)
@@ -428,27 +450,30 @@ setMethod("handleNA", "unmarkedFramePCO",
 	Xom.long.na <- apply(Xom, 2, long.na2)			
 	Xom.long.na <- apply(Xom.long.na, 1, any)		
 	
-	y.long <- as.vector(t(getY(umf)))
+	y.long <- as.vector(t(y))
 	y.long.na <- is.na(y.long)
-	delta.long <- as.vector(t(delta))
-	delta.long.na <- is.na(delta.long)
 	
-	covs.na <- apply(cbind(Xlam.long.na, Xp.long.na, delta.long.na), 1, any)
+#  delta.long <- as.vector(t(delta))
+#	delta.long.na <- is.na(delta.long)
+	
+	covs.na <- apply(cbind(Xlam.long.na, Xp.long.na), 1, any)
 	covs.na2 <- apply(cbind(Xgam.long.na, Xom.long.na), 1, any)
+	covs.na3 <- rep(covs.na2, each=J)
 	# If gamma[1, 1] is NA, remove y[1, 2]
-	covs.na[-seq(1, M*T, by=T)] <- covs.na[-seq(1, M*T, by=T)] | covs.na2 
+	common <- 1:(M*J*(T-1))
+	covs.na[common] <- covs.na[common] | covs.na3 
 	
 	## are any NA in covs not in y already?
-	y.new.na <- covs.na & !y.long.na
+	y.new.na <- covs.na & !y.long.na      
 	
 	if(sum(y.new.na) > 0) {
         y.long[y.new.na] <- NA
         warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
         }
 	
-	y <- matrix(y.long, M, T, byrow = TRUE)
-	delta <- matrix(delta.long, M, T, byrow = TRUE)
-	sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+	y.wide <- matrix(y.long, nrow=M, ncol=J*T, byrow = TRUE)
+#	delta <- matrix(delta.long, nrow=M, ncol=T, byrow = TRUE)
+	sites.to.remove <- apply(y.wide, 1, function(x) all(is.na(x)))
   # Should also remove sites with no omega and gamma before an observation
   # remove all observations before the one after the first real omega/gamma
 #  covs.na2.mat <- matrix(covs.na2, M, T-1, byrow=TRUE)
@@ -464,13 +489,13 @@ setMethod("handleNA", "unmarkedFramePCO",
 #          return(T-1))
 #  no.go.before.y <- last.y <= last.go
           
-
-	
-	delta <- formatDelta(delta, y)
+	ya <- array(y.wide, c(M, J, T))
+	yna <- apply(is.na(ya), c(1,3), all)
+	delta <- formatDelta(delta, yna)
 	
 	num.to.remove <- sum(sites.to.remove)
 	if(num.to.remove > 0) {
-		y <- y[!sites.to.remove, ,drop = FALSE]
+		y.wide <- y.wide[!sites.to.remove, ,drop = FALSE]
 		Xlam <- Xlam[!sites.to.remove, ,drop = FALSE]
 		Xgam <- Xgam[!sites.to.remove[rep(1:M, each = T-1)], ,drop = FALSE]
 		Xom <- Xom[!sites.to.remove[rep(1:M, each = T-1)], ,drop = FALSE]
@@ -479,9 +504,9 @@ setMethod("handleNA", "unmarkedFramePCO",
 		warning(paste(num.to.remove, "sites have been discarded because of missing data."), call.=FALSE)
 	}
 	
-	list(y = y, Xlam = Xlam, Xgam = Xgam, Xom = Xom, Xp = Xp, 
+	list(y = y.wide, Xlam = Xlam, Xgam = Xgam, Xom = Xom, Xp = Xp, 
 		delta = delta, removed.sites = which(sites.to.remove))
-    })
+})
 
 
     
@@ -494,8 +519,6 @@ setMethod("handleNA", "unmarkedFramePCO",
     
 # UnmarkedFrameGMN    
 	
-
-
 
 setMethod("getDesign", "unmarkedFrameGMM", 
     function(umf, formula, na.rm = TRUE) 

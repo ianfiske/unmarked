@@ -100,7 +100,7 @@ y[] <- rbinom(M*T, N, p)
 
                             
 # Prepare data                               
-umf <- unmarkedFramePCO(y = y)
+umf <- unmarkedFramePCO(y = y, numPrimary=T)
 
 summary(umf)
 

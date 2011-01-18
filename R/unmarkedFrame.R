@@ -79,9 +79,9 @@ setClass("unmarkedFrameMPois",
 		contains = "unmarkedFrame")
 
 setClass("unmarkedFramePCO",
-		representation(
-			dates = "matrix"),
-		contains = "unmarkedFrame")
+    representation(
+        primaryPeriod = "matrix"),
+    contains = "unmarkedMultFrame")
 
 
 setClass("unmarkedFrameGMM", 
@@ -96,8 +96,7 @@ setClass("unmarkedFrameGMM",
 
 
 # Constructor for unmarkedFrames.
-unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
-    obsToY) 
+unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo, obsToY) 
 {
     if(!missing(obsToY))
         obsNum <- nrow(obsToY)
@@ -167,7 +166,6 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
                 nrow(yearlySiteCovs[[i]]) != nrow(y))
                     stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
             }
-        if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
         yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x) 
             as.vector(t(x))))
         }    
@@ -193,7 +191,6 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
           piFun <- "removalPiFun"
           },
         double = {
-          #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
           obsToY <- matrix(1, 2, 3)
           obsToY <- kronecker(diag(numPrimary), obsToY) 
           piFun <- "doublePiFun"
@@ -272,45 +269,62 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
 
 
 
-unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
- 	dates) 
+unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL, 
+    yearlySiteCovs = NULL, mapInfo, numPrimary, primaryPeriod) 
 {
     M <- nrow(y)
-    T <- ncol(y)
-    if(missing(dates))
-        dates <- matrix(1:T, M, T, byrow=TRUE)
-    if(nrow(dates) != M | ncol(dates) != T)
-        stop("Dimensions of dates matrix should be MxT")
-    if(any(dates < 0, na.rm=TRUE))
-        stop("Negative dates not allowed.")
-    if(!identical(typeof(dates), "integer")) {
-        mode(dates) <- "integer"
-        warning("dates have been converted to integers")      
+    T <- numPrimary
+    J <- ncol(y) / T
+    if(missing(primaryPeriod))
+        primaryPeriod <- matrix(1:T, M, T, byrow=TRUE)
+    if(nrow(primaryPeriod) != M | ncol(primaryPeriod) != T)
+        stop("Dimensions of primaryPeriod matrix should be MxT")
+    if(any(primaryPeriod < 0, na.rm=TRUE))
+        stop("Negative primaryPeriod values are not allowed.")
+    if(!identical(typeof(primaryPeriod), "integer")) {
+        mode(primaryPeriod) <- "integer"
+        warning("primaryPeriod values have been converted to integers")      
         }
-    y.na <- which(is.na(y))
-    d.na <- which(is.na(dates))
-    if(!all(d.na %in% y.na))
-        stop("dates must be supplied for all non-missing values of y")
+    ya <- array(y, c(M, J, T))
+    yt.na <- apply(!is.na(ya), c(1,3), any)
+    yt.na <- which(!yt.na)
+    d.na <- which(is.na(primaryPeriod))
+    if(!all(d.na %in% yt.na))
+        stop("primaryPeriod values must be supplied for all non-missing values of y")
     increasing <- function(x) {
         x <- x[!is.na(x)]
         all(order(x) == 1:length(x))
         }
-    if(!all(apply(dates, 1, increasing)))
-        stop("dates must increase over time for each site")
+    if(!all(apply(primaryPeriod, 1, increasing)))
+        stop("primaryPeriod values must increase over time for each site")
     if(class(obsCovs) == "list") {
         obsVars <- names(obsCovs)
         for(i in seq(length(obsVars))) {
-        if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
-            stop("At least one element of obsCovs is not a matrix or data frame.")
-        if(ncol(obsCovs[[i]]) != T | nrow(obsCovs[[i]]) != M)
-            stop("At least one matrix in obsCovs has incorrect number of dimensions.")
-        }
-    if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]])
+            if(!(class(obsCovs[[i]]) %in% c("matrix", "data.frame")))
+                stop("At least one element of obsCovs is not a matrix or data frame.")
+            if(ncol(obsCovs[[i]]) != J*T | nrow(obsCovs[[i]]) != M)
+                stop("At least one matrix in obsCovs has incorrect number of dimensions.")
+            }
         obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
         }
-    umf <- new("unmarkedFramePCO", y = y, siteCovs = siteCovs, 
-        obsCovs = obsCovs, obsToY = diag(T), 
-        dates = dates)
+    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J*T))
+    umf <- as(umf, "unmarkedMultFrame")
+    umf@numPrimary <- numPrimary    
+    if(class(yearlySiteCovs) == "list") {
+        yearlySiteVars <- names(yearlySiteCovs)
+        for(i in seq(length(yearlySiteVars))) {
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
+                stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
+            if(ncol(yearlySiteCovs[[i]]) != T | 
+                nrow(yearlySiteCovs[[i]]) != nrow(y))
+                    stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
+            }
+        yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x) 
+            as.vector(t(x))))
+        }
+    umf@yearlySiteCovs <- yearlySiteCovs
+    umf <- as(umf, "unmarkedFramePCO")
+    umf@primaryPeriod <- primaryPeriod
     return(umf)
 }
 
