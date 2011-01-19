@@ -683,7 +683,7 @@ setMethod("fitted", "unmarkedFitPCountOpen",
         if(identical(dynamics, "notrend")) 
             gamma <- (1-omega)*lambda
         }
-    p <- getP(object, na.rm = na.rm)
+    p <- getP(object, na.rm = na.rm) # Should return MxJT
     N <- matrix(NA, M, T)
     for(i in 1:M) {
         N[i, 1] <- lambda[i]
@@ -707,7 +707,7 @@ setMethod("fitted", "unmarkedFitPCountOpen",
                 }
             }
         }
-    fitted <- N * p
+    fitted <- N * p # FIXME: Need to expand N
     return(fitted)
 })
 

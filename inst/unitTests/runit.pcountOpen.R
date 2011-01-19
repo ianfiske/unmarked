@@ -137,6 +137,42 @@ test.pcountOpen.na <- function()
       starts=c(.8, 0, 5, -5, 7))
   checkEquals(fm4.2@sitesRemoved, 1)
   
+  
+  
+    # Now with secondary sampling periods
+    
+    y5 <- matrix(c(  
+        2,2,  2,2,  1,0,
+        3,2,  1,1,  2,2,
+        0,0,  1,1,  1,1,
+        3,3,  2,0,  3,3), 4, 6, byrow=TRUE)
+    
+    umf5 <- unmarkedFramePCO(y=y5, numPrimary=3)
+    fm5 <- pcountOpen(~1, ~1, ~1, ~1, umf5, se=FALSE, K=10)
+    checkEqualsNumeric(coef(fm5), 
+        c(0.7269958, -0.3484145, 0.1494188, 1.9391898), tol=1e-5)
+
+    y6 <- y5
+    y6[1,1] <- y6[2,3:4] <- y6[3,5:6] <- y6[4,6] <- NA
+    umf6 <- unmarkedFramePCO(y=y6, numPrimary=3)    
+    fm6 <- pcountOpen(~1, ~1, ~1, ~1, umf6, se=FALSE, K=10)
+    checkEqualsNumeric(coef(fm6), 
+        c(0.7945817, -0.4340502, 0.5614526, 1.4161393), tol=1e-5)
+    
+    y7 <- y5
+    oc7 <- y6 + -2:1
+    umf7 <- unmarkedFramePCO(y=y7, obsCovs=list(oc=oc7), numPrimary=3)    
+    fm7 <- pcountOpen(~1, ~1, ~1, ~oc, umf7, se=FALSE, K=10)
+    checkEqualsNumeric(coef(fm7), 
+        c(1.1985964, -8.9001805, 12.2205930, -0.8876678, 0.9525985), tol=1e-4)
+
+    y8 <- y5
+    ysc8 <- matrix(1:3, 4, 3, byrow=TRUE)
+    ysc8[1,1] <- NA
+    umf8 <- unmarkedFramePCO(y=y8, yearlySiteCovs=list(ysc=ysc8), numPrimary=3)
+    fm8 <- pcountOpen(~1, ~1, ~ysc, ~1, umf8, se=FALSE, K=10)
+    checkEqualsNumeric(coef(fm8), 
+        c(0.7332303, -0.3489245, -2.4720594, 1.7194687, 1.8111326), tol=1e-5)
 
 }
 

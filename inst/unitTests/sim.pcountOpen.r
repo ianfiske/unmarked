@@ -1,7 +1,8 @@
 
 library(unmarked)
 
-## Simulate no covariates, constant sampling period intervals	
+## Simulate no covariates, constant sampling period intervals, 
+## no secondary samples
 
 sim1 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5)
 {
@@ -19,12 +20,12 @@ sim1 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5)
                             
 # Prepare data                               
 set.seed(3)
-umf <- unmarkedFramePCO(y = sim1())
+umf <- unmarkedFramePCO(y = sim1(), numPrimary=5)
 
 summary(umf)
 
 # Fit model and backtransform
-system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))  # 3.7s on 64bit.
+system.time(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))  # 7s on 64bit.
 
 backTransform(m1, "lambda") # 0.71 initial abundance
 backTransform(m1, "gamma")  # 0.45 recruitment rate
@@ -43,7 +44,7 @@ for(i in 1:nsim1) {
     omega <- 0.8
     p <- 0.7
     y.sim1 <- sim1(lambda, gamma, omega, p)
-    umf1 <- unmarkedFramePCO(y = y.sim1)
+    umf1 <- unmarkedFramePCO(y = y.sim1, numPrimary=5)
     m1 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=15, 
         starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
     e <- coef(m1)
@@ -402,4 +403,77 @@ hist(simout6[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
 hist(simout6[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
 dev.off()    
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Simulate no covariates, constant sampling period intervals, 
+## WITH secondary samples
+
+sim7 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5, J=3)
+{
+    y <- matrix(NA, M, J*T)
+    N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    for(t in 1:(T-1)) {
+        S[,t] <- rbinom(M, N[,t], omega)
+        G[,t] <- rpois(M, gamma)
+        N[,t+1] <- S[,t] + G[,t]
+        }
+    N <- N[,rep(1:T, each=J)]        
+    y[] <- rbinom(M*J*T, N, p)
+    return(y)
+}
+                            
+# Prepare data                               
+set.seed(3)
+umf <- unmarkedFramePCO(y = sim7(T=5), numPrimary=5)
+
+summary(umf)
+
+# Fit model and backtransform
+system.time(m7 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))  # 32s on 64bit.
+
+backTransform(m7, "lambda") # 0.71 initial abundance
+backTransform(m7, "gamma")  # 0.45 recruitment rate
+backTransform(m7, "omega")  # 0.75 survival rate
+backTransform(m7, "det")    # 0.72 detection probability
+
+
+set.seed(3223)
+nsim7 <- 500
+simout7 <- matrix(NA, nsim7, 4)
+colnames(simout7) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim7) {
+    cat("sim", i, "\n"); flush.console()
+    lambda <- 1
+    gamma <- 0.5
+    omega <- 0.8
+    p <- 0.7
+    y.sim1 <- sim1(lambda, gamma, omega, p)
+    umf1 <- unmarkedFramePCO(y = y.sim1, numPrimary=5)
+    m1 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=15, 
+        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
+    e <- coef(m1)
+    simout1[i, 1:2] <- exp(e[1:2])
+    simout1[i, 3:4] <- plogis(e[3:4])
+    }
+
+png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout1[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout1[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout1[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout1[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)    
+dev.off()    
 
