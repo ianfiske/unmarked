@@ -222,7 +222,7 @@ if(identical(mixture, "NB")) {
         covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
         invlinkGrad = "exp")
     }
-umfit <- new("unmarkedFitPCountOpen", fitType = "pcountOpen", 
+umfit <- new("unmarkedFitPCO", fitType = "pcountOpen", 
     call = match.call(), formula = formula, formlist = formlist, data = data, 
     sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC, 
     opt = opt, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture, 

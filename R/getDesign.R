@@ -391,7 +391,7 @@ setMethod("getDesign", "unmarkedFramePCO",
         out <- handleNA(umf, Xlam, Xgam, Xom, Xp, delta)
     else {   # delta needs to be formatted first
         ya <- array(y, c(M, J, T))
-        yna <- apply(is.na(y), c(1,3), all)
+        yna <- apply(is.na(ya), c(1,3), all)
         delta <- formatDelta(delta, yna)
         out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, 
             delta=delta, removed.sites=integer(0), go.dims=go.dims)

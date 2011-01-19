@@ -11,7 +11,8 @@ export(removalPiFun, doublePiFun)
 
 # S4 classes
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS, unmarkedFitPCount,
-    unmarkedFitMPois, unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount, 
+    unmarkedFitMPois, unmarkedFitPCO, 
+    unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount, 
     unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
     unmarkedFramePCO, unmarkedEstimate, unmarkedFitList, unmarkedModSel)
 

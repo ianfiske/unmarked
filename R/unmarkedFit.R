@@ -43,7 +43,7 @@ setClass("unmarkedFitPCount",
 
 
 
-setClass("unmarkedFitPCountOpen", 
+setClass("unmarkedFitPCO", 
         representation(
             formlist = "list",
             dynamics = "character"),
@@ -309,7 +309,7 @@ setMethod("predict", "unmarkedFitColExt",
 
 
 
-setMethod("predict", "unmarkedFitPCountOpen", 
+setMethod("predict", "unmarkedFitPCO", 
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE, 
         appendData = FALSE, ...) 
 {
@@ -664,7 +664,7 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
 })
 
 
-setMethod("fitted", "unmarkedFitPCountOpen",
+setMethod("fitted", "unmarkedFitPCO",
     function(object, K, na.rm = FALSE) 
 {
     dynamics <- object@dynamics
@@ -674,7 +674,8 @@ setMethod("fitted", "unmarkedFitPCountOpen",
     delta <- D$delta #FIXME this isn't returned propertly when na.rm=F
     y <- D$y
     M <- nrow(y)
-    T <- ncol(y)
+    T <- data@numPrimary
+    J <- ncol(y) / T
     lambda <- exp(Xlam %*% coef(object, 'lambda'))
     omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, byrow=TRUE)
     if(!identical(dynamics, "notrend"))
@@ -707,7 +708,8 @@ setMethod("fitted", "unmarkedFitPCountOpen",
                 }
             }
         }
-    fitted <- N * p # FIXME: Need to expand N
+    N <- N[,rep(1:T, each=J)]
+    fitted <- N * p
     return(fitted)
 })
 
@@ -991,7 +993,7 @@ setMethod("update", "unmarkedFitGMM",
           
 
 
-setMethod("update", "unmarkedFitPCountOpen", 
+setMethod("update", "unmarkedFitPCO", 
     function(object, lambdaformula., gammaformula., omegaformula., pformula., 
         ..., evaluate = TRUE) 
     {
@@ -1368,18 +1370,18 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
 
 
 
-setMethod("getP", "unmarkedFitPCountOpen", function(object, na.rm = TRUE) 
+setMethod("getP", "unmarkedFitPCO", function(object, na.rm = TRUE) 
 {
-    formlist <- object@formlist
     umf <- object@data
     D <- getDesign(umf, object@formula, na.rm = na.rm)
     y <- D$y
     Xp <- D$Xp
     M <- nrow(y)
-    J <- ncol(y)
+    T <- umf@numPrimary
+    J <- ncol(y) / T
     ppars <- coef(object, type = "det")
     p <- plogis(Xp %*% ppars)
-    p <- matrix(p, M, J, byrow = TRUE)
+    p <- matrix(p, M, J*T, byrow = TRUE)
     return(p)
 })
 
@@ -1510,10 +1512,9 @@ setMethod("simulate", "unmarkedFitPCount",
 
 
 
-setMethod("simulate", "unmarkedFitPCountOpen", 
+setMethod("simulate", "unmarkedFitPCO", 
     function(object, nsim = 1, seed = NULL, na.rm = TRUE) 
 {
-    formlist <- object@formlist
     mix <- object@mixture
     dynamics <- object@dynamics
     umf <- object@data
@@ -1522,7 +1523,8 @@ setMethod("simulate", "unmarkedFitPCountOpen",
     delta <- D$delta
     y <- D$y
     M <- nrow(y)
-    T <- ncol(y)
+    T <- umf@numPrimary
+    J <- ncol(y) / T
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
     if(dynamics != "notrend")
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, byrow=TRUE)
@@ -1534,7 +1536,7 @@ setMethod("simulate", "unmarkedFitPCountOpen",
     S <- G <- matrix(NA, M, T-1)
     simList <- list()
     for(s in 1:nsim) {
-        y.sim <- matrix(NA, M, T)
+        y.sim <- matrix(NA, M, J*T)
         for(i in 1:M) {
             switch(mix, 
                 P = N[i, 1] <- rpois(1, lambda),
@@ -1544,6 +1546,7 @@ setMethod("simulate", "unmarkedFitPCountOpen",
                 for(d in 2:delta[i, 1]) 
                     N[i, 1] <- N[i, 1] * omega[i, 1] + gamma[i, 1]
                 }
+            # Might need more NA handling here...ignore gaps?
             for(t in 2:T) {
                 if(is.na(omega[i, t-1]) | is.na(gamma[i,t-1])) 
                     N[i, t] <- N[i, t-1] # just a place holder
@@ -1566,6 +1569,7 @@ setMethod("simulate", "unmarkedFitPCountOpen",
                 }
             }
         y.na <- is.na(y)
+        N <- N[,rep(1:T, each=J)]
         y.sim[!y.na] <- rbinom(sum(!y.na), N[!y.na], p[!y.na])
         simList[[s]] <- y.sim
         }

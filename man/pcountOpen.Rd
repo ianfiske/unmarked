@@ -67,9 +67,9 @@ Dail, D. and L. Madsen (In press) Models for Estimating Abundance from Repeated 
 \note{
 When gamma or omega are modeled using observation-level covariates, the covariate data for the final survey occasion will be ignored; however, they must be supplied.
 
-If time intervals vary among survey occasions (sampling periods), an M by T matrix of dates (integer values) should be supplied to unmarkedFramePCO using the \code{dates} argument.
+If time intervals vary among primary sampling occasions, an M by T matrix of integers should be supplied to \code{\link{unmarkedFramePCO}} using the \code{primaryPeriod} argument.
 
-At this time, the robust design is not available. However, if you have multiple seasons of data, you can model within vs. among rates by creating an MxT observation-level covariate identifying the transition periods and include it the gamma and omega formulas.
+Secondary sampling periods are optional.
 }
 
 \section{Warning}{This function can be extremely slow, especially if there are covariates of gamma or omega. Consider testing the timing on a small subset of the data, perhaps with se=FALSE. Finding the lowest value of K that does not affect estimates will also help with speed. }
@@ -80,7 +80,10 @@ At this time, the robust design is not available. However, if you have multiple 
 
 \examples{
 
-## Simulate no covariates, constant sampling period intervals	
+## Simulation 
+## No covariates, constant time intervals between primary periods, and 
+## no secondary sampling periods
+
 set.seed(3)
 M <- 50
 T <- 5
