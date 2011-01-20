@@ -150,6 +150,7 @@ setMethod("getDesign", "unmarkedMultFrame",
     M <- numSites(umf)
     R <- obsNum(umf)
     nY <- umf@numPrimary
+    J <- R / nY
   
     ## Compute phi design matrices
     if(is.null(umf@yearlySiteCovs)) {
@@ -157,17 +158,48 @@ setMethod("getDesign", "unmarkedMultFrame",
     } else {
         yearlySiteCovs <- umf@yearlySiteCovs
     }
+    ## add siteCovs in so they can be used as well
+    if(!is.null(umf@siteCovs)) {
+        sC <- umf@siteCovs[rep(1:M, each = nY),,drop=FALSE]
+        yearlySiteCovs <- cbind(yearlySiteCovs, sC)
+        }
+  
+    ## Compute site-level design matrix for psi
+    if(is.null(siteCovs(umf)))
+        siteCovs <- data.frame(placeHolder = rep(1, M))
+    else
+        siteCovs <- siteCovs(umf)
+
+    W.mf <- model.frame(psiformula, siteCovs, na.action = NULL)
+    if(!is.null(model.offset(W.mf)))
+        stop("offsets not currently allowed in colext", call.=FALSE)
+    W <- model.matrix(psiformula, W.mf)
+
+  
+    ## Compute detection design matrix
+    if(is.null(obsCovs(umf)))
+        obsCovs <- data.frame(placeHolder = rep(1, M*R))
+    else
+        obsCovs <- obsCovs(umf)
+
+    ## add site and yearlysite covariates, which contain siteCovs
+    obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = J),])
+	
+    ## add observation number if not present
+    if(!("obsNum" %in% names(obsCovs)))
+        obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:R, M)))
+	
+    V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
+    if(!is.null(model.offset(V.mf)))
+        stop("offsets not currently allowed in colext", call.=FALSE)
+    V <- model.matrix(detformula, V.mf)
+    
     ## in order to drop factor levels that only appear in last year,
     ## replace last year with NAs and use drop=TRUE
     yearlySiteCovs[seq(nY,M*nY,by=nY),] <- NA
     yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, function(x) {
         x[,drop = TRUE]
         }))
-    ## add siteCovs in so they can be used as well
-    if(!is.null(umf@siteCovs)) {
-        sC <- umf@siteCovs[rep(1:M, each = nY),,drop=FALSE]
-        yearlySiteCovs <- cbind(yearlySiteCovs, sC)
-        }
     X.mf.gam <- model.frame(gamformula, yearlySiteCovs, na.action = NULL)
     if(!is.null(model.offset(X.mf.gam)))
         stop("offsets not currently allowed in colext", call.=FALSE)
@@ -176,57 +208,16 @@ setMethod("getDesign", "unmarkedMultFrame",
     if(!is.null(model.offset(X.mf.eps)))
         stop("offsets not currently allowed in colext", call.=FALSE)
     X.eps <- model.matrix(epsformula, X.mf.eps)
-  
-    ## Compute site-level design matrix for psi
-    if(is.null(siteCovs(umf))) {
-        siteCovs <- data.frame(placeHolder = rep(1, M))
-    } else {
-        siteCovs <- siteCovs(umf)
-    }
-    W.mf <- model.frame(psiformula, siteCovs, na.action = NULL)
-    if(!is.null(model.offset(W.mf)))
-        stop("offsets not currently allowed in colext", call.=FALSE)
-    W <- model.matrix(psiformula, W.mf)
+    
+	
+    if(na.rm)
+        out <- handleNA(umf, X.gam, X.eps, W, V)
+    else
+        out <- list(y=getY(umf), X.gam=X.gam, X.eps=X.eps, W=W, V=V, 
+            removed.sites=integer(0))
 
-    #  ## impute missing yearlySiteCovs across years as average
-    #  X <- t(apply(X, 1, function(x) {
-    #            out <- x
-    #            out[is.na(x)] <- mean(x)
-    #          }))
-  
-	## Compute detection design matrix
-	if(is.null(obsCovs(umf))) {
-		obsCovs <- data.frame(placeHolder = rep(1, M*R))
-	} else {
-		obsCovs <- obsCovs(umf)
-	}
-	
-	## add site and yearlysite covariates at observation-level
-	## DOUBLE CHECK THIS. Shouldn't it be:
-  ## yearlySiteCovs[rep(1:(M*nY), each = J),] where J is R/nY
-	obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = R),],
-                         siteCovs[rep(1:M, each = R), ])
-	
-	## add observation number if not present
-	if(!("obsNum" %in% names(obsCovs))) {
-		obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:R, M)))
-	}
-	
-	V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
-  if(!is.null(model.offset(V.mf)))
-        stop("offsets not currently allowed in colext", call.=FALSE)
-	V <- model.matrix(detformula, V.mf)
-	
-	if(na.rm)
-		out <- handleNA(umf, X.gam, X.eps, W, V)
-	else
-		out <- list(y=getY(umf), X.gam=X.gam, X.eps=X.eps,
-                            W=W,V=V,
-				removed.sites=integer(0))
-	
-	return(list(y = out$y, X.eps = out$X.eps, X.gam = out$X.gam,
-                    W = out$W, V = out$V,
-                    removed.sites = out$removed.sites))
+    return(list(y = out$y, X.eps = out$X.eps, X.gam = out$X.gam, W = out$W, 
+        V = out$V, removed.sites = out$removed.sites))
 })
 
 
@@ -317,12 +308,6 @@ setMethod("getDesign", "unmarkedFramePCO",
     else
         yearlySiteCovs <- umf@yearlySiteCovs
     
-    ## in order to drop factor levels that only appear in last year,
-    ## replace last year with NAs and use drop=TRUE
-    #yearlySiteCovs[seq(T, M*T, by=T),] <- NA
-    #yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, 
-    #    function(x) x[,drop = TRUE]))
-    
     ## add siteCovs in so they can be used as well
     if(!is.null(umf@siteCovs)) {
         sC <- umf@siteCovs[rep(1:M, each = T),,drop=FALSE]
@@ -344,8 +329,8 @@ setMethod("getDesign", "unmarkedFramePCO",
 	
     colNames <- c(colnames(obsCovs), colnames(siteCovs))
 	
-	  # Need to add yearlySiteCovs too
-    obsCovs <- cbind(obsCovs, siteCovs[rep(1:M, each = J*T),])
+	  # Add yearlySiteCovs, which contains siteCovs
+    obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),])
     colnames(obsCovs) <- colNames
 	
     if(!("obsNum" %in% names(obsCovs)))
@@ -460,8 +445,9 @@ setMethod("handleNA", "unmarkedFramePCO",
 	covs.na2 <- apply(cbind(Xgam.long.na, Xom.long.na), 1, any)
 	covs.na3 <- rep(covs.na2, each=J)
 	# If gamma[1, 1] is NA, remove y[1, 2]
-	common <- 1:(M*J*(T-1))
-	covs.na[common] <- covs.na[common] | covs.na3 
+	#common <- 1:(M*J*(T-1))
+	ignore <- rep(seq(1, M*T, by=T), each=J)
+  covs.na[-ignore] <- covs.na[-ignore] | covs.na3 
 	
 	## are any NA in covs not in y already?
 	y.new.na <- covs.na & !y.long.na      
@@ -567,9 +553,8 @@ setMethod("getDesign", "unmarkedFrameGMM",
         obsCovs <- data.frame(placeHolder = rep(1, M*R))
     } else obsCovs <- obsCovs(umf)
 	
-    # add site and yearlysite covariates at observation-level
-    obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),],
-        siteCovs[rep(1:M, each = R), ])
+    # add site and yearlysite covariates, which contain siteCovs
+    obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),])
 	
     # add observation number if not present
     if(!("obsNum" %in% names(obsCovs)))
