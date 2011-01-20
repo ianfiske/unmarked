@@ -757,7 +757,7 @@ setMethod("fitted", "unmarkedFitColExt", function(object, na.rm = FALSE)
         gammaformula=object@gamformula,
         epsilonformula=object@epsformula,
         pformula=object@detformula)
-    designMats <- getDesign(object@data, formlist = formulaList)
+    designMats <- getDesign(object@data, object@formula)
     V.itj <- designMats$V
     X.it.gam <- designMats$X.gam
     X.it.eps <- designMats$X.eps
@@ -1389,7 +1389,21 @@ setMethod("getP", "unmarkedFitPCO", function(object, na.rm = TRUE)
 
 setMethod("getP", "unmarkedFitColExt", function(object, na.rm = TRUE)
 {
-    stop("getP is not yet implemented for colext fits.")
+    data <- object@data
+    detParms <- coef(object, 'det')
+    D <- getDesign(object@data, object@formula, na.rm=na.rm)
+    y <- D$y
+    V <- D$V
+
+    M <- nrow(y)	# M <- nrow(X.it)
+    nY <- data@numPrimary
+    J <- obsNum(data)/nY
+
+    p <- plogis(V %*% detParms)
+    p <- array(p, c(J, nY, M))
+    p <- aperm(p, c(3, 1, 2))
+    p <- matrix(p, nrow=M)
+    return(p)    
 })
 
 
@@ -1649,7 +1663,7 @@ setMethod("simulate", "unmarkedFitColExt",
         gammaformula=object@gamformula,
         epsilonformula=object@epsformula,
         pformula=object@detformula)
-    designMats <- getDesign(object@data, formlist = formulaList)
+    designMats <- getDesign(object@data, object@formula)
     V.itj <- designMats$V
     X.it.gam <- designMats$X.gam
     X.it.eps <- designMats$X.eps
