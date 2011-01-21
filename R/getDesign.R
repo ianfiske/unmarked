@@ -183,7 +183,9 @@ setMethod("getDesign", "unmarkedMultFrame",
         obsCovs <- obsCovs(umf)
 
     ## add site and yearlysite covariates, which contain siteCovs
+    cnames <- c(colnames(obsCovs), colnames(yearlySiteCovs))
     obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*nY), each = J),])
+    colnames(obsCovs) <- cnames
 	
     ## add observation number if not present
     if(!("obsNum" %in% names(obsCovs)))
@@ -327,7 +329,7 @@ setMethod("getDesign", "unmarkedFramePCO",
     else
 	     obsCovs <- obsCovs(umf)
 	
-    colNames <- c(colnames(obsCovs), colnames(siteCovs))
+    colNames <- c(colnames(obsCovs), colnames(yearlySiteCovs))
 	
 	  # Add yearlySiteCovs, which contains siteCovs
     obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),])
@@ -446,7 +448,7 @@ setMethod("handleNA", "unmarkedFramePCO",
 	covs.na3 <- rep(covs.na2, each=J)
 	# If gamma[1, 1] is NA, remove y[1, 2]
 	#common <- 1:(M*J*(T-1))
-	ignore <- rep(seq(1, M*T, by=T), each=J)
+  ignore <- rep(seq(1, M*J*T, by=J*T), each=J) + 0:(J-1)
   covs.na[-ignore] <- covs.na[-ignore] | covs.na3 
 	
 	## are any NA in covs not in y already?
@@ -554,7 +556,9 @@ setMethod("getDesign", "unmarkedFrameGMM",
     } else obsCovs <- obsCovs(umf)
 	
     # add site and yearlysite covariates, which contain siteCovs
+    cnames <- c(colnames(obsCovs), colnames(yearlySiteCovs))
     obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),])
+    colnames(obsCovs) <- cnames
 	
     # add observation number if not present
     if(!("obsNum" %in% names(obsCovs)))
