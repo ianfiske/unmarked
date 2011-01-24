@@ -367,7 +367,7 @@ sim6 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=100, T=5)
 
 
 set.seed(3223)
-nsim6 <- 500
+nsim6 <- 50
 simout6 <- matrix(NA, nsim6, 4)
 colnames(simout6) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim6) {
@@ -380,7 +380,7 @@ for(i in 1:nsim6) {
     yd <- sim6(lambda, gamma, omega, p, M=100, T=T)
     y.sim6 <- yd$y
     dates6 <- yd$dates
-    umf6 <- unmarkedFramePCO(y = y.sim6, dates=dates6, numPrimary=T)
+    umf6 <- unmarkedFramePCO(y = y.sim6, primaryPeriod=dates6, numPrimary=T)
     m6 <- pcountOpen(~1, ~1, ~1, ~1, umf6, K=15, 
         starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
     e <- coef(m6)
