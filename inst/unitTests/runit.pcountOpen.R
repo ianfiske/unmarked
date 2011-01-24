@@ -19,7 +19,7 @@ test.pcountOpen.null <- function()
       tol = 1e-5)
 
   fm2 <- pcountOpen(~1, ~1, ~1, ~1, data = umf, se=FALSE, fix="gamma", K=10)
-  checkEqualsNumeric(coef(fm2), c(1.8219331, 8.7406381, -0.2873663), 
+  checkEqualsNumeric(coef(fm2), c(1.821936, 8.741870, -0.287360), 
       tol = 1e-4)
 
   fm3 <- pcountOpen(~1, ~1, ~1, ~1, data = umf, se=FALSE, fix="omega", K=10)
@@ -81,7 +81,7 @@ test.pcountOpen.na <- function()
   fm2.3 <- pcountOpen(~1, ~o2, ~1, ~1, data = umf2, se=FALSE, K=10, 
       starts=c(1, 0, 0, -5, -1))
   checkEqualsNumeric(coef(fm2.3), 
-      c(0.7039422, 0.5307081, -0.2339607, -1.8495494, 4.5613312), tol = 1e-4)
+      c(0.7038926, 0.5306853, -0.2339208, -1.8501411, 4.5668710), tol = 1e-4)
 
   y3 <- matrix(c(
       NA, 2, 1, 4,
@@ -172,7 +172,7 @@ test.pcountOpen.na <- function()
     umf8 <- unmarkedFramePCO(y=y8, yearlySiteCovs=list(ysc=ysc8), numPrimary=3)
     fm8 <- pcountOpen(~1, ~1, ~ysc, ~1, umf8, se=FALSE, K=10)
     checkEqualsNumeric(coef(fm8), 
-        c(0.7332303, -0.3489245, -2.4720594, 1.7194687, 1.8111326), tol=1e-5)
+        c(0.7362607, -0.4708421, -2.3317736, 1.7017999, 1.8114414), tol=1e-4)
 
 }
 
