@@ -15,10 +15,6 @@
 \alias{nllFun,unmarkedFit-method}
 \alias{parboot,unmarkedFit-method}
 \alias{plot,unmarkedFit,missing-method}
-\alias{predict,unmarkedFit-method}
-\alias{predict,unmarkedFitColExt-method}
-\alias{predict,unmarkedFitPCO-method}
-\alias{predict,unmarkedFitGMM-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{residuals,unmarkedFitOccu-method}
