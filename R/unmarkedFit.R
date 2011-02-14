@@ -840,9 +840,12 @@ setMethod("fitted", "unmarkedFitGMM",
     T <- data@numPrimary
     J <- ncol(y) / T
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda') + Xlam.offset))
-    phi <- plogis(Xphi %*% coef(object, 'phi') + Xphi.offset)
+    if(T==1) 
+        phi <- 1
+    else
+        phi <- plogis(Xphi %*% coef(object, 'phi') + Xphi.offset)
     phi.mat <- matrix(phi, nrow=M, ncol=T, byrow=TRUE)
-    phi.ijt <- as.numeric(apply(phi, 2, rep, times=J))
+    phi.ijt <- as.numeric(apply(phi.mat, 2, rep, times=J))
     cp <- getP(object, na.rm = na.rm)
 
 # My tests show that E[y] is the same under the P and NB models    
@@ -1353,6 +1356,122 @@ setMethod("getP", "unmarkedFitDS",
 
 
 
+## FIXME: This is only working for half-normal 
+
+setMethod("getP", "unmarkedFitGDS", 
+    function(object, na.rm = TRUE) 
+{
+    formula <- object@formula
+    detformula <- as.formula(formula[[2]])
+    umf <- object@data
+    designMats <- getDesign(umf, formula, na.rm = na.rm)
+    y <- designMats$y
+    Xdet <- designMats$Xdet
+    Xdet.offset <- designMats$Xdet.offset
+    if (is.null(Xdet.offset))
+        Xdet.offset <- rep(0, nrow(Xdet))
+    M <- nrow(y)
+    T <- umf@numPrimary
+    J <- ncol(y) / T
+    ppars <- coef(object, type = "det")
+    db <- umf@dist.breaks
+    w <- diff(db)
+    survey <- umf@survey
+    key <- object@keyfun
+    tlength <- umf@tlength
+
+    u <- a <- matrix(NA, M, J)
+    switch(survey,
+    line = {
+        for(i in 1:M) {
+            a[i,] <- tlength[i] * w
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        }, 
+    point = {
+        for(i in 1:M) {
+            a[i, 1] <- pi*db[2]^2
+            for(j in 2:J)
+                a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        })
+
+
+    cp <- array(NA, c(M, J, T))
+    switch(key, 
+        halfnorm = {
+            sigma <- exp(Xdet %*% ppars + Xdet.offset)
+            for(i in 1:M) {
+                for(t in 1:T) {
+                    switch(survey, 
+                    line = { 
+                        f.0 <- 2 * dnorm(0, 0, sd=sigma[i])
+                        int <- 2 * (pnorm(db[-1], 0, sd=sigma[i]) - 
+                            pnorm(db[-(J+1)], 0, sd=sigma[i]))
+                        cp[i,,t] <- int / f.0 / w 
+                        },
+                    point = {
+                        for(j in 1:J) {
+                            cp[i, j, t] <- integrate(grhn, db[j], db[j+1], 
+                                sigma=sigma[i], rel.tol=1e-4)$value * 
+                                2 * pi / a[i, j]
+                            }
+                        })
+                    cp[i,,t] <- cp[i,,t] * u[i,]    
+                    }                
+                }
+            }, 
+        exp = {
+            rate <- exp(Xdet %*% ppars + Xdet.offset)
+            for(i in 1:M) {
+                switch(survey, 
+                line = {
+                    for(j in 1:J) {
+                        cp[i, j] <- integrate(gxexp, db[j], db[j+1], 
+                            rate=rate[i], rel.tol=1e-4)$value / w[j]
+                        }},
+                point = {
+                    for(j in 1:J) {
+                        cp[i, j] <- u * integrate(grexp, db[j], db[j+1], 
+                            rate=rate[i], rel.tol=1e-4)$value * 
+                            2 * pi * a[i, j]
+                        }	
+                    })
+                cp[i,] <- cp[i,] * u[i,]
+                }
+            }, 
+        hazard = {
+            shape <- exp(Xdet %*% ppars + Xdet.offset)
+            scale <- exp(coef(object, type="scale"))
+            for(i in 1:M) {
+                switch(survey, 
+                line = {
+                    for(j in 1:J) {
+                        cp[i, j] <- integrate(gxhaz, db[j], db[j+1], 
+                            shape=shape[i], scale=scale, 
+                            rel.tol=1e-4)$value / w[j]
+                        }},
+                point = {   
+                    for(j in 1:J) {
+                        cp[i, j] <- integrate(grhaz, db[j], db[j+1], 
+                            shape = shape[i], scale=scale, 
+                            rel.tol=1e-4)$value * 2 * pi / a[i, j]
+                    }})
+                cp[i,] <- cp[i,] * u[i,]
+                }
+            },
+		uniform = cp <- u)
+		cp <- matrix(cp, nrow=M)
+    return(cp)
+})
+
+
+
+
+
+
+
 
 
 setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE) 
@@ -1816,6 +1935,99 @@ setMethod("simulate", "unmarkedFitGMM",
             for(t in 1:T)
                 y.sim[i,,t] <- drop(rmultinom(1, N[i,t], cp.arr[i,t,]))[1:J] 
         simList[[s]] <- matrix(y.sim, nrow=n, ncol=J*T) # note, byrow=F
+        }
+    return(simList)
+})
+
+          
+          
+
+
+
+
+setMethod("simulate", "unmarkedFitGDS", 
+    function(object, nsim = 1, seed = NULL, na.rm=TRUE)
+{
+    formula <- object@formula
+    umf <- object@data
+    db <- umf@dist.breaks
+    w <- diff(db)
+    mixture <- object@mixture
+    
+    D <- getDesign(umf, formula, na.rm = na.rm)
+    y <- D$y
+    Xlam <- D$Xlam
+    Xphi <- D$Xphi    
+    Xdet <- D$Xdet        
+    Xlam.offset <- D$Xlam.offset
+    Xphi.offset <- D$Xphi.offset
+    Xdet.offset <- D$Xdet.offset
+        
+    if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
+    if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
+    if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
+
+    M <- nrow(y)  
+    T <- umf@numPrimary
+    R <- ncol(y)
+    J <- R / T
+
+    lamPars <- coef(object, type="lambda")
+    if(T>1)
+        phiPars <- coef(object, type="phi")
+    detPars <- coef(object, type="det")
+    nLP <- ncol(Xlam)
+    nPP <- ifelse(T==1, 0, ncol(Xphi))
+    nDP <- ncol(Xdet)
+    nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
+
+    lambda <- exp(Xlam %*% lamPars + Xlam.offset) 
+    if(T==1) 
+        phi <- matrix(1, M, T)
+    else {
+        phi <- plogis(Xphi %*% phiPars + Xphi.offset)
+        phi <- matrix(phi, M, T, byrow=TRUE)
+        }
+    shape <- exp(Xdet %*% detPars + Xdet.offset)
+    shape <- matrix(shape, M, T, byrow=TRUE)
+    alpha <- exp(coef(object, type="alpha"))
+
+    if(identical(object@output, "density")) {
+        switch(umf@survey, 
+            line = {
+                tlength <- umf@tlength
+                A <- tlength * max(db) * 2
+                },
+            point = {
+                A <- pi * max(db)^2
+                })
+        switch(umf@unitsIn, 
+            m = A <- A / 1e6,
+            km = A <- A)
+        switch(object@unitsOut, 
+            ha = A <- A * 100,
+            kmsq = A <- A)
+        lambda <- lambda * A
+        }
+    cp <- getP(object, na.rm = na.rm)
+    ysim <- cpa <- array(cp, c(M, J, T))
+       
+    simList <- list()
+    for(s in 1:nsim) {
+        for(i in 1:M) {
+            switch(mixture, 
+                P = Ns <- rpois(1, lambda[1]),
+                NB = Ns <- rnbinom(1, mu=lambda[i], size=alpha))
+            for(t in 1:T) {
+                N <- rbinom(1, Ns, phi[i,t])
+                cp.it <- cpa[i,,t]
+                cp.it <- c(cp.it, 1-sum(cp.it))
+                y.it <- as.integer(rmultinom(1, N, prob=cp.it))
+                ysim[i,,t] <- y.it[1:J]
+                }
+            }
+        y.mat <- matrix(ysim, nrow=M)                
+        simList[[s]] <- y.mat
         }
     return(simList)
 })
