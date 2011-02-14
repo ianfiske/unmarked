@@ -60,14 +60,15 @@ identLink <- function(x) x
 
 identLinkGrad <- function(x) 1
 
+# !!! This is now done in C++. See rowProds() below
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))
 
-rowProds <-
-function(x, na.rm = FALSE)
-{
-  exp(rowSums(log(x), na.rm = na.rm))
-}
+#rowProds <-
+#function(x, na.rm = FALSE)
+#{
+#  exp(rowSums(log(x), na.rm = na.rm))
+#}
 
 # helper function to coerce an array of matrices to a list
 
@@ -440,86 +441,6 @@ function(lam, r)
 }
 
 
-#handleNA <- function(stateformula, detformula, umf) {
-#  y <- umf@y
-#  # TODO: use J <- ncol(y) here and throughout instead of wrong use of obsNum?  ... fixed in new version "handleNA2"
-#  obsNum <- umf@obsNum
-#  M <- nrow(y)
-#  siteCovs <- umf@siteCovs
-#  obsCovs <- umf@obsCovs
-#  umf.clean <- umf
-#
-#  ## set up obsCov indices
-#  sites <- rep(1:M, each = obsNum)
-#  obs <- rep(1:obsNum, M)
-#
-#  ## assume that siteCovs have already been added to obsCovs
-#  X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
-#  V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
-#
-#  if(ncol(V.mf) > 0) {
-#    ## which sites have NA's in obsCovs included in detformula?
-#    V.NA <- apply(is.na(V.mf), 1, any)
-#    V.NA.obs <- cbind(sites[V.NA], obs[V.NA])
-#    V.NA.sites <- unique(sites[V.NA])
-#    umf.clean@y[V.NA.obs] <- NA
-#    if(any(!is.na(y[V.NA.obs]))) {
-#      warning(sprintf("NA(s) found in 'obsCovs' that were not in 'y' matrix.
-#Corresponding observation(s) 'y' were replaced with NA.
-#Observations removed from site(s) %s", paste(V.NA.sites,collapse=", ")))
-#    }
-#  }
-#
-#  if(ncol(X.mf) > 0) {
-#    ## which sites have NA in site var included in stateformula?
-#    X.NA.sites <- unique(which(apply(is.na(X.mf), 1, any)))
-#    umf.clean@y[X.NA.sites,] <- NA
-#    if(length(X.NA.sites) > 0) {
-#      warning(sprintf("NA(s) found in 'siteCovs' that were not in 'y' matrix.
-#Corresponding site(s) in 'y' were replaced with NA: %s",
-#                      paste(X.NA.sites,collapse=", ")))
-#    }
-#  }
-#
-#  ## which sites have all NA's in y?
-#  na.sites <- which(apply(is.na(umf.clean@y), 1, all))
-#  if(length(na.sites) > 0) {
-#    umf.clean@y <- umf.clean@y[-na.sites,]
-#    umf.clean@siteCovs <- subset(umf.clean@siteCovs,
-#                                 !seq(length=M) %in% na.sites)
-#    umf.clean@obsCovs <- umf.clean@obsCovs[!(sites %in% na.sites),]
-#  }
-#
-#  ## reorder obs within year/site so that non-NA's come first
-#  ## this is needed to use ragged array style indexing
-#  if(umf.clean@primaryNum > 1) {
-#    J <- umf.clean@obsNum/umf.clean@primaryNum
-#    for(i in 1:M) {
-#      obsCovs.i <- umf.clean@obsCovs[sites == i, ]
-#      for(t in 1:umf.clean@primaryNum) {
-#        y.it <- umf.clean@y[i,((t-1)*J + 1 ): (t*J) ]
-#        obsCovs.it <- obsCovs.i[((t-1)*J + 1 ): (t*J), ]
-#
-#        notNA.inds <- which(!is.na(y.it))
-#        numGoods <- length(notNA.inds)
-#
-#        y.it[seq(length=numGoods)] <- y.it[notNA.inds]
-#        if(numGoods > 0) obsCovs.it[1:numGoods,] <- obsCovs.it[notNA.inds,]
-#        if(numGoods < J) {
-#          y.it[(numGoods+1) : J] <-  NA
-#          obsCovs.it[(numGoods+1) : J, ] <- NA
-#        }
-#
-#        umf.clean@y[i,((t-1)*J + 1 ): (t*J) ] <- y.it
-#        obsCovs.i[((t-1)*J + 1 ): (t*J), ] <- obsCovs.it
-#      }
-#      umf.clean@obsCovs[sites == i, ] <- obsCovs.i
-#    }
-#  }
-#
-#  return(umf.clean)
-#}
-
 
 
 ## function to move data around:
@@ -596,6 +517,9 @@ function(lam, r)
 #
 #  list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
 #}
+
+# Design matrices
+
 
 
 
@@ -748,6 +672,35 @@ SSE <- function(fit)
 
 
 
+# For pcountOpen. Calculate time intervals acknowledging gaps due to NAs
+# The first column indicates is time since first primary period + 1
+formatDelta <- function(d, yna)
+{
+    M <- nrow(yna)
+    T <- ncol(yna)
+    d <- d - min(d, na.rm=TRUE) + 1
+    dout <- matrix(NA, M, T)
+    dout[,1] <- d[,1]
+    dout[,2:T] <- t(apply(d, 1, diff))
+    for(i in 1:M) {
+        if(any(yna[i,]) & !all(yna[i,])) { # 2nd test for simulate
+            last <- max(which(!yna[i,]))
+            y.in <- yna[i, 1:last]
+            d.in <- d[i, 1:last]
+            if(any(y.in)) {
+                for(j in last:2) { # first will always be time since 1
+                    nextReal <- which(!yna[i, 1:(j-1)])
+                    if(length(nextReal) > 0)
+                        dout[i, j] <- d[i, j] - d[i, max(nextReal)]
+                    else
+                        dout[i, j] <- d[i, j] - 1
+                    }
+                }
+            }
+        }
+    return(dout)
+}
+                        
 
 
 
@@ -755,3 +708,65 @@ SSE <- function(fit)
 
 
 
+
+
+
+
+# Markov transition probs for pcountOpen
+tranProbs <- function(Nr, omegaR, gammaR, deltaR, dynamicsR) 
+{
+    if(any(Nr < 0))
+        stop("N should be a non-negative integer")
+    if(any(is.na(omegaR)) | any(is.na(gammaR)))
+        stop("Missing values are not allowed in omega or gamma")
+    if(length(omegaR) != 1 | length(gammaR) != 1 | length(deltaR) != 1)
+        stop("omega, gamma, and delta must be scalars")
+    if(any(is.na(deltaR)))
+        stop("Delta cannot be NA")
+    if(!dynamicsR %in% c("constant", "autoreg", "notrend"))
+        stop("dynamics must be one of: constant, autoreg, or notrend")
+    
+    .Call("tranProbs", 
+        as.integer(Nr),
+        as.double(omegaR),
+        as.double(gammaR),
+        as.integer(deltaR),
+        as.character(dynamicsR),
+        PACKAGE = "unmarked")
+}
+
+
+# The slow way
+tranProbsR <- function(N, omega, gamma, delta, dynamics) {
+    lN <- length(N)
+    bpsum <- matrix(NA, lN, lN)
+    for(j in 1:lN) {
+        for(k in 1:lN) {
+            cmin0 <- 0:min(N[j], N[k])
+            gamma2 <- ifelse(identical(dynamics, "autoreg"), gamma*N[j], gamma)
+            bpsum[k, j] <- sum(dbinom(cmin0, N[j], omega) * 
+                dpois(N[k]-cmin0, gamma2))
+            }}
+    bpsum <- t(t(bpsum) / colSums(bpsum))
+    if(delta>1) {
+        for(d in 2:delta) {
+            bpsum <- bpsum %*% bpsum
+            bpsum <- t(t(bpsum) / colSums(bpsum))
+            }
+        }
+    return(bpsum)
+    }
+    
+    
+    
+    
+# much faster than apply(m, 1, prod) or exp(rowSums(log(m)))    
+rowProds <- function(m) 
+{
+    .Call("rowProds", 
+        as.matrix(m),
+        PACKAGE = "unmarked")
+}    
+    
+    
+ 

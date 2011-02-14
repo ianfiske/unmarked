@@ -177,9 +177,15 @@ setMethod("modSel", "unmarkedFitList",
         }
     fits <- object@fits
     estList <- lapply(fits, coef, altNames=TRUE)
-    seList <- lapply(fits, function(x) 
-        if(any(is.na(x@opt$hessian))) rep(NA, length(coef(x))) 
-            else sqrt(diag(vcov(x, altNames=TRUE))))
+    seList <- lapply(fits, function(x) {
+		se <- tryCatch(sqrt(diag(vcov(x, altNames=TRUE))),
+			error=function(e) simpleError("Hessian is singular."))
+        if(identical(class(se)[1], "simpleError")) {
+            cat(se$message, fill=TRUE)
+            se <- rep(NA, length(coef(x)))
+            }
+        return(se)
+        })
     eNames <- sort(unique(unlist(sapply(estList, names))))
     seNames <- paste("SE", eNames, sep="")
     eseNames <- character(l <- length(c(eNames, seNames)))
