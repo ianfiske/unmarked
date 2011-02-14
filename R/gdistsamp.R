@@ -61,10 +61,13 @@ asum <- a / sum(a)
     
 
 lamPars <- colnames(Xlam)
-phiPars <- colnames(Xphi)
+if(T==1)
+    phiPars <- character(0)
+else
+    phiPars <- colnames(Xphi)
 detPars <- colnames(Xdet)
 nLP <- ncol(Xlam)
-nPP <- ncol(Xphi)
+nPP <- ifelse(T==1, 0, ncol(Xphi))
 nDP <- ncol(Xdet)
 nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
 
@@ -93,10 +96,14 @@ for(i in 1:M) {
 
 nll <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
-    phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
+    if(T==1) 
+        phi <- matrix(1, M, T)
+    else {
+        phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
+        phi <- matrix(phi, M, T, byrow=TRUE)
+        }
     shape <- exp(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
 
-    phi <- matrix(phi, M, T, byrow=TRUE)
     shape <- matrix(shape, M, T, byrow=TRUE)
 
     switch(mixture, 
@@ -157,24 +164,28 @@ lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
     estimates = ests[1:nLP],
     covMat = as.matrix(covMat[1:nLP, 1:nLP]), invlink = "exp",
     invlinkGrad = "exp")
-phiEstimates <- unmarkedEstimate(name = "Availability", short.name = "phi",
-    estimates = ests[(nLP+1):(nLP+nPP)],
-    covMat = as.matrix(covMat[(nLP+1):(nLP+nPP), (nLP+1):(nLP+nPP)]), 
-        invlink = "logistic",
-    invlinkGrad = "logistic.grad")
 detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     estimates = ests[(nLP+nPP+1):(nLP+nPP+nDP)],
     covMat = as.matrix(
         covMat[(nLP+nPP+1):(nLP+nPP+nDP), (nLP+nPP+1):(nLP+nPP+nDP)]), 
     invlink = "exp", invlinkGrad = "exp")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
-    phi=phiEstimates, det=detEstimates))
+    det=detEstimates))
+    
+if(T>1) {
+    estimateList@estimates$phi <- unmarkedEstimate(name = "Availability", 
+        short.name = "phi",estimates = ests[(nLP+1):(nLP+nPP)],
+        covMat = as.matrix(covMat[(nLP+1):(nLP+nPP), (nLP+1):(nLP+nPP)]), 
+        invlink = "logistic",
+        invlinkGrad = "logistic.grad")
+    }
 
-if(identical(mixture,"NB"))
+if(identical(mixture,"NB")) {
 		estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
         short.name = "alpha", estimates = ests[nP],
         covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
         invlinkGrad = "exp")
+    }
 
 umfit <- new("unmarkedFitGDS", fitType = "gdistsamp", 
     call = match.call(), formula = form, formlist = formlist,    
