@@ -575,7 +575,7 @@ setMethod("summary", "unmarkedMultFrame",
 	function(object,...) {
 		cat("unmarkedFrame Object\n\n")
 		cat(nrow(object@y), "sites\n")
-		cat("Maximum number of observations per site:",obsNum(object),"\n")
+		cat("Maximum number of observations per site:",ncol(object@y),"\n")
 			mean.obs <- mean(rowSums(!is.na(getY(object))))
 		cat("Mean number of observations per site:",round(mean.obs,2),"\n")
 		cat("Number of primary survey periods:", object@numPrimary, "\n")
