@@ -107,13 +107,25 @@ umf <- unmarkedFramePCO(y = y, numPrimary=T)
 
 summary(umf)
 
+
 # Fit model and backtransform
 (m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10))
-backTransform(m1, "lambda")
-backTransform(m1, "gamma")
-backTransform(m1, "omega")
-backTransform(m1, "det")
 
+(lam <- coef(backTransform(m1, "lambda"))) # or
+lam <- exp(coef(m1, type="lambda"))
+gam <- exp(coef(m1, type="gamma"))
+om <- plogis(coef(m1, type="omega"))
+p <- plogis(coef(m1, type="det"))
+
+
+# Calculate population size at each time period
+N.hat <- matrix(NA, M, T)
+N.hat[,1] <- lam
+for(t in 2:T) {
+    N.hat[,t] <- om*N.hat[,t-1] + gam
+    }
+
+rbind(N=colSums(N), N.hat=colSums(N.hat))
 
 }
 
