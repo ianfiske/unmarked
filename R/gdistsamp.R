@@ -1,7 +1,7 @@
 
 gdistsamp <- function(lambdaformula, phiformula, pformula, data, 
     keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
-    output=c("density", "abund"), unitsOut=c("ha", "kmsq"), 
+    output=c("abund", "density"), unitsOut=c("ha", "kmsq"), 
     mixture=c('P', 'NB'), K, 
     starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4)
 {
@@ -51,13 +51,31 @@ yt <- apply(y, 1:2, function(x) {
     else return(sum(x, na.rm=TRUE))
     })
 
-# point counts only    
-a <- rep(NA, J)
-a[1] <- pi*db[2]^2
-for(j in 2:J) {
-   a[j] <- pi*db[j+1]^2 - sum(a[1:(j-1)])
-   }
-asum <- a / sum(a) 
+    u <- a <- matrix(NA, M, J)
+    switch(survey,
+        line = {
+            for(i in 1:M) {
+                a[i,] <- tlength[i] * w
+                u[i,] <- a[i,] / sum(a[i,])
+                }
+            }, 
+        point = {
+            for(i in 1:M) {
+                a[i, 1] <- pi*db[2]^2
+                for(j in 2:J)
+                    a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+                u[i,] <- a[i,] / sum(a[i,])
+                }
+            })
+    switch(survey, 
+        line = A <- rowSums(a) * 2,
+        point = A <- rowSums(a))
+    switch(unitsIn, 
+        m = A <- A / 1e6,
+        km = A <- A)
+    switch(unitsOut, 
+        ha = A <- A * 100,
+        kmsq = A <- A)
     
 
 lamPars <- colnames(Xlam)
@@ -94,49 +112,65 @@ for(i in 1:M) {
 # Sites w/ missing siteCovs should be removed beforehand
 # Sites w/ some missing yearlySiteCovs shoul be retained but      
 
-nll <- function(pars) {
-    lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
-    if(T==1) 
-        phi <- matrix(1, M, T)
-    else {
-        phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
-        phi <- matrix(phi, M, T, byrow=TRUE)
-        }
-    shape <- exp(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
+switch(keyfun,
+halfnorm = { 
+    altdetParms <- paste("sigma", colnames(V), sep="")
 
-    shape <- matrix(shape, M, T, byrow=TRUE)
+    nll <- function(pars) {
+        lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
+        if(identical(output, "density"))
+            lambda <- lambda * A
 
-    switch(mixture, 
-        P = f <- sapply(k, function(x) dpois(x, lambda)),
-        NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, 
-            size=exp(pars[nP]))))
-    for(i in 1:M) {
-        A <- matrix(0, lk, T)
-        for(t in 1:T) {
-            if(!all(naflag[i,t,])) {
+        if(T==1) 
+            phi <- matrix(1, M, T)
+        else {
+            phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
+            phi <- matrix(phi, M, T, byrow=TRUE)
+            }
+        shape <- exp(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
+        shape <- matrix(shape, M, T, byrow=TRUE)
+
+        switch(mixture, 
+            P = f <- sapply(k, function(x) dpois(x, lambda)),
+            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, 
+                size=exp(pars[nP]))))
+        for(i in 1:M) {
+            mn <- matrix(0, lk, T)
+            for(t in 1:T) {
+                if(!all(naflag[i,t,])) {
                 cp <- rep(NA, J)
-                for(j in 1:J) {
-                    cp[j] <- integrate(grhn, db[j], db[j+1], 
-                        sigma=shape[i, t], rel.tol=rel.tol, 
-                        stop.on.error=FALSE, subdivisions=50)$value * 2 * 
-                        pi / a[j]
-                    }
-                cp <- cp * asum * phi[i, t]
-                #if(sum(cp)>1) 
-                #    cat("a =", a, "\ncp =", cp, "\nphi =", phi[i,t], "\n")
+                switch(survey,
+                line = {
+                    f.0 <- 2 * dnorm(0, 0, sd=sigma[i])
+                    int <- 2 * (pnorm(db[-1], 0, sd=sigma[i]) - 
+                        pnorm(db[-(J+1)], 0, sd=sigma[i]))
+                    cp <- int / f.0 / w 
+                    }, 
+                point = {                                    
+                    for(j in 1:J) {
+                        cp[j] <- integrate(grhn, db[j], db[j+1], 
+                            sigma=shape[i, t], rel.tol=rel.tol, 
+                            stop.on.error=FALSE, subdivisions=50)$value * 
+                            2 * pi / a[j]
+                        }
+                    })
+                cp <- cp * u * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
-                A[, t] <- lfac.k - lfac.kmyt[i, t,] + 
+                }
+                mn[, t] <- lfac.k - lfac.kmyt[i, t,] + 
                     sum(y[i, t, !naflag[i,t,]] * 
                     log(cp[which(!naflag[i,t,])])) + 
                     kmyt[i, t,] * log(cp[J+1])
                 }
+            g[i,] <- exp(rowSums(mn))
             }
-        g[i,] <- exp(rowSums(A))
+        f[!fin] <- g[!fin] <- 0
+        ll <- rowSums(f*g)
+        -sum(log(ll))
         }
-    f[!fin] <- g[!fin] <- 0
-    ll <- rowSums(f*g)
-    -sum(log(ll))
-    }
+    },
+exp = {stop("Negative exponential not ready")},
+hazard = {stop("Hazard-rate not ready")})
     
 if(missing(starts)) {
     starts <- rep(0, nP)
@@ -174,10 +208,9 @@ estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
     
 if(T>1) {
     estimateList@estimates$phi <- unmarkedEstimate(name = "Availability", 
-        short.name = "phi",estimates = ests[(nLP+1):(nLP+nPP)],
+        short.name = "phi", estimates = ests[(nLP+1):(nLP+nPP)],
         covMat = as.matrix(covMat[(nLP+1):(nLP+nPP), (nLP+1):(nLP+nPP)]), 
-        invlink = "logistic",
-        invlinkGrad = "logistic.grad")
+        invlink = "logistic", invlinkGrad = "logistic.grad")
     }
 
 if(identical(mixture,"NB")) {
