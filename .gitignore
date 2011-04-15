@@ -5,3 +5,6 @@
 runit
 bc
 .Rhistory
+*.Rd~
+*.R~
+NAMESPACE~
