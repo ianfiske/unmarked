@@ -1,8 +1,8 @@
 
-gdistsamp <- function(lambdaformula, phiformula, pformula, data, 
-    keyfun=c("halfnorm", "exp", "hazard", "uniform"), 
-    output=c("abund", "density"), unitsOut=c("ha", "kmsq"), 
-    mixture=c('P', 'NB'), K, 
+gdistsamp <- function(lambdaformula, phiformula, pformula, data,
+    keyfun=c("halfnorm", "exp", "hazard", "uniform"),
+    output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
+    mixture=c('P', 'NB'), K,
     starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4)
 {
 if(!is(data, "unmarkedFrameGDS"))
@@ -12,21 +12,21 @@ keyfun <- match.arg(keyfun)
 output <- match.arg(output)
 unitsOut <- match.arg(unitsOut)
 db <- data@dist.breaks
-w <- diff(db)	
+w <- diff(db)
 tlength <- data@tlength
 survey <- data@survey
 unitsIn <- data@unitsIn
 mixture <- match.arg(mixture)
 
-formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula, 
+formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula,
     pformula = pformula)
 form <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- unmarked:::getDesign(data, formula = form)
 
 Xlam <- D$Xlam
-Xphi <- D$Xphi 
+Xphi <- D$Xphi
 Xdet <- D$Xdet
-y <- D$y  # MxJT 
+y <- D$y  # MxJT
 
 Xlam.offset <- D$Xlam.offset
 Xphi.offset <- D$Xphi.offset
@@ -38,7 +38,7 @@ if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
 if(missing(K) || is.null(K)) K <- max(y, na.rm=TRUE) + 20
 k <- 0:K
 lk <- length(k)
-M <- nrow(y)  
+M <- nrow(y)
 T <- data@numPrimary
 R <- ncol(y)
 J <- R / T
@@ -46,7 +46,7 @@ J <- R / T
 y <- array(y, c(M, J, T))
 y <- aperm(y, c(1,3,2))
 yt <- apply(y, 1:2, function(x) {
-    if(all(is.na(x))) 
+    if(all(is.na(x)))
         return(NA)
     else return(sum(x, na.rm=TRUE))
     })
@@ -58,7 +58,7 @@ yt <- apply(y, 1:2, function(x) {
                 a[i,] <- tlength[i] * w
                 u[i,] <- a[i,] / sum(a[i,])
                 }
-            }, 
+            },
         point = {
             for(i in 1:M) {
                 a[i, 1] <- pi*db[2]^2
@@ -67,16 +67,16 @@ yt <- apply(y, 1:2, function(x) {
                 u[i,] <- a[i,] / sum(a[i,])
                 }
             })
-    switch(survey, 
+    switch(survey,
         line = A <- rowSums(a) * 2,
         point = A <- rowSums(a))
-    switch(unitsIn, 
+    switch(unitsIn,
         m = A <- A / 1e6,
         km = A <- A)
-    switch(unitsOut, 
+    switch(unitsOut,
         ha = A <- A * 100,
         kmsq = A <- A)
-    
+
 
 lamPars <- colnames(Xlam)
 if(T==1)
@@ -107,21 +107,21 @@ for(i in 1:M) {
             }
         }
     }
-    
+
 ## NA handling
 # Sites w/ missing siteCovs should be removed beforehand
-# Sites w/ some missing yearlySiteCovs shoul be retained but      
+# Sites w/ some missing yearlySiteCovs shoul be retained but
 
 switch(keyfun,
-halfnorm = { 
-    altdetParms <- paste("sigma", colnames(V), sep="")
+halfnorm = {
+    altdetParms <- paste("sigma", colnames(Xdet), sep="")
 
     nll <- function(pars) {
-        lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset) 
+        lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
 
-        if(T==1) 
+        if(T==1)
             phi <- matrix(1, M, T)
         else {
             phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
@@ -130,36 +130,36 @@ halfnorm = {
         shape <- exp(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
         shape <- matrix(shape, M, T, byrow=TRUE)
 
-        switch(mixture, 
+        switch(mixture,
             P = f <- sapply(k, function(x) dpois(x, lambda)),
-            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, 
+            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda,
                 size=exp(pars[nP]))))
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
                 if(!all(naflag[i,t,])) {
-                cp <- rep(NA, J)
+                p <- rep(NA, J)
                 switch(survey,
                 line = {
                     f.0 <- 2 * dnorm(0, 0, sd=sigma[i])
-                    int <- 2 * (pnorm(db[-1], 0, sd=sigma[i]) - 
+                    int <- 2 * (pnorm(db[-1], 0, sd=sigma[i]) -
                         pnorm(db[-(J+1)], 0, sd=sigma[i]))
-                    cp <- int / f.0 / w 
-                    }, 
-                point = {                                    
+                    p <- int / f.0 / w
+                    },
+                point = {
                     for(j in 1:J) {
-                        cp[j] <- integrate(grhn, db[j], db[j+1], 
-                            sigma=shape[i, t], rel.tol=rel.tol, 
-                            stop.on.error=FALSE, subdivisions=50)$value * 
-                            2 * pi / a[j]
+                        p[j] <- integrate(grhn, db[j], db[j+1],
+                            sigma=shape[i, t], rel.tol=rel.tol,
+                            stop.on.error=FALSE, subdivisions=50)$value *
+                            2 * pi / a[i,j]
                         }
                     })
-                cp <- cp * u * phi[i, t]
+                cp <- p * u[i,] * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
                 }
-                mn[, t] <- lfac.k - lfac.kmyt[i, t,] + 
-                    sum(y[i, t, !naflag[i,t,]] * 
-                    log(cp[which(!naflag[i,t,])])) + 
+                mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
+                    sum(y[i, t, !naflag[i,t,]] *
+                    log(cp[which(!naflag[i,t,])])) +
                     kmyt[i, t,] * log(cp[J+1])
                 }
             g[i,] <- exp(rowSums(mn))
@@ -171,7 +171,7 @@ halfnorm = {
     },
 exp = {stop("Negative exponential not ready")},
 hazard = {stop("Hazard-rate not ready")})
-    
+
 if(missing(starts)) {
     starts <- rep(0, nP)
     starts[nLP+nPP+1] <- log(max(db))
@@ -179,7 +179,7 @@ if(missing(starts)) {
 fm <- optim(starts, nll, method = method, hessian = se, control = control)
 opt <- fm
 if(se) {
-		covMat <- tryCatch(solve(fm$hessian), error=function(x) 
+  covMat <- tryCatch(solve(fm$hessian), error=function(x)
         simpleError("Hessian is singular. Try using fewer covariates."))
     if(identical(class(covMat)[1], "simpleError")) {
         warning(covMat$message)
@@ -201,15 +201,15 @@ lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
 detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     estimates = ests[(nLP+nPP+1):(nLP+nPP+nDP)],
     covMat = as.matrix(
-        covMat[(nLP+nPP+1):(nLP+nPP+nDP), (nLP+nPP+1):(nLP+nPP+nDP)]), 
+        covMat[(nLP+nPP+1):(nLP+nPP+nDP), (nLP+nPP+1):(nLP+nPP+nDP)]),
     invlink = "exp", invlinkGrad = "exp")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
     det=detEstimates))
-    
+
 if(T>1) {
-    estimateList@estimates$phi <- unmarkedEstimate(name = "Availability", 
+    estimateList@estimates$phi <- unmarkedEstimate(name = "Availability",
         short.name = "phi", estimates = ests[(nLP+1):(nLP+nPP)],
-        covMat = as.matrix(covMat[(nLP+1):(nLP+nPP), (nLP+1):(nLP+nPP)]), 
+        covMat = as.matrix(covMat[(nLP+1):(nLP+nPP), (nLP+1):(nLP+nPP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
     }
 
@@ -220,9 +220,9 @@ if(identical(mixture,"NB")) {
         invlinkGrad = "exp")
     }
 
-umfit <- new("unmarkedFitGDS", fitType = "gdistsamp", 
-    call = match.call(), formula = form, formlist = formlist,    
-    data = data, estimates = estimateList, sitesRemoved = D$removed.sites, 
+umfit <- new("unmarkedFitGDS", fitType = "gdistsamp",
+    call = match.call(), formula = form, formlist = formlist,
+    data = data, estimates = estimateList, sitesRemoved = D$removed.sites,
     AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll,
     mixture=mixture, K=K, keyfun=keyfun, unitsOut=unitsOut, output=output)
 

@@ -23,7 +23,7 @@ unmarkedFit <- function(fitType, call, formula, data, sitesRemoved, estimates,
     return(umfit)
 }
 
-# ---------------------------- CHILD CLASSES -----------------------------------
+# ---------------------------- CHILD CLASSES ----------------------------
 
 
 setClass("unmarkedFitDS",
@@ -89,7 +89,6 @@ setClass("unmarkedFitGMM",
         K = "numeric"),
     contains = "unmarkedFit")
 
-<<<<<<< HEAD
 
 setClass("unmarkedFitGDS",
     representation(
@@ -98,10 +97,8 @@ setClass("unmarkedFitGDS",
         output = "character"),
     contains = "unmarkedFitGMM")
 
-=======
->>>>>>> master
 
-# -------------------------- Show and Summary ----------------------------------
+# -------------------------- Show and Summary ----------------------------
 
 
 setMethod("show", "unmarkedFit", function(object)
@@ -186,7 +183,7 @@ setMethod("names", "unmarkedFit", function(x)
 
 
 
-# ----------------------------- Prediction ------------------------------------
+# ----------------------------- Prediction -----------------------------
 
 
 
@@ -382,16 +379,18 @@ setMethod("predict", "unmarkedFitGMM",
     if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
     formlist <- object@formlist
-    lamformula <- formlist$lambdaformula
+    lambdaformula <- formlist$lambdaformula
     phiformula <- formlist$phiformula
     pformula <- formlist$pformula
     formula <- object@formula
 
     if(inherits(newdata, "unmarkedFrame"))
-        cls <- "unmarkedFrame"
+      cls <- "unmarkedFrame"
+    else
+      cls <- class(newdata)
     switch(cls,
         unmarkedFrame = {
-            D <- getDesign(newdata, formula, na.rm = na.rm)
+            D <- unmarked:::getDesign(newdata, formula, na.rm = na.rm)
             switch(type,
                 lambda = {
                     X <- D$Xlam
