@@ -1226,7 +1226,7 @@ setMethod("hist", "unmarkedFitDS",
 
 ############################# CHILD CLASS METHODS ##############################
 
-                                        # Extract detection probs
+# Extract detection probs
 setGeneric("getP", function(object, ...) standardGeneric("getP"))
 
 
@@ -1358,7 +1358,6 @@ setMethod("getP", "unmarkedFitDS",
 
 
 
-## FIXME: This is only working for half-normal
 
 setMethod("getP", "unmarkedFitGDS",
     function(object, na.rm = TRUE)
@@ -1435,7 +1434,7 @@ setMethod("getP", "unmarkedFitGDS",
                         }},
                 point = {
                     for(j in 1:J) {
-                        cp[i, j] <- u * integrate(grexp, db[j], db[j+1],
+                        cp[i, j] <- integrate(grexp, db[j], db[j+1],
                             rate=rate[i], rel.tol=1e-4)$value *
                             2 * pi * a[i, j]
                         }
@@ -1463,8 +1462,8 @@ setMethod("getP", "unmarkedFitGDS",
                 cp[i,] <- cp[i,] * u[i,]
                 }
             },
-		uniform = cp <- u)
-		cp <- matrix(cp, nrow=M)
+	uniform = cp <- u)
+    cp <- matrix(cp, nrow=M)
     return(cp)
 })
 
@@ -1670,10 +1669,12 @@ setMethod("simulate", "unmarkedFitPCO",
     J <- ncol(y) / T
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda')))
     if(dynamics != "notrend")
-        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, byrow=TRUE)
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1,
+                        byrow=TRUE)
     else
         gamma <- matrix(NA, M, T-1)
-    omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, byrow=TRUE)
+    omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1,
+                    byrow=TRUE)
     p <- getP(object, na.rm = na.rm)
     N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
@@ -1954,6 +1955,7 @@ setMethod("simulate", "unmarkedFitGDS",
     db <- umf@dist.breaks
     w <- diff(db)
     mixture <- object@mixture
+    keyfun <- object@keyfun
 
     D <- getDesign(umf, formula, na.rm = na.rm)
     y <- D$y
@@ -1977,10 +1979,6 @@ setMethod("simulate", "unmarkedFitGDS",
     if(T>1)
         phiPars <- coef(object, type="phi")
     detPars <- coef(object, type="det")
-    nLP <- ncol(Xlam)
-    nPP <- ifelse(T==1, 0, ncol(Xphi))
-    nDP <- ncol(Xdet)
-    nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
 
     lambda <- exp(Xlam %*% lamPars + Xlam.offset)
     if(T==1)
@@ -1989,9 +1987,6 @@ setMethod("simulate", "unmarkedFitGDS",
         phi <- plogis(Xphi %*% phiPars + Xphi.offset)
         phi <- matrix(phi, M, T, byrow=TRUE)
         }
-    shape <- exp(Xdet %*% detPars + Xdet.offset)
-    shape <- matrix(shape, M, T, byrow=TRUE)
-    alpha <- exp(coef(object, type="alpha"))
 
     if(identical(object@output, "density")) {
         switch(umf@survey,
@@ -2018,11 +2013,14 @@ setMethod("simulate", "unmarkedFitGDS",
         for(i in 1:M) {
             switch(mixture,
                 P = Ns <- rpois(1, lambda[1]),
-                NB = Ns <- rnbinom(1, mu=lambda[i], size=alpha))
+                NB = {
+                    alpha <- exp(coef(object, type="alpha"))
+                    Ns <- rnbinom(1, mu=lambda[i], size=alpha)
+                    })
             for(t in 1:T) {
                 N <- rbinom(1, Ns, phi[i,t])
                 cp.it <- cpa[i,,t]
-                cp.it <- c(cp.it, 1-sum(cp.it))
+                cp.it[J+1] <- 1-sum(cp.it)
                 y.it <- as.integer(rmultinom(1, N, prob=cp.it))
                 ysim[i,,t] <- y.it[1:J]
                 }

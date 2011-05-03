@@ -401,10 +401,12 @@ if(!identical(keyfun, "uniform"))
         invlink = "exp", invlinkGrad = "exp")
 
 if(identical(keyfun, "hazard"))
-    estimateList@estimates$scale <- unmarkedEstimate(name = "Hazard-rate(scale)",
-        short.name = "scale", estimates = ests[nP-1],
-        covMat = as.matrix(covMat[nP-1, nP-1]), invlink = "exp",
-        invlinkGrad = "exp")
+    estimateList@estimates$scale <- unmarkedEstimate(
+        name = "Hazard-rate(scale)", short.name = "scale",
+        estimates = ests[(nLP+nPP+nDP+1):(nLP+nPP+nDP+1)],
+        covMat = covMat[(nLP+nPP+nDP+1):(nLP+nPP+nDP+1),
+                        (nLP+nPP+nDP+1):(nLP+nPP+nDP+1), drop=FALSE],
+        invlink = "exp", invlinkGrad = "exp")
 
 if(identical(mixture, "NB"))
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
