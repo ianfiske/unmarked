@@ -15,19 +15,13 @@ sim <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
     y <- array(0, c(R, J, T))
     for(i in 1:R) {
         M <- rpois(1, lambda * A) # Individuals within the rectangle
-        if(identical(survey, "pt")) {
-            X <- runif(M, -maxDist, maxDist)
-            Y <- runif(M, -maxDist, maxDist)
-            dM <- sqrt(X^2+Y^2)
-            dM <- dM[dM<=maxDist]
-            M <- length(dM)
-            }
-
         N <- rbinom(T, M, phi)    # Individuals available at time t
         for(t in 1:T) {
             switch(survey,
                 pt = {
-                    d <- dM[rbinom(M, 1, phi)==1]
+                    X <- runif(N[t], -maxDist, maxDist)
+                    Y <- runif(N[t], -maxDist, maxDist)
+                    d <- sqrt(X^2+Y^2)
                     },
                 line = {
                     d <- runif(N[t], 0, maxDist)
@@ -75,7 +69,7 @@ backTransform(m, type="det")
 
 
 # Point-transect, half-normal
-nsim <- 10
+nsim <- 5
 simout <- matrix(NA, nsim, 3)
 colnames(simout) <- c('lambda', 'phi', 'sigma')
 for(i in 1:nsim) {

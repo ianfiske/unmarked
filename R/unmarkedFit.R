@@ -418,7 +418,7 @@ setMethod("predict", "unmarkedFitGMM",
                     offset <- model.offset(mf)
                     },
                 det = {   # Note, this is p not pi
-                  mf <- model.frame(detformula, newdata)
+                  mf <- model.frame(detformula, newdata) # bug!
                   X <- model.matrix(detformula, mf)
                   offset <- model.offset(mf)
                 })
