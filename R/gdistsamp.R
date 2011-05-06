@@ -37,9 +37,6 @@ if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
 if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
 if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
 
-if(missing(K) || is.null(K)) K <- max(y, na.rm=TRUE) + 20
-k <- 0:K
-lk <- length(k)
 M <- nrow(y)
 T <- data@numPrimary
 R <- ncol(y)
@@ -53,31 +50,35 @@ yt <- apply(y, 1:2, function(x) {
     else return(sum(x, na.rm=TRUE))
     })
 
-    u <- a <- matrix(NA, M, J)
-    switch(survey,
-        line = {
-            for(i in 1:M) {
-                a[i,] <- tlength[i] * w
+if(missing(K) || is.null(K)) K <- max(yt, na.rm=TRUE) + 100
+k <- 0:K
+lk <- length(k)
+
+u <- a <- matrix(NA, M, J)
+switch(survey,
+    line = {
+        for(i in 1:M) {
+            a[i,] <- tlength[i] * w
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        },
+    point = {
+        for(i in 1:M) {
+            a[i, 1] <- pi*db[2]^2
+            for(j in 2:J)
+                a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
                 u[i,] <- a[i,] / sum(a[i,])
-                }
-            },
-        point = {
-            for(i in 1:M) {
-                a[i, 1] <- pi*db[2]^2
-                for(j in 2:J)
-                    a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
-                u[i,] <- a[i,] / sum(a[i,])
-                }
-            })
-    switch(survey,
-        line = A <- rowSums(a) * 2,
-        point = A <- rowSums(a))
-    switch(unitsIn,
-        m = A <- A / 1e6,
-        km = A <- A)
-    switch(unitsOut,
-        ha = A <- A * 100,
-        kmsq = A <- A)
+            }
+        })
+switch(survey,
+    line = A <- rowSums(a) * 2,
+    point = A <- rowSums(a))
+switch(unitsIn,
+    m = A <- A / 1e6,
+    km = A <- A)
+switch(unitsOut,
+    ha = A <- A * 100,
+    kmsq = A <- A)
 
 
 lamPars <- colnames(Xlam)
@@ -155,8 +156,8 @@ halfnorm = {
             phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
             phi <- matrix(phi, M, T, byrow=TRUE)
             }
-        shape <- exp(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)]+Xdet.offset)
-        shape <- matrix(shape, M, T, byrow=TRUE)
+        sigma <- exp(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)]+Xdet.offset)
+        sigma <- matrix(sigma, M, T, byrow=TRUE)
 
         switch(mixture,
             P = f <- sapply(k, function(x) dpois(x, lambda)),
@@ -208,7 +209,6 @@ exp = {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
-
         if(T==1)
             phi <- matrix(1, M, T)
         else {
@@ -324,7 +324,6 @@ hazard = {
         }
     },
 uniform = {
-    altdetParms <- paste("shape", colnames(Xdet), sep="")
     if(missing(starts)) {
         starts <- rep(0, nP)
         }
@@ -338,7 +337,8 @@ uniform = {
             phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
             phi <- matrix(phi, M, T, byrow=TRUE)
             }
-       switch(mixture,
+        p <- 1
+        switch(mixture,
             P = f <- sapply(k, function(x) dpois(x, lambda)),
             NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda,
                 size=exp(pars[nP]))))
@@ -346,7 +346,6 @@ uniform = {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
                 if(!all(naflag[i,t,])) {
-                    p <- 1
                     cp <- p * u[i,] * phi[i, t]
                     cp[J+1] <- 1 - sum(cp)
                     }
