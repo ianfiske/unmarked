@@ -13,12 +13,13 @@ setClass("unmarkedFit",
         covMatBS = "optionalMatrix")) # list of bootstrap sample fits
 
 # constructor for unmarkedFit objects
-unmarkedFit <- function(fitType, call, formula, data, sitesRemoved, estimates,
-    AIC, opt, negLogLike, nllFun)
+unmarkedFit <- function(fitType, call, formula, data, sitesRemoved,
+    estimates, AIC, opt, negLogLike, nllFun)
 {
     umfit <- new("unmarkedFit", fitType = fitType, call = call,
         formula = formula, data = data, sitesRemoved = sitesRemoved,
-        estimates = estimates, AIC = AIC, opt = opt, negLogLike = negLogLike,
+        estimates = estimates, AIC = AIC, opt = opt,
+        negLogLike = negLogLike,
         nllFun = nllFun)
     return(umfit)
 }
@@ -418,8 +419,8 @@ setMethod("predict", "unmarkedFitGMM",
                     offset <- model.offset(mf)
                     },
                 det = {   # Note, this is p not pi
-                  mf <- model.frame(detformula, newdata) # bug!
-                  X <- model.matrix(detformula, mf)
+                  mf <- model.frame(pformula, newdata)
+                  X <- model.matrix(pformula, mf)
                   offset <- model.offset(mf)
                 })
             })
@@ -440,7 +441,7 @@ setMethod("predict", "unmarkedFitGMM",
 
 
 
-# ---------------------- coef, vcov, and SE -----------------------------------
+# ---------------------- coef, vcov, and SE ------------------------------
 
 
 setMethod("coef", "unmarkedFit",
@@ -512,19 +513,20 @@ setMethod("LRT", c(m1="unmarkedFit", m2="unmarkedFit"), function(m1, m2)
     chisq <- 2 * abs(ll1 - ll2)
     DF <- abs(length(coef(m1)) - length(coef(m2)))
     pval <- pchisq(chisq, DF, lower.tail=FALSE)
-    return(data.frame(Chisq=chisq, DF = DF, 'Pr(>Chisq)' = pval, check.names=F))
+    return(data.frame(Chisq=chisq, DF = DF, 'Pr(>Chisq)' = pval,
+        check.names=F))
 })
 
 
 
 
 
-setMethod("confint", "unmarkedFit", function(object, parm, level = 0.95, type,
-    method = c("normal", "profile"))
+setMethod("confint", "unmarkedFit", function(object, parm, level = 0.95,
+    type, method = c("normal", "profile"))
 {
     method <- match.arg(method)
     if(missing(type))
-        stop(paste("Must specify type as one of (", paste(names(object),collapse=", "),").",sep=""))
+        stop(paste("Must specify type as one of (", paste(names(object), collapse=", "),").",sep=""))
     if(missing(parm))
         parm <- 1:length(object[type]@estimates)
     if(method == "normal") {
@@ -665,7 +667,8 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
             state.ijk <- state[rep(1:M, each = J*(K+1))]
             alpha <- exp(coef(object['alpha']))
             prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
-            all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk, prob.ijk)
+            all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk,
+                prob.ijk)
             prod.ijk <- rowProds(all)
             fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
             fitted <- matrix(fitted, M, J, byrow = TRUE)
@@ -687,9 +690,11 @@ setMethod("fitted", "unmarkedFitPCO",
     T <- data@numPrimary
     J <- ncol(y) / T
     lambda <- exp(Xlam %*% coef(object, 'lambda'))
-    omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1, byrow=TRUE)
+    omega <- matrix(plogis(Xom %*% coef(object, 'omega')), M, T-1,
+        byrow=TRUE)
     if(!identical(dynamics, "notrend"))
-        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1, byrow=TRUE)
+        gamma <- matrix(exp(Xgam %*% coef(object, 'gamma')), M, T-1,
+            byrow=TRUE)
     else {
         if(identical(dynamics, "notrend"))
             gamma <- (1-omega)*lambda
@@ -850,7 +855,7 @@ setMethod("fitted", "unmarkedFitGMM",
     phi.ijt <- as.numeric(apply(phi.mat, 2, rep, times=J))
     cp <- getP(object, na.rm = na.rm)
 
-# My tests show that E[y] is the same under the P and NB models
+# E[y] is the same under the P and NB models
 #    mix <- object@mixture
 #    switch(mix,
 #        P = {
@@ -896,7 +901,8 @@ setMethod("profile", "unmarkedFit",
         data.frame(type = rep(types[i], length.est),
             num = seq(length=length.est)))
         }
-    parm.fullnums <- which(numbertable$type == type & numbertable$num == parm)
+    parm.fullnums <- which(numbertable$type == type &
+        numbertable$num == parm)
 
     f <- function(value) {
         fixedNLL <- genFixedNLL(nll, parm.fullnums, value)
@@ -973,7 +979,8 @@ setMethod("update", "unmarkedFitColExt",
 
 
 setMethod("update", "unmarkedFitGMM",
-    function(object, lambdaformula, phiformula, pformula, ..., evaluate = TRUE)
+    function(object, lambdaformula, phiformula, pformula, ...,
+        evaluate = TRUE)
 {
     call <- object@call
     if (is.null(call))
@@ -1007,8 +1014,8 @@ setMethod("update", "unmarkedFitGMM",
 
 
 setMethod("update", "unmarkedFitPCO",
-    function(object, lambdaformula., gammaformula., omegaformula., pformula.,
-        ..., evaluate = TRUE)
+    function(object, lambdaformula., gammaformula., omegaformula.,
+        pformula., ..., evaluate = TRUE)
     {
         call <- object@call
         lambdaformula <- as.formula(call[['lambdaformula']])
@@ -1017,7 +1024,8 @@ setMethod("update", "unmarkedFitPCO",
         pformula <- as.formula(call[['pformula']])
         extras <- match.call(expand.dots = FALSE)$...
         if (!missing(lambdaformula.)) {
-            upLambdaformula <- update.formula(lambdaformula, lambdaformula.)
+            upLambdaformula <- update.formula(lambdaformula,
+                lambdaformula.)
             call[['lambdaformula']] <- upLambdaformula
             }
         if (!missing(gammaformula.)) {
@@ -1071,14 +1079,16 @@ setMethod("mle", "unmarkedFit", function(object) object@opt$par)
 
 setClass("profile", representation(prof = "matrix"))
 
-setGeneric("smoothed", function(object, mean=TRUE) standardGeneric("smoothed"))
+setGeneric("smoothed",
+    function(object, mean=TRUE) standardGeneric("smoothed"))
 setMethod("smoothed","unmarkedFitColExt",
           function(object, mean) {
             if(mean) object@smoothed.mean
             else object@smoothed
           })
 
-setGeneric("projected", function(object, mean=TRUE) standardGeneric("projected"))
+setGeneric("projected",
+    function(object, mean=TRUE) standardGeneric("projected"))
 setMethod("projected","unmarkedFitColExt",
           function(object, mean) {
             if(mean) object@projected.mean
@@ -1169,14 +1179,16 @@ setMethod("hist", "unmarkedFitDS",
                 stop("This method only works when there are no detection covars")
             switch(survey,
             line = {
-                int <- integrate(dxexp, dbreaks[1], dbreaks[nb], rate=rate)$value
+                int <- integrate(dxexp, dbreaks[1], dbreaks[nb],
+                    rate=rate)$value
                 h$density <- h$density * int
                 plot(h, freq=F, ...)
                 plot(function(x) dxexp(x, rate=rate), min(dbreaks),
                     max(dbreaks), add=T, lwd=lwd, lty=lty)
                 },
             point = {
-                int <- integrate(drexp, dbreaks[1], dbreaks[nb], rate=rate)$value
+                int <- integrate(drexp, dbreaks[1], dbreaks[nb],
+                    rate=rate)$value
                 h$density <- h$density * int
                 plot(h, freq=F, ...)
                 plot(function(r) drexp(r, rate=rate), min(dbreaks),
@@ -1203,7 +1215,8 @@ setMethod("hist", "unmarkedFitDS",
                     h$density <- h$density * int
                     plot(h, freq=F, ...)
                     plot(function(r) drhaz(r, shape=shape, scale=scale),
-                        min(dbreaks), max(dbreaks), add=T, lwd=lwd, lty=lty)
+                        min(dbreaks), max(dbreaks), add=T, lwd=lwd,
+                        lty=lty)
                 })
             },
         uniform = {
@@ -1224,7 +1237,7 @@ setMethod("hist", "unmarkedFitDS",
 
 
 
-############################# CHILD CLASS METHODS ##############################
+# ----------------------- CHILD CLASS METHODS ---------------------------
 
 # Extract detection probs
 setGeneric("getP", function(object, ...) standardGeneric("getP"))
@@ -1643,7 +1656,8 @@ setMethod("simulate", "unmarkedFitPCount",
     for(i in 1:nsim) {
         switch(mix,
             P = N <- rpois(M, lam),
-            NB = N <- rnbinom(M, size = exp(coef(object["alpha"])), mu = lam)
+            NB = N <- rnbinom(M, size = exp(coef(object["alpha"])),
+                mu = lam)
             )
         yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
         simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
@@ -1684,8 +1698,8 @@ setMethod("simulate", "unmarkedFitPCO",
         for(i in 1:M) {
             switch(mix,
                 P = N[i, 1] <- rpois(1, lambda),
-                NB = N[i, 1] <- rnbinom(1, size = exp(coef(object["alpha"])),
-                    mu = lambda))
+                NB = N[i, 1] <- rnbinom(1, size =
+                    exp(coef(object["alpha"])), mu = lambda))
             if(delta[i, 1] > 1) {
                 for(d in 2:delta[i, 1])
                     N[i, 1] <- N[i, 1] * omega[i, 1] + gamma[i, 1]
@@ -1698,7 +1712,7 @@ setMethod("simulate", "unmarkedFitPCO",
                     S[i, t-1] <- rbinom(1, N[i, t-1], omega[i, t-1])
                     if(identical(dynamics, "autoreg"))
                         gamma[i, t-1] <- gamma[i, t-1] * N[i, t-1]
-                    if(identical(dynamics, "notrend")) # is this true for t>2??
+                    if(identical(dynamics, "notrend"))
                         gamma[i, t-1] <- (1-omega[i, t-1]) * lambda[i]
                     G[i, t-1] <- rpois(1, gamma[i, t-1])
                     N[i, t] <- S[i, t-1] + G[i, t-1]
@@ -1928,7 +1942,8 @@ setMethod("simulate", "unmarkedFitGMM",
     for(s in 1:nsim) {
         switch(mixture,
             P = M <- rpois(n=n, lambda=lam),
-            NB = M <- rnbinom(n=n, mu=lam, size=exp(coef(object, type="alpha"))))
+            NB = M <- rnbinom(n=n, mu=lam,
+                size=exp(coef(object, type="alpha"))))
 
         N <- rbinom(n*T, size=M, prob=phi.mat)
         N <- matrix(N, nrow=n, ncol=T, byrow=TRUE)
@@ -1936,7 +1951,8 @@ setMethod("simulate", "unmarkedFitGMM",
         y.sim <- array(NA, c(n, J, T))
         for(i in 1:n)
             for(t in 1:T)
-                y.sim[i,,t] <- drop(rmultinom(1, N[i,t], cp.arr[i,t,]))[1:J]
+                y.sim[i,,t] <- drop(rmultinom(1, N[i,t],
+                     cp.arr[i,t,]))[1:J]
         simList[[s]] <- matrix(y.sim, nrow=n, ncol=J*T) # note, byrow=F
         }
     return(simList)
@@ -2035,7 +2051,7 @@ setMethod("simulate", "unmarkedFitGDS",
 
 
 
-############################## PARAMETRIC BOOTSTRAP ###########################
+# ----------------------- PARAMETRIC BOOTSTRAP --------------------------
 
 setGeneric("parboot",
            def = function(object, ...) {
@@ -2076,12 +2092,13 @@ setMethod("parboot", "unmarkedFit",
         y.sim <- simList[[i]]
         is.na(y.sim) <- is.na(y)
         simdata@y <- y.sim
-        fits[[i]] <- update(object, data=simdata, starts=ests, se=FALSE, ...)
+        fits[[i]] <- update(object, data=simdata, starts=ests, se=FALSE,
+            ...)
         t.star[i,] <- statistic(fits[[i]], ...)
         if(!missing(report)) {
             if(nsim > report && i %in% seq(report, nsim, by=report))
-                cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=", "),
-                    fill=TRUE)
+                cat(paste(round(t.star[(i-(report-1)):i,], 1),
+                          collapse=","), fill=TRUE)
             flush.console()
             }
         }
@@ -2124,7 +2141,8 @@ setMethod("show", "parboot", function(object)
 
 
 setMethod("plot", signature(x="parboot", y="missing"),
-    function(x, y, xlab, main = "Parametric Bootstrapped Samples", xlim, ...)
+    function(x, y, xlab, main = "Parametric Bootstrapped Samples", xlim,
+        ...)
 {
     t.star <- x@t.star
     t0 <- x@t0
@@ -2142,7 +2160,7 @@ setMethod("plot", signature(x="parboot", y="missing"),
 })
 
 
-# ----------------------- Nonparametric bootstrapping --------------------------
+# ----------------------- Nonparametric bootstrapping -------------------
 
 ## nonparboot return entire list of fits...
 ##  they will be processed by vcov, confint, etc.
@@ -2189,7 +2207,8 @@ setMethod("nonparboot", "unmarkedFit",
             }
             object@bootstrapSamples <- c(object@bootstrapSamples,
                 replicate(B, boot.iter(), simplify = FALSE))
-            coefs <- t(sapply(object@bootstrapSamples, function(x) coef(x)))
+            coefs <- t(sapply(object@bootstrapSamples,
+                 function(x) coef(x)))
             v <- cov(coefs)
             object@covMatBS <- v
             inds <- .estimateInds(object)
@@ -2203,35 +2222,40 @@ setMethod("nonparboot", "unmarkedFit",
 setMethod("nonparboot", "unmarkedFitOccu",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
-    callNextMethod(object, B=B, keepOldSamples=keepOldSamples, bsType="both")
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="both")
 })
 
 
 setMethod("nonparboot", "unmarkedFitPCount",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
-    callNextMethod(object, B=B, keepOldSamples=keepOldSamples, bsType="both")
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="both")
 })
 
 
 setMethod("nonparboot", "unmarkedFitMPois",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
-    callNextMethod(object, B=B, keepOldSamples=keepOldSamples, bsType="site")
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="site")
 })
 
 
 setMethod("nonparboot", "unmarkedFitDS",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
-    callNextMethod(object, B=B, keepOldSamples=keepOldSamples, bsType="site")
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="site")
 })
 
 
 setMethod("nonparboot", "unmarkedFitOccuRN",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
-    callNextMethod(object, B=B, keepOldSamples=keepOldSamples, bsType="both")
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="both")
 })
 
 
@@ -2269,7 +2293,8 @@ setMethod("nonparboot", "unmarkedFitColExt",
             }
             object@bootstrapSamples <- c(object@bootstrapSamples,
                 replicate(B, boot.iter(), simplify = FALSE))
-            coefs <- t(sapply(object@bootstrapSamples, function(x) coef(x)))
+            coefs <- t(sapply(object@bootstrapSamples,
+                              function(x) coef(x)))
             v <- cov(coefs)
             object@covMatBS <- v
             inds <- .estimateInds(object)
@@ -2281,18 +2306,20 @@ setMethod("nonparboot", "unmarkedFitColExt",
                 function(x) x@smoothed.mean[1,]))
             smoothed.unocc <- t(sapply(object@bootstrapSamples,
                 function(x) x@smoothed.mean[2,]))
-            object@smoothed.mean.bsse <- rbind(sqrt(diag(cov(smoothed.occ))),
-                                               sqrt(diag(cov(smoothed.unocc))))
+            object@smoothed.mean.bsse <-
+                rbind(sqrt(diag(cov(smoothed.occ))),
+                      sqrt(diag(cov(smoothed.unocc))))
             projected.occ <- t(sapply(object@bootstrapSamples,
                 function(x) x@projected.mean[1,]))
             projected.unocc <- t(sapply(object@bootstrapSamples,
                 function(x) x@projected.mean[2,]))
-            object@projected.mean.bsse <- rbind(sqrt(diag(cov(projected.occ))),
-                                               sqrt(diag(cov(projected.unocc))))
+            object@projected.mean.bsse <-
+                rbind(sqrt(diag(cov(projected.occ))),
+                sqrt(diag(cov(projected.unocc))))
             object
           })
 
-################################# Helper functions #############################
+# ----------------------- Helper functions -------------------------------
 
 ## A helper function to return a list of indices for each estimate type
 ##
@@ -2310,7 +2337,8 @@ setMethod("nonparboot", "unmarkedFitColExt",
     } else {
       prev.list <- estimateInds(type-1)
       prev.max <- max(prev.list[[type-1]])
-      return(c(prev.list, list(seq(prev.max+1, prev.max+estimateLengths[type]))))
+      return(c(prev.list, list(seq(prev.max+1, prev.max +
+                                   estimateLengths[type]))))
     }
   }
   retlist <- estimateInds(length(estimateLengths))
