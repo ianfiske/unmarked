@@ -170,15 +170,15 @@ halfnorm = {
                 p <- rep(NA, J)
                 switch(survey,
                 line = {
-                    f.0 <- 2 * dnorm(0, 0, sd=sigma[i])
-                    int <- 2 * (pnorm(db[-1], 0, sd=sigma[i]) -
-                        pnorm(db[-(J+1)], 0, sd=sigma[i]))
+                    f.0 <- 2 * dnorm(0, 0, sd=sigma[i, t])
+                    int <- 2 * (pnorm(db[-1], 0, sd=sigma[i, t]) -
+                        pnorm(db[-(J+1)], 0, sd=sigma[i, t]))
                     p <- int / f.0 / w
                     },
                 point = {
                     for(j in 1:J) {
                         p[j] <- integrate(grhn, db[j], db[j+1],
-                            sigma=shape[i, t], rel.tol=rel.tol,
+                            sigma=sigma[i, t], rel.tol=rel.tol,
                             stop.on.error=FALSE, subdivisions=50)$value *
                             2 * pi / a[i,j]
                         }

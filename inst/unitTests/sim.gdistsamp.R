@@ -1,5 +1,7 @@
 
 
+library(unmarked)
+
 sim <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
     breaks=seq(0, 50, by=10), survey="pt", detfun="hn")
 {
@@ -18,6 +20,7 @@ sim <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
             Y <- runif(M, -maxDist, maxDist)
             dM <- sqrt(X^2+Y^2)
             dM <- dM[dM<=maxDist]
+            M <- length(dM)
             }
 
         N <- rbinom(T, M, phi)    # Individuals available at time t
@@ -96,7 +99,7 @@ hist(simout[,3], xlab=expression(sigma), main=""); abline(v=20, col=4)
 
 
 # Point-transect, neg exp
-nsim <- 100
+nsim <- 5
 simout <- matrix(NA, nsim, 3)
 colnames(simout) <- c('lambda', 'phi', 'rate')
 for(i in 1:nsim) {
@@ -150,18 +153,18 @@ hist(simout[,3], xlab=expression(sigma), main=""); abline(v=20, col=4)
 
 
 # Point-transect, uniform
-nsim <- 20
+nsim <- 5
 simout <- matrix(NA, nsim, 2)
 colnames(simout) <- c('lambda', 'phi')
 for(i in 1:nsim) {
     cat("sim", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y <- sim(lambda=20, phi=0.4, R=100, T=T, breaks=breaks, detfun="unif",
+    y <- sim(lambda=20, phi=0.6, R=100, T=T, breaks=breaks, detfun="unif",
              survey="pt")
     umf <- unmarkedFrameGDS(y = y, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m <- gdistsamp(~1, ~1, ~1, umf, keyfun="uniform", #output="density",
+    m <- gdistsamp(~1, ~1, ~1, umf, keyfun="uniform", output="density",
                    K=100, unitsOut="ha")
     e <- coef(m)
     simout[i,] <- c(exp(e[1]), plogis(e[2]))
