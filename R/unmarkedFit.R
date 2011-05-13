@@ -930,7 +930,8 @@ setMethod("update", "unmarkedFit",
     origFormula <- formula(call)
     if (is.null(call))
         stop("need an object with call slot")
-    extras <- match.call(expand.dots = FALSE)$...
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
     if (!missing(formula.)) {
         detformula <- as.formula(origFormula[[2]])
         stateformula <- as.formula(paste("~", origFormula[3], sep=""))
@@ -951,28 +952,30 @@ setMethod("update", "unmarkedFit",
             }
         }
     if (evaluate)
-        eval(call, parent.frame())
+        eval(call, parent.frame(2))
     else call
 })
 
 
 setMethod("update", "unmarkedFitColExt",
-    function(object, ..., evaluate = TRUE)
+    function(object, formula., ..., evaluate = TRUE)
 {
     call <- object@call
     if (is.null(call))
         stop("need an object with call slot")
-    extras <- match.call(expand.dots = FALSE)$...
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
     if (length(extras) > 0) {
         existing <- !is.na(match(names(extras), names(call)))
-        for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
-            if (any(!existing)) {
-                call <- c(as.list(call), extras[!existing])
-                call <- as.call(call)
+        for (a in names(extras)[existing])
+            call[[a]] <- extras[[a]]
+        if (any(!existing)) {
+            call <- c(as.list(call), extras[!existing])
+            call <- as.call(call)
             }
         }
     if (evaluate)
-        eval(call, parent.frame())
+        eval(call, parent.frame(2))
     else call
 })
 
@@ -995,7 +998,8 @@ setMethod("update", "unmarkedFitGMM",
     if (!missing(pformula))
         call$pformula <- update.formula(formlist$pformula,
             pformula)
-    extras <- match.call(expand.dots = FALSE)$...
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
     if(length(extras) > 0) {
         existing <- !is.na(match(names(extras), names(call)))
         for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
@@ -1005,7 +1009,7 @@ setMethod("update", "unmarkedFitGMM",
             }
         }
     if (evaluate)
-        eval(call, parent.frame())
+        eval(call, parent.frame(2))
     else call
 })
 
@@ -1022,7 +1026,8 @@ setMethod("update", "unmarkedFitPCO",
         gammaformula <- as.formula(call[['gammaformula']])
         omegaformula <- as.formula(call[['omegaformula']])
         pformula <- as.formula(call[['pformula']])
-        extras <- match.call(expand.dots = FALSE)$...
+        extras <- match.call(call=sys.call(-1),
+                             expand.dots = FALSE)$...
         if (!missing(lambdaformula.)) {
             upLambdaformula <- update.formula(lambdaformula,
                 lambdaformula.)
@@ -1049,7 +1054,7 @@ setMethod("update", "unmarkedFitPCO",
                 }
             }
         if (evaluate)
-            eval(call, parent.frame())
+            eval(call, parent.frame(2))
         else call
         })
 
@@ -2092,8 +2097,7 @@ setMethod("parboot", "unmarkedFit",
         y.sim <- simList[[i]]
         is.na(y.sim) <- is.na(y)
         simdata@y <- y.sim
-        fits[[i]] <- update(object, data=simdata, starts=ests, se=FALSE,
-            ...)
+        fits[[i]] <- update(object, data=simdata, starts=ests, se=FALSE)
         t.star[i,] <- statistic(fits[[i]], ...)
         if(!missing(report)) {
             if(nsim > report && i %in% seq(report, nsim, by=report))
@@ -2260,64 +2264,67 @@ setMethod("nonparboot", "unmarkedFitOccuRN",
 
 
 setMethod("nonparboot", "unmarkedFitColExt",
-          function(object, B = 0, keepOldSamples = TRUE, ...) {
-            if (identical(B, 0) && !is.null(object@bootstrapSamples)) {
-              return(object)
-            }
-            if (B <= 0 && is.null(object@bootstrapSamples)) {
-              stop("B must be greater than 0 when fit has no bootstrap samples.")
-            }
-            data <- object@data
-            psiParms <- coef(object, 'psi')
-            detParms <- coef(object, 'det')
-            colParms <- coef(object, 'col')
-            extParms <- coef(object, 'ext')
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+    if (identical(B, 0) && !is.null(object@bootstrapSamples))
+        return(object)
+    if (B <= 0 && is.null(object@bootstrapSamples))
+        stop("B must be greater than 0 when fit has no bootstrap samples.")
+    data <- object@data
+    psiParms <- coef(object, 'psi')
+    detParms <- coef(object, 'det')
+    colParms <- coef(object, 'col')
+    extParms <- coef(object, 'ext')
 
-            # bootstrap only after removing sites
-            designMats <- getDesign(object@data, formula = object@formula)
-            removed.sites <- designMats$removed.sites
-            data <- data[-removed.sites,]
-            y <- getY(data)
-            colnames(y) <- NULL
-            data@y <- y
-            M <- numSites(data)
-            boot.iter <- function() {
-              sites <- sort(sample(1:M, M, replace = TRUE))
-              data.b <- data[sites,]
-              y <- getY(data.b)
-              fm <- update(object, data = data.b, se = FALSE)
-              return(fm)
-            }
-            if (!keepOldSamples) {
-              object@bootstrapSamples <- NULL
-            }
-            object@bootstrapSamples <- c(object@bootstrapSamples,
-                replicate(B, boot.iter(), simplify = FALSE))
-            coefs <- t(sapply(object@bootstrapSamples,
-                              function(x) coef(x)))
-            v <- cov(coefs)
-            object@covMatBS <- v
-            inds <- .estimateInds(object)
-            for (est in names(inds)) {
-              v.est <- v[inds[[est]], inds[[est]], drop = FALSE]
-              object@estimates@estimates[[est]]@covMatBS <- v.est
-            }
-            smoothed.occ <- t(sapply(object@bootstrapSamples,
-                function(x) x@smoothed.mean[1,]))
-            smoothed.unocc <- t(sapply(object@bootstrapSamples,
-                function(x) x@smoothed.mean[2,]))
-            object@smoothed.mean.bsse <-
-                rbind(sqrt(diag(cov(smoothed.occ))),
-                      sqrt(diag(cov(smoothed.unocc))))
-            projected.occ <- t(sapply(object@bootstrapSamples,
-                function(x) x@projected.mean[1,]))
-            projected.unocc <- t(sapply(object@bootstrapSamples,
-                function(x) x@projected.mean[2,]))
-            object@projected.mean.bsse <-
+    # bootstrap only after removing sites
+    designMats <- getDesign(object@data, formula = object@formula)
+    removed.sites <- designMats$removed.sites
+    if(length(removed.sites) > 0) {
+        sites <- 1:nrow(getY(data))
+        keep <- which(!sites %in% removed.sites)
+        data <- data[keep,]
+        }
+    y <- getY(data)
+    colnames(y) <- NULL
+    data@y <- y
+    M <- numSites(data)
+    boot.iter <- function() {
+        sites <- sort(sample(1:M, M, replace = TRUE))
+        data.b <- data[sites,]
+        y <- getY(data.b)
+        fm <- update(object, data = data.b, se = FALSE)
+        return(fm)
+        }
+    if(!keepOldSamples)
+        object@bootstrapSamples <- NULL
+    object@bootstrapSamples <- c(object@bootstrapSamples,
+        replicate(B, boot.iter(), simplify = FALSE))
+    coefs <- t(sapply(object@bootstrapSamples, function(x) coef(x)))
+    v <- cov(coefs)
+    object@covMatBS <- v
+    inds <- .estimateInds(object)
+    for(est in names(inds)) {
+         v.est <- v[inds[[est]], inds[[est]], drop = FALSE]
+         object@estimates@estimates[[est]]@covMatBS <- v.est
+         }
+    smoothed.occ <- t(sapply(object@bootstrapSamples,
+         function(x) x@smoothed.mean[1,]))
+    smoothed.unocc <- t(sapply(object@bootstrapSamples,
+         function(x) x@smoothed.mean[2,]))
+    object@smoothed.mean.bsse <-
+         rbind(sqrt(diag(cov(smoothed.occ))),
+               sqrt(diag(cov(smoothed.unocc))))
+    projected.occ <- t(sapply(object@bootstrapSamples,
+         function(x) x@projected.mean[1,]))
+    projected.unocc <- t(sapply(object@bootstrapSamples,
+         function(x) x@projected.mean[2,]))
+             object@projected.mean.bsse <-
                 rbind(sqrt(diag(cov(projected.occ))),
-                sqrt(diag(cov(projected.unocc))))
-            object
-          })
+                      sqrt(diag(cov(projected.unocc))))
+    return(object)
+})
+
+
 
 # ----------------------- Helper functions -------------------------------
 
