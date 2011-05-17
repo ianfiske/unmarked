@@ -107,6 +107,58 @@ fm1 <- occu(~1 ~1, umf)
 fm2 <- occu(~veght+habitat ~veght+habitat, umf)
 fm3 <- occu(~veght ~veght+habitat, umf)
 
+
+# Goodness-of-fit test
+
+histories <- function(n) {
+    X <- matrix(0L, 2^n, n)
+    hold <- 1
+    for(i in 1:n) {
+        ind <- combn(n, i)
+        m <- ncol(ind)
+        for(k in 1:m) {
+            X[hold+k, ind[,k]] <- 1
+            }
+        hold <- m + hold
+        }
+    rownames(X) <- apply(X, 1, paste, collapse="")
+    return(X) # all possible histories. see expand.grid for alternative
+    }
+
+fitstat <- function(fm, out='stat') {
+    umf <- getData(fm)
+    y <- getY(umf)
+    if(any(is.na(y)))
+        stop("this function needs to be modified if NAs are present")
+    R <- nrow(y)
+    J <- ncol(y)
+    hist.all <- histories(ncol(y))
+    hist.names <- rownames(hist.all)
+    EO <- data.frame(h=rownames(hist.all), E=NA, O=0)
+    hist.obs <- apply(y, 1, paste, collapse="")
+    hist.tab <- table(hist.obs)
+    p <- getP(fm)
+    psi <- predict(fm, type="state")[,1]
+    for(i in 1:nrow(hist.all)) {
+        hist.i <- hist.names[i]
+        yh <- matrix(hist.all[i,], R, J, byrow=TRUE)
+        nd <- ifelse(any(yh>0), 0, 1)
+        cp <- p^yh * (1-p)^(1-yh)
+        cp <- apply(cp, 1, prod)
+        EO$E[i] <- sum(cp * psi + nd * (1-psi)) # likelihood
+        if(hist.i \%in\% names(hist.tab))
+            EO$O[i] <- hist.tab[hist.i]
+        }
+    if(identical(out, 'stat'))
+        return(sum((EO$O - EO$E)^2/EO$E)) # Chi-square stat
+    else
+        return(EO)
+    }
+
+pb <- parboot(fm4, statistic=fitstat, nsim=200, report=1, nG=10)
+pb
+
+
 # Model selection
 fms <- fitList(m1=fm1, m2=fm2, m3=fm3)
 modSel(fms)
