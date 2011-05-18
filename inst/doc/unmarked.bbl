@@ -1,0 +1,39 @@
+\begin{thebibliography}{1}
+
+\bibitem{mackenzie_estimating_2003}
+Darryl~I. {MacKenzie}, James~D. Nichols, James~E. Hines, Melinda~G. Knutson,
+  and Alan~B. Franklin.
+\newblock Estimating site occupancy, colonization, and local extinction when a
+  species is detected imperfectly.
+\newblock {\em Ecology}, 84(8):2200--2207, 2003.
+
+\bibitem{mackenzie_estimating_2002}
+Darryl~I. {MacKenzie}, James~D. Nichols, G.~B. Lachman, S.~Droege, J.~A. Royle,
+  and C.~A. Langtimm.
+\newblock Estimating site occupancy rates when detection probabilities are less
+  than one.
+\newblock {\em Ecology}, 83(8):2248--2255, 2002.
+
+\bibitem{royle_generalized_2004}
+J.~A. Royle.
+\newblock Generalized estimators of avian abundance from count survey data.
+\newblock {\em Animal Biodiversity and Conservation}, 27(1):375--386, 2004.
+
+\bibitem{royle_n-mixture_2004}
+J.~A Royle.
+\newblock N-mixture models for estimating population size from spatially
+  replicated counts.
+\newblock {\em Biometrics}, 60(1):108--115, 2004.
+
+\bibitem{royle_modeling_2004}
+J.~A. Royle, D.~K. Dawson, and S.~Bates.
+\newblock Modeling abundance effects in distance sampling.
+\newblock {\em Ecology}, 85(6):1591--1597, 2004.
+
+\bibitem{royle_estimating_2003}
+J.~A. Royle and J.~D. Nichols.
+\newblock Estimating abundance from repeated presence-absence data or point
+  counts.
+\newblock {\em Ecology}, 84(3):777--790, 2003.
+
+\end{thebibliography}

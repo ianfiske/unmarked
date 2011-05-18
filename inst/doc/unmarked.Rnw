@@ -108,16 +108,16 @@ To help stabilize the numerical optimization algorithm, we recommend
 standardizing the covariates.
 
 <<>>=
-	obsCovs(pcru) <- scale(obsCovs(pcru))
+obsCovs(pcru) <- scale(obsCovs(pcru))
 @
 
 
 Occupancy models can then be fit with the occu() function:
 
-<<fig>>=
-	fm1 <- occu(~1 ~1, pcru)
-	fm2 <- occu(~ MinAfterSunset + Temperature ~ 1, pcru)
-	fm2
+<<>>=
+fm1 <- occu(~1 ~1, pcru)
+fm2 <- occu(~ MinAfterSunset + Temperature ~ 1, pcru)
+fm2
 @
 
 Here, we have specified that the detection process is modeled with the
@@ -146,7 +146,7 @@ A predict method also exists.
 
 <<>>=
 newData <- data.frame(MinAfterSunset = 0, Temperature = -2:2)
-predict(fm2, type = 'det', newdata = newData)
+round(predict(fm2, type = 'det', newdata = newData, appendData=TRUE), 2)
 @
 
 
@@ -163,20 +163,29 @@ Model selection and multi-model inference can be implemented after
 organizing models using the fitList function.
 
 <<>>=
-fms <- fitList(Null = fm1, TimeTemp = fm2)
-modSel(fms, nullmod="Null")
+fms <- fitList('psi(.)p(.)' = fm1, 'psi(.)p(Time+Temp)' = fm2)
+modSel(fms)
 predict(fms, type='det', newdata = newData)
 @
 
 
 The parametric bootstrap can be used to check the adequacy of model fit.
-With binary data, observations need to be aggregated in some fashion.
-See ?unmarked for an encounter history formulation. Here we use the
-function fitstat1 to group the data according to the fitted values,
-and compute a $\chi^2$ statistic.
+Here we use a $\chi^2$ statistic appropriate for binary data.
 
 <<>>=
-(pb <- parboot(fm2, statistic=fitstat1, nsim=50))
+chisq <- function(fm) {
+    umf <- getData(fm)
+    y <- getY(umf)
+    y[y>1] <- 1
+    sr <- fm@sitesRemoved
+    if(length(sr)>0)
+        y <- y[-sr,,drop=FALSE]
+    fv <- fitted(fm, na.rm=TRUE)
+    y[is.na(fv)] <- NA
+    sum((y-fv)^2/(fv*(1-fv)), na.rm=TRUE)
+    }
+
+(pb <- parboot(fm2, statistic=chisq, nsim=200))
 @
 
 We fail to reject the null hypothesis, and conclude that the model fit

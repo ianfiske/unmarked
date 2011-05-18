@@ -773,36 +773,4 @@ rowProds <- function(m)
 
 # ------------------------ fit statistics -------------------------------
 
-fitstat1 <- function(fm, nG=10, out='stat') {
-    umf <- getData(fm)
-    y <- getY(umf)
-    y <- y[-fm@sitesRemoved,]
-    fv <- fitted(fm)
-    y[is.na(fv)] <- NA
-    mn <- min(fv, na.rm=TRUE)
-    mx <- max(fv, na.rm=TRUE)
-    if(identical(mn, mx))
-        stop("Covariates must be present")
-    if(length(unique(as.numeric(fv))) < nG)
-        stop("nG is too high")
-    cutpts <- seq(mn, mx, length=nG+1)
-    intervals <- diff(cutpts)
-    mids <- cutpts[-(nG+1)] + intervals
-    G <- cut(fv, cutpts, include.lowest=TRUE)
-    Gid <- levels(G)
-    n <- table(G)
-    E <- n*mids
-    if(any(n == 0))
-        warning("data are too sparse. Consider lowering nG")
-    O <- numeric(nG)
-    for(i in 1:nG) {
-        O[i] <- sum(y[G==Gid[i]]==1, na.rm=TRUE)
-        }
-    if(identical(out, 'stat')) {
-        return(sum((O-E)^2 / (n*mids*(1-mids))))
-        }
-    else
-        return(cbind(O=O, E=E))
-    }
-
 
