@@ -1,13 +1,11 @@
 
-############# VALIDATION FUNCTIONS #############################################
+############# VALIDATION FUNCTIONS #######################################
 
 validunmarkedFrame <- function(object)
 {
     errors <- character(0)
     M <- nrow(object@y)
     J <- ncol(object@y)
-    if(J < 2) # matrices can have 0 columns
-        errors <- c(errors, "y must have at least 2 columns")
     if(!is.null(object@siteCovs))
         if(nrow(object@siteCovs) != M)
             errors <- c(errors,
@@ -21,7 +19,7 @@ validunmarkedFrame <- function(object)
         errors
 }
 
-############ DATA CLASSES ######################################################
+############ DATA CLASSES ################################################
 
 # Class to hold data for analyses in unmarked.
 setClass("unmarkedFrame",
@@ -36,7 +34,7 @@ setClass("unmarkedFrame",
 
 setClass("unmarkedMultFrame",
     representation(numPrimary = "numeric",
-        #data frame in site-major, year-minor order describing site-level covs
+        #data frame in site-major, year-minor order describing siteCovs
         yearlySiteCovs = "optionalDataFrame"),
     contains="unmarkedFrame")
 
@@ -111,7 +109,8 @@ setClass("unmarkedFrameGDS",
 
 
 # Constructor for unmarkedFrames.
-unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo, obsToY)
+unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
+                          obsToY)
 {
     if(!missing(obsToY))
         obsNum <- nrow(obsToY)
@@ -137,17 +136,17 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo, obsToY)
 }
 
 
-unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength, survey,
-		unitsIn, mapInfo = NULL)
+unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength,
+                            survey, unitsIn, mapInfo = NULL)
 {
 	if(missing(survey))
         stop("survey argument must be specified")
-  if(missing(tlength) & survey == "point")
-  tlength <- numeric(0)
+        if(missing(tlength) & survey == "point")
+            tlength <- numeric(0)
 	umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
-			siteCovs = siteCovs, dist.breaks = dist.breaks, tlength = tlength,
-			survey = survey, unitsIn = unitsIn,
-			obsToY = matrix(1, 1, ncol(y)))
+                     siteCovs = siteCovs, dist.breaks = dist.breaks,
+                     tlength = tlength, survey = survey, unitsIn = unitsIn,
+                     obsToY = matrix(1, 1, ncol(y)))
 	return(umfds)
 }
 
@@ -157,15 +156,15 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
 {
 	J <- ncol(y)
 	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J),
-		mapInfo = mapInfo)
+                             mapInfo = mapInfo)
 	umf <- as(umf, "unmarkedFrameOccu")
 	umf
 }
 
 
 # This function constructs an unmarkedMultFrame object.
-unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
-	yearlySiteCovs = NULL)
+unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
+                              numPrimary, yearlySiteCovs = NULL)
 {
     J <- ncol(y)
 	  umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
@@ -222,7 +221,7 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
     if(class(yearlySiteCovs) == "list") {
         yearlySiteVars <- names(yearlySiteCovs)
         for(i in seq(length(yearlySiteVars))) {
-            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix","data.frame")))
                 stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
             if(ncol(yearlySiteCovs[[i]]) != numPrimary |
                 nrow(yearlySiteCovs[[i]]) != nrow(y))
@@ -255,7 +254,7 @@ unmarkedFrameGDS <- function(y, siteCovs = NULL, numPrimary,
     if(class(yearlySiteCovs) == "list") {
         yearlySiteVars <- names(yearlySiteCovs)
         for(i in seq(length(yearlySiteVars))) {
-            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix","data.frame")))
                 stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
             if(ncol(yearlySiteCovs[[i]]) != numPrimary |
                 nrow(yearlySiteCovs[[i]]) != nrow(y))
@@ -368,7 +367,7 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
     if(class(yearlySiteCovs) == "list") {
         yearlySiteVars <- names(yearlySiteCovs)
         for(i in seq(length(yearlySiteVars))) {
-            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix","data.frame")))
                 stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
             if(ncol(yearlySiteCovs[[i]]) != T |
                 nrow(yearlySiteCovs[[i]]) != nrow(y))
@@ -388,7 +387,7 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
 
 
 
-################ SHOW METHODS ##################################################
+################ SHOW METHODS ############################################
 
 
 setMethod("show", "unmarkedFrame", function(object)
@@ -418,38 +417,36 @@ setMethod("show", "unmarkedMultFrame",
 })
 
 
-############################ EXTRACTORS ########################################
+############################ EXTRACTORS ##################################
 
 # Extractor for site level covariates
 setGeneric("siteCovs", function(object,...) standardGeneric("siteCovs"))
-setMethod("siteCovs", "unmarkedFrame",
-		function(object) {
-			return(object@siteCovs)
-		})
 
-setGeneric("yearlySiteCovs",
-	function(object,...) standardGeneric("yearlySiteCovs"))
-setMethod("yearlySiteCovs", "unmarkedMultFrame",
-		function(object) {
-			return(object@yearlySiteCovs)
-		})
+setMethod("siteCovs", "unmarkedFrame", function(object) {
+    return(object@siteCovs)
+})
+
+setGeneric("yearlySiteCovs", function(object,...)
+    standardGeneric("yearlySiteCovs"))
+setMethod("yearlySiteCovs", "unmarkedMultFrame", function(object) {
+    return(object@yearlySiteCovs)
+})
 
 setGeneric("obsCovs", function(object,...) standardGeneric("obsCovs"))
-setMethod("obsCovs", "unmarkedFrame",
-		function(object, matrices = FALSE) {
-			M <- numSites(object)
-			R <- obsNum(object)
-			if(matrices) {
-				value <- list()
-				for(i in seq(length=length(object@obsCovs))){
-					value[[i]] <- matrix(object@obsCovs[,i], M, R, byrow = TRUE)
-				}
-				names(value) <- names(object@obsCovs)
-			} else {
-				value <- object@obsCovs
-			}
-			return(value)
-		})
+setMethod("obsCovs", "unmarkedFrame", function(object, matrices = FALSE) {
+    M <- numSites(object)
+    R <- obsNum(object)
+    if(matrices) {
+        value <- list()
+        for(i in seq(length=length(object@obsCovs))){
+            value[[i]] <- matrix(object@obsCovs[,i], M, R, byrow = TRUE)
+        }
+        names(value) <- names(object@obsCovs)
+    } else {
+        value <- object@obsCovs
+    }
+    return(value)
+})
 
 
 setGeneric("obsNum", function(object) standardGeneric("obsNum"))
@@ -468,35 +465,38 @@ setGeneric("obsToY", function(object) standardGeneric("obsToY"))
 setMethod("obsToY", "unmarkedFrame", function(object) object@obsToY)
 
 
-setGeneric("obsCovs<-", function(object, value) standardGeneric("obsCovs<-"))
+setGeneric("obsCovs<-", function(object, value)
+    standardGeneric("obsCovs<-"))
 setReplaceMethod("obsCovs", "unmarkedFrame", function(object, value) {
-			if(identical(class(object)[1], "unmarkedFrameDS"))
-			     stop("unmarkedFrameDS objects cannot have obsCovs")
-            object@obsCovs <- as.data.frame(value)
-			object
-		})
+    if(identical(class(object)[1], "unmarkedFrameDS"))
+        stop("unmarkedFrameDS objects cannot have obsCovs")
+    object@obsCovs <- as.data.frame(value)
+    object
+})
 
 
-setGeneric("siteCovs<-", function(object, value) standardGeneric("siteCovs<-"))
+setGeneric("siteCovs<-", function(object, value)
+    standardGeneric("siteCovs<-"))
 setReplaceMethod("siteCovs", "unmarkedFrame", function(object, value) {
-			object@siteCovs <- as.data.frame(value)
-			object
-		})
+    object@siteCovs <- as.data.frame(value)
+    object
+})
 
 
 setGeneric("yearlySiteCovs<-",
 	function(object, value) standardGeneric("yearlySiteCovs<-"))
-setReplaceMethod("yearlySiteCovs", "unmarkedMultFrame", function(object, value) {
-			object@yearlySiteCovs <- as.data.frame(value)
-			object
-		})
+setReplaceMethod("yearlySiteCovs", "unmarkedMultFrame",
+    function(object, value) {
+        object@yearlySiteCovs <- as.data.frame(value)
+        object
+    })
 
 
 setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
 setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
-			object@obsToY <- value
-			object
-		})
+    object@obsToY <- value
+    object
+})
 
 
 
@@ -505,106 +505,101 @@ setMethod("getY", "unmarkedFrame", function(object) object@y)
 
 
 setGeneric("coordinates", function(object) standardGeneric("coordinates"))
-setMethod("coordinates", "unmarkedFrame",
-		function(object) {
-			object@mapInfo@coordinates
-		})
+setMethod("coordinates", "unmarkedFrame", function(object) {
+    object@mapInfo@coordinates
+})
 
 
 setGeneric("projection", function(object) standardGeneric("projection"))
-setMethod("projection", "unmarkedFrame",
-		function(object) {
-			object@mapInfo@projection
-		})
+setMethod("projection", "unmarkedFrame", function(object) {
+    object@mapInfo@projection
+})
 
-################################### SUMMARY METHODS ############################
+################################### SUMMARY METHODS ######################
 
 
-setMethod("summary", "unmarkedFrame",
-	function(object,...) {
-		cat("unmarkedFrame Object\n\n")
-		cat(nrow(object@y), "sites\n")
-		cat("Maximum number of observations per site:",obsNum(object),"\n")
-			mean.obs <- mean(rowSums(!is.na(getY(object))))
-		cat("Mean number of observations per site:",round(mean.obs,2),"\n")
-		cat("Sites with at least one detection:",
-			sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))),
-				"\n\n")
-		cat("Tabulation of y observations:")
-		print(table(object@y, exclude=NULL))
-		if(!is.null(object@siteCovs)) {
-			cat("\nSite-level covariates:\n")
-			print(summary(object@siteCovs))
-			}
-		if(!is.null(object@obsCovs)) {
-			cat("\nObservation-level covariates:\n")
-			print(summary(object@obsCovs))
-			}
-	})
+setMethod("summary", "unmarkedFrame", function(object,...) {
+    cat("unmarkedFrame Object\n\n")
+    cat(nrow(object@y), "sites\n")
+    cat("Maximum number of observations per site:",obsNum(object),"\n")
+    mean.obs <- mean(rowSums(!is.na(getY(object))))
+    cat("Mean number of observations per site:",round(mean.obs,2),"\n")
+    cat("Sites with at least one detection:",
+        sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))),
+        "\n\n")
+    cat("Tabulation of y observations:")
+    print(table(object@y, exclude=NULL))
+    if(!is.null(object@siteCovs)) {
+        cat("\nSite-level covariates:\n")
+        print(summary(object@siteCovs))
+    }
+    if(!is.null(object@obsCovs)) {
+        cat("\nObservation-level covariates:\n")
+        print(summary(object@obsCovs))
+    }
+})
 
 
 
-setMethod("summary", "unmarkedFrameDS",
-	function(object, ...)
+setMethod("summary", "unmarkedFrameDS", function(object, ...)
 {
-	cat("unmarkedFrameDS Object\n\n")
-	cat(object@survey, "-transect survey design", "\n", sep="")
-	cat(paste("Distance class cutpoints (", object@unitsIn, "): ", sep=""),
-		object@dist.breaks, "\n\n")
-	cat(nrow(object@y), "sites\n")
-	cat("Maximum number of distance classes per site:", ncol(getY(object)), "\n")
-		mean.dc <- mean(rowSums(!is.na(getY(object))))
-	cat("Mean number of distance classes per site:", round(mean.dc, 2), "\n")
-	cat("Sites with at least one detection:",
-		sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))), "\n\n")
-	cat("Tabulation of y observations:")
-	print(table(object@y, exclude=NULL))
-	if(!is.null(object@siteCovs)) {
-		cat("\nSite-level covariates:\n")
-		print(summary(object@siteCovs))
-		}
-	if(!is.null(object@obsCovs)) {
-		warning("Observation-level covariates cannot be used by distsamp()")
-		}
+    cat("unmarkedFrameDS Object\n\n")
+    cat(object@survey, "-transect survey design", "\n", sep="")
+    cat(paste("Distance class cutpoints (", object@unitsIn, "): ", sep=""),
+        object@dist.breaks, "\n\n")
+    cat(nrow(object@y), "sites\n")
+    cat("Maximum number of distance classes per site:", ncol(getY(object)), "\n")
+    mean.dc <- mean(rowSums(!is.na(getY(object))))
+    cat("Mean number of distance classes per site:", round(mean.dc, 2), "\n")
+    cat("Sites with at least one detection:",
+        sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))), "\n\n")
+    cat("Tabulation of y observations:")
+    print(table(object@y, exclude=NULL))
+    if(!is.null(object@siteCovs)) {
+        cat("\nSite-level covariates:\n")
+        print(summary(object@siteCovs))
+    }
+    if(!is.null(object@obsCovs)) {
+        warning("Observation-level covariates cannot be used by distsamp()")
+    }
 })
 
 
 
 
-setMethod("summary", "unmarkedMultFrame",
-	function(object,...) {
-		cat("unmarkedFrame Object\n\n")
-		cat(nrow(object@y), "sites\n")
-		cat("Maximum number of observations per site:",ncol(object@y),"\n")
-			mean.obs <- mean(rowSums(!is.na(getY(object))))
-		cat("Mean number of observations per site:",round(mean.obs,2),"\n")
-		cat("Number of primary survey periods:", object@numPrimary, "\n")
-		cat("Number of secondary survey periods:",
-            obsNum(object) / object@numPrimary, "\n")
-        cat("Sites with at least one detection:",
-			sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))),
-				"\n\n")
-		cat("Tabulation of y observations:")
-		print(table(object@y, exclude=NULL))
-		if(!is.null(object@siteCovs)) {
-			cat("\nSite-level covariates:\n")
-			print(summary(object@siteCovs))
-			}
-		if(!is.null(object@obsCovs)) {
-			cat("\nObservation-level covariates:\n")
-			print(summary(object@obsCovs))
-			}
-		if(!is.null(object@yearlySiteCovs)) {
-			cat("\nYearly-site-level covariates:\n")
-			print(summary(object@yearlySiteCovs))
-			}
-	})
+setMethod("summary", "unmarkedMultFrame", function(object,...) {
+    cat("unmarkedFrame Object\n\n")
+    cat(nrow(object@y), "sites\n")
+    cat("Maximum number of observations per site:",ncol(object@y),"\n")
+    mean.obs <- mean(rowSums(!is.na(getY(object))))
+    cat("Mean number of observations per site:",round(mean.obs,2),"\n")
+    cat("Number of primary survey periods:", object@numPrimary, "\n")
+    cat("Number of secondary survey periods:",
+        obsNum(object) / object@numPrimary, "\n")
+    cat("Sites with at least one detection:",
+        sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))),
+        "\n\n")
+    cat("Tabulation of y observations:")
+    print(table(object@y, exclude=NULL))
+    if(!is.null(object@siteCovs)) {
+        cat("\nSite-level covariates:\n")
+        print(summary(object@siteCovs))
+    }
+    if(!is.null(object@obsCovs)) {
+        cat("\nObservation-level covariates:\n")
+        print(summary(object@obsCovs))
+    }
+    if(!is.null(object@yearlySiteCovs)) {
+        cat("\nYearly-site-level covariates:\n")
+        print(summary(object@yearlySiteCovs))
+    }
+})
 
 
 
 
-################################# PLOT METHODS #################################
-# TODO:  come up with nice show/summary/plot methods for each of these data types.
+################################# PLOT METHODS ###########################
+# TODO:  come up with nice show/summary/plot methods for each data types.
 
 setMethod("plot", c(x="unmarkedFrame", y="missing"),
 	function (x, y, panels = 1, colorkey, strip=FALSE,
@@ -642,52 +637,7 @@ setMethod("hist", "unmarkedFrameDS", function(x, ...)
 
 
 
-#setMethod("plot", c(x="unmarkedFrameOccu", y="missing"),
-#		function(x) {
-#			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFrameOccu object.")
-#			y <- getY(x)
-#			## get sites w/ at least one pos
-#			y <- as.factor(rowSums(y, na.rm = TRUE) > 0)
-#			levels(y) <- c("non-detection", "detection")
-#			siteCovs <- siteCovs(x)
-#			coords <- coordinates(x)
-#			if(is.null(x@mapInfo@projection)) {
-#				proj <- list(x = coords[,1], y = coords[,2])
-#			} else {
-#				proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
-#						parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
-#			}
-#			p <- qplot(x = proj$x, y = proj$y, colour = y, xlab = "longitude", ylab = "latitude")
-#			if(!is.null(x@mapInfo@projection)) {
-#				p + coord_map(project = x@mapInfo@projection)
-#			} else {
-#				p
-#			}
-#		})
-#
-
-#setMethod("plot", c(x="unmarkedFramePCount", y="missing"),
-#		function(x) {
-#			if(is.null(x@mapInfo)) stop("mapInfo is required to plot an unmarkedFramePCount object.")
-#			y <- getY(x)
-#			## plot maximums
-#			y <- apply(y, 1, max, na.rm = TRUE)
-#			siteCovs <- siteCovs(x)
-#			coords <- coordinates(x)
-#			if(is.null(x@mapInfo@projection)) {
-#				proj <- list(x = coords[,1], y = coords[,2])
-#			} else {
-#				proj <- mapproject(x = coords[,1], y = coords[,2], projection = x@mapInfo@projection,
-#					parameters = x@mapInfo@parameters, orientation = x@mapInfo@orientation)
-#			}
-#			p <- qplot(x = proj$x, y = proj$y, colour = y, xlab = "longitude", ylab = "latitude")
-#			if(!is.null(x@mapInfo@projection)) {
-#				p + coord_map(project = x@mapInfo@projection)
-#			} else {
-#				p
-#			}
-#		})
-################################# SELECTORS ####################################
+################################# SELECTORS ##############################
 
 # i is the vector of sites to extract
 
@@ -825,14 +775,6 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 		function(x, i, j)
 {
     u <- callNextMethod(x, i, j)
-#    ysc <- u@yearlySiteCovs
-#    if(!is.null(ysc)) {
-#        sites <- 1:nrow(ysc)
-#        T <- x@numPrimary
-#        keep <- sites %in% i
-#        ysc <- ysc[rep(keep, each=T),, drop=FALSE]
-#        u@yearlySiteCovs <- ysc
-#        }
     return(u)
 })
 
@@ -844,7 +786,7 @@ setMethod("head", "unmarkedFrame",
 			umf
 		})
 
-############################### COERCION #######################################
+############################### COERCION #################################
 
 setAs("data.frame", "unmarkedFrame", function(from)
 {
