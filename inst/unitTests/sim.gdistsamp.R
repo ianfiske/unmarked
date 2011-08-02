@@ -146,7 +146,7 @@ for(i in 1:nsim1) {
     y1 <- sim2(lambda=30, shape=50, phi=0.7, R=100, T=T, breaks=breaks)
     umf1 <- unmarkedFrameGDS(y = y1, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m1 <- gdistsamp(~1, ~1, ~1, umf1, output="density", K=150,
+    m1 <- gdistsamp(~1, ~1, ~1, umf1, output="density", K=100,
                     starts=c(3,0.5,3), se=FALSE)
     e <- coef(m1)
     simout1[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3]))
@@ -157,22 +157,24 @@ par(mfrow=c(3, 1))
 hist(simout1[,1], xlab=expression(lambda), main="")
 abline(v=30, col=4)
 hist(simout1[,2], xlab=expression(phi), main=""); abline(v=0.7, col=4)
-hist(simout1[,3], xlab=expression(sigma), main=""); abline(v=20, col=4)
+hist(simout1[,3], xlab=expression(sigma), main=""); abline(v=50, col=4)
 
 
 
 # Point-transect, neg exp
-nsim2 <- 100
+nsim2 <- 10
 simout2 <- matrix(NA, nsim2, 3)
 colnames(simout2) <- c('lambda', 'phi', 'rate')
 for(i in 1:nsim2) {
     cat("sim2", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y2 <- sim2(lambda=40, phi=0.7, R=100, T=T, breaks=breaks, detfun="exp")
+    y2 <- sim2(lambda=30, phi=0.7, shape=50, R=100, T=T, breaks=breaks,
+               detfun="exp")
     umf2 <- unmarkedFrameGDS(y = y2, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m2 <- gdistsamp(~1,~1,~1, umf2, keyfun="exp", output="density", K=100)
+    m2 <- gdistsamp(~1,~1,~1, umf2, keyfun="exp", output="density", K=100,
+                    starts=c(3,0,3), se=FALSE)
     e <- coef(m2)
     simout2[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3]))
     cat("\tbeta.hat =", simout2[i,], "\n")
@@ -180,44 +182,45 @@ for(i in 1:nsim2) {
 
 par(mfrow=c(3, 1))
 hist(simout2[,1], xlab=expression(lambda), main="")
-abline(v=40, col=4, lwd=2)
+abline(v=30, col=4, lwd=2)
 hist(simout2[,2], xlab=expression(phi), main="")
 abline(v=0.7, col=4, lwd=2)
 hist(simout2[,3], xlab=expression(rate), main="")
-abline(v=20, col=4, lwd=2)
+abline(v=50, col=4, lwd=2)
 
 
 
 
 # Point-transect, hazard
-nsim <- 100
+nsim <- 10
 simout <- matrix(NA, nsim, 4)
 colnames(simout) <- c('lambda', 'phi', 'shape', 'scale')
 for(i in 1:nsim) {
     cat("sim", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y <- sim2(lambda=20, phi=0.7, shape=20, scale=1, R=100, T=T,
+    y <- sim2(lambda=30, phi=0.7, shape=30, scale=5, R=100, T=T,
              breaks=breaks, detfun="haz")
     umf <- unmarkedFrameGDS(y = y, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
     m <- gdistsamp(~1, ~1, ~1, umf, keyfun="hazard", output="density",
-                   K=100, starts=c(3, 0, 2, 0))
+                   K=100, starts=c(3, 0, 2, 1), se=FALSE)
     e <- coef(m)
     simout[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3:4]))
+    cat(" beta.hat =", simout[i,], "\n")
     }
 
 par(mfrow=c(3, 1))
 hist(simout[,1], xlab=expression(lambda), main="")
-abline(v=20*(pi*50^2/10000), col=4)
+abline(v=30, col=4)
 hist(simout[,2], xlab=expression(phi), main=""); abline(v=0.7, col=4)
-hist(simout[,3], xlab=expression(sigma), main=""); abline(v=20, col=4)
+hist(simout[,3], xlab=expression(sigma), main=""); abline(v=30, col=4)
 
 
 
 
 # Point-transect, uniform
-nsim4 <- 100
+nsim4 <- 10
 simout4 <- matrix(NA, nsim4, 2)
 colnames(simout4) <- c('lambda', 'phi')
 for(i in 1:nsim4) {
@@ -230,7 +233,7 @@ for(i in 1:nsim4) {
     umf4 <- unmarkedFrameGDS(y = y4, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
     m4 <- gdistsamp(~1, ~1, ~1, umf4, keyfun="uniform", output="density",
-                   K=100, unitsOut="ha")
+                   K=100, unitsOut="ha", se=FALSE)
     e <- coef(m4)
     simout4[i,] <- c(exp(e[1]), plogis(e[2]))
     cat("\tbeta.hat =", simout4[i,], "\n")
@@ -271,26 +274,26 @@ for(i in 1:nsim5) {
 
 par(mfrow=c(3, 1))
 hist(simout5[,1], xlab=expression(lambda), main="")
-abline(v=20, col=4)
+abline(v=30, col=4)
 hist(simout5[,2], xlab=expression(phi), main=""); abline(v=0.7, col=4)
-hist(simout5[,3], xlab=expression(sigma), main=""); abline(v=20, col=4)
+hist(simout5[,3], xlab=expression(sigma), main=""); abline(v=50, col=4)
 
 
 
 # Line-transect, neg exp
-nsim6 <- 100
+nsim6 <- 10
 simout6 <- matrix(NA, nsim6, 3)
 colnames(simout6) <- c('lambda', 'phi', 'rate')
 for(i in 1:nsim6) {
     cat("sim6", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y6 <- sim2(lambda=20, phi=0.7, R=100, T=T, breaks=breaks, detfun="exp",
-             survey="line")
+    y6 <- sim2(lambda=30, phi=0.7, shape=30, R=100, T=T, breaks=breaks,
+               detfun="exp", survey="line")
     umf6 <- unmarkedFrameGDS(y = y6, survey="line", tlength=rep(100,100),
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m6 <- gdistsamp(~1, ~1, ~1, umf6,
-        keyfun="exp", output="density", K=100)
+    m6 <- gdistsamp(~1, ~1, ~1, umf6, keyfun="exp", output="density",
+                    K=100, se=FALSE, starts=c(3,0,3))
     e <- coef(m6)
     simout6[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3]))
     cat("\tbeta.hat =", simout6[i,], "\n")
@@ -298,26 +301,26 @@ for(i in 1:nsim6) {
 
 par(mfrow=c(3, 1))
 hist(simout6[,1], xlab=expression(lambda), main="")
-abline(v=20, col=4)
+abline(v=30, col=4)
 hist(simout6[,2], xlab=expression(phi), main=""); abline(v=0.7, col=4)
-hist(simout6[,3], xlab=expression(sigma), main=""); abline(v=20, col=4)
+hist(simout6[,3], xlab=expression(sigma), main=""); abline(v=30, col=4)
 
 
 
 
 # Line-transect, hazard
-nsim7 <- 100
+nsim7 <- 10
 simout7 <- matrix(NA, nsim7, 4)
 colnames(simout7) <- c('lambda', 'phi', 'shape', 'scale')
 for(i in 1:nsim7) {
     cat("sim7", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y7 <- sim2(lambda=20, phi=0.7, shape=20, scale=1, R=100, T=T,
+    y7 <- sim2(lambda=30, phi=0.7, shape=30, scale=5, R=100, T=T,
              breaks=breaks, detfun="haz", survey="line")
     umf7 <- unmarkedFrameGDS(y = y7, survey="line", tlength=rep(100,100),
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m7 <- gdistsamp(~1, ~1, ~1, umf7, rel.tol=0.01, keyfun="hazard",
+    m7 <- gdistsamp(~1, ~1, ~1, umf7, keyfun="hazard", K=100,
         starts=c(1.5, 0.5, 3, 0), output="density")
     e <- coef(m7)
     simout7[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3:4]))
@@ -334,7 +337,7 @@ hist(simout7[,3], xlab=expression(sigma), main=""); abline(v=20, col=4)
 
 
 # Line-transect, uniform
-nsim8 <- 100
+nsim8 <- 10
 simout8 <- matrix(NA, nsim8, 2)
 colnames(simout8) <- c('lambda', 'phi')
 for(i in 1:nsim8) {
@@ -347,7 +350,7 @@ for(i in 1:nsim8) {
     umf8 <- unmarkedFrameGDS(y = y8, survey="line", tlength=rep(100,100),
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
     m8 <- gdistsamp(~1, ~1, ~1, umf8, keyfun="uniform", output="density",
-                   K=100)
+                   K=100, se=FALSE)
     e <- coef(m8)
     simout8[i,] <- c(exp(e[1]), plogis(e[2]))
     }
@@ -394,5 +397,6 @@ points(rc1 <- rcirc(1000, 50))
 
 
 f <- function(r, R=50) 2*r/R^2
-plot(f, 0, 50)
-
+u <- runif(10000, 0, 50)
+d <- sample(u, 100, replace=TRUE, prob=f(u))
+hist(d)
