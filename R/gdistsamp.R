@@ -177,10 +177,12 @@ halfnorm = {
                     },
                 point = {
                     for(j in 1:J) {
-                        p[j] <- integrate(grhn, db[j], db[j+1],
+                        int <- integrate(grhn, db[j], db[j+1],
                             sigma=sigma[i, t], rel.tol=rel.tol,
-                            stop.on.error=FALSE, subdivisions=50)$value *
-                            2 * pi / a[i,j]
+                            stop.on.error=FALSE, subdivisions=50)
+                        if(!identical(int$message, "OK"))
+                            int$value <- NA
+                        p[j] <- int$value * 2 * pi / a[i,j]
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]

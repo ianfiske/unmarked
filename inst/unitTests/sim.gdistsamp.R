@@ -2,7 +2,8 @@
 
 library(unmarked)
 
-sim <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
+
+sim1 <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
     breaks=seq(0, 50, by=10), survey="pt", detfun="hn")
 {
     nb <- length(breaks)
@@ -10,7 +11,57 @@ sim <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
     maxDist <- max(breaks)
     tlength <- 1000
     switch(survey,
-#           pt = A <- (2*maxDist)^2 / 10000,   # Area (ha) of square
+           pt = A <- (2*maxDist)^2 / 10000,   # Area (ha) of square
+           line = A <- maxDist*2*100 / 10000 # Area (ha) 100m transect
+           )
+    a <- pi*breaks[2]^2
+    for(j in 2:J) {
+        a[j] <- pi*breaks[j+1]^2 - sum(a[1:(j-1)])
+        }
+    u <- a / sum(a)
+    y <- array(0, c(R, J, T))
+    for(i in 1:R) {
+        M <- rpois(1, lambda * A) # Individuals within the rectangle
+        if(identical(survey, "pt")) {
+            X <- runif(M, -maxDist, maxDist)
+            Y <- runif(M, -maxDist, maxDist)
+            d <- sqrt(X^2+Y^2)
+            d <- d[d<=maxDist]
+            M <- length(d)
+            }
+        else if(identical(survey, "line"))
+            d <- runif(M, -maxDist, maxDist)
+        else
+            stop("survey must be either 'point' or 'line'")
+        if(length(d) > 0) {
+            switch(detfun,
+                   hn   = p <- exp(-d^2 / (2 * shape^2)),
+                   exp  = p <- exp(-d/shape),
+                   haz  = p <- 1-exp(-(d/shape)^-scale),
+                   unif = p <- 1
+                   )
+            cp <- p * phi
+        } else next
+        for(t in 1:T) {
+            # Detection process
+            d1 <- d[rbinom(length(d), 1, cp) == 1]
+            y[i,,t] <- table(cut(d1, breaks, include.lowest=TRUE))
+        }
+    }
+    y <- matrix(y, nrow=R)
+    return(y)
+}
+
+
+
+sim2 <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
+    breaks=seq(0, 50, by=10), survey="pt", detfun="hn")
+{
+    nb <- length(breaks)
+    J <- nb-1
+    maxDist <- max(breaks)
+    tlength <- 1000
+    switch(survey,
            pt = A <- pi*maxDist^2 / 10000,   # Area (ha) of circle
            line = A <- maxDist*2*100 / 10000 # Area (ha) 100m transect
            )
@@ -19,33 +70,23 @@ sim <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
         a[j] <- pi*breaks[j+1]^2 - sum(a[1:(j-1)])
         }
     u <- a / sum(a)
-    mids <- breaks[-nb] + ((breaks[-1]-breaks[-nb])/2)
     y <- array(0, c(R, J, T))
     for(i in 1:R) {
-        M <- rpois(1, lambda * A) # Individuals within the rectangle
-#        if(identical(survey, "pt")) {
-#            X <- runif(M, -maxDist, maxDist)
-#            Y <- runif(M, -maxDist, maxDist)
-#            dM <- sqrt(X^2+Y^2)
-#            dM <- dM[dM<=maxDist]
-#            M <- length(dM)
-#            }
-#        N <- rbinom(T, M, phi)    # Individuals available at time t
+        M <- rpois(1, lambda * A) # Super-population
         for(t in 1:T) {
             switch(survey,
                 pt = {
-                    N <- rbinom(1, M, phi)
-#                    N <- rbinom(1, length(dM), phi)
-#                    d <- sample(dM, N)
-#                    X <- runif(N, -maxDist, maxDist)
-#                    Y <- runif(N, -maxDist, maxDist)
-#                    d <- sqrt(X^2+Y^2)
-#                    d <- d[d<=maxDist]
-                    d <- sample(mids, N, replace=TRUE, prob=u)
+                    z <- 2*pi*runif(M)
+                    u <- runif(M) + runif(M)
+                    r <- ifelse(u>1, 2-u, u)
+                    X <- maxDist*r*cos(z)
+                    Y <- maxDist*r*sin(z)
+                    d <- sqrt(X^2+Y^2)
+                    d <- d[d<=maxDist]
+                    d <- d
                     },
                 line = {
-                    N <- rbinom(1, M, phi)
-                    d <- runif(N, 0, maxDist)
+                    d <- runif(M, 0, maxDist)
                     })
 
             # Detection process
@@ -56,7 +97,8 @@ sim <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
                     haz  = p <- 1-exp(-(d/shape)^-scale),
                     unif = p <- 1
                     )
-                d1 <- d[rbinom(length(d), 1, p) == 1]
+                cp <- p * phi
+                d1 <- d[rbinom(length(d), 1, cp) == 1]
                 y[i,,t] <- table(cut(d1, breaks, include.lowest=TRUE))
                 }
             }
@@ -70,18 +112,22 @@ sim <- function(lambda=5, phi=0.5, shape=20, scale=10, R=100, T=3,
 
 
 
-
+source("../../R/gdistsamp.R")
 
 library(unmarked)
 
-breaks <- seq(0, 50, by=10)
-T <- 3
 set.seed(3)
-umf <- unmarkedFrameGDS(y = sim(lambda=20, T=T, breaks=breaks), survey="point",
-    unitsIn="m", dist.breaks=breaks, numPrimary=T)
+
+breaks <- seq(0, 50, by=10)
+T <- 5
+umf <- unmarkedFrameGDS(y = sim2(lambda=30, shape=50, phi=0.7,
+                                 T=T, breaks=breaks),
+                        survey="point", unitsIn="m",
+                        dist.breaks=breaks, numPrimary=T)
 summary(umf)
 
-system.time(m <- gdistsamp(~1, ~1, ~1, umf)) # 28s
+system.time(m <- gdistsamp(~1, ~1, ~1, umf, K=200, output="density",
+                           starts=c(3, 0, 3))) # 28s
 
 backTransform(m, type="lambda")
 backTransform(m, type="phi")
@@ -90,18 +136,18 @@ backTransform(m, type="det")
 
 
 # Point-transect, half-normal
-nsim1 <- 100
+nsim1 <- 10
 simout1 <- matrix(NA, nsim1, 3)
 colnames(simout1) <- c('lambda', 'phi', 'sigma')
 for(i in 1:nsim1) {
-    cat("sim1", i, "\n"); flush.console()
+    cat("sim1", i, "\n")
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y1 <- sim(lambda=30, shape=30, phi=0.7, R=100, T=T, breaks=breaks)
+    y1 <- sim2(lambda=30, shape=50, phi=0.7, R=100, T=T, breaks=breaks)
     umf1 <- unmarkedFrameGDS(y = y1, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m1 <- gdistsamp(~1, ~1, ~1, umf1, output="density", K=200,
-                    starts=c(3,0.5,3)))
+    m1 <- gdistsamp(~1, ~1, ~1, umf1, output="density", K=150,
+                    starts=c(3,0.5,3), se=FALSE)
     e <- coef(m1)
     simout1[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3]))
     cat("\tbeta.hat =", simout1[i,], "\n")
@@ -123,7 +169,7 @@ for(i in 1:nsim2) {
     cat("sim2", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y2 <- sim(lambda=40, phi=0.7, R=100, T=T, breaks=breaks, detfun="exp")
+    y2 <- sim2(lambda=40, phi=0.7, R=100, T=T, breaks=breaks, detfun="exp")
     umf2 <- unmarkedFrameGDS(y = y2, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
     m2 <- gdistsamp(~1,~1,~1, umf2, keyfun="exp", output="density", K=100)
@@ -151,7 +197,7 @@ for(i in 1:nsim) {
     cat("sim", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y <- sim(lambda=20, phi=0.7, shape=20, scale=1, R=100, T=T,
+    y <- sim2(lambda=20, phi=0.7, shape=20, scale=1, R=100, T=T,
              breaks=breaks, detfun="haz")
     umf <- unmarkedFrameGDS(y = y, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
@@ -178,7 +224,8 @@ for(i in 1:nsim4) {
     cat("sim4", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y4 <- sim(lambda=20, phi=0.6, R=100, T=T, breaks=breaks, detfun="unif",
+    y4 <- sim2(lambda=20, phi=0.6, R=100, T=T, breaks=breaks,
+               detfun="unif",
              survey="pt")
     umf4 <- unmarkedFrameGDS(y = y4, survey="point",
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
@@ -204,20 +251,22 @@ hist(simout4[,2], xlab=expression(phi), main=""); abline(v=0.6, col=4)
 
 
 # Line-transect, half-normal
-nsim5 <- 100
+nsim5 <- 10
 simout5 <- matrix(NA, nsim5, 3)
 colnames(simout5) <- c('lambda', 'phi', 'sigma')
 for(i in 1:nsim5) {
-    cat("sim5", i, "\n"); flush.console()
+    cat("sim5", i, "\n")
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y5 <- sim(lambda=20, phi=0.7, R=100, T=T, breaks=breaks, survey="line")
+    y5 <- sim2(lambda=30, phi=0.7, shape=50, R=100, T=T, breaks=breaks,
+               survey="line")
     umf5 <- unmarkedFrameGDS(y = y5, survey="line", tlength=rep(100,100),
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
-    m5 <- gdistsamp(~1, ~1, ~1, umf5,
-        output="density", K=100)
+    m5 <- gdistsamp(~1, ~1, ~1, umf5, output="density", K=100,
+                    se=FALSE, starts=c(3, 0, 3))
     e <- coef(m5)
     simout5[i,] <- c(exp(e[1]), plogis(e[2]), exp(e[3]))
+    cat("  beta.hat =", simout5[i,], "\n")
     }
 
 par(mfrow=c(3, 1))
@@ -236,7 +285,7 @@ for(i in 1:nsim6) {
     cat("sim6", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y6 <- sim(lambda=20, phi=0.7, R=100, T=T, breaks=breaks, detfun="exp",
+    y6 <- sim2(lambda=20, phi=0.7, R=100, T=T, breaks=breaks, detfun="exp",
              survey="line")
     umf6 <- unmarkedFrameGDS(y = y6, survey="line", tlength=rep(100,100),
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
@@ -264,7 +313,7 @@ for(i in 1:nsim7) {
     cat("sim7", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y7 <- sim(lambda=20, phi=0.7, shape=20, scale=1, R=100, T=T,
+    y7 <- sim2(lambda=20, phi=0.7, shape=20, scale=1, R=100, T=T,
              breaks=breaks, detfun="haz", survey="line")
     umf7 <- unmarkedFrameGDS(y = y7, survey="line", tlength=rep(100,100),
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
@@ -292,7 +341,8 @@ for(i in 1:nsim8) {
     cat("sim8", i, "\n"); flush.console()
     breaks <- seq(0, 50, by=10)
     T <- 5
-    y8 <- sim(lambda=20, phi=0.7, R=100, T=T, breaks=breaks, detfun="unif",
+    y8 <- sim2(lambda=20, phi=0.7, R=100, T=T, breaks=breaks,
+               detfun="unif",
              survey="line")
     umf8 <- unmarkedFrameGDS(y = y8, survey="line", tlength=rep(100,100),
         unitsIn="m", dist.breaks=breaks, numPrimary=T)
@@ -312,4 +362,37 @@ hist(simout8[,2], xlab=expression(phi), main=""); abline(v=0.7, col=4)
 
 
 
+
+
+
+
+
+
+rcirc <- function(n, R) {
+    a <- a2 <- runif(n)
+    b <- b2 <- runif(n)
+    bla <- b < a
+    b2[bla] <- a[bla]
+    a2[bla] <- b[bla]
+    stopifnot(all(b2 >= a2))
+    cbind(b2*R*cos(2*pi*a2/b2), b2*R*sin(2*pi*a2/b2))
+}
+
+plot(0,type="n", xlim=c(-55,55), asp=1)
+points(rc1 <- rcirc(1000, 50))
+
+rcirc <- function(n, R) {
+    t <- 2*pi*runif(n, 0, 1)
+    u <- runif(n) + runif(n)
+    r <- ifelse(u>1, 2-u, u)
+    cbind(R*r*cos(t), R*r*sin(t))
+}
+
+plot(0,type="n", xlim=c(-55,55), asp=1)
+points(rc1 <- rcirc(1000, 50))
+
+
+
+f <- function(r, R=50) 2*r/R^2
+plot(f, 0, 50)
 
