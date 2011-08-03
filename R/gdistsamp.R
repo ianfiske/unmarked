@@ -232,18 +232,22 @@ exp = {
                 switch(survey,
                 line = {
                     for(j in 1:J) {
-                        p[j] <- integrate(gxexp, db[j], db[j+1],
+                        int <- integrate(gxexp, db[j], db[j+1],
                              rate=rate[i,t], rel.tol=rel.tol,
-                             stop.on.error=FALSE, subdivisions=50)$value /
-                             w[j]
+                             stop.on.error=FALSE, subdivisions=50)
+                        if(!identical(int$message, "OK"))
+                            int$value <- NA
+                        p[j] <- int$value / w[j]
                         }
                     },
                 point = {
                     for(j in 1:J) {
-                        p[j] <- integrate(grexp, db[j], db[j+1],
+                        int <- integrate(grexp, db[j], db[j+1],
                             rate=rate[i, t], rel.tol=rel.tol,
-                            stop.on.error=FALSE, subdivisions=50)$value *
-                            2 * pi / a[i,j]
+                            stop.on.error=FALSE, subdivisions=50)
+                        if(!identical(int$message, "OK"))
+                            int$value <- NA
+                        p[j] <- int$value * 2 * pi / a[i,j]
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
@@ -294,20 +298,24 @@ hazard = {
                 switch(survey,
                 line = {
                     for(j in 1:J) {
-                        p[j] <- integrate(gxhaz, db[j], db[j+1],
+                        int <- integrate(gxhaz, db[j], db[j+1],
                              shape=shape[i,t], scale=scale,
                              rel.tol=rel.tol,
-                             stop.on.error=FALSE, subdivisions=50)$value /
-                             w[j]
+                             stop.on.error=FALSE, subdivisions=50)
+                        if(!identical(int$message, "OK"))
+                            int$value <- NA
+                        p[j] <- int$value / w[j]
                         }
                     },
                 point = {
                     for(j in 1:J) {
-                        p[j] <- integrate(grhaz, db[j], db[j+1],
+                        int <- integrate(grhaz, db[j], db[j+1],
                             shape=shape[i, t], scale=scale,
                             rel.tol=rel.tol,
-                            stop.on.error=FALSE, subdivisions=50)$value *
-                            2 * pi / a[i,j]
+                            stop.on.error=FALSE, subdivisions=50)
+                        if(!identical(int$message, "OK"))
+                            int$value <- NA
+                        p[j] <- int$value * 2 * pi / a[i,j]
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
