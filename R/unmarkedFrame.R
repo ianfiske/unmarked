@@ -241,16 +241,20 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 
 
 # This function constructs an unmarkedMultFrame object.
-unmarkedFrameGDS <- function(y, siteCovs = NULL, numPrimary,
-	yearlySiteCovs = NULL, dist.breaks, survey, unitsIn, tlength)
+unmarkedFrameGDS <- function(y, siteCovs, numPrimary,
+	yearlySiteCovs, dist.breaks, survey, unitsIn, tlength)
 {
     J <- ncol(y) / numPrimary
     obsToY <- matrix(1, 1, J)
     obsToY <- kronecker(diag(numPrimary), obsToY)
+    if(missing(siteCovs))
+        siteCovs <- NULL
 
     umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
+    if(missing(yearlySiteCovs))
+        yearlySiteCovs <- NULL
     if(class(yearlySiteCovs) == "list") {
         yearlySiteVars <- names(yearlySiteCovs)
         for(i in seq(length(yearlySiteVars))) {
@@ -774,8 +778,42 @@ setMethod("[", c("unmarkedMultFrame", "missing", "numeric", "missing"),
 setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 		function(x, i, j)
 {
-    u <- callNextMethod(x, i, j)
-    return(u)
+    M <- numSites(x)
+    if(length(i) == 0) return(x)
+    if(any(i < 0) && any(i > 0))
+        stop("i must be all positive or all negative indices.")
+    if(all(i < 0)) { # if i is negative, then convert to positive
+        i <- (1:M)[i]
+        }
+    oldy <- getY(x)
+    y <- oldy[i,]
+    siteCovs <- siteCovs(x)
+    obsCovs <- obsCovs(x)
+    if (!is.null(siteCovs)) {
+        siteCovs <- siteCovs(x)[i, , drop = FALSE]
+        }
+    if (!is.null(obsCovs)) {
+        R <- obsNum(x)
+        obsCovs <- cbind(.site=rep(1:M, each = R), obsCovs(x))
+        obsCovs <- ldply(i, function(site) {
+            subset(obsCovs, .site == site)
+            })
+        obsCovs$.site <- NULL
+        }
+    u <- unmarkedMultFrame(y=matrix(y, ncol=ncol(oldy)),
+                           siteCovs=siteCovs,
+                           obsCovs=obsCovs,
+                           numPrimary=x@numPrimary)
+    ysc <- x@yearlySiteCovs
+    if(!is.null(ysc)) {
+        sites <- 1:nrow(ysc)
+        T <- x@numPrimary
+        keep <- sites %in% i
+        ysc <- ysc[rep(keep, each=T),, drop=FALSE]
+        u@yearlySiteCovs <- ysc
+        }
+    u
+
 })
 
 

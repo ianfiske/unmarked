@@ -5,19 +5,21 @@
 \alias{predict,unmarkedFit-method}
 \alias{predict,unmarkedFitColExt-method}
 \alias{predict,unmarkedFitGMM-method}
+\alias{predict,unmarkedFitGDS-method}
+\alias{predict,unmarkedFitPCO-method}
 \alias{predict,unmarkedFitList-method}
 \title{ Methods for Function predict in Package `unmarked' }
 \description{
-These methods return predicted values from fitted model objects. 
+These methods return predicted values from fitted model objects.
 }
 \section{Methods}{
 \describe{
 
 \item{\code{signature(object = "unmarkedFit")}}{
-Type must be either `state' or `det'. 
+Type must be either `state' or `det'.
 }
 \item{\code{signature(object = "unmarkedFitColExt")}}{
-Type must be either `state' or `det'. 
+Type must be either `state' or `det'.
 }
 
 \item{\code{signature(object = "unmarkedFitGMM")}}{
