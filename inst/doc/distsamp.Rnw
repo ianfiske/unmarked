@@ -373,7 +373,8 @@ individual a distance of 0 must be 1. These assumptions often cannot
 be met. For instance, when counting cues such as bird songs or whale
 blows, the probability that an individual will produce a cue (and thus
 be available for detection) is rarely 1 during the sampling
-interval. \citet{chandlerEA_2011} describe a method of estimating the
+interval. Recently developed methods \citep{chandlerEA_2011}
+allow for the estimation of the
 probability of being available for detection $\phi$. To do so,
 replicate distance sampling observations must be collected at each
 transect. These replicates could be collected using repeated visits or
