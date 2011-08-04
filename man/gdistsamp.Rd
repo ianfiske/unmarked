@@ -4,12 +4,15 @@
 Fit the generalized distance sampling model of Chandler et al. (2011).
 }
 \description{
-This model can be fit to distance sampling data collected at i = 1, 2, ..., R
-plots surveyed on t = 1, 2, ..., T occasions. The detections must be binned
-into distance classes.
+Extends the distance sampling model of Royle et al. (2004) to estimate
+the probability of being available for detection. Also allows abundance
+to be modeled using the negative binomial distribution.
 }
 \usage{
-gdistsamp(lambdaformula, phiformula, pformula, data, keyfun = c("halfnorm", "exp", "hazard", "uniform"), output = c("abund", "density"), unitsOut = c("ha", "kmsq"), mixture = c("P", "NB"), K, starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4)
+gdistsamp(lambdaformula, phiformula, pformula, data, keyfun =
+c("halfnorm", "exp", "hazard", "uniform"), output = c("abund",
+"density"), unitsOut = c("ha", "kmsq"), mixture = c("P", "NB"), K,
+starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4)
 }
 \arguments{
   \item{lambdaformula}{
@@ -56,35 +59,40 @@ gdistsamp(lambdaformula, phiformula, pformula, data, keyfun = c("halfnorm", "exp
 }
 \item{rel.tol}{relative accuracy for the integration of the detection function.
     See \link{integrate}. You might try adjusting this if you get an error
-    message related to the integral.}
+    message related to the integral. Alternatively, try providing
+    different starting values.}
 }
 \details{
-    Unlike conventional distance sampling, which uses the 'conditional on
-    detection' likelihood formulation, this model is based upon the
-    unconditional likelihood and thus allows for modeling both abundance and
-    detection function parameters.
+  This model extends the model of Royle et al. (2004) by estimating the
+  probability of being available for detection (phi). This
+  effectively relaxes the assumption that \eqn{g(0)=1}. In other words,
+  inividuals at a distance of 0 are not assumed to be detected with
+  certainty. To estimate this additional parameter, replicate distance
+  sampling data must be collected at each transect. Thus the data are
+  collected at i = 1, 2, ..., R transects on t = 1, 2, ..., T
+  occassions. As with the model of Royle et al. (2004), the detections
+  must be binned into distance classes. These data must be formatted in
+  a matrix with R rows, and JT columns where J is the number of distance
+  classses. See \code{\link{unmarkedFrameGDS}} for more information.
+}
 
-    The latent transect-level abundance distribution
-    \eqn{f(N | \mathbf{\theta})}{f(N | theta)} is currently assumed to be
-    Poisson with mean \eqn{\lambda}{lambda}.
-
-    The detection process is modeled as multinomial:
-    \eqn{y_{ij} \sim Multinomial(N_i, pi_{ij})}{y_ij ~ Multinomial(N_i, pi_i1, pi_i2, ..., pi_iJ)},
-    where \eqn{pi_ij} is the multinomial cell probability for transect i in
-    distance class j. These are computed based upon a detection function
-    \eqn{g(x | \mathbf{\sigma})}{g(x | sigma)}, such as the half-normal,
-    negative exponential, or hazard rate.
-
-    Parameters \eqn{\lambda}{lambda} and \eqn{\sigma}{sigma} can be vectors
-    affected by transect-specific covariates using the log link.
-    }
+\note{
+  If you aren't interested in estimating phi, but you want to
+  use the negative binomial distribution, simply set numPrimary=1 when
+  formatting the data.
+  }
 
 \value{
     An object of class unmarkedFitGDS.
     }
 \references{
-    Royle, J. A., D. K. Dawson, and S. Bates (2004) Modeling
-    abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
+    Royle, J. A., D. K. Dawson, and S. Bates. 2004. Modeling
+    abundance effects in distance sampling. \emph{Ecology}
+    85:1591-1597.
+
+    Chandler, R. B, J. A. Royle, and D. I. King. 2011. Inference about
+    density and temporary emigration in unmarked
+    populations. \emph{Ecology}  92:1429--1435.
     }
 \author{
     Richard Chandler \email{rchandler@usgs.gov}
@@ -92,24 +100,27 @@ gdistsamp(lambdaformula, phiformula, pformula, data, keyfun = c("halfnorm", "exp
 \note{
     You cannot use obsCovs, but you can use yearlySiteCovs (a confusing name
     since this model isn't for multi-year data. It's just a hold-over
-    from the colext methods upon which it is based.)
+    from the colext methods of formatting data upon which it is based.)
     }
 \seealso{
     \code{\link{distsamp}}
     }
 \examples{
 
+
+# Simulate some line-transect data
+
 set.seed(36837)
 
-R <- 50
-T <- 5
+R <- 50 # number of transects
+T <- 5  # number of replicates
 strip.width <- 50
 transect.length <- 100
 breaks <- seq(0, 50, by=10)
 
-lambda <- 5
-phi <- 0.6
-sigma <- 30
+lambda <- 5 # Abundance
+phi <- 0.6  # Availability
+sigma <- 30 # Half-normal shape parameter
 
 J <- length(breaks)-1
 y <- array(0, c(R, J, T))
@@ -126,14 +137,18 @@ for(i in 1:R) {
             }
         }
     }
-y <- matrix(y, nrow=R)
+y <- matrix(y, nrow=R) # convert array to matrix
 
-
+# Organize data
 umf <- unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
     dist.breaks=breaks, tlength=rep(transect.length, R), numPrimary=T)
 summary(umf)
 
+# Fit the model
 m1 <- gdistsamp(~1, ~1, ~1, umf, output="density")
+summary(m1)
+
+
 backTransform(m1, type="lambda")
 backTransform(m1, type="phi")
 backTransform(m1, type="det")

@@ -509,15 +509,60 @@ detection probability. We also time the calculations.
 
 \begin{small}
 
-<<eval=true>>=
-# Model with all constant parameters
-m0 <- colext(psiformula= ~1, gammaformula = ~ 1, epsilonformula = ~ 1,
-             pformula = ~ 1, data = simUMF, method="BFGS")
-@
+%<<eval=true>>=
+%# Model with all constant parameters
+%m0 <- colext(psiformula= ~1, gammaformula = ~ 1, epsilonformula = ~ 1,
+%             pformula = ~ 1, data = simUMF, method="BFGS")
+%@
 
-<<>>=
-summary(m0)
-@
+%<<>>=
+%summary(m0)
+%@
+
+
+
+\begin{Schunk}
+\begin{Sinput}
+> # Model with all constant parameters
+> m0 <- colext(psiformula= ~1, gammaformula = ~ 1, epsilonformula = ~ 1,
+              pformula = ~ 1, data = simUMF, method="BFGS")
+\end{Sinput}
+\end{Schunk}
+
+\begin{Schunk}
+\begin{Sinput}
+> summary(m0)
+\end{Sinput}
+\begin{Soutput}
+Call:
+colext(psiformula = ~1, gammaformula = ~1, epsilonformula = ~1,
+    pformula = ~1, data = simUMF, method = "BFGS")
+
+Initial (logit-scale):
+ Estimate    SE     z  P(>|z|)
+   -0.813 0.158 -5.16 2.46e-07
+
+Colonization (logit-scale):
+ Estimate     SE   z   P(>|z|)
+    -1.77 0.0807 -22 2.75e-107
+
+Extinction (logit-scale):
+ Estimate    SE     z  P(>|z|)
+    -0.59 0.102 -5.79 7.04e-09
+
+Detection (logit-scale):
+ Estimate     SE     z P(>|z|)
+  -0.0837 0.0562 -1.49   0.137
+
+AIC: 4972.597
+Number of sites: 250
+optim convergence code: 0
+optim iterations: 27
+Bootstrap iterations: 0
+\end{Soutput}
+\end{Schunk}
+
+
 
 \end{small}
 
@@ -544,11 +589,40 @@ used as arguments for these functions.
 
 \begin{small}
 
-<<>>=
-names(m0)
-backTransform(m0, type="psi")
-confint(backTransform(m0, type="psi"))
-@
+%<<>>=
+%names(m0)
+%backTransform(m0, type="psi")
+%confint(backTransform(m0, type="psi"))
+%@
+
+
+\begin{Schunk}
+\begin{Sinput}
+> names(m0)
+\end{Sinput}
+\begin{Soutput}
+[1] "psi" "col" "ext" "det"
+\end{Soutput}
+\begin{Sinput}
+> backTransform(m0, type="psi")
+\end{Sinput}
+\begin{Soutput}
+Backtransformed linear combination(s) of Initial estimate(s)
+
+ Estimate     SE LinComb (Intercept)
+    0.307 0.0335  -0.813           1
+
+Transformation: logistic
+\end{Soutput}
+\begin{Sinput}
+> confint(backTransform(m0, type="psi"))
+\end{Sinput}
+\begin{Soutput}
+     0.025     0.975
+ 0.2457313 0.3765804
+\end{Soutput}
+\end{Schunk}
+
 \end{small}
 
 

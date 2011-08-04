@@ -2,19 +2,28 @@
 \alias{unmarked}
 \alias{unmarked-package}
 \title{Models for Data from Unmarked Animals}
-\description{\emph{unmarked} fits hierarchical models of animal occurrence and abundance to data collected on species subject to imperfect detection.  Examples include single- and multi-season site occupancy models, binomial mixture models, and multinomial mixture models. The data can arise from survey methods such as occurrence sampling, temporally replicated counts, removal sampling, double observer sampling, and distance sampling. Parameters governing the state and observation processes can be modeled as functions of covariates. General treatment of these models can be found in MacKenzie et al. (2006) and Royle and Dorazio (2008).}
+\description{\emph{unmarked} fits hierarchical models of animal
+  occurrence and abundance to data collected on species subject to
+  imperfect detection.  Examples include single- and multi-season site
+  occupancy models, binomial mixture models, and multinomial mixture
+  models. The data can arise from survey methods such as occurrence
+  sampling, temporally replicated counts, removal sampling, double
+  observer sampling, and distance sampling. Parameters governing the
+  state and observation processes can be modeled as functions of
+  covariates. General treatment of these models can be found in
+  MacKenzie et al. (2006) and Royle and Dorazio (2008).}
 
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9-0\cr
+Version: \tab 0.9-1\cr
 License: \tab GPL (>= 3)\cr
 }
 
 \strong{Overview of Model-fitting Functions:}
 
-\code{\link{occu}} fits occurrence models with no linkage between abundance and
-detection (MacKenzie et al. 2002).
+\code{\link{occu}} fits occurrence models with no linkage between
+abundance and detection (MacKenzie et al. 2002).
 
 \code{\link{occuRN}} fits abundance models to presence/absence data by
 exploiting the link between detection probability and abundance (Royle and
@@ -29,6 +38,10 @@ repeated count data (Royle 2004a, Kéry et al 2005).
 \code{\link{distsamp}} fits the distance sampling model of
 Royle et al. (2004) to distance data recorded in discrete intervals.
 
+\code{\link{gdistsamp}} fits the generalized distance sampling model
+described by Chandler et al. (2011) to distance data recorded in
+discrete intervals.
+
 \code{\link{multinomPois}} fits the multinomial-Poisson model of Royle (2004b)
 to data collected using methods such as removal sampling or double observer
 sampling.
@@ -40,21 +53,21 @@ probability.
 \code{\link{pcountOpen}} fits the open population model of Dail and Madsen (in press) to repeated count data. This is a genearlized form of the Royle (2004a) N-mixture model that includes parameters for recruitment and apparent survival.
 
 
-\strong{Data:} All data are passed to unmarked's estimation
-functions as a formal S4 class called an unmarkedFrame, which has child classes
-for each model type. This allows metadata (eg as distance interval cut points,
-measurement units, etc...) to be stored with the response and covariate data.
-See \code{\link{unmarkedFrame}} for a detailed description of unmarkedFrames
-and how to create them.
+\strong{Data:} All data are passed to unmarked's estimation functions as
+a formal S4 class called an unmarkedFrame, which has child classes
+for each model type. This allows metadata (eg as distance interval cut
+points, measurement units, etc...) to be stored with the response and
+covariate data. See \code{\link{unmarkedFrame}} for a detailed
+description of unmarkedFrames and how to create them.
 
 \strong{Model Specification:}  \emph{unmarked}'s
 model-fitting functions allow specification of covariates for both the
-state process and the detection process.  For two-level hierarchical models,
-(eg \code{\link{occu}}, \code{\link{occuRN}}, \code{\link{pcount}},
+state process and the detection process.  For two-level hierarchical
+models, (eg \code{\link{occu}}, \code{\link{occuRN}}, \code{\link{pcount}},
 \code{\link{multinomPois}}, \code{\link{distsamp}}) covariates for the
-detection process (at the site or observation level) and the state process (at
-the site level) are specified with a double right-hand sided formula, in that
-order.  Such a formula looks like
+detection process (at the site or observation level) and the state
+process (at the site level) are specified with a double right-hand sided
+formula, in that order.  Such a formula looks like
 
 \eqn{~ x1 + x2 + \ldots + x_n  ~ x_1 + x_2 + \ldots + x_n}
 
@@ -63,10 +76,10 @@ the process of interest.  Using two tildes in a single formula
 differs from standard R convention, but it is informative about the model
 being fit. The meaning of these covariates, or what they
 model, is full described in the help files for the individual functions
-and is not the same for all functions. For models with more than two processes
-(eg \code{\link{colext}}, \code{\link{gmultmix}}, \code{\link{pcountOpen}}),
-single right-hand sided formulas (only one tilde) are used to model each
-parameter.
+and is not the same for all functions. For models with more than two
+processes (eg \code{\link{colext}}, \code{\link{gmultmix}},
+\code{\link{pcountOpen}}), single right-hand sided formulas (only one
+tilde) are used to model each parameter.
 
 \strong{Utility Functions:}  \emph{unmarked} contains several utility
 functions for organizing data into the form required by its model-fitting

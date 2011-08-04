@@ -81,7 +81,8 @@ test.pcountOpen.na <- function()
   fm2.3 <- pcountOpen(~1, ~o2, ~1, ~1, data = umf2, se=FALSE, K=10,
       starts=c(1, 0, 0, -5, -1))
   checkEqualsNumeric(coef(fm2.3),
-      c(0.7038926, 0.5306853, -0.2339208, -1.8501411, 4.5668710), tol = 1e-3)
+      c(0.7038926, 0.5306853, -0.2339208, -1.8501411, 4.5668710),
+                     tol = 1e-2)
 
   y3 <- matrix(c(
       NA, 2, 1, 4,
