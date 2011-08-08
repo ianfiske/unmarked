@@ -2,9 +2,12 @@
 #  Fit the occupancy model of MacKenzie et al (2002).
 
 occu <- function(formula, data, knownOcc = numeric(0), starts,
-                 method = "BFGS", control = list(), se = TRUE) {
+                 method = "BFGS", control = list(), se = TRUE,
+                 engine = c("C", "R")) {
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
+
+    engine <- match.arg(engine, c("C", "R"))
 
     designMats <- getDesign(data, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
@@ -40,15 +43,32 @@ occu <- function(formula, data, knownOcc = numeric(0), starts,
     navec <- is.na(yvec)
     nd <- ifelse(rowSums(y,na.rm=TRUE) == 0, 1, 0) # no det at site i
 
-    nll <- function(params) {
-        psi <- plogis(X %*% params[1 : nOP] + X.offset)
-        psi[knownOccLog] <- 1
-        pvec <- plogis(V %*% params[(nOP + 1) : nP] + V.offset)
-        cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
-        cp[navec] <- 1  # so that NA's don't modify likelihood
-        cpmat <- matrix(cp, M, J, byrow = TRUE) #
-        loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi))
-        -sum(loglik)
+    ## need to add offsets !!!!!!!!!!!!!!
+    ## and fix bug causing crash when NAs are in V
+
+    if(identical(engine, "C")) {
+#        V[is.na(V)] <- -999 # Armadillo's matrix-multiplication fails
+#                            # if values are missing. These will be
+#                            # ignored anyway
+        nll <- function(params) {
+            beta.psi <- params[1:nOP]
+            beta.p <- params[(nOP+1):nP]
+            .Call("nll_occu",
+                  yvec, X, V, beta.psi, beta.p, nd, knownOccLog, navec,
+                  X.offset, V.offset,
+                  PACKAGE = "unmarked")
+        }
+    } else {
+        nll <- function(params) {
+            psi <- plogis(X %*% params[1 : nOP] + X.offset)
+            psi[knownOccLog] <- 1
+            pvec <- plogis(V %*% params[(nOP + 1) : nP] + V.offset)
+            cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
+            cp[navec] <- 1 # so that NA's don't modify likelihood
+            cpmat <- matrix(cp, M, J, byrow = TRUE) #
+            loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi))
+            -sum(loglik)
+        }
     }
 
     if(missing(starts)) starts <- rep(0, nP)	#rnorm(nP)
