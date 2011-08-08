@@ -4,7 +4,6 @@ library(rbenchmark)
 
 
 set.seed(34537)
-
 nSites <- 100
 nReps <- 5
 covariates <- data.frame(veght=rnorm(nSites),
