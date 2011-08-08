@@ -3,7 +3,7 @@
 using namespace Rcpp ;
 
 SEXP nll_occu( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR ) {
-  arma::colvec y = as<arma::colvec>(yR);
+  arma::icolvec y = as<arma::icolvec>(yR);
   arma::mat X = as<arma::mat>(Xr);
   arma::mat V = as<arma::mat>(Vr);
   arma::colvec beta_psi = as<arma::colvec>(beta_psiR);
