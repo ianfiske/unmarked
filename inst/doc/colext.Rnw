@@ -445,7 +445,7 @@ legend(1, 0.6, c("truth", "observed"),
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=4in,height=4in]{colext-sim.pdf}
+\includegraphics[width=5in,height=5in]{colext-sim.pdf}
 \caption{Summary of the multi-year occupancy data set generated.}
 \label{fig:sim}
 \end{figure}
@@ -938,18 +938,18 @@ chisq <- function(fm) {
     sum((y-fv)^2/(fv*(1-fv)))
     }
 
-pb.gof <- parboot(m0, statistic=chisq, nsim=100)
+pb.gof <- parboot(m0, statistic=chisq, nsim=50)
 @
 
-%<<eval=false,gof,echo=false,fig=true,include=false,width=6,height=6>>=
-%plot(pb.gof, xlab=expression(chi^2), main="", col=gray(0.95))
-%@
+<<gof,fig=true,include=false,width=5,height=5,echo=false,eval=false>>=
+plot(pb.gof, xlab=expression(chi^2), main="", col=gray(0.95))
+@
 \end{small}
 
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=4in,height=4in]{colext-gof.pdf}
+\includegraphics[width=5in,height=5in]{colext-gof.pdf}
 \caption{Goodness-of-fit}
 \label{fig:gof}
 \end{figure}
