@@ -77,11 +77,11 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
         nll <- function(parms) {
             beta.lam <- parms[1:nAP]
             beta.p <- parms[(nAP+1):(nAP+nDP)]
-            alpha <- 1
+            log.alpha <- 1
             if(identical(mixture, "NB"))
-                alpha <- exp(parms[nP])
+                log.alpha <- parms[nP]
             .Call("nll_pcount",
-                  y, X, V, beta.lam, beta.p, alpha, X.offset, V.offset,
+                  y, X, V, beta.lam, beta.p, log.alpha, X.offset, V.offset,
                   NAmat, lk, mixture,
                   PACKAGE = "unmarked")
         }

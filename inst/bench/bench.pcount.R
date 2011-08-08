@@ -14,7 +14,7 @@ X <- model.matrix(~veght+habitat, covariates) # design matrix
 lam <- exp(X %*% lampars)
 p <- plogis(X %*% ppars)
 y <- matrix(NA, nSites, nReps)
-N <- rnbinom(nSites, size=2, mu=lam)       # true abund
+N <- rnbinom(nSites, size=1, mu=lam)       # true abund
 for(i in 1:nSites) {
     y[i,] <- rbinom(nReps, N[i], p[i])
     }
@@ -32,8 +32,8 @@ all.equal(coef(fm1R), coef(fm1C))
 all.equal(vcov(fm1R), vcov(fm1C))
 
 
-benchmark(pcount(~veght ~veght+habitat, umf, engine="C", K=50),
-          pcount(~veght ~veght+habitat, umf, engine="R", K=50),
+benchmark(pcount(~veght ~veght+habitat, umf, engine="C", K=30),
+          pcount(~veght ~veght+habitat, umf, engine="R", K=30),
           columns=c("test", "elapsed", "relative"),
           replications=100)
 

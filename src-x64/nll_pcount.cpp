@@ -3,12 +3,13 @@
 using namespace Rcpp ;
 
 SEXP nll_pcount( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_lamR, SEXP beta_pR, SEXP alphaR, SEXP X_offsetR, SEXP V_offsetR, SEXP naMatR, SEXP lkR, SEXP mixtureR ) {
-  arma::imat y = as<arma::imat>(yR);
+  arma::mat y = as<arma::mat>(yR);
   arma::mat X = as<arma::mat>(Xr);
   arma::mat V = as<arma::mat>(Vr);
   arma::colvec beta_lam = as<arma::colvec>(beta_lamR);
   arma::colvec beta_p = as<arma::colvec>(beta_pR);
-  double alpha = as<double>(alphaR);
+  double log_alpha = as<double>(log_alphaR);
+  double alpha = exp(log_alpha);
   arma::colvec X_offset = as<arma::colvec>(X_offsetR);
   arma::colvec V_offset = as<arma::colvec>(V_offsetR);
   Rcpp::LogicalMatrix naMat(naMatR);
@@ -34,9 +35,9 @@ SEXP nll_pcount( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_lamR, SEXP beta_pR, SEXP a
       g(k) = 1.0;
       for(int j=0; j<J; j++) {
 	// if(k >= y(i,j))
+	z = zi + j;
 	if(!naMat(i,j))
 	  g(k) *= Rf_dbinom(y(i,j), k, p(z), false);
-	z = zi + j;
 	// else
 	// g(k) = 0.0;
       }
