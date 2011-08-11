@@ -1,5 +1,5 @@
 
-# -------------------------- Null Poisson removal model ------------------------
+# -------------------------- Null Poisson removal model ------------------
 
 set.seed(26)
 
@@ -42,7 +42,7 @@ plot(pb1)
 
 
 
-# -------------------------- Null NegBin removal model ------------------------
+# -------------------------- Null NegBin removal model -------------------
 
 set.seed(73)
 
@@ -89,7 +89,7 @@ plot(pb2)
 
 
 
-# --------------------- Poisson removal model w/ covariates -------------------
+# --------------------- Poisson removal model w/ covariates --------------
 
 set.seed(37)
 
@@ -255,24 +255,24 @@ hist(simout[,5]); abline(v=0.5, col=4)
 
 
 
-sim.dep.double <- function(nSites=200, nReps=4, lambda=1, phi=0.6,
+sim.dep.double <- function(nSites=200, numPrimary=2, lambda=1, phi=0.6,
                            pA=0.8, pB=0.6, alpha=0.5)
 {
 
-    N <- matrix(NA, nSites, nReps)
-    y <- array(NA, c(nSites, 2, nReps))
+    N <- matrix(NA, nSites, numPrimary)
+    y <- array(NA, c(nSites, 2, numPrimary))
 
-    # Abundance at each site (quadrat)
+    # Abundance at each site
     M <- rnbinom(nSites, size=alpha, mu=lambda)
 
-    # Number available during each rep (pass)
+    # Number available during each rep
     for(i in 1:nSites) {
-        N[i,] <- rbinom(nReps, M[i], phi)
+        N[i,] <- rbinom(numPrimary, M[i], phi)
         }
 
     # Number observed
     for(i in 1:nSites) {
-        for(t in 1:nReps) {
+        for(t in 1:numPrimary) {
             cp <- c(pA, pB * (1 - pA))
             cp[3] <- 1 - sum(cp)
             y[i,,t] <- c(rmultinom(1, N[i,t], cp)[1:2])
@@ -295,7 +295,7 @@ depDoubPiFun <- function(p) {
 }
 
 obsToY <- matrix(1, 2, 2)
-numPrimary <- 4
+numPrimary <- 2
 obsToY <- kronecker(diag(numPrimary), obsToY)
 
 
@@ -303,19 +303,22 @@ obsToY <- kronecker(diag(numPrimary), obsToY)
 # Fit the model
 
 set.seed(4)
-y.sim <- sim.dep.double()
-T <- ncol(y.sim) / 2
-observer <- matrix(c("A", "B"), 200, T*2, byrow=TRUE)
+nSites <- 200
+T <- 10
+y.sim <- sim.dep.double(nSites=nSites, numPrimary=T, lambda=3)
+observer <- matrix(c("A", "B"), nSites, T*2, byrow=TRUE)
+obsToY <- matrix(1, 2, 2)
+obsToY <- kronecker(diag(T), obsToY)
 umf <- unmarkedFrameGMM(y = y.sim,
     obsCovs = list(observer=observer),
-    numPrimary=4, obsToY=obsToY, piFun="depDoubPiFun")
+    numPrimary=T, obsToY=obsToY, piFun="depDoubPiFun")
 summary(umf)
 
 m5 <- gmultmix(~1, ~1, ~observer-1, umf, mixture="NB")
 m5
 
-plogis(0.958)
-plogis(-0.216)
+plogis(1.429)
+plogis(0.395)
 
 
 
@@ -328,11 +331,11 @@ simout <- matrix(NA, nsim, 4)
 colnames(simout) <- c("lambda", "phi", "pA", "pB")
 for(i in 1:nsim) {
     cat("sim", i, "\n"); flush.console()
-    y.sim <- sim.dep.double(nSites=200, alpha=1000, nReps=5)
+    y.sim <- sim.dep.double(nSites=200, alpha=1000, numPrimary=5)
     T <- ncol(y.sim)/2
     obsToY <- matrix(1, 2, 2)
     obsToY <- kronecker(diag(T), obsToY)
-    observer <- matrix(c("A", "B"), nrow(y.sim), T*2, byrow=TRUE)
+    observer <- matrix(c("A", "B", "B", "A"), nrow(y.sim), T*2, byrow=TRUE)
     umf <- unmarkedFrameGMM(y = y.sim, obsCovs=list(observer=observer),
         numPrimary=T, obsToY=obsToY, piFun="depDoubPiFun")
     m.sim5 <- gmultmix(~1, ~1, ~observer-1, umf, mixture="P", se=FALSE)
