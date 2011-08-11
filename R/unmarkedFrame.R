@@ -1,15 +1,14 @@
 
-############# VALIDATION FUNCTIONS #######################################
+# ------------------------ VALIDATION FUNCTIONS --------------------------
 
-validunmarkedFrame <- function(object)
-{
+validunmarkedFrame <- function(object) {
     errors <- character(0)
     M <- nrow(object@y)
     J <- ncol(object@y)
     if(!is.null(object@siteCovs))
         if(nrow(object@siteCovs) != M)
             errors <- c(errors,
-                "siteCovData does not have same size number of sites as y.")
+               "siteCovData does not have same size number of sites as y.")
     if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
         if(nrow(object@obsCovs) != M*obsNum(object))
             errors <- c(errors, "obsCovData does not have M*obsNum rows.")
@@ -19,7 +18,7 @@ validunmarkedFrame <- function(object)
         errors
 }
 
-############ DATA CLASSES ################################################
+# --------------------------- DATA CLASSES -------------------------------
 
 # Class to hold data for analyses in unmarked.
 setClass("unmarkedFrame",
@@ -110,8 +109,7 @@ setClass("unmarkedFrameGDS",
 
 # Constructor for unmarkedFrames.
 unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
-                          obsToY)
-{
+                          obsToY) {
     if(!missing(obsToY))
         obsNum <- nrow(obsToY)
     if(class(obsCovs) == "list") {
