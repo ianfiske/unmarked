@@ -11,7 +11,8 @@
   observer sampling, and distance sampling. Parameters governing the
   state and observation processes can be modeled as functions of
   covariates. General treatment of these models can be found in
-  MacKenzie et al. (2006) and Royle and Dorazio (2008).}
+  MacKenzie et al. (2006) and Royle and Dorazio (2008). The primary
+  reference for the package is Fiske and Chandler (2011).}
 
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
@@ -50,7 +51,10 @@ sampling.
 of Royle (2004b) that allows for estimating availability and detection
 probability.
 
-\code{\link{pcountOpen}} fits the open population model of Dail and Madsen (in press) to repeated count data. This is a genearlized form of the Royle (2004a) N-mixture model that includes parameters for recruitment and apparent survival.
+\code{\link{pcountOpen}} fits the open population model of Dail and
+Madsen (2011) to repeated count data. This is a genearlized form of the
+Royle (2004a) N-mixture model that includes parameters for recruitment
+and apparent survival.
 
 
 \strong{Data:} All data are passed to unmarked's estimation functions as
@@ -169,7 +173,12 @@ with(Ep, {
 
 \references{
 
-Dail, D. and L. Madsen. In press. Models for estimating abundance from repeated counts of an open metapopulation. \emph{Biometrics}
+Dail, D. and L. Madsen. 2011. Models for estimating abundance from
+repeated counts of an open metapopulation. \emph{Biometrics} 67:577-587.
+
+Fiske, I. and R. B. Chandler. 2011. \emph{unmarked}: An R package for
+fitting hierarchical models of wildlife occurrence and
+abundance. \emph{Journal of Statistical Software} 43:1--23.
 
 Kéry, M., Royle, J. A., and Schmid, H. 2005 Modeling avian abundance from
   replicated counts using binomial mixture models. \emph{Ecological
