@@ -31,9 +31,9 @@ T <- data@numPrimary
 J <- ncol(getY(data)) / T
 
 # NEED TO ALLOW OFFSETS!!!!
-Xlam.offset <- rep(1, M)
-Xgam.offset <- Xom.offset <- rep(1, M*T)
-Xp.offset <- rep(1, M*T*J)
+Xlam.offset <- rep(0, M)
+Xgam.offset <- Xom.offset <- rep(0, M*T)
+Xp.offset <- rep(0, M*T*J)
 
 y <- array(y, c(M, J, T))
 if(missing(K)) K <- max(y, na.rm=T) + 20
@@ -204,8 +204,7 @@ if(identical(engine, "R")) {
         NAmat <- is.na(y1)
         .Call("nll_pcountOpen",
               y1, Xlam, Xgam, Xom, Xp, beta.lam, beta.gam, beta.om, beta.p,
-              log.alpha, Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
-              NAmat, lk, mixture, first, last,
+              log.alpha, NAmat, lk, mixture, first, last,
               PACKAGE = "unmarked")
         }
 }
