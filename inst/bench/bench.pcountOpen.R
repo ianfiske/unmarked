@@ -25,19 +25,34 @@ for(t in 2:T) {
     N[,t] <- S+G
     }
 y[] <- rbinom(nSites*T, N, p)
-y[1,5] <- NA
-covariates[2,] <- NA
+#y[1,5] <- NA
+#covariates[2,] <- NA
 umf <- unmarkedFramePCO(y = y, siteCovs = covariates, numPrimary=T)
 head(umf)
 summary(umf)
 
-fm1 <- pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf, K=20,
-                  control=list(trace=TRUE, REPORT=1))
-
+{
+system.time(fmR <- pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf,
+                              K=20, control=list(trace=TRUE, REPORT=1),
+                              se=FALSE, engine="R"))
+system.time(fmC <- pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf,
+                              K=20, control=list(trace=TRUE, REPORT=1),
+                              se=FALSE, engine="C"))
+}
 
 benchmark(pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf, K=20,
                      control=list(trace=TRUE, REPORT=1)),
           columns=c("test", "elapsed", "relative"),
           replications=50)
+
+
+
+system.time(fm2R <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
+                               control=list(trace=TRUE, REPORT=1, maxit=2),
+                               se=FALSE, engine="R"))
+
+system.time(fm2C <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
+                               control=list(trace=TRUE, REPORT=1, maxit=2),
+                               se=FALSE, engine="C"))
 
 
