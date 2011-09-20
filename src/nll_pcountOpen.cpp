@@ -39,8 +39,8 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   for(int i=0; i<R; i++) {
     first_i = first[i]-1;
     last_i = last[i]-1;
-    ll_i=0.0;
     g_star.ones();
+    g3.zeros();
     for(int t=last_i; t>0; t--) { // last through 2nd occassion
       for(int n2=0; n2<lk; n2++) {
         g1_t(n2) = Rf_dbinom(y(i, t), n2, p(i, t), false);
@@ -53,10 +53,11 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	  }
 	}
       }
-      g_star = g3.slice(t-1) * g1_t_star;
+      g_star = trans(g3.slice(t-1)) * g1_t_star;
     }
     g1=0.0;
     g2=0.0;
+    ll_i=0.0;
     for(int k=0; k<lk; k++) {
       g1 = Rf_dbinom(y(i, first_i), k, p(i, first_i), false);
       if(mixture=="P")
