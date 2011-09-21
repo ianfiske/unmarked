@@ -23,7 +23,7 @@ sim1 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5)
 
 
 set.seed(3223)
-nsim1 <- 50
+nsim1 <- 1
 simout1 <- matrix(NA, nsim1, 4)
 colnames(simout1) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim1) {
@@ -87,7 +87,7 @@ sim2 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
 
 
 
-nsim2 <- 10
+nsim2 <- 1
 simout2 <- matrix(NA, nsim2, 8)
 colnames(simout2) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1',
                        'p0', 'p1')
@@ -244,7 +244,7 @@ sim4 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5)
 
 
 set.seed(3223)
-nsim4 <- 500
+nsim4 <- 1
 simout4 <- matrix(NA, nsim4, 4)
 colnames(simout4) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim4) {
@@ -257,10 +257,12 @@ for(i in 1:nsim4) {
     y.sim4 <- sim4(lambda, gamma, omega, p, T=T)
     umf4 <- unmarkedFramePCO(y = y.sim4, numPrimary=T)
     m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=30, dynamics="autoreg",
-        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
+                     starts=c(log(lambda), log(gamma), plogis(omega),
+                     plogis(p)), se=FALSE)
     e <- coef(m4)
     simout4[i, 1:2] <- exp(e[1:2])
     simout4[i, 3:4] <- plogis(e[3:4])
+    cat("  beta.hat =", e, "\n")
     }
 
 png("pcountOpenSim4.png", width=6, height=6, units="in", res=360)
@@ -439,7 +441,7 @@ sim7 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5, J=3)
 
 
 set.seed(3223)
-nsim7 <- 500
+nsim7 <- 1
 simout7 <- matrix(NA, nsim7, 4)
 colnames(simout7) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim7) {
@@ -452,10 +454,12 @@ for(i in 1:nsim7) {
     y.sim7 <- sim7(lambda, gamma, omega, p, T=T)
     umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
     m7 <- pcountOpen(~1, ~1, ~1, ~1, umf7, K=15,
-        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
+              starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+              se=FALSE)
     e <- coef(m7)
     simout7[i, 1:2] <- exp(e[1:2])
     simout7[i, 3:4] <- plogis(e[3:4])
+    cat("mle = ", simout7[i,], "\n")
     }
 
 png("pcountOpenSim7.png", width=6, height=6, units="in", res=360)

@@ -36,17 +36,22 @@ Xlam.offset <- rep(0, M)
 Xgam.offset <- Xom.offset <- rep(0, M*(T-1))
 Xp.offset <- rep(0, M*T*J)
 
+yna <- is.na(y)
+yna[] <- as.integer(yna)
 y <- array(y, c(M, J, T))
+ytna <- apply(is.na(y), c(1,3), all)
+ytna <- matrix(ytna, nrow=M)
+ytna[] <- as.integer(ytna)
+
+first <- apply(!ytna, 1, function(x) min(which(x)))
+last  <- apply(!ytna, 1, function(x) max(which(x)))
+
 if(missing(K)) K <- max(y, na.rm=T) + 20
 if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
 k <- 0:K
 lk <- length(k)
 
-yna <- is.na(y)
-ytna <- apply(yna, c(1,3), all)
-first <- apply(!ytna, 1, function(x) min(which(x)))
-last  <- apply(!ytna, 1, function(x) max(which(x)))
 
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)
@@ -208,9 +213,9 @@ if(identical(engine, "R")) {
               ym, Xlam, Xgam, Xom, Xp,
               beta.lam, beta.gam, beta.om, beta.p, log.alpha,
               Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
-              !ytna, !is.na(ym),
+              ytna, yna,
               lk, mixture, first, last, M, J, T, delta,
-              dynamics,
+              dynamics, fix,
               PACKAGE = "unmarked")
         }
 }

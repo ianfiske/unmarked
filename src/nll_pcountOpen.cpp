@@ -2,7 +2,7 @@
 
 using namespace Rcpp ;
 
-SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytr_, SEXP yr_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_ ) {
+SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_ ) {
   int lk = as<int>(lk_);
   int M = as<int>(M_);
   int J = as<int>(J_);
@@ -24,31 +24,42 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   double alpha = exp(log_alpha);
   std::string mixture = as<std::string>(mixture_);
   std::string dynamics = as<std::string>(dynamics_);
+  std::string fix = as<std::string>(fix_);
   Rcpp::NumericVector first(first_);
   Rcpp::NumericVector last(last_);
-  arma::imat ytr = as<arma::imat>(ytr_); // y[i,,t] are not all NA
-  arma::imat yrm = as<arma::imat>(yr_);  // y[i,j,t] is not NA
+  arma::imat ytna = as<arma::imat>(ytna_); // y[i,,t] are all NA
+  arma::imat ynam = as<arma::imat>(yna_);  // y[i,j,t] is NA
   arma::imat delta = as<arma::imat>(delta_);
   // linear predictors
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
-  arma::colvec gamv = exp(Xgam*beta_gam + Xgam_offset);
-  arma::colvec omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
+  arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
+  if(fix!="omega")
+    omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
+  omv.reshape(T-1, M);
+  arma::mat om = arma::trans(omv);
+  arma::mat gam = arma::zeros<arma::mat>(M,T-1);
+  if(dynamics=="notrend") {
+    arma::mat lamMat = arma::repmat(lam, 1, T-1);
+    gam = (1-om) % lamMat;
+  } else {
+    if(fix!="gamma") {
+      arma::colvec gamv = exp(Xgam*beta_gam + Xgam_offset);
+      gamv.reshape(T-1, M);
+      gam = arma::trans(gamv);
+    }
+  }
   arma::colvec pv = 1.0/(1.0+exp(-1*(Xp*beta_p + Xp_offset)));
   // Put vectors in row-major matrices
-  gamv.reshape(T-1, M);
-  arma::mat gam = trans(gamv);
-  omv.reshape(T-1, M);
-  arma::mat om = trans(omv);
   pv.reshape(T, M);
   arma::mat pm = trans(pv);
   // format matrices as cubes
-  arma::cube y(M,J,T);
+  arma::icube y(M,J,T);
   arma::cube p(M,J,T);
-  arma::icube yr(M,J,T);
-  for(int q=0; q<M*J*T; q++) {
+  arma::icube yna(M,J,T);
+  for(int q=0; q<(M*J*T); q++) {
     y(q) = ym(q);
     p(q) = pm(q);
-    yr(q) = yrm(q);
+    yna(q) = ynam(q);
   }
   // initialize
   double ll=0.0;
@@ -71,7 +82,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     if(last_i > first_i) {
       // loop over time periods in reverse order, up to second occasion
       for(int t=last_i; t>first_i; t--) {
-	if(ytr(i,t)==0) {
+	if(ytna(i,t)==1) {
 	  continue; //
 	}
 	g1_t.zeros();
@@ -80,20 +91,23 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	  if(J==1)
 	    g1_t(k) = Rf_dbinom(y(i,0,t), k, p(i,0,t), false);
 	  else {
-	    for(int j=0; j<J; j++) {
-	      if(yr(i,j,t)==1) {
-		g1_t(k) += Rf_dbinom(y(i,j,t), k, p(i,j,t), true);
-		g1_t(k) = exp(g1_t(k));
+	    if(J>1) {
+	      for(int j=0; j<J; j++) {
+		if(yna(i,j,t)==0) {
+		  g1_t(k)=0.1;
+		  // g1_t(k) *= Rf_dbinom(y(i,j,t), k, p(i,j,t), false);
+		  //		  g1_t(k) = exp(g1_t(k));
+		}
 	      }
 	    }
 	  }
 	  g1_t_star(k) = g1_t(k) * g_star(k);
 	}
 	// computes transition probs for g3.slice(t-1)
-	if(dynamics=="constant")
+	if(dynamics=="constant" || dynamics=="notrend")
 	  tp1(g3, lk, gam(i,t-1), om(i,t-1), t-1);
 	else if(dynamics=="autoreg")
-	  tp2(g3, lk, gam(i,t-1), om(i,t-1), t-1);
+	  tp2(g3, lk, gam(i,t-1), om(i,t-1), t-1); // Might be broken
 	int delta_it = delta(i,t);
 	// matrix multiply transition probs over time gaps
 	if(delta_it>1) {
@@ -112,13 +126,17 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     int delta_i0 = delta(i,0);
     g1.zeros();
     for(int k=0; k<lk; k++) { // loop over possible values of N
-      if(J==1)
+      if(J==1) {
 	g1(k) = Rf_dbinom(y(i,0,first_i), k, p(i,0,first_i), false);
+      }
       else {
-	for(int j=0; j<J; j++) {
-	  if(yr(i,j,first_i)==1) {
-	    g1(k) += Rf_dbinom(y(i,j,first_i), k, p(i,j,first_i), true);
-	    g1(k) = exp(g1(k));
+	if(J>1) {
+	  for(int j=0; j<J; j++) {
+	    if(yna(i,j,first_i)==0) {
+	      g1(k)=0.1;
+	      //g1(k) *= Rf_dbinom(y(i,j,first_i), k, p(i,j,first_i), false);
+	      //	      g1(k) = exp(g1(k));
+	    }
 	  }
 	}
       }
