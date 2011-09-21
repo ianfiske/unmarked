@@ -3,6 +3,23 @@
 
 #include <RcppArmadillo.h>
 
-RcppExport SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytr_, SEXP yr_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_  ) ;
+RcppExport SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytr_, SEXP yr_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_  ) ;
+
+
+
+
+void tp(arma::cube& g3, int lk, double gam, double om, int t) {
+    int Nmin=0;
+    for(int n1=0; n1<lk; n1++) {
+	for(int n2=0; n2<lk; n2++) {
+	    Nmin = std::min(n1, n2);
+	    for(int c=0; c<=Nmin; c++) {
+		g3(n1, n2, t) += exp(Rf_dbinom(c, n1, om, true) +
+				       Rf_dpois(n2-c, gam, true));
+	    }
+	}
+    }
+}
+
 
 #endif

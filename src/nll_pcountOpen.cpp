@@ -2,12 +2,12 @@
 
 using namespace Rcpp ;
 
-SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytr_, SEXP yr_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_ ) {
+SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytr_, SEXP yr_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_ ) {
   int lk = as<int>(lk_);
   int M = as<int>(M_);
   int J = as<int>(J_);
   int T = as<int>(T_);
-  arma::mat ym = as<arma::mat>(y_);
+  arma::imat ym = as<arma::imat>(y_);
   arma::mat Xlam = as<arma::mat>(Xlam_);
   arma::mat Xgam = as<arma::mat>(Xgam_);
   arma::mat Xom = as<arma::mat>(Xom_);
@@ -27,6 +27,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   Rcpp::NumericVector last(last_);
   arma::imat ytr = as<arma::imat>(ytr_); // y[i,,t] are not all NA
   arma::imat yrm = as<arma::imat>(yr_);  // y[i,j,t] is not NA
+  arma::imat delta = as<arma::imat>(delta_);
   // linear predictors
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
   arma::colvec gamv = exp(Xgam*beta_gam + Xgam_offset);
@@ -51,7 +52,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   // initialize
   double ll=0.0;
   double ll_i=0.0, g1=0.0, g2=0.0;
-  int Nmin=0, first_i=0, last_i=0;
+  int first_i=0, last_i=0;
   arma::colvec g_star = arma::ones<arma::colvec>(lk);
   arma::cube g3 = arma::zeros<arma::cube>(lk, lk, T-1);
   arma::colvec g1_t = arma::zeros<arma::colvec>(lk);
@@ -62,32 +63,31 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     last_i = last[i]-1;
     g_star.ones();
     g3.zeros();
-    // loop over time periods in reverse order, up to second occasion
-    for(int t=last_i; t>first_i; t--) {
-      g1_t.zeros();
-      // loop over possible value of N at time t
-      for(int n2=0; n2<lk; n2++) {
-        if(J==1)
-	  g1_t(n2) = Rf_dbinom(y(i,0,t), n2, p(i,0,t), false);
-	else {
-	  for(int j=0; j<J; j++) {
-	    if(yr(i,j,t)) {
-	      g1_t(n2) += Rf_dbinom(y(i,j,t), n2, p(i,j,t), true);
-	      g1_t(n2) = exp(g1_t(n2));
+    if(last_i > first_i) {
+      // loop over time periods in reverse order, up to second occasion
+      for(int t=last_i; t>first_i; t--) {
+	if(ytr(i,t)==0) {
+	  continue; // FIXME: g3 needs to handle time gap
+	}
+	g1_t.zeros();
+	// loop over possible value of N at time t
+	for(int n2=0; n2<lk; n2++) {
+	  if(J==1)
+	    g1_t(n2) = Rf_dbinom(y(i,0,t), n2, p(i,0,t), false);
+	  else {
+	    for(int j=0; j<J; j++) {
+	      if(yr(i,j,t)==1) {
+		g1_t(n2) += Rf_dbinom(y(i,j,t), n2, p(i,j,t), true);
+		g1_t(n2) = exp(g1_t(n2));
+	      }
 	    }
 	  }
+	  g1_t_star(n2) = g1_t(n2) * g_star(n2);
 	}
-        g1_t_star(n2) = g1_t(n2) * g_star(n2);
-	// loop over possible values of N at time t-1
-        for(int n1=0; n1<lk; n1++) {
-          Nmin = std::min(n1, n2);
-          for(int c=0; c<=Nmin; c++) {
-	    g3(n2, n1, t-1) += exp(Rf_dbinom(c, n1, om(i,t-1), true) +
-				   Rf_dpois(n2-c, gam(i,t-1), true));
-	  }
-	}
+	// computes transition probs for g3.slice(t-1)
+	tp(g3, lk, gam(i,t-1), om(i,t-1), t-1);
+	g_star = g3.slice(t-1) * g1_t_star;
       }
-      g_star = trans(g3.slice(t-1)) * g1_t_star;
     }
     g1=0.0;
     g2=0.0;
@@ -97,7 +97,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	g1 = Rf_dbinom(y(i,0,first_i), n1, p(i,0,first_i), false);
       else {
 	for(int j=0; j<J; j++) {
-	  if(yr(i,j,first_i)) {
+	  if(yr(i,j,first_i)==1) {
 	    g1 += Rf_dbinom(y(i,j,first_i), n1, p(i,j,first_i), true);
 	    g1 = exp(g1);
 	  }
@@ -107,7 +107,14 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	g2 = Rf_dpois(n1, lam(i), false);
       else
         g2 = dnbinom_mu(n1, alpha, lam(i), false);
-      ll_i += g1 * g2 * g_star(n1);
+      //      if(delta(i,0)==1)
+	ll_i += g1 * g2 * g_star(n1);
+	//      else if(delta(i,0)>1) {
+	// FIXME: need to recompute g3 here, call it g3_0
+	// g1_t_star(n1) = g1 * g_star(n1);
+	// g_star(n1) = trans(g3_0) * g1_t_star; // this is wrong
+	// ll_i += g2 * g_star(n1);
+	//}
     }
     ll += log(ll_i);
   }

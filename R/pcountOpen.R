@@ -209,7 +209,7 @@ if(identical(engine, "R")) {
               beta.lam, beta.gam, beta.om, beta.p, log.alpha,
               Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
               !ytna, !is.na(ym),
-              lk, mixture, first, last, M, J, T,
+              lk, mixture, first, last, M, J, T, delta,
               PACKAGE = "unmarked")
         }
 }
