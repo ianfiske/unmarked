@@ -11,7 +11,8 @@ mixture <- match.arg(mixture)
 dynamics <- match.arg(dynamics)
 engine <- match.arg(engine)
 fix <- match.arg(fix)
-if(identical(dynamics, "notrend") & !identical(lambdaformula, omegaformula))
+if(identical(dynamics, "notrend") &
+   !identical(lambdaformula, omegaformula))
     stop("lambdaformula and omegaformula must be identical for notrend model")
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula)
@@ -146,8 +147,9 @@ if(identical(engine, "R")) {
         else {
             last.gamma.i <- max(which(!is.na(gamma[i,])))
             last.omega.i <- max(which(!is.na(omega[i,])))
-            g3.T <- tranProbs(k, omega[i, last.omega.i], gamma[i, last.gamma.i],
-                delta[i, last.i], dynamics)
+            g3.T <- tranProbs(k, omega[i, last.omega.i],
+                              gamma[i, last.gamma.i],
+                              delta[i, last.i], dynamics)
             }
         if(first.i == last.i & delta.i1 > 1) {
             g.star0 <- colSums(g1.T * g3.T)
@@ -193,6 +195,7 @@ if(identical(engine, "R")) {
     -sum(log(L))
     }
 } else {
+    ym <- matrix(y, nrow=M)
     nll <- function(parms) {
         beta.lam <- parms[1:nAP]
         beta.gam <- parms[(nAP+1):(nAP+nGP)]
@@ -201,13 +204,12 @@ if(identical(engine, "R")) {
         log.alpha <- 1
         if(identical(mixture, "NB"))
             log.alpha <- parms[nP]
-        y1 <- y[,1,]
-        NAmat <- is.na(y1)
         .Call("nll_pcountOpen",
-              y1, Xlam, Xgam, Xom, Xp,
+              ym, Xlam, Xgam, Xom, Xp,
               beta.lam, beta.gam, beta.om, beta.p, log.alpha,
               Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
-              NAmat, lk, mixture, first, last, M, J, T,
+              !ytna, !is.na(ym),
+              lk, mixture, first, last, M, J, T,
               PACKAGE = "unmarked")
         }
 }

@@ -32,12 +32,14 @@ head(umf)
 summary(umf)
 
 {
-system.time(fmR <- pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf,
+st1 <- system.time(fmR <- pcountOpen(~veght+habitat, ~1, ~veght, ~veght,
+                                     umf,
                               K=20, control=list(trace=TRUE, REPORT=1),
-                              se=FALSE, engine="R"))
-system.time(fmC <- pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf,
+                              se=FALSE, engine="R")) # 886
+st2 <- system.time(fmC <- pcountOpen(~veght+habitat, ~1, ~veght, ~veght,
+                                     umf,
                               K=20, control=list(trace=TRUE, REPORT=1),
-                              se=FALSE, engine="C"))
+                              se=FALSE, engine="C")) # 722
 }
 
 benchmark(pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf, K=20,
@@ -47,11 +49,11 @@ benchmark(pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf, K=20,
 
 
 
-system.time(fm2R <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
+st1 <- system.time(fm2R <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
                                control=list(trace=TRUE, REPORT=1, maxit=2),
                                se=FALSE, engine="R"))
 
-system.time(fm2C <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
+st2 <- system.time(fm2C <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
                                control=list(trace=TRUE, REPORT=1, maxit=2),
                                se=FALSE, engine="C"))
 
