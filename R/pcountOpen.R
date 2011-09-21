@@ -210,6 +210,7 @@ if(identical(engine, "R")) {
               Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
               !ytna, !is.na(ym),
               lk, mixture, first, last, M, J, T, delta,
+              dynamics,
               PACKAGE = "unmarked")
         }
 }
