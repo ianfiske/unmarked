@@ -49,7 +49,7 @@ hist(simout1[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout1[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
 hist(simout1[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
 hist(simout1[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
-#dev.off()
+dev.off()
 
 
 
@@ -124,7 +124,7 @@ hist(simout2[,5], xlab=expression(omega)); abline(v=om[1], lwd=2, col=4)
 hist(simout2[,6], xlab=expression(omega)); abline(v=om[2], lwd=2, col=4)
 hist(simout2[,7], xlab=expression(p)); abline(v=p[1], lwd=2, col=4)
 hist(simout2[,8], xlab=expression(p)); abline(v=p[2], lwd=2, col=4)
-#dev.off()
+dev.off()
 
 
 
@@ -147,7 +147,6 @@ sim3 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=100, T=5)
     S <- G <- matrix(NA, M, T-1)
     N[,1] <- rpois(M, lambda)
     date[,1] <- 1
-
     for(i in 1:M) {
     for(t in 2:T) {
         delta <- max(rpois(1, 3), 1)
@@ -204,7 +203,7 @@ for(i in 1:nsim3) {
 
 
 
-png("pcountOpenSim3.png", width=6, height=6, units="in", res=360)
+#png("pcountOpenSim3.png", width=6, height=6, units="in", res=360)
 par(mfrow=c(2,2))
 hist(simout3[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout3[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
@@ -268,7 +267,7 @@ for(i in 1:nsim4) {
     cat("  mle =", simout4[i,], "\n")
     }
 
-png("pcountOpenSim4.png", width=6, height=6, units="in", res=360)
+#png("pcountOpenSim4.png", width=6, height=6, units="in", res=360)
 par(mfrow=c(2,2))
 hist(simout4[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout4[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
@@ -327,7 +326,7 @@ for(i in 1:nsim5) {
     cat("  mle =", simout5[i,], "\n")
     }
 
-png("pcountOpenSim5.png", width=6, height=6, units="in", res=360)
+#png("pcountOpenSim5.png", width=6, height=6, units="in", res=360)
 par(mfrow=c(2,2))
 hist(simout5[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout5[,2], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
@@ -382,7 +381,7 @@ nsim6 <- 100
 simout6 <- matrix(NA, nsim6, 4)
 colnames(simout6) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim6) {
-    cat("sim6", i, "\n"); flush.console()
+    cat("sim6", i, "\n")
     lambda <- 1
     gamma <- 0.5
     omega <- 0.8
@@ -404,7 +403,7 @@ for(i in 1:nsim6) {
 
 
 
-png("pcountOpenSim6.png", width=6, height=6, units="in", res=360)
+#png("pcountOpenSim6.png", width=6, height=6, units="in", res=360)
 par(mfrow=c(2,2))
 hist(simout6[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout6[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
@@ -469,7 +468,7 @@ for(i in 1:nsim7) {
     cat("mle = ", simout7[i,], "\n")
     }
 
-png("pcountOpenSim7.png", width=6, height=6, units="in", res=360)
+#png("pcountOpenSim7.png", width=6, height=6, units="in", res=360)
 par(mfrow=c(2,2))
 hist(simout7[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout7[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
@@ -624,7 +623,7 @@ for(i in 1:nsim9) {
     cat("mle = ", simout9[i,], "\n")
     }
 
-png("pcountOpenSim9.png", width=6, height=6, units="in", res=360)
+#png("pcountOpenSim9.png", width=6, height=6, units="in", res=360)
 par(mfrow=c(2,2))
 hist(simout9[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout9[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)

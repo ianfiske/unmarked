@@ -216,7 +216,7 @@ if(identical(engine, "R")) {
               Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
               ytna, yna,
               lk, mixture, first, last, M, J, T,
-              delta, dynamics, fix,
+              delta, dynamics, fix, go.dims,
               PACKAGE = "unmarked")
         }
 }

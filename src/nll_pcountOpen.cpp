@@ -2,7 +2,7 @@
 
 using namespace Rcpp ;
 
-SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_) {
+SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_) {
   int lk = as<int>(lk_);
   int M = as<int>(M_);
   int J = as<int>(J_);
@@ -25,6 +25,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   std::string mixture = as<std::string>(mixture_);
   std::string dynamics = as<std::string>(dynamics_);
   std::string fix = as<std::string>(fix_);
+  std::string go_dims = as<std::string>(go_dims_);
   Rcpp::IntegerVector first(first_);
   Rcpp::IntegerVector last(last_);
   arma::imat ytna = as<arma::imat>(ytna_); // y[i,,t] are all NA
@@ -67,11 +68,19 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   int last_i=0;
   arma::colvec g_star = arma::ones<arma::colvec>(lk);
   arma::mat g3 = arma::zeros<arma::mat>(lk, lk);
+  arma::mat g3_d = arma::zeros<arma::mat>(lk, lk);
   arma::colvec g1_t = arma::zeros<arma::colvec>(lk);
   arma::colvec g1_t_star = arma::zeros<arma::colvec>(lk);
   arma::colvec g1 = arma::zeros<arma::colvec>(lk);
   arma::colvec g2 = arma::zeros<arma::colvec>(lk);
   arma::colvec g1_star = arma::zeros<arma::colvec>(lk);
+  // compute g3 is there are no covariates of omega/gamma
+  if(go_dims == "scalar") {
+    if(dynamics=="constant" || dynamics=="notrend")
+      tp1(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
+    else if(dynamics=="autoreg")
+      tp2(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
+  }
   // loop over sites
   for(int i=0; i<M; i++) {
     first_i = first[i]-1; // remember 0=1st location in C++
@@ -84,28 +93,30 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	  continue; //
 	}
 	g1_t.zeros();
-	g3.zeros();
 	// loop over possible value of N at time t
 	for(int k=0; k<lk; k++) {
 	  for(int j=0; j<J; j++) {
 	    if(yna(i,j,t)==0) {
 	      g1_t(k) += Rf_dbinom(y(i,j,t), k, p(i,j,t), true);
-	      //	      g1_t(k) = exp(g1_t(k));
 	    }
 	  }
 	  g1_t(k) = exp(g1_t(k));
 	  g1_t_star(k) = g1_t(k) * g_star(k);
 	}
 	// computes transition probs for g3
-	if(dynamics=="constant" || dynamics=="notrend")
-	  tp1(g3, lk, gam(i,t-1), om(i,t-1));
-	else if(dynamics=="autoreg")
-	  tp2(g3, lk, gam(i,t-1), om(i,t-1));
+	if(go_dims != "scalar") {
+	  g3.zeros();
+	  if(dynamics=="constant" || dynamics=="notrend")
+	    tp1(g3, lk, gam(i,t-1), om(i,t-1));
+	  else if(dynamics=="autoreg")
+	    tp2(g3, lk, gam(i,t-1), om(i,t-1));
+	}
 	int delta_it = delta(i,t);
 	// matrix multiply transition probs over time gaps
 	if(delta_it>1) {
+	  g3_d = g3;
 	  for(int d=1; d<delta_it; d++) {
-	    g3 *= g3;
+	    g3_d *= g3_d;
 	    /*
 	    might be necessary to guard against underflow
 	    approach 1
@@ -116,8 +127,9 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	    replace values outside [0,1]
 	    */
 	    }
-	}
-	g_star = g3 * g1_t_star;
+	  g_star = g3_d * g1_t_star;
+	} else
+	  g_star = g3 * g1_t_star;
       }
     }
     ll_i=0.0;
@@ -127,7 +139,6 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
       for(int j=0; j<J; j++) {
 	if(yna(i,j,first_i)==0) {
 	  g1(k) += Rf_dbinom(y(i,j,first_i), k, p(i,j,first_i), true);
-	  //	  g1(k) = exp(g1(k));
 	}
       }
       g1(k) = exp(g1(k));
@@ -142,9 +153,9 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     }
     if(delta_i0>1) {
       for(int d=0; d<delta_i0; d++) {
-	g3 *= g3;
+	g3_d *= g3_d;
       }
-      g_star = g3 * g1_star;
+      g_star = g3_d * g1_star;
       ll_i = arma::dot(g2, g_star);
     }
     ll += log(ll_i + 1.0e-50);
