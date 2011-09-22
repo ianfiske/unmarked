@@ -49,12 +49,12 @@ benchmark(pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf, K=20,
 
 
 
-st1 <- system.time(fm2R <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
-                               control=list(trace=TRUE, REPORT=1, maxit=2),
-                               se=FALSE, engine="R")) # 27.94
+st1 <- system.time(fm2R <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=15,
+                                      control=list(trace=TRUE, REPORT=1),
+                                      se=TRUE, engine="R")) # 211.1
 
-st2 <- system.time(fm2C <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
-                               control=list(trace=TRUE, REPORT=1, maxit=2),
-                               se=FALSE, engine="C")) # 22.18
+st2 <- system.time(fm2C <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=15,
+                                      control=list(trace=TRUE, REPORT=1),
+                                      se=TRUE, engine="C")) # 155.5
 
 

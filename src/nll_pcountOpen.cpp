@@ -66,7 +66,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   int first_i=0;
   int last_i=0;
   arma::colvec g_star = arma::ones<arma::colvec>(lk);
-  arma::cube g3 = arma::zeros<arma::cube>(lk, lk, T-1);
+  arma::mat g3 = arma::zeros<arma::mat>(lk, lk);
   arma::colvec g1_t = arma::zeros<arma::colvec>(lk);
   arma::colvec g1_t_star = arma::zeros<arma::colvec>(lk);
   arma::colvec g1 = arma::zeros<arma::colvec>(lk);
@@ -77,7 +77,6 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     first_i = first[i]-1; // remember 0=1st location in C++
     last_i = last[i]-1;
     g_star.ones();
-    g3.zeros();
     if(last_i > first_i) {
       // loop over time periods in reverse order, up to second occasion
       for(int t=last_i; t>first_i; t--) {
@@ -85,6 +84,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	  continue; //
 	}
 	g1_t.zeros();
+	g3.zeros();
 	// loop over possible value of N at time t
 	for(int k=0; k<lk; k++) {
 	  for(int j=0; j<J; j++) {
@@ -96,28 +96,28 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	  g1_t(k) = exp(g1_t(k));
 	  g1_t_star(k) = g1_t(k) * g_star(k);
 	}
-	// computes transition probs for g3.slice(t-1)
+	// computes transition probs for g3
 	if(dynamics=="constant" || dynamics=="notrend")
-	  tp1(g3, lk, gam(i,t-1), om(i,t-1), t-1);
+	  tp1(g3, lk, gam(i,t-1), om(i,t-1));
 	else if(dynamics=="autoreg")
-	  tp2(g3, lk, gam(i,t-1), om(i,t-1), t-1);
+	  tp2(g3, lk, gam(i,t-1), om(i,t-1));
 	int delta_it = delta(i,t);
 	// matrix multiply transition probs over time gaps
 	if(delta_it>1) {
 	  for(int d=1; d<delta_it; d++) {
-	    g3.slice(t-1) *= g3.slice(t-1);
+	    g3 *= g3;
 	    /*
 	    might be necessary to guard against underflow
 	    approach 1
-	    arma::mat cs1 = sum(g3.slice(t-1), 0);
+	    arma::mat cs1 = sum(g3, 0);
 	    arma::mat csm1 = arma::repmat(cs1, n, 1);
-	    g3.slice(t-1) = g3.slice(t-1) / csm1
+	    g3 = g3 / csm1
 	    approach 2
 	    replace values outside [0,1]
 	    */
 	    }
 	}
-	g_star = g3.slice(t-1) * g1_t_star;
+	g_star = g3 * g1_t_star;
       }
     }
     ll_i=0.0;
@@ -142,9 +142,9 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     }
     if(delta_i0>1) {
       for(int d=0; d<delta_i0; d++) {
-	g3.slice(0) *= g3.slice(0);
+	g3 *= g3;
       }
-      g_star = g3.slice(0) * g1_star;
+      g_star = g3 * g1_star;
       ll_i = arma::dot(g2, g_star);
     }
     ll += log(ll_i + 1.0e-50);
