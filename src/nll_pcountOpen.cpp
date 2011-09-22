@@ -100,7 +100,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	if(dynamics=="constant" || dynamics=="notrend")
 	  tp1(g3, lk, gam(i,t-1), om(i,t-1), t-1);
 	else if(dynamics=="autoreg")
-	  tp2(g3, lk, gam(i,t-1), om(i,t-1), t-1); // Might be broken
+	  tp2(g3, lk, gam(i,t-1), om(i,t-1), t-1);
 	int delta_it = delta(i,t);
 	// matrix multiply transition probs over time gaps
 	if(delta_it>1) {

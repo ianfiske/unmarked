@@ -23,7 +23,7 @@ sim1 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5)
 
 
 set.seed(3223)
-nsim1 <- 1
+nsim1 <- 100
 simout1 <- matrix(NA, nsim1, 4)
 colnames(simout1) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim1) {
@@ -40,7 +40,7 @@ for(i in 1:nsim1) {
     e <- coef(m1)
     simout1[i, 1:2] <- exp(e[1:2])
     simout1[i, 3:4] <- plogis(e[3:4])
-    cat("  beta.hat =", simout1[i,], "\n")
+    cat("  mle =", simout1[i,], "\n")
     }
 
 #png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
@@ -87,7 +87,7 @@ sim2 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
 
 
 
-nsim2 <- 1
+nsim2 <- 100
 simout2 <- matrix(NA, nsim2, 8)
 colnames(simout2) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1',
                        'p0', 'p1')
@@ -111,7 +111,7 @@ for(i in 1:nsim2) {
                      K=30, se=F, starts=c(lam, gam, om, p))
     e <- coef(m2)
     simout2[i, ] <- e
-    cat("  beta.hat =", e, "\n")
+    cat("  mle =", e, "\n")
     }
 
 #png("pcountOpenSim2.png", width=6, height=8, units="in", res=360)
@@ -178,7 +178,7 @@ sim3 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=100, T=5)
 
 
 set.seed(373)
-nsim3 <- 500
+nsim3 <- 100
 simout3 <- matrix(NA, nsim3, 4)
 colnames(simout3) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim3) {
@@ -191,12 +191,15 @@ for(i in 1:nsim3) {
     yd <- sim3(lambda, gamma, omega, p, M=100, T=5)
     y.sim3 <- yd$y
     dates3 <- yd$dates
-    umf3 <- unmarkedFramePCO(y = y.sim3, primaryPeriod=dates3, numPrimary=T)
+    umf3 <- unmarkedFramePCO(y = y.sim3, primaryPeriod=dates3,
+                             numPrimary=T)
     m3 <- pcountOpen(~1, ~1, ~1, ~1, umf3, K=20,
-        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
+        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+                     se=FALSE)
     e <- coef(m3)
     simout3[i, 1:2] <- exp(e[1:2])
     simout3[i, 3:4] <- plogis(e[3:4])
+    cat("  mle =", simout3[i,], "\n")
     }
 
 
@@ -244,7 +247,7 @@ sim4 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5)
 
 
 set.seed(3223)
-nsim4 <- 1
+nsim4 <- 100
 simout4 <- matrix(NA, nsim4, 4)
 colnames(simout4) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim4) {
@@ -262,7 +265,7 @@ for(i in 1:nsim4) {
     e <- coef(m4)
     simout4[i, 1:2] <- exp(e[1:2])
     simout4[i, 3:4] <- plogis(e[3:4])
-    cat("  beta.hat =", e, "\n")
+    cat("  mle =", simout4[i,], "\n")
     }
 
 png("pcountOpenSim4.png", width=6, height=6, units="in", res=360)
@@ -305,7 +308,7 @@ sim5 <- function(lambda=1, omega=0.8, p=0.7, M=100, T=5)
 
 
 set.seed(3223)
-nsim5 <- 500
+nsim5 <- 100
 simout5 <- matrix(NA, nsim5, 3)
 colnames(simout5) <- c('lambda', 'omega', 'p')
 for(i in 1:nsim5) {
@@ -321,6 +324,7 @@ for(i in 1:nsim5) {
     e <- coef(m5)
     simout5[i, 1] <- exp(e[1])
     simout5[i, 2:3] <- plogis(e[2:3])
+    cat("  mle =", simout5[i,], "\n")
     }
 
 png("pcountOpenSim5.png", width=6, height=6, units="in", res=360)
@@ -374,7 +378,7 @@ sim6 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=100, T=5)
 
 
 set.seed(3223)
-nsim6 <- 50
+nsim6 <- 100
 simout6 <- matrix(NA, nsim6, 4)
 colnames(simout6) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim6) {
@@ -387,12 +391,15 @@ for(i in 1:nsim6) {
     yd <- sim6(lambda, gamma, omega, p, M=100, T=T)
     y.sim6 <- yd$y
     dates6 <- yd$dates
-    umf6 <- unmarkedFramePCO(y = y.sim6, primaryPeriod=dates6, numPrimary=T)
-    m6 <- pcountOpen(~1, ~1, ~1, ~1, umf6, K=15,
-        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)), se=FALSE)
+    umf6 <- unmarkedFramePCO(y = y.sim6, primaryPeriod=dates6,
+                             numPrimary=T)
+    m6 <- pcountOpen(~1, ~1, ~1, ~1, umf6, K=25,
+        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+                     se=FALSE)
     e <- coef(m6)
     simout6[i, 1:2] <- exp(e[1:2])
     simout6[i, 3:4] <- plogis(e[3:4])
+    cat("  mle =", simout6[i,], "\n")
     }
 
 
@@ -441,7 +448,7 @@ sim7 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5, J=3)
 
 library(unmarked)
 set.seed(3223)
-nsim7 <- 1
+nsim7 <- 100
 simout7 <- matrix(NA, nsim7, 4)
 colnames(simout7) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim7) {
@@ -518,7 +525,7 @@ sim8 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
 
 
 
-nsim8 <- 500
+nsim8 <- 100
 simout8 <- matrix(NA, nsim8, 8)
 colnames(simout8) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1', 'p0', 'p1')
 for(i in 1:nsim8) {
@@ -537,10 +544,12 @@ for(i in 1:nsim8) {
     obsCovs <- list(time = covs[,grep("time", cn)])
     umf8 <- unmarkedFramePCO(y = y.sim8, siteCovs=siteCovs,
         yearlySiteCovs=yearlySiteCovs, obsCovs=obsCovs, numPrimary=T)
-    m8 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf8, K=30, se=F,
+    m8 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf8, K=30,
+                     se=F,
         starts=c(lam, gam, om, p))
     e <- coef(m8)
     simout8[i, ] <- e
+    cat("  mle=", e, "\n")
     }
 
 png("pcountOpenSim8.png", width=6, height=8, units="in", res=360)
@@ -559,6 +568,69 @@ dev.off()
 
 
 
+
+
+
+
+
+
+
+
+
+
+## Simulate no covariates, constant sampling period intervals,
+## WITH secondary samples and missing values
+
+sim9 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5, J=3,
+                 nMissing=50)
+{
+    y <- matrix(NA, M, J*T)
+    N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    for(t in 1:(T-1)) {
+        S[,t] <- rbinom(M, N[,t], omega)
+        G[,t] <- rpois(M, gamma)
+        N[,t+1] <- S[,t] + G[,t]
+        }
+    N <- N[,rep(1:T, each=J)]
+    y[] <- rbinom(M*J*T, N, p)
+    y[sample.int(M*J*T, nMissing)] <- NA
+    return(y)
+}
+
+
+
+library(unmarked)
+set.seed(3223)
+nsim9 <- 100
+simout9 <- matrix(NA, nsim9, 4)
+colnames(simout9) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim9) {
+    cat("sim9", i, "\n")
+    lambda <- 1
+    gamma <- 0.5
+    omega <- 0.8
+    p <- 0.7
+    T <- 5
+    y.sim9 <- sim9(lambda, gamma, omega, p, T=T, nMissing=100)
+    umf9 <- unmarkedFramePCO(y = y.sim9, numPrimary=T)
+    m9 <- pcountOpen(~1, ~1, ~1, ~1, umf9, K=15,
+              starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+              se=FALSE, engine="C")
+    e <- coef(m9)
+    simout9[i, 1:2] <- exp(e[1:2])
+    simout9[i, 3:4] <- plogis(e[3:4])
+    cat("mle = ", simout9[i,], "\n")
+    }
+
+png("pcountOpenSim9.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout9[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout9[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout9[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout9[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+dev.off()
 
 
 

@@ -5,7 +5,7 @@ library(rbenchmark)
 
 set.seed(34537)
 nSites <- 100
-T <- 20
+T <- 10
 covariates <- data.frame(veght=rnorm(nSites),
     habitat=factor(c(rep('A', 50), rep('B', 50))))
 lampars <- c(-1, 1, -1)
@@ -51,10 +51,10 @@ benchmark(pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf, K=20,
 
 st1 <- system.time(fm2R <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
                                control=list(trace=TRUE, REPORT=1, maxit=2),
-                               se=FALSE, engine="R"))
+                               se=FALSE, engine="R")) # 27.94
 
 st2 <- system.time(fm2C <- pcountOpen(~1, ~1, ~veght, ~1, umf, K=20,
                                control=list(trace=TRUE, REPORT=1, maxit=2),
-                               se=FALSE, engine="C"))
+                               se=FALSE, engine="C")) # 22.18
 
 
