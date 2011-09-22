@@ -439,13 +439,13 @@ sim7 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5, J=3)
 
 
 
-
+library(unmarked)
 set.seed(3223)
 nsim7 <- 1
 simout7 <- matrix(NA, nsim7, 4)
 colnames(simout7) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim7) {
-    cat("sim7", i, "\n"); flush.console()
+    cat("sim7", i, "\n")
     lambda <- 1
     gamma <- 0.5
     omega <- 0.8
@@ -455,7 +455,7 @@ for(i in 1:nsim7) {
     umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
     m7 <- pcountOpen(~1, ~1, ~1, ~1, umf7, K=15,
               starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
-              se=FALSE)
+              se=FALSE, engine="C")
     e <- coef(m7)
     simout7[i, 1:2] <- exp(e[1:2])
     simout7[i, 3:4] <- plogis(e[3:4])

@@ -210,17 +210,38 @@ if(identical(engine, "R")) {
         if(identical(mixture, "NB"))
             log.alpha <- parms[nP]
         .Call("nll_pcountOpen",
-              ym, Xlam, Xgam, Xom, Xp,
-              beta.lam, beta.gam, beta.om, beta.p, log.alpha,
-              Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
-              ytna, yna,
-              lk, mixture, first, last, M, J, T, delta,
-              dynamics, fix,
+              as.matrix(ym),
+              as.matrix(Xlam),
+              as.matrix(Xgam),
+              as.matrix(Xom),
+              as.matrix(Xp),
+              as.numeric(beta.lam),
+              as.numeric(beta.gam),
+              as.numeric(beta.om),
+              as.numeric(beta.p),
+              as.numeric(log.alpha),
+              as.numeric(Xlam.offset),
+              as.numeric(Xgam.offset),
+              as.numeric(Xom.offset),
+              as.numeric(Xp.offset),
+              as.matrix(ytna),
+              as.matrix(yna),
+              as.integer(lk),
+              as.character(mixture),
+              as.integer(first),
+              as.integer(last),
+              as.integer(M),
+              as.integer(J),
+              as.integer(T),
+              as.matrix(delta),
+              as.character(dynamics),
+              as.character(fix),
               PACKAGE = "unmarked")
         }
 }
 if(missing(starts))
     starts <- rep(0, nP)
+# browser()
 fm <- optim(starts, nll, method=method, hessian=se, ...)
 opt <- fm
 ests <- fm$par
