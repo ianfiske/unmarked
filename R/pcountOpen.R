@@ -31,10 +31,14 @@ M <- nrow(y)
 T <- data@numPrimary
 J <- ncol(getY(data)) / T
 
-# NEED TO ALLOW OFFSETS!!!!
-Xlam.offset <- rep(0, M)
-Xgam.offset <- Xom.offset <- rep(0, M*(T-1))
-Xp.offset <- rep(0, M*T*J)
+Xlam.offset <- D$Xlam.offset
+Xgam.offset <- D$Xgam.offset
+Xom.offset <- D$Xom.offset
+Xp.offset <- D$Xp.offset
+if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
+if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
+if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
+if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
 
 yna <- is.na(y)
 yna[] <- as.integer(yna)
