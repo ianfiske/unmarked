@@ -14,7 +14,7 @@ void tp1(arma::mat& g3, int lk, double gam, double om) {
 	for(int n2=0; n2<lk; n2++) {
 	    Nmin = std::min(n1, n2);
 	    for(int c=0; c<=Nmin; c++) {
-		g3(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
+		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
 				  Rf_dpois(n2-c, gam, true));
 	    }
 	}
@@ -32,7 +32,7 @@ void tp2(arma::mat& g3, int lk, double gam, double om) {
 	for(int n2=0; n2<lk; n2++) {
 	    Nmin = std::min(n1, n2);
 	    for(int c=0; c<=Nmin; c++) {
-		g3(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
+		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
 				  Rf_dpois(n2-c, gam*n1, true));
 	    }
 	}

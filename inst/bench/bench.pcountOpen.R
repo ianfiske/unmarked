@@ -8,10 +8,10 @@ nSites <- 100
 T <- 10
 covariates <- data.frame(veght=rnorm(nSites),
     habitat=factor(c(rep('A', 50), rep('B', 50))))
-lampars <- c(-1, 1, -1)
-gampars <- c(-1,0, 0)
+lampars <- c(-1, 0, 0)
+gampars <- c(-1, 0, 0)
 ompars <- c(2, -1, 0)
-ppars <- c(1, -1, 0)
+ppars <- c(1, 0, 0)
 X <- model.matrix(~veght+habitat, covariates) # design matrix
 lam <- exp(X %*% lampars)
 gam <- exp(X %*% gampars)
@@ -42,10 +42,16 @@ st2 <- system.time(fmC <- pcountOpen(~veght+habitat, ~1, ~veght, ~veght,
                               se=FALSE, engine="C")) # 722
 }
 
-benchmark(pcountOpen(~veght+habitat, ~1, ~veght, ~veght, umf, K=20,
-                     control=list(trace=TRUE, REPORT=1)),
+
+
+benchmark(pcountOpen(~1, ~1, ~veght, ~1, umf, K=15, se=FALSE,
+                     starts=c(-1,-1,2,-1,1),
+                     control=list(trace=TRUE, REPORT=1), engine="R"),
+          pcountOpen(~1, ~1, ~veght, ~1, umf, K=15, se=FALSE,
+                     starts=c(-1,-1,2,-1,1),
+                     control=list(trace=TRUE, REPORT=1), engine="C"),
           columns=c("test", "elapsed", "relative"),
-          replications=50)
+          replications=5) # 375.39 vs 275.43
 
 
 
