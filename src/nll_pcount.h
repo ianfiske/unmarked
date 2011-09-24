@@ -5,4 +5,17 @@
 
 RcppExport SEXP nll_pcount( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_lamR, SEXP beta_pR, SEXP alphaR, SEXP X_offsetR, SEXP V_offsetR, SEXP naMatR, SEXP lkR, SEXP mixtureR ) ;
 
+
+
+double dzip(int x, double lambda, double psi) {
+  double den=0.0;
+  if(x==0)
+    den = psi + (1-psi)*exp(-lambda);
+  else if(x>0)
+    den = (1-psi)*Rf_dpois(x, lambda, false);
+  return den;
+}
+
+
+
 #endif

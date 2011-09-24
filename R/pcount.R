@@ -1,11 +1,11 @@
 
 #' Fit the N-mixture point count model
 
-pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
+pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
                    method = "BFGS", control = list(), se = TRUE,
                    engine = c("C", "R"))
 {
-    mixture <- match.arg(mixture, c("P", "NB"))
+    mixture <- match.arg(mixture, c("P", "NB", "ZIP"))
     if(!is(data, "unmarkedFramePCount"))
         stop("Data is not an unmarkedFramePCount object.")
 
@@ -37,7 +37,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
     k.ik <- rep(k, M)
     k.ijk <- rep(k, M*J)
 
-    nP <- nAP + nDP + ifelse(identical(mixture,"NB"),1,0)
+    nP <- nAP + nDP + (mixture != "P")
     if(!missing(starts) && length(starts) != nP)
         stop(paste("The number of starting values should be", nP))
 
@@ -78,7 +78,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
             beta.lam <- parms[1:nAP]
             beta.p <- parms[(nAP+1):(nAP+nDP)]
             log.alpha <- 1
-            if(identical(mixture, "NB"))
+            if(mixture %in% c("NB", "ZIP"))
                 log.alpha <- parms[nP]
             .Call("nll_pcount",
                   y, X, V, beta.lam, beta.p, log.alpha, X.offset, V.offset,
@@ -92,10 +92,10 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
     opt <- fm
 
     ests <- fm$par
-    if(identical(mixture,"NB"))
-        nbParm <- "alpha"
-    else
-        nbParm <- character(0)
+    nbParm <- switch(mixture,
+                     NB = "alpha",
+                     ZIP = "psi",
+                     P = character(0))
     names(ests) <- c(lamParms, detParms, nbParm)
     if(se) {
         tryCatch(covMat <- solve(fm$hessian),
@@ -126,6 +126,14 @@ pcount <- function(formula, data, K, mixture = c("P", "NB"), starts,
             short.name = "alpha", estimates = ests[nP],
             covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
             invlinkGrad = "exp")
+    }
+
+    if(identical(mixture,"ZIP")) {
+        estimateList@estimates$psi <- unmarkedEstimate(
+            name="Zero-inflation",
+            short.name = "psi", estimates = ests[nP],
+            covMat = as.matrix(covMat[nP, nP]), invlink = "logistic",
+            invlinkGrad = "logistic.grad")
     }
 
     umfit <- new("unmarkedFitPCount", fitType="pcount", call=match.call(),
