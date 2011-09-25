@@ -657,22 +657,28 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
     p <- getP(object, na.rm = na.rm)
     mix <- object@mixture
     switch(mix,
-        P = {
-            fitted <- as.numeric(state) * p
-            },
-        NB = {
-            if(missing(K)) K <- max(y, na.rm = TRUE) + 20
-            k <- 0:K
-            k.ijk <- rep(k, M*J)
-            state.ijk <- state[rep(1:M, each = J*(K+1))]
-            alpha <- exp(coef(object['alpha']))
-            prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
-            all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk,
-                prob.ijk)
-            prod.ijk <- rowProds(all)
-            fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
-            fitted <- matrix(fitted, M, J, byrow = TRUE)
-            })
+           P = {
+               fitted <- as.numeric(state) * p
+           },
+           NB = { # I don't think this sum is necessary
+               if(missing(K)) K <- max(y, na.rm = TRUE) + 20
+               k <- 0:K
+               k.ijk <- rep(k, M*J)
+               state.ijk <- state[rep(1:M, each = J*(K+1))]
+               alpha <- exp(coef(object['alpha']))
+               prob.ijk <- dnbinom(k.ijk, mu = state.ijk, size = alpha)
+               all <- cbind(rep(as.vector(t(p)), each = K + 1), k.ijk,
+                            prob.ijk)
+               prod.ijk <- rowProds(all)
+               fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
+               fitted <- matrix(fitted, M, J, byrow = TRUE)
+           },
+           ZIP = {
+               psi <- plogis(coef(object['psi']))
+               lambda <- as.numeric(state)
+               fitted <- (1-psi)*lambda
+               fitted <- matrix(fitted, M, J, byrow=TRUE)
+           })
     return(fitted)
 })
 
@@ -1660,9 +1666,13 @@ setMethod("simulate", "unmarkedFitPCount",
     simList <- list()
     for(i in 1:nsim) {
         switch(mix,
-            P = N <- rpois(M, lam),
-            NB = N <- rnbinom(M, size = exp(coef(object["alpha"])),
-                mu = lam)
+               P = N <- rpois(M, lam),
+               NB = N <- rnbinom(M, size = exp(coef(object["alpha"])),
+                                 mu = lam),
+               ZIP = {
+                   psi <- plogis(coef(object["psi"]))
+                   N <- rzip(M, lam, psi)
+               }
             )
         yvec <- rbinom(M * J, size = rep(N, each = J), prob = pvec)
         simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
