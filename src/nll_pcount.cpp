@@ -1,4 +1,5 @@
 #include "nll_pcount.h"
+#include "distr.h"
 
 using namespace Rcpp ;
 
