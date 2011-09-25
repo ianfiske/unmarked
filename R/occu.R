@@ -47,9 +47,6 @@ occu <- function(formula, data, knownOcc = numeric(0), starts,
     ## and fix bug causing crash when NAs are in V
 
     if(identical(engine, "C")) {
-#        V[is.na(V)] <- -999 # Armadillo's matrix-multiplication fails
-#                            # if values are missing. These will be
-#                            # ignored anyway
         nll <- function(params) {
             beta.psi <- params[1:nOP]
             beta.p <- params[(nOP+1):nP]
@@ -71,7 +68,7 @@ occu <- function(formula, data, knownOcc = numeric(0), starts,
         }
     }
 
-    if(missing(starts)) starts <- rep(0, nP)	#rnorm(nP)
+    if(missing(starts)) starts <- rep(0, nP)
     fm <- optim(starts, nll, method = method, control = control,
                 hessian = se)
     opt <- fm
