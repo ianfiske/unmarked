@@ -756,7 +756,7 @@ simout11 <- matrix(NA, nsim11, 3)
 colnames(simout1) <- c('lambda', 'gamma', 'p')
 for(i in 1:nsim11) {
     cat("sim11:", i, "\n"); flush.console()
-    lambda <- 4
+    lambda <- 2
     gamma <- 0.5
     p <- 0.7
     y.sim11 <- sim11(lambda, gamma, p)
