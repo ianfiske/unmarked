@@ -725,10 +725,17 @@ setMethod("fitted", "unmarkedFitPCO",
     Xlam.offset <- D$Xlam.offset; Xgam.offset <- D$Xgam.offset
     Xom.offset <- D$Xom.offset; Xp.offset <- D$Xp.offset
     delta <- D$delta #FIXME this isn't returned propertly when na.rm=F
+
     y <- D$y
     M <- nrow(y)
     T <- data@numPrimary
     J <- ncol(y) / T
+
+    if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
+    if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
+    if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
+    if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
+
     lambda <- exp(Xlam %*% coef(object, 'lambda') + Xlam.offset)
     if(identical(mixture, "ZIP")) {
         psi <- plogis(coef(object, type="psi"))
@@ -1578,6 +1585,7 @@ setMethod("getP", "unmarkedFitPCO", function(object, na.rm = TRUE)
     M <- nrow(y)
     T <- umf@numPrimary
     J <- ncol(y) / T
+    if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
     ppars <- coef(object, type = "det")
     p <- plogis(Xp %*% ppars + Xp.offset)
     p <- matrix(p, M, J*T, byrow = TRUE)
@@ -1741,10 +1749,17 @@ setMethod("simulate", "unmarkedFitPCO",
     Xlam.offset <- D$Xlam.offset; Xgam.offset <- D$Xgam.offset
     Xom.offset <- D$Xom.offset; Xp.offset <- D$Xp.offset
     delta <- D$delta
+
     y <- D$y
     M <- nrow(y)
     T <- umf@numPrimary
     J <- ncol(y) / T
+
+    if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
+    if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
+    if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
+    if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
+
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda') + Xlam.offset))
     if(dynamics != "notrend")
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma') + Xgam.offset),
@@ -1754,7 +1769,7 @@ setMethod("simulate", "unmarkedFitPCO",
     if(dynamics != "trend")
         omega <- matrix(plogis(Xom %*% coef(object, 'omega') + Xom.offset),
                         M, T-1, byrow=TRUE)
-    if(identical(mixture, "ZIP"))
+    if(identical(mix, "ZIP"))
         psi <- plogis(coef(object, type="psi"))
     p <- getP(object, na.rm = na.rm)
     N <- matrix(NA, M, T)
