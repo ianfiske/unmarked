@@ -150,7 +150,7 @@ dateToObs <- function(dfin)
     sites <- unique(sitecol)
     nSite <- length(sites)
     nStop <- colSums(dTab)
-    nStop <- nStop[nStop > 0]  # get rid of the stops for sites with no stops
+    nStop <- nStop[nStop > 0]  # get rid of stops for sites with no stops
 
     obsNum <- numeric(length(sitecol))
     # for each site i, replace stops with 1:nStop[i]
@@ -184,7 +184,7 @@ formatLong <- function(dfin, species = NULL, type)
         dfin$y[is.na(dfin$y)] <- 0
         dfin$species = NULL
     }
-# TODO: double check that multiple cells per site*time are handled correctly.
+# TODO: dbl check that multiple cells per site*time are handled correctly.
 #  # sum up counts within time/site
 #  expr <- substitute(recast(dfin[,1:3], sv + dv ~ ..., id.var = 1:2,
 #                            fun.aggregate = sum),
@@ -202,13 +202,15 @@ formatLong <- function(dfin, species = NULL, type)
     dfnm <- colnames(dfin)
     nV <- length(dfnm) - 1  # last variable is obsNum
     expr <- substitute(recast(dfin, newvar ~ obsNum + variable,
-                              id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[3]),
+                              id.var = c(dfnm[1],"obsNum"),
+                              measure.var = dfnm[3]),
                        list(newvar=as.name(dfnm[1])))
     y <- as.matrix(eval(expr)[,-1])
     attr(y,"class") <- "matrix"
 
     expr <- substitute(recast(dfin, newvar ~ obsNum ~ variable,
-                              id.var = c(dfnm[1],"obsNum"), measure.var = dfnm[4:nV]),
+                              id.var = c(dfnm[1],"obsNum"),
+                              measure.var = dfnm[4:nV]),
                        list(newvar=as.name(dfnm[1])))
     obsvars <- eval(expr)
     which.date <- which(dimnames(obsvars)$variable == "Date")
@@ -225,12 +227,13 @@ formatLong <- function(dfin, species = NULL, type)
 # site (optional, but if present, labeled "site")
 # response: y.1, y.2, ..., y.J
 # site vars: namefoo, namebar, ...
-# obs vars: namefoo.1, namefoo.2, ..., namefoo.J, namebar.1, ..., namebar.J,...
+# obs v: namefoo.1, namefoo.2, ..., namefoo.J, namebar.1, .., namebar.J,..
 
 formatWide <- function(dfin, sep = ".", obsToY, type, ...)
 {
         # escape separater if it is regexp special
-    reg.specials <- c('.', '\\', ':', '|', '(', ')', '[', '{', '^', '$', '*', '+', '?')
+    reg.specials <- c('.', '\\', ':', '|', '(', ')', '[', '{', '^', '$',
+                      '*', '+', '?')
     if(sep %in% reg.specials) {
         sep.reg <- paste("\\",sep,sep="")
     } else {
@@ -254,9 +257,12 @@ formatWide <- function(dfin, sep = ".", obsToY, type, ...)
     siteCovsPresent <- FALSE
     i <- J + 1
     while(i <= ncols) {     # loop through columns
-        if(!identical(grep(paste(sep.reg,"[[:digit:]]+$",sep=""),dfnm[i]),integer(0))) {  # check if this is obsdata
-            newvar.name <- sub(paste(sep.reg,"[[:digit:]]+$",sep=""),'',dfnm[i])
-            newvar <- dfin[,grep(paste(newvar.name,sep.reg,"[[:digit:]]+$",sep=""),dfnm)]
+        if(!identical(grep(paste(sep.reg,"[[:digit:]]+$",sep=""),
+                           dfnm[i]),integer(0))) { # check if is obsdata
+            newvar.name <- sub(paste(sep.reg,"[[:digit:]]+$",sep=""),'',
+                               dfnm[i])
+            newvar <- dfin[,grep(paste(newvar.name,sep.reg,
+                                       "[[:digit:]]+$",sep=""),dfnm)]
             if(obsCovsPresent) {
                 if(ncol(newvar) != R) {
                     stop("Not all observation-level covariates have the same number of columns.")
@@ -286,7 +292,7 @@ formatWide <- function(dfin, sep = ".", obsToY, type, ...)
     if(!obsCovsPresent) obsCovs <- NULL
     if(!siteCovsPresent) siteCovs <- NULL
 
-    ## if we don't know the true obsToY yet, use R X J matrix of ones or diag if R == J
+    ## if don't know obsToY yet, use RxJ matrix of ones or diag if R == J
     if(missing(obsToY)) {
         if(identical(R,J)) {
             obsToY <- diag(J)
@@ -299,7 +305,8 @@ formatWide <- function(dfin, sep = ".", obsToY, type, ...)
 }
 
 
-# This convenience function converts multi-year data in long format to unmarkedMultFrame Object.  See Details for more information.
+# This convenience function converts multi-year data in long format to
+# unmarkedMultFrame Object.  See Details for more information.
 
 formatMult <- function(df.in)
 {
@@ -326,14 +333,16 @@ formatMult <- function(df.in)
 
     # create y matrix using reshape
     expr <- substitute(recast(df.obs, var1 ~ year + obsNum + variable,
-                              id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[4]),
+                              id.var = c(dfnm[2],"year","obsNum"),
+                              measure.var = dfnm[4]),
                        list(var1 = as.name(dfnm[2])))
     y <- as.matrix(eval(expr)[,-1])
 
     # create obsdata with reshape
     # include date (3rd col) and other measured vars
     expr <- substitute(recast(df.obs, newvar ~ year + obsNum ~ variable,
-                              id.var = c(dfnm[2],"year","obsNum"), measure.var = dfnm[c(3,5:nV)]),
+                              id.var = c(dfnm[2],"year","obsNum"),
+                              measure.var = dfnm[c(3,5:nV)]),
                        list(newvar=as.name(dfnm[2])))
     obsvars <- eval(expr)
 
@@ -355,10 +364,12 @@ formatMult <- function(df.in)
             row.u <- unique(y)
             length(row.u[!is.na(row.u)])
         })
-        if(all(l.u %in% 0:1)) {  ## if there are 0 or 1 unique vals per row, we have a sitecov
+        ## if there are 0 or 1 unique vals per row, we have a sitecov
+        if(all(l.u %in% 0:1)) {
             u <- apply(obsmat, 1, function(y) {
                 row.u <- unique(y)
-                if(!all(is.na(row.u)))  ## only remove NAs if there are some non-NAs.
+                ## only remove NAs if there are some non-NAs.
+                if(!all(is.na(row.u)))
                     row.u <- row.u[!is.na(row.u)]
                 row.u
             })
@@ -369,8 +380,10 @@ formatMult <- function(df.in)
     if(nrow(siteCovs) == 0) siteCovs <- NULL
 
     ## only check non-sitecovs
-    obsvars.df2 <- as.data.frame(obsvars.df[, !(names(obsvars.df) %in% names(siteCovs))])
-    names(obsvars.df2) <- names(obsvars.df)[!(names(obsvars.df) %in% names(siteCovs))]
+    obsvars.df2 <- as.data.frame(obsvars.df[, !(names(obsvars.df) %in%
+                                                names(siteCovs))])
+    names(obsvars.df2) <- names(obsvars.df)[!(names(obsvars.df) %in%
+                                              names(siteCovs))]
 
     yearlySiteCovs <- sapply(obsvars.df2, function(x) {
         obsmat <- matrix(x, M*nY, obsNum/nY, byrow = TRUE)
@@ -378,20 +391,25 @@ formatMult <- function(df.in)
             row.u <- unique(y)
             length(row.u[!is.na(row.u)])
         })
-        if(all(l.u %in% 0:1)) {  ## if there are 0 or 1 unique vals per row, we have a sitecov
+        ## if there are 0 or 1 unique vals per row, we have a sitecov
+        if(all(l.u %in% 0:1)) {
             u <- apply(obsmat, 1, function(y) {
                 row.u <- unique(y)
-                if(!all(is.na(row.u)))  ## only remove NAs if there are some non-NAs.
+                ## only remove NAs if there are some non-NAs.
+                if(!all(is.na(row.u)))
                     row.u <- row.u[!is.na(row.u)]
                 row.u
             })
             u
         }
     })
-    yearlySiteCovs <- as.data.frame(yearlySiteCovs[!sapply(yearlySiteCovs, is.null)])
+    yearlySiteCovs <- as.data.frame(yearlySiteCovs[!sapply(yearlySiteCovs,
+                                                           is.null)])
     if(nrow(yearlySiteCovs) == 0) yearlySiteCovs <- NULL
 
-    umf <- unmarkedMultFrame(y = y, siteCovs = siteCovs, obsCovs = obsvars.df, yearlySiteCovs = yearlySiteCovs,
+    umf <- unmarkedMultFrame(y = y, siteCovs = siteCovs,
+                             obsCovs = obsvars.df, yearlySiteCovs =
+                             yearlySiteCovs,
                              numPrimary = nY)
     return(umf)
 }
@@ -432,84 +450,6 @@ function(lam, r)
 
 
 
-## function to move data around:
-## converts array obsdata to a list
-## copies site covariate info from obsdata to sitedata
-## puts all site covariates back into obsdata
-## needed because all site vars need to be available for both state and det models
-##' @nord
-#arrangeData <-
-#function(data)
-#{
-#  require(abind)
-#  y <- data$y
-#  sitedata <- data$covdata.site
-#  obsdata <- data$covdata.obs
-#
-#  J <- ncol(y)
-#  M <- nrow(y)
-#  nSV <- length(sitedata)
-#
-#  # if not null, then just add "ones"
-#  if(!is.null(obsdata)) {
-#      if(class(obsdata) == "list") obsdata$ones <- matrix(1,M,J)
-#      if(class(obsdata) == "array") {
-#          obsdata <- abind(obsdata, ones = matrix(1,M,J))
-#      }
-#  }
-#  if(!is.null(sitedata)) sitedata <- cbind(ones = rep(1,M),sitedata)
-#
-#  # if data components are null, create as just ones
-#  if(is.null(obsdata)) obsdata <- list(ones = matrix(1,M,J))
-#  if(is.null(sitedata)) sitedata=data.frame(ones = rep(1,M))
-#
-#  # if obsdata is an array, coerce it to a list
-#  if(identical(class(obsdata),"array")) obsdata <- arrToList(obsdata)
-#  nOV <- length(obsdata)
-#
-#  # move all site data (single vectors and matrices of J repeated vectors)
-#  # in obsdata into sitedata
-#  toDel <- numeric(0)
-#  nuniq <- function(x) length(as.numeric(na.omit(unique(x)))) # lil' helper fun
-#  for(i in 1:nOV){
-#    # test for equality across rows (matrix site data)
-#    eqRow <- as.numeric(apply(as.matrix(obsdata[[i]]), 1, nuniq) == 1)
-#    isRep <- as.logical(prod(eqRow)) # make sure all rows are
-#    # move into site data if (vector) or (repeated vector as matrix)
-#    if((dim(as.matrix(obsdata[[i]]))[2] == 1) || isRep){
-#      obsdata[[i]] <- matrix(obsdata[[i]],nrow = M, ncol = J)
-#      sitedata <- cbind(sitedata,obsdata[[i]][,1])
-#      colnames(sitedata)[length(sitedata)] <- names(obsdata[i])
-#      toDel <- c(toDel,i)
-#    }
-#    # ensure that obsdata is made of matrices rather than dataframes
-#    obsdata[[i]] <- as.matrix(obsdata[[i]])
-#  }
-#  if(length(toDel) > 0) {   #obsdata[[toDel]] <- NULL # remove sitedata from obsdata
-#    for(t in toDel) {
-#      obsdata[[t]] <- NULL
-#    }
-#  }
-#  if(length(obsdata) == 0) obsdata <- list(ones = matrix(1,M,J))
-#  nSV <- length(sitedata) # update nSV
-#  nOV <- length(obsdata)
-#
-#  # make all site terms into obs terms by copying them to
-#  # obsdata (from vector to a matrix of repeated vectors)
-#  # needed if site variables are used to model detection.
-#  for(i in 1:nSV){
-#    obsdata[[nOV + i]] <- matrix(sitedata[[i]],nrow=M,ncol=J)
-#    names(obsdata)[nOV + i] <- colnames(sitedata)[i]
-#  }
-#  obsvars <- names(obsdata)
-#  nOV <- length(obsdata) # update length
-#
-#  list(y = y, covdata.site = sitedata, covdata.obs = obsdata)
-#}
-
-# Design matrices
-
-
 
 
 meanstate <- function(x) {
@@ -533,7 +473,8 @@ getSS <- function(phi) {
     ev/sum(ev)
 }
 
-imputeMissing <- function(umf, whichCovs = seq(length=ncol(obsCovs(umf)))) {
+imputeMissing <- function(umf, whichCovs = seq(length=ncol(obsCovs(umf))))
+{
     ## impute observation covariates
     if(!is.null(umf@obsCovs)) {
         obsCovs <- umf@obsCovs
@@ -552,10 +493,13 @@ imputeMissing <- function(umf, whichCovs = seq(length=ncol(obsCovs(umf)))) {
                 for(k in 1:J) {
                     if(obs.i.missing[j,k])
                         if(all(is.na(obs.i.mat[j,]))) {
-                            obs.i.imputed[j,k] <- mean(obs.i.mat[,k], na.rm = T)
+                            obs.i.imputed[j,k] <- mean(obs.i.mat[,k],
+                                                       na.rm = T)
                         } else {
-                            obs.i.imputed[j,k] <- mean(c(mean(obs.i.mat[j,],na.rm = T),
-                                                         mean(obs.i.mat[,k], na.rm = T)))
+                           obs.i.imputed[j,k] <- mean(c(mean(obs.i.mat[j,],
+                                                             na.rm = T),
+                                                        mean(obs.i.mat[,k],
+                                                             na.rm = T)))
                         }
                 }
             }
@@ -568,50 +512,6 @@ imputeMissing <- function(umf, whichCovs = seq(length=ncol(obsCovs(umf)))) {
 }
 
 
-#wideToUMF <- function(formula, data)
-#{
-#	detformula <- as.formula(formula[[2]])
-#	stateformula <- as.formula(paste("~",formula[3],sep=""))
-#	yVar <- all.vars(detformula)[1]
-#	detVars <- all.vars(detformula)[-1]
-#
-#	# escape separater if it is regexp special
-#	reg.specials <- c('.', '\\', ':', '|', '(', ')', '[', '{', '^', '$', '*', '+', '?')
-#	if(sep %in% reg.specials) {
-#		sep.reg <- paste("\\",sep,sep="")
-#	} else {
-#		sep.reg <- sep
-#	}
-#
-#	## y columns must be in format y.1, y.2, ..., y.J where sep="." here
-#	yNames <- grep(paste(yVar,sep.reg,"[[:digit:]]+$",sep=""), colnames(data), value=TRUE)
-#	timevary <- yNames
-#
-#	## detection covs must be in format either name alone, or name.1, name.2, ..., name.Q where sep="." here
-#	detCols <- lapply(detVars,
-#			function(x) sort(grep(paste("^",x,"(",sep.reg,"[[:digit:]]+)?$",sep=""), colnames(data),
-#								value=TRUE)))
-#
-#	names(detCols) <- detVars
-#	if (length(detVars) > 0) {
-#		toadd <- detVars[sapply(detCols, function(x) ifelse(length(x) >
-#											1, TRUE, FALSE))]
-#		timevary <- as.character(c(timevary, unlist(detCols[toadd])))
-#	}
-#	dataLong <- reshape(data, timevary, direction = "long", sep = sep,
-#			timevar = "timeINDEX", idvar = "idINDEX", ids = rownames(data))
-#	## reorder dataLong to be in site-major order
-#	dataLong <- dataLong[order(dataLong$idINDEX, dataLong$timeINDEX),]
-##	mf <- model.frame(stateformula, dataLong)
-#	browser()
-##	y <- data[,yNames]
-##	X <- model.matrix(stateformula, data)
-#	obsCovs <- model.frame(detformula, dataLong)
-#	siteCovs <- model.frame()
-##	return(list(y=y, X=X, V=V, dataLong=dataLong))
-#}
-
-
 
 
 lambda2psi <- function(lambda)
@@ -622,7 +522,8 @@ as.numeric(1 - exp(-lambda))
 }
 
 
-# Convert individual-level distance data to the transect-level format required by distsamp()
+# Convert individual-level distance data to the
+# transect-level format required by distsamp()
 
 formatDistData <- function(distData, distCol, transectNameCol, dist.breaks)
 {
@@ -630,10 +531,12 @@ formatDistData <- function(distData, distCol, transectNameCol, dist.breaks)
     M <- nlevels(transects)
     J <- length(dist.breaks) - 1
     y <- matrix(NA, M, J,
-                dimnames = list(levels(transects), paste("y", 1:J, sep=".")))
+                dimnames = list(levels(transects),
+                paste("y", 1:J, sep=".")))
     for(i in 1:M) {
         sub <- subset(distData, transects==rownames(y)[i])
-        y[i,] <- table(cut(sub[,distCol], dist.breaks, include.lowest=TRUE))
+        y[i,] <- table(cut(sub[,distCol], dist.breaks,
+                           include.lowest=TRUE))
     }
     return(y)
 }
@@ -696,53 +599,6 @@ formatDelta <- function(d, yna)
 
 
 
-
-
-
-# Markov transition probs for pcountOpen
-tranProbs <- function(Nr, omegaR, gammaR, deltaR, dynamicsR)
-{
-    if(any(Nr < 0))
-        stop("N should be a non-negative integer")
-    if(any(is.na(omegaR)) | any(is.na(gammaR)))
-        stop("Missing values are not allowed in omega or gamma")
-    if(length(omegaR) != 1 | length(gammaR) != 1 | length(deltaR) != 1)
-        stop("omega, gamma, and delta must be scalars")
-    if(any(is.na(deltaR)))
-        stop("Delta cannot be NA")
-    if(!dynamicsR %in% c("constant", "autoreg", "notrend"))
-        stop("dynamics must be one of: constant, autoreg, or notrend")
-
-    .Call("tranProbs",
-        as.integer(Nr),
-        as.double(omegaR),
-        as.double(gammaR),
-        as.integer(deltaR),
-        as.character(dynamicsR),
-        PACKAGE = "unmarked")
-}
-
-
-# The slow way
-tranProbsR <- function(N, omega, gamma, delta, dynamics) {
-    lN <- length(N)
-    bpsum <- matrix(NA, lN, lN)
-    for(j in 1:lN) {
-        for(k in 1:lN) {
-            cmin0 <- 0:min(N[j], N[k])
-            gamma2 <- ifelse(identical(dynamics, "autoreg"), gamma*N[j], gamma)
-            bpsum[k, j] <- sum(dbinom(cmin0, N[j], omega) *
-                dpois(N[k]-cmin0, gamma2))
-            }}
-    bpsum <- t(t(bpsum) / colSums(bpsum))
-    if(delta>1) {
-        for(d in 2:delta) {
-            bpsum <- bpsum %*% bpsum
-            bpsum <- t(t(bpsum) / colSums(bpsum))
-            }
-        }
-    return(bpsum)
-    }
 
 
 
