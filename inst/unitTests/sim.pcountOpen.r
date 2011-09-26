@@ -728,3 +728,52 @@ dev.off()
 
 
 
+
+
+
+## Simulate "trend model", no covariates, constant intervals,
+## no secondary samples
+
+sim11 <- function(lambda=1, gamma=0.5, p=0.7, M=100, T=5)
+{
+    y <- N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    for(t in 2:T) {
+        N[,t] <- rpois(M, gamma*N[,t-1])
+        }
+    y[] <- rbinom(M*T, N, p)
+    return(y)
+}
+
+
+
+
+
+set.seed(3223)
+nsim11 <- 100
+simout11 <- matrix(NA, nsim11, 3)
+colnames(simout1) <- c('lambda', 'gamma', 'p')
+for(i in 1:nsim11) {
+    cat("sim11:", i, "\n"); flush.console()
+    lambda <- 4
+    gamma <- 0.5
+    p <- 0.7
+    y.sim11 <- sim11(lambda, gamma, p)
+    umf11 <- unmarkedFramePCO(y = y.sim11, numPrimary=5)
+    m11 <- pcountOpen(~1, ~1, ~1, ~1, umf11, K=40, dynamics="trend",
+        starts=c(log(lambda), log(gamma), plogis(p)),
+        se=FALSE)
+    e <- coef(m11)
+    simout11[i, 1:2] <- exp(e[1:2])
+    simout11[i, 3] <- plogis(e[3])
+    cat("  mle =", simout11[i,], "\n")
+    }
+
+#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout11[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout11[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout11[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+dev.off()
+

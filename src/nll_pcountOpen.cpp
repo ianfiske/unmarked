@@ -87,7 +87,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   // linear predictors
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
   arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
-  if(fix != "omega")
+  if((fix != "omega") && (dynamics != "trend"))
     omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
   omv.reshape(T-1, M);
   arma::mat om = arma::trans(omv);
@@ -135,6 +135,8 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
       tp1(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
     else if(dynamics=="autoreg")
       tp2(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
+    else if(dynamics=="trend")
+      tp3(g3, lk, gam(0,first[0]-1));
   } else if(go_dims == "rowvec") {
     for(int i=0; i<M; i++) {
       if(first[i]==1) {
@@ -147,6 +149,8 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	tp1(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
       else if(dynamics=="autoreg")
 	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
+      else if(dynamics=="trend")
+	tp3(g3_t.slice(t), lk, gam(first1,t));
     }
   }
   // loop over sites
@@ -178,6 +182,8 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	    tp1(g3, lk, gam.at(i,t-1), om.at(i,t-1));
 	  else if(dynamics=="autoreg")
 	    tp2(g3, lk, gam.at(i,t-1), om.at(i,t-1));
+	  else if(dynamics=="trend")
+	    tp3(g3, lk, gam.at(i,t-1));
 	} else if(go_dims == "rowvec") {
 	  g3 = g3_t.slice(t-1);
 	}

@@ -3,7 +3,7 @@
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     data, mixture=c("P", "NB", "ZIP"), K,
-    dynamics=c("constant", "autoreg", "notrend"),
+    dynamics=c("constant", "autoreg", "notrend", "trend"),
     fix=c("none", "gamma", "omega"),
     starts, method="BFGS", se=TRUE, engine=c('C', 'R'), ...)
 {
@@ -12,6 +12,8 @@ dynamics <- match.arg(dynamics)
 engine <- match.arg(engine)
 if(identical(mixture, "ZIP") & identical(engine, "R"))
     stop("ZIP mixture not available if engine='R'")
+if(identical(dynamics, "trend") & identical(engine, "R"))
+    stop("trend dynamics not available if engine='R'")
 fix <- match.arg(fix)
 if(identical(dynamics, "notrend") &
    !identical(lambdaformula, omegaformula))
@@ -73,20 +75,41 @@ nDP <- ncol(Xp)
 if(identical(fix, "gamma")) {
     if(!identical(dynamics, "constant"))
         stop("dynamics must be constant when fixing gamma or omega")
-    if(nGP > 1) stop("gamma covariates not allowed when fix==gamma")
-    else { nGP <- 0; gamParms <- character(0) }
+    if(nGP > 1)
+        stop("gamma covariates not allowed when fix==gamma")
+    else {
+        nGP <- 0
+        gamParms <- character(0)
     }
-else
-    if(identical(dynamics, "notrend")) {
-        if(nGP > 1) stop("gamma covariates not allowed when dyamics==notrend")
-        else { nGP <- 0; gamParms <- character(0) }
-        }
+}
+else if(identical(dynamics, "notrend")) {
+    if(nGP > 1)
+        stop("gamma covariates not allowed when dyamics==notrend")
+    else {
+        nGP <- 0
+        gamParms <- character(0)
+    }
+}
+
 if(identical(fix, "omega")) {
     if(!identical(dynamics, "constant"))
         stop("dynamics must be constant when fixing gamma or omega")
-    if(nOP > 1) stop("omega covariates not allowed when fix==omega")
-    else { nOP <- 0; omParms <- character(0) }
+    if(nOP > 1)
+        stop("omega covariates not allowed when fix==omega")
+    else {
+        nOP <- 0
+        omParms <- character(0)
     }
+} else if(identical(dynamics, "trend")) {
+    if(nOP > 1)
+        stop("omega covariates not allowed when dynamics='trend'")
+    else {
+        nOP <- 0
+        omParms <- character(0)
+    }
+}
+
+
 nP <- nAP + nGP + nOP + nDP + (mixture!="P")
 if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
@@ -263,11 +286,13 @@ estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates))
 if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
     estimateList@estimates$gamma <- unmarkedEstimate(name = "Recruitment",
         short.name = "gam", estimates = ests[(nAP+1) : (nAP+nGP)],
-        covMat = as.matrix(covMat[(nAP+1) : (nAP+nGP), (nAP+1) : (nAP+nGP)]),
+        covMat = as.matrix(covMat[(nAP+1) :
+                           (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")
-if(!identical(fix, "omega"))
-    estimateList@estimates$omega <- unmarkedEstimate(name="Apparent Survival",
-        short.name = "omega", estimates = ests[(nAP+nGP+1) : (nAP+nGP+nOP)],
+if(!identical(fix, "omega") | identical(dynamics, "trend"))
+    estimateList@estimates$omega <- unmarkedEstimate(
+        name="Apparent Survival",
+        short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
