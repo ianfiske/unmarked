@@ -8,8 +8,9 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
     mixture <- match.arg(mixture, c("P", "NB", "ZIP"))
     if(!is(data, "unmarkedFramePCount"))
         stop("Data is not an unmarkedFramePCount object.")
-
     engine <- match.arg(engine, c("C", "R"))
+    if(identical(mixture, "ZIP") & identical(engine, "R"))
+        stop("ZIP mixture not available for engine='R'")
 
     designMats <- getDesign(data, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
@@ -18,6 +19,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
         X.offset <- rep(0, nrow(X))
     if (is.null(V.offset))
         V.offset <- rep(0, nrow(V))
+    NAmat <- is.na(y)
 
     J <- ncol(y)
     M <- nrow(y)
@@ -27,7 +29,10 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
     nDP <- ncol(V)
     nAP <- ncol(X)
 
-    if(missing(K)) K <- max(y, na.rm = TRUE) + 100
+    if(missing(K)) {
+        K <- max(y, na.rm = TRUE) + 100
+        warning("K was not specified and was set to ", K, ".")
+    }
     if(K <= max(y, na.rm = TRUE))
         stop("specified K is too small. Try a value larger than any observation")
     k <- 0:K
@@ -41,15 +46,11 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
     if(!missing(starts) && length(starts) != nP)
         stop(paste("The number of starting values should be", nP))
 
-    y.ij <- as.numeric(t(y))
-    y.ijk <- rep(y.ij, each = K + 1)
-    navec <- is.na(y.ijk)
-    NAmat <- is.na(y)
-    nd <- ifelse(rowSums(y, na.rm=TRUE) == 0, 1, 0)#no detection at site i
-    ijk <- expand.grid(k = 0:K, j = 1:J, i = 1:M)
-    ijk.to.ikj <- with(ijk, order(i, k, j))
-
     if(identical(engine, "R")) {
+        y.ij <- as.numeric(t(y))
+        y.ijk <- rep(y.ij, each = K + 1)
+        navec <- is.na(y.ijk)
+        ijk <- expand.grid(k = 0:K, j = 1:J, i = 1:M)
         nll <- function(parms) {
             theta.i <- exp(X %*% parms[1 : nAP] + X.offset)
             p.ij <- plogis(V %*% parms[(nAP + 1) : (nAP + nDP)] + V.offset)
@@ -98,8 +99,8 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
                      P = character(0))
     names(ests) <- c(lamParms, detParms, nbParm)
     if(se) {
-        tryCatch(covMat <- solve(fm$hessian),
-                 error=function(x) stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
+        tryCatch(covMat <- solve(fm$hessian), error=function(x)
+                 stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
     } else {
         covMat <- matrix(NA, nP, nP)
     }

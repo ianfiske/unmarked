@@ -1,4 +1,5 @@
 #include "nll_pcountOpen.h"
+#include "distr.h"
 
 using namespace Rcpp ;
 
@@ -21,11 +22,15 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::colvec Xgam_offset = as<arma::colvec>(Xgam_offset_);
   arma::colvec Xom_offset = as<arma::colvec>(Xom_offset_);
   arma::colvec Xp_offset = as<arma::colvec>(Xp_offset_);
-  double alpha = exp(log_alpha);
   std::string mixture = as<std::string>(mixture_);
   std::string dynamics = as<std::string>(dynamics_);
   std::string fix = as<std::string>(fix_);
   std::string go_dims = as<std::string>(go_dims_);
+  double alpha=0.0, psi=0.0;
+  if(mixture=="NB")
+    alpha = exp(log_alpha);
+  else if(mixture=="ZIP")
+    psi = 1.0/(1.0+exp(-log_alpha));
   Rcpp::IntegerVector first(first_);
   Rcpp::IntegerVector last(last_);
   arma::imat ytna = as<arma::imat>(ytna_); // y[i,,t] are all NA
@@ -146,8 +151,10 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	g1_star.at(k) = g1.at(k) * g_star.at(k);
       if(mixture=="P")
 	g2.at(k) = Rf_dpois(k, lam.at(i), false);
-      else
+      else if(mixture=="NB")
         g2(k) = dnbinom_mu(k, alpha, lam.at(i), false);
+      else if(mixture=="ZIP")
+	g2(k) = dzip(k, lam(i), psi);
       if(delta_i0==1)
 	ll_i += g1.at(k) * g2.at(k) * g_star.at(k);
     }

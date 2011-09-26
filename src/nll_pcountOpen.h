@@ -25,7 +25,6 @@ void tp1(arma::mat& g3, int lk, double gam, double om) {
 
 
 // autoregressive model
-// might be broken
 void tp2(arma::mat& g3, int lk, double gam, double om) {
     int Nmin=0;
     for(int n1=0; n1<lk; n1++) {
@@ -38,6 +37,7 @@ void tp2(arma::mat& g3, int lk, double gam, double om) {
 	}
     }
 }
+
 
 
 #endif

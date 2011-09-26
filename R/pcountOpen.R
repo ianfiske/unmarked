@@ -2,7 +2,7 @@
 
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
-    data, mixture=c("P", "NB"), K,
+    data, mixture=c("P", "NB", "ZIP"), K,
     dynamics=c("constant", "autoreg", "notrend"),
     fix=c("none", "gamma", "omega"),
     starts, method="BFGS", se=TRUE, engine=c('C', 'R'), ...)
@@ -10,6 +10,8 @@ pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
 mixture <- match.arg(mixture)
 dynamics <- match.arg(dynamics)
 engine <- match.arg(engine)
+if(identical(mixture, "ZIP") & identical(engine, "R"))
+    stop("ZIP mixture not available if engine='R'")
 fix <- match.arg(fix)
 if(identical(dynamics, "notrend") &
    !identical(lambdaformula, omegaformula))
@@ -50,12 +52,14 @@ ytna[] <- as.integer(ytna)
 first <- apply(!ytna, 1, function(x) min(which(x)))
 last  <- apply(!ytna, 1, function(x) max(which(x)))
 
-if(missing(K)) K <- max(y, na.rm=T) + 20
+if(missing(K)) {
+    K <- max(y, na.rm=T) + 20
+    warning("K was not specified and was set to ", K, ".")
+}
 if(K <= max(y, na.rm = TRUE))
     stop("specified K is too small. Try a value larger than any observation")
 k <- 0:K
 lk <- length(k)
-
 
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)
@@ -83,7 +87,7 @@ if(identical(fix, "omega")) {
     if(nOP > 1) stop("omega covariates not allowed when fix==omega")
     else { nOP <- 0; omParms <- character(0) }
     }
-nP <- nAP + nGP + nOP + nDP + ifelse(identical(mixture, "NB"), 1, 0)
+nP <- nAP + nGP + nOP + nDP + (mixture!="P")
 if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
 
@@ -211,7 +215,7 @@ if(identical(engine, "R")) {
         beta.om <- parms[(nAP+nGP+1):(nAP+nGP+nOP)]
         beta.p <- parms[(nAP+nGP+nOP+1):(nAP+nGP+nOP+nDP)]
         log.alpha <- 1
-        if(identical(mixture, "NB"))
+        if(mixture %in% c("NB", "ZIP"))
             log.alpha <- parms[nP]
         .Call("nll_pcountOpen",
               ym,
@@ -226,12 +230,15 @@ if(identical(engine, "R")) {
 }
 if(missing(starts))
     starts <- rep(0, nP)
-# browser()
 fm <- optim(starts, nll, method=method, hessian=se, ...)
 opt <- fm
 ests <- fm$par
-if(identical(mixture,"NB")) nbParm <- "alpha"
-    else nbParm <- character(0)
+if(identical(mixture,"NB"))
+    nbParm <- "alpha"
+else if(identical(mixture, "ZIP"))
+    nbParm <- "psi"
+else
+    nbParm <- character(0)
 names(ests) <- c(lamParms, gamParms, omParms, detParms, nbParm)
 if(se) {
 	covMat <- tryCatch(solve(fm$hessian), error=function(x)
@@ -270,6 +277,12 @@ if(identical(mixture, "NB")) {
         short.name = "alpha", estimates = ests[nP],
         covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
         invlinkGrad = "exp")
+    }
+if(identical(mixture, "ZIP")) {
+    estimateList@estimates$psi <- unmarkedEstimate(name = "Zero-inflation",
+        short.name = "psi", estimates = ests[nP],
+        covMat = as.matrix(covMat[nP, nP]), invlink = "logistic",
+        invlinkGrad = "logistic.grad")
     }
 umfit <- new("unmarkedFitPCO", fitType = "pcountOpen",
     call = match.call(), formula = formula, formlist = formlist, data = data,
