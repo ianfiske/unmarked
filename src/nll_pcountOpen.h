@@ -8,36 +8,18 @@ RcppExport SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP
 
 
 // constant model
-void tp1(arma::mat& g3, int lk, double gam, double om) {
-    int Nmin=0;
-    for(int n1=0; n1<lk; n1++) {
-	for(int n2=0; n2<lk; n2++) {
-	    Nmin = std::min(n1, n2);
-	    for(int c=0; c<=Nmin; c++) {
-		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
-				  Rf_dpois(n2-c, gam, true));
-	    }
-	}
-    }
-}
+void tp1(arma::mat& g3, int lk, double gam, double om);
 
 
 
 
 // autoregressive model
-void tp2(arma::mat& g3, int lk, double gam, double om) {
-    int Nmin=0;
-    for(int n1=0; n1<lk; n1++) {
-	for(int n2=0; n2<lk; n2++) {
-	    Nmin = std::min(n1, n2);
-	    for(int c=0; c<=Nmin; c++) {
-		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
-				  Rf_dpois(n2-c, gam*n1, true));
-	    }
-	}
-    }
-}
+void tp2(arma::mat& g3, int lk, double gam, double om);
 
+
+
+// trend model
+void tp3(arma::mat& g3, int lk, double gam);
 
 
 #endif

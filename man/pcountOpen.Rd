@@ -158,7 +158,7 @@ summary(umf)
 
 
 # Fit model and backtransform
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10)) # Typically, K should be higher
+(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20)) # Typically, K should be higher
 
 (lam <- coef(backTransform(m1, "lambda"))) # or
 lam <- exp(coef(m1, type="lambda"))

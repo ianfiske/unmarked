@@ -108,7 +108,7 @@ for(i in 1:nsim2) {
     umf2 <- unmarkedFramePCO(y = y.sim2, siteCovs=siteCovs,
         yearlySiteCovs=yearlySiteCovs, obsCovs=obsCovs, numPrimary=T)
     m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2,
-                     K=30, se=F, starts=c(lam, gam, om, p))
+                     K=50, se=F, starts=c(lam, gam, om, p))
     e <- coef(m2)
     simout2[i, ] <- e
     cat("  mle =", e, "\n")
@@ -139,7 +139,6 @@ dev.off()
 
 
 ## Simulate uneven sampling period intervals with all dates[i,1]==1
-set.seed(333)
 
 sim3 <- function(lambda=4, gamma=0.1, omega=0.8, p=0.7, M=100, T=5)
 {
