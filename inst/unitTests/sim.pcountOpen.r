@@ -87,7 +87,7 @@ sim2 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
 
 
 
-nsim2 <- 1
+nsim2 <- 50
 simout2 <- matrix(NA, nsim2, 8)
 colnames(simout2) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1',
                        'p0', 'p1')
@@ -98,7 +98,7 @@ for(i in 1:nsim2) {
     om <- c(0, -1)
     p <- c(-1, 1)
     T <- 5
-    sim2out <- sim2(lam, gam, om, p, T=T)
+    sim2out <- sim2(lam, gam, om, p, T=T, M=50)
     y.sim2 <- sim2out$y
     covs <- sim2out$covs
     cn <- colnames(covs)
@@ -108,7 +108,7 @@ for(i in 1:nsim2) {
     umf2 <- unmarkedFramePCO(y = y.sim2, siteCovs=siteCovs,
         yearlySiteCovs=yearlySiteCovs, obsCovs=obsCovs, numPrimary=T)
     m2 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf2,
-                     K=30, se=F, starts=c(lam, gam, om, p),
+                     K=40, se=F, starts=c(lam, gam, om, p),
                      control=list(trace=TRUE, REPORT=1))
     e <- coef(m2)
     simout2[i, ] <- e
@@ -461,7 +461,7 @@ for(i in 1:nsim7) {
     umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
     m7 <- pcountOpen(~1, ~1, ~1, ~1, umf7, K=15,
               starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
-              se=FALSE, engine="C")
+              se=FALSE)
     e <- coef(m7)
     simout7[i, 1:2] <- exp(e[1:2])
     simout7[i, 3:4] <- plogis(e[3:4])
