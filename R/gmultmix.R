@@ -45,12 +45,17 @@ yt <- apply(y, 1:2, function(x) {
 piFun <- data@piFun
 
 lamPars <- colnames(Xlam)
-phiPars <- colnames(Xphi)
 detPars <- colnames(Xdet)
 nLP <- ncol(Xlam)
-nPP <- ncol(Xphi)
+if(T==1) {
+    nPP <- 0
+    phiPars <- character(0)
+} else if(T>1) {
+    nPP <- ncol(Xphi)
+    phiPars <- colnames(Xphi)
+    }
 nDP <- ncol(Xdet)
-nP <- nLP + nPP + nDP + ifelse(mixture=='NB', 1, 0)
+nP <- nLP + nPP + nDP + (mixture=='NB')
 if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
 
@@ -73,7 +78,10 @@ for(i in 1:M) {
 
 nll <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
-    phi <- drop(plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset))
+    if(T==1)
+        phi <- 1
+    else if(T>1)
+        phi <- drop(plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset))
     p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
 
     phi.mat <- matrix(phi, M, T, byrow=TRUE)
@@ -86,7 +94,7 @@ nll <- function(pars) {
 
     for(t in 1:T) cp[,t,1:R] <- do.call(piFun, list(p[,t,]))
     cp[,,1:R] <- cp[,,1:R] * phi
-    cp[,,R+1] <- 1 - apply(cp[,,1:R], 1:2, sum, na.rm=TRUE)
+    cp[,,R+1] <- 1 - apply(cp[,,1:R,drop=FALSE], 1:2, sum, na.rm=TRUE)
 
     switch(mixture,
         P = f <- sapply(k, function(x) dpois(x, lambda)),
@@ -132,18 +140,25 @@ lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",
     estimates = ests[1:nLP],
     covMat = as.matrix(covMat[1:nLP, 1:nLP]), invlink = "exp",
     invlinkGrad = "exp")
-phiEstimates <- unmarkedEstimate(name = "Availability", short.name = "phi",
-    estimates = ests[(nLP+1):(nLP+nPP)],
-    covMat = as.matrix(covMat[(nLP+1):(nLP+nPP), (nLP+1):(nLP+nPP)]),
-        invlink = "logistic",
-    invlinkGrad = "logistic.grad")
+estimateList <- unmarkedEstimateList(list(lambda=lamEstimates))
+
+if(T>1) {
+    phiEstimates <- unmarkedEstimate(name = "Availability",
+                                     short.name = "phi",
+                                     estimates = ests[(nLP+1):(nLP+nPP)],
+                                     covMat = as.matrix(covMat[(nLP+1) :
+                                       (nLP+nPP), (nLP+1):(nLP+nPP)]),
+                                     invlink = "logistic",
+                                     invlinkGrad = "logistic.grad")
+    estimateList@estimates$phi <- phiEstimates
+}
+
 detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     estimates = ests[(nLP+nPP+1):(nLP+nPP+nDP)],
     covMat = as.matrix(
         covMat[(nLP+nPP+1):(nLP+nPP+nDP), (nLP+nPP+1):(nLP+nPP+nDP)]),
     invlink = "logistic", invlinkGrad = "logistic.grad")
-estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates,
-    phi=phiEstimates, det=detEstimates))
+estimateList@estimates$det <- detEstimates
 
 if(identical(mixture,"NB"))
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
