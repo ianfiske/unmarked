@@ -1769,6 +1769,8 @@ setMethod("simulate", "unmarkedFitPCO",
     if(dynamics != "trend")
         omega <- matrix(plogis(Xom %*% coef(object, 'omega') + Xom.offset),
                         M, T-1, byrow=TRUE)
+    else
+        omega <- -999 # placeholder
     if(identical(mix, "ZIP"))
         psi <- plogis(coef(object, type="psi"))
     p <- getP(object, na.rm = na.rm)

@@ -167,7 +167,7 @@ if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
         covMat = as.matrix(covMat[(nAP+1) :
                            (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")
-if(!identical(fix, "omega") | identical(dynamics, "trend"))
+if(!(identical(fix, "omega") | identical(dynamics, "trend")))
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Apparent Survival",
         short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
