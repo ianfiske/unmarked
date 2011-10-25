@@ -3,7 +3,7 @@
 
 pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
                    method = "BFGS", control = list(), se = TRUE,
-                   engine = c("C", "R"))
+                   engine = c("C", "R"), ...)
 {
     mixture <- match.arg(mixture, c("P", "NB", "ZIP"))
     if(!is(data, "unmarkedFramePCount"))
@@ -90,7 +90,8 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
     }
 
     if(missing(starts)) starts <- rep(0, nP)
-    fm <- optim(starts, nll, method=method, hessian=se, control=control)
+    fm <- optim(starts, nll, method=method, hessian=se, control=control,
+                ...)
     opt <- fm
 
     ests <- fm$par

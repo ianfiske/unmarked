@@ -3,7 +3,8 @@ gdistsamp <- function(lambdaformula, phiformula, pformula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
     mixture=c('P', 'NB'), K,
-    starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4)
+    starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4,
+    ...)
 {
 if(!is(data, "unmarkedFrameGDS"))
     stop("Data is not of class unmarkedFrameGMM.")
@@ -372,7 +373,8 @@ uniform = {
         }
     })
 
-fm <- optim(starts, nll, method = method, hessian = se, control = control)
+fm <- optim(starts, nll, method = method, hessian = se, control = control,
+            ...)
 opt <- fm
 if(se) {
   covMat <- tryCatch(solve(fm$hessian), error=function(x)

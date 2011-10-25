@@ -8,17 +8,21 @@
     se=TRUE)}
 
 \arguments{
-    \item{formula}{double right-hand side formula describing covariates of 
+    \item{formula}{double right-hand side formula describing covariates of
         detection and occupancy in that order.}
-    \item{data}{Object of class \code{\link{unmarkedFrameOccu}} supplying data 
+    \item{data}{Object of class \code{\link{unmarkedFrameOccu}} supplying data
         to the model.}
-    \item{K}{the upper summation index used to numerically integrate out the 
+    \item{K}{the upper summation index used to numerically integrate out the
         latent abundance. This should be set high enough so that it does not
         affect the parameter estimates. Computation time will increase with K.}
     \item{starts}{initial values for the optimization.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{control}{Other arguments passed to \code{\link{optim}}.}
-    \item{se}{logical specifying whether or not to compute standard errors.}}
+    \item{se}{logical specifying whether or not to compute standard
+      errors.}
+    \item{\dots}{Additional arguments to optim, such as lower and upper
+      bounds}
+  }
 
 \description{Fit the occupancy model of Royle and Nichols (2003)}
 
@@ -61,7 +65,7 @@ pp. 777--790.
 data(birds)
 woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
 # survey occasion-specific detection probabilities
-(fm.wood.rn <- occuRN(~ obsNum ~ 1, woodthrushUMF)) 
+(fm.wood.rn <- occuRN(~ obsNum ~ 1, woodthrushUMF))
 
 }
 

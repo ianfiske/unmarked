@@ -4,7 +4,7 @@
 \usage{distsamp(formula, data, keyfun=c("halfnorm", "exp",
     "hazard", "uniform"), output=c("density", "abund"),
     unitsOut=c("ha", "kmsq"), starts, method="BFGS",
-    control=list(), se=TRUE, rel.tol=1e-4)}
+    control=list(), se=TRUE, rel.tol=1e-4, ...)}
 
 \description{
 Fit the hierarchical distance sampling model of Royle et al. (2004)
@@ -30,6 +30,9 @@ square kilometers, respectively.}
 \item{rel.tol}{relative accuracy for the integration of the detection function.
     See \link{integrate}. You might try adjusting this if you get an error
     message related to the integral.}
+\item{\dots}{Additional arguments to optim, such as lower and upper
+      bounds}
+
 }
 
 \details{

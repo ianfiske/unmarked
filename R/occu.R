@@ -3,7 +3,7 @@
 
 occu <- function(formula, data, knownOcc = numeric(0), starts,
                  method = "BFGS", control = list(), se = TRUE,
-                 engine = c("C", "R")) {
+                 engine = c("C", "R"), ...) {
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
@@ -70,7 +70,7 @@ occu <- function(formula, data, knownOcc = numeric(0), starts,
 
     if(missing(starts)) starts <- rep(0, nP)
     fm <- optim(starts, nll, method = method, control = control,
-                hessian = se)
+                hessian = se, ...)
     opt <- fm
     if(se) {
         tryCatch(covMat <- solve(fm$hessian),

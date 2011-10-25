@@ -2,7 +2,8 @@
 \alias{colext}
 \title{Fit the colonization-extinction model.}
 \usage{colext(psiformula= ~1, gammaformula =  ~ 1, epsilonformula = ~ 1,
-    pformula = ~ 1, data, starts, method="BFGS", control=list(), se=TRUE)}
+    pformula = ~ 1, data, starts, method="BFGS", control=list(),
+    se=TRUE, ...)}
 
 \description{Estimate parameters of the colonization-extinction model,
 including covariate-dependent rates and detection process.}
@@ -34,7 +35,7 @@ obtained from the \code{smoothed.mean} and \code{projected.mean} slots
 MacKenzie, D.I. et al. (2002) Estimating Site Occupancy Rates When Detection Probabilities Are Less Than One. Ecology, 83(8), 2248-2255.
 
 MacKenzie, D. I., J. D. Nichols, J. E. Hines, M. G. Knutson, and A. B. Franklin.
-  2003. Estimating site occupancy, colonization, and local extinction when a 
+  2003. Estimating site occupancy, colonization, and local extinction when a
   species is detected imperfectly. \emph{Ecology} 84:2200--2207.
 
 MacKenzie, D. I. et al. (2006) \emph{Occupancy Estimation and Modeling}.Amsterdam: Academic Press.
@@ -54,6 +55,8 @@ Program. Herpetological Conservation and Biology. 4(3):389-402.
 \item{method}{Optimization method used by \code{\link{optim}}.}
 \item{control}{Other arguments passed to \code{\link{optim}}.}
 \item{se}{logical specifying whether or not to compute standard errors.}}
+    \item{\dots}{Additional arguments to optim, such as lower and upper
+      bounds}
 \examples{
 
 # Fake data
@@ -67,7 +70,7 @@ y <- matrix(c(
    1,1,1,  1,1,0,
    1,0,1,  0,0,1), nrow=R, ncol=J*T, byrow=TRUE)
 y
-   
+
 site.covs <- data.frame(x1=1:4, x2=factor(c('A','B','A','B')))
 site.covs
 
@@ -82,7 +85,7 @@ yearly.site.covs
 
 obs.covs <- list(
    x4 = matrix(c(
-      -1,0,1,  -1,1,1, 
+      -1,0,1,  -1,1,1,
       -2,0,0,  0,0,2,
       -3,1,0,  1,1,2,
       0,0,0,   0,1,-1), nrow=R, ncol=J*T, byrow=TRUE),
@@ -93,11 +96,11 @@ obs.covs <- list(
       'a','b','a',  'd','b','a'), nrow=R, ncol=J*T, byrow=TRUE))
 obs.covs
 
-umf <- unmarkedMultFrame(y=y, siteCovs=site.covs, 
-    yearlySiteCovs=yearly.site.covs, obsCovs=obs.covs, 
+umf <- unmarkedMultFrame(y=y, siteCovs=site.covs,
+    yearlySiteCovs=yearly.site.covs, obsCovs=obs.covs,
     numPrimary=2)                  # organize data
 umf                                # look at data
-summary(umf)                       # summarize      
+summary(umf)                       # summarize
 fm <- colext(~1, ~1, ~1, ~1, umf)  # fit a model
 fm
 
@@ -133,7 +136,7 @@ yearlySiteCovs(umf) <- data.frame(year = factor(rep(1:7, numSites(umf))))
 (fm.yearly <- colext(psiformula = ~ 1,
 gammaformula = ~ year,
 epsilonformula = ~ year,
-pformula = ~ JulianDate + I(JulianDate^2), umf, 
+pformula = ~ JulianDate + I(JulianDate^2), umf,
 	control = list(trace=1, maxit=1e4)))
 }
 

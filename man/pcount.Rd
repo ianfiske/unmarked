@@ -4,8 +4,9 @@
 
 \title{Fit the N-mixture model of Royle (2004)}
 
-\usage{pcount(formula, data, K, mixture=c("P", "NB", "ZIP"), starts, method="BFGS",
-    control=list(), se=TRUE, engine=c("C", "R"))}
+\usage{pcount(formula, data, K, mixture=c("P", "NB", "ZIP"),
+    starts, method="BFGS",
+    control=list(), se=TRUE, engine=c("C", "R"), ...)}
 
 \description{Fit the N-mixture model of Royle (2004)}
 
@@ -23,7 +24,9 @@
     \item{se}{logical specifying whether or not to compute standard
       errors.}
     \item{engine}{Either "C" or "R" to use fast C++ code or native R
-    code during the optimization.}
+      code during the optimization.}
+    \item{\dots}{Additional arguments to optim, such as lower and upper
+      bounds}
   }
 
 

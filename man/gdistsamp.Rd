@@ -12,7 +12,8 @@ to be modeled using the negative binomial distribution.
 gdistsamp(lambdaformula, phiformula, pformula, data, keyfun =
 c("halfnorm", "exp", "hazard", "uniform"), output = c("abund",
 "density"), unitsOut = c("ha", "kmsq"), mixture = c("P", "NB"), K,
-starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4)
+starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4,
+...)
 }
 \arguments{
   \item{lambdaformula}{
@@ -61,6 +62,9 @@ starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4)
     See \link{integrate}. You might try adjusting this if you get an error
     message related to the integral. Alternatively, try providing
     different starting values.}
+\item{\dots}{Additional arguments to optim, such as lower and upper
+      bounds}
+
 }
 \details{
   This model extends the model of Royle et al. (2004) by estimating the
