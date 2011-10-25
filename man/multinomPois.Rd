@@ -40,9 +40,11 @@ Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance a
     \item{starts}{vector of starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{control}{Other arguments passed to \code{\link{optim}}.}
-    \item{se}{logical specifying whether or not to compute standard errors.    \item{\dots}{Additional arguments to optim, such as lower and upper
+    \item{se}{logical specifying whether or not to compute standard
+      errors.}
+    \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
-}}
+}
 
 \examples{
 

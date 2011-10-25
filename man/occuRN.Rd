@@ -5,7 +5,7 @@
 \title{Fit the occupancy model of Royle and Nichols (2003)}
 
 \usage{occuRN(formula, data, K=25, starts, method="BFGS", control=list(),
-    se=TRUE)}
+    se=TRUE, ...)}
 
 \arguments{
     \item{formula}{double right-hand side formula describing covariates of

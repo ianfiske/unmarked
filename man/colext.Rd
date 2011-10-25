@@ -54,9 +54,10 @@ Program. Herpetological Conservation and Biology. 4(3):389-402.
 \item{starts}{optionally, initial values for parameters in the optimization.}
 \item{method}{Optimization method used by \code{\link{optim}}.}
 \item{control}{Other arguments passed to \code{\link{optim}}.}
-\item{se}{logical specifying whether or not to compute standard errors.}}
+\item{se}{logical specifying whether or not to compute standard errors.}
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
+    }
 \examples{
 
 # Fake data

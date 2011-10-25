@@ -35,6 +35,7 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
   } else {
     fc$starts <- eval(starts)
   }
+  fc$... <- as.name("...")
 
   fm <- eval(fc)
 
@@ -98,7 +99,8 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
 
 
 colext.fit <- function(formula, data, J,
-                       starts=NULL, method, control, getHessian = TRUE, wts)
+                       starts=NULL, method, control, getHessian = TRUE,
+                       wts, ...)
 {
   K <- 1
 
