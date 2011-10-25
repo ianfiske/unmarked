@@ -1770,7 +1770,7 @@ setMethod("simulate", "unmarkedFitPCO",
         omega <- matrix(plogis(Xom %*% coef(object, 'omega') + Xom.offset),
                         M, T-1, byrow=TRUE)
     else
-        omega <- -999 # placeholder
+        omega <- matrix(-999, M, T-1) # placeholder
     if(identical(mix, "ZIP"))
         psi <- plogis(coef(object, type="psi"))
     p <- getP(object, na.rm = na.rm)
@@ -1802,13 +1802,14 @@ setMethod("simulate", "unmarkedFitPCO",
                 if(is.na(omega[i, t-1]) | is.na(gamma[i,t-1]))
                     N[i, t] <- N[i, t-1] # just a place holder
                 else{
-                    S[i, t-1] <- rbinom(1, N[i, t-1], omega[i, t-1])
+                    if(!identical(dynamics, "trend"))
+                        S[i, t-1] <- rbinom(1, N[i, t-1], omega[i, t-1])
                     if(identical(dynamics, "autoreg"))
                         gamma[i, t-1] <- gamma[i, t-1] * N[i, t-1]
                     else if(identical(dynamics, "notrend"))
                         gamma[i, t-1] <- (1-omega[i, t-1]) * lambda[i]
                     G[i, t-1] <- rpois(1, gamma[i, t-1])
-                    if(dynamics == "trend")
+                    if(identical(dynamics, "trend"))
                         N[i,t] <- rpois(1, N[i,t-1]*gamma[i,t-1])
                     else
                         N[i, t] <- S[i, t-1] + G[i, t-1]

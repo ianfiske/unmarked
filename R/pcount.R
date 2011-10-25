@@ -51,6 +51,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
         y.ijk <- rep(y.ij, each = K + 1)
         navec <- is.na(y.ijk)
         ijk <- expand.grid(k = 0:K, j = 1:J, i = 1:M)
+        ijk.to.ikj <- with(ijk, order(i, k, j))
         nll <- function(parms) {
             theta.i <- exp(X %*% parms[1 : nAP] + X.offset)
             p.ij <- plogis(V %*% parms[(nAP + 1) : (nAP + nDP)] + V.offset)

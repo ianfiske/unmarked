@@ -2,12 +2,13 @@
 \alias{pcountOpen}
 \title{Fit the open N-mixture model of Dail and Madsen}
 \description{Fit the model of Dail and Madsen, which is
-a generalized form of the Royle (2004) N-mixture model for open populations.}
+a generalized form of the Royle (2004) N-mixture model for open
+populations.}
 \usage{
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula,
-  data, mixture = c("P", "NB"), K, dynamics=c("constant", "autoreg",
-  "notrend"), fix=c("none", "gamma", "omega"), starts, method = "BFGS",
-  se = TRUE, engine=c("C", "R"), ...)
+  data, mixture = c("P", "NB", "ZIP"), K, dynamics=c("constant", "autoreg",
+  "notrend", "trend"), fix=c("none", "gamma", "omega"), starts,
+  method = "BFGS", se = TRUE, ...)
 }
 \arguments{
   \item{lambdaformula}{
@@ -26,8 +27,9 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula,
     An object of class \code{\link{unmarkedFramePCO}}. See details
   }
   \item{mixture}{
-    character specifying mixture: either "P" or "NB" for
-    the Poisson and negative binomial distributions.
+    character specifying mixture: "P", "NB", or "ZIP" for
+    the Poisson, negative binomial, and zero-inflated Poisson
+    distributions.
   }
   \item{K}{
     Integer defining upper bound of discrete integration. This
@@ -40,7 +42,8 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula,
     dynamics. "constant" indicates that there is no relationship between
     omega and gamma. "autoreg" is an auto-regressive model in which
     recruitment is modeled as gamma*N[i,t-1]. "notrend" model gamma as
-    lambda*(1-omega) such that there is no temporal trend.
+    lambda*(1-omega) such that there is no temporal trend. "trend" is
+    N[i,t] = N[i,t-1]*gamma.
   }
   \item{fix}{
     If "omega", omega is fixed at 1. If "gamma", gamma is fixed at 0.
@@ -54,9 +57,6 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula,
   \item{se}{
     logical specifying whether or not to compute standard errors.
   }
-  \item{engine}{
-    Use either fast C++ version of likelihood or native R code.
-  }
   \item{\dots}{
     additional arguments to be passed to \code{\link{optim}}.
   }
@@ -67,29 +67,35 @@ closure assumption. The model includes two additional parameters: gamma,
 the recruitment rate (births and immigrations), and omega,
 the apparent survival rate (deaths and emigrations). Estimates of
 population size at each time period can be derived from these
-parameters, and thus so can trend estimates.
+parameters, and thus so can trend estimates. Or, trend can be estimated
+directly using dynamics="trend".
 
-The latent initial abundance distribution,
-\eqn{f(N | \mathbf{\theta})}{f(N | theta)} can be set as either
-Poisson or a negative binomial, depending on the setting of the
-\code{mixture} argument. \code{mixture = "P"} or \code{mixture = "NB"} select
-the Poisson or negative binomial distribution respectively.  The mean of
-\eqn{N_i} is \eqn{\lambda_i}{lambda_i}.  If \eqn{N_i \sim NB}{N_i ~ NB}, then an
+The latent abundance distribution, \eqn{f(N | \mathbf{\theta})}{f(N |
+theta)} can be set as a Poisson, negative binomial, or zero-inflated
+Poisson random
+variable, depending on the setting of the \code{mixture} argument,
+\code{mixture = "P"}, \code{mixture = "NB"}, \code{mixture = "ZIP"}
+respectively.  For the first two distributions, the mean of \eqn{N_i} is
+\eqn{\lambda_i}{lambda_i}.  If \eqn{N_i \sim NB}{N_i ~ NB}, then an
 additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
-\eqn{\alpha}{alpha} implies higher variance).
+\eqn{\alpha}{alpha} implies higher variance). For the ZIP distribution,
+the mean is \eqn{\lambda_i(1-\psi)}{lambda psi}, where psi is the
+zero-inflation parameter.
 
 The latent abundance state following the initial sampling period arises from a
 Markovian process in which survivors are modeled as \eqn{S_it \sim
 Binomial(N_it-1, omega_it)}{S_it ~ Binomial(N_it-1, omega_it)}, and recruits
 follow \eqn{G_it \sim Poisson(gamma_it)}{G_it ~ Poisson(gamma_it)}.
-Alternative recruitment processes can be specified
+Alternative population dynamics can be specified
 using the \code{dynamics} argument.
 
 The detection process is modeled as binomial: \eqn{y_{it} \sim
 Binomial(N_it, p_it)}{y_it ~ Binomial(N_it, p_it)}.
 
 Covariates of \eqn{\lambda_i}{lamdba_i} use the log link and
-covariates of \eqn{p_it}{p_it} use the logit link.
+Covariates of \eqn{\gamma_{it}}{gamma_{it}} use the log link and
+Covariates of \eqn{\omega_{it}}{omega_{it}} use the log link and
+covariates of \eqn{p_{ijt}}{p_{ijt}} use the logit link.
 
 }
 \value{
@@ -100,7 +106,8 @@ Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from
 Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
 
 Dail, D. and L. Madsen (2011) Models for Estimating Abundance from
-Repeated Counts of an Open Metapopulation. \emph{Biometrics}. 67, pp 577-587.
+Repeated Counts of an Open Metapopulation. \emph{Biometrics}. 67, pp
+577-587.
 
 }
 
