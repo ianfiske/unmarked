@@ -2,7 +2,7 @@
 # Fit the Occupancy model of Royle and Nichols
 
 occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
-    control = list(), se = TRUE, ...)
+    se = TRUE, ...)
 {
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
@@ -66,20 +66,20 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
   }
 
 	if(missing(starts)) starts <- rep(0, nP)
-  fm <- optim(starts, nll, method = method, hessian = se,
-              control = control, ...)
+  fm <- optim(starts, nll, method = method, hessian = se, ...)
 	opt <- fm
 	if(se) {
-		tryCatch(covMat <- solve(fm$hessian),
-				error=function(x) stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
+            tryCatch(covMat <- solve(fm$hessian),
+                     error=function(x) stop(simpleError("Hessian is singular.  Try providing starting values or using fewer covariates.")))
 	} else {
-		covMat <- matrix(NA, nP, nP)
+            covMat <- matrix(NA, nP, nP)
 	}
   ests <- fm$par
-  fmAIC <- 2 * fm$value + 2 * nP + 2 * nP * (nP + 1) / (M - nP - 1)
+  fmAIC <- 2 * fm$value + 2 * nP # + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)
 
-  stateEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
+  stateEstimates <- unmarkedEstimate(name = "Abundance",
+      short.name = "lam",
       estimates = ests[1:nOP],
       covMat = as.matrix(covMat[1:nOP,1:nOP]), invlink = "exp",
       invlinkGrad = "exp")

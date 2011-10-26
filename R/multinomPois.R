@@ -35,7 +35,7 @@ doublePiFun <- function(p){
 # Fit the multinomial-Poisson abundance mixture model.
 
 multinomPois <- function(formula, data, starts, method = "BFGS",
-    control = list(), se = TRUE, ...)
+    se = TRUE, ...)
 {
     if(!is(data, "unmarkedFrameMPois"))
 		    stop("Data is not a data frame or unmarkedFrame.")
@@ -75,12 +75,11 @@ multinomPois <- function(formula, data, starts, method = "BFGS",
         }
     if(missing(starts))
         starts <- rep(0, nP)
-    fm <- optim(starts, nll, method = method, hessian = se,
-                control = control, ...)
+    fm <- optim(starts, nll, method = method, hessian = se, ...)
     opt <- fm
     if(se) {
         tryCatch(covMat <- solve(fm$hessian),
-				    error=function(x) stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
+                 error=function(x) stop(simpleError("Hessian is singular.  Try providing starting values or using fewer covariates.")))
     } else {
         covMat <- matrix(NA, nP, nP)
       }
@@ -90,15 +89,20 @@ multinomPois <- function(formula, data, starts, method = "BFGS",
 
     stateName <- "Abundance"
 
-    stateEstimates <- unmarkedEstimate(name = stateName, short.name = "lambda",
-        estimates = ests[1:nAP],
-		    covMat = as.matrix(covMat[1:nAP,1:nAP]), invlink = "exp",
-		    invlinkGrad = "exp")
+    stateEstimates <- unmarkedEstimate(name = stateName,
+                                       short.name = "lambda",
+                                       estimates = ests[1:nAP],
+                                       covMat = as.matrix(
+                                           covMat[1:nAP,1:nAP]),
+                                       invlink = "exp",
+                                       invlinkGrad = "exp")
 
     detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
-		    estimates = ests[(nAP + 1) : nP],
-		    covMat = as.matrix(covMat[(nAP + 1) : nP, (nAP + 1) : nP]),
-		    invlink = "logistic", invlinkGrad = "logistic.grad")
+                                     estimates = ests[(nAP + 1) : nP],
+                                     covMat = as.matrix(covMat[(nAP + 1) :
+                                                 nP, (nAP + 1) : nP]),
+                                     invlink = "logistic",
+                                     invlinkGrad = "logistic.grad")
 
     estimateList <- unmarkedEstimateList(list(state=stateEstimates,
         det=detEstimates))

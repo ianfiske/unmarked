@@ -2,8 +2,7 @@
 \alias{colext}
 \title{Fit the colonization-extinction model.}
 \usage{colext(psiformula= ~1, gammaformula =  ~ 1, epsilonformula = ~ 1,
-    pformula = ~ 1, data, starts, method="BFGS", control=list(),
-    se=TRUE, ...)}
+    pformula = ~ 1, data, starts, method="BFGS", se=TRUE, ...)}
 
 \description{Estimate parameters of the colonization-extinction model,
 including covariate-dependent rates and detection process.}
@@ -53,7 +52,6 @@ Program. Herpetological Conservation and Biology. 4(3):389-402.
 \item{data}{unmarkedMultFrame object that supplies the data (see \code{\link{unmarkedMultFrame}}).}
 \item{starts}{optionally, initial values for parameters in the optimization.}
 \item{method}{Optimization method used by \code{\link{optim}}.}
-\item{control}{Other arguments passed to \code{\link{optim}}.}
 \item{se}{logical specifying whether or not to compute standard errors.}
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}

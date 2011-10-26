@@ -2,8 +2,7 @@
 #  Fit the occupancy model of MacKenzie et al (2002).
 
 occu <- function(formula, data, knownOcc = numeric(0), starts,
-                 method = "BFGS", control = list(), se = TRUE,
-                 engine = c("C", "R"), ...) {
+                 method = "BFGS", se = TRUE, engine = c("C", "R"), ...) {
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
@@ -69,12 +68,11 @@ occu <- function(formula, data, knownOcc = numeric(0), starts,
     }
 
     if(missing(starts)) starts <- rep(0, nP)
-    fm <- optim(starts, nll, method = method, control = control,
-                hessian = se, ...)
+    fm <- optim(starts, nll, method = method, hessian = se, ...)
     opt <- fm
     if(se) {
         tryCatch(covMat <- solve(fm$hessian),
-                 error=function(x) stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
+                 error=function(x) stop(simpleError("Hessian is singular.  Try providing starting values or using fewer covariates.")))
     } else {
         covMat <- matrix(NA, nP, nP)
     }

@@ -79,7 +79,7 @@ respectively.  For the first two distributions, the mean of \eqn{N_i} is
 \eqn{\lambda_i}{lambda_i}.  If \eqn{N_i \sim NB}{N_i ~ NB}, then an
 additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 \eqn{\alpha}{alpha} implies higher variance). For the ZIP distribution,
-the mean is \eqn{\lambda_i(1-\psi)}{lambda psi}, where psi is the
+the mean is \eqn{\lambda_i(1-\psi)}{lambda_i*(1-psi)}, where psi is the
 zero-inflation parameter.
 
 The latent abundance state following the initial sampling period arises from a
@@ -89,13 +89,13 @@ follow \eqn{G_it \sim Poisson(gamma_it)}{G_it ~ Poisson(gamma_it)}.
 Alternative population dynamics can be specified
 using the \code{dynamics} argument.
 
-The detection process is modeled as binomial: \eqn{y_{it} \sim
-Binomial(N_it, p_it)}{y_it ~ Binomial(N_it, p_it)}.
+The detection process is modeled as binomial: \eqn{y_{ijt} \sim
+Binomial(N_{it}, p_{ijt})}{y_ijt ~ Binomial(N_it, p_ijt)}.
 
-Covariates of \eqn{\lambda_i}{lamdba_i} use the log link and
-Covariates of \eqn{\gamma_{it}}{gamma_{it}} use the log link and
-Covariates of \eqn{\omega_{it}}{omega_{it}} use the log link and
-covariates of \eqn{p_{ijt}}{p_{ijt}} use the logit link.
+Covariates of \eqn{\lambda_i}{lamdba_i} use the log link.
+Covariates of \eqn{\gamma_{it}}{gamma_it} use the log link.
+Covariates of \eqn{\omega_{it}}{omega_it} use the logit link.
+covariates of \eqn{p_{ijt}}{p_ijt} use the logit link.
 
 }
 \value{

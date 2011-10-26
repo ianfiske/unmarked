@@ -5,8 +5,7 @@
 \title{Fit the N-mixture model of Royle (2004)}
 
 \usage{pcount(formula, data, K, mixture=c("P", "NB", "ZIP"),
-    starts, method="BFGS",
-    control=list(), se=TRUE, engine=c("C", "R"), ...)}
+    starts, method="BFGS", se=TRUE, engine=c("C", "R"), ...)}
 
 \description{Fit the N-mixture model of Royle (2004)}
 
@@ -20,7 +19,6 @@
     \item{mixture}{character specifying mixture: either "P" or "NB".}
     \item{starts}{vector of starting values}
     \item{method}{Optimization method used by \code{\link{optim}}.}
-    \item{control}{Other arguments passed to \code{\link{optim}}.}
     \item{se}{logical specifying whether or not to compute standard
       errors.}
     \item{engine}{Either "C" or "R" to use fast C++ code or native R
@@ -47,7 +45,7 @@ respectively.  For the first two distributions, the mean of \eqn{N_i} is
 \eqn{\lambda_i}{lambda_i}.  If \eqn{N_i \sim NB}{N_i ~ NB}, then an
 additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 \eqn{\alpha}{alpha} implies higher variance). For the ZIP distribution,
-the mean is \eqn{\lambda_i(1-\psi)}{lambda psi}, where psi is the
+the mean is \eqn{\lambda_i(1-\psi)}{lambda*(1-psi)}, where psi is the
 zero-inflation parameter.
 
 The detection process is modeled as binomial: \eqn{y_{ij} \sim

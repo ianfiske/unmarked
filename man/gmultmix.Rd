@@ -9,8 +9,8 @@ The three model parameters are abundance, availability, and detection
 probability.
 }
 \usage{
-gmultmix(lambdaformula, phiformula, pformula, data, mixture = c("P", "NB"), K,
-    starts, method = "BFGS", control = list(), se = TRUE, ...)
+gmultmix(lambdaformula, phiformula, pformula, data,
+mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE, ...)
 }
 \arguments{
     \item{lambdaformula}{Righthand side (RHS) formula describing abundance
@@ -23,7 +23,6 @@ gmultmix(lambdaformula, phiformula, pformula, data, mixture = c("P", "NB"), K,
     \item{K}{The upper bound of integration}
     \item{starts}{Starting values}
     \item{method}{Optimization method used by \code{\link{optim}}}
-    \item{control}{List of control arguments passed to \code{\link{optim}}}
     \item{se}{Logical. Should standard errors be calculated?}
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}

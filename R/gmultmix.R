@@ -1,8 +1,7 @@
 
 # data will need to be an unmarkedMultFrame
 gmultmix <- function(lambdaformula, phiformula, pformula, data,
-    mixture=c('P', 'NB'), K, starts, method = "BFGS", control = list(),
-    se = TRUE, ...)
+    mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE, ...)
 {
 if(!is(data, "unmarkedFrameGMM"))
     stop("Data is not of class unmarkedFrameGMM.")
@@ -119,8 +118,7 @@ nll <- function(pars) {
     }
 
 if(missing(starts)) starts <- rep(0, nP)
-fm <- optim(starts, nll, method = method, hessian = se, control = control,
-            ...)
+fm <- optim(starts, nll, method = method, hessian = se, ...)
 opt <- fm
 if(se) {
     covMat <- tryCatch(solve(fm$hessian), error=function(x)

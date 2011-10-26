@@ -49,7 +49,7 @@ hist(simout1[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout1[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
 hist(simout1[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
 hist(simout1[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
-dev.off()
+#dev.off()
 
 
 
@@ -250,7 +250,7 @@ nsim4 <- 100
 simout4 <- matrix(NA, nsim4, 4)
 colnames(simout4) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim4) {
-    cat("sim4:", i, "\n"); flush.console()
+    cat("sim4:", i, "\n")
     lambda <- 1
     gamma <- 0.5
     omega <- 0.7
@@ -616,7 +616,7 @@ for(i in 1:nsim9) {
     umf9 <- unmarkedFramePCO(y = y.sim9, numPrimary=T)
     m9 <- pcountOpen(~1, ~1, ~1, ~1, umf9, K=15,
               starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
-              se=FALSE, engine="C")
+              se=FALSE)
     e <- coef(m9)
     simout9[i, 1:2] <- exp(e[1:2])
     simout9[i, 3:4] <- plogis(e[3:4])
@@ -753,7 +753,7 @@ sim11 <- function(lambda=1, gamma=0.5, p=0.7, M=100, T=5)
 set.seed(3223)
 nsim11 <- 100
 simout11 <- matrix(NA, nsim11, 3)
-colnames(simout1) <- c('lambda', 'gamma', 'p')
+colnames(simout11) <- c('lambda', 'gamma', 'p')
 for(i in 1:nsim11) {
     cat("sim11:", i, "\n"); flush.console()
     lambda <- 2
@@ -776,4 +776,69 @@ hist(simout11[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout11[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
 hist(simout11[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
+## Simulate trend model with ZIP dist
+
+sim12 <- function(lambda=1, gamma=0.5, p=0.7, psi=0.3, M=100, T=5)
+{
+    y <- N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    N[runif(M) < psi, 1] <- 0
+    for(t in 2:T) {
+        N[,t] <- rpois(M, gamma*N[,t-1])
+        }
+    y[] <- rbinom(M*T, N, p)
+    return(y)
+}
+
+
+
+
+
+set.seed(3223)
+nsim12 <- 100
+simout12 <- matrix(NA, nsim12, 4)
+colnames(simout12) <- c('lambda', 'gamma', 'p', 'psi')
+for(i in 1:nsim12) {
+    cat("sim12:", i, "\n")
+    lambda <- 2
+    gamma <- 0.5
+    p <- 0.7
+    psi <- 0.3
+    y.sim12 <- sim12(lambda, gamma, p, psi)
+    umf12 <- unmarkedFramePCO(y = y.sim12, numPrimary=5)
+    m12 <- pcountOpen(~1, ~1, ~1, ~1, umf12, K=40, dynamics="trend",
+                      mixture="ZIP",
+        starts=c(log(lambda), log(gamma), plogis(p), plogis(psi)),
+        se=FALSE)
+    e <- coef(m12)
+    simout12[i, 1:2] <- exp(e[1:2])
+    simout12[i, 3:4] <- plogis(e[3:4])
+    cat("  mle =", simout12[i,], "\n")
+    }
+
+#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout12[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout12[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout12[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+hist(simout12[,4], xlab=expression(psi)); abline(v=psi, lwd=2, col=4)
+dev.off()
+
+
+
+
+
+
 

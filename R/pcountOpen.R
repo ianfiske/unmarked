@@ -161,9 +161,14 @@ detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates))
+gamName <- switch(dynamics,
+                  constant = "gamConst",
+                  autoreg = "gamAR",
+                  notrend = "",
+                  trend = "gamTrend")
 if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
     estimateList@estimates$gamma <- unmarkedEstimate(name = "Recruitment",
-        short.name = "gam", estimates = ests[(nAP+1) : (nAP+nGP)],
+        short.name = gamName, estimates = ests[(nAP+1) : (nAP+nGP)],
         covMat = as.matrix(covMat[(nAP+1) :
                            (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")

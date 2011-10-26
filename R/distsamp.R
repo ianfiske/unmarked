@@ -2,7 +2,7 @@
 distsamp <- function(formula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL,
-    method="BFGS", control=list(), se = TRUE, ...)
+    method="BFGS", se = TRUE, ...)
 {
     keyfun <- match.arg(keyfun)
     output <- match.arg(output)
@@ -202,8 +202,7 @@ distsamp <- function(formula, data,
             -sum(ll)
             }
         })
-    fm <- optim(starts, nll, method=method, hessian=se, control=control,
-                ...)
+    fm <- optim(starts, nll, method=method, hessian=se, ...)
     opt <- fm
     ests <- fm$par
     if(se) {

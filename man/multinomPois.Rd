@@ -4,10 +4,11 @@
 
 \title{Multinomial-Poisson Mixtures Model}
 
-\usage{multinomPois(formula, data, starts, method = "BFGS", control =
-list(), se = TRUE, ...)}
+\usage{multinomPois(formula, data, starts, method = "BFGS",
+   se = TRUE, ...)}
 
-\description{Fit the multinomial-Poisson mixture model to data collected using
+\description{Fit the multinomial-Poisson mixture model to data collected
+    using
     survey methods such as removal sampling or double observer sampling.}
 
 \details{
@@ -39,7 +40,6 @@ Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance a
     \item{data}{unmarkedFrame supplying data.}
     \item{starts}{vector of starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
-    \item{control}{Other arguments passed to \code{\link{optim}}.}
     \item{se}{logical specifying whether or not to compute standard
       errors.}
     \item{\dots}{Additional arguments to optim, such as lower and upper

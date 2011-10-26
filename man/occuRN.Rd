@@ -4,8 +4,7 @@
 
 \title{Fit the occupancy model of Royle and Nichols (2003)}
 
-\usage{occuRN(formula, data, K=25, starts, method="BFGS", control=list(),
-    se=TRUE, ...)}
+\usage{occuRN(formula, data, K=25, starts, method="BFGS", se=TRUE, ...)}
 
 \arguments{
     \item{formula}{double right-hand side formula describing covariates of
@@ -17,7 +16,6 @@
         affect the parameter estimates. Computation time will increase with K.}
     \item{starts}{initial values for the optimization.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
-    \item{control}{Other arguments passed to \code{\link{optim}}.}
     \item{se}{logical specifying whether or not to compute standard
       errors.}
     \item{\dots}{Additional arguments to optim, such as lower and upper

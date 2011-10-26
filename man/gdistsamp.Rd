@@ -12,8 +12,7 @@ to be modeled using the negative binomial distribution.
 gdistsamp(lambdaformula, phiformula, pformula, data, keyfun =
 c("halfnorm", "exp", "hazard", "uniform"), output = c("abund",
 "density"), unitsOut = c("ha", "kmsq"), mixture = c("P", "NB"), K,
-starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4,
-...)
+starts, method = "BFGS", se = TRUE, rel.tol=1e-4, ...)
 }
 \arguments{
   \item{lambdaformula}{
@@ -51,9 +50,6 @@ starts, method = "BFGS", control = list(), se = TRUE, rel.tol=1e-4,
 }
   \item{method}{
       Optimization method used by \code{\link{optim}}.
-}
-  \item{control}{
-      Other arguments passed to \code{\link{optim}}.
 }
   \item{se}{
       logical specifying whether or not to compute standard errors.

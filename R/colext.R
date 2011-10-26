@@ -1,7 +1,6 @@
 colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
                    epsilonformula = ~ 1, pformula = ~ 1,
-                   data, starts, method = "BFGS", control=list(),
-                   se = TRUE, ...)
+                   data, starts, method = "BFGS", se = TRUE, ...)
 {
 
   K <- 1
@@ -27,7 +26,7 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
   fc$data <- as.name("data")
   fc$J <- as.name("J")
   fc$method <- as.name("method")
-  fc$control <- as.name("control")
+#  fc$control <- as.name("control")
   fc$getHessian <- as.name("se")
   fc$se <- NULL
   if(missing(starts)) {
@@ -35,7 +34,15 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
   } else {
     fc$starts <- eval(starts)
   }
-  fc$... <- as.name("...")
+
+  extras <- match.call(expand.dots = FALSE)$...
+  if (length(extras) > 0) {
+      existing <- !is.na(match(names(extras), names(fc)))
+      for (a in names(extras)[existing]) fc[[a]] <- extras[[a]]
+      if (any(!existing)) {
+            fc <- as.call(c(as.list(fc), extras[!existing]))
+        }
+    }
 
   fm <- eval(fc)
 
@@ -46,7 +53,7 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
 
   if(se) {
     tryCatch(covMat <- solve(opt$hessian),
-             error=function(x) stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
+             error=function(x) stop(simpleError("Hessian is singular.  Try providing starting values or using fewer covariates.")))
   } else {
     covMat <- matrix(NA, nP, nP)
   }
@@ -61,25 +68,35 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
 
   psi <- unmarkedEstimate(name = "Initial", short.name = "psi",
                           estimates = psiParams,
-                          covMat = as.matrix(covMat[1:nSP,1:nSP]), invlink = "logistic",
+                          covMat = as.matrix(covMat[1:nSP,1:nSP]),
+                          invlink = "logistic",
                           invlinkGrad = "logistic.grad")
 
   col <- unmarkedEstimate(name = "Colonization", short.name = "col",
                           estimates = colParams,
-                          covMat = as.matrix(covMat[(nSP + 1) : (nSP + nGP), (nSP + 1) : (nSP + nGP)]), invlink = "logistic",
+                          covMat = as.matrix(covMat[(nSP + 1) :
+                              (nSP + nGP), (nSP + 1) : (nSP + nGP)]),
+                          invlink = "logistic",
                           invlinkGrad = "logistic.grad")
 
   ext <- unmarkedEstimate(name = "Extinction", short.name = "ext",
                           estimates = extParams,
-                          covMat = as.matrix(covMat[(nSP + nGP + 1) : (nSP + nGP + nEP), (nSP + nGP + 1) : (nSP + nGP + nEP)]), invlink = "logistic",
+                          covMat = as.matrix(covMat[(nSP + nGP + 1) :
+                                                    (nSP + nGP + nEP),
+                                                    (nSP + nGP + 1) :
+                                                    (nSP + nGP + nEP)]),
+                          invlink = "logistic",
                           invlinkGrad = "logistic.grad")
 
   det <- unmarkedEstimate(name = "Detection", short.name = "p",
                           estimates = detParams,
-                          covMat = as.matrix(covMat[(nSP + nGP + nEP + 1) : nP, (nSP + nGP + nEP + 1) : nP]), invlink = "logistic",
+                          covMat = as.matrix(covMat[(nSP+nGP+nEP+1):nP,
+                                                    (nSP+nGP+nEP+1):nP]),
+                          invlink = "logistic",
                           invlinkGrad = "logistic.grad")
 
-  estimateList <- unmarkedEstimateList(list(psi = psi, col = col, ext = ext, det=det))
+  estimateList <- unmarkedEstimateList(list(psi = psi, col = col,
+                                            ext = ext, det=det))
 
   umfit <- new("unmarkedFitColExt", fitType = "colext",
                call = match.call(),
@@ -90,8 +107,10 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
                detformula = pformula,
                data = data, sitesRemoved = fm$designMats$removed.sites,
                estimates = estimateList,
-               AIC = fmAIC, opt = opt, negLogLike = opt$value, nllFun = fm$nll,
-               projected = fm$projected, projected.mean = fm$projected.mean,
+               AIC = fmAIC, opt = opt, negLogLike = opt$value,
+               nllFun = fm$nll,
+               projected = fm$projected,
+               projected.mean = fm$projected.mean,
                smoothed = fm$smoothed, smoothed.mean = fm$smoothed.mean)
 
   return(umfit)
@@ -99,7 +118,7 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
 
 
 colext.fit <- function(formula, data, J,
-                       starts=NULL, method, control, getHessian = TRUE,
+                       starts=NULL, method, getHessian = TRUE,
                        wts, ...)
 {
   K <- 1
@@ -225,8 +244,7 @@ colext.fit <- function(formula, data, J,
   }
 
   if(is.null(starts)) starts <- rep(0,nP)
-  fm <- optim(starts, nll, method=method,hessian = getHessian,
-              control=control, ...)
+  fm <- optim(starts, nll, method=method, hessian = getHessian, ...)
   mle <- fm$par
 
   psis <- plogis(W.i %*% mle[1:nSP])
@@ -256,7 +274,7 @@ colext.fit <- function(formula, data, J,
   gamma <- array(NA, c(K + 1, nY, M))
   for(i in 1:M) {
     for(t in 1:nY) {
-      gamma[,t,i] <- alpha[,t,i] * beta[,t,i] / sum(alpha[,t,i] * beta[,t,i])
+      gamma[,t,i] <- alpha[,t,i]*beta[,t,i] / sum(alpha[,t,i]*beta[,t,i])
     }
   }
   smoothed.mean <- apply(gamma, 1:2, mean)
@@ -265,12 +283,14 @@ colext.fit <- function(formula, data, J,
 
   parm.names <- c(psiParms, gamParms, epsParms, detParms)
   mle.df <- data.frame(names = parm.names, value = mle)
-  rownames(mle.df) <- paste(c(rep("psi", nSP), rep("col", nGP), rep("ext", nEP), rep("det", nDP)),
+  rownames(mle.df) <- paste(c(rep("psi", nSP), rep("col", nGP),
+                              rep("ext", nEP), rep("det", nDP)),
                             c(1:nSP,1:nGP,1:nEP, 1:nDP))
 
   list(mle = mle.df, opt=fm, nP = nP, M = M, nDP = nDP, nGP = nGP,
        nEP = nEP, nSP = nSP,
        nllFun = nll, designMats = designMats,
-       projected = projected, projected.mean = projected.mean, smoothed = gamma,
+       projected = projected, projected.mean = projected.mean,
+       smoothed = gamma,
        smoothed.mean = smoothed.mean)
 }
