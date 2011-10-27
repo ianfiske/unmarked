@@ -5,7 +5,7 @@
 \description{\emph{unmarked} fits hierarchical models of animal
   occurrence and abundance to data collected on species subject to
   imperfect detection.  Examples include single- and multi-season site
-  occupancy models, binomial mixture models, and multinomial mixture
+  occupancy models, binomial N-mixture models, and multinomial N-mixture
   models. The data can arise from survey methods such as occurrence
   sampling, temporally replicated counts, removal sampling, double
   observer sampling, and distance sampling. Parameters governing the
@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9-1\cr
+Version: \tab 0.9-3\cr
 License: \tab GPL (>= 3)\cr
 }
 
@@ -93,7 +93,7 @@ components required by model-fitting functions.}
 
 \examples{
 
-## An example of site-occupancy analysis
+## An example site-occupancy analysis
 
 # Simulate occupancy data
 nSites <- 100
