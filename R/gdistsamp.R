@@ -188,11 +188,12 @@ halfnorm = {
                     })
                 cp <- p * u[i,] * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
-                }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
                     kmyt[i, t,] * log(cp[J+1])
+                } else
+                    mn[,t] <- 0
                 }
             g[i,] <- exp(rowSums(mn))
             }
@@ -253,11 +254,12 @@ exp = {
                     })
                 cp <- p * u[i,] * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
-                }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
                     kmyt[i, t,] * log(cp[J+1])
+                } else
+                    mn[,t] <- 0
                 }
             g[i,] <- exp(rowSums(mn))
             }
@@ -321,11 +323,12 @@ hazard = {
                     })
                 cp <- p * u[i,] * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
-                }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
                     kmyt[i, t,] * log(cp[J+1])
+                } else
+                    mn[,t] <- 0
                 }
             g[i,] <- exp(rowSums(mn))
             }
@@ -359,11 +362,12 @@ uniform = {
                 if(!all(naflag[i,t,])) {
                     cp <- p * u[i,] * phi[i, t]
                     cp[J+1] <- 1 - sum(cp)
-                    }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
                     kmyt[i, t,] * log(cp[J+1])
+                } else
+                    mn[,t] <- 0
                 }
             g[i,] <- exp(rowSums(mn))
             }
