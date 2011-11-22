@@ -1054,7 +1054,7 @@ appropriately.
 <<>>=
 years <- as.character(1999:2007)
 years <- matrix(years, nrow(crossbill), 9, byrow=TRUE)
-umf <- unmarkedMultFrame(y=crossbill[,5:31],
+umf <- unmarkedMultFrame(y=y.cross,
     siteCovs=crossbill[,2:3], yearlySiteCovs=list(year=years),
     obsCovs=list(date=DATE),
     numPrimary=9)
@@ -1158,13 +1158,13 @@ ensure that the models were fit to the same data.
 \end{Sinput}
 \begin{Soutput}
                           nPars     AIC  delta   AICwt cumltvWt
-psi(F)gam(Y)eps(Y)p(YD2F)    30 5000.85   0.00 1.0e+00     1.00
-psi(F)gam(Y)eps(Y)p(YD2)     29 5077.03  76.19 2.9e-17     1.00
-psi(F)gam(Y)eps(Y)p(Y)       27 5099.15  98.31 4.5e-22     1.00
-psi(.)gam(.)eps(.)p(Y)       12 5115.80 114.95 1.1e-25     1.00
-psi(.)gam(Y)eps(Y)p(Y)       26 5131.34 130.49 4.6e-29     1.00
-psi(.)gam(Y)eps(Y)p(.)       18 5173.21 172.36 3.7e-38     1.00
-psi(.)gam(.)eps(.)p(.)        4 5197.44 196.60 2.0e-43     1.00
+psi(F)gam(Y)eps(Y)p(YD2F)    30 4986.39   0.00 1.0e+00     1.00
+psi(F)gam(Y)eps(Y)p(YD2)     29 5059.30  72.91 1.5e-16     1.00
+psi(F)gam(Y)eps(Y)p(Y)       27 5095.38 108.99 2.2e-24     1.00
+psi(.)gam(.)eps(.)p(Y)       12 5111.32 124.93 7.5e-28     1.00
+psi(.)gam(Y)eps(Y)p(Y)       26 5127.63 141.24 2.1e-31     1.00
+psi(.)gam(Y)eps(Y)p(.)       18 5170.54 184.15 1.0e-40     1.00
+psi(.)gam(.)eps(.)p(.)        4 5193.50 207.11 1.1e-45     1.00
 \end{Soutput}
 \end{Schunk}
 
