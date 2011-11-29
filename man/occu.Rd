@@ -11,7 +11,9 @@
     \item{formula}{Double right-hand side formula describing covariates of
         detection and occupancy in that order.}
     \item{data}{An \code{\link{unmarkedFrameOccu}} object}
-    \item{knownOcc}{Vector of sites that are known to be occupied.}
+    \item{knownOcc}{Vector of sites that are known to be occupied. These
+    should be supplied as row numbers of the y matrix, eg, c(3,8) if
+    sites 3 and 8 were known to be occupied a priori.}
     \item{starts}{Vector of parameter starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{Logical specifying whether or not to compute standard
