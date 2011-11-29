@@ -212,7 +212,6 @@ setMethod("getDesign", "unmarkedMultFrame",
         stop("offsets not currently allowed in colext", call.=FALSE)
     X.eps <- model.matrix(epsformula, X.mf.eps)
 
-
     if(na.rm)
         out <- handleNA(umf, X.gam, X.eps, W, V)
     else
@@ -248,10 +247,10 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
     V.long.na <- apply(V, 2, function(x) {
         x.mat <- matrix(x, M, R, byrow = TRUE)
         x.mat <- is.na(x.mat)
-				x.mat <- x.mat %*% obsToY
-				x.long <- as.vector(t(x.mat))
-				x.long > 0
-        })
+        x.mat <- x.mat %*% obsToY
+        x.long <- as.vector(t(x.mat))
+        x.long > 0
+    })
     V.long.na <- apply(V.long.na, 1, any)
 
     y.long <- as.vector(t(getY(umf)))
@@ -272,12 +271,12 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
     num.to.remove <- sum(sites.to.remove)
     if(num.to.remove > 0) {
         y <- y[!sites.to.remove, ,drop = FALSE]
-		    X.gam <- X.gam[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
+        X.gam <- X.gam[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
         X.eps <- X.eps[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
-        W <- X[!sites.to.remove, drop = FALSE]
-		    V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
-		    warning(paste(num.to.remove,"sites have been discarded because of missing data."))
-        }
+        W <- X[!sites.to.remove, drop = FALSE] # !!!
+        V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
+        warning(paste(num.to.remove,"sites have been discarded because of missing data."))
+    }
     list(y = y, X.gam = X.gam, X.eps = X.eps, W = W, V = V,
         removed.sites = which(sites.to.remove))
 })
@@ -558,8 +557,9 @@ setMethod("getDesign", "unmarkedFrameG3",
 
     M <- numSites(umf)
     T <- umf@numPrimary
-    R <- obsNum(umf)
-    J <- R/T
+    R <- obsNum(umf) # 2*T for double observer sampling
+                     # 1*T for distance sampling
+                     # nPasses*T for removal sampling
 
     ## Compute phi design matrices
     if(is.null(umf@yearlySiteCovs)) {
@@ -593,7 +593,7 @@ setMethod("getDesign", "unmarkedFrameG3",
 
     # add site and yearlysite covariates, which contain siteCovs
     cnames <- c(colnames(obsCovs), colnames(yearlySiteCovs))
-    obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),])
+    obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = R/T),])
     colnames(obsCovs) <- cnames
 
     # add observation number if not present
@@ -635,7 +635,7 @@ setMethod("handleNA", "unmarkedFrameG3",
     M <- numSites(umf)
     T <- umf@numPrimary
     R <- obsNum(umf)
-    J <- numY(umf) / T  # R/T
+    J <- numY(umf)/T
 
     # treat Xphi and Xlam together
     X <- cbind(Xphi, Xlam[rep(1:M, each = T), ])
@@ -662,9 +662,9 @@ setMethod("handleNA", "unmarkedFrameG3",
     y.new.na <- covs.na & !y.long.na
 
     if(sum(y.new.na) > 0) {
-    		y.long[y.new.na] <- NA
-    		warning("Some observations have been discarded because correspoding covariates were missing.", call. = FALSE)
-	     }
+        y.long[y.new.na] <- NA
+        warning("Some observations have been discarded because correspoding covariates were missing.", call. = FALSE)
+    }
 
     y <- matrix(y.long, M, numY(umf), byrow = TRUE)
     sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
@@ -676,9 +676,9 @@ setMethod("handleNA", "unmarkedFrameG3",
         Xlam.offset <- Xlam.offset[!sites.to.remove]
         Xphi <- Xphi[!sites.to.remove[rep(1:M, each = T)],, drop = FALSE]
         Xphi.offset <- Xphi.offset[!sites.to.remove[rep(1:M, each = T)]]
-        Xdet <- Xdet[!sites.to.remove[rep(1:M, each = numY(umf))],,
+        Xdet <- Xdet[!sites.to.remove[rep(1:M, each = R)],,
                      drop=FALSE]
-        Xdet.offset <- Xdet.offset[!sites.to.remove[rep(1:M, each=numY(umf))]]
+        Xdet.offset <- Xdet.offset[!sites.to.remove[rep(1:M, each=R)]]
         warning(paste(num.to.remove,
                       "sites have been discarded because of missing data."), call.=FALSE)
     }

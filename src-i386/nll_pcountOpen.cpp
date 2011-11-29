@@ -43,9 +43,7 @@ void tp2(arma::mat& g3, int lk, double gam, double om) {
 void tp3(arma::mat& g3, int lk, double gam) {
     for(int n1=0; n1<lk; n1++) {
 	for(int n2=0; n2<lk; n2++) {
-	    for(int c=0; c<=Nmin; c++) {
-	      g3.at(n1, n2) = Rf_dpois(n2, gam*n1, false);
-	    }
+	  g3.at(n1, n2) = Rf_dpois(n2, gam*n1, false);
 	}
     }
 }
@@ -89,7 +87,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   // linear predictors
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
   arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
-  if(fix != "omega")
+  if((fix != "omega") && (dynamics != "trend"))
     omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
   omv.reshape(T-1, M);
   arma::mat om = arma::trans(omv);
@@ -121,6 +119,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   double ll_i=0.0;
   int first_i=0;
   int last_i=0;
+  int first1=0;
   arma::colvec g_star = arma::ones<arma::colvec>(lk);
   arma::mat g3 = arma::zeros<arma::mat>(lk, lk);
   arma::mat g3_d = arma::zeros<arma::mat>(lk, lk);
@@ -136,18 +135,22 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
       tp1(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
     else if(dynamics=="autoreg")
       tp2(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
+    else if(dynamics=="trend")
+      tp3(g3, lk, gam(0,first[0]-1));
   } else if(go_dims == "rowvec") {
-    int first1;
     for(int i=0; i<M; i++) {
       if(first[i]==1) {
 	first1=i; // site with no missing values at t=1
 	break;
       }
+    }
     for(int t=0; t<(T-1); t++) {
       if(dynamics=="constant" || dynamics=="notrend")
 	tp1(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
       else if(dynamics=="autoreg")
 	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
+      else if(dynamics=="trend")
+	tp3(g3_t.slice(t), lk, gam(first1,t));
     }
   }
   // loop over sites
@@ -166,21 +169,23 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	for(int k=0; k<lk; k++) {
 	  for(int j=0; j<J; j++) {
 	    if(yna(i,j,t)==0) {
-	      g1_t(k) += Rf_dbinom(y.at(i,j,t), k, p.at(i,j,t), true);
+	      g1_t(k) += Rf_dbinom(y(i,j,t), k, p(i,j,t), true);
 	    }
 	  }
-	  g1_t.at(k) = exp(g1_t.at(k));
-	  g1_t_star.at(k) = g1_t.at(k) * g_star.at(k);
+	  g1_t(k) = exp(g1_t(k));
+	  g1_t_star(k) = g1_t(k) * g_star(k);
 	}
 	// computes transition probs for g3
 	if(go_dims == "matrix") {
 	  g3.zeros();
 	  if(dynamics=="constant" || dynamics=="notrend")
-	    tp1(g3, lk, gam.at(i,t-1), om.at(i,t-1));
+	    tp1(g3, lk, gam(i,t-1), om(i,t-1));
 	  else if(dynamics=="autoreg")
-	    tp2(g3, lk, gam.at(i,t-1), om.at(i,t-1));
+	    tp2(g3, lk, gam(i,t-1), om(i,t-1));
+	  else if(dynamics=="trend")
+	    tp3(g3, lk, gam(i,t-1));
 	} else if(go_dims == "rowvec") {
-	  g3 = g3_t(t);
+	  g3 = g3_t.slice(t-1);
 	}
 	int delta_it = delta(i,t);
 	// matrix multiply transition probs over time gaps
@@ -209,20 +214,20 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     for(int k=0; k<lk; k++) { // loop over possible values of N
       for(int j=0; j<J; j++) {
 	if(yna(i,j,first_i)==0) {
-	  g1.at(k) += Rf_dbinom(y.at(i,j,first_i), k, p.at(i,j,first_i), true);
+	  g1(k) += Rf_dbinom(y(i,j,first_i), k, p(i,j,first_i), true);
 	}
       }
-      g1.at(k) = exp(g1.at(k));
+      g1(k) = exp(g1(k));
       if(delta_i0>1)
-	g1_star.at(k) = g1.at(k) * g_star.at(k);
+	g1_star(k) = g1(k) * g_star(k);
       if(mixture=="P")
-	g2.at(k) = Rf_dpois(k, lam.at(i), false);
+	g2(k) = Rf_dpois(k, lam(i), false);
       else if(mixture=="NB")
-        g2(k) = dnbinom_mu(k, alpha, lam.at(i), false);
+        g2(k) = dnbinom_mu(k, alpha, lam(i), false);
       else if(mixture=="ZIP")
 	g2(k) = dzip(k, lam(i), psi);
       if(delta_i0==1)
-	ll_i += g1.at(k) * g2.at(k) * g_star.at(k);
+	ll_i += g1(k) * g2(k) * g_star(k);
     }
     if(delta_i0>1) {
       for(int d=0; d<delta_i0; d++) {
