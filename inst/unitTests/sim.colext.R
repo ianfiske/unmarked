@@ -68,7 +68,7 @@ nYears <- 5
 
 set.seed(3454)
 x1 <- rnorm(nSites)
-x2 <- matrix(nSites*nYears, nSites, nYears)
+x2 <- matrix(rnorm(nSites*nYears), nSites, nYears)
 
 psi <- plogis(-1 + 1*x1)
 epsilon <- plogis(-2 + 1*x2)
@@ -78,7 +78,6 @@ p <- 0.3
 
 y <- array(NA, c(nSites, nReps, nYears))
 Z <- matrix(NA, nSites, nYears)
-
 
 Z[,1] <- rbinom(nSites, 1, psi)
 for(t in 2:nYears) {
@@ -91,12 +90,15 @@ for(j in 1:nReps)
 
 y <- matrix(y, nSites, nReps*nYears)
 
+x1[1] <- NA
+
 umf <- unmarkedMultFrame(y=y, siteCovs=data.frame(x1=x1),
                          yearlySiteCovs=list(x2=x2),
                          numPrimary=nYears)
 
-(m2 <- colext(~x1, ~1, ~x2, ~1, umf))
+(m2 <- colext(~x1, ~1, ~1, ~1, umf))
+
+plogis(coef(m2))
 
 
-
-
+trace(unmarked:::handleNA, browser, browser, signature="unmarkedMultFrame")

@@ -267,13 +267,13 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
         }
 
     y <- matrix(y.long, M, numY(umf), byrow = TRUE)
-    sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+    sites.to.remove <- apply(y, 1, function(x) all(is.na(x))) # need to ignore last year
     num.to.remove <- sum(sites.to.remove)
     if(num.to.remove > 0) {
         y <- y[!sites.to.remove, ,drop = FALSE]
         X.gam <- X.gam[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
         X.eps <- X.eps[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
-        W <- X[!sites.to.remove, drop = FALSE] # !!!
+        W <- W[!sites.to.remove, drop = FALSE] # !!! Recent bug fix
         V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
         warning(paste(num.to.remove,"sites have been discarded because of missing data."))
     }
