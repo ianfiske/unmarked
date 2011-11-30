@@ -203,6 +203,7 @@ setMethod("getDesign", "unmarkedMultFrame",
     yearlySiteCovs <- as.data.frame(lapply(yearlySiteCovs, function(x) {
         x[,drop = TRUE]
         }))
+
     X.mf.gam <- model.frame(gamformula, yearlySiteCovs, na.action = NULL)
     if(!is.null(model.offset(X.mf.gam)))
         stop("offsets not currently allowed in colext", call.=FALSE)
@@ -227,7 +228,8 @@ setMethod("getDesign", "unmarkedMultFrame",
 
 
 
-setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
+setMethod("handleNA", "unmarkedMultFrame",
+    function(umf, X.gam, X.eps, W, V)
 {
     obsToY <- obsToY(umf)
     if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
@@ -238,10 +240,16 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
     J <- numY(umf) / nY
 
     ## treat both X's and W together
-    X <- cbind(X.gam, X.eps, W[rep(1:M, each = nY), ])
+#    X <- cbind(X.gam, X.eps, W[rep(1:M, each = nY), ])
+    X <- cbind(X.gam, X.eps)
 
     X.na <- is.na(X)
-    X.na[seq(nY,M*nY,by=nY),] <- FALSE  ## final years are unimportant (not used).
+    X.na[seq(nY,M*nY,by=nY),] <- FALSE  ## final years are unimportant.
+                                        ## not true for W covs!!!
+    W.expand <- W[rep(1:M, each=nY),,drop=FALSE]
+    W.na <- is.na(W.expand)
+    X.na <- cbind(X.na, W.na) # NAs in siteCovs results in removed site
+
     X.long.na <- X.na[rep(1:(M*nY), each = J),]
 
     V.long.na <- apply(V, 2, function(x) {
@@ -256,6 +264,8 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
     y.long <- as.vector(t(getY(umf)))
     y.long.na <- is.na(y.long)
 
+    # It doesn't make sense to combine X.gam/eps with W here b/c
+    # a X.eps does not map correctly to y
     covs.na <- apply(cbind(X.long.na, V.long.na), 1, any)
 
     ## are any NA in covs not in y already?
@@ -267,15 +277,19 @@ setMethod("handleNA", "unmarkedMultFrame", function(umf, X.gam, X.eps, W, V)
         }
 
     y <- matrix(y.long, M, numY(umf), byrow = TRUE)
-    sites.to.remove <- apply(y, 1, function(x) all(is.na(x))) # need to ignore last year
+    sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+#    Perhaps we need to remove sites that have no data in T=1
+#    noDataT1 <- apply(is.na(y[,1:J]), 1, all) #
+#    sites.to.remove <- sites.to.remove | noDataT1
+
     num.to.remove <- sum(sites.to.remove)
     if(num.to.remove > 0) {
         y <- y[!sites.to.remove, ,drop = FALSE]
-        X.gam <- X.gam[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
-        X.eps <- X.eps[!sites.to.remove[rep(1:M, each = J)], ,drop = FALSE]
-        W <- W[!sites.to.remove, drop = FALSE] # !!! Recent bug fix
+        X.gam <- X.gam[!sites.to.remove[rep(1:M, each = nY)],,drop = FALSE]
+        X.eps <- X.eps[!sites.to.remove[rep(1:M, each = nY)],,drop = FALSE]
+        W <- W[!sites.to.remove,, drop = FALSE] # !!! Recent bug fix
         V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
-        warning(paste(num.to.remove,"sites have been discarded because of missing data."))
+        warning(paste(num.to.remove,"sites have been discarded because of missing data."), call. = FALSE)
     }
     list(y = y, X.gam = X.gam, X.eps = X.eps, W = W, V = V,
         removed.sites = which(sites.to.remove))

@@ -62,6 +62,8 @@ checkEqualsNumeric(coef(m),
 
 # Covariates
 
+library(unmarked)
+
 nSites <- 100
 nReps <- 4
 nYears <- 5
@@ -91,14 +93,26 @@ for(j in 1:nReps)
 y <- matrix(y, nSites, nReps*nYears)
 
 x1[1] <- NA
+x2[1,2] <- NA
+y[1,1:4] <- NA
 
 umf <- unmarkedMultFrame(y=y, siteCovs=data.frame(x1=x1),
                          yearlySiteCovs=list(x2=x2),
                          numPrimary=nYears)
 
-(m2 <- colext(~x1, ~1, ~1, ~1, umf))
+summary(umf)
+
+(m2 <- colext(~1, ~x1, ~1, ~1, umf))
 
 plogis(coef(m2))
 
 
 trace(unmarked:::handleNA, browser, browser, signature="unmarkedMultFrame")
+untrace(unmarked:::handleNA, signature="unmarkedMultFrame")
+
+trace(unmarked:::getDesign, browser, browser,
+      signature="unmarkedMultFrame")
+untrace(unmarked:::getDesign, signature="unmarkedMultFrame")
+
+
+debugonce(unmarked:::colext.fit)
