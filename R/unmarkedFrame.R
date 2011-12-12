@@ -139,6 +139,8 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength,
 {
 	if(missing(survey))
         stop("survey argument must be specified")
+        if((survey=="line") & (length(tlength) != nrow(y)))
+            stop("tlength should be a vector with length(tlength)==nrow(y)")
         if(missing(tlength) & survey == "point")
             tlength <- numeric(0)
 	umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
