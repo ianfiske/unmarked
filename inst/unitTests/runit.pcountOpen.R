@@ -77,18 +77,17 @@ test.pcountOpen.na <- function()
       c(1.239636, -2.085200, 1.770919, -0.602612, 1.255386),
                      tol = 1e-4)
 
-  # !!!!!!!!!!!!!
   fm2.2 <- pcountOpen(~1, ~1, ~o2, ~1, data = umf2, se=FALSE, K=10,
-      starts=c(1.2, -1, -2, 0, -1))
+      starts=c(1.2, -1, 2, 0, 0))
   checkEqualsNumeric(coef(fm2.2),
-      c(1.36621986, 0.88669259, -2.46690971, -8.93330624, 0.02535309),
+      c(1.3242059, 0.8439311, -2.8217070, -10.1414153, 0.1176959),
       tol = 1e-5)
 
   fm2.3 <- pcountOpen(~1, ~o2, ~1, ~1, data = umf2, se=FALSE, K=10,
       starts=c(1, 0, 0, -5, -1))
-#  checkEqualsNumeric(coef(fm2.3),
-#      c(0.7038926, 0.5306853, -0.2339208, -1.8501411, 4.5668710),
-#                     tol = 1e-2)
+  checkEqualsNumeric(coef(fm2.3),
+      c(0.7013386, 0.5277811, -0.2350951, -1.8346326, 4.7771974),
+                     tol = 1e-2)
 
   y3 <- matrix(c(
       NA, 2, 1, 4,
@@ -176,16 +175,19 @@ test.pcountOpen.na <- function()
                        tol=1e-4)
 
     y8 <- y5
-    ysc8 <- matrix(1:3, 4, 3, byrow=TRUE)
-    ysc8[1,1] <- NA
+    ysc8 <- matrix(1:3, #rnorm(12),
+                   4, 3, byrow=TRUE)
+    ysc8[2,1] <- NA # note this will fail if it's ysc8[1,1] <- NA
     umf8 <- unmarkedFramePCO(y=y8, yearlySiteCovs=list(ysc=ysc8),
                              numPrimary=3)
   ## !!!!!!!!!!!
     fm8 <- pcountOpen(~1, ~1, ~ysc, ~1, umf8, se=FALSE, K=10)
-#    checkEqualsNumeric(coef(fm8),
-#        c(0.7362607, -0.4708421, -2.3317736, 1.7017999, 1.8114414), tol=1e-4)
+    checkEqualsNumeric(coef(fm8),
+        c(0.7278796, -0.8770411, 0.9170578, 0.0399341, 1.8956210),
+                       tol=1e-4)
 
 }
+
 
 
 

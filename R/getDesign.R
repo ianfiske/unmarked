@@ -382,14 +382,24 @@ setMethod("getDesign", "unmarkedFramePCO",
     Xgo <- cbind(Xgam, Xom)
     getGOdims <- function(x) {
         xm <- matrix(x, M, T-1, byrow=TRUE)
-        anyNA <- apply(is.na(xm), 1, any)
-        xm <- xm[!anyNA,] # This is not 100% safe
-        nSites <- nrow(xm)
-        if(all(dim(unique(xm, MARGIN=1)) == c(1, T-1)))
+#        anyNA <- apply(is.na(xm), 1, any)
+#        if(all(anyNA))
+#            return("matrix")
+#        xm <- xm[!anyNA,] # This is not 100% safe
+#        nSites <- nrow(xm)
+#        if(all(dim(unique(xm, MARGIN=1)) == c(1, T-1)))
+#            return("rowvec")
+#        else if(all(dim(unique(xm, MARGIN=2)) == c(nSites, 1)))
+#            return("colvec")
+#        else return("matrix")
+        col.table <- apply(xm, 2, table)
+        row.table <- apply(xm, 1, table)
+        if(is.vector(col.table) & !is.list(col.table)) {
             return("rowvec")
-        else if(all(dim(unique(xm, MARGIN=2)) == c(nSites, 1)))
+        } else if(is.vector(row.table) & !is.list(row.table)) {
             return("colvec")
-        else return("matrix")
+        } else
+            return("matrix")
         }
     if(isTRUE(all.equal(gamformula,~1)) & isTRUE(all.equal(omformula, ~1)))
         go.dims <- "scalar"
