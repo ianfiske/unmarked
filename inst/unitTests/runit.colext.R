@@ -19,12 +19,11 @@ test.colext <- function()
         c(0.1422577, -1.4950576,  0.2100365,  1.1998444),
         tol=1e-6)
 
-    set.seed(232)
-    oc <- matrix(rnorm(length(y)), nrow(y), ncol(y))
+    oc <- matrix(1:nsites, nsites, nyr*nrep)
     umf2 <- unmarkedMultFrame(y=y, obsCovs=list(oc=oc), numPrimary=nyr)
     fm2 <- colext(~1, ~1, ~1, ~oc, umf2, starts=c(coef(fm1), 0))
     checkEqualsNumeric(coef(fm2),
-        c(0.1548709, -1.4697222, 0.1745153, 1.1154250, -0.3557752),
+        c(0.14720927, -1.49813673, 0.20885145, 1.30867241, -0.03056995),
         tol=1e-6)
 
     y1 <- y
@@ -41,7 +40,7 @@ test.colext <- function()
     umf4 <- unmarkedMultFrame(y=y1, obsCovs=list(oc=oc1), numPrimary=nyr)
     fm4 <- colext(~1, ~1, ~1, ~oc, umf4, starts=coef(fm2))
     checkEqualsNumeric(coef(fm4),
-        c(0.2783699, -1.5034240, 0.3470471, 0.7425092, -0.5110785),
+        c(0.1934965, -1.5207296,  0.4305665,  0.2514093,  0.1790207),
         tol=1e-6)
 
     y2 <- y
