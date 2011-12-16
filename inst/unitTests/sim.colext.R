@@ -34,7 +34,8 @@ sim <- function(nSites=100, nReps=5, nYears=5, psi=0.5, gamma=0.2,
 # ------------------------------- unmarked -------------------------------
 
 
-
+library(unmarked)
+library(RUnit)
 
 set.seed(3)
 nYears <- 5
@@ -92,9 +93,9 @@ for(j in 1:nReps)
 
 y <- matrix(y, nSites, nReps*nYears)
 
-x1[1] <- NA
-x2[1,2] <- NA
-y[1,1:4] <- NA
+#x1[1] <- NA
+#x2[1,2] <- NA
+#y[1,1:4] <- NA
 
 umf <- unmarkedMultFrame(y=y, siteCovs=data.frame(x1=x1),
                          yearlySiteCovs=list(x2=x2),
@@ -102,9 +103,23 @@ umf <- unmarkedMultFrame(y=y, siteCovs=data.frame(x1=x1),
 
 summary(umf)
 
-(m2 <- colext(~1, ~x1, ~1, ~1, umf))
+(m2 <- colext(~x1, ~1, ~x2, ~1, umf))
 
-plogis(coef(m2))
+checkEqualsNumeric(coef(m2), c(-0.7440136, 0.9246523, -0.1577932,
+                               -1.9102425,  1.2321186, -0.6352266),
+                   tol=1e-6)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 trace(unmarked:::handleNA, browser, browser, signature="unmarkedMultFrame")

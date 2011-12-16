@@ -239,7 +239,7 @@ setMethod("handleNA", "unmarkedMultFrame",
     nY <- umf@numPrimary
     J <- numY(umf) / nY
 
-    ## treat both X's and W together
+    ## treat both X's #######no: and W together
 #    X <- cbind(X.gam, X.eps, W[rep(1:M, each = nY), ])
     X <- cbind(X.gam, X.eps)
 
