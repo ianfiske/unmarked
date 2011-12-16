@@ -137,28 +137,28 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength,
                             survey, unitsIn, mapInfo = NULL)
 {
-	if(missing(survey))
+    if(missing(survey))
         stop("survey argument must be specified")
-        if((survey=="line") & (length(tlength) != nrow(y)))
-            stop("tlength should be a vector with length(tlength)==nrow(y)")
-        if(missing(tlength) & survey == "point")
-            tlength <- numeric(0)
-	umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
-                     siteCovs = siteCovs, dist.breaks = dist.breaks,
-                     tlength = tlength, survey = survey, unitsIn = unitsIn,
-                     obsToY = matrix(1, 1, ncol(y)))
-	return(umfds)
+    if(missing(tlength) & survey == "point")
+        tlength <- rep(NA_real_, nrow(y))
+    if((survey=="line") & (length(tlength) != nrow(y)))
+        stop("tlength should be a vector with length(tlength)==nrow(y)")
+    umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
+                 siteCovs = siteCovs, dist.breaks = dist.breaks,
+                 tlength = tlength, survey = survey, unitsIn = unitsIn,
+                 obsToY = matrix(1, 1, ncol(y)))
+    return(umfds)
 }
 
 
 
 unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
 {
-	J <- ncol(y)
-	umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J),
-                             mapInfo = mapInfo)
-	umf <- as(umf, "unmarkedFrameOccu")
-	umf
+    J <- ncol(y)
+    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J),
+                         mapInfo = mapInfo)
+    umf <- as(umf, "unmarkedFrameOccu")
+    umf
 }
 
 
