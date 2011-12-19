@@ -22,4 +22,12 @@ void tp2(arma::mat& g3, int lk, double gam, double om);
 void tp3(arma::mat& g3, int lk, double gam);
 
 
+// Ricker model
+void tp4(arma::mat& g3, int lk, double gam, double om);
+
+// Gompertz model
+void tp5(arma::mat& g3, int lk, double gam, double om);
+
+
+
 #endif

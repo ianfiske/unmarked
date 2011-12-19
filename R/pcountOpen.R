@@ -3,7 +3,7 @@
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     data, mixture=c("P", "NB", "ZIP"), K,
-    dynamics=c("constant", "autoreg", "notrend", "trend"),
+    dynamics=c("constant", "autoreg", "notrend", "trend", "ricker", "gompertz"),
     fix=c("none", "gamma", "omega"),
     starts, method="BFGS", se=TRUE, ...)
 {
@@ -131,6 +131,7 @@ nll <- function(parms) {
 
 if(missing(starts))
     starts <- rep(0, nP)
+#browser()
 fm <- optim(starts, nll, method=method, hessian=se, ...)
 opt <- fm
 ests <- fm$par
@@ -165,20 +166,32 @@ gamName <- switch(dynamics,
                   constant = "gamConst",
                   autoreg = "gamAR",
                   notrend = "",
-                  trend = "gamTrend")
+                  trend = "gamTrend",
+                  ricker = "gamRicker",
+                  gompertz = "gamGomp")
 if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
-    estimateList@estimates$gamma <- unmarkedEstimate(name = "Recruitment",
-        short.name = gamName, estimates = ests[(nAP+1) : (nAP+nGP)],
-        covMat = as.matrix(covMat[(nAP+1) :
+    estimateList@estimates$gamma <- unmarkedEstimate(name = 
+        ifelse(identical(dynamics, "constant") | identical(dynamics, "autoreg"), 
+        "Recruitment", "Growth Rate"), short.name = gamName, 
+        estimates = ests[(nAP+1) : (nAP+nGP)], covMat = as.matrix(covMat[(nAP+1) :
                            (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")
-if(!(identical(fix, "omega") | identical(dynamics, "trend")))
+if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
+  if(identical(dynamics, "constant") | identical(dynamics, "autoreg"))
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Apparent Survival",
-        short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+        short.name = "omSurv", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
+  else 
+    estimateList@estimates$omega <- unmarkedEstimate(
+        name="Carrying Capacity",
+        short.name = "omCC", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+        covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
+            (nAP+nGP+1) : (nAP+nGP+nOP)]),
+        invlink = "exp", invlinkGrad = "exp")
+  }
 estimateList@estimates$det <- detEstimates
 if(identical(mixture, "NB")) {
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",

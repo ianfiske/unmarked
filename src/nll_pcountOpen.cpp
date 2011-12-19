@@ -48,6 +48,29 @@ void tp3(arma::mat& g3, int lk, double gam) {
     }
 }
 
+// Ricker model
+void tp4(arma::mat& g3, int lk, double gam, double om) {
+    for(int n1=0; n1<lk; n1++) {
+	for(int n2=0; n2<lk; n2++) {
+	  g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam*(1-n1/om)), false);
+	}
+    }
+}
+
+// Gompertz model
+void tp5(arma::mat& g3, int lk, double gam, double om) {
+    while(om==1) {
+      om = 0.999 + rand() * 0.002 / RAND_MAX;
+    }
+    for(int n2=0; n2<lk; n2++) {
+	     g3.at(0, n2) = Rf_dpois(n2, 0, false);
+    }
+    for(int n1=1; n1<lk; n1++) {
+	   for(int n2=0; n2<lk; n2++) {
+	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(n1)/log(om))), false);
+	   }
+    }
+}
 
 
 
@@ -87,8 +110,12 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   // linear predictors
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
   arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
-  if((fix != "omega") && (dynamics != "trend"))
-    omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
+  if((fix != "omega") && (dynamics != "trend")) {
+    if((dynamics == "ricker")  || (dynamics == "gompertz"))
+        omv = exp(Xom*beta_om + Xom_offset);
+    else if((dynamics == "constant")  || (dynamics == "autoreg"))
+        omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
+  }
   omv.reshape(T-1, M);
   arma::mat om = arma::trans(omv);
   arma::mat gam = arma::zeros<arma::mat>(M, T-1);
@@ -129,7 +156,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::colvec g2 = arma::zeros<arma::colvec>(lk);
   arma::colvec g1_star = arma::zeros<arma::colvec>(lk);
   arma::cube g3_t = arma::zeros<arma::cube>(lk,lk,T-1);
-  // compute g3 is there are no covariates of omega/gamma
+  // compute g3 if there are no covariates of omega/gamma
   if(go_dims == "scalar") {
     if(dynamics=="constant" || dynamics=="notrend")
       tp1(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
@@ -137,6 +164,10 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
       tp2(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
     else if(dynamics=="trend")
       tp3(g3, lk, gam(0,first[0]-1));
+    else if(dynamics=="ricker")
+      tp4(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
+    else if(dynamics=="gompertz")
+      tp5(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
   } else if(go_dims == "rowvec") {
     for(int i=0; i<M; i++) {
       if(first[i]==1) {
@@ -151,6 +182,10 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
       else if(dynamics=="trend")
 	tp3(g3_t.slice(t), lk, gam(first1,t));
+      else if(dynamics=="ricker")
+	tp4(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
+      else if(dynamics=="gompertz")
+	tp5(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
     }
   }
   // loop over sites
@@ -184,6 +219,10 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	    tp2(g3, lk, gam(i,t-1), om(i,t-1));
 	  else if(dynamics=="trend")
 	    tp3(g3, lk, gam(i,t-1));
+	  else if(dynamics=="ricker")
+	    tp4(g3, lk, gam(i,t-1), om(i,t-1));
+	  else if(dynamics=="gompertz")
+	    tp5(g3, lk, gam(i,t-1), om(i,t-1));
 	} else if(go_dims == "rowvec") {
 	  g3 = g3_t.slice(t-1);
 	}
