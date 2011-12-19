@@ -52,7 +52,7 @@ SEXP nll_pcount( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_lamR, SEXP beta_pR, SEXP l
       g(k) = exp(g(k));
       L_i += f(k) * g(k);
     }
-    ll += log(L_i);
+    ll += log(L_i + DOUBLE_XMIN);
   }
   return wrap(-ll);
 
