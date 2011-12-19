@@ -734,7 +734,7 @@ for(i in 1:nsim10) {
     cat("sim10", i, "\n"); flush.console()
     lam <- c(-2, 1)
     gam <- c(-1, -1)
-    om <- c(0, -1)
+    om <- c(0, 0)
     p <- c(-1, 1)
     T <- 5
     sim10out <- sim10(lam, gam, om, p, T=T)
@@ -746,9 +746,9 @@ for(i in 1:nsim10) {
     obsCovs <- list(time = covs[,grep("time", cn)])
     umf10 <- unmarkedFramePCO(y = y.sim10, siteCovs=siteCovs,
         yearlySiteCovs=yearlySiteCovs, obsCovs=obsCovs, numPrimary=T)
-    m10 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf10, K=30,
-                      se=F, starts=c(lam, gam, om, p),
-                      control=list(trace=TRUE, REPORT=1))
+    m10 <- pcountOpen(~veght, ~isolation, ~1, ~time, umf10, K=30,
+                      se=F, starts=c(lam, gam, 0, p),
+                      control=list(trace=F, REPORT=1))
     e <- coef(m10)
     simout10[i, ] <- e
     cat("  mle=", e, "\n")
@@ -768,16 +768,13 @@ dev.off()
 
 
 m10 <- pcountOpen(~veght, ~1, ~1, ~time, umf10, K=30,
-                  se=F, starts=c(lam, 0, 0, p),
+                  se=F, #starts=c(0, 0, 0, p),
                   control=list(trace=TRUE, REPORT=1))
 
 
 
 
-
-
 trace(unmarked:::handleNA, browser, browser, signature="unmarkedFramePCO")
-
 untrace(unmarked:::handleNA, signature="unmarkedFramePCO")
 
 

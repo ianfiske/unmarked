@@ -502,8 +502,8 @@ setMethod("handleNA", "unmarkedFramePCO",
 	y.new.na <- covs.na & !y.long.na
 
 	if(sum(y.new.na) > 0) {
-        y.long[y.new.na] <- NA
-        warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
+            y.long[y.new.na] <- NA
+            warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
         }
 
 	y.wide <- matrix(y.long, nrow=M, ncol=J*T, byrow = TRUE)
@@ -541,9 +541,9 @@ setMethod("handleNA", "unmarkedFramePCO",
                        drop = FALSE]
             Xom.offset <- Xom.offset[!sites.to.remove[rep(1:M, each = T-1)],,
                        drop = FALSE]
-            Xp <- Xp[!sites.to.remove[rep(1:M, each = T)],,
+            Xp <- Xp[!sites.to.remove[rep(1:M, each = J*T)],,
                      drop = FALSE]
-            Xp.offset <- Xp.offset[!sites.to.remove[rep(1:M, each = T)],,
+            Xp.offset <- Xp.offset[!sites.to.remove[rep(1:M, each = J*T)],,
                      drop = FALSE]
             delta <- delta[!sites.to.remove, ,drop =FALSE]
             warning(paste(num.to.remove, "sites have been discarded because of missing data."), call.=FALSE)
