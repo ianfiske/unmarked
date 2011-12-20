@@ -728,8 +728,9 @@ sim10 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
 
 set.seed(4483499)
 nsim10 <- 100
-simout10 <- matrix(NA, nsim10, 8)
-colnames(simout10) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1', 'p0', 'p1')
+simout10 <- matrix(NA, nsim10, 7)
+colnames(simout10) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', #'om1',
+                        'p0', 'p1')
 for(i in 1:nsim10) {
     cat("sim10", i, "\n"); flush.console()
     lam <- c(-2, 1)
