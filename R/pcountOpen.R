@@ -180,14 +180,14 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
   if(identical(dynamics, "constant") | identical(dynamics, "autoreg"))
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Apparent Survival",
-        short.name = "omSurv", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+        short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
   else 
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Carrying Capacity",
-        short.name = "omCC", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+        short.name = "omCarCap", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "exp", invlinkGrad = "exp")
