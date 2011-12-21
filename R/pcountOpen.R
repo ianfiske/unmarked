@@ -3,7 +3,7 @@
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     data, mixture=c("P", "NB", "ZIP"), K,
-    dynamics=c("constant", "autoreg", "notrend", "trend", "ricker", "gompertz"),
+    dynamics=c("constant", "autoreg", "notrend", "trend", "ricker", "gompertz", "trendImm"),
     fix=c("none", "gamma", "omega"),
     starts, method="BFGS", se=TRUE, ...)
 {
@@ -168,7 +168,8 @@ gamName <- switch(dynamics,
                   notrend = "",
                   trend = "gamTrend",
                   ricker = "gamRicker",
-                  gompertz = "gamGomp")
+                  gompertz = "gamGomp",
+                  trendImm = "gamTrend")
 if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
     estimateList@estimates$gamma <- unmarkedEstimate(name = 
         ifelse(identical(dynamics, "constant") | identical(dynamics, "autoreg"), 
@@ -184,7 +185,14 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
-  else 
+  else if(identical(dynamics, "trendImm"))
+    estimateList@estimates$omega <- unmarkedEstimate(
+        name="Immigration",
+        short.name = "omImm", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+        covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
+            (nAP+nGP+1) : (nAP+nGP+nOP)]),
+        invlink = "exp", invlinkGrad = "exp")
+  else
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Carrying Capacity",
         short.name = "omCarCap", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
