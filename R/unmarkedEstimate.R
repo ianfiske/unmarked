@@ -14,7 +14,7 @@ setClass("unmarkedEstimate",
     validity = function(object) {
         errors <- character(0)
         if(nrow(object@covMat) != length(object@estimates)) {
-        errors <- c(errors, 
+        errors <- c(errors,
             "Size of covMat does not match length of estimates.")
         }
     if(length(errors) > 0)
@@ -49,7 +49,7 @@ setMethod("show", "unmarkedEstimateList",
     })
 
 setMethod("summary", "unmarkedEstimateList",
-    function(object) 
+    function(object)
 {
     sumList <- list()
     for(i in 1:length(object@estimates)) {
@@ -81,11 +81,11 @@ unmarkedEstimateList <- function(l) {
 
 
 
-unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink, 
-    invlinkGrad) 
+unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink,
+    invlinkGrad)
 {
-    new("unmarkedEstimate", 
-        name = name, 
+    new("unmarkedEstimate",
+        name = name,
         short.name = short.name,
         estimates = estimates,
         covMat = covMat,
@@ -95,35 +95,36 @@ unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink,
 
 
 setMethod("show", signature(object = "unmarkedEstimate"),
-    function(object) 
+    function(object)
 {
     ests <- object@estimates
     SEs <- SE(object)
     Z <- ests/SEs
-	p <- 2*pnorm(abs(Z), lower.tail = FALSE)
-	printRowNames <- !(length(ests) == 1 | 
-        identical(names(ests), "(Intercept)") | identical(names(ests), "1"))
-			
-	cat(object@name,":\n", sep="")
-	outDF <- data.frame(Estimate = ests, SE = SEs, z = Z, "P(>|z|)" = p,
-          check.names = FALSE)
+    p <- 2*pnorm(abs(Z), lower.tail = FALSE)
+    printRowNames <- !(length(ests) == 1 |
+                       identical(names(ests), "(Intercept)") |
+                       identical(names(ests), "1"))
+
+    cat(object@name,":\n", sep="")
+    outDF <- data.frame(Estimate = ests, SE = SEs, z = Z, "P(>|z|)" = p,
+                        check.names = FALSE)
     print(outDF, row.names = printRowNames, digits = 3)
-			
+
 })
 
 
 
-setMethod("summary", signature(object = "unmarkedEstimate"), 
-	function(object) 
+setMethod("summary", signature(object = "unmarkedEstimate"),
+	function(object)
 {
 	ests <- object@estimates
 	SEs <- SE(object)
     Z <- ests/SEs
 	p <- 2*pnorm(abs(Z), lower.tail = FALSE)
-	printRowNames <- 
+	printRowNames <-
 		!(length(ests) == 1 | identical(names(ests), "(Intercept)") | identical(names(ests), "1"))
 	invlink <- object@invlink
-	link <- switch(invlink, 
+	link <- switch(invlink,
 		exp = "log",
 		logistic = "logit")
 	cat(object@name, " (", link, "-scale)", ":\n", sep="")
@@ -132,19 +133,19 @@ setMethod("summary", signature(object = "unmarkedEstimate"),
 	print(outDF, row.names = printRowNames, digits = 3)
 	invisible(outDF)
 })
-	
+
 
 
 # Compute linear combinations of estimates in unmarkedEstimate objects.
 
 setMethod("linearComb",
 	signature(obj = "unmarkedEstimate", coefficients = "matrixOrVector"),
-	function(obj, coefficients, offset = NULL) 
+	function(obj, coefficients, offset = NULL)
 {
-	if(!is(coefficients, "matrix")) 
+	if(!is(coefficients, "matrix"))
         coefficients <- t(as.matrix(coefficients))
 	stopifnot(ncol(coefficients) == length(obj@estimates))
-    if (is.null(offset)) 
+    if (is.null(offset))
         offset <- rep(0, nrow(coefficients))
 	e <- as.vector(coefficients %*% obj@estimates) + offset
 	v <- coefficients %*% obj@covMat %*% t(coefficients)
@@ -191,7 +192,7 @@ setMethod("linearComb",
 # can backtranform a fit directly if it has length 1
 # o.w. give error
 setMethod("backTransform", "unmarkedEstimate",
-	function(obj) 
+	function(obj)
 {
 	if(length(obj@estimates) == 1) {
 	   lc <- linearComb(obj, 1)
@@ -222,7 +223,7 @@ setMethod("names", "unmarkedEstimateList",
     })
 
 setMethod("coef", "unmarkedEstimate",
-	function(object, altNames = TRUE, ...) 
+	function(object, altNames = TRUE, ...)
 {
 	coefs <- object@estimates
 	names(coefs)[names(coefs) == "(Intercept)"] <- "Int"
@@ -238,8 +239,8 @@ setMethod("vcov", "unmarkedEstimate",
 			rownames(v) <- colnames(v) <- names(coef(object))
 			v
 		})
- 
-setMethod("confint", "unmarkedEstimate", 
+
+setMethod("confint", "unmarkedEstimate",
 		function(object, parm, level = 0.95) {
 			if(missing(parm)) parm <- 1:length(object@estimates)
 			ests <- object@estimates[parm]

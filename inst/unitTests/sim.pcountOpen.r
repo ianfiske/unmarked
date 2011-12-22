@@ -715,9 +715,9 @@ sim10 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
     N <- N[,rep(1:T, each=J)]
     y[] <- rbinom(M*J*T, N, det)
     na.ind <- sample.int(M*J*T, nMissing)
-#    veght[na.ind<=M] <- NA
-#    isolation[na.ind<=(M*T)] <- NA
-#    time[na.ind] <- NA
+    veght[na.ind<=M] <- NA
+    isolation[na.ind<=(M*T)] <- NA
+    time[na.ind] <- NA
     covs <- data.frame(veght=veght, isolation=isolation, time=time)
     y[na.ind] <- NA
     return(list(y=y, covs=covs))
@@ -728,13 +728,14 @@ sim10 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
 
 set.seed(4483499)
 nsim10 <- 100
-simout10 <- matrix(NA, nsim10, 8)
-colnames(simout10) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1', 'p0', 'p1')
+simout10 <- matrix(NA, nsim10, 7)
+colnames(simout10) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', #'om1',
+                        'p0', 'p1')
 for(i in 1:nsim10) {
     cat("sim10", i, "\n"); flush.console()
     lam <- c(-2, 1)
     gam <- c(-1, -1)
-    om <- c(0, -1)
+    om <- c(0, 0)
     p <- c(-1, 1)
     T <- 5
     sim10out <- sim10(lam, gam, om, p, T=T)
@@ -746,9 +747,9 @@ for(i in 1:nsim10) {
     obsCovs <- list(time = covs[,grep("time", cn)])
     umf10 <- unmarkedFramePCO(y = y.sim10, siteCovs=siteCovs,
         yearlySiteCovs=yearlySiteCovs, obsCovs=obsCovs, numPrimary=T)
-    m10 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf10, K=30,
-                     se=F,
-        starts=c(lam, gam, om, p))
+    m10 <- pcountOpen(~veght, ~isolation, ~1, ~time, umf10, K=30,
+                      se=F, starts=c(lam, gam, 0, p),
+                      control=list(trace=F, REPORT=1))
     e <- coef(m10)
     simout10[i, ] <- e
     cat("  mle=", e, "\n")
@@ -767,8 +768,18 @@ hist(simout10[,8], xlab=expression(p)); abline(v=p[2], lwd=2, col=4)
 dev.off()
 
 
+m10 <- pcountOpen(~veght, ~1, ~1, ~time, umf10, K=30,
+                  se=F, #starts=c(0, 0, 0, p),
+                  control=list(trace=TRUE, REPORT=1))
 
 
+
+
+trace(unmarked:::handleNA, browser, browser, signature="unmarkedFramePCO")
+untrace(unmarked:::handleNA, signature="unmarkedFramePCO")
+
+
+debugonce(pcountOpen)
 
 
 
