@@ -72,21 +72,8 @@ void tp5(arma::mat& g3, int lk, double gam, double om) {
     }
 }
 
-// trend + immigration model 1
+// trend + immigration model 
 void tp6(arma::mat& g3, int lk, double gam, double om) {
-    int Nmin=0;
-    for(int n1=0; n1<lk; n1++) {
-      for(int n2=0; n2<lk; n2++) {
-        for(int c=0; c<=n2; c++) {
-          g3.at(n1, n2) += exp(Rf_dpois(c, n1*gam, true) +
-            Rf_dpois(n2-c, om, true));
-	    }
-	}
-    }
-}
-
-// trend + immigration model 2
-void tp7(arma::mat& g3, int lk, double gam, double om) {
     for(int n1=0; n1<lk; n1++) {
       for(int n2=0; n2<lk; n2++) {
         g3.at(n1, n2) = Rf_dpois(n2, n1*gam+om, false);
@@ -132,7 +119,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
   arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
   if((fix != "omega") && (dynamics != "trend")) {
-    if((dynamics == "ricker")  || (dynamics == "gompertz") || (dynamics == "trendImm1") || (dynamics == "trendImm2"))
+    if((dynamics == "ricker")  || (dynamics == "gompertz") || (dynamics == "trendImm"))
         omv = exp(Xom*beta_om + Xom_offset);
     else if((dynamics == "constant")  || (dynamics == "autoreg"))
         omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
@@ -189,10 +176,8 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
       tp4(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
     else if(dynamics=="gompertz")
       tp5(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
-    else if(dynamics=="trendImm1")
+    else if(dynamics=="trendImm")
       tp6(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
-    else if(dynamics=="trendImm2")
-      tp7(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
   } else if(go_dims == "rowvec") {
     for(int i=0; i<M; i++) {
       if(first[i]==1) {
@@ -211,10 +196,8 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	tp4(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
       else if(dynamics=="gompertz")
 	tp5(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
-      else if(dynamics=="trendImm1")
+      else if(dynamics=="trendImm")
 	tp6(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
-      else if(dynamics=="trendImm2")
-	tp7(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
     }
   }
   // loop over sites
@@ -252,10 +235,8 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	    tp4(g3, lk, gam(i,t-1), om(i,t-1));
 	  else if(dynamics=="gompertz")
 	    tp5(g3, lk, gam(i,t-1), om(i,t-1));
-	  else if(dynamics=="trendImm1")
+	  else if(dynamics=="trendImm")
 	    tp6(g3, lk, gam(i,t-1), om(i,t-1));
-	  else if(dynamics=="trendImm2")
-	    tp7(g3, lk, gam(i,t-1), om(i,t-1));
 	} else if(go_dims == "rowvec") {
 	  g3 = g3_t.slice(t-1);
 	}

@@ -2,8 +2,8 @@
 
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
-    data, mixture=c("P", "NB", "ZIP"), K,
-    dynamics=c("constant", "autoreg", "notrend", "trend", "ricker", "gompertz", "trendImm"),
+    data, mixture=c("P", "NB", "ZIP"), K, dynamics=c("constant", "autoreg", 
+    "notrend", "trend", "ricker", "gompertz", "trendImm"),
     fix=c("none", "gamma", "omega"),
     starts, method="BFGS", se=TRUE, ...)
 {
