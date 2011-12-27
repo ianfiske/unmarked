@@ -715,9 +715,9 @@ sim10 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
     N <- N[,rep(1:T, each=J)]
     y[] <- rbinom(M*J*T, N, det)
     na.ind <- sample.int(M*J*T, nMissing)
-#    veght[na.ind<=M] <- NA
-#    isolation[na.ind<=(M*T)] <- NA
-#    time[na.ind] <- NA
+    veght[na.ind<=M] <- NA
+    isolation[na.ind<=(M*T)] <- NA
+    time[na.ind] <- NA
     covs <- data.frame(veght=veght, isolation=isolation, time=time)
     y[na.ind] <- NA
     return(list(y=y, covs=covs))
@@ -728,13 +728,14 @@ sim10 <- function(lam=c(0,1), gam=c(-1,-1), om=c(2,-1), p=c(-1,1), M=100,
 
 set.seed(4483499)
 nsim10 <- 100
-simout10 <- matrix(NA, nsim10, 8)
-colnames(simout10) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', 'om1', 'p0', 'p1')
+simout10 <- matrix(NA, nsim10, 7)
+colnames(simout10) <- c('lam0', 'lam1', 'gam0', 'gam1', 'om0', #'om1',
+                        'p0', 'p1')
 for(i in 1:nsim10) {
     cat("sim10", i, "\n"); flush.console()
     lam <- c(-2, 1)
     gam <- c(-1, -1)
-    om <- c(0, -1)
+    om <- c(0, 0)
     p <- c(-1, 1)
     T <- 5
     sim10out <- sim10(lam, gam, om, p, T=T)
@@ -746,9 +747,9 @@ for(i in 1:nsim10) {
     obsCovs <- list(time = covs[,grep("time", cn)])
     umf10 <- unmarkedFramePCO(y = y.sim10, siteCovs=siteCovs,
         yearlySiteCovs=yearlySiteCovs, obsCovs=obsCovs, numPrimary=T)
-    m10 <- pcountOpen(~veght, ~isolation, ~isolation, ~time, umf10, K=30,
-                     se=F,
-        starts=c(lam, gam, om, p))
+    m10 <- pcountOpen(~veght, ~isolation, ~1, ~time, umf10, K=30,
+                      se=F, starts=c(lam, gam, 0, p),
+                      control=list(trace=F, REPORT=1))
     e <- coef(m10)
     simout10[i, ] <- e
     cat("  mle=", e, "\n")
@@ -767,8 +768,18 @@ hist(simout10[,8], xlab=expression(p)); abline(v=p[2], lwd=2, col=4)
 dev.off()
 
 
+m10 <- pcountOpen(~veght, ~1, ~1, ~time, umf10, K=30,
+                  se=F, #starts=c(0, 0, 0, p),
+                  control=list(trace=TRUE, REPORT=1))
 
 
+
+
+trace(unmarked:::handleNA, browser, browser, signature="unmarkedFramePCO")
+untrace(unmarked:::handleNA, signature="unmarkedFramePCO")
+
+
+debugonce(pcountOpen)
 
 
 
@@ -875,11 +886,117 @@ hist(simout12[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout12[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
 hist(simout12[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)
 hist(simout12[,4], xlab=expression(psi)); abline(v=psi, lwd=2, col=4)
-dev.off()
+#dev.off()
+
+
+## Simulate no covariates, constant sampling period intervals,
+## no secondary samples, Ricker dynamics
+simRicker0 <- function(M=100, T=10, lambda=3, gamma=0.1, omega=3.5, p=0.5) {
+
+  y <- N <- matrix(NA, M, T)
+
+  N[,1] <- rpois(M, lambda)
+  for(t in 1:(T-1)) {
+    N[,t+1] <- rpois(M, N[,t]*exp(gamma*(1-N[,t]/omega)))
+  }
+  for(i in 1:M) {
+    y[i,] <- rbinom(T, N[i,], p)
+  }
+  return(y)
+}
 
 
 
 
 
+
+set.seed(2001)
+nsim13 <- 100
+simout13 <- matrix(NA, nsim13, 4)
+colnames(simout13) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim13) {
+    cat("sim13:", i, "\n"); flush.console()
+    lambda <- 3
+    gamma <- 0.2
+    omega <- 2
+    p <- 0.7
+    M <- 50
+    T <- 10
+    y.sim13 <- simRicker0(M, T, lambda, gamma, omega, p)
+    umf13 <- unmarkedFramePCO(y = y.sim13, numPrimary=T)
+    m13 <- pcountOpen(~1, ~1, ~1, ~1, umf13, K=50, dynamics='ricker',
+        starts=c(log(lambda), log(gamma), log(omega), qlogis(p)),
+        se=FALSE)
+    e <- coef(m13)
+    simout13[i, 1:3] <- exp(e[1:3])
+    simout13[i, 4] <- plogis(e[4])
+    cat("  mle =", simout13[i,], "\n")
+    }
+
+#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+
+par(mfrow=c(2,2))
+hist(simout13[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout13[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout13[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout13[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+#dev.off()
+mean(simout13[,1])
+mean(simout13[,2])
+mean(simout13[,3])
+mean(simout13[,4])
+
+## Simulate no covariates, constant sampling period intervals,
+## no secondary samples, Gompertz dynamics
+simGompertz0 <- function(M=100, T=10, lambda=3, gamma=0.1, omega=3.5, p=0.5) {
+
+  y <- N <- matrix(NA, M, T)
+  if (identical(omega, 1))
+    omega <- 1.000001
+  N[,1] <- rpois(M, lambda)
+  for(t in 1:(T-1)) {
+    N[,t+1] <- rpois(M, N[,t]*exp(gamma*(1-ifelse(N[,t]==0, 0, log(N[,t]))/log(omega))))
+  }
+  for(i in 1:M) {
+    y[i,] <- rbinom(T, N[i,], p)
+  }
+  return(y)
+}
+
+set.seed(2010)
+nsim14 <- 100
+simout14 <- matrix(NA, nsim14, 4)
+colnames(simout14) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim14) {
+    cat("sim14:", i, "\n"); flush.console()
+    lambda <- 3
+    gamma <- 0.2
+    omega <- 2
+    p <- 0.7
+    M <- 50
+    T <- 10
+    y.sim14 <- simGompertz0(M, T, lambda, gamma, omega, p)
+    umf14 <- unmarkedFramePCO(y = y.sim14, numPrimary=T)
+    m14 <- pcountOpen(~1, ~1, ~1, ~1, umf14, K=50, dynamics='gompertz',
+        starts=c(log(lambda), log(gamma), log(omega), qlogis(p)),
+        se=FALSE)
+    e <- coef(m14)
+    simout14[i, 1:3] <- exp(e[1:3])
+    simout14[i, 4] <- plogis(e[4])
+    cat("  mle =", simout14[i,], "\n")
+    }
+
+#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+
+par(mfrow=c(2,2))
+hist(simout14[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout14[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout14[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout14[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+#dev.off()
+mean(simout14[,1])
+mean(simout14[,2])
+mean(simout14[,3])
+mean(simout14[,4])
 
 
