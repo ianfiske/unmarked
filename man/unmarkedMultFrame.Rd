@@ -110,7 +110,7 @@ y <- matrix(0:1, n, J*T)
 umf <- unmarkedMultFrame(y=y,
     siteCovs = data.frame(site=site),
     obsCovs=list(occasion=occasions),
-    yearlySiteCovs=data.frame(year=years),
+    yearlySiteCovs=list(year=years),
     numPrimary=T)
 
 umfGMM1 <- unmarkedFrameGMM(y=y,
