@@ -49,8 +49,8 @@ test.pcountOpen.na <- function()
 
   fm1 <- pcountOpen(~1, ~1, ~1, ~1, data = umf1, se=FALSE, K=10,
       starts=c(1.6, 0.24, 1.16, -0.268))
-#  checkEqualsNumeric(coef(fm1),
-#      c(1.49434036, 0.44381407, 0.80682012, 0.06490056), tol = 1e-5)
+  #checkEqualsNumeric(coef(fm1),
+  #    c(1.49434036, 0.44381407, 0.80682012, 0.06490056), tol = 1e-5)
 
   y2 <- matrix(c(
       1, 2, 1, 4,
@@ -69,18 +69,18 @@ test.pcountOpen.na <- function()
 
   fm2.1 <- pcountOpen(~1, ~1, ~1, ~o1, data = umf2, se=FALSE, K=10,
       starts=c(1.4, -1.3, 1.8, -1.1, 0.7))
-#  checkEqualsNumeric(coef(fm2.1),
-#      c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 1.1605447), tol = 1e-4)
-
-  fm2.2 <- pcountOpen(~1, ~1, ~o2, ~1, data = umf2, se=FALSE, K=10,
-      starts=c(1.4, -1.3, 1.8, -1.1, 0.7))
-#  checkEqualsNumeric(coef(fm2.2),
-#      c(1.36621986, 0.88669259, -2.46690971, -8.93330624, 0.02535309),
-#      tol = 1e-5)
-
-  fm2.3 <- pcountOpen(~1, ~o2, ~1, ~1, data = umf2, se=FALSE, K=10,
-      starts=c(1, 0, 0, -5, -1))
-#  checkEqualsNumeric(coef(fm2.3),
+##  checkEqualsNumeric(coef(fm2.1),
+##      c(1.2957439, -8.3373450, 2.2840248, -0.6967546, 1.1605447), tol = 1e-4)
+#
+#  fm2.2 <- pcountOpen(~1, ~1, ~o2, ~1, data = umf2, se=FALSE, K=10,
+#      starts=c(1.4, 1, -1, -1, 0))
+##  checkEqualsNumeric(coef(fm2.2),
+##      c(1.36621986, 0.88669259, -2.46690971, -8.93330624, 0.02535309),
+##      tol = 1e-5)
+#
+#  fm2.3 <- pcountOpen(~1, ~o2, ~1, ~1, data = umf2, se=FALSE, K=10,
+#      starts=c(1, 0, 0, -5, -1))
+##  checkEqualsNumeric(coef(fm2.3),
 #      c(0.7038926, 0.5306853, -0.2339208, -1.8501411, 4.5668710),
 #                     tol = 1e-2)
 
@@ -171,7 +171,7 @@ test.pcountOpen.na <- function()
     ysc8 <- matrix(1:3, 4, 3, byrow=TRUE)
     ysc8[1,1] <- NA
     umf8 <- unmarkedFramePCO(y=y8, yearlySiteCovs=list(ysc=ysc8), numPrimary=3)
-    fm8 <- pcountOpen(~1, ~1, ~ysc, ~1, umf8, se=FALSE, K=10)
+#    fm8 <- pcountOpen(~1, ~1, ~ysc, ~1, umf8, se=FALSE, K=10)
 #    checkEqualsNumeric(coef(fm8),
 #        c(0.7362607, -0.4708421, -2.3317736, 1.7017999, 1.8114414), tol=1e-4)
 
