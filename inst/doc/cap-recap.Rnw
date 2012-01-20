@@ -108,6 +108,7 @@ visitMat[1,2] <- NA
 visitMat[2,] <- NA
 head(visitMat)
 
+library(unmarked)
 umf.cr1 <- unmarkedFrameMPois(y=alfl.capRecap[,1:7],
                         siteCovs=alfl.capRecap[,c("woody", "struct")],
                         obsCovs=list(visit=visitMat),
