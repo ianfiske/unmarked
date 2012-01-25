@@ -18,7 +18,7 @@ options(continue=" ")
 
 %%\VignetteIndexEntry{Capture-recapture}
 
-\title{Fitting capture-recapture models in {\tt unmarked}}
+\title{Capture-recapture models in {\tt unmarked}}
 \author{Richard Chandler}
 
 
@@ -26,44 +26,118 @@ options(continue=" ")
 
 \maketitle
 
-\abstract{The name {\tt unmarked} suggests that the package can't
-  accomodate data from studies of marked populations. Indeed the
-  emphasis is on data from unmarked populations, but {\tt unmarked}
-  also includes functions to fit so-called multinomial $N$-mixture
-  models, which can handle data from marked populations. The three
+\abstract{The ``{\tt un}'' in {\tt unmarked} is somewhat misleading
+  because the package can be used to model spatial variation in
+  abundance using data from marked animals. The three
   most common sampling methods that produce suitable data are removal
   sampling, double observer sampling, and capture-recapture
-  methods. Although these methods require that individual animals can
-  be assigned to distinct categories, these methods are often used when individuals are
-  unmarked. For example, a common study design divides a 10-minute
-  point count into two or more time intervals, and observers note the
-  time periods during which each bird was detected. Thus, keeping
-  track of individuals during a small time frame is similar to
-  monitoring marked individuals over longer durations. This document
-  shows how to fit this class of models using the functions
-  \code{multinomPois} and \code{gmultmix}. For more background on the
-  models, see \citep{fiskeChandler_2011, royle_generalized_2004,
-    chandlerEA_2011}. % Mention Williams et al and Royle-Dorazio too.
+  methods\footnote{Sometimes animals are not actually marked when
+    using these methods, but they are treated as though
+    they are}. This document focuses on the analysis of capture-recapture
+  data using a class of models known as multinomial $N$-mixture
+  models \citep{royle_generalized_2004, fiskeChandler_2011}, which can
+  be fit using the functions \code{multinomPois} and
+  \code{gmultmix}. Capture-recapture models such as so-called: $M_0,
+  M_t, M_b, ...$ can be fitted, but unlike other software, variation
+  in abundance among ``sites'' or trap grids can also be modeled.
 }
 
 
 \section{Introduction}
+
+Capture-recapture models have a long history in ecology and are used
+to estimate population size while controlling for variation in capture
+probability. Traditional capture-recapture models, however, do not
+allow one to model spatial variation in abundance---a central
+objective of much ecological research. cite{ royle etal } proposed a
+simple hierarchical model to overcome this limitation.
+
+Before describing the multinomial $N$-mixture model of Royle et al.,
+we need to first describe how capture-recapture data are collected. In
+the simplest scenario, animals are captured at a single site and
+released back into the population. Animals might be captured using an
+array of traps or by capturing individuals by hand while searching
+some well defined area. After a short time interval, the same sampling
+method is repeated and a new sample of marked and unmarked individuals
+are captured. If sampling stops here, Lincoln-Peterson methods can be
+used to estimate population size. If additional samples are collected,
+more robust methods are available. Typical data that arise from
+capture-recapture studies is shown in Table XXX.
+
+SHOW TYPICAL DATA
+
+In the absence of individual covariates, these data can be collapsed
+and formatted as shown in Table YYY.
+
+SHOW TYPICAL MULTIONOMIAL DATA
+
+
+
+
+
+
+
+
+
+
+\section{Sampling methods}
+
+
+
+Although these methods require that individual animals can
+be assigned to distinct categories, these methods are often used when individuals are
+unmarked. For example, a common study design divides a 10-minute
+point count into two or more time intervals, and observers note the
+time periods during which each bird was detected. Thus, keeping
+track of individuals during a small time frame is similar to
+monitoring marked individuals over longer durations.
+
+
+
+
+
+
+\section{Capture-recapture Models}
+
+
+
+\subsection{Model $M_0$}
+
+
+
+\subsection{Model $M_t$}
+
+
+
+
+
+\subsection{Model $M_b$}
+
+
+
+
+\subsection{Model $M_t$}
+
+
+\subsection{Model $M_h$}
 
 Cite Royle and Dorazio pg 173 ``In the absence of individual effects
 on $p$, the individual encounter histories can be pooled into groups
 of unique encounter histories, indexed by $h$, a unique combination of
 zeros and ones.''.
 
+{\tt unmarked} does not, however, allow for the modeling of individual
+  hetergenity in capture probability although data cou
 
-\section{Removal Models}
 
-\section{Double Observer Models}
+\section{Analysis in {\tt unmarked}}
 
-\subsection{Independent Double Observer Models}
 
-\subsection{Dependent Double Observer Models}
 
-\section{Capture-recapture Models}
+
+\section{Closed population capture-recapture models}
+
+
 
 
 <<>>=
@@ -84,7 +158,7 @@ crPiFun <- function(p) { # p should have 3 columns
           p[,1] * p[,2] * (1-p[,3]),
           p[,1] * p[,2] * p[,3])
 }
-p <- matrix(0.7, 2, 3)
+p <- matrix(0.4, 2, 3)
 crPiFun(p)
 rowSums(crPiFun(p))
 @
@@ -108,15 +182,30 @@ visitMat[1,2] <- NA
 visitMat[2,] <- NA
 head(visitMat)
 
+library(unmarked)
 umf.cr1 <- unmarkedFrameMPois(y=alfl.capRecap[,1:7],
                         siteCovs=alfl.capRecap[,c("woody", "struct")],
                         obsCovs=list(visit=visitMat),
                         obsToY=o2y, piFun="crPiFun")
 
-(fm.m0 <- multinomPois(~1 ~1, umf.cr1))
-(fm.mt <- multinomPois(~visit ~1, umf.cr1))
-
+(M0 <- multinomPois(~1 ~1, umf.cr1))
 @
+
+
+
+
+<<>>=
+(Mt <- multinomPois(~visit ~1, umf.cr1))
+@
+
+
+
+\section{Capture-recapture models allowing for temporary emigration}
+
+
+
+\bibliography{unmarked}
+
 
 
 \end{document}
