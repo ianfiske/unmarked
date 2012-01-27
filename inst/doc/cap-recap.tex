@@ -1,7 +1,3 @@
-<<echo=false>>=
-options(width=70)
-options(continue=" ")
-@
 
 \documentclass[a4paper]{article}
 \usepackage[OT1]{fontenc}
@@ -150,6 +146,26 @@ SHOW TYPICAL MULTIONOMIAL DATA
 
 
 
+
+
+
+\section{Sampling methods}
+
+
+
+Although these methods require that individual animals can
+be assigned to distinct categories, these methods are often used when individuals are
+unmarked. For example, a common study design divides a 10-minute
+point count into two or more time intervals, and observers note the
+time periods during which each bird was detected. Thus, keeping
+track of individuals during a small time frame is similar to
+monitoring marked individuals over longer durations.
+
+
+
+
+
+
 \section{Capture-recapture Models}
 
 
@@ -167,6 +183,9 @@ SHOW TYPICAL MULTIONOMIAL DATA
 \subsection{Model $M_b$}
 
 
+
+
+\subsection{Model $M_t$}
 
 
 \subsection{Model $M_h$}
@@ -190,28 +209,50 @@ zeros and ones.''.
 
 
 
-<<>>=
-alfl.capRecap <- read.csv(system.file("csv", "alfl.capRecap.csv", package="unmarked"),
-                         row.names=1)
-names(alfl.capRecap)
-@
+\begin{Schunk}
+\begin{Sinput}
+> alfl.capRecap <- read.csv(system.file("csv", "alfl.capRecap.csv", package="unmarked"),
+                          row.names=1)
+> names(alfl.capRecap)
+\end{Sinput}
+\begin{Soutput}
+ [1] "visit1_001" "visit1_010" "visit1_011" "visit1_100" "visit1_101"
+ [6] "visit1_110" "visit1_111" "visit2_001" "visit2_010" "visit2_011"
+[11] "visit2_100" "visit2_101" "visit2_110" "visit2_111" "visit3_001"
+[16] "visit3_010" "visit3_011" "visit3_100" "visit3_101" "visit3_110"
+[21] "visit3_111" "struct"     "woody"      "time.1"     "time.2"    
+[26] "time.3"     "date.1"     "date.2"     "date.3"    
+\end{Soutput}
+\end{Schunk}
 
 
 
-<<>>=
-crPiFun <- function(p) { # p should have 3 columns
-    cbind((1-p[,1]) * (1-p[,2]) * p[,3],
-          (1-p[,1]) * p[,2] * (1-p[,3]),
-          (1-p[,1]) * p[,2] * p[,3],
-          p[,1] * (1-p[,2]) * (1-p[,3]),
-          p[,1] * (1-p[,2]) * p[,3],
-          p[,1] * p[,2] * (1-p[,3]),
-          p[,1] * p[,2] * p[,3])
-}
-p <- matrix(0.4, 2, 3)
-crPiFun(p)
-rowSums(crPiFun(p))
-@
+\begin{Schunk}
+\begin{Sinput}
+> crPiFun <- function(p) { # p should have 3 columns
+     cbind((1-p[,1]) * (1-p[,2]) * p[,3],
+           (1-p[,1]) * p[,2] * (1-p[,3]),
+           (1-p[,1]) * p[,2] * p[,3],
+           p[,1] * (1-p[,2]) * (1-p[,3]),
+           p[,1] * (1-p[,2]) * p[,3],
+           p[,1] * p[,2] * (1-p[,3]),
+           p[,1] * p[,2] * p[,3])
+ }
+> p <- matrix(0.4, 2, 3)
+> crPiFun(p)
+\end{Sinput}
+\begin{Soutput}
+      [,1]  [,2]  [,3]  [,4]  [,5]  [,6]  [,7]
+[1,] 0.144 0.144 0.096 0.144 0.096 0.096 0.064
+[2,] 0.144 0.144 0.096 0.144 0.096 0.096 0.064
+\end{Soutput}
+\begin{Sinput}
+> rowSums(crPiFun(p))
+\end{Sinput}
+\begin{Soutput}
+[1] 0.784 0.784
+\end{Soutput}
+\end{Schunk}
 
 
 obsToY needs to be a matrix with
@@ -220,33 +261,78 @@ the number columns equal to the number of columns in y
 If obsToY[i,j] is 1, then a missing value in obsCov translates to
 a missing value in y
 
-<<>>=
-o2y <- matrix(1, 3, 7)
-@
+\begin{Schunk}
+\begin{Sinput}
+> o2y <- matrix(1, 3, 7)
+\end{Sinput}
+\end{Schunk}
 
 
 
-<<>>=
-visitMat <- matrix(c('V1','V2','V3'), 50, 3, byrow=TRUE)
-visitMat[1,2] <- NA
-visitMat[2,] <- NA
-head(visitMat)
+\begin{Schunk}
+\begin{Sinput}
+> visitMat <- matrix(c('V1','V2','V3'), 50, 3, byrow=TRUE)
+> visitMat[1,2] <- NA
+> visitMat[2,] <- NA
+> head(visitMat)
+\end{Sinput}
+\begin{Soutput}
+     [,1] [,2] [,3]
+[1,] "V1" NA   "V3"
+[2,] NA   NA   NA  
+[3,] "V1" "V2" "V3"
+[4,] "V1" "V2" "V3"
+[5,] "V1" "V2" "V3"
+[6,] "V1" "V2" "V3"
+\end{Soutput}
+\begin{Sinput}
+> library(unmarked)
+> umf.cr1 <- unmarkedFrameMPois(y=alfl.capRecap[,1:7],
+                         siteCovs=alfl.capRecap[,c("woody", "struct")],
+                         obsCovs=list(visit=visitMat),
+                         obsToY=o2y, piFun="crPiFun")
+> (M0 <- multinomPois(~1 ~1, umf.cr1))
+\end{Sinput}
+\begin{Soutput}
+Call:
+multinomPois(formula = ~1 ~ 1, data = umf.cr1)
 
-library(unmarked)
-umf.cr1 <- unmarkedFrameMPois(y=alfl.capRecap[,1:7],
-                        siteCovs=alfl.capRecap[,c("woody", "struct")],
-                        obsCovs=list(visit=visitMat),
-                        obsToY=o2y, piFun="crPiFun")
+Abundance:
+ Estimate    SE      z P(>|z|)
+  0.00714 0.141 0.0504    0.96
 
-(M0 <- multinomPois(~1 ~1, umf.cr1))
-@
+Detection:
+ Estimate    SE    z  P(>|z|)
+     1.43 0.216 6.63 3.41e-11
+
+AIC: 258.2382 
+\end{Soutput}
+\end{Schunk}
 
 
 
 
-<<>>=
-(Mt <- multinomPois(~visit ~1, umf.cr1))
-@
+\begin{Schunk}
+\begin{Sinput}
+> (Mt <- multinomPois(~visit ~1, umf.cr1))
+\end{Sinput}
+\begin{Soutput}
+Call:
+multinomPois(formula = ~visit ~ 1, data = umf.cr1)
+
+Abundance:
+ Estimate    SE       z P(>|z|)
+  -0.0137 0.146 -0.0938   0.925
+
+Detection:
+            Estimate    SE      z  P(>|z|)
+(Intercept)    1.402 0.371  3.779 0.000157
+visitV2        0.292 0.543  0.538 0.590599
+visitV3       -0.248 0.499 -0.496 0.619611
+
+AIC: 250.449 
+\end{Soutput}
+\end{Schunk}
 
 
 

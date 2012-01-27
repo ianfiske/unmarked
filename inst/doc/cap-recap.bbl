@@ -1,0 +1,20 @@
+\begin{thebibliography}{1}
+
+\bibitem{fiskeChandler_2011}
+Ian Fiske and Richard Chandler.
+\newblock \textbf{unmarked}: An \textbf{R} package for fitting hierarchical
+  models of wildlife occurrence and abundance.
+\newblock {\em Journal of Statistical Software}, 43(10):1--23, 2011.
+
+\bibitem{royle_generalized_2004}
+J.~A. Royle.
+\newblock Generalized estimators of avian abundance from count survey data.
+\newblock {\em Animal Biodiversity and Conservation}, 27(1):375--386, 2004.
+
+\bibitem{williams_etal:2002}
+B~K Williams, J~D Nichols, and M~J Conroy.
+\newblock {\em {Analysis and management of animal populations: modeling,
+  estimation, and decision making}}.
+\newblock Academic Pr, 2002.
+
+\end{thebibliography}
