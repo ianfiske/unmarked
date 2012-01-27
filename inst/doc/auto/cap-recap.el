@@ -2,7 +2,10 @@
  (lambda ()
     (LaTeX-add-bibliographies
      "unmarked")
+    (LaTeX-add-labels
+     "mod")
     (TeX-run-style-hooks
+     "amsmath"
      "fullpage"
      "natbib"
      "Sweave"

@@ -8,6 +8,7 @@ options(continue=" ")
 \usepackage{Sweave}
 \usepackage{natbib}
 \usepackage{fullpage}
+\usepackage{amsmath}
 \bibliographystyle{plain}
 
 \DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
@@ -40,7 +41,11 @@ options(continue=" ")
   constant parameters ($M_0$), time-specific parameters ($M_t$),
   and behavioral responses ($M_b$). In addition, spatial
   variation in abundance or capture probability can also be
-  modeled.
+  modeled. \pkg{unmarked} has two functions for fitting
+  capture-recapture models: \code{multinomPois} and
+  \code{gmultmix}. Both allow for user-defined functions to describe
+  the capture process, and the latter allows for modeling of temporary
+  emigration.
 }
 
 
@@ -48,13 +53,60 @@ options(continue=" ")
 
 Capture-recapture models have a long history in ecology and are used
 to estimate population size while controling for variation in capture
-probability. Traditional capture-recapture models, however, do not
+probability \citep{williams_etal:2002}. Traditional capture-recapture
+models, however, do not
 allow one to model spatial variation in abundance---a central
-objective of much ecological research. citet{royle_generalized_2004} proposed a
+objective of much ecological research. \citet{royle_generalized_2004} proposed a
 simple hierarchical model to overcome this limitation. The model
-requires that multiple ``sites'' are surveyed using capture-recapture
-methods, and that abundance among sites can be modeled as a discrete
-random variable.
+requires that $R$ ``sites'' are surveyed using capture-recapture
+methods, and that site-specific abundance ($N_i, i=1,2,...,R$) can be modeled as a discrete
+random variable. For example, if assert that that abundance is Poisson
+distributed, we can describe the model as
+\begin{align}
+  N_i \sim \mbox{Poisson}(\lambda) \nonumber \\
+  {\bf y_i}|N_i \sim \mbox{Multinomial}(N_i, \pi(p))
+  \label{mod}
+\end{align}
+In the above, $\lambda$ is the expected number of individuals at each
+site. ${\bf y_i}$ is a vector of containing the number of
+individuals with encounter history $k, k=1,2,...K$.
+$\pi(p)$ is a function that that converts capture probability ($p$) to
+multinomial cell probabilities, \emph{i.e.}, the proportion
+of individuals expected to have capture history $k$. The definition of
+$\pi(p)$ is specific to the sampling method. For example, in removal
+sampling (a simple type of capture-recapture model}, if there are 3
+removal passes, the function is
+\[
+{\bold \pi(p)} = \{p, (1-p)p, (1-p)^2p, (1-p)^3\}.
+\]
+Note that there are $\pi(p)$ here is a vector with 4, not 3,
+multinomial cell probabilites. The fourth corresponds to the
+probability of not being captured. This form of $\pi(p)$ can be
+specified by setting the argument \code{piFun} to
+\code{`removal'} when formatting the data with the
+\code{unmarkedFrame} function. Another canned option is for double observer
+sampling, \code{piFun=`double'}. At some point in the near future, we
+may offer a canned option for adding a capture-recapture
+\code{piFun}. However, the purpose of this document is to describe how
+users can do so in a transparent way, which allows users to provide
+custom functions to suite their needs.
+
+Before moving on, we note that, as with all other abundance models in
+\pkg{unmarked}, spatial variation in abundance can be modeled using covariates
+with a log-link function
+\[
+\exp(\lambda_i) = \beta_0 + \beta_1 x_i
+\]
+where $x_i$ is some site-specific covariate such as habitat type or
+elevation say. Note that multiple covariates, continuous or
+categorical, can be considered as covariates of $\lambda$. Similarly,
+if we had a single covariate of $p$, we could model it using a logit link
+\[
+logit(p_{ij}) = \alpha_0 + \beta_1 v_{ij}
+\]
+where $v_{ij}$ is some covariate that may be specific to the site and
+observation.
+
 
 Simple capture-recapture data is shown in Table.
 SHOW TYPICAL DATA
