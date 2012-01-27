@@ -27,8 +27,7 @@ options(continue=" ")
 \maketitle
 
 \abstract{The ``{\tt un}'' in {\tt unmarked} is somewhat misleading
-  because the package can be used to model spatial variation in
-  abundance using data from marked animals. The three
+  because the package can be used to analyze data from marked animals. The three
   most common sampling methods that produce suitable data are removal
   sampling, double observer sampling, and capture-recapture
   methods\footnote{Sometimes animals are not actually marked when
@@ -37,33 +36,27 @@ options(continue=" ")
   data using a class of models known as multinomial $N$-mixture
   models \citep{royle_generalized_2004, fiskeChandler_2011}, which can
   be fit using the functions \code{multinomPois} and
-  \code{gmultmix}. Capture-recapture models such as so-called: $M_0,
-  M_t, M_b, ...$ can be fitted, but unlike other software, variation
-  in abundance among ``sites'' or trap grids can also be modeled.
+  \code{gmultmix}. Capture-recapture models can be fitted with
+  constant parameters ($M_0$), time-specific parameters ($M_t$),
+  and behavioral responses ($M_b$). In addition, spatial
+  variation in abundance or capture probability can also be
+  modeled.
 }
 
 
 \section{Introduction}
 
 Capture-recapture models have a long history in ecology and are used
-to estimate population size while controlling for variation in capture
+to estimate population size while controling for variation in capture
 probability. Traditional capture-recapture models, however, do not
 allow one to model spatial variation in abundance---a central
-objective of much ecological research. cite{ royle etal } proposed a
-simple hierarchical model to overcome this limitation.
+objective of much ecological research. citet{royle_generalized_2004} proposed a
+simple hierarchical model to overcome this limitation. The model
+requires that multiple ``sites'' are surveyed using capture-recapture
+methods, and that abundance among sites can be modeled as a discrete
+random variable.
 
-Before describing the multinomial $N$-mixture model of Royle et al.,
-we need to first describe how capture-recapture data are collected. In
-the simplest scenario, animals are captured at a single site and
-released back into the population. Animals might be captured using an
-array of traps or by capturing individuals by hand while searching
-some well defined area. After a short time interval, the same sampling
-method is repeated and a new sample of marked and unmarked individuals
-are captured. If sampling stops here, Lincoln-Peterson methods can be
-used to estimate population size. If additional samples are collected,
-more robust methods are available. Typical data that arise from
-capture-recapture studies is shown in Table XXX.
-
+Simple capture-recapture data is shown in Table.
 SHOW TYPICAL DATA
 
 In the absence of individual covariates, these data can be collapsed
