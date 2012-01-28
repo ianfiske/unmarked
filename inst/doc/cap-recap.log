@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (MiKTeX 2.8) (preloaded format=pdflatex 2012.1.21)  28 JAN 2012 15:22
+This is pdfTeX, Version 3.1415926-1.40.10 (MiKTeX 2.8) (preloaded format=pdflatex 2012.1.21)  28 JAN 2012 16:17
 entering extended mode
 **c:/R/unmarked/inst/doc/cap-recap.tex
 (c:/R/unmarked/inst/doc/cap-recap.tex
@@ -320,36 +320,75 @@ I suspect you've forgotten a `}', causing me to apply this
 control sequence to too much text. How can we recover?
 My plan is to forget the whole thing and hope for the best.
 
+
+LaTeX Warning: Reference `tab:format' on page 2 undefined on input line 142.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:146: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:146: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:163: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:163: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
  [2] [3]
 (c:\R\unmarked\inst\doc\cap-recap.bbl) [4]
-(c:\R\unmarked\inst\doc\cap-recap.aux) ) 
+(c:\R\unmarked\inst\doc\cap-recap.aux)
+
+LaTeX Warning: There were undefined references.
+
+ ) 
 Here is how much of TeX's memory you used:
- 3151 strings out of 495285
- 41073 string characters out of 3179815
+ 3154 strings out of 495285
+ 41094 string characters out of 3179815
  93429 words of memory out of 3000000
- 6272 multiletter control sequences out of 15000+200000
+ 6275 multiletter control sequences out of 15000+200000
  40316 words of font info for 89 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
  35i,9n,21p,283b,314s stack positions out of 5000i,500n,10000p,200000b,50000s
-<C:/Program Files (x86)/MiKTeX 2.8/font
-s/type1/public/amsfonts/cm/cmbx12.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/
-type1/public/amsfonts/cm/cmbx6.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/typ
-e1/public/amsfonts/cm/cmbx9.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/
-public/amsfonts/cm/cmmi12.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/pu
-blic/amsfonts/cm/cmmi6.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/publi
-c/amsfonts/cm/cmmi8.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/a
-msfonts/cm/cmmi9.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsf
-onts/cm/cmr10.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfont
-s/cm/cmr12.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/c
-m/cmr17.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/c
-mr6.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmr8.
-pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmr9.pfb>
-<C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:
-/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Pr
-ogram Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmti9.pfb><C:/Progr
-am Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmtt12.pfb><C:/Program
- Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on cap-recap.pdf (4 pages, 214125 bytes).
+<C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
+<C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmbx6.pfb><C:
+/Program Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmbx9.pfb><C:/Pr
+ogram Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Prog
+ram Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Program
+ Files (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Program Fi
+les (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Program Files
+ (x86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files (x
+86)/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Program Files (x86)
+/MiKTeX 2.8/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/Program Files (x86)/Mi
+KTeX 2.8/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Program Files (x86)/MiKTeX
+ 2.8/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files (x86)/MiKTeX 2.8
+/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Program Files (x86)/MiKTeX 2.8/fon
+ts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/
+type1/public/amsfonts/cm/cmsy9.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/typ
+e1/public/amsfonts/cm/cmti9.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/
+public/amsfonts/cm/cmtt12.pfb><C:/Program Files (x86)/MiKTeX 2.8/fonts/type1/pu
+blic/amsfonts/cm/cmtt9.pfb>
+Output written on cap-recap.pdf (4 pages, 216816 bytes).
 PDF statistics:
  87 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)

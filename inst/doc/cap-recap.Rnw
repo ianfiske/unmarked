@@ -128,9 +128,11 @@ however, is typically recorded in the format shown in Table\ref
 
 \begin{table}[h]
   \centering
+  \caption{Capture-recapture data for 3 individuals. There were 3
+    trapping occasions}
   \begin{tabular}{lcc}
     \hline
-    AnimalID   & Site  & Capture history \\
+    Animal ID   & Site  & Capture history \\
     \hline
     GB        & A     & 101 \\
     RO        & A     & 111 \\
@@ -140,27 +142,21 @@ however, is typically recorded in the format shown in Table\ref
   \label{tab:raw}
 \end{table}
 
-The raw data that one collects in a
-capture-recapture study is typically of the form shown in Table 1. Each row of the
-matrix corresponds to a capture of some individual. Associated with
-this capture we need to know the capture occasion, the site at which
-it was captured, and perhaps some covariates. Note that if we have
-multiple traps at a site, as is often the case, traditional
-capture-recapture, and the models considered here, models ignore this
-information. Recently developed spatial capture-recapture models,
-however, make use of the trap location data to model density and
-distance-related heterogeneity in capture probability. SCR models thus
-offer important advantages over traditional methods and should be used
-when possible if the assumptions are deemed reasonable. See xyz for
-more information.
+In the absence of individual covariates, the data shown in Table~\ref{tab:raw} can be collapsed
+and formatted as shown in Table~\ref{tab:format}.
 
-Simple capture-recapture data is shown in Table.
-
-
-In the absence of individual covariates, these data can be collapsed
-and formatted as shown in Table YYY.
-
-SHOW TYPICAL MULTIONOMIAL DATA
+\begin{table}[h]
+  \centering
+  \caption{Capture-recapture data in the format required by \pkg{unmarked}}
+  \begin{tabular}{lccccccc}
+    \hline
+    Site  & 100 & 010 & 001 & 110 & 011 & 101 & 111 \\
+    \hline
+    A     & 0   & 2   & 3   & 0   & 1   & 1   & 0   \\
+    B     & 0   & 2   & 3   & 0   & 1   & 1   & 0   \\
+    \hline
+  \end{tabular}
+\end{table}
 
 
 
@@ -168,7 +164,7 @@ SHOW TYPICAL MULTIONOMIAL DATA
 
 
 
-\section{Capture-recapture Models}
+\section{Analysis in \pkg{unmarked}}
 
 
 
@@ -269,6 +265,17 @@ umf.cr1 <- unmarkedFrameMPois(y=alfl.capRecap[,1:7],
 
 
 \section{Capture-recapture models allowing for temporary emigration}
+
+
+
+\section{Spatially-explicit Capture-recapture Models}
+
+Recently developed spatial capture-recapture models,
+however, make use of the trap location data to model density and
+distance-related heterogeneity in capture probability. SCR models thus
+offer important advantages over traditional methods and should be used
+when possible if the assumptions are deemed reasonable. See xyz for
+more information.
 
 
 
