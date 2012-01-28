@@ -35,13 +35,15 @@ options(continue=" ")
     using these methods, but they are treated as though
     they are}. This document focuses on the analysis of capture-recapture
   data using a class of models known as multinomial $N$-mixture
-  models \citep{royle_generalized_2004, fiskeChandler_2011}, which can
-  be fit using the functions \code{multinomPois} and
-  \code{gmultmix}. Capture-recapture models can be fitted with
+  models \citep{royle_generalized_2004, fiskeChandler_2011}, which
+  assume that capture-recapture data have been collected at a
+  collection of sample locations (``sites''). Capture-recapture models
+  can be fitted with
   constant parameters ($M_0$), time-specific parameters ($M_t$),
   and behavioral responses ($M_b$). In addition, spatial
   variation in abundance or capture probability can also be
-  modeled. \pkg{unmarked} has two functions for fitting
+  modeled using site-specific covariates. \pkg{unmarked} has two
+  functions for fitting
   capture-recapture models: \code{multinomPois} and
   \code{gmultmix}. Both allow for user-defined functions to describe
   the capture process, and the latter allows for modeling of temporary
@@ -59,68 +61,84 @@ allow one to model spatial variation in abundance---a central
 objective of much ecological research. \citet{royle_generalized_2004} proposed a
 simple hierarchical model to overcome this limitation. The model
 requires that $R$ ``sites'' are surveyed using capture-recapture
-methods, and that site-specific abundance ($N_i, i=1,2,...,R$) can be modeled as a discrete
-random variable. For example, if assert that that abundance is Poisson
+methods, and that site-specific abundance ($N_i; i=1,2,...,R$) can be modeled as a discrete
+random variable. For example, if abundance is Poisson
 distributed, we can describe the model as
-\begin{align}
+\begin{gather}
   N_i \sim \mbox{Poisson}(\lambda) \nonumber \\
   {\bf y_i}|N_i \sim \mbox{Multinomial}(N_i, \pi(p))
   \label{mod}
-\end{align}
+\end{gather}
 In the above, $\lambda$ is the expected number of individuals at each
 site. ${\bf y_i}$ is a vector containing the number of
-individuals with encounter history $k, k=1,2,...K$ at site $i$. The
-number of possible encounter histories $K$ depends on the sampling
-protocol.
+individuals with encounter history $k; k=1,2,...K$ at site $i$. The
+number of observable encounter histories $K$ depends on the sampling
+protocol. For a capture-recapture study with 2 time periods, $K$
+equals 3 because the possibilities are $(11, 10, 01)$. In Equation~\ref{mod},
 $\pi(p)$ is a function that that converts capture probability ($p$) to
 multinomial cell probabilities, \emph{i.e.}, the proportion
 of individuals expected to have capture history $k$. The definition of
-$\pi(p)$ is also specific to the sampling protocol. For example, in removal
-sampling\footnote{a simple type of capture-recapture sampling}, if there are 3
-removal passes, the function is
+$\pi(p)$ is also specific to the sampling protocol. For example, the
+cell probabilities corresponding to the capture histories listed above
+are
 \[
-{\bold \pi(p)} = \{p, (1-p)p, (1-p)^2p, (1-p)^3\}.
+{\bold \pi(p)} = \{p^2, p(1-p), (1-p)p, (1-p)^2\}.
 \]
-These 4 multinomial cell probabilities correspond to the 4 possible
-encounter histories: $H = (100, 010, 001, 000)$. The probability in
-$\pi(p)$ corresponds to the
-probability of not being captured. This form of $\pi(p)$ can be
-specified in \pkg{unmarked} by setting the argument \code{piFun} to
-\code{`removal'} when formatting the data with the
-\code{unmarkedFrame} function. Another canned option is for double observer
-sampling, \code{piFun=`double'}. At some point in the near future, we
-may offer a capture-recapture
-\code{piFun}. However, the purpose of this document is to describe how
-users can do so in a transparent way so that they can provide
-custom functions to suit their needs.
+Note that the last multinomial cell probability corresponds to the
+probability of not being captured.
 
-Before we describe how to format data, it is important to mention that,
-as with all the abundance models in
+Traditional capture-recapture methods were developed for sampling
+situations in which a single site was surveyed using trap
+arrays, and the objective was to estimate the number of individuals
+exposed to sampling $N$. Since there was not variation in abundance to
+model, emphasis was placed on
+modeling variation in capture probability ($p$). [Mention standard models]
+Often, however,
+ecologists collect data at a collection of sites, and interest lies in
+describing variation in abundance among those sites. For instance,
+capture-recapture arrays might be established in replicates sites in 2
+different habitat types to make inferences about differences in
+abundance among the two habitats. as with all the abundance models in
 \pkg{unmarked}, spatial variation in abundance can be modeled using covariates
 with a log-link function
 \[
 \exp(\lambda_i) = \beta_0 + \beta_1 x_i
 \]
 where $x_i$ is some site-specific covariate such as habitat type or
-elevation say. Note that multiple covariates, continuous or
-categorical, can be considered as covariates of $\lambda$. Similarly,
-if we had a single covariate of $p$, we could model it using a logit link
+elevation. A more general form is written as
 \[
-logit(p_{ij}) = \alpha_0 + \beta_1 v_{ij}
+\exp(\lambda_i) = {\bold X_i' \beta}
 \]
-where $v_{ij}$ is some covariate that may be specific to the site and
-observation.
+where ${\bold X}$ is a design matrix and ${\bold \beta}$ is a vector
+of coefficients, possibly including an intercept.
+Capture probability can be modeled in the same way using the logit
+instead of the log link. For instance, we could have
+\[
+logit(p_{ij}) = \alpha_0 + \alpha_1 v_{ij}
+\]
+where $v_{ij}$ is some covariate specific to the site and
+capture occasion.
 
 
 \section{Data}
 Earlier we mentioned that the data $\bf y$ must be a $R \times K$
 matrix in which each row is the vector of tabulated encounter
-histories for animals captured at some site. A site can be defined in
-many different ways. For example, a site could be a wetland where an
-array of live traps are placed to capture wood turtles. Or a site could be
-a point count plot where we collect capture-recapture data on birds by
-dividing the survey into time intervals and recording which intervals
-each bird is detected in.
+histories for animals captured at some site. Capture-recapture data,
+however, is typically recorded in the format shown in Table\ref
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lcc}
+    \hline
+    AnimalID   & Site  & Capture history \\
+    \hline
+    GB        & A     & 101 \\
+    RO        & A     & 111 \\
+    GY        & B     & 100 \\
+    \hline
+  \end{tabular}
+  \label{tab:raw}
+\end{table}
 
 The raw data that one collects in a
 capture-recapture study is typically of the form shown in Table 1. Each row of the
