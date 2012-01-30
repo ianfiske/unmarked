@@ -31,11 +31,12 @@ options(continue=" ")
   because the package can be used to analyze data from marked animals. The three
   most common sampling methods that produce suitable data are removal
   sampling, double observer sampling, and capture-recapture
-  methods\footnote{Sometimes animals are not actually marked when
-    using these methods, but they are treated as though
-    they are}. This document focuses on the analysis of capture-recapture
+  methods%\footnote{Sometimes animals are not actually marked when
+%    using these methods, but they are treated as though
+%    they are}
+  . This document focuses on the analysis of capture-recapture
   data using a class of models known as multinomial $N$-mixture
-  models \citep{royle_generalized_2004, fiskeChandler_2011}, which
+  models \citep{royle_generalized_2004, chandlerEA_2011}, which
   assume that capture-recapture data have been collected at a
   collection of sample locations (``sites''). Capture-recapture models
   can be fitted with
@@ -48,25 +49,26 @@ options(continue=" ")
   \code{gmultmix}. Both allow for user-defined functions to describe
   the capture process, and the latter allows for modeling of temporary
   emigration when data have been collected using the so-called robust
-  design.
+  design \citep{kendall_etal:1997,chandlerEA_2011}.
 }
 
 
-\section{Introduction}
+\section*{Introduction}
 
 In traditional capture-recapture models, $n$ individuals are captured
 at a site during the course of $J$ sampling occasions. The encounter
 history for each individual is used as information about capture
 probability $p$ such that the total population size $N$ can be
 regarded as the size parameter of a binomial distribution, $n \sim
-\mbox{Binomial}(N, p)$. When capture probability is assumed to be
-constant among individuals and over time, the model is refered to as
-model $M_0$. Temporal variation in $p$ is assumed by the so-called
-model $M_t$. Likewise, behavioral responses, such as trap-avoidance or
-``trap-happiness'' can be modeled using model $M_b$.
+\mbox{Binomial}(N, p)$.
+%When capture probability is assumed to be
+%constant among individuals and over time, the model is refered to as
+%model $M_0$. Temporal variation in $p$ is assumed by the so-called
+%model $M_t$. Likewise, behavioral responses, such as trap-avoidance or
+%``trap-happiness'' can be modeled using model $M_b$.
 
-Although traditional capture-recapture models represent the primary
-method for estimating population size, they do not allow one to model
+Although traditional capture-recapture models are useful
+for estimating population size when $p<1$, they do not allow one to model
 variation in abundance which is a central focus of much ecological
 research.
 \citet{royle_generalized_2004} developed a framework for
@@ -89,8 +91,8 @@ In the above, $\lambda$ is the expected number of individuals at each
 site. ${\bf y_i}$ is a vector containing the number of
 individuals with encounter history $k; k=1,2,...K$ at site $i$. The
 number of observable encounter histories $K$ depends on the sampling
-protocol. For a capture-recapture study with 2 time periods, $K$
-equals 3 because the possibilities are $(11, 10, 01)$. In Equation~\ref{mod},
+protocol. For a capture-recapture study with 2 time periods, $K=3$
+because the possibilities are $H=(11, 10, 01)$. In Equation~\ref{mod},
 $\pi(p)$ is a function that that converts capture probability $p$ to
 multinomial cell probabilities, \emph{i.e.}, the proportion
 of individuals expected to have capture history $k$. The definition of
@@ -98,41 +100,45 @@ $\pi(p)$ is also specific to the sampling protocol. For example, the
 cell probabilities corresponding to the capture histories listed above
 are
 \[
-{\bold \pi(p)} = \{p^2, p(1-p), (1-p)p, (1-p)^2\}.
+{\bold \pi(p)} = \{p^2, p(1-p), (1-p)p}.
 \]
-Note that the last multinomial cell probability corresponds to the
-probability of not being captured.
+The probability of not capturing an individual in this case ($H=00$)
+is $(1-p)^2$.
 
 Spatial variation in abundance can be modeled using covariates
 with a log-link function
 \[
-\exp(\lambda_i) = \beta_0 + \beta_1 x_i
+\log(\lambda_i) = \beta_0 + \beta_1 x_i
 \]
 where $x_i$ is some site-specific covariate such as habitat type or
 elevation. Of course, multiple covariate effects can be consered an a
-more general form of the above can be written as $\exp(\lambda_i) =
-{\bf X_i' \beta}$ where ${\bf X}$ is a design matrix and ${\bf \beta}$ is a vector
+more general form of the above can be written as $\log(\lambda_i) =
+{\bf X_}i' \bold \beta}$ where ${\bf X}$ is a design matrix and
+${\bold \beta}$ is a vector
 of coefficients, possibly including an intercept.
-Capture probability can be modeled in the same way using the logit
-instead of the log link. For instance, we could have
+Capture probability can be modeled in the same way using the logit-
+instead of the log-link. For instance, we could have
 \[
-logit(p_{ij}) = \alpha_0 + \alpha_1 v_{ij}
+\text{logit}(p_{ij}) = \alpha_0 + \alpha_1 v_{ij}
 \]
 where $v_{ij}$ is some covariate specific to the site and
 capture occasion.
 
 
-\section{Data}
-As previously mentioned, the data required by \pkg{unmarked} are an $R \times K$
+\section*{Data}
+As previously mentioned, the data required by \pkg{unmarked} are an $R
+\times K$
 matrix in which each row is the vector of tabulated encounter
 histories for animals captured at some site. Capture-recapture data,
 however, is typically recorded in the format shown in
 Table~\ref{tab:raw}.
 
 \begin{table}[h]
-  \centering
+  \footnotesize
+  \begin{center}
   \caption{Capture-recapture data for 3 individuals. There were 3
     trapping occasions}
+  \vspace{0.3cm}
   \begin{tabular}{lcc}
     \hline
     Animal ID   & Site  & Capture history \\
@@ -144,31 +150,37 @@ Table~\ref{tab:raw}.
     GY        & B     & 100 \\
     PR        & B     & 010 \\
     \hline
-  \end{tabular}
   \label{tab:raw}
+  \end{tabular}
+  \end{center}
 \end{table}
 
-In the absence of individual covariates, these data can be collapsed
-and formatted as shown in Table~\ref{tab:format}. The \code{table}
-function in \proglang{R} makes this conversion very easy, as
-demonstrated in the next section.
+In the absence of individual covariates, the data in
+Table~\ref{tab:raw} can be converted to the requisite format as shown
+in Table~\ref{tab:format}. Notice that no captures were made in sites
+C and D. It is important that such sites are retained in the analysis
+in order to make inference about spatial variation in abundance.
 
 \begin{table}[h]
-  \centering
+  \footnotesize
+  \begin{center}
   \caption{Capture-recapture data from Table~\ref{tab:raw} in the
-    format required by \pkg{unmarked}. Note that no animals were
-    captured in sites C or D.}
+    format required by \pkg{unmarked}}
+  \vspace{0.3cm}
   \begin{tabular}{lccccccc}
     \hline
-    Site  & 100 & 010 & 001 & 110 & 011 & 101 & 111 \\
+    Site  & \multicolumn{7}{c}{Encounter history} \\
+    \cline{2-8}
+          & 100 & 010 & 001 & 110 & 011 & 101 & 111 \\
     \hline
     A     & 1   & 0   & 0   & 0   & 0   & 2   & 1   \\
     B     & 1   & 1   & 0   & 0   & 0   & 0   & 0   \\
     C     & 0   & 0   & 0   & 0   & 0   & 0   & 0   \\
     D     & 0   & 0   & 0   & 0   & 0   & 0   & 0   \\
     \hline
-  \end{tabular}
   \label{tab:format}
+  \end{tabular}
+  \end{center}
 \end{table}
 
 
@@ -177,29 +189,30 @@ demonstrated in the next section.
 
 
 
-\section{Analysis in \pkg{unmarked}}
+\section*{Analysis in \pkg{unmarked}}
 
 
 
 
-\subsection{Closed population capture-recapture models}
+\subsection*{Closed population capture-recapture models}
 
 
-In this example we will analyze point count data collected on the Alder
-Flycatcher (\emph{Empidonax alnorum}) by
+In this example we will analyze point count data collected on alder
+flycatchers (\emph{Empidonax alnorum}) by
 \citet{chandler_etal:2009}. Point count data such as these are
 collected on unmarked animals, but one can apply
 capture-recapture models because it is possible to keep track of
 inidividual birds during a short period of time. That is, we can
 pretend like birds are marked by noting which time intervals they are
 detected in during a short survey. The alder flycatcher data were
-collected using a 15-minute point counts, which were divided into 3
-5-minute intervals. Thus, the ``capture history'' for a bird detected
-in all 3 intervals would be ``111''. The following command imports the
+collected using fixed-area 15-minute point counts, which were divided
+into 3
+5-minute intervals. Each point was surveyed 3 times during 2005.
+The following command imports the
 capture histories for 50 individuals detected in 2005 at 49 point
-count locations. Note that each point was surveyed three times. To
-simply the analysis we first subset the data to work with the data
-from the first visit.
+count locations.
+
+\vspace{3cm}
 
 <<>>=
 alfl <- read.csv(system.file("csv", "alfl.csv", package="unmarked"))
@@ -216,8 +229,8 @@ for each of the 49 sites. We can import these data using the following
 command:
 
 <<>>=
-alfl.covs <- read.csv(system.file("csv", "alflCovs.csv", package="unmarked"),
-                         row.names=1)
+alfl.covs <- read.csv(system.file("csv", "alflCovs.csv",
+    package="unmarked"), row.names=1)
 head(alfl.covs)
 @
 
@@ -231,37 +244,36 @@ To format the data for \pkg{unmarked}, we need to tabulate the
 encounter histories for each site. Before doing so, let's first put
 our capture histories in a single column. Let's also be explicit about
 the levels of our factors for both the newly created captureHistory
-column and the point id column
+column and the point id column.
 
 <<>>=
 alfl$captureHistory <- paste(alfl$interval1, alfl$interval2, alfl$interval3, sep="")
 alfl$captureHistory <- factor(alfl$captureHistory,
     levels=c("001", "010", "011", "100", "101", "110", "111"))
-## NOOOOOOO
+## Don't do this:
 #levels(alfl$id) <- rownames(alfl.covs)
 alfl$id <- factor(alfl$id, levels=rownames(alfl.covs))
 @
-
-Setting the levels of \code{captureHistory} ensures that when we
+Specifying the levels of \code{captureHistory} ensures that when we
 tabulate the encounter histories, we will include zeros for histories
 that were not observed. Similarly, setting the levels of
 \code{alfl\$id} tells \proglang{R} that there
 were some sites where no ALFL were detected. This way, when we
 tabulate the data, we get a frequency for each site, not just the ones
-with $>1$ detection. Let's go ahead and tabulate the encounter
-histories for the first survey occasion.
+with $>1$ detection. Here are the commands to extract data from the
+first primary period and to tabulate the encounter
+histories.
 
 <<>>=
 alfl.v1 <- alfl[alfl$survey==1,]
 alfl.H1 <- table(alfl.v1$id, alfl.v1$captureHistory)
 head(alfl.H1, 5)
 @
-
 The object \code{alfl.H1} contains the tabulated capture histories for
-each site. This is the format required by unmarked. Note that this
-data also suggests that detection probability was high since the most
-common encounter history (for these 5 points) was $111$. Note also that
-no birds were detected at point \code{hisw1\_05}.
+each site. This is the format required by unmarked. The data from
+the first 5 sites
+suggest that detection probability was high since the most
+common encounter history was $111$.
 
 Now we are almost ready to create our \code{unmarkedFrame} and begin
 fitting models. We will fit our first series of models using the
@@ -274,7 +286,8 @@ but here we show how to supply it using a user-defined \code{piFun},
 which allows extreme flexibility in converting detection probability
 to multinomial cell probabilities $\bold \pi$. The \code{piFun} must
 take a matrix of detection probabilities with as many columns as there
-are columns of $\bf y$, and convert them to a matrix of multinomial
+are secondary sampling periods (3 in this case), and convert them to a
+matrix of multinomial
 cell probabilities with $K$ columns. Each column corresponds to the
 probability of observing the encounter history $k$. Here is a
 \code{piFun} to compute the multinomial cell probabilities when there
@@ -308,28 +321,37 @@ rowSums(crPiFun(p))
 
 
 
-
-obsToY needs to be a matrix with
+When providing a user-defined \code{piFun}, we also need to provide
+information about how to handle missing values. That is, if we have a
+missing value in a covariate, we need to know which values of {\bf y}
+are affected. In \pkg{unmarked}, this can be done by supplying a
+mapping-matrix to the \code{obsToY} argument in the
+\code{unmarkedFrameMPois} function. \code{obsToY} needs to be a matrix
+of zeros and ones with
 the number of rows equal to the number of columns for some obsCov, and
 the number columns equal to the number of columns in y
-If obsToY[i,j] is 1, then a missing value in obsCov translates to
-a missing value in y. For capture-recapture data, all elements of
+If obsToY[j,k] is 1, then a missing value in obsCov[i,j] translates to
+a missing value in y[i,k]. For capture-recapture data, all elements of
 \code{obsToY} should be 1.
 
 <<>>=
 o2y <- matrix(1, 3, 7)
 @
 
-
+We are now ready to create the \code{unmarkedFrame}. In order to fit
+model $M_t$, we need a covariate that references the secondary sampling
+period, which we call \code{intervalMat} below. We also provide a
+couple of site-specific covariates: the percent cover of woody
+vegetation and vegetation structure.
 
 <<>>=
 library(unmarked)
 intervalMat <- matrix(c('1','2','3'), 50, 3, byrow=TRUE)
 class(alfl.H1) <- "matrix"
 umf.cr1 <- unmarkedFrameMPois(y=alfl.H1,
-                        siteCovs=alfl.covs[,c("woody", "struct", "time.1")],
-                        obsCovs=list(interval=intervalMat),
-                        obsToY=o2y, piFun="crPiFun")
+    siteCovs=alfl.covs[,c("woody", "struct", "time.1")],
+    obsCovs=list(interval=intervalMat),
+    obsToY=o2y, piFun="crPiFun")
 @
 
 
@@ -337,11 +359,11 @@ Writing a \code{piFun} and creating the \code{obsToY} object are
 the hardest parts of a capture-recapture analysis in
 \pkg{unmarked}. Again, this is done automatically for removal models
 and double observer models, and we may add an option to do this
-automatically for capture-recapture data too, but hopefully it is
-evident the flexibility allowed by specifying user-defined
-functions. For example \code{crPiFun} could easily be modified to
-allow for behavioral responses (trap-shyness) or for non-constant time
-intervals.
+automatically for capture-recapture data too, but hopefully
+the flexibility allowed by specifying user-defined
+functions is evident. % \code{crPiFun} could easily be
+%modified to allow for behavioral responses (trap-shyness) or for
+%non-constant time intervals.
 
 Now that we have our data formatted we can fit some models. The
 following correspond to model $M_0$, model $M_t$, and a model with a
@@ -380,7 +402,7 @@ lines(upper ~ woody, E.abundance, col=gray(0.7))
 @
 
 
-\section{Capture-recapture models allowing for temporary emigration}
+\subsection*{Capture-recapture models allowing for temporary emigration}
 
 In the previous analysis we used data from the first visit only.
 \citet{chandlerEA_2011} proposed a model that allows us to
@@ -406,7 +428,8 @@ y_{ijt}$. The model can be written as
   {\bf y_{it}}|N_{it} \sim \mbox{Multinomial}(N_{it}, \pi(p))
   \label{mod:te}
 \end{gather}
-
+where $\phi$ is the probability of being available for capture. This
+can be modeled as a function of covariates using the logit-link.
 
 The data structure for the robust design is more complex than before,
 but it is easy to create in \proglang{R}. We can once again use the
@@ -423,8 +446,7 @@ nVisits <- 3
 o2yGMM <- kronecker(diag(nVisits), o2y)
 umf.cr <- unmarkedFrameGMM(y=alfl.Hmat,
     siteCovs=alfl.covs[,c("woody", "struct")],
-    yearlySiteCovs=list(date=alfl.covs[,3:5],
-                        time=alfl.covs[,6:8]),
+    yearlySiteCovs=list(date=alfl.covs[,3:5], time=alfl.covs[,6:8]),
     obsCovs=list(interval=cbind(intervalMat,intervalMat,intervalMat)),
     obsToY=o2yGMM, piFun="crPiFun", numPrimary=nVisits)
 @
@@ -447,18 +469,19 @@ covariates, and detection covariates in that order.
 
 
 <<>>=
-(fm1 <- gmultmix(~woody, ~1, ~time+scale(date), umf.cr))
+(fm1 <- gmultmix(~woody, ~1, ~time+date, umf.cr))
 @
 
 Results from this model are similar to those obtained using the subset
 of data, but the standard error for the woody estimate has decreased.
 
 
-\section{Individual Heteogeneity in Capture Probability}
+\section*{Individual Heteogeneity in Capture Probability}
 
 The capture-recapture models that can be fit in \pkg{unmarked} assume
 that variation in capture probability can be
-explained by site, time, or behavioral factors. Individual
+explained by site, time, or behavioral factors such as trap-shyness or
+trap-happiness. Individual
 heterogeneity cannot be explicitly modeled, although, one could
 partition the data into strata and analyze the strata separately. For
 example, sex-specific
@@ -480,12 +503,14 @@ well-defined. See xyz for
 more information.
 
 Spatial capture-recapture models would not work well with the alder
-flycatcher data because they require ``spatial recaptures''. That is,
-the models work best when individuals are encountered at multiple
-locations. We also do not see any reason to worry about
-distance-related heterogeneity in detection for this dataset because
-the sample plots were so small (0.785 ha) and we analyzed data from
-singing individuals only.
+flycatcher data because there were no ``spatial recaptures''. That is,
+SCR models work best when individuals are encountered at multiple
+locations, but the points in the alder flycatcher dataset were
+independent of one another. Furthermore,
+distance-related heterogeneity in detection was probably insubstantial
+for this dataset because
+the sample plots were small (0.785 ha) and only data from
+singing individuals was included.
 
 \bibliography{unmarked}
 

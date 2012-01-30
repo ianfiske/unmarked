@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.11 (MiKTeX 2.9) (preloaded format=pdflatex 2011.4.13)  30 JAN 2012 14:44
+This is pdfTeX, Version 3.1415926-1.40.11 (MiKTeX 2.9) (preloaded format=pdflatex 2011.4.13)  30 JAN 2012 16:42
 entering extended mode
 **c:/R/unmarked/inst/doc/cap-recap.tex
 (c:/R/unmarked/inst/doc/cap-recap.tex
@@ -251,15 +251,7 @@ LaTeX Font Info:    Try loading font information for T1+aett on input line 24.
 ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\ae\t1aett.fd"
 File: t1aett.fd 1997/11/16 Font definitions for T1/aett.
 )
-c:/R/unmarked/inst/doc/cap-recap.tex:41: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:43: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:42: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -275,7 +267,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:75: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:45: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -283,7 +275,46 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:97: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:77: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:99: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:99: Extra }, or forgotten $
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:112: Missing { inserted
+A left brace was mandatory here, so I've put one in.
+You might want to delete and/or insert some corrections
+so that I will find a matching right brace soon.
+(If you're confused by all this, try typing `I}' now.)
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:112: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:113: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -293,7 +324,7 @@ and I'll forget about whatever was undefined.
  [1
 
 {C:/Users/rchandler/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
-c:/R/unmarked/inst/doc/cap-recap.tex:122: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:125: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -301,7 +332,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:148: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:164: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -309,7 +340,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:149: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:164: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -317,39 +348,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:156: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:156: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:156: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:176: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:176: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:188: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -357,7 +356,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
  [2]
-c:/R/unmarked/inst/doc/cap-recap.tex:241: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:254: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -365,7 +364,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:242: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:255: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -373,7 +372,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:243: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:256: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -381,7 +380,29 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:247: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:260: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+LaTeX Font Info:    Try loading font information for TS1+aett on input line 271
+.
+
+(c:/R/R-2.14.0/share/texmf/tex/latex\ts1aett.fd
+File: ts1aett.fd 
+)
+LaTeX Font Info:    Try loading font information for TS1+cmtt on input line 271
+.
+
+("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\base\ts1cmtt.fd"
+File: ts1cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `TS1/aett/m/n' in size <9> not available
+(Font)              Font shape `TS1/cmtt/m/n' tried instead on input line 271.
+
+c:/R/unmarked/inst/doc/cap-recap.tex:276: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -389,7 +410,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:264: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:279: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -397,7 +418,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:267: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:279: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -405,7 +426,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:267: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:301: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -413,63 +434,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:289: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:293: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:295: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:297: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:298: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:302: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:304: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-
-c:/R/unmarked/inst/doc/cap-recap.tex:304: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:307: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -484,30 +449,48 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
+
+c:/R/unmarked/inst/doc/cap-recap.tex:310: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:314: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:316: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:316: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:322: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
  [3]
-c:/R/unmarked/inst/doc/cap-recap.tex:360: Undefined control sequence
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-LaTeX Font Info:    Try loading font information for TS1+aett on input line 373
-.
-
-(c:/R/R-2.14.0/share/texmf/tex/latex\ts1aett.fd
-File: ts1aett.fd 
-)
-LaTeX Font Info:    Try loading font information for TS1+cmtt on input line 373
-.
-
-("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\base\ts1cmtt.fd"
-File: ts1cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
-)
-LaTeX Font Info:    Font shape `TS1/aett/m/n' in size <9> not available
-(Font)              Font shape `TS1/cmtt/m/n' tried instead on input line 373.
-
-c:/R/unmarked/inst/doc/cap-recap.tex:383: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:367: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -515,7 +498,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:383: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:370: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -523,7 +506,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:385: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:371: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -531,7 +514,55 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:389: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:372: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:372: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:378: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:386: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:388: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:405: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:405: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -546,19 +577,27 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
+
+c:/R/unmarked/inst/doc/cap-recap.tex:429: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
  [4]
 <cap-recap-012.pdf, id=31, 361.35pt x 361.35pt>
 File: cap-recap-012.pdf Graphic file (type pdf)
 
 <use cap-recap-012.pdf> [5 <c:/R/unmarked/inst/doc/cap-recap-012.pdf>]
-c:/R/unmarked/inst/doc/cap-recap.tex:464: Missing { inserted
+c:/R/unmarked/inst/doc/cap-recap.tex:486: Missing { inserted
 A left brace was mandatory here, so I've put one in.
 You might want to delete and/or insert some corrections
 so that I will find a matching right brace soon.
 (If you're confused by all this, try typing `I}' now.)
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:464: Missing } inserted
+c:/R/unmarked/inst/doc/cap-recap.tex:486: Missing } inserted
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
 With luck, this will get me unwedged. But if you
@@ -566,7 +605,7 @@ really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:481: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:504: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -574,7 +613,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:482: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:505: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -582,7 +621,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:484: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:507: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -590,7 +629,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:510: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:532: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -598,7 +637,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:514: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:536: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -606,7 +645,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
  [6]
-c:/R/unmarked/inst/doc/cap-recap.tex:554: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:576: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -614,7 +653,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:562: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:585: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -625,13 +664,13 @@ and I'll forget about whatever was undefined.
 (c:\R\unmarked\inst\doc\cap-recap.bbl) [7]
 (c:\R\unmarked\inst\doc\cap-recap.aux) ) 
 Here is how much of TeX's memory you used:
- 3232 strings out of 494053
- 42633 string characters out of 3146173
+ 3228 strings out of 494053
+ 42598 string characters out of 3146173
  96765 words of memory out of 3000000
- 6434 multiletter control sequences out of 15000+200000
- 39814 words of font info for 87 fonts, out of 3000000 for 9000
+ 6432 multiletter control sequences out of 15000+200000
+ 40119 words of font info for 84 fonts, out of 3000000 for 9000
  715 hyphenation exceptions out of 8191
- 35i,9n,32p,295b,316s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 35i,9n,32p,295b,314s stack positions out of 5000i,500n,10000p,200000b,50000s
  <C:\Users\rchandler\AppData\Local\MiKT
 eX\2.9\fonts\pk\ljfour\jknappen\ec\dpi600\tctt0900.pk><C:/Program Files (x86)/M
 iKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Program Files (x86)/MiK
@@ -650,7 +689,7 @@ cm/cmsy9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/
 cmti9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmt
 t12.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmtt9
 .pfb>
-Output written on cap-recap.pdf (7 pages, 225607 bytes).
+Output written on cap-recap.pdf (7 pages, 223162 bytes).
 PDF statistics:
  101 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
