@@ -53,17 +53,43 @@ options(continue=" ")
 
 \section{Introduction}
 
-Capture-recapture models have a long history in ecology and are used
-to estimate population size while controling for variation in capture
-probability \citep{williams_etal:2002}. Traditional capture-recapture
-models, however, do not
-allow one to model spatial variation in abundance---a central
-objective of much ecological research. \citet{royle_generalized_2004} proposed a
-simple hierarchical model to overcome this limitation. The model
-requires that $R$ ``sites'' are surveyed using capture-recapture
-methods, and that site-specific abundance ($N_i; i=1,2,...,R$) can be modeled as a discrete
-random variable. For example, if abundance is Poisson
-distributed, we can describe the model as
+In traditional capture-recapture models, $n$ individuals are captured
+at a site during the course of $J$ sampling occasions. The encounter
+history for each individual is used as information about capture
+probability $p$ such that the total population size $N$ can be
+regarded as the size parameter of a binomial distribution, $n \sim
+\mbox{Binomial}(N, p)$. When capture probability is assumed to be
+constant among individuals and over time, the model is refered to as
+model $M_0$. Temporal variation in $p$ is assumed by the so-called
+model $M_t$. Likewise, behavioral responses, such as trap-avoidance or
+``trap-happiness'' can be modeled using model $M_b$.
+
+Although traditional capture-recapture models represent the primary
+method for estimating population size, the do not allow one to model
+variation in abundance which is a central focus of much ecological
+research.
+%Capture-recapture is one of the most important classes of
+%methods used to estimate population size ($N$) when
+%individuals cannot be captured with certainty
+%\citep{williams_etal:2002}. Traditional capture-recapture
+%models focused was on modeling
+%variation in capture probability, but they do not
+%allow one to model spatial variation in abundance---a central
+%objective of much ecological research.
+%To study variation in
+%abundance, researchers often select replicate sites whose local
+%abundance $N_i$ is assumed to depend on local environmental
+%conditions.
+\citet{royle_generalized_2004} developed a framework for
+modeling variation in both abundance and capture
+probability when capture-recapture data is collected at a set of
+$R$ sites. Site-specific abundance ($N_i; i=1,2,...,R$) is regarded
+as latent variable following a discrete distrubution such as the
+Poisson or negative binomial. The encounter histories are then
+tabulated at each site so that they can be regarded as an outcome of a
+multinomial distribution with cell probabilities determined by capture
+probability (see next section for details). Assuming a Poisson
+distribution, the model can be written as
 \begin{gather}
   N_i \sim \mbox{Poisson}(\lambda) \nonumber \\
   {\bf y_i}|N_i \sim \mbox{Multinomial}(N_i, \pi(p))
@@ -87,19 +113,7 @@ are
 Note that the last multinomial cell probability corresponds to the
 probability of not being captured.
 
-Traditional capture-recapture methods were developed for sampling
-situations in which a single site was surveyed using trap
-arrays, and the objective was to estimate the number of individuals
-exposed to sampling $N$. Since there was not variation in abundance to
-model, emphasis was placed on
-modeling variation in capture probability ($p$). [Mention standard models]
-Often, however,
-ecologists collect data at a collection of sites, and interest lies in
-describing variation in abundance among those sites. For instance,
-capture-recapture arrays might be established in replicates sites in 2
-different habitat types to make inferences about differences in
-abundance among the two habitats. as with all the abundance models in
-\pkg{unmarked}, spatial variation in abundance can be modeled using covariates
+Spatial variation in abundance can be modeled using covariates
 with a log-link function
 \[
 \exp(\lambda_i) = \beta_0 + \beta_1 x_i
@@ -121,10 +135,11 @@ capture occasion.
 
 
 \section{Data}
-Earlier we mentioned that the data $\bf y$ must be a $R \times K$
+As previously mentioned, the data required by \pkg{unmarked} are an $R \times K$
 matrix in which each row is the vector of tabulated encounter
 histories for animals captured at some site. Capture-recapture data,
-however, is typically recorded in the format shown in Table\ref
+however, is typically recorded in the format shown in
+Table~\ref{tab:raw}.
 
 \begin{table}[h]
   \centering
@@ -135,25 +150,32 @@ however, is typically recorded in the format shown in Table\ref
     Animal ID   & Site  & Capture history \\
     \hline
     GB        & A     & 101 \\
+    YR        & A     & 101 \\
     RO        & A     & 111 \\
+    PP        & A     & 100 \\
     GY        & B     & 100 \\
+    PR        & B     & 010 \\
     \hline
   \end{tabular}
   \label{tab:raw}
 \end{table}
 
-In the absence of individual covariates, the data shown in Table~\ref{tab:raw} can be collapsed
+In the absence of individual covariates, these data can be collapsed
 and formatted as shown in Table~\ref{tab:format}.
 
 \begin{table}[h]
   \centering
-  \caption{Capture-recapture data in the format required by \pkg{unmarked}}
+  \caption{Capture-recapture data from Table~\ref{tab:raw} in the
+    format required by \pkg{unmarked}. Note that no animals were
+    captured in sites C or D.}
   \begin{tabular}{lccccccc}
     \hline
     Site  & 100 & 010 & 001 & 110 & 011 & 101 & 111 \\
     \hline
-    A     & 0   & 2   & 3   & 0   & 1   & 1   & 0   \\
-    B     & 0   & 2   & 3   & 0   & 1   & 1   & 0   \\
+    A     & 1   & 0   & 0   & 0   & 0   & 2   & 1   \\
+    B     & 1   & 1   & 0   & 0   & 0   & 0   & 0   \\
+    C     & 0   & 0   & 0   & 0   & 0   & 0   & 0   \\
+    D     & 0   & 0   & 0   & 0   & 0   & 0   & 0   \\
     \hline
   \end{tabular}
 \end{table}
@@ -168,40 +190,8 @@ and formatted as shown in Table~\ref{tab:format}.
 
 
 
-\subsection{Model $M_0$}
 
-
-
-\subsection{Model $M_t$}
-
-
-
-
-
-\subsection{Model $M_b$}
-
-
-
-
-\subsection{Model $M_h$}
-
-Cite Royle and Dorazio pg 173 ``In the absence of individual effects
-on $p$, the individual encounter histories can be pooled into groups
-of unique encounter histories, indexed by $h$, a unique combination of
-zeros and ones.''.
-
-{\tt unmarked} does not, however, allow for the modeling of individual
-  hetergenity in capture probability although data cou
-
-
-\section{Analysis in {\tt unmarked}}
-
-
-
-
-\section{Closed population capture-recapture models}
-
-
+\subsection{Closed population capture-recapture models}
 
 
 <<>>=
@@ -268,8 +258,27 @@ umf.cr1 <- unmarkedFrameMPois(y=alfl.capRecap[,1:7],
 
 
 
+\section{Individual Heteogeneity in Capture Probability}
+
+The model of xxx assumes that variation in capture probability can be
+explained by site, time, or behavioral factors. Individual
+heterogeneity is not allowed, although, for example, sex-specific
+differences can be studied by analyzing the data from the two sexes
+seperately. Continuous animal-specific covariates, however, cannot be
+considered in \pkg{unmarked}. The so-called model $M_h$, which assumes
+random variation in capture probability among individuals, is also not
+allowed. Some might find comfort in this given the concerns about
+$M_h$ raised by Link (2003!!CITE).
+
+
+
+
+
 \section{Spatially-explicit Capture-recapture Models}
 
+Another source of individual heterogeneity in capture probability
+arises from the distance between an individuals area of activity and
+the trap location.
 Recently developed spatial capture-recapture models,
 however, make use of the trap location data to model density and
 distance-related heterogeneity in capture probability. SCR models thus
