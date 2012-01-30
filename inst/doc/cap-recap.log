@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.11 (MiKTeX 2.9) (preloaded format=pdflatex 2011.4.13)  30 JAN 2012 16:42
+This is pdfTeX, Version 3.1415926-1.40.11 (MiKTeX 2.9) (preloaded format=pdflatex 2011.4.13)  30 JAN 2012 17:06
 entering extended mode
 **c:/R/unmarked/inst/doc/cap-recap.tex
 (c:/R/unmarked/inst/doc/cap-recap.tex
@@ -590,14 +590,30 @@ and I'll forget about whatever was undefined.
 File: cap-recap-012.pdf Graphic file (type pdf)
 
 <use cap-recap-012.pdf> [5 <c:/R/unmarked/inst/doc/cap-recap-012.pdf>]
-c:/R/unmarked/inst/doc/cap-recap.tex:486: Missing { inserted
+c:/R/unmarked/inst/doc/cap-recap.tex:495: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:495: Undefined control sequence
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+c:/R/unmarked/inst/doc/cap-recap.tex:525: Missing { inserted
 A left brace was mandatory here, so I've put one in.
 You might want to delete and/or insert some corrections
 so that I will find a matching right brace soon.
 (If you're confused by all this, try typing `I}' now.)
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:486: Missing } inserted
+c:/R/unmarked/inst/doc/cap-recap.tex:525: Missing } inserted
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
 With luck, this will get me unwedged. But if you
@@ -605,7 +621,7 @@ really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:504: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:543: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -613,7 +629,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:505: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:544: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -621,7 +637,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:507: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:546: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -629,7 +645,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:532: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:571: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -637,7 +653,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:536: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:575: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -645,7 +661,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
  [6]
-c:/R/unmarked/inst/doc/cap-recap.tex:576: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:615: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -653,7 +669,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-c:/R/unmarked/inst/doc/cap-recap.tex:585: Undefined control sequence
+c:/R/unmarked/inst/doc/cap-recap.tex:624: Undefined control sequence
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -661,7 +677,7 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 
-(c:\R\unmarked\inst\doc\cap-recap.bbl) [7]
+(c:\R\unmarked\inst\doc\cap-recap.bbl [7]) [8]
 (c:\R\unmarked\inst\doc\cap-recap.aux) ) 
 Here is how much of TeX's memory you used:
  3228 strings out of 494053
@@ -670,7 +686,7 @@ Here is how much of TeX's memory you used:
  6432 multiletter control sequences out of 15000+200000
  40119 words of font info for 84 fonts, out of 3000000 for 9000
  715 hyphenation exceptions out of 8191
- 35i,9n,32p,295b,314s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 35i,9n,32p,295b,304s stack positions out of 5000i,500n,10000p,200000b,50000s
  <C:\Users\rchandler\AppData\Local\MiKT
 eX\2.9\fonts\pk\ljfour\jknappen\ec\dpi600\tctt0900.pk><C:/Program Files (x86)/M
 iKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Program Files (x86)/MiK
@@ -689,9 +705,9 @@ cm/cmsy9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/
 cmti9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmt
 t12.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmtt9
 .pfb>
-Output written on cap-recap.pdf (7 pages, 223162 bytes).
+Output written on cap-recap.pdf (8 pages, 225753 bytes).
 PDF statistics:
- 101 PDF objects out of 1000 (max. 8388607)
+ 104 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  6 words of extra memory for PDF output out of 10000 (max. 10000000)
 

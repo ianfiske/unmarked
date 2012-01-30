@@ -471,6 +471,45 @@ abundance at a sequence of woody vegetation values.
 \includegraphics{cap-recap-012}
 
 
+What about detection probability? Since there was no evidence of
+variation in $p$, we can simply backTrasform the logit-scale estimate
+to obtain $\hat{p}$.
+
+\begin{Schunk}
+\begin{Sinput}
+> backTransform(M0.woody, type="det")
+\end{Sinput}
+\begin{Soutput}
+Backtransformed linear combination(s) of Detection estimate(s)
+
+ Estimate     SE LinComb (Intercept)
+    0.808 0.0336    1.43           1
+
+Transformation: logistic 
+\end{Soutput}
+\end{Schunk}
+
+As suggested by the raw data, detection probability was very high. The
+cooresponding multinomial cell probabilities can be computed by
+pluggin in this estimate of detection probability into our
+\code{piFun}. This can process is automated using the \code{getP}
+function.
+
+\begin{Schunk}
+\begin{Sinput}
+> head(round(getP(M0.woody), 2), 1)
+\end{Sinput}
+\begin{Soutput}
+      001  010  011  100  101  110  111
+[1,] 0.03 0.03 0.13 0.03 0.13 0.13 0.53
+\end{Soutput}
+\end{Schunk}
+
+Note that the encounter probability most likely to be observed was
+111. In fact $p$ was so high that the probability of not detecting an
+alder flycatcher was essentially zero, $(1-0.81)^3 = 0.007$.
+
+
 \subsection*{Capture-recapture models allowing for temporary emigration}
 
 In the previous analysis we used data from the first visit only.
