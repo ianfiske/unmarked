@@ -1,12 +1,5 @@
-(TeX-add-style-hook "cap-recap"
+(TeX-add-style-hook "_region_"
  (lambda ()
-    (LaTeX-add-bibliographies
-     "unmarked")
-    (LaTeX-add-labels
-     "mod"
-     "tab:raw"
-     "tab:format"
-     "mod:te")
     (TeX-run-style-hooks
      "amsmath"
      "fullpage"

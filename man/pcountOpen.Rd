@@ -114,11 +114,11 @@ Repeated Counts of an Open Metapopulation. \emph{Biometrics}. 67, pp
 \author{Richard Chandler \email{rchandler@usgs.gov}}
 
 \note{
-When gamma or omega are modeled using observation-level covariates, the
-covariate data for the final survey occasion will be ignored; however,
+When gamma or omega are modeled using year-specific covariates, the
+covariate data for the final year will be ignored; however,
 they must be supplied.
 
-If time intervals vary among primary sampling occasions, an M by T
+If the time gap between primary periods is not constant, an M by T
 matrix of integers should be supplied to \code{\link{unmarkedFramePCO}}
 using the \code{primaryPeriod} argument.
 

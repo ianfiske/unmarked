@@ -1,20 +1,47 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{6}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-\bibitem{fiskeChandler_2011}
+\bibitem[Chandler et~al.(2011)Chandler, Royle, and King]{chandlerEA_2011}
+R.~B. Chandler, J.~A. Royle, and D.~I. King.
+\newblock Inference about density and temporary emigration in unmarked
+  populations.
+\newblock \emph{Ecology}, 92\penalty0 (7):\penalty0 1429--1435, July 2011.
+
+\bibitem[Chandler et~al.(2009)Chandler, King, and
+  DeStefano]{chandler_etal:2009}
+R.B. Chandler, D.I. King, and S.~DeStefano.
+\newblock Scrub-shrub bird habitat associations at multiple spatial scales in
+  beaver meadows in massachusetts.
+\newblock \emph{The Auk}, pages 186--197, 2009.
+
+\bibitem[Fiske and Chandler(2011)]{fiskeChandler_2011}
 Ian Fiske and Richard Chandler.
 \newblock \textbf{unmarked}: An \textbf{R} package for fitting hierarchical
   models of wildlife occurrence and abundance.
-\newblock {\em Journal of Statistical Software}, 43(10):1--23, 2011.
+\newblock \emph{Journal of Statistical Software}, 43\penalty0 (10):\penalty0
+  1--23, 2011.
+\newblock URL \url{http://www.jstatsoft.org/v43/i10/}.
 
-\bibitem{royle_generalized_2004}
+\bibitem[Kendall et~al.(1997)Kendall, Nichols, and Hines]{kendall_etal:1997}
+William~L. Kendall, James~D. Nichols, and James~E. Hines.
+\newblock Estimating temporary emigration using {capture-recapture} data with
+  {P}ollock{'}s robust design.
+\newblock \emph{Ecology}, 78\penalty0 (2):\penalty0 563--578, 1997.
+
+\bibitem[Link(2003)]{link:2003}
+W.A. Link.
+\newblock Nonidentifiability of population size from capture-recapture data
+  with heterogeneous detection probabilities.
+\newblock \emph{Biometrics}, 59\penalty0 (4):\penalty0 1123--1130, 2003.
+
+\bibitem[Royle(2004)]{royle_generalized_2004}
 J.~A. Royle.
 \newblock Generalized estimators of avian abundance from count survey data.
-\newblock {\em Animal Biodiversity and Conservation}, 27(1):375--386, 2004.
-
-\bibitem{williams_etal:2002}
-B~K Williams, J~D Nichols, and M~J Conroy.
-\newblock {\em {Analysis and management of animal populations: modeling,
-  estimation, and decision making}}.
-\newblock Academic Pr, 2002.
+\newblock \emph{Animal Biodiversity and Conservation}, 27\penalty0
+  (1):\penalty0 375--386, 2004.
 
 \end{thebibliography}
