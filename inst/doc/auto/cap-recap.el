@@ -12,6 +12,7 @@
      "fullpage"
      "natbib"
      "authoryear"
+     "round"
      "Sweave"
      "fontenc"
      "OT1"

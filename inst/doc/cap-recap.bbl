@@ -1,4 +1,4 @@
-\begin{thebibliography}{6}
+\begin{thebibliography}{10}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -18,13 +18,10 @@ R.B. Chandler, D.I. King, and S.~DeStefano.
   beaver meadows in massachusetts.
 \newblock \emph{The Auk}, pages 186--197, 2009.
 
-\bibitem[Fiske and Chandler(2011)]{fiskeChandler_2011}
-Ian Fiske and Richard Chandler.
-\newblock \textbf{unmarked}: An \textbf{R} package for fitting hierarchical
-  models of wildlife occurrence and abundance.
-\newblock \emph{Journal of Statistical Software}, 43\penalty0 (10):\penalty0
-  1--23, 2011.
-\newblock URL \url{http://www.jstatsoft.org/v43/i10/}.
+\bibitem[Efford(2004)]{efford:2004}
+M~Efford.
+\newblock {Density estimation in live-trapping studies}.
+\newblock \emph{Oikos}, 106\penalty0 (3):\penalty0 598--610, 2004.
 
 \bibitem[Kendall et~al.(1997)Kendall, Nichols, and Hines]{kendall_etal:1997}
 William~L. Kendall, James~D. Nichols, and James~E. Hines.
@@ -38,10 +35,33 @@ W.A. Link.
   with heterogeneous detection probabilities.
 \newblock \emph{Biometrics}, 59\penalty0 (4):\penalty0 1123--1130, 2003.
 
+\bibitem[Otis et~al.(1978)Otis, Burnham, White, and Anderson]{otis_etal:1978}
+D.L. Otis, K.P. Burnham, G.C. White, and D.R. Anderson.
+\newblock Statistical inference from capture data on closed animal populations.
+\newblock \emph{Wildlife monographs}, \penalty0 (62):\penalty0 3--135, 1978.
+
 \bibitem[Royle(2004)]{royle_generalized_2004}
 J.~A. Royle.
 \newblock Generalized estimators of avian abundance from count survey data.
 \newblock \emph{Animal Biodiversity and Conservation}, 27\penalty0
   (1):\penalty0 375--386, 2004.
+
+\bibitem[Royle and Young(2008)]{royle_young:2008}
+J~A Royle and K~V Young.
+\newblock {A Hierarchical Model For Spatial Capture-Recapture Data}.
+\newblock \emph{Ecology}, 89\penalty0 (8):\penalty0 2281--2289, 2008.
+
+\bibitem[Royle and Dorazio(2008)]{royle_dorazio:2008}
+J.A. Royle and R.M. Dorazio.
+\newblock \emph{Hierarchical modeling and inference in ecology: the analysis of
+  data from populations, metapopulations and communities}.
+\newblock Academic Press, 2008.
+
+\bibitem[Williams et~al.(2002)Williams, Nichols, and
+  Conroy]{williams_etal:2002}
+B~K Williams, J~D Nichols, and M~J Conroy.
+\newblock \emph{{Analysis and management of animal populations: modeling,
+  estimation, and decision making}}.
+\newblock Academic Pr, 2002.
 
 \end{thebibliography}
