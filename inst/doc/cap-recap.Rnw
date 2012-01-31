@@ -425,7 +425,7 @@ alder flycatcher was essentially zero, $(1-0.81)^3 = 0.007$.
 
 
 
-\subsection{Modeling behavioral responses Model $M_b$}
+\subsection{Modeling behavioral responses, Model $M_b$}
 
 An animal's behavior might change after being captured. Both
 trap avoidance and trap attraction are frequently
