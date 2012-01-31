@@ -61,11 +61,6 @@ history for each individual is used as information about capture
 probability $p$ such that the total population size $N$ can be
 regarded as the size parameter of a binomial distribution, $n \sim
 \mbox{Binomial}(N, p)$.
-%When capture probability is assumed to be
-%constant among individuals and over time, the model is refered to as
-%model $M_0$. Temporal variation in $p$ is assumed by the so-called
-%model $M_t$. Likewise, behavioral responses, such as trap-avoidance or
-%``trap-happiness'' can be modeled using model $M_b$.
 
 Although traditional capture-recapture models are useful
 for estimating population size when $p<1$, they do not allow one to model
@@ -80,7 +75,7 @@ Poisson or negative binomial. The encounter histories are then
 tabulated at each site so that they can be regarded as an outcome of a
 multinomial distribution with cell probabilities {$\bold \pi$}
 determined by a protocol-specific function of capture
-probability (see next section for details). Assuming a Poisson
+probability. Assuming a Poisson
 distribution, the model can be written as
 \begin{gather}
   N_i \sim \mbox{Poisson}(\lambda) \nonumber \\
@@ -91,8 +86,8 @@ In the above, $\lambda$ is the expected number of individuals at each
 site. ${\bf y_i}$ is a vector containing the number of
 individuals with encounter history $k; k=1,2,...K$ at site $i$. The
 number of observable encounter histories $K$ depends on the sampling
-protocol. For a capture-recapture study with 2 time periods, $K=3$
-because the possibilities are $H=(11, 10, 01)$. In Equation~\ref{mod},
+protocol. For a capture-recapture study with 2 occasions, there are
+3 possible encounter histories $H \in (11, 10, 01)$. In Equation~\ref{mod},
 $\pi(p)$ is a function that that converts capture probability $p$ to
 multinomial cell probabilities, \emph{i.e.}, the proportion
 of individuals expected to have capture history $k$. The definition of
@@ -100,7 +95,7 @@ $\pi(p)$ is also specific to the sampling protocol. For example, the
 cell probabilities corresponding to the capture histories listed above
 are
 \[
-{\bold \pi(p)} = \{p^2, p(1-p), (1-p)p}.
+{\bold \pi(p)} = \{ p^2, p(1-p), (1-p)p \}.
 \]
 The probability of not capturing an individual in this case ($H=00$)
 is $(1-p)^2$.
@@ -111,13 +106,13 @@ with a log-link function
 \log(\lambda_i) = \beta_0 + \beta_1 x_i
 \]
 where $x_i$ is some site-specific covariate such as habitat type or
-elevation. Of course, multiple covariate effects can be consered an a
-more general form of the above can be written as $\log(\lambda_i) =
-{\bf X_}i' \bold \beta}$ where ${\bf X}$ is a design matrix and
+elevation. Multiple covariates can be considered and a more general
+form of the above can be written as $\log(\lambda_i) =
+{\bf X}_i' \bold \beta}$ where ${\bf X}$ is a design matrix and
 ${\bold \beta}$ is a vector
 of coefficients, possibly including an intercept.
-Capture probability can be modeled in the same way using the logit-
-instead of the log-link. For instance, we could have
+Capture probability can be modeled using the logit-
+link in much the same way
 \[
 \text{logit}(p_{ij}) = \alpha_0 + \alpha_1 v_{ij}
 \]
@@ -136,8 +131,8 @@ Table~\ref{tab:raw}.
 \begin{table}[h]
   \footnotesize
   \begin{center}
-  \caption{Capture-recapture data for 3 individuals. There were 3
-    trapping occasions}
+  \caption{Capture-recapture data for 6 individuals sampled on 3
+    occasions}
   \vspace{0.3cm}
   \begin{tabular}{lcc}
     \hline
@@ -318,9 +313,6 @@ crPiFun(p)
 rowSums(crPiFun(p))
 @
 
-
-
-
 When providing a user-defined \code{piFun}, we also need to provide
 information about how to handle missing values. That is, if we have a
 missing value in a covariate, we need to know which values of {\bf y}
@@ -412,8 +404,8 @@ backTransform(M0.woody, type="det")
 
 As suggested by the raw data, detection probability was very high. The
 cooresponding multinomial cell probabilities can be computed by
-pluggin in this estimate of detection probability into our
-\code{piFun}. This can process is automated using the \code{getP}
+plugging this estimate of detection probability into our
+\code{piFun}. This process is automated using the \code{getP}
 function.
 
 <<>>=
@@ -439,11 +431,11 @@ period, but animals may move on and off the plots between sampling
 occasions. This type of movement is referred to as temporary
 emigration. To account for it, define $M_$ to be the super-population
 size, the total number of individuals that use site $i$ during the
-study period. Assuming that we visit each site on $T$ occasions,
-primary periods, define $N_{it}$ to be the subset of $M_i$ exposed
-to sampling during occasion $t$. We now collect capture-recapture data
-at each site during each primary period $t$, and obtain the data $\bf
-y_{ijt}$. The model can be written as
+study period. Assums that we visit each site on $T$
+primary periods and define $N_{it}$ to be the subset of $M_i$ exposed
+to sampling during primary period $t$. We now collect capture-recapture data
+at each site during each primary period, and obtain the data $\bf
+y_{it}$. The model can be written as
 
 \begin{gather}
   M_i \sim \mbox{Poisson}(\lambda) \nonumber \\
@@ -458,7 +450,8 @@ The data structure for the robust design is more complex than before,
 but it is easy to create in \proglang{R}. We can once again use the
 \code{table} function---but this time, we create a three-dimensional table
 rather than a two-dimensional one. We also need to expand the
-\code{obsToY} mapping matrix. This isn't so intuitive, but the
+\code{obsToY} mapping matrix so that it has a block diagonal
+structure. This isn't so intuitive, but the
 commands below are generic and can be applied to other
 capture-recapture designs.
 
@@ -496,7 +489,9 @@ covariates, and detection covariates in that order.
 @
 
 Results from this model are similar to those obtained using the subset
-of data, but the standard error for the woody estimate has decreased.
+of data, but the standard error for the woody estimate has
+decreased. If we back-transform the estimate of $\phi$, we  see that
+the probability of being available for detection is 0.31.
 
 
 \section*{Individual Heteogeneity in Capture Probability}
@@ -516,24 +511,21 @@ allowed. Some might find comfort in this given the concerns about
 $M_h$ raised by \citet{link:2003}.
 
 Another source of individual heterogeneity in capture probability
-arises from the distance between an individual's area of activity and
-the trap location. Traditional capture-recapture models ignore this
+arises from the distance between animal activity centers and
+sample locations. Traditional capture-recapture models ignore this
 important source of variation in capture probability, but
 recently developed spatial capture-recapture models overcome this
-limitation. SCR models also yield estimates of density rather than
-just population size, which is important when the study area cannot be
-well-defined. See xyz for
-more information.
-
-Spatial capture-recapture models would not work well with the alder
-flycatcher data because there were no ``spatial recaptures''. That is,
+limitation (CITATIONS). Distance-related heterogeneity in detection
+probability was probably not an important concern in the alder
+flycatcher dataset because the plots were very small (0.785 ha) and
+only singing birds were included in the analysis. In addition, SCR
+models would not work well for this dataset because they
+require ``spatial recaptures'' to work effectively. That is,
 SCR models work best when individuals are encountered at multiple
 locations, but the points in the alder flycatcher dataset were
-independent of one another. Furthermore,
-distance-related heterogeneity in detection was probably insubstantial
-for this dataset because
-the sample plots were small (0.785 ha) and only data from
-singing individuals was included.
+independent of one another. Nonetheless, we recommend the use of SCR
+models in other contexts such as when using camera traps or fixed
+arrays of live traps.
 
 \bibliography{unmarked}
 

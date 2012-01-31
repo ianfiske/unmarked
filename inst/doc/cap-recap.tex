@@ -57,11 +57,6 @@ history for each individual is used as information about capture
 probability $p$ such that the total population size $N$ can be
 regarded as the size parameter of a binomial distribution, $n \sim
 \mbox{Binomial}(N, p)$.
-%When capture probability is assumed to be
-%constant among individuals and over time, the model is refered to as
-%model $M_0$. Temporal variation in $p$ is assumed by the so-called
-%model $M_t$. Likewise, behavioral responses, such as trap-avoidance or
-%``trap-happiness'' can be modeled using model $M_b$.
 
 Although traditional capture-recapture models are useful
 for estimating population size when $p<1$, they do not allow one to model
@@ -76,7 +71,7 @@ Poisson or negative binomial. The encounter histories are then
 tabulated at each site so that they can be regarded as an outcome of a
 multinomial distribution with cell probabilities {$\bold \pi$}
 determined by a protocol-specific function of capture
-probability (see next section for details). Assuming a Poisson
+probability. Assuming a Poisson
 distribution, the model can be written as
 \begin{gather}
   N_i \sim \mbox{Poisson}(\lambda) \nonumber \\
@@ -87,8 +82,8 @@ In the above, $\lambda$ is the expected number of individuals at each
 site. ${\bf y_i}$ is a vector containing the number of
 individuals with encounter history $k; k=1,2,...K$ at site $i$. The
 number of observable encounter histories $K$ depends on the sampling
-protocol. For a capture-recapture study with 2 time periods, $K=3$
-because the possibilities are $H=(11, 10, 01)$. In Equation~\ref{mod},
+protocol. For a capture-recapture study with 2 occasions, there are
+3 possible encounter histories $H \in (11, 10, 01)$. In Equation~\ref{mod},
 $\pi(p)$ is a function that that converts capture probability $p$ to
 multinomial cell probabilities, \emph{i.e.}, the proportion
 of individuals expected to have capture history $k$. The definition of
@@ -96,7 +91,7 @@ $\pi(p)$ is also specific to the sampling protocol. For example, the
 cell probabilities corresponding to the capture histories listed above
 are
 \[
-{\bold \pi(p)} = \{p^2, p(1-p), (1-p)p}.
+{\bold \pi(p)} = \{ p^2, p(1-p), (1-p)p \}.
 \]
 The probability of not capturing an individual in this case ($H=00$)
 is $(1-p)^2$.
@@ -107,13 +102,13 @@ with a log-link function
 \log(\lambda_i) = \beta_0 + \beta_1 x_i
 \]
 where $x_i$ is some site-specific covariate such as habitat type or
-elevation. Of course, multiple covariate effects can be consered an a
-more general form of the above can be written as $\log(\lambda_i) =
-{\bf X_}i' \bold \beta}$ where ${\bf X}$ is a design matrix and
+elevation. Multiple covariates can be considered and a more general
+form of the above can be written as $\log(\lambda_i) =
+{\bf X}_i' \bold \beta}$ where ${\bf X}$ is a design matrix and
 ${\bold \beta}$ is a vector
 of coefficients, possibly including an intercept.
-Capture probability can be modeled in the same way using the logit-
-instead of the log-link. For instance, we could have
+Capture probability can be modeled using the logit-
+link in much the same way
 \[
 \text{logit}(p_{ij}) = \alpha_0 + \alpha_1 v_{ij}
 \]
@@ -132,8 +127,8 @@ Table~\ref{tab:raw}.
 \begin{table}[h]
   \footnotesize
   \begin{center}
-  \caption{Capture-recapture data for 3 individuals. There were 3
-    trapping occasions}
+  \caption{Capture-recapture data for 6 individuals sampled on 3
+    occasions}
   \vspace{0.3cm}
   \begin{tabular}{lcc}
     \hline
@@ -212,7 +207,7 @@ count locations.
 
 \begin{Schunk}
 \begin{Sinput}
-> alfl <- read.csv(system.file("csv", "alfl.csv", package="unmarked"))
+> alfl <- read.csv(system.file("csv", "alfl.csv", package = "unmarked"))
 > head(alfl, 5)
 \end{Sinput}
 \begin{Soutput}
@@ -236,8 +231,8 @@ command:
 
 \begin{Schunk}
 \begin{Sinput}
-> alfl.covs <- read.csv(system.file("csv", "alflCovs.csv",
-     package="unmarked"), row.names=1)
+> alfl.covs <- read.csv(system.file("csv", "alflCovs.csv", 
+     package = "unmarked"), row.names = 1)
 > head(alfl.covs)
 \end{Sinput}
 \begin{Soutput}
@@ -265,12 +260,11 @@ column and the point id column.
 
 \begin{Schunk}
 \begin{Sinput}
-> alfl$captureHistory <- paste(alfl$interval1, alfl$interval2, alfl$interval3, sep="")
-> alfl$captureHistory <- factor(alfl$captureHistory,
-     levels=c("001", "010", "011", "100", "101", "110", "111"))
-> ## Don't do this:
-> #levels(alfl$id) <- rownames(alfl.covs)
-> alfl$id <- factor(alfl$id, levels=rownames(alfl.covs))
+> alfl$captureHistory <- paste(alfl$interval1, alfl$interval2, 
+     alfl$interval3, sep = "")
+> alfl$captureHistory <- factor(alfl$captureHistory, levels = c("001", 
+     "010", "011", "100", "101", "110", "111"))
+> alfl$id <- factor(alfl$id, levels = rownames(alfl.covs))
 \end{Sinput}
 \end{Schunk}
 Specifying the levels of \code{captureHistory} ensures that when we
@@ -285,7 +279,7 @@ histories.
 
 \begin{Schunk}
 \begin{Sinput}
-> alfl.v1 <- alfl[alfl$survey==1,]
+> alfl.v1 <- alfl[alfl$survey == 1, ]
 > alfl.H1 <- table(alfl.v1$id, alfl.v1$captureHistory)
 > head(alfl.H1, 5)
 \end{Sinput}
@@ -325,14 +319,14 @@ for a detection and $1-p$ for a non-detection.
 
 \begin{Schunk}
 \begin{Sinput}
-> crPiFun <- function(p) { # p should have 3 columns
-     cbind("001" = (1-p[,1]) * (1-p[,2]) * p[,3],
-           "010" = (1-p[,1]) * p[,2]     * (1-p[,3]),
-           "011" = (1-p[,1]) * p[,2]     * p[,3],
-           "100" = p[,1]     * (1-p[,2]) * (1-p[,3]),
-           "101" = p[,1]     * (1-p[,2]) * p[,3],
-           "110" = p[,1]     * p[,2]     * (1-p[,3]),
-           "111" = p[,1]     * p[,2]     * p[,3])
+> crPiFun <- function(p) {
+     cbind(`001` = (1 - p[, 1]) * (1 - p[, 2]) * p[, 3], 
+         `010` = (1 - p[, 1]) * p[, 2] * (1 - p[, 3]), 
+         `011` = (1 - p[, 1]) * p[, 2] * p[, 3], `100` = p[, 
+             1] * (1 - p[, 2]) * (1 - p[, 3]), `101` = p[, 
+             1] * (1 - p[, 2]) * p[, 3], `110` = p[, 1] * 
+             p[, 2] * (1 - p[, 3]), `111` = p[, 1] * p[, 
+             2] * p[, 3])
  }
 \end{Sinput}
 \end{Schunk}
@@ -360,9 +354,6 @@ sum to $< 1$ if capture probability less than 1 over the 3 occasions.
 [1] 0.784 0.784
 \end{Soutput}
 \end{Schunk}
-
-
-
 
 When providing a user-defined \code{piFun}, we also need to provide
 information about how to handle missing values. That is, if we have a
@@ -392,12 +383,11 @@ vegetation and vegetation structure.
 \begin{Schunk}
 \begin{Sinput}
 > library(unmarked)
-> intervalMat <- matrix(c('1','2','3'), 50, 3, byrow=TRUE)
+> intervalMat <- matrix(c("1", "2", "3"), 50, 3, byrow = TRUE)
 > class(alfl.H1) <- "matrix"
-> umf.cr1 <- unmarkedFrameMPois(y=alfl.H1,
-     siteCovs=alfl.covs[,c("woody", "struct", "time.1")],
-     obsCovs=list(interval=intervalMat),
-     obsToY=o2y, piFun="crPiFun")
+> umf.cr1 <- unmarkedFrameMPois(y = alfl.H1, siteCovs = alfl.covs[, 
+     c("woody", "struct", "time.1")], obsCovs = list(interval = intervalMat), 
+     obsToY = o2y, piFun = "crPiFun")
 \end{Sinput}
 \end{Schunk}
 
@@ -419,9 +409,9 @@ continous covariate effect on $p$.
 
 \begin{Schunk}
 \begin{Sinput}
-> M0 <- multinomPois(~1 ~1, umf.cr1)
-> Mt <- multinomPois(~interval-1 ~1, umf.cr1)
-> Mc <- multinomPois(~time.1 ~1, umf.cr1)
+> M0 <- multinomPois(~1 ~ 1, umf.cr1)
+> Mt <- multinomPois(~interval - 1 ~ 1, umf.cr1)
+> Mc <- multinomPois(~time.1 ~ 1, umf.cr1)
 \end{Sinput}
 \end{Schunk}
 
@@ -432,7 +422,7 @@ a function of the percent cover of woody vegetation.
 
 \begin{Schunk}
 \begin{Sinput}
-> (M0.woody <- multinomPois(~1 ~woody, umf.cr1))
+> (M0.woody <- multinomPois(~1 ~ woody, umf.cr1))
 \end{Sinput}
 \begin{Soutput}
 Call:
@@ -460,12 +450,13 @@ abundance at a sequence of woody vegetation values.
 
 \begin{Schunk}
 \begin{Sinput}
-> nd <- data.frame(woody=seq(0, 0.8, length=50))
-> E.abundance <- predict(M0.woody, type="state", newdata=nd, appendData=TRUE)
-> plot(Predicted ~ woody, E.abundance, type="l", ylim=c(0, 6),
-      ylab="Alder flycatchers / plot", xlab="Woody vegetation cover")
-> lines(lower ~ woody, E.abundance, col=gray(0.7))
-> lines(upper ~ woody, E.abundance, col=gray(0.7))
+> nd <- data.frame(woody = seq(0, 0.8, length = 50))
+> E.abundance <- predict(M0.woody, type = "state", newdata = nd, 
+     appendData = TRUE)
+> plot(Predicted ~ woody, E.abundance, type = "l", ylim = c(0, 
+     6), ylab = "Alder flycatchers / plot", xlab = "Woody vegetation cover")
+> lines(lower ~ woody, E.abundance, col = gray(0.7))
+> lines(upper ~ woody, E.abundance, col = gray(0.7))
 \end{Sinput}
 \end{Schunk}
 \includegraphics{cap-recap-012}
@@ -477,7 +468,7 @@ to obtain $\hat{p}$.
 
 \begin{Schunk}
 \begin{Sinput}
-> backTransform(M0.woody, type="det")
+> backTransform(M0.woody, type = "det")
 \end{Sinput}
 \begin{Soutput}
 Backtransformed linear combination(s) of Detection estimate(s)
@@ -491,8 +482,8 @@ Transformation: logistic
 
 As suggested by the raw data, detection probability was very high. The
 cooresponding multinomial cell probabilities can be computed by
-pluggin in this estimate of detection probability into our
-\code{piFun}. This can process is automated using the \code{getP}
+plugging this estimate of detection probability into our
+\code{piFun}. This process is automated using the \code{getP}
 function.
 
 \begin{Schunk}
@@ -524,11 +515,11 @@ period, but animals may move on and off the plots between sampling
 occasions. This type of movement is referred to as temporary
 emigration. To account for it, define $M_$ to be the super-population
 size, the total number of individuals that use site $i$ during the
-study period. Assuming that we visit each site on $T$ occasions,
-primary periods, define $N_{it}$ to be the subset of $M_i$ exposed
-to sampling during occasion $t$. We now collect capture-recapture data
-at each site during each primary period $t$, and obtain the data $\bf
-y_{ijt}$. The model can be written as
+study period. Assums that we visit each site on $T$
+primary periods and define $N_{it}$ to be the subset of $M_i$ exposed
+to sampling during primary period $t$. We now collect capture-recapture data
+at each site during each primary period, and obtain the data $\bf
+y_{it}$. The model can be written as
 
 \begin{gather}
   M_i \sim \mbox{Poisson}(\lambda) \nonumber \\
@@ -543,21 +534,23 @@ The data structure for the robust design is more complex than before,
 but it is easy to create in \proglang{R}. We can once again use the
 \code{table} function---but this time, we create a three-dimensional table
 rather than a two-dimensional one. We also need to expand the
-\code{obsToY} mapping matrix. This isn't so intuitive, but the
+\code{obsToY} mapping matrix so that it has a block diagonal
+structure. This isn't so intuitive, but the
 commands below are generic and can be applied to other
 capture-recapture designs.
 
 \begin{Schunk}
 \begin{Sinput}
 > alfl.H <- table(alfl$id, alfl$captureHistory, alfl$survey)
-> alfl.Hmat <- cbind(alfl.H[,,1], alfl.H[,,2], alfl.H[,,3])
+> alfl.Hmat <- cbind(alfl.H[, , 1], alfl.H[, , 2], alfl.H[, 
+     , 3])
 > nVisits <- 3
 > o2yGMM <- kronecker(diag(nVisits), o2y)
-> umf.cr <- unmarkedFrameGMM(y=alfl.Hmat,
-     siteCovs=alfl.covs[,c("woody", "struct")],
-     yearlySiteCovs=list(date=alfl.covs[,3:5], time=alfl.covs[,6:8]),
-     obsCovs=list(interval=cbind(intervalMat,intervalMat,intervalMat)),
-     obsToY=o2yGMM, piFun="crPiFun", numPrimary=nVisits)
+> umf.cr <- unmarkedFrameGMM(y = alfl.Hmat, siteCovs = alfl.covs[, 
+     c("woody", "struct")], yearlySiteCovs = list(date = alfl.covs[, 
+     3:5], time = alfl.covs[, 6:8]), obsCovs = list(interval = cbind(intervalMat, 
+     intervalMat, intervalMat)), obsToY = o2yGMM, piFun = "crPiFun", 
+     numPrimary = nVisits)
 \end{Sinput}
 \end{Schunk}
 
@@ -580,7 +573,7 @@ covariates, and detection covariates in that order.
 
 \begin{Schunk}
 \begin{Sinput}
-> (fm1 <- gmultmix(~woody, ~1, ~time+date, umf.cr))
+> (fm1 <- gmultmix(~woody, ~1, ~time + date, umf.cr))
 \end{Sinput}
 \begin{Soutput}
 Call:
@@ -607,7 +600,9 @@ AIC: 580.4508
 \end{Schunk}
 
 Results from this model are similar to those obtained using the subset
-of data, but the standard error for the woody estimate has decreased.
+of data, but the standard error for the woody estimate has
+decreased. If we back-transform the estimate of $\phi$, we  see that
+the probability of being available for detection is 0.31.
 
 
 \section*{Individual Heteogeneity in Capture Probability}
@@ -627,24 +622,21 @@ allowed. Some might find comfort in this given the concerns about
 $M_h$ raised by \citet{link:2003}.
 
 Another source of individual heterogeneity in capture probability
-arises from the distance between an individual's area of activity and
-the trap location. Traditional capture-recapture models ignore this
+arises from the distance between animal activity centers and
+sample locations. Traditional capture-recapture models ignore this
 important source of variation in capture probability, but
 recently developed spatial capture-recapture models overcome this
-limitation. SCR models also yield estimates of density rather than
-just population size, which is important when the study area cannot be
-well-defined. See xyz for
-more information.
-
-Spatial capture-recapture models would not work well with the alder
-flycatcher data because there were no ``spatial recaptures''. That is,
+limitation (CITATIONS). Distance-related heterogeneity in detection
+probability was probably not an important concern in the alder
+flycatcher dataset because the plots were very small (0.785 ha) and
+only singing birds were included in the analysis. In addition, SCR
+models would not work well for this dataset because they
+require ``spatial recaptures'' to work effectively. That is,
 SCR models work best when individuals are encountered at multiple
 locations, but the points in the alder flycatcher dataset were
-independent of one another. Furthermore,
-distance-related heterogeneity in detection was probably insubstantial
-for this dataset because
-the sample plots were small (0.785 ha) and only data from
-singing individuals was included.
+independent of one another. Nonetheless, we recommend the use of SCR
+models in other contexts such as when using camera traps or fixed
+arrays of live traps.
 
 \bibliography{unmarked}
 
