@@ -2426,6 +2426,138 @@ setMethod("nonparboot", "unmarkedFitColExt",
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+# ----------------- Empirical Bayes Methods ------------------------------
+
+
+
+setGeneric("ranef",
+    function(object, ...) standardGeneric("ranef"))
+
+
+setClass("unmarkedRanef1",
+    representation(bup = "matrix",
+                   modes = "integer"))
+
+
+setMethod("ranef", "unmarkedFitPCount",
+    function(object, ...)
+{
+    lam <- predict(object, type="state")[,1]
+    R <- length(lam)
+    p <- getP(object)
+    K <- object@K
+    N <- 0:K
+    y <- getY(getData(object))
+    srm <- object@sitesRemoved
+    if(length(srm) > 0)
+        y <- y[-object@sitesRemoved,]
+    bup <- matrix(0, R, length(N))
+    modes <- integer(K+1)
+    colnames(bup) <- N
+    mix <- fm@mixture
+    for(i in 1:R) {
+        switch(mix,
+               P  = f <- dpois(N, lam[i]),
+               NB = {
+                   alpha <- exp(coef(object, type="alpha"))
+                   f <- dnbinom(N, mu=lam[i], size=alpha)
+               },
+               ZIP = {
+                   psi <- plogis(coef(object, type="psi"))
+                   f <- (1-psi)*dpois(N, lam[i])
+                   f[1] <- psi + (1-psi)*exp(-lam[i])
+               })
+        g <- rep(1, K+1)
+        for(j in 1:ncol(y)) {
+            if(is.na(y[i,j]) | is.na(p[i,j]))
+                next
+            g <- g * dbinom(y[i,j], N, p[i,j])
+        }
+        fudge <- f*g
+        bup[i,] <- fudge / sum(fudge)
+        modes[i] <- N[which.max(bup[i,])]
+    }
+    new("unmarkedRanef1", bup=bup, modes=modes)
+})
+
+
+
+
+
+
+
+
+
+setMethod("coef", "unmarkedRanef1", function(object) object@modes)
+
+setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
+{
+    if(!missing(parm))
+        warning("parm argument is ignored. Did you mean to specify level?")
+    bup <- object@bup
+    N <- as.integer(colnames(bup))
+    R <- nrow(bup)
+    CI <- matrix(NA_real_, R, 2)
+    alpha <- 1-level
+    c1 <- alpha/2
+    c2 <- 1-c1
+    colnames(CI) <- paste(c(c1,c2)*100, "%", sep="")
+    for(i in 1:R) {
+        pr <- bup[i,]
+        ed <- cumsum(pr)
+        lower <- N[which(ed >= c1)][1]
+        upper <- N[which(ed >= c2)][1]
+        CI[i,] <- c(lower, upper)
+    }
+    return(CI)
+})
+
+
+
+setMethod("show", "unmarkedRanef1", function(object)
+{
+    print(cbind(Mode=coef(object), confint(object)))
+})
+
+
+
+
+setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
+{
+    bup <- x@bup
+    N <- as.integer(colnames(bup))
+    dat <- data.frame(p=c(t(bup)), N=N, site=gl(nrow(bup), ncol(bup)))
+    xyplot(p ~ N | site, dat, type="h", xlab="Latent variable",
+           ylab="Probability", ...)
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ----------------------- Helper functions -------------------------------
 
 ## A helper function to return a list of indices for each estimate type

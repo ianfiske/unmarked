@@ -16,7 +16,8 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS,
     unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
     unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
     unmarkedFrameGMM, unmarkedFrameGDS, unmarkedFramePCO,
-    unmarkedEstimate, unmarkedFitList, unmarkedModSel)
+    unmarkedEstimate, unmarkedFitList, unmarkedModSel,
+    unmarkedRanef1)
 
 # Methods
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
@@ -25,7 +26,7 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
     hist, predict, profile, projection, residuals, sampleSize, SE,
     show, simulate, siteCovs, "siteCovs<-", summary, update, vcov,
     yearlySiteCovs, "yearlySiteCovs<-", "[", smoothed, projected,
-    nonparboot, logLik, LRT)
+    nonparboot, logLik, LRT, ranef)
 
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
