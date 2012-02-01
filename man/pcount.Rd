@@ -58,7 +58,9 @@ covariates of \eqn{p_{ij}}{p_ij} use the logit link.}
 
 \author{Ian Fiske and Richard Chandler}
 
-\seealso{\code{\link{unmarkedFramePCount}}, \code{\link{pcountOpen}}}
+\seealso{\code{\link{unmarkedFramePCount}}, \code{\link{pcountOpen}},
+\code{\link{ranef}}, \code{\link{parboot}}
+}
 
 \references{
 
@@ -104,9 +106,16 @@ fm1
 plogis(coef(fm1, type="det")) # Should be close to p
 
 
+# Empirical Bayes estimation of random effects
+(fm1re <- ranef(fm1))
+plot(fm1re, subset=site \%in\% 1:25, xlim=c(-1, 20))
+sum(coef(fm1re))        # Estimated population size
+colSums(confint(fm1re)) # and 95\% CI
+sum(N)                  # Actual population size
 
 
 
+\dontrun{
 
 # Real data
 data(mallard)
@@ -114,6 +123,8 @@ mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site,
 obsCovs = mallard.obs)
 (fm.mallard <- pcount(~ ivel+ date + I(date^2) ~ length + elev + forest, mallardUMF, K=30))
 (fm.mallard.nb <- pcount(~ date + I(date^2) ~ length + elev, mixture = "NB", mallardUMF, K=30))
+
+}
 
 }
 

@@ -54,6 +54,16 @@ ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
     type = "removal")
 (fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
 
+# Detection probability for a single pass
+backTransform(fm1, type="det")
+
+# Detection probability after 4 removal passes
+rowSums(getP(fm1))
+
+# Empirical Bayes estimates of abundance at first 25 sites
+# Very low uncertainty because p is very high
+plot(ranef(fm1, K=10), subset = site \%in\% 1:10, xlim=c(-1, 10))
+
 }
 
 \keyword{models}

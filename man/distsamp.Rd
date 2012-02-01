@@ -69,7 +69,8 @@ abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
 \seealso{\code{\link{unmarkedFrameDS}},
     \code{\link{unmarkedFit-class}} \code{\link{fitList}},
     \code{\link{formatDistData}}, \code{\link{parboot}},
-    \code{\link{sight2perpdist}}, \code{\link{detFuns}}.
+    \code{\link{sight2perpdist}}, \code{\link{detFuns}},
+    \code{\link{gdistsamp}}, \code{\link{ranef}}.
     Also look at vignette("distsamp").
 	}
 
@@ -95,10 +96,12 @@ hist(ltUMF)
 
 # Some methods to use on fitted model
 summary(fm1)
-backTransform(fm1, type="state")       # animals / ha
+backTransform(fm1, type="state")                # animals / ha
 exp(coef(fm1, type="state", altNames=TRUE))     # same
-backTransform(fm1, type="det")         # half-normal SD
-hist(fm1, xlab="Distance (m)")	# Only works when there are no detection covars
+backTransform(fm1, type="det")                  # half-normal SD
+hist(fm1, xlab="Distance (m)")	# Only works when there are no det covars
+# Empirical Bayes estimates of posterior distribution for N_i
+plot(ranef(fm1, K=50))
 
 # Effective strip half-width
 (eshw <- integrate(gxhn, 0, 20, sigma=10.9)$value)

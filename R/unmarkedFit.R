@@ -2453,7 +2453,7 @@ setClass("unmarkedRanef1",
 setMethod("ranef", "unmarkedFitPCount",
     function(object, ...)
 {
-    lam <- predict(object, type="state")[,1]
+    lam <- predict(object, type="state")[,1] # Too slow
     R <- length(lam)
     p <- getP(object)
     K <- object@K
@@ -2463,9 +2463,9 @@ setMethod("ranef", "unmarkedFitPCount",
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
     bup <- matrix(0, R, length(N))
-    modes <- integer(K+1)
+    modes <- integer(R)
     colnames(bup) <- N
-    mix <- fm@mixture
+    mix <- object@mixture
     for(i in 1:R) {
         switch(mix,
                P  = f <- dpois(N, lam[i]),
@@ -2483,6 +2483,160 @@ setMethod("ranef", "unmarkedFitPCount",
             if(is.na(y[i,j]) | is.na(p[i,j]))
                 next
             g <- g * dbinom(y[i,j], N, p[i,j])
+        }
+        fudge <- f*g
+        bup[i,] <- fudge / sum(fudge)
+        modes[i] <- N[which.max(bup[i,])]
+    }
+    new("unmarkedRanef1", bup=bup, modes=modes)
+})
+
+
+
+
+
+
+setMethod("ranef", "unmarkedFitOccu",
+    function(object, ...)
+{
+    psi <- predict(object, type="state")[,1]
+    R <- length(psi)
+    p <- getP(object)
+    z <- 0:1
+    y <- getY(getData(object))
+    srm <- object@sitesRemoved
+    if(length(srm) > 0)
+        y <- y[-object@sitesRemoved,]
+    bup <- matrix(0, R, 2)
+    modes <- integer(R)
+    colnames(bup) <- z
+    for(i in 1:R) {
+        f <- dbinom(z, 1, psi[i])
+        g <- rep(1, 2)
+        for(j in 1:ncol(y)) {
+            if(is.na(y[i,j]) | is.na(p[i,j]))
+                next
+            g <- g * dbinom(y[i,j], 1, z*p[i,j])
+        }
+        fudge <- f*g
+        bup[i,] <- fudge / sum(fudge)
+        modes[i] <- z[which.max(bup[i,])]
+    }
+    new("unmarkedRanef1", bup=bup, modes=modes)
+})
+
+
+
+
+
+
+
+setMethod("ranef", "unmarkedFitMPois",
+    function(object, K, ...)
+{
+    y <- getY(getData(object))
+    srm <- object@sitesRemoved
+    if(length(srm) > 0)
+        y <- y[-object@sitesRemoved,]
+    if(missing(K)) {
+        warning("You did not specify K, the maximum value of N, so it was set to max(y)+50")
+        K <- max(y, na.rm=TRUE)+50
+    }
+
+    lam <- predict(object, type="state")[,1]
+    R <- length(lam)
+    cp <- getP(object)
+    cp <- cbind(cp, 1-rowSums(cp))
+    N <- 0:K
+    bup <- matrix(0, R, K+1)
+    modes <- integer(R)
+    colnames(bup) <- N
+    for(i in 1:R) {
+        f <- dpois(N, lam[i])
+        g <- rep(1, K+1)
+        if(any(is.na(y[i,])) | any(is.na(cp[i,])))
+            next
+        for(k in 1:(K+1)) {
+            yi <- y[i,]
+            ydot <- N[k] - sum(yi)
+            if(ydot<0) {
+                g[k] <- 0
+                next
+            }
+            yi <- c(yi, ydot)
+            g[k] <- g[k] * dmultinom(yi, size=N[k], prob=cp[i,])
+        }
+        fudge <- f*g
+        bup[i,] <- fudge / sum(fudge)
+        modes[i] <- N[which.max(bup[i,])]
+    }
+    new("unmarkedRanef1", bup=bup, modes=modes)
+})
+
+
+
+
+
+
+
+setMethod("ranef", "unmarkedFitDS",
+    function(object, K, ...)
+{
+    y <- getY(getData(object))
+    srm <- object@sitesRemoved
+    if(length(srm) > 0)
+        y <- y[-object@sitesRemoved,]
+    if(missing(K)) {
+        warning("You did not specify K, the maximum value of N, so it was set to max(y)+50")
+        K <- max(y, na.rm=TRUE)+50
+    }
+    lam <- predict(object, type="state")[,1]
+    R <- length(lam)
+    J <- ncol(y)
+    survey <- object@data@survey
+    tlength <- object@data@tlength
+    db <- object@data@dist.breaks
+    w <- diff(db)
+    unitsIn <- object@data@unitsIn
+    unitsOut <- object@unitsOut
+    if(identical(object@output, "density")) {
+        a <- matrix(NA, R, J)
+        switch(survey, line = {
+            for (i in 1:R) {
+                a[i, ] <- tlength[i] * w
+            }
+        }, point = {
+            for (i in 1:R) {
+                a[i, 1] <- pi * db[2]^2
+                for (j in 2:J)
+                    a[i, j] <- pi * db[j + 1]^2 - sum(a[i, 1:(j - 1)])
+            }
+        })
+        switch(survey, line = A <- rowSums(a) * 2, point = A <- rowSums(a))
+        switch(unitsIn, m = A <- A/1e+06, km = A <- A)
+        switch(unitsOut, ha = A <- A * 100, kmsq = A <- A)
+        lam <- lam*A
+    }
+    cp <- getP(object)
+    cp <- cbind(cp, 1-rowSums(cp))
+    N <- 0:K
+    bup <- matrix(0, R, K+1)
+    modes <- integer(R)
+    colnames(bup) <- N
+    for(i in 1:R) {
+        f <- dpois(N, lam[i])
+        g <- rep(1, K+1)
+        if(any(is.na(y[i,])) | any(is.na(cp[i,])))
+            next
+        for(k in 1:(K+1)) {
+            yi <- y[i,]
+            ydot <- N[k] - sum(yi)
+            if(ydot<0) {
+                g[k] <- 0
+                next
+            }
+            yi <- c(yi, ydot)
+            g[k] <- g[k] * dmultinom(yi, size=N[k], prob=cp[i,])
         }
         fudge <- f*g
         bup[i,] <- fudge / sum(fudge)
@@ -2537,9 +2691,11 @@ setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
 {
     bup <- x@bup
     N <- as.integer(colnames(bup))
+#    extras <- match.call(call = sys.call(-1), expand.dots = FALSE)$...
+    xlb <- ifelse(length(N)>2, "Abundance", "Occurrence")
+    ylb <- "Probability"
     dat <- data.frame(p=c(t(bup)), N=N, site=gl(nrow(bup), ncol(bup)))
-    xyplot(p ~ N | site, dat, type="h", xlab="Latent variable",
-           ylab="Probability", ...)
+    xyplot(p ~ N | site, dat, type="h", xlab=xlb, ylab=ylb, ...)
 })
 
 

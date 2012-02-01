@@ -108,9 +108,9 @@ psi <- plogis(X \%*\% psipars)
 p <- plogis(X \%*\% ppars)
 
 y <- matrix(NA, nSites, nReps)
-Z <- rbinom(nSites, 1, psi)       # true occupancy state
+z <- rbinom(nSites, 1, psi)       # true occupancy state
 for(i in 1:nSites) {
-    y[i,] <- rbinom(nReps, 1, Z[i]*p[i])
+    y[i,] <- rbinom(nReps, 1, z[i]*p[i])
     }
 
 # Organize data and look at it
@@ -128,6 +128,12 @@ fm3 <- occu(~veght ~veght+habitat, umf)
 # Model selection
 fms <- fitList(m1=fm1, m2=fm2, m3=fm3)
 modSel(fms)
+
+# Number of sites occupied
+sum(coef(ranef(fm3)))         # Estimate
+colSums(confint(ranef(fm3)))  # 95\% CI
+sum(z)                        # Actual
+
 
 # Model-averaged prediction and plots
 
