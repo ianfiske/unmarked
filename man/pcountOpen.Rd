@@ -174,7 +174,14 @@ om <- plogis(coef(m1, type="omega"))
 p <- plogis(coef(m1, type="det"))
 
 
-# Calculate population size at each time period
+# Finite sample inference. Abundance at site i, year t
+re <- ranef(m1)
+devAskNewPage(TRUE)
+plot(re, layout=c(5,5), xlim=c(-1,10))
+devAskNewPage(FALSE)
+
+
+# Expected values of N[i,t]
 N.hat <- matrix(NA, M, T)
 N.hat[,1] <- lam
 for(t in 2:T) {

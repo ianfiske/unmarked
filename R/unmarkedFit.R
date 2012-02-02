@@ -2445,12 +2445,9 @@ setGeneric("ranef",
     function(object, ...) standardGeneric("ranef"))
 
 
-# I don't think its possible to handle bup arrays. Probably only matrices
-# Probably need the modes here too because they require MLEs for
-# open population models. Modes should be matrix.
 setClass("unmarkedRanef1",
     representation(bup = "array"))
-#                   modes = "integer"))
+
 
 
 setMethod("ranef", "unmarkedFitPCount",
@@ -2465,9 +2462,7 @@ setMethod("ranef", "unmarkedFitPCount",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
-#    bup <- matrix(0, R, length(N))
     bup <- array(NA_real_, c(R, length(N), 1))
-#    modes <- integer(R)
     colnames(bup) <- N
     mix <- object@mixture
     for(i in 1:R) {
@@ -2490,9 +2485,7 @@ setMethod("ranef", "unmarkedFitPCount",
         }
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
-#        modes[i] <- N[which.max(bup[i,])]
     }
-#    new("unmarkedRanef1", bup=bup, modes=modes)
     new("unmarkedRanef1", bup=bup)
 })
 
@@ -2512,9 +2505,7 @@ setMethod("ranef", "unmarkedFitOccu",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
-#    bup <- matrix(0, R, 2)
     bup <- array(0, c(R,2,1))
-#    modes <- integer(R)
     colnames(bup) <- z
     for(i in 1:R) {
         f <- dbinom(z, 1, psi[i])
@@ -2526,9 +2517,7 @@ setMethod("ranef", "unmarkedFitOccu",
         }
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
-#        modes[i] <- z[which.max(bup[i,])]
     }
-#    new("unmarkedRanef1", bup=bup, modes=modes)
     new("unmarkedRanef1", bup=bup)
 })
 
@@ -2556,7 +2545,6 @@ setMethod("ranef", "unmarkedFitMPois",
     cp <- cbind(cp, 1-rowSums(cp))
     N <- 0:K
     bup <- array(0, c(R, K+1, 1))
-#    modes <- integer(R)
     colnames(bup) <- N
     for(i in 1:R) {
         f <- dpois(N, lam[i])
@@ -2575,9 +2563,7 @@ setMethod("ranef", "unmarkedFitMPois",
         }
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
-#        modes[i] <- N[which.max(bup[i,])]
     }
-#    new("unmarkedRanef1", bup=bup, modes=modes)
     new("unmarkedRanef1", bup=bup)
 })
 
@@ -2628,9 +2614,7 @@ setMethod("ranef", "unmarkedFitDS",
     cp <- getP(object)
     cp <- cbind(cp, 1-rowSums(cp))
     N <- 0:K
-#    bup <- matrix(0, R, K+1)
     bup <- array(0, c(R, K+1, 1))
-#    modes <- integer(R)
     colnames(bup) <- N
     for(i in 1:R) {
         f <- dpois(N, lam[i])
@@ -2649,9 +2633,7 @@ setMethod("ranef", "unmarkedFitDS",
         }
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
-#        modes[i] <- N[which.max(bup[i,])]
     }
-#    new("unmarkedRanef1", bup=bup, modes=modes)
     new("unmarkedRanef1", bup=bup)
 })
 
@@ -2669,6 +2651,8 @@ setMethod("ranef", "unmarkedFitPCO",
     function(object, ...)
 {
     lam <- predict(object, type="lambda")[,1] # Too slow
+    gam <- predict(object, type="gamma")[,1]
+    om <- predict(object, type="omega")[,1]
     R <- length(lam)
     T <- object@data@numPrimary
     p <- getP(object)
@@ -2676,12 +2660,24 @@ setMethod("ranef", "unmarkedFitPCO",
     N <- 0:K
     y <- getY(getData(object))
     J <- ncol(y)/T
+    gam <- matrix(gam, R, T-1, byrow=TRUE)
+    om <- matrix(om, R, T-1, byrow=TRUE)
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
+    ya <- array(y, c(R, J, T))
+    pa <- array(p, c(R, J, T))
     bup <- array(NA_real_, c(R, length(N), T))
     colnames(bup) <- N
     mix <- object@mixture
+
+    tp <- function(N0, N1, gam, om) {
+        c <- min(N0, N1)
+        sum(dbinom(0:c, N0, om) * dpois(N1-c, gam))
+    }
+
+    P <- matrix(NA_real_, K+1, K+1)
+
     for(i in 1:R) {
         switch(mix,
                P  = f <- dpois(N, lam[i]),
@@ -2696,12 +2692,27 @@ setMethod("ranef", "unmarkedFitPCO",
                })
         g <- rep(1, K+1)
         for(j in 1:J) {
-            if(is.na(y[i,j]) | is.na(p[i,j]))
+            if(is.na(ya[i,j,1]) | is.na(pa[i,j,1]))
                 next
-            g <- g * dbinom(y[i,j], N, p[i,j])
+            g <- g * dbinom(ya[i,j,1], N, pa[i,j,1])
         }
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
+        for(t in 2:T) {
+            for(n0 in N) {
+                for(n1 in N) {
+                    P[n0+1, n1+1] <- tp(n0, n1, gam[i,t-1], om[i,t-1])
+                }
+            }
+            g3 <- colSums(P)
+            g <- rep(1, K+1)
+            for(j in 1:J) {
+                if(is.na(ya[i,j,t]) | is.na(pa[i,j,t]))
+                    next
+                g <- g * dbinom(ya[i,j,t], N, pa[i,j,t])
+            }
+            bup[i,,t] <- g * g3
+        }
     }
     new("unmarkedRanef1", bup=bup)
 })
@@ -2727,29 +2738,8 @@ setMethod("coef", "unmarkedRanef1", function(object)
     K <- dims[2]-1
     T <- dims[3]
     N <- as.integer(colnames(bup))
-    if(dims[3]==1L) {
-        modes <- apply(bup[,,1], 1, function(x) N[which.max(x)])
-    }
-    tp <- function(N0, N1, gam, om) {
-        c <- min(N0, N1)
-        sum(dbinom(0:c, N0, om) * dpois(N1-c, gam))
-    }
-    if(dims[3]>1L) {
-        modes <- matrix(NA_integer_, dims[1], T)
-        modes[,1] <- apply(bup[,,1], 1, function(x) N[which.max(x)])
-        ### TESTING!!!
-#        gam <- 3
-#        om <- 0.5
-        for(i in 1:R) {
-            for(t in 2:T) {
-                tmp <- rep(NA_real_, dims[2])
-                for(k in 1:(K+1)) {
-                    tmp[k] <- tp(modes[i,t-1], N[k], gam, om)
-                }
-                modes[i,t] <- N[which.max(tmp)]
-            }
-        }
-    }
+    modes <- apply(bup, c(1,3), function(x) N[which.max(x)])
+    modes <- drop(modes) # convert to vector if T=1
     return(modes)
 })
 
@@ -2762,18 +2752,22 @@ setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
     bup <- object@bup
     N <- as.integer(colnames(bup))
     R <- nrow(bup)
-    CI <- matrix(NA_real_, R, 2)
+    T <- dim(bup)[3]
+    CI <- array(NA_real_, c(R,2,T))
     alpha <- 1-level
     c1 <- alpha/2
     c2 <- 1-c1
     colnames(CI) <- paste(c(c1,c2)*100, "%", sep="")
     for(i in 1:R) {
-        pr <- bup[i,,1] #
-        ed <- cumsum(pr)
-        lower <- N[which(ed >= c1)][1]
-        upper <- N[which(ed >= c2)][1]
-        CI[i,] <- c(lower, upper)
+        for(t in 1:T) {
+            pr <- bup[i,,t]
+            ed <- cumsum(pr)
+            lower <- N[which(ed >= c1)][1]
+            upper <- N[which(ed >= c2)][1]
+            CI[i,,t] <- c(lower, upper)
+        }
     }
+    CI <- drop(CI) # Convert to matrix if T==1
     return(CI)
 })
 
@@ -2781,7 +2775,23 @@ setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
 
 setMethod("show", "unmarkedRanef1", function(object)
 {
-    print(cbind(Mode=coef(object), confint(object)))
+    bup <- object@bup
+    dims <- dim(bup)
+    T <- dims[3]
+    if(T==1)
+        print(cbind(Mode=coef(object), confint(object)))
+    else if(T>1) {
+        modes <- coef(object)
+        CI <- confint(object)
+        out <- array(NA_real_, c(dims[1], 3, T))
+        dimnames(out) <- list(NULL,
+                              c("Mode", "2.5%", "97.5%"),
+                              paste("Year", 1:T, sep=""))
+        for(t in 1:T) {
+            out[,,t] <- cbind(modes[,t], CI[,,t])
+        }
+        print(out)
+    }
 })
 
 
@@ -2790,12 +2800,28 @@ setMethod("show", "unmarkedRanef1", function(object)
 setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
 {
     bup <- x@bup
+    dims <- dim(bup)
+    R <- dims[1]
+    lN <- dims[2]
+    T <- dims[3]
     N <- as.integer(colnames(bup))
 #    extras <- match.call(call = sys.call(-1), expand.dots = FALSE)$...
     xlb <- ifelse(length(N)>2, "Abundance", "Occurrence")
     ylb <- "Probability"
-    dat <- data.frame(p=c(t(bup[,,1])), N=N, site=gl(nrow(bup), ncol(bup)))
-    xyplot(p ~ N | site, dat, type="h", xlab=xlb, ylab=ylb, ...)
+
+    N.ikt <- rep(rep(N, each=R), times=T)
+    site <- rep(1:R, times=lN*T)
+    site <- paste("Site", site, sep="")
+    site <- factor(site)
+    year <- rep(1:T, each=R*lN)
+    year <- paste("Year", year, sep="")
+    year <- factor(year)
+
+    dat <- data.frame(p=as.vector(bup), N=N.ikt, site=site, year=year)
+    if(T==1)
+        xyplot(p ~ N | site, dat, type="h", xlab=xlb, ylab=ylb, ...)
+    else if(T>1)
+        xyplot(p ~ N | site+year, dat, type="h", xlab=xlb, ylab=ylb, ...)
 })
 
 
