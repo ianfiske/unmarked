@@ -180,15 +180,18 @@ devAskNewPage(TRUE)
 plot(re, layout=c(5,5), xlim=c(-1,10))
 devAskNewPage(FALSE)
 
+(N.hat1 <- colSums(coef(re)))
+CI <- apply(confint(re), c(2,3), sum)
+rbind(N=colSums(N), N.hat=N.hat)
 
 # Expected values of N[i,t]
-N.hat <- matrix(NA, M, T)
-N.hat[,1] <- lam
+N.hat2 <- matrix(NA, M, T)
+N.hat2[,1] <- lam
 for(t in 2:T) {
-    N.hat[,t] <- om*N.hat[,t-1] + gam
+    N.hat2[,t] <- om*N.hat2[,t-1] + gam
     }
 
-rbind(N=colSums(N), N.hat=colSums(N.hat))
+rbind(N=colSums(N), N.hat1=N.hat1, N.hat2=colSums(N.hat2))
 
 }
 

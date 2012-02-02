@@ -62,38 +62,62 @@ colSums(confint(re))
 
 
 
-set.seed(3)
-M <- 50
-T <- 5
-lambda <- 1
-gamma <- 0.5
-omega <- 0.8
-p <- 0.7
-y <- N <- matrix(NA, M, T)
+set.seed(7)
+M <- 100
+J <- 3
+T <- 10
+lambda <- 5
+gamma <- 0.4
+omega <- 0.6
+p <- 0.5
+N <- matrix(NA, M, T)
+y <- array(NA, c(M, J, T))
 S <- G <- matrix(NA, M, T-1)
 N[,1] <- rpois(M, lambda)
+y[,,1] <- rbinom(M*J, N[,1], p)
 for(t in 1:(T-1)) {
     S[,t] <- rbinom(M, N[,t], omega)
     G[,t] <- rpois(M, gamma)
     N[,t+1] <- S[,t] + G[,t]
+    y[,,t+1] <- rbinom(M*J, N[,t+1], p)
 }
-y[] <- rbinom(M*T, N, p)
+
+
+colSums(N)
 
 
 # Prepare data
-umf <- unmarkedFramePCO(y = y, numPrimary=T)
+umf <- unmarkedFramePCO(y = matrix(y, M), numPrimary=T)
 summary(umf)
 
 
 # Fit model and backtransform
 (m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20))
 
+e <- coef(m1)
+(lam <- exp(e[1]))
+(gam <- exp(e[2]))
+(om <- plogis(e[3]))
+(p <- plogis(e[4]))
+
 re <- ranef(m1)
 sites <- paste("site", 1:25, sep="")
-plot(re, layout=c(5,5), subset = site %in% sites, xlim=c(-1,10))
+years <- paste("year", 1:2, sep="")
+plot(re, layout=c(5,5), subset = site %in% sites & year %in% years,
+     xlim=c(-1,10))
 
 coef(re)
 confint(re)
+
+N.hat <- colSums(coef(re))
+CI <- apply(confint(re), c(2,3), sum)
+rbind(N=colSums(N), N.hat=N.hat)
+
+plot(1:T, N.hat, ylim=c(0, 600), cex=2)
+points(1:T, colSums(N), pch=16, col="blue")
+segments(1:T, CI[1,], 1:T, CI[2,])
+
+
 
 
 

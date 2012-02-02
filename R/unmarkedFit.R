@@ -2650,6 +2650,7 @@ setMethod("ranef", "unmarkedFitDS",
 setMethod("ranef", "unmarkedFitPCO",
     function(object, ...)
 {
+#    browser()
     dyn <- object@dynamics
     lam <- predict(object, type="lambda")[,1] # Too slow
     om <- predict(object, type="omega")[,1]
@@ -2678,13 +2679,13 @@ setMethod("ranef", "unmarkedFitPCO",
 
     if(dyn %in% c("constant", "notrend")) {
         tp <- function(N0, N1, gam, om) {
-            c <- min(N0, N1)
-            sum(dbinom(0:c, N0, om) * dpois(N1-c, gam))
+            c <- 0:min(N0, N1)
+            sum(dbinom(c, N0, om) * dpois(N1-c, gam))
         }
     } else if(dyn=="autoreg") {
         tp <- function(N0, N1, gam, om) {
-            c <- min(N0, N1)
-            sum(dbinom(0:c, N0, om) * dpois(N1-c, gam*N0))
+            c <- 0:min(N0, N1)
+            sum(dbinom(c, N0, om) * dpois(N1-c, gam*N0))
         }
     } else if(dyn=="trend") {
         tp <- function(N0, N1, gam, om) {
@@ -2696,38 +2697,41 @@ setMethod("ranef", "unmarkedFitPCO",
 
     for(i in 1:R) {
         switch(mix,
-               P  = f <- dpois(N, lam[i]),
+               P  = g2 <- dpois(N, lam[i]),
                NB = {
                    alpha <- exp(coef(object, type="alpha"))
-                   f <- dnbinom(N, mu=lam[i], size=alpha)
+                   g2 <- dnbinom(N, mu=lam[i], size=alpha)
                },
                ZIP = {
                    psi <- plogis(coef(object, type="psi"))
-                   f <- (1-psi)*dpois(N, lam[i])
-                   f[1] <- psi + (1-psi)*exp(-lam[i])
+                   g2 <- (1-psi)*dpois(N, lam[i])
+                   g2[1] <- psi + (1-psi)*exp(-lam[i])
                })
-        g <- rep(1, K+1)
+        g1 <- rep(1, K+1)
         for(j in 1:J) {
             if(is.na(ya[i,j,1]) | is.na(pa[i,j,1]))
                 next
-            g <- g * dbinom(ya[i,j,1], N, pa[i,j,1])
+            g1 <- g1 * dbinom(ya[i,j,1], N, pa[i,j,1])
         }
-        fudge <- f*g
-        bup[i,,1] <- fudge / sum(fudge)
+        g1g2 <- g1*g2
+        bup[i,,1] <- g1g2 / sum(g1g2)
         for(t in 2:T) {
             for(n0 in N) {
                 for(n1 in N) {
                     P[n0+1, n1+1] <- tp(n0, n1, gam[i,t-1], om[i,t-1])
                 }
             }
-            g3 <- colSums(P)
-            g <- rep(1, K+1)
+            g1 <- rep(1, K+1)
             for(j in 1:J) {
                 if(is.na(ya[i,j,t]) | is.na(pa[i,j,t]))
                     next
-                g <- g * dbinom(ya[i,j,t], N, pa[i,j,t])
+                g1 <- g1 * dbinom(ya[i,j,t], N, pa[i,j,t])
             }
-            bup[i,,t] <- g * g3
+#            g <- colSums(P) * g1 * bup[i,,t-1]
+            g <- colSums(P * bup[i,,t-1]) * g1
+#            g <- colSums(t(t(P) * bup[i,,t-1])) * g1
+#            g <- colSums(P) * g1
+            bup[i,,t] <- g / sum(g)
         }
     }
     new("unmarkedRanef1", bup=bup)
