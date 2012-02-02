@@ -2445,9 +2445,12 @@ setGeneric("ranef",
     function(object, ...) standardGeneric("ranef"))
 
 
+# I don't think its possible to handle bup arrays. Probably only matrices
+# Probably need the modes here too because they require MLEs for
+# open population models. Modes should be matrix.
 setClass("unmarkedRanef1",
-    representation(bup = "matrix",
-                   modes = "integer"))
+    representation(bup = "array"))
+#                   modes = "integer"))
 
 
 setMethod("ranef", "unmarkedFitPCount",
@@ -2462,8 +2465,9 @@ setMethod("ranef", "unmarkedFitPCount",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
-    bup <- matrix(0, R, length(N))
-    modes <- integer(R)
+#    bup <- matrix(0, R, length(N))
+    bup <- array(NA_real_, c(R, length(N), 1))
+#    modes <- integer(R)
     colnames(bup) <- N
     mix <- object@mixture
     for(i in 1:R) {
@@ -2485,10 +2489,11 @@ setMethod("ranef", "unmarkedFitPCount",
             g <- g * dbinom(y[i,j], N, p[i,j])
         }
         fudge <- f*g
-        bup[i,] <- fudge / sum(fudge)
-        modes[i] <- N[which.max(bup[i,])]
+        bup[i,,1] <- fudge / sum(fudge)
+#        modes[i] <- N[which.max(bup[i,])]
     }
-    new("unmarkedRanef1", bup=bup, modes=modes)
+#    new("unmarkedRanef1", bup=bup, modes=modes)
+    new("unmarkedRanef1", bup=bup)
 })
 
 
@@ -2507,8 +2512,9 @@ setMethod("ranef", "unmarkedFitOccu",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
-    bup <- matrix(0, R, 2)
-    modes <- integer(R)
+#    bup <- matrix(0, R, 2)
+    bup <- array(0, c(R,2,1))
+#    modes <- integer(R)
     colnames(bup) <- z
     for(i in 1:R) {
         f <- dbinom(z, 1, psi[i])
@@ -2519,10 +2525,11 @@ setMethod("ranef", "unmarkedFitOccu",
             g <- g * dbinom(y[i,j], 1, z*p[i,j])
         }
         fudge <- f*g
-        bup[i,] <- fudge / sum(fudge)
-        modes[i] <- z[which.max(bup[i,])]
+        bup[i,,1] <- fudge / sum(fudge)
+#        modes[i] <- z[which.max(bup[i,])]
     }
-    new("unmarkedRanef1", bup=bup, modes=modes)
+#    new("unmarkedRanef1", bup=bup, modes=modes)
+    new("unmarkedRanef1", bup=bup)
 })
 
 
@@ -2548,8 +2555,8 @@ setMethod("ranef", "unmarkedFitMPois",
     cp <- getP(object)
     cp <- cbind(cp, 1-rowSums(cp))
     N <- 0:K
-    bup <- matrix(0, R, K+1)
-    modes <- integer(R)
+    bup <- array(0, c(R, K+1, 1))
+#    modes <- integer(R)
     colnames(bup) <- N
     for(i in 1:R) {
         f <- dpois(N, lam[i])
@@ -2567,10 +2574,11 @@ setMethod("ranef", "unmarkedFitMPois",
             g[k] <- g[k] * dmultinom(yi, size=N[k], prob=cp[i,])
         }
         fudge <- f*g
-        bup[i,] <- fudge / sum(fudge)
-        modes[i] <- N[which.max(bup[i,])]
+        bup[i,,1] <- fudge / sum(fudge)
+#        modes[i] <- N[which.max(bup[i,])]
     }
-    new("unmarkedRanef1", bup=bup, modes=modes)
+#    new("unmarkedRanef1", bup=bup, modes=modes)
+    new("unmarkedRanef1", bup=bup)
 })
 
 
@@ -2620,8 +2628,9 @@ setMethod("ranef", "unmarkedFitDS",
     cp <- getP(object)
     cp <- cbind(cp, 1-rowSums(cp))
     N <- 0:K
-    bup <- matrix(0, R, K+1)
-    modes <- integer(R)
+#    bup <- matrix(0, R, K+1)
+    bup <- array(0, c(R, K+1, 1))
+#    modes <- integer(R)
     colnames(bup) <- N
     for(i in 1:R) {
         f <- dpois(N, lam[i])
@@ -2639,10 +2648,11 @@ setMethod("ranef", "unmarkedFitDS",
             g[k] <- g[k] * dmultinom(yi, size=N[k], prob=cp[i,])
         }
         fudge <- f*g
-        bup[i,] <- fudge / sum(fudge)
-        modes[i] <- N[which.max(bup[i,])]
+        bup[i,,1] <- fudge / sum(fudge)
+#        modes[i] <- N[which.max(bup[i,])]
     }
-    new("unmarkedRanef1", bup=bup, modes=modes)
+#    new("unmarkedRanef1", bup=bup, modes=modes)
+    new("unmarkedRanef1", bup=bup)
 })
 
 
@@ -2653,7 +2663,97 @@ setMethod("ranef", "unmarkedFitDS",
 
 
 
-setMethod("coef", "unmarkedRanef1", function(object) object@modes)
+
+
+setMethod("ranef", "unmarkedFitPCO",
+    function(object, ...)
+{
+    lam <- predict(object, type="lambda")[,1] # Too slow
+    R <- length(lam)
+    T <- object@data@numPrimary
+    p <- getP(object)
+    K <- object@K
+    N <- 0:K
+    y <- getY(getData(object))
+    J <- ncol(y)/T
+    srm <- object@sitesRemoved
+    if(length(srm) > 0)
+        y <- y[-object@sitesRemoved,]
+    bup <- array(NA_real_, c(R, length(N), T))
+    colnames(bup) <- N
+    mix <- object@mixture
+    for(i in 1:R) {
+        switch(mix,
+               P  = f <- dpois(N, lam[i]),
+               NB = {
+                   alpha <- exp(coef(object, type="alpha"))
+                   f <- dnbinom(N, mu=lam[i], size=alpha)
+               },
+               ZIP = {
+                   psi <- plogis(coef(object, type="psi"))
+                   f <- (1-psi)*dpois(N, lam[i])
+                   f[1] <- psi + (1-psi)*exp(-lam[i])
+               })
+        g <- rep(1, K+1)
+        for(j in 1:J) {
+            if(is.na(y[i,j]) | is.na(p[i,j]))
+                next
+            g <- g * dbinom(y[i,j], N, p[i,j])
+        }
+        fudge <- f*g
+        bup[i,,1] <- fudge / sum(fudge)
+    }
+    new("unmarkedRanef1", bup=bup)
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+setMethod("coef", "unmarkedRanef1", function(object)
+{
+    bup <- object@bup
+    dims <- dim(bup)
+    R <- dims[1]
+    K <- dims[2]-1
+    T <- dims[3]
+    N <- as.integer(colnames(bup))
+    if(dims[3]==1L) {
+        modes <- apply(bup[,,1], 1, function(x) N[which.max(x)])
+    }
+    tp <- function(N0, N1, gam, om) {
+        c <- min(N0, N1)
+        sum(dbinom(0:c, N0, om) * dpois(N1-c, gam))
+    }
+    if(dims[3]>1L) {
+        modes <- matrix(NA_integer_, dims[1], T)
+        modes[,1] <- apply(bup[,,1], 1, function(x) N[which.max(x)])
+        ### TESTING!!!
+#        gam <- 3
+#        om <- 0.5
+        for(i in 1:R) {
+            for(t in 2:T) {
+                tmp <- rep(NA_real_, dims[2])
+                for(k in 1:(K+1)) {
+                    tmp[k] <- tp(modes[i,t-1], N[k], gam, om)
+                }
+                modes[i,t] <- N[which.max(tmp)]
+            }
+        }
+    }
+    return(modes)
+})
+
+
 
 setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
 {
@@ -2668,7 +2768,7 @@ setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
     c2 <- 1-c1
     colnames(CI) <- paste(c(c1,c2)*100, "%", sep="")
     for(i in 1:R) {
-        pr <- bup[i,]
+        pr <- bup[i,,1] #
         ed <- cumsum(pr)
         lower <- N[which(ed >= c1)][1]
         upper <- N[which(ed >= c2)][1]
@@ -2694,7 +2794,7 @@ setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
 #    extras <- match.call(call = sys.call(-1), expand.dots = FALSE)$...
     xlb <- ifelse(length(N)>2, "Abundance", "Occurrence")
     ylb <- "Probability"
-    dat <- data.frame(p=c(t(bup)), N=N, site=gl(nrow(bup), ncol(bup)))
+    dat <- data.frame(p=c(t(bup[,,1])), N=N, site=gl(nrow(bup), ncol(bup)))
     xyplot(p ~ N | site, dat, type="h", xlab=xlb, ylab=ylb, ...)
 })
 

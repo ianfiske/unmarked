@@ -74,6 +74,8 @@ plogis(e[2:3])
 
 # Estimates of random effects
 re <- ranef(fm, K=20)
+ltheme <- canonical.theme(color = FALSE)       
+lattice.options(default.theme = ltheme)        
 plot(re, layout=c(5,5), subset = site \%in\% 1:25)
 
 
