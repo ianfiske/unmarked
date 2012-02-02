@@ -2650,8 +2650,8 @@ setMethod("ranef", "unmarkedFitDS",
 setMethod("ranef", "unmarkedFitPCO",
     function(object, ...)
 {
+    dyn <- object@dynamics
     lam <- predict(object, type="lambda")[,1] # Too slow
-    gam <- predict(object, type="gamma")[,1]
     om <- predict(object, type="omega")[,1]
     R <- length(lam)
     T <- object@data@numPrimary
@@ -2660,7 +2660,10 @@ setMethod("ranef", "unmarkedFitPCO",
     N <- 0:K
     y <- getY(getData(object))
     J <- ncol(y)/T
-    gam <- matrix(gam, R, T-1, byrow=TRUE)
+    if(dyn != "notrend") {
+        gam <- predict(object, type="gamma")[,1]
+        gam <- matrix(gam, R, T-1, byrow=TRUE)
+    }
     om <- matrix(om, R, T-1, byrow=TRUE)
     srm <- object@sitesRemoved
     if(length(srm) > 0)
@@ -2670,10 +2673,23 @@ setMethod("ranef", "unmarkedFitPCO",
     bup <- array(NA_real_, c(R, length(N), T))
     colnames(bup) <- N
     mix <- object@mixture
+    if(dyn=="notrend")
+        gam <- lam*(1-om)
 
-    tp <- function(N0, N1, gam, om) {
-        c <- min(N0, N1)
-        sum(dbinom(0:c, N0, om) * dpois(N1-c, gam))
+    if(dyn %in% c("constant", "notrend")) {
+        tp <- function(N0, N1, gam, om) {
+            c <- min(N0, N1)
+            sum(dbinom(0:c, N0, om) * dpois(N1-c, gam))
+        }
+    } else if(dyn=="autoreg") {
+        tp <- function(N0, N1, gam, om) {
+            c <- min(N0, N1)
+            sum(dbinom(0:c, N0, om) * dpois(N1-c, gam*N0))
+        }
+    } else if(dyn=="trend") {
+        tp <- function(N0, N1, gam, om) {
+            dpois(N1, gam*N0)
+        }
     }
 
     P <- matrix(NA_real_, K+1, K+1)
@@ -2811,10 +2827,10 @@ setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
 
     N.ikt <- rep(rep(N, each=R), times=T)
     site <- rep(1:R, times=lN*T)
-    site <- paste("Site", site, sep="")
+    site <- paste("site", site, sep="")
     site <- factor(site)
     year <- rep(1:T, each=R*lN)
-    year <- paste("Year", year, sep="")
+    year <- paste("year", year, sep="")
     year <- factor(year)
 
     dat <- data.frame(p=as.vector(bup), N=N.ikt, site=site, year=year)

@@ -34,6 +34,7 @@ colSums(confint(re))
 
 library(unmarked)
 
+set.seed(320)
 R <- 50
 J <- 3
 z <- rbinom(R, 1, 0.5)
@@ -51,8 +52,9 @@ coef(re)
 confint(re, level=0.9)
 plot(re)
 
-
-
+sum(z)
+sum(coef(re))
+colSums(confint(re))
 
 
 
@@ -71,16 +73,15 @@ y <- N <- matrix(NA, M, T)
 S <- G <- matrix(NA, M, T-1)
 N[,1] <- rpois(M, lambda)
 for(t in 1:(T-1)) {
-	S[,t] <- rbinom(M, N[,t], omega)
-	G[,t] <- rpois(M, gamma)
-	N[,t+1] <- S[,t] + G[,t]
-	}
+    S[,t] <- rbinom(M, N[,t], omega)
+    G[,t] <- rpois(M, gamma)
+    N[,t+1] <- S[,t] + G[,t]
+}
 y[] <- rbinom(M*T, N, p)
 
 
 # Prepare data
 umf <- unmarkedFramePCO(y = y, numPrimary=T)
-
 summary(umf)
 
 
@@ -88,9 +89,18 @@ summary(umf)
 (m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20))
 
 re <- ranef(m1)
-devAskNewPage(TRUE)
-plot(re, layout=c(5,5), xlim=c(-1,10))
-devAskNewPage(FALSE)
+sites <- paste("site", 1:25, sep="")
+plot(re, layout=c(5,5), subset = site %in% sites, xlim=c(-1,10))
 
 coef(re)
 confint(re)
+
+
+
+(m1nt <- update(m1, dynamics="notrend"))
+
+re <- ranef(m1nt)
+
+plot(re, layout=c(5,5), subset = site %in% sites, xlim=c(-1,10))
+
+
