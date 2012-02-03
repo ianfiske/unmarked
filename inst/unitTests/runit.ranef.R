@@ -68,7 +68,7 @@ J <- 3
 T <- 10
 lambda <- 5
 gamma <- 0.4
-omega <- 0.6
+omega <- 0.9
 p <- 0.5
 N <- matrix(NA, M, T)
 y <- array(NA, c(M, J, T))
@@ -84,6 +84,7 @@ for(t in 1:(T-1)) {
 
 
 colSums(N)
+colMeans(N)
 
 
 # Prepare data
@@ -101,10 +102,12 @@ e <- coef(m1)
 (p <- plogis(e[4]))
 
 re <- ranef(m1)
+
 sites <- paste("site", 1:25, sep="")
-years <- paste("year", 1:2, sep="")
+years <- paste("year", 1:1, sep="")
+
 plot(re, layout=c(5,5), subset = site %in% sites & year %in% years,
-     xlim=c(-1,10))
+     xlim=c(-1,20))
 
 coef(re)
 confint(re)
@@ -113,7 +116,7 @@ N.hat <- colSums(coef(re))
 CI <- apply(confint(re), c(2,3), sum)
 rbind(N=colSums(N), N.hat=N.hat)
 
-plot(1:T, N.hat, ylim=c(0, 600), cex=2)
+plot(1:T, N.hat, ylim=c(0, 1000), cex=1.5)
 points(1:T, colSums(N), pch=16, col="blue")
 segments(1:T, CI[1,], 1:T, CI[2,])
 

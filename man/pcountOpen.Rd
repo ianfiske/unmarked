@@ -143,8 +143,8 @@ Secondary sampling periods are optional.
 set.seed(3)
 M <- 50
 T <- 5
-lambda <- 1
-gamma <- 0.5
+lambda <- 4
+gamma <- 1.5
 omega <- 0.8
 p <- 0.7
 y <- N <- matrix(NA, M, T)
@@ -160,7 +160,6 @@ y[] <- rbinom(M*T, N, p)
 
 # Prepare data
 umf <- unmarkedFramePCO(y = y, numPrimary=T)
-
 summary(umf)
 
 
@@ -177,12 +176,12 @@ p <- plogis(coef(m1, type="det"))
 # Finite sample inference. Abundance at site i, year t
 re <- ranef(m1)
 devAskNewPage(TRUE)
-plot(re, layout=c(5,5), xlim=c(-1,10))
+plot(re, layout=c(5,5), xlim=c(-1,15))
 devAskNewPage(FALSE)
 
 (N.hat1 <- colSums(coef(re)))
 CI <- apply(confint(re), c(2,3), sum)
-rbind(N=colSums(N), N.hat=N.hat)
+
 
 # Expected values of N[i,t]
 N.hat2 <- matrix(NA, M, T)
@@ -192,6 +191,11 @@ for(t in 2:T) {
     }
 
 rbind(N=colSums(N), N.hat1=N.hat1, N.hat2=colSums(N.hat2))
+
+
+plot(1:T, N.hat1, ylim=c(0,600))
+points(1:T, colSums(N), col="blue", pch=16)
+arrows(1:T, CI[1,], 1:T, CI[2,], code=3, length=0.05, angle=90)
 
 }
 
