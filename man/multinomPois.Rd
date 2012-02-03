@@ -74,9 +74,9 @@ plogis(e[2:3])
 
 # Estimates of random effects
 re <- ranef(fm, K=20)
-ltheme <- canonical.theme(color = FALSE)       
-lattice.options(default.theme = ltheme)        
-plot(re, layout=c(5,5), subset = site \%in\% 1:25)
+ltheme <- canonical.theme(color = FALSE)
+lattice.options(default.theme = ltheme)
+plot(re, layout=c(10,5))
 
 
 
@@ -95,7 +95,7 @@ rowSums(getP(fm1))
 
 # Empirical Bayes estimates of abundance at first 25 sites
 # Very low uncertainty because p is very high
-plot(ranef(fm1, K=10), subset = site \%in\% 1:10, xlim=c(-1, 10))
+plot(ranef(fm1, K=10), layout=c(10,7), xlim=c(-1, 10))
 
 }
 

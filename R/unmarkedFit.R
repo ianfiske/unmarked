@@ -2643,6 +2643,72 @@ setMethod("ranef", "unmarkedFitDS",
 
 
 
+setMethod("ranef", "unmarkedFitGMM",
+    function(object, ...)
+{
+    stop("method not written yet")
+}
+
+
+
+setMethod("ranef", "unmarkedFitGDS",
+    function(object, ...)
+{
+    stop("method not written yet")
+}
+
+
+
+
+
+setMethod("ranef", "unmarkedFitColExt",
+    function(object, ...)
+{
+
+    stop("method not written")
+
+    data <- object@data
+    data@y[data@y > K] <- 1
+
+    y <- getY(data)
+    T <- data@numPrimary
+    J <- numY(data) / T
+
+    srm <- object@sitesRemoved
+    if(length(srm)>0)
+        y <- y[-srm,]
+
+    M <- nrow(y)
+    n.det <- sum(apply(y > 0, 1, any, na.rm = TRUE))
+
+    fc <- match.call()
+    fc[[1]] <- as.name("colext.fit")
+    formula <- object@formula
+
+    designMats <- getDesign(data, formula = formula)
+    V.itjk <- designMats$V
+    X.it.gam <- designMats$X.gam
+    X.it.eps <- designMats$X.eps
+    W.i <- designMats$W
+    X.it.gam <- as.matrix(X.it.gam[-seq(T,M*T,by=T),])
+    X.it.eps <- as.matrix(X.it.eps[-seq(T,M*T,by=T),])
+
+    psi.pars <- coef(object, type="psi")
+    col.pars <- coef(object, type="col")
+    ext.pars <- coef(object, type="ext")
+    p.pars <- coef(object, type="det")
+
+    psi <- plogis(W.i %*% psi.pars)
+    col <- plogis(X.it.gam %in% col.pars)
+    ext <- plogis(X.it.eps %in% ext.pars)
+    p <- plogis(V.itjk %in% p.pars)
+
+
+
+}
+
+
+
 
 
 
@@ -2652,7 +2718,13 @@ setMethod("ranef", "unmarkedFitPCO",
 {
 #    browser()
     dyn <- object@dynamics
-    lam <- predict(object, type="lambda")[,1] # Too slow
+    formlist <- object@formlist
+    formula <- as.formula(paste(unlist(formlist), collapse=" "))
+    D <- unmarked:::getDesign(object@data, formula)
+    delta <- D$delta
+    deltamax <- max(delta, na.rm=TRUE)
+
+    lam <- predict(object, type="lambda")[,1] # Too slow, use D$Xlam instead
     om <- predict(object, type="omega")[,1]
     R <- length(lam)
     T <- object@data@numPrimary
@@ -2721,16 +2793,20 @@ setMethod("ranef", "unmarkedFitPCO",
                     P[n0+1, n1+1] <- tp(n0, n1, gam[i,t-1], om[i,t-1])
                 }
             }
+            delta.it <- delta[i,t-1]
+            if(delta.it > 1) {
+                P1 <- P
+                for(d in 2:delta.it) {
+                    P <- P %*% P1
+                }
+            }
             g1 <- rep(1, K+1)
             for(j in 1:J) {
                 if(is.na(ya[i,j,t]) | is.na(pa[i,j,t]))
                     next
                 g1 <- g1 * dbinom(ya[i,j,t], N, pa[i,j,t])
             }
-#            g <- colSums(P) * g1 * bup[i,,t-1]
             g <- colSums(P * bup[i,,t-1]) * g1
-#            g <- colSums(t(t(P) * bup[i,,t-1])) * g1
-#            g <- colSums(P) * g1
             bup[i,,t] <- g / sum(g)
         }
     }
