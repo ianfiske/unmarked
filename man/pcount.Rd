@@ -79,10 +79,10 @@ Distributions, 3rd ed. Wiley.
 
 # Simulate data
 set.seed(35)
-nSites <- 200
+nSites <- 100
 nVisits <- 3
 x <- rnorm(nSites)               # a covariate
-beta0 <- -1
+beta0 <- 0
 beta1 <- 1
 lambda <- exp(beta0 + beta1*x)   # expected counts at each site
 N <- rpois(nSites, lambda)       # latent abundance
@@ -108,7 +108,8 @@ plogis(coef(fm1, type="det")) # Should be close to p
 
 # Empirical Bayes estimation of random effects
 (fm1re <- ranef(fm1))
-plot(fm1re, subset=site \%in\% 1:25, xlim=c(-1, 20))
+sites <- paste("site", 1:25, sep="")
+plot(fm1re, subset=site \%in\% sites, xlim=c(-1,15))
 sum(coef(fm1re))        # Estimated population size
 colSums(confint(fm1re)) # and 95\% CI
 sum(N)                  # Actual population size
