@@ -6,6 +6,10 @@
 \alias{ranef,unmarkedFitPCount-method}
 \alias{ranef,unmarkedFitMPois-method}
 \alias{ranef,unmarkedFitDS-method}
+\alias{ranef,unmarkedFitGMM-method}
+\alias{ranef,unmarkedFitGDS-method}
+\alias{ranef,unmarkedFitColExt-method}
+\alias{ranef,unmarkedFitPCO-method}
 \title{ Methods for Function \code{ranef} in Package \pkg{unmarked} }
 \description{
 Compute Best Unbiased Predictor (BUP) of latent variables (abundance or
@@ -18,6 +22,10 @@ occurrence) using empirical Bayes methods.
 \item{\code{signature(object = "unmarkedFitPCount")}}{}
 \item{\code{signature(object = "unmarkedFitMPois")}}{}
 \item{\code{signature(object = "unmarkedFitDS")}}{}
+\item{\code{signature(object = "unmarkedFitGMM")}}{Not written yet}
+\item{\code{signature(object = "unmarkedFitGDS")}}{Not written yet}
+\item{\code{signature(object = "unmarkedFitColExt")}}{Not written yet}
+\item{\code{signature(object = "unmarkedFitPCO")}}{}
 
 }
 }
@@ -26,7 +34,8 @@ occurrence) using empirical Bayes methods.
   Empirical Bayes methods typically under-estimate the variance of the
   posterior distribution because they do not account for uncertainty in
   the estimates of the fixed effects. See Laird and Louis (1987) for
-  discussion and possible remedies.
+  discussion and possible remedies, which could be implemented using
+  \code{\link{parboot}}.
 }
 
 \references{

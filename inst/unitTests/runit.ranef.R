@@ -12,7 +12,6 @@ N <- rpois(R, 3)
 y <- matrix(NA, R, J)
 y[] <- rbinom(R*J, N, 0.5)
 y[1,] <- NA
-
 K <- 15
 
 umf <- unmarkedFramePCount(y=y)
@@ -29,7 +28,8 @@ sum(coef(re))
 colSums(confint(re))
 
 
-
+df <- as(re, "data.frame")
+ar <- as(re, "array")
 
 
 

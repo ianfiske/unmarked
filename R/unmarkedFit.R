@@ -2647,7 +2647,7 @@ setMethod("ranef", "unmarkedFitGMM",
     function(object, ...)
 {
     stop("method not written yet")
-}
+})
 
 
 
@@ -2655,7 +2655,7 @@ setMethod("ranef", "unmarkedFitGDS",
     function(object, ...)
 {
     stop("method not written yet")
-}
+})
 
 
 
@@ -2686,7 +2686,7 @@ setMethod("ranef", "unmarkedFitColExt",
     formula <- object@formula
 
     designMats <- getDesign(data, formula = formula)
-    V.itjk <- designMats$V
+    V.itjk <- designMats$V # why 5 dims?
     X.it.gam <- designMats$X.gam
     X.it.eps <- designMats$X.eps
     W.i <- designMats$W
@@ -2705,7 +2705,7 @@ setMethod("ranef", "unmarkedFitColExt",
 
 
 
-}
+})
 
 
 
@@ -2869,6 +2869,13 @@ setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
 
 
 
+
+#setGeneric("ranef",
+#    function(object, ...) standardGeneric("ranef"))
+
+
+
+
 setMethod("show", "unmarkedRanef1", function(object)
 {
     bup <- object@bup
@@ -2892,19 +2899,28 @@ setMethod("show", "unmarkedRanef1", function(object)
 
 
 
-
-setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
-{
-    bup <- x@bup
+setAs("unmarkedRanef1", "array", function(from) {
+    bup <- from@bup
     dims <- dim(bup)
     R <- dims[1]
     lN <- dims[2]
     T <- dims[3]
     N <- as.integer(colnames(bup))
-#    extras <- match.call(call = sys.call(-1), expand.dots = FALSE)$...
-    xlb <- ifelse(length(N)>2, "Abundance", "Occurrence")
-    ylb <- "Probability"
+    site <- paste("site", 1:R, sep="")
+    year <- paste("year", 1:T, sep="")
+    dimnames(bup) <- list(site, colnames(bup), year)
+    bup <- drop(bup)
+    return(bup)
+})
 
+
+setAs("unmarkedRanef1", "data.frame", function(from) {
+    bup <- from@bup
+    dims <- dim(bup)
+    R <- dims[1]
+    lN <- dims[2]
+    T <- dims[3]
+    N <- as.integer(colnames(bup))
     N.ikt <- rep(rep(N, each=R), times=T)
     site <- rep(1:R, times=lN*T)
     site <- paste("site", site, sep="")
@@ -2912,8 +2928,22 @@ setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
     year <- rep(1:T, each=R*lN)
     year <- paste("year", year, sep="")
     year <- factor(year)
-
     dat <- data.frame(p=as.vector(bup), N=N.ikt, site=site, year=year)
+    if(T==1)
+        dat$year <- NULL
+    return(dat)
+})
+
+
+
+setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
+{
+    bup <- x@bup
+    T <- dim(bup)[3]
+    N <- as.integer(colnames(bup))
+    xlb <- ifelse(length(N)>2, "Abundance", "Occurrence")
+    ylb <- "Probability"
+    dat <- as(x, "data.frame")
     if(T==1)
         xyplot(p ~ N | site, dat, type="h", xlab=xlb, ylab=ylb, ...)
     else if(T>1)

@@ -24,8 +24,6 @@ Objects can be created by calls of the form \code{\link{ranef}}.
 \section{Slots}{
   \describe{
     \item{\code{bup}:}{A \code{"matrix"} with nSites rows and Nmax (K+1) columns }
-    \item{\code{modes}:}{A vector of length nSites containing the
-      posterior modes.}
   }
 }
 
