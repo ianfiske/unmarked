@@ -179,7 +179,7 @@ devAskNewPage(TRUE)
 plot(re, layout=c(5,5), xlim=c(-1,15))
 devAskNewPage(FALSE)
 
-(N.hat1 <- colSums(coef(re)))
+(N.hat1 <- colSums(postMean(re)))
 CI <- apply(confint(re), c(2,3), sum)
 
 

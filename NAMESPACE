@@ -26,7 +26,7 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
     hist, predict, profile, projection, residuals, sampleSize, SE,
     show, simulate, siteCovs, "siteCovs<-", summary, update, vcov,
     yearlySiteCovs, "yearlySiteCovs<-", "[", smoothed, projected,
-    nonparboot, logLik, LRT, ranef)
+    nonparboot, logLik, LRT, ranef, postMode, postMean)
 
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,

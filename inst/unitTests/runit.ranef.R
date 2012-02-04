@@ -19,12 +19,12 @@ fm <- pcount(~1 ~1, umf, K=K)
 
 
 (re <- ranef(fm))
-coef(re)
+postMode(re)
 confint(re, level=0.9)
 plot(re, xlim=c(-1,10))
 
 sum(N)
-sum(coef(re))
+sum(postMode(re))
 colSums(confint(re))
 
 
@@ -63,12 +63,12 @@ umf <- unmarkedFrameOccu(y=y, obsCovs=list(visit=visit))
 
 
 (re <- ranef(fm))
-coef(re)
+postMode(re)
 confint(re, level=0.9)
 plot(re)
 
 sum(z)
-sum(coef(re))
+sum(postMode(re))
 colSums(confint(re))
 
 
@@ -128,11 +128,11 @@ plot(re1)
 re2 <- ranef(m2, K=20)
 plot(re2)
 
-all(coef(re1) == coef(re2))
+all(postMode(re1) == postMode(re2))
 all(confint(re1) == confint(re2))
 
 
-reM <- coef(re1)
+reM <- postMode(re1)
 reCI <- confint(re1)
 
 sum(N)
@@ -178,7 +178,7 @@ umf <- unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
 fm <- multinomPois(~observer-1 ~1, umf)
 
 # Estimates of fixed effects
-e <- coef(fm)
+e <- postMode(fm)
 exp(e[1])
 plogis(e[2:3])
 
@@ -189,7 +189,7 @@ lattice.options(default.theme = ltheme)
 plot(re, layout=c(10,5))
 
 
-sum(coef(re))
+sum(postMode(re))
 colSums(confint(re))
 sum(N)
 
@@ -253,7 +253,7 @@ summary(umf)
 # Fit model and backtransform
 (m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20))
 
-e <- coef(m1)
+e <- postMode(m1)
 (lam <- exp(e[1]))
 (gam <- exp(e[2]))
 (om <- plogis(e[3]))
@@ -264,10 +264,10 @@ re <- ranef(m1)
 plot(re, layout=c(5,5), subset = site %in% 1:25 & year %in% 1,
      xlim=c(-1,20))
 
-coef(re)
+postMode(re)
 confint(re)
 
-N.hat <- colSums(coef(re))
+N.hat <- colSums(postMode(re))
 CI <- apply(confint(re), c(2,3), sum)
 rbind(N=colSums(N), N.hat=N.hat)
 

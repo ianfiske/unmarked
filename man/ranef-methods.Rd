@@ -3,6 +3,7 @@
 \alias{ranef}
 \alias{ranef-methods}
 \alias{ranef,unmarkedFitOccu-method}
+\alias{ranef,unmarkedFitOccuRN-method}
 \alias{ranef,unmarkedFitPCount-method}
 \alias{ranef,unmarkedFitMPois-method}
 \alias{ranef,unmarkedFitDS-method}
@@ -19,6 +20,7 @@ occurrence) using empirical Bayes methods.
 \describe{
 
 \item{\code{signature(object = "unmarkedFitOccu")}}{}
+\item{\code{signature(object = "unmarkedFitOccuRN")}}{}
 \item{\code{signature(object = "unmarkedFitPCount")}}{}
 \item{\code{signature(object = "unmarkedFitMPois")}}{}
 \item{\code{signature(object = "unmarkedFitDS")}}{}
@@ -59,13 +61,13 @@ fm <- pcount(~1 ~1, umf, K=50)
 
 # Estimates of abundance at each site
 (re <- ranef(fm))
-coef(re)
+postMean(re)
 confint(re, level=0.9)
 plot(re, xlim=c(0,20))
 
 # Compare estimates to truth
 sum(N)
-sum(coef(re))
+sum(postMean(re))
 colSums(confint(re))
 
 

@@ -2527,6 +2527,43 @@ setMethod("ranef", "unmarkedFitOccu",
 
 
 
+
+setMethod("ranef", "unmarkedFitOccuRN",
+    function(object, K, ...)
+{
+    if(missing(K)) {
+        warning("You did not specify K, the maximum value of N, so it was set to 50")
+        K <- 50
+    }
+    lam <- predict(object, type="state")[,1] # Too slow
+    R <- length(lam)
+    r <- getP(object)
+    N <- 0:K
+    y <- getY(getData(object))
+    srm <- object@sitesRemoved
+    if(length(srm) > 0)
+        y <- y[-object@sitesRemoved,]
+    bup <- array(NA_real_, c(R, length(N), 1))
+    colnames(bup) <- N
+    for(i in 1:R) {
+        f <- dpois(N, lam[i])
+        g <- rep(1, K+1)
+        for(j in 1:ncol(y)) {
+            if(is.na(y[i,j]) | is.na(r[i,j]))
+                next
+            p.ijn <- 1 - (1-r[i,j])^N
+            g <- g * dbinom(y[i,j], 1, p.ijn)
+        }
+        fudge <- f*g
+        bup[i,,1] <- fudge / sum(fudge)
+    }
+    new("unmarkedRanef1", bup=bup)
+})
+
+
+
+
+
 setMethod("ranef", "unmarkedFitMPois",
     function(object, K, ...)
 {
@@ -2668,7 +2705,7 @@ setMethod("ranef", "unmarkedFitColExt",
     stop("method not written")
 
     data <- object@data
-    data@y[data@y > K] <- 1
+    data@y[data@y > 1] <- 1
 
     y <- getY(data)
     T <- data@numPrimary
@@ -2823,21 +2860,32 @@ setMethod("ranef", "unmarkedFitPCO",
 
 
 
-
-
-
-setMethod("coef", "unmarkedRanef1", function(object)
+setGeneric("postMode",
+    function(object, ...) standardGeneric("postMode"))
+setMethod("postMode", "unmarkedRanef1", function(object)
 {
     bup <- object@bup
-    dims <- dim(bup)
-    R <- dims[1]
-    K <- dims[2]-1
-    T <- dims[3]
     N <- as.integer(colnames(bup))
     modes <- apply(bup, c(1,3), function(x) N[which.max(x)])
     modes <- drop(modes) # convert to vector if T=1
     return(modes)
 })
+
+
+
+setGeneric("postMean",
+    function(object, ...) standardGeneric("postMean"))
+setMethod("postMean", "unmarkedRanef1", function(object)
+{
+    bup <- object@bup
+    dims <- dim(bup)
+    N <- as.integer(colnames(bup))
+    means <- apply(bup, c(1,3), function(x) sum(N*x))
+    means <- drop(means) # convert to vector if T=1
+    return(means)
+})
+
+
 
 
 
@@ -2870,10 +2918,6 @@ setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
 
 
 
-#setGeneric("ranef",
-#    function(object, ...) standardGeneric("ranef"))
-
-
 
 
 setMethod("show", "unmarkedRanef1", function(object)
@@ -2882,16 +2926,17 @@ setMethod("show", "unmarkedRanef1", function(object)
     dims <- dim(bup)
     T <- dims[3]
     if(T==1)
-        print(cbind(Mode=coef(object), confint(object)))
+        print(cbind(Mean=postMean(object), Mode=postMode(object), confint(object)))
     else if(T>1) {
-        modes <- coef(object)
+        means <- postMean(object)
+        modes <- postMode(object)
         CI <- confint(object)
-        out <- array(NA_real_, c(dims[1], 3, T))
+        out <- array(NA_real_, c(dims[1], 4, T))
         dimnames(out) <- list(NULL,
-                              c("Mode", "2.5%", "97.5%"),
+                              c("Mean", "Mode", "2.5%", "97.5%"),
                               paste("Year", 1:T, sep=""))
         for(t in 1:T) {
-            out[,,t] <- cbind(modes[,t], CI[,,t])
+            out[,,t] <- cbind(means[,t], modes[,t], CI[,,t])
         }
         print(out)
     }

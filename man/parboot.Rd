@@ -65,7 +65,7 @@ plot(pb, main="")
 # Population size in sampled area
 
 Nhat <- function(fm) {
-    sum(coef(ranef(fm, K=50)))
+    sum(postMean(ranef(fm, K=50)))
     }
 
 set.seed(345)

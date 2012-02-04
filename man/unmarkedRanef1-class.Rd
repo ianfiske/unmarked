@@ -2,7 +2,10 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{unmarkedRanef1-class}
-\alias{coef,unmarkedRanef1-method}
+\alias{postMean}
+\alias{postMode}
+\alias{postMean,unmarkedRanef1-method}
+\alias{postMode,unmarkedRanef1-method}
 \alias{confint,unmarkedRanef1-method}
 \alias{plot,unmarkedRanef1,missing-method}
 \alias{show,unmarkedRanef1-method}
@@ -11,10 +14,7 @@
 
 \description{
 Stores the empirical Bayes estimates of the posterior distributions of
-the latent abundance or occurrence variables. This class works for
-closed population models fitted using functions such as
-\code{\link{occu}}, \code{\link{pcount}}, \code{\link{multinomPois}},
-and \code{\link{distsamp}}.
+the latent abundance or occurrence variables.
 }
 
 \section{Objects from the Class}{
@@ -23,14 +23,17 @@ Objects can be created by calls of the form \code{\link{ranef}}.
 
 \section{Slots}{
   \describe{
-    \item{\code{bup}:}{A \code{"matrix"} with nSites rows and Nmax (K+1) columns }
+    \item{\code{bup}:}{A \code{\link{array}} with nSites rows and Nmax
+  (K+1) columns and nPrimaryPeriod slices }
   }
 }
 
 \section{Methods}{
   \describe{
-    \item{coef}{\code{signature(object = "unmarkedRanef1")}: Extract the
+    \item{postMode}{\code{signature(object = "unmarkedRanef1")}: Extract the
     posterior modes}
+    \item{postMean}{\code{signature(object = "unmarkedRanef1")}: Extract the
+    posterior means}
     \item{confint}{\code{signature(object = "unmarkedRanef1")}: Compute
       confidence intervals.}
     \item{plot}{\code{signature(x = "unmarkedRanef1", y = "missing")}:

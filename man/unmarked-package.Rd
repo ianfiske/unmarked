@@ -129,8 +129,8 @@ fm3 <- occu(~veght ~veght+habitat, umf)
 fms <- fitList(m1=fm1, m2=fm2, m3=fm3)
 modSel(fms)
 
-# Number of sites occupied
-sum(coef(ranef(fm3)))         # Estimate
+# Empirical Bayes estimates of the number of sites occupied
+sum(postMode(ranef(fm3)))     # Estimate
 colSums(confint(ranef(fm3)))  # 95\% CI
 sum(z)                        # Actual
 
