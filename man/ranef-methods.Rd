@@ -61,13 +61,13 @@ fm <- pcount(~1 ~1, umf, K=50)
 
 # Estimates of abundance at each site
 (re <- ranef(fm))
-postMean(re)
+postMode(re)
 confint(re, level=0.9)
 plot(re, xlim=c(0,20))
 
 # Compare estimates to truth
 sum(N)
-sum(postMean(re))
+sum(postMode(re))
 colSums(confint(re))
 
 

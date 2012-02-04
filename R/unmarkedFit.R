@@ -2702,46 +2702,78 @@ setMethod("ranef", "unmarkedFitColExt",
     function(object, ...)
 {
 
-    stop("method not written")
+#    stop("method not written")
 
     data <- object@data
-    data@y[data@y > 1] <- 1
-
-    y <- getY(data)
-    T <- data@numPrimary
-    J <- numY(data) / T
-
-    srm <- object@sitesRemoved
-    if(length(srm)>0)
-        y <- y[-srm,]
-
-    M <- nrow(y)
-    n.det <- sum(apply(y > 0, 1, any, na.rm = TRUE))
-
-    fc <- match.call()
-    fc[[1]] <- as.name("colext.fit")
-    formula <- object@formula
-
-    designMats <- getDesign(data, formula = formula)
-    V.itjk <- designMats$V # why 5 dims?
+    M <- numSites(data)
+    nY <- data@numPrimary
+    J <- obsNum(data)/nY
+    psiParms <- coef(object, 'psi')
+    detParms <- coef(object, 'det')
+    colParms <- coef(object, 'col')
+    extParms <- coef(object, 'ext')
+    formulaList <- list(psiformula=object@psiformula,
+        gammaformula=object@gamformula,
+        epsilonformula=object@epsformula,
+        pformula=object@detformula)
+    designMats <- unmarked:::getDesign(object@data, object@formula)
+    V.itj <- designMats$V
     X.it.gam <- designMats$X.gam
     X.it.eps <- designMats$X.eps
     W.i <- designMats$W
-    X.it.gam <- as.matrix(X.it.gam[-seq(T,M*T,by=T),])
-    X.it.eps <- as.matrix(X.it.eps[-seq(T,M*T,by=T),])
 
-    psi.pars <- coef(object, type="psi")
-    col.pars <- coef(object, type="col")
-    ext.pars <- coef(object, type="ext")
-    p.pars <- coef(object, type="det")
+#    yumf <- getY(object@data)
+#    yumfa <- array(yumf, c(M, J, nY))
 
-    psi <- plogis(W.i %*% psi.pars)
-    col <- plogis(X.it.gam %in% col.pars)
-    ext <- plogis(X.it.eps %in% ext.pars)
-    p <- plogis(V.itjk %in% p.pars)
+    y <- designMats$y
+    ya <- array(y, c(M, J, nY))
 
+    psiP <- plogis(W.i %*% psiParms)
+    detP <- plogis(V.itj %*% detParms)
+    colP <- plogis(X.it.gam  %*% colParms)
+    extP <- plogis(X.it.eps %*% extParms)
 
+    detP <- array(detP, c(J, nY, M))
+    colP <- matrix(colP, M, nY, byrow = TRUE)
+    extP <- matrix(extP, M, nY, byrow = TRUE)
 
+    ## create transition matrices (phi^T)
+    phis <- array(NA,c(2,2,nY-1,M)) #array of phis for each
+    for(i in 1:M) {
+        for(t in 1:(nY-1)) {
+            phis[,,t,i] <- matrix(c(1-colP[i,t], colP[i,t], extP[i,t],
+                1-extP[i,t]))
+            }
+        }
+
+    ## first compute latent probs
+    x <- array(NA, c(2, nY, M))
+    x[1,1,] <- 1-psiP
+    x[2,1,] <- psiP
+    for(i in 1:M) {
+        for(t in 2:nY) {
+            x[,t,i] <- (phis[,,t-1,i] %*% x[,t-1,i])
+            }
+        }
+
+    z <- 0:1
+    bup <- array(NA_real_, c(M, 2, nY))
+    colnames(bup) <- z
+
+    for(i in 1:M) {
+        for(t in 1:nY) {
+            g <- rep(1, 2)
+            for(j in 1:J) {
+                if(is.na(ya[i,j,t]) | is.na(detP[j,t,i]))
+                    next
+                g <- g * dbinom(ya[i,j,t], 1, z*detP[j,t,i])
+            }
+            tmp <- x[,t,i] * g
+            bup[i,,t] <- tmp/sum(tmp)
+        }
+    }
+
+    new("unmarkedRanef1", bup=bup)
 })
 
 
@@ -2926,17 +2958,20 @@ setMethod("show", "unmarkedRanef1", function(object)
     dims <- dim(bup)
     T <- dims[3]
     if(T==1)
-        print(cbind(Mean=postMean(object), Mode=postMode(object), confint(object)))
+        print(cbind(#Mean=postMean(object),
+                    Mode=postMode(object), confint(object)))
     else if(T>1) {
-        means <- postMean(object)
+#        means <- postMean(object)
         modes <- postMode(object)
         CI <- confint(object)
-        out <- array(NA_real_, c(dims[1], 4, T))
+        out <- array(NA_real_, c(dims[1], 3, T))
         dimnames(out) <- list(NULL,
-                              c("Mean", "Mode", "2.5%", "97.5%"),
+                              c(#"Mean",
+                                "Mode", "2.5%", "97.5%"),
                               paste("Year", 1:T, sep=""))
         for(t in 1:T) {
-            out[,,t] <- cbind(means[,t], modes[,t], CI[,,t])
+            out[,,t] <- cbind(#means[,t],
+                              modes[,t], CI[,,t])
         }
         print(out)
     }
