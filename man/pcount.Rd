@@ -108,8 +108,7 @@ plogis(coef(fm1, type="det")) # Should be close to p
 
 # Empirical Bayes estimation of random effects
 (fm1re <- ranef(fm1))
-sites <- paste("site", 1:25, sep="")
-plot(fm1re, subset=site \%in\% sites, xlim=c(-1,15))
+plot(fm1re, subset=site \%in\% 1:25, xlim=c(-1,15))
 sum(coef(fm1re))        # Estimated population size
 colSums(confint(fm1re)) # and 95\% CI
 sum(N)                  # Actual population size

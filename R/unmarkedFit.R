@@ -2903,12 +2903,8 @@ setAs("unmarkedRanef1", "array", function(from) {
     bup <- from@bup
     dims <- dim(bup)
     R <- dims[1]
-    lN <- dims[2]
     T <- dims[3]
-    N <- as.integer(colnames(bup))
-    site <- paste("site", 1:R, sep="")
-    year <- paste("year", 1:T, sep="")
-    dimnames(bup) <- list(site, colnames(bup), year)
+    dimnames(bup) <- list(1:R, colnames(bup), 1:T)
     bup <- drop(bup)
     return(bup)
 })
@@ -2923,12 +2919,9 @@ setAs("unmarkedRanef1", "data.frame", function(from) {
     N <- as.integer(colnames(bup))
     N.ikt <- rep(rep(N, each=R), times=T)
     site <- rep(1:R, times=lN*T)
-    site <- paste("site", site, sep="")
-    site <- factor(site)
     year <- rep(1:T, each=R*lN)
-    year <- paste("year", year, sep="")
-    year <- factor(year)
-    dat <- data.frame(p=as.vector(bup), N=N.ikt, site=site, year=year)
+    dat <- data.frame(site=site, year=year, N=N.ikt, p=as.vector(bup))
+    dat <- dat[order(dat$site),]
     if(T==1)
         dat$year <- NULL
     return(dat)
@@ -2944,10 +2937,23 @@ setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
     xlb <- ifelse(length(N)>2, "Abundance", "Occurrence")
     ylb <- "Probability"
     dat <- as(x, "data.frame")
+    site.c <- as.character(dat$site)
+    nc <- nchar(site.c)
+    mc <- max(nc)
+    dat$site.c <- paste("site", sapply(site.c, function(x)
+         paste(paste(rep("0", mc-nchar(x)), collapse=""), x, sep="")),
+         sep="")
     if(T==1)
-        xyplot(p ~ N | site, dat, type="h", xlab=xlb, ylab=ylb, ...)
-    else if(T>1)
-        xyplot(p ~ N | site+year, dat, type="h", xlab=xlb, ylab=ylb, ...)
+        xyplot(p ~ N | site.c, dat, type="h", xlab=xlb, ylab=ylb, ...)
+    else if(T>1) {
+        year.c <- as.character(dat$year)
+        nc <- nchar(year.c)
+        mc <- max(nc)
+        dat$year.c <- paste("year", sapply(year.c, function(x)
+            paste(paste(rep("0", mc-nchar(x)), collapse=""), x, sep="")),
+            sep="")
+        xyplot(p ~ N | site.c+year.c, dat, type="h", xlab=xlb, ylab=ylb, ...)
+    }
 })
 
 

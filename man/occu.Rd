@@ -93,6 +93,11 @@ confint(fm, type='det', method = 'profile')
 (btlc <- backTransform(lc))
 confint(btlc, level = 0.9)
 
+# Empirical Bayes estimates of proportion of sites occupied with 95% CI
+# No uncertainty b/c p is so high!
+re <- ranef(fm)
+c("PAO"=sum(coef(re)), colSums(confint(re)))
+
 }
 
 \keyword{models}

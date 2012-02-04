@@ -72,7 +72,7 @@ abundance effects in distance sampling. \emph{Ecology} 85, pp. 1591-1597.
     \code{\link{sight2perpdist}}, \code{\link{detFuns}},
     \code{\link{gdistsamp}}, \code{\link{ranef}}.
     Also look at vignette("distsamp").
-	}
+  }
 
 
 \examples{

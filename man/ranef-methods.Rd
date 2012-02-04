@@ -49,19 +49,19 @@ occurrence) using empirical Bayes methods.
 set.seed(4564)
 R <- 20
 J <- 5
-N <- rpois(R, 3)
+N <- rpois(R, 10)
 y <- matrix(NA, R, J)
 y[] <- rbinom(R*J, N, 0.5)
 
 # Fit model
 umf <- unmarkedFramePCount(y=y)
-fm <- pcount(~1 ~1, umf, K=15)
+fm <- pcount(~1 ~1, umf, K=50)
 
 # Estimates of abundance at each site
 (re <- ranef(fm))
 coef(re)
 confint(re, level=0.9)
-plot(re, xlim=c(0,10))
+plot(re, xlim=c(0,20))
 
 # Compare estimates to truth
 sum(N)

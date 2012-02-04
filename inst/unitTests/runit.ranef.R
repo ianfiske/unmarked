@@ -31,6 +31,13 @@ colSums(confint(re))
 df <- as(re, "data.frame")
 ar <- as(re, "array")
 
+site.c <- as.character(df$site)
+nc <- nchar(site.c)
+mc <- max(nc)
+sapply(site.c, function(x) paste(paste(rep("0", mc-nchar(x)),
+                                       collapse=""), x, sep=""))
+
+ifelse(site.c<mc, paste(rep("0",mc-nc), site.c, sep=""), site.c)
 
 
 
@@ -254,10 +261,7 @@ e <- coef(m1)
 
 re <- ranef(m1)
 
-sites <- paste("site", 1:25, sep="")
-years <- paste("year", 1:1, sep="")
-
-plot(re, layout=c(5,5), subset = site %in% sites & year %in% years,
+plot(re, layout=c(5,5), subset = site %in% 1:25 & year %in% 1,
      xlim=c(-1,20))
 
 coef(re)
