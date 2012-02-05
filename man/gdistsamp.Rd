@@ -153,6 +153,11 @@ backTransform(m1, type="lambda")
 backTransform(m1, type="phi")
 backTransform(m1, type="det")
 
+
+# Empirical Bayes estimates of abundance at each site
+re <- ranef(m1)
+plot(re, layout=c(10,5), xlim=c(-1, 20))
+
 }
 \keyword{ models }
 

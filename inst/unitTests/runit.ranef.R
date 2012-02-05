@@ -198,8 +198,97 @@ sum(N)
 
 
 
+# ---------------------------- gmultmix ---------------------------------
 
 
+library(unmarked)
+n <- 100  # number of sites
+T <- 4    # number of primary periods
+J <- 3    # number of secondary periods
+
+lam <- 3
+phi <- 0.5
+p <- 0.3
+
+#set.seed(26)
+y <- array(NA, c(n, T, J))
+M <- rpois(n, lam)          # Local population size
+N <- matrix(NA, n, T)       # Individuals available for detection
+
+for(i in 1:n) {
+    N[i,] <- rbinom(T, M[i], phi)
+    y[i,,1] <- rbinom(T, N[i,], p)    # Observe some
+    Nleft1 <- N[i,] - y[i,,1]         # Remove them
+    y[i,,2] <- rbinom(T, Nleft1, p)   # ...
+    Nleft2 <- Nleft1 - y[i,,2]
+    y[i,,3] <- rbinom(T, Nleft2, p)
+    }
+
+y.ijt <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
+umf1 <- unmarkedFrameGMM(y=y.ijt, numPrimary=T, type="removal")
+
+(m1 <- gmultmix(~1, ~1, ~1, data=umf1, K=30))
+
+re <- ranef(m1)
+plot(re, layout=c(5,5), xlim=c(-1,20), subset=site%in%1:25)
+
+
+
+
+
+
+
+# ------------------------------ gdistsamp ------------------------------
+
+set.seed(36837)
+R <- 50 # number of transects
+T <- 5  # number of replicates
+strip.width <- 50
+transect.length <- 60 # so that abund != density
+breaks <- seq(0, 50, by=10)
+
+lambda <- 10 # Abundance
+phi <- 0.6   # Availability
+sigma <- 30  # Half-normal shape parameter
+
+J <- length(breaks)-1
+y <- array(0, c(R, J, T))
+for(i in 1:R) {
+    M <- rpois(1, lambda) # Individuals within the 1-ha strip
+    for(t in 1:T) {
+        # Distances from point
+        d <- runif(M, 0, strip.width)
+        # Detection process
+        if(length(d)) {
+            cp <- phi*exp(-d^2 / (2 * sigma^2)) # half-normal w/ g(0)<1
+            d <- d[rbinom(length(d), 1, cp) == 1]
+            y[i,,t] <- table(cut(d, breaks, include.lowest=TRUE))
+            }
+        }
+    }
+y <- matrix(y, nrow=R) # convert array to matrix
+
+# Organize data
+umf <- unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
+    dist.breaks=breaks, tlength=rep(transect.length, R), numPrimary=T)
+summary(umf)
+
+# Fit the model
+m1 <- gdistsamp(~1, ~1, ~1, umf, output="abund", K=50)
+summary(m1)
+m2 <- gdistsamp(~1, ~1, ~1, umf, output="density", K=50)
+summary(m2)
+
+
+re1 <- ranef(m1)
+plot(re1, xlim=c(-1, 30))
+re2 <- ranef(m2)
+plot(re2, xlim=c(-1, 30))
+
+all(postMode(re1) == postMode(re2))
+all(confint(re1) == confint(re2))
+
+cbind(postMode(re1), postMode(re2))
 
 
 # ----------------------------- colext ----------------------------------

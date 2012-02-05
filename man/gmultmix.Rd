@@ -131,6 +131,10 @@ c(p, (1-p) * p, (1-p)^2 * p)
 # Or more generally:
 head(getP(m1))
 
+# Empirical Bayes estimates of super-population size
+re <- ranef(m1)
+plot(re, layout=c(5,5), xlim=c(-1,20), subset=site\%in\%1:25)
+
 
 }
 \keyword{ model }

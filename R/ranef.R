@@ -267,9 +267,9 @@ setMethod("ranef", "unmarkedFitDS",
 setMethod("ranef", "unmarkedFitGMMorGDS",
     function(object, ...)
 {
-    stop("method not written yet")
 
-    D <- getDesign(object@data, object@formula)
+    data <- object@data
+    D <- unmarked:::getDesign(data, object@formula)
 
     Xlam <- D$Xlam
     Xphi <- D$Xphi
@@ -287,9 +287,7 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
     beta.det <- coef(object, type="det")
 
     lambda <- exp(Xlam %*% beta.lam)
-    phi <- plogis(Xphi %*% beta.phi)
-    phi <- matrix(phi, M, J, byrow=TRUE)
-#    p <- plogis(Xdet %*% beta.det)
+
     cp <- getP(object)
 
     K <- object@K
@@ -300,8 +298,46 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
     R <- numY(data) / T
     J <- obsNum(data) / T
 
-    cpa <- array(cp, c(M,R,T))
-    ya <- array(y, c(M,R,T))
+    if(identical(class(object)[1], "unmarkedFitGDS")) {
+        if(identical(object@output, "density")) {
+            survey <- object@data@survey
+            tlength <- object@data@tlength
+            unitsIn <- object@data@unitsIn
+            unitsOut <- object@unitsOut
+            db <- object@data@dist.breaks
+            w <- diff(db)
+            u <- a <- matrix(NA, nSites, R)
+            switch(survey,
+                   line = {
+                       for(i in 1:nSites) {
+                           a[i,] <- tlength[i] * w
+                           u[i,] <- a[i,] / sum(a[i,])
+                       }
+                   },
+                   point = {
+                       for(i in 1:nSites) {
+                           a[i, 1] <- pi*db[2]^2
+                           for(j in 2:R)
+                               a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+                           u[i,] <- a[i,] / sum(a[i,])
+                       }
+                   })
+            switch(survey,
+                   line = A <- rowSums(a) * 2,
+                   point = A <- rowSums(a))
+            switch(unitsIn,
+                   m = A <- A / 1e6,
+                   km = A <- A)
+            switch(unitsOut,
+                   ha = A <- A * 100,
+                   kmsq = A <- A)
+            lambda <- lambda*A # Density to abundance
+        }
+    }
+
+    cpa <- array(cp, c(nSites,R,T))
+    ya <- array(y, c(nSites,R,T))
+#    ym <- apply(ya, c(1,3), sum, na.rm=TRUE)
 
     bup <- array(0, c(nSites, K+1, 1))
     colnames(bup) <- M
@@ -314,16 +350,17 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
                NB = f <- dnbinom(M, mu=lambda[i], size=alpha))
         g <- rep(1, K+1) # outside t loop
         for(t in 1:T) {
-            if(any(is.na(y[i,,t])))
+            if(any(is.na(ya[i,,t])))
                 next
-            cpa[i,R+1,t] <- 1-sum(cpa[i,1:R,t])
             for(k in 1:(K+1)) {
-                y.it <- y[i,,t]
+                y.it <- ya[i,,t]
                 ydot <- M[k]-sum(y.it)
                 y.it <- c(y.it, ydot)
-                if(ydot < 0)
+                if(ydot < 0) {
+                    g[k] <- 0
                     next
-                cp.it <- c(cp[i,,t], 1-sum(cp[i,,t]))
+                }
+                cp.it <- c(cpa[i,,t], 1-sum(cpa[i,,t]))
                 g[k] <- dmultinom(y.it, M[k], cp.it)
             }
         }
