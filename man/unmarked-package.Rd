@@ -166,11 +166,11 @@ with(Epsi2, {
     lines(veght, Predicted+SE, col="blue")
     })
 with(Ep, {
-    plot(veght, Predicted, type="l", lwd=2, col="blue", ylim=c(0,1),
+    plot(veght, Predicted, type="l", lwd=2, ylim=c(0,1),
         xlab="Vegetation height (standardized)",
         ylab=expression(paste("Detection probability (", italic(p), ")")))
-    lines(veght, Predicted-SE, col="blue")
-    lines(veght, Predicted+SE, col="blue")
+    lines(veght, Predicted-SE, col=gray(0.7))
+    lines(veght, Predicted+SE, col=gray(0.7))
     })
 
 
