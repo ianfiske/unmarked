@@ -17,7 +17,7 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitDS,
     unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
     unmarkedFrameGMM, unmarkedFrameGDS, unmarkedFramePCO,
     unmarkedEstimate, unmarkedFitList, unmarkedModSel,
-    unmarkedRanef1)
+    unmarkedRanef)
 
 # Methods
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData,

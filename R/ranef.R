@@ -10,9 +10,12 @@ setGeneric("ranef",
     function(object, ...) standardGeneric("ranef"))
 
 
-setClass("unmarkedRanef1",
+setClass("unmarkedRanef",
     representation(bup = "array"))
 
+
+setClassUnion("unmarkedFitGMMorGDS",
+              c("unmarkedFitGMM", "unmarkedFitGDS"))
 
 
 setMethod("ranef", "unmarkedFitPCount",
@@ -51,7 +54,7 @@ setMethod("ranef", "unmarkedFitPCount",
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef1", bup=bup)
+    new("unmarkedRanef", bup=bup)
 })
 
 
@@ -83,7 +86,7 @@ setMethod("ranef", "unmarkedFitOccu",
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef1", bup=bup)
+    new("unmarkedRanef", bup=bup)
 })
 
 
@@ -122,7 +125,7 @@ setMethod("ranef", "unmarkedFitOccuRN",
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef1", bup=bup)
+    new("unmarkedRanef", bup=bup)
 })
 
 
@@ -166,7 +169,7 @@ setMethod("ranef", "unmarkedFitMPois",
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef1", bup=bup)
+    new("unmarkedRanef", bup=bup)
 })
 
 
@@ -236,7 +239,7 @@ setMethod("ranef", "unmarkedFitDS",
         fudge <- f*g
         bup[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef1", bup=bup)
+    new("unmarkedRanef", bup=bup)
 })
 
 
@@ -245,19 +248,91 @@ setMethod("ranef", "unmarkedFitDS",
 
 
 
-setMethod("ranef", "unmarkedFitGMM",
+#setMethod("ranef", "unmarkedFitGMM",
+#    function(object, ...)
+#{
+#    stop("method not written yet")
+#})
+
+
+
+#setMethod("ranef", "unmarkedFitGDS",
+#    function(object, ...)
+#{
+#    stop("method not written yet")
+#})
+
+
+
+setMethod("ranef", "unmarkedFitGMMorGDS",
     function(object, ...)
 {
     stop("method not written yet")
+
+    D <- getDesign(object@data, object@formula)
+
+    Xlam <- D$Xlam
+    Xphi <- D$Xphi
+    Xdet <- D$Xdet
+    y <- D$y  # MxJT
+    Xlam.offset <- D$Xlam.offset
+    Xphi.offset <- D$Xphi.offset
+    Xdet.offset <- D$Xdet.offset
+    if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
+    if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
+    if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
+
+    beta.lam <- coef(object, type="lambda")
+    beta.phi <- coef(object, type="phi")
+    beta.det <- coef(object, type="det")
+
+    lambda <- exp(Xlam %*% beta.lam)
+    phi <- plogis(Xphi %*% beta.phi)
+    phi <- matrix(phi, M, J, byrow=TRUE)
+#    p <- plogis(Xdet %*% beta.det)
+    cp <- getP(object)
+
+    K <- object@K
+    M <- 0:K
+
+    nSites <- nrow(y)
+    T <- data@numPrimary
+    R <- numY(data) / T
+    J <- obsNum(data) / T
+
+    cpa <- array(cp, c(M,R,T))
+    ya <- array(y, c(M,R,T))
+
+    bup <- array(0, c(nSites, K+1, 1))
+    colnames(bup) <- M
+    mix <- object@mixture
+    if(identical(mix, "NB"))
+        alpha <- exp(coef(object, type="alpha"))
+    for(i in 1:nSites) {
+        switch(mix,
+               P  = f <- dpois(M, lambda[i]),
+               NB = f <- dnbinom(M, mu=lambda[i], size=alpha))
+        g <- rep(1, K+1) # outside t loop
+        for(t in 1:T) {
+            if(any(is.na(y[i,,t])))
+                next
+            cpa[i,R+1,t] <- 1-sum(cpa[i,1:R,t])
+            for(k in 1:(K+1)) {
+                y.it <- y[i,,t]
+                ydot <- M[k]-sum(y.it)
+                y.it <- c(y.it, ydot)
+                if(ydot < 0)
+                    next
+                cp.it <- c(cp[i,,t], 1-sum(cp[i,,t]))
+                g[k] <- dmultinom(y.it, M[k], cp.it)
+            }
+        }
+        fudge <- f*g
+        bup[i,,1] <- fudge/sum(fudge)
+    }
+    new("unmarkedRanef", bup=bup)
 })
 
-
-
-setMethod("ranef", "unmarkedFitGDS",
-    function(object, ...)
-{
-    stop("method not written yet")
-})
 
 
 
@@ -338,7 +413,7 @@ setMethod("ranef", "unmarkedFitColExt",
         }
     }
 
-    new("unmarkedRanef1", bup=bup)
+    new("unmarkedRanef", bup=bup)
 })
 
 
@@ -444,7 +519,7 @@ setMethod("ranef", "unmarkedFitPCO",
             bup[i,,t] <- g / sum(g)
         }
     }
-    new("unmarkedRanef1", bup=bup)
+    new("unmarkedRanef", bup=bup)
 })
 
 
@@ -459,7 +534,7 @@ setMethod("ranef", "unmarkedFitPCO",
 
 setGeneric("postMode",
     function(object, ...) standardGeneric("postMode"))
-setMethod("postMode", "unmarkedRanef1", function(object)
+setMethod("postMode", "unmarkedRanef", function(object)
 {
     bup <- object@bup
     N <- as.integer(colnames(bup))
@@ -472,7 +547,7 @@ setMethod("postMode", "unmarkedRanef1", function(object)
 
 setGeneric("postMean",
     function(object, ...) standardGeneric("postMean"))
-setMethod("postMean", "unmarkedRanef1", function(object)
+setMethod("postMean", "unmarkedRanef", function(object)
 {
     bup <- object@bup
     dims <- dim(bup)
@@ -486,7 +561,7 @@ setMethod("postMean", "unmarkedRanef1", function(object)
 
 
 
-setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
+setMethod("confint", "unmarkedRanef", function(object, parm, level=0.95)
 {
     if(!missing(parm))
         warning("parm argument is ignored. Did you mean to specify level?")
@@ -517,7 +592,7 @@ setMethod("confint", "unmarkedRanef1", function(object, parm, level=0.95)
 
 
 
-setMethod("show", "unmarkedRanef1", function(object)
+setMethod("show", "unmarkedRanef", function(object)
 {
     bup <- object@bup
     dims <- dim(bup)
@@ -544,7 +619,7 @@ setMethod("show", "unmarkedRanef1", function(object)
 
 
 
-setAs("unmarkedRanef1", "array", function(from) {
+setAs("unmarkedRanef", "array", function(from) {
     bup <- from@bup
     dims <- dim(bup)
     R <- dims[1]
@@ -555,7 +630,7 @@ setAs("unmarkedRanef1", "array", function(from) {
 })
 
 
-setAs("unmarkedRanef1", "data.frame", function(from) {
+setAs("unmarkedRanef", "data.frame", function(from) {
     bup <- from@bup
     dims <- dim(bup)
     R <- dims[1]
@@ -574,7 +649,7 @@ setAs("unmarkedRanef1", "data.frame", function(from) {
 
 
 
-setMethod("plot", c("unmarkedRanef1", "missing"), function(x, y, ...)
+setMethod("plot", c("unmarkedRanef", "missing"), function(x, y, ...)
 {
     bup <- x@bup
     T <- dim(bup)[3]
