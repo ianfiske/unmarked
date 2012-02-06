@@ -64,7 +64,7 @@ starts, method = "BFGS", se = TRUE, rel.tol=1e-4, ...)
 }
 \details{
   This model extends the model of Royle et al. (2004) by estimating the
-  probability of being available for detection (phi). This
+  probability of being available for detection \eqn{\phi}{phi}. This
   effectively relaxes the assumption that \eqn{g(0)=1}. In other words,
   inividuals at a distance of 0 are not assumed to be detected with
   certainty. To estimate this additional parameter, replicate distance

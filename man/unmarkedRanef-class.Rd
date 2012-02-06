@@ -11,7 +11,7 @@
 \title{Class \code{"unmarkedRanef"}}
 
 \description{
-Stores the empirical Bayes estimates of the posterior distributions of
+Stores the conditional posterior distributions of
 the latent abundance or occurrence variables.
 }
 

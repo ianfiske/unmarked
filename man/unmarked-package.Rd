@@ -157,22 +157,18 @@ newdata2 <- data.frame(habitat=factor('A', levels=c('A','B')),
 Epsi2 <- predict(fms, type="state", newdata=newdata2, appendData=TRUE)
 Ep <- predict(fms, type="det", newdata=newdata2, appendData=TRUE)
 
-par(mfrow=c(2, 1), mai=c(0.9, 0.8, 0.2, 0.2))
-with(Epsi2, {
-    plot(veght, Predicted, type="l", lwd=2, col="blue", ylim=c(0,1),
-        xlab="Vegetation height (standardized)",
-        ylab=expression(paste("Probability of occurrence (", psi, ")")))
-    lines(veght, Predicted-SE, col="blue")
-    lines(veght, Predicted+SE, col="blue")
-    })
-with(Ep, {
-    plot(veght, Predicted, type="l", lwd=2, ylim=c(0,1),
-        xlab="Vegetation height (standardized)",
-        ylab=expression(paste("Detection probability (", italic(p), ")")))
-    lines(veght, Predicted-SE, col=gray(0.7))
-    lines(veght, Predicted+SE, col=gray(0.7))
-    })
-
+op <- par(mfrow=c(2, 1), mai=c(0.9, 0.8, 0.2, 0.2))
+plot(Predicted~veght, Epsi2, type="l", lwd=2, ylim=c(0,1),
+    xlab="Vegetation height (standardized)",
+    ylab=expression(paste("Probability of occurrence (", psi, ")")))
+    lines(lower ~ veght, Epsi2, col=gray(0.7))
+    lines(upper ~ veght, Epsi2, col=gray(0.7))
+plot(Predicted~veght, Ep, type="l", lwd=2, ylim=c(0,1),
+    xlab="Vegetation height (standardized)",
+    ylab=expression(paste("Detection probability (", italic(p), ")")))
+lines(lower~veght, Ep, col=gray(0.7))
+lines(upper~veght, Ep, col=gray(0.7))
+par(op)
 
 
 }
