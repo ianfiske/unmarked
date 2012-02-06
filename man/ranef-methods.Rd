@@ -60,12 +60,17 @@ manipulate the returned object.
 
 
 \references{
-  Royle, J.A and R.M. Dorazio. 2008. Hierarchical Modeling and Inference
-  in Ecology. Academic Press.
 
   Laird, N.M. and T.A. Louis. 1987. Empirical Bayes confidence intervals
   based on bootstrap samples. Journal of the American Statistical
   Association 82:739--750.
+
+  Carlin, B.P and T.A Louis. 1996. Bayes and Empirical Bayes Methods for
+  Data Analysis. Chapman and Hall/CRC.
+
+  Royle, J.A and R.M. Dorazio. 2008. Hierarchical Modeling and Inference
+  in Ecology. Academic Press.
+
   }
 
   \seealso{
