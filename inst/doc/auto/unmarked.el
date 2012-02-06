@@ -4,6 +4,7 @@
      "buckland_distsamp_2001"
      "chandler_etal:2009"
      "chandlerEA_2011"
+     "dorazio_etal:2005"
      "efford:2004"
      "fiskeChandler_2011"
      "kendall_etal:1997"

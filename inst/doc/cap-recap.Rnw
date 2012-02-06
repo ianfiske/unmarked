@@ -10,7 +10,7 @@ library(tools)
 \usepackage[authoryear,round]{natbib}
 \usepackage{fullpage}
 \usepackage{amsmath}
-\bibliographystyle{plainnat}
+\bibliographystyle{ecology}
 
 \DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
 \DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em}
@@ -34,7 +34,7 @@ library(tools)
   sampling, double observer sampling, and capture-recapture
   methods. This document focuses on the analysis of capture-recapture
   data using a class of models known as multinomial $N$-mixture
-  models \citep{royle_generalized_2004, chandlerEA_2011}, which
+  models \citep{royle_generalized_2004, dorazio_etal:2005}, which
   assume that capture-recapture data have been collected at a
   collection of sample locations (``sites''). Capture-recapture models
   can be fitted with
@@ -64,9 +64,9 @@ Although traditional capture-recapture models are useful
 for estimating population size when $p<1$, they do not allow one to model
 variation in abundance, which is a central focus of much ecological
 research.
-\citet{royle_generalized_2004} developed a framework for
+\citet{royle_generalized_2004} and \citet{dorazio_etal:2005} developed a framework for
 modeling variation in both abundance and capture
-probability when capture-recapture data is collected at a set of
+probability when capture-recapture data are collected at a set of
 $R$ sites. Site-specific abundance ($N_i; i=1,2,...,R$) is regarded
 as latent variable following a discrete distrubution such as the
 Poisson or negative binomial. The encounter histories are then
@@ -108,8 +108,7 @@ form of the above can be written as $\log(\lambda_i) =
 {\bf X}_i' \bf \beta$ where ${\bf X}$ is a design matrix and
 ${\bf \beta}$ is a vector
 of coefficients, possibly including an intercept.
-Capture probability can be modeled using the logit-
-link in much the same way
+Capture probability can be modeled using the logit-link in much the same way
 \[
 \text{logit}(p_{ij}) = \alpha_0 + \alpha_1 v_{ij}
 \]
@@ -279,8 +278,8 @@ option to automatically handle standard capture-recapture data too,
 but here we show how to supply it using a user-defined \texttt{piFun},
 which allows flexibility in converting detection probability
 to multinomial cell probabilities $\bf \pi$. The \texttt{piFun} must
-take a matrix of detection probabilities with as many columns as there
-are secondary sampling periods (3 in this case), and convert them to a
+take a matrix of detection probabilities with $J$ columns
+(3 in this case), and convert them to a
 matrix of multinomial
 cell probabilities with $K$ columns. Each column corresponds to the
 probability of observing the encounter history $k$. Here is a
@@ -335,8 +334,8 @@ o2y <- matrix(1, 3, 7)
 @
 
 We are now ready to create the \texttt{unmarkedFrame}. In order to fit
-model $M_t$, we need a covariate that references the secondary sampling
-period, which we call \texttt{intervalMat} below. We also provide a
+model $M_t$, we need a covariate that references the time interval
+, which we call \texttt{intervalMat} below. We also provide a
 couple of site-specific covariates: the percent cover of woody
 vegetation and vegetation structure.
 
@@ -435,7 +434,7 @@ newly-captured individuals are captured with probability $p_{naive}$
 and then are subsequently recaptured with probability $p_{wise}$. If
 $p_{wise} < p_{naive}$, then animals exhibit trap avoidance. In some
 cases, such as when traps are baited, we might observed $p_{wise} >
-p_{naive}$ in which the animals are said to be ``trap-happy''.
+p_{naive}$ in which case the animals are said to be ``trap-happy''.
 
 To fit model $M_b$ in \texttt{unmarked}, we need to create a new
 \texttt{piFun} and we need to provide an \texttt{obsCov} that
@@ -444,10 +443,6 @@ $p_{wise}$. The simplest possible approach is the following
 
 <<>>=
 crPiFun.Mb <- function(p) { # p should have 3 columns
-    if(!all(p[,1]==p[,2]))
-        stop("only the behavior obsCov is allowed")
-    if(length(table(p[,2])) > 1)
-        stop("only the behavior obsCov is allowed")
     pNaive <- p[,1]
     pWise <- p[,3]
     cbind("001" = (1-pNaive) * (1-pNaive) * pNaive,
@@ -477,6 +472,11 @@ umf.cr1Mb <- unmarkedFrameMPois(y=alfl.H1,
     obsCovs=list(behavior=behavior),
     obsToY=o2y, piFun="crPiFun.Mb")
 M0 <- multinomPois(~1 ~1, umf.cr1Mb)
+@
+
+\newpage
+
+<<>>=
 (Mb <- multinomPois(~behavior-1 ~1, umf.cr1Mb))
 @
 AIC gives us no reason to favor model $M_b$ over model $M_0$. This is
@@ -486,8 +486,6 @@ flycathers were not actually captured. Here is a command to compute
 <<>>=
 plogis(confint(Mb, type="det", method="profile"))
 @
-
-
 
 
 \section{Modeling Temporary Emigration}
@@ -574,7 +572,7 @@ eventually add other options such as the zero-inflated Poisson.
 
 The capture-recapture models that can be fit in \texttt{unmarked} assume
 that variation in capture probability can be
-explained by site, time, or behavioral. Currently, individual
+explained by site, time, or behavior. Currently, individual
 heterogeneity cannot be explicitly modeled, although, one could
 partition the data into strata and analyze the strata separately. For
 example, sex-specific

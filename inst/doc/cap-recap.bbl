@@ -1,67 +1,67 @@
-\begin{thebibliography}{10}
-\providecommand{\natexlab}[1]{#1}
-\providecommand{\url}[1]{\texttt{#1}}
-\expandafter\ifx\csname urlstyle\endcsname\relax
-  \providecommand{\doi}[1]{doi: #1}\else
-  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
-
-\bibitem[Chandler et~al.(2011)Chandler, Royle, and King]{chandlerEA_2011}
-R.~B. Chandler, J.~A. Royle, and D.~I. King.
-\newblock Inference about density and temporary emigration in unmarked
-  populations.
-\newblock \emph{Ecology}, 92\penalty0 (7):\penalty0 1429--1435, July 2011.
+\begin{thebibliography}{11}
 
 \bibitem[Chandler et~al.(2009)Chandler, King, and
   DeStefano]{chandler_etal:2009}
-R.B. Chandler, D.I. King, and S.~DeStefano.
+Chandler, R., D.~King, and S.~DeStefano, 2009.
 \newblock Scrub-shrub bird habitat associations at multiple spatial scales in
   beaver meadows in massachusetts.
-\newblock \emph{The Auk}, pages 186--197, 2009.
+\newblock \emph{The Auk} pages 186--197.
+
+\bibitem[Chandler et~al.(2011)Chandler, Royle, and King]{chandlerEA_2011}
+Chandler, R.~B., J.~A. Royle, and D.~I. King, 2011.
+\newblock Inference about density and temporary emigration in unmarked
+  populations.
+\newblock \emph{Ecology} \textbf{92}:1429--1435.
+
+\bibitem[Dorazio et~al.(2005)Dorazio, Jelks, and Jordan]{dorazio_etal:2005}
+Dorazio, R.~M., H.~L. Jelks, and F.~Jordan, 2005.
+\newblock Improving {removal-based} estimates of abundance by sampling a
+  population of spatially distinct subpopulations.
+\newblock \emph{Biometrics} \textbf{61}:1093--1101.
 
 \bibitem[Efford(2004)]{efford:2004}
-M~Efford.
+Efford, M., 2004.
 \newblock {Density estimation in live-trapping studies}.
-\newblock \emph{Oikos}, 106\penalty0 (3):\penalty0 598--610, 2004.
+\newblock \emph{Oikos} \textbf{106}:598--610.
 
 \bibitem[Kendall et~al.(1997)Kendall, Nichols, and Hines]{kendall_etal:1997}
-William~L. Kendall, James~D. Nichols, and James~E. Hines.
+Kendall, W.~L., J.~D. Nichols, and J.~E. Hines, 1997.
 \newblock Estimating temporary emigration using {capture-recapture} data with
   {P}ollock{'}s robust design.
-\newblock \emph{Ecology}, 78\penalty0 (2):\penalty0 563--578, 1997.
+\newblock \emph{Ecology} \textbf{78}:563--578.
 
 \bibitem[Link(2003)]{link:2003}
-W.A. Link.
+Link, W., 2003.
 \newblock Nonidentifiability of population size from capture-recapture data
   with heterogeneous detection probabilities.
-\newblock \emph{Biometrics}, 59\penalty0 (4):\penalty0 1123--1130, 2003.
+\newblock \emph{Biometrics} \textbf{59}:1123--1130.
 
 \bibitem[Otis et~al.(1978)Otis, Burnham, White, and Anderson]{otis_etal:1978}
-D.L. Otis, K.P. Burnham, G.C. White, and D.R. Anderson.
+Otis, D., K.~Burnham, G.~White, and D.~Anderson, 1978.
 \newblock Statistical inference from capture data on closed animal populations.
-\newblock \emph{Wildlife monographs}, \penalty0 (62):\penalty0 3--135, 1978.
-
-\bibitem[Royle(2004)]{royle_generalized_2004}
-J.~A. Royle.
-\newblock Generalized estimators of avian abundance from count survey data.
-\newblock \emph{Animal Biodiversity and Conservation}, 27\penalty0
-  (1):\penalty0 375--386, 2004.
-
-\bibitem[Royle and Young(2008)]{royle_young:2008}
-J~A Royle and K~V Young.
-\newblock {A Hierarchical Model For Spatial Capture-Recapture Data}.
-\newblock \emph{Ecology}, 89\penalty0 (8):\penalty0 2281--2289, 2008.
+\newblock \emph{Wildlife monographs} pages 3--135.
 
 \bibitem[Royle and Dorazio(2008)]{royle_dorazio:2008}
-J.A. Royle and R.M. Dorazio.
-\newblock \emph{Hierarchical modeling and inference in ecology: the analysis of
-  data from populations, metapopulations and communities}.
-\newblock Academic Press, 2008.
+Royle, J. and R.~Dorazio, 2008.
+\newblock Hierarchical modeling and inference in ecology: the analysis of data
+  from populations, metapopulations and communities.
+\newblock Academic Press.
+
+\bibitem[Royle(2004)]{royle_generalized_2004}
+Royle, J.~A., 2004.
+\newblock Generalized estimators of avian abundance from count survey data.
+\newblock \emph{Animal Biodiversity and Conservation} \textbf{27}:375--386.
+
+\bibitem[Royle and Young(2008)]{royle_young:2008}
+Royle, J.~A. and K.~V. Young, 2008.
+\newblock {A Hierarchical Model For Spatial Capture-Recapture Data}.
+\newblock \emph{Ecology} \textbf{89}:2281--2289.
 
 \bibitem[Williams et~al.(2002)Williams, Nichols, and
   Conroy]{williams_etal:2002}
-B~K Williams, J~D Nichols, and M~J Conroy.
-\newblock \emph{{Analysis and management of animal populations: modeling,
-  estimation, and decision making}}.
-\newblock Academic Pr, 2002.
+Williams, B.~K., J.~D. Nichols, and M.~J. Conroy, 2002.
+\newblock {Analysis and management of animal populations: modeling, estimation,
+  and decision making}.
+\newblock Academic Pr.
 
 \end{thebibliography}
