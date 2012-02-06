@@ -339,6 +339,8 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
         stop("Dimensions of primaryPeriod matrix should be MxT")
     if(any(primaryPeriod < 0, na.rm=TRUE))
         stop("Negative primaryPeriod values are not allowed.")
+    if(any(is.na(primaryPeriod)))
+        stop("Missing values are not allowed in primaryPeriod.")
     if(!identical(typeof(primaryPeriod), "integer")) {
         mode(primaryPeriod) <- "integer"
         warning("primaryPeriod values have been converted to integers")

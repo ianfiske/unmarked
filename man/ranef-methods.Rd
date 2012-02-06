@@ -30,29 +30,30 @@ manipulate the returned object.
   y(i,j), psi(i), p(i,j))}}
 \item{\code{signature(object = "unmarkedFitOccuRN")}}{Computes the
   conditional abundance distribution given the data and the estimates of the
-  fixed effects, \eqn{Pr(N_i=k | y_{ij}, \hat{\psi}_i, \hat{r}_{ij})}{Pr(N(i)=k |
-  y(i,j), psi(i), r(i,j))} for k = 0,1,...,K}
+  fixed effects, \eqn{Pr(N_i=k | y_{ij}, \hat{\psi}_i, \hat{r}_{ij}) for k = 0,1,\dots,K}{Pr(N(i)=k |
+  y(i,j), psi(i), r(i,j)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitPCount")}}{\eqn{Pr(N_i=k |
-  y_{ij}, \hat{\lambda}_i, \hat{p}_{ij})}{Pr(N(i)=k |
-  y(i,j), lambda(i), p(i,j))} for k = 0,1,...,K}
+  y_{ij}, \hat{\lambda}_i, \hat{p}_{ij})  for k = 0,1,\dots,K}{Pr(N(i)=k |
+  y(i,j), lambda(i), p(i,j)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitMPois")}}{\eqn{Pr(N_i=k |
-  y_{ij}, \hat{\lambda}_i, \hat{p}_{ij})}{Pr(N(i)=k |
-  y(i,j), lambda(i), p(i,j))} for k = 0,1,...,K}
+  y_{ij}, \hat{\lambda}_i, \hat{p}_{ij}) for k = 0,1,\dots,K}{Pr(N(i)=k |
+  y(i,j), lambda(i), p(i,j)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitDS")}}{\eqn{Pr(N_i=k |
-  y_{i,1:J}, \hat{\lambda}_i, \hat{\sigma}_{i})}{Pr(N(i)=k |
-  y(i,1:J), lambda(i), sigma(i))} for k = 0,1,...,K}
+  y_{i,1:J}, \hat{\lambda}_i, \hat{\sigma}_{i}) for k = 0,1,\dots,K}{Pr(N(i)=k |
+  y(i,1:J), lambda(i), sigma(i)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitGMM")}}{\eqn{Pr(M_i=k |
-  y_{i,1:J,t}, \hat{\lambda}_i, \hat{\phi}_{it}, \hat{p}_{ijt})}{Pr(N(i)=k |
-  y(i,1:J,t), lambda(i), phi(i,t), p(i,j,t))} for k = 0,1,...,K}
+  y_{i,1:J,t}, \hat{\lambda}_i, \hat{\phi}_{it}, \hat{p}_{ijt})  for k = 0,1,\dots,K}{Pr(N(i)=k |
+  y(i,1:J,t), lambda(i), phi(i,t), p(i,j,t)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitGDS")}}{\eqn{Pr(M_i=k |
-  y_{i,1:J,t}, \hat{\lambda}_i, \hat{\phi}_{it}, \hat{\sigma}_{it})}{Pr(N(i)=k |
-  y(i,1:J,t), lambda(i), phi(i,t), sigma(i,t))} for k = 0,1,...,K}
+  y_{i,1:J,t}, \hat{\lambda}_i, \hat{\phi}_{it}, \hat{\sigma}_{it}) for k = 0,1,\dots,K}{Pr(N(i)=k |
+  y(i,1:J,t), lambda(i), phi(i,t), sigma(i,t)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitColExt")}}{\eqn{Pr(z_{it}=1 |
   y_{ijt}, \hat{\psi}_i, \hat{\gamma}_{it}, \hat{\epsilon}_{it}, \hat{p}_{ijt})}{Pr(z(i,t)=1 |
   y(i,j,t), psi(i), gamma(i,t), epsilon(i,t), p(i,j,t))} for k = 0,1,...,K}
 \item{\code{signature(object = "unmarkedFitPCO")}}{\eqn{Pr(N_{it}=k |
-  y_{ijt}, \hat{\lambda}_i, \hat{\gamma}_{it}, \hat{\omega}_{it}, \hat{p}_{ijt})}{Pr(N(i,t)=k |
-  y(i,j,t), lambda(i), gamma(i,t), omega(i,t), p(i,j,t))} for k = 0,1,...,K}
+  y_{ijt}, \hat{\lambda}_i, \hat{\gamma}_{it}, \hat{\omega}_{it},
+  \hat{p}_{ijt}) for k = 0,1,\dots,K}{Pr(N(i,t)=k |
+  y(i,j,t), lambda(i), gamma(i,t), omega(i,t), p(i,j,t)) for k = 0,1,...,K}}
 
 }
 }
