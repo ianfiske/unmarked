@@ -14,40 +14,63 @@
 \alias{ranef,unmarkedFitPCO-method}
 \title{ Methods for Function \code{ranef} in Package \pkg{unmarked} }
 \description{
-Compute posterior distributions of latent variables (abundance or
-occurrence) using empirical Bayes methods. The posterior mode is
-referred to as Empirical Best Unbiased Prediction (EBUP).
+Compute conditional posterior distributions of the random variables (latent abundance or
+occurrence) using empirical Bayes methods. These methods return an
+object storing the posterior distributions of the latent variables at
+each site, and for each year (primary period) in the case of open
+population models. See \link{unmarkedRanef-class} for methods used to
+manipulate the returned object.
 }
 \section{Methods}{
 \describe{
 
-\item{\code{signature(object = "unmarkedFitOccu")}}{}
-\item{\code{signature(object = "unmarkedFitOccuRN")}}{}
-\item{\code{signature(object = "unmarkedFitPCount")}}{}
-\item{\code{signature(object = "unmarkedFitMPois")}}{}
-\item{\code{signature(object = "unmarkedFitDS")}}{}
-\item{\code{signature(object = "unmarkedFitGMM")}}{}
-\item{\code{signature(object = "unmarkedFitGDS")}}{}
-\item{\code{signature(object = "unmarkedFitColExt")}}{}
-\item{\code{signature(object = "unmarkedFitPCO")}}{}
+\item{\code{signature(object = "unmarkedFitOccu")}}{Computes the
+  conditional distribution of occurrence given the data and the estimates of the
+  fixed effects, \eqn{Pr(z_i=1 | y_{ij}, \hat{\psi}_i, \hat{p}_{ij})}{Pr(z(i)=1 |
+  y(i,j), psi(i), p(i,j))}}
+\item{\code{signature(object = "unmarkedFitOccuRN")}}{Computes the
+  conditional abundance distribution given the data and the estimates of the
+  fixed effects, \eqn{Pr(N_i=k | y_{ij}, \psi_i, r_{ij})}{Pr(N(i)=k |
+  y(i,j), psi(i), r(i,j))} for k = 0,1,...,K}
+\item{\code{signature(object = "unmarkedFitPCount")}}{\eqn{Pr(N_i=k |
+  y_{ij}, \lambda_i, p_{ij})}{Pr(N(i)=k | 
+  y(i,j), lambda(i), p(i,j))} for k = 0,1,...,K}
+\item{\code{signature(object = "unmarkedFitMPois")}}{\eqn{Pr(N_i=k |
+  y_{ij}, \lambda_i, p_{ij})}{Pr(N(i)=k | 
+  y(i,j), lambda(i), p(i,j))} for k = 0,1,...,K}
+\item{\code{signature(object = "unmarkedFitDS")}}{\eqn{Pr(N_i=k |
+  y_{i,1:J}, \lambda_i, \sigma_{i})}{Pr(N(i)=k | 
+  y(i,1:J), lambda(i), sigma(i))} for k = 0,1,...,K}
+\item{\code{signature(object = "unmarkedFitGMM")}}{\eqn{Pr(M_i=k |
+  y_{i,1:J,t}, \lambda_i, \phi_{it}, p_{ijt})}{Pr(N(i)=k | 
+  y(i,1:J,t), lambda(i), phi(i,t), p(i,j,t))} for k = 0,1,...,K}
+\item{\code{signature(object = "unmarkedFitGDS")}}{\eqn{Pr(M_i=k |
+  y_{i,1:J,t}, \lambda_i, \phi_{it}, \sigma_{it})}{Pr(N(i)=k | 
+  y(i,1:J,t), lambda(i), phi(i,t), sigma(i,t))} for k = 0,1,...,K}
+\item{\code{signature(object = "unmarkedFitColExt")}}{\eqn{Pr(z_{it}=1 |
+  y_{ijt}, \psi_i, \gamma_{it}, \epsilon{it}, p_{ijt})}{Pr(z(i,t)=1 | 
+  y(i,j,t), psi(i), gamma(i,t), epsilon(i,t), p(i,j,t))} for k = 0,1,...,K}
+\item{\code{signature(object = "unmarkedFitPCO")}}{\eqn{Pr(N_{it}=k |
+  y_{ijt}, \lambda_i, \gamma_{it}, \omega{it}, p_{ijt})}{Pr(N(i,t)=k | 
+  y(i,j,t), lambda(i), gamma(i,t), omega(i,t), p(i,j,t))} for k = 0,1,...,K}
 
 }
 }
 
-\section{Warning}{
-  Empirical Bayes methods can under-estimate the variance of the
-  posterior distribution because they do not account for uncertainty in
-  the estimates of the fixed effects. See Laird and Louis (1987) for
-  discussion and possible remedies, which could be implemented using
-  \code{\link{parboot}}.
-}
 
 \references{
-  Laird, N.M. and T.A. Louis. 1987. Empirical Bayes Confidence Intervals
-  Based on Bootstrap Samples. Journal of the American Statistical
+  Royle, J.A and R.M. Dorazio. 2008. Hierarchical Modeling and Inference
+  in Ecology. Academic Press.
+  
+  Laird, N.M. and T.A. Louis. 1987. Empirical Bayes confidence intervals
+  based on bootstrap samples. Journal of the American Statistical
   Association 82:739--750.
   }
-
+  
+  \seealso{
+  \link{unmarkedRanef-class}  
+  }
+  
 \examples{
 # Simulate data under N-mixture model
 set.seed(4564)
@@ -61,11 +84,11 @@ y[] <- rbinom(R*J, N, 0.5)
 umf <- unmarkedFramePCount(y=y)
 fm <- pcount(~1 ~1, umf, K=50)
 
-# Estimates of abundance at each site
+# Estimates of conditional abundance distribution at each site
 (re <- ranef(fm))
-postMode(re)
-confint(re, level=0.9)
-plot(re, xlim=c(0,20))
+postMode(re)           # EBUP
+confint(re, level=0.9) # 90\% CI
+plot(re, xlim=c(0,20)) 
 
 # Compare estimates to truth
 sum(N)
