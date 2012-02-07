@@ -19,7 +19,7 @@ test.ranef.pcount <- function() {
     fm <- pcount(~1 ~1, umf, K=K)
 
     re <- ranef(fm)
-    modes <- postMode(re)
+    modes <- bup(re, stat="mode")
     CI <- confint(re, level=0.9)
     checkEqualsNumeric(length(modes), R-1)
     checkEqualsNumeric(nrow(CI), R-1)
@@ -85,7 +85,7 @@ test.ranef.occu <- function() {
     fm <- occu(~1 ~1, umf)
 
     re <- ranef(fm)
-    modes <- postMode(re)
+    modes <- bup(re, stat="mode")
     CI <- confint(re, level=0.95)
     checkEqualsNumeric(length(modes), R-1)
     checkEqualsNumeric(nrow(CI), R-1)
@@ -154,7 +154,7 @@ test.distsamp.ranef <- function() {
     re1 <- ranef(m1, K=20)
     re2 <- ranef(m2, K=20)
 
-    checkEquals(mode1 <- postMode(re1), postMode(re2))
+    checkEquals(mode1 <- bup(re1, stat="mode"), bup(re2, "mode"))
     checkEquals(confint(re1), confint(re2))
 
     ar1 <- as(re1, "array")

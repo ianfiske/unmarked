@@ -14,7 +14,7 @@
 \alias{ranef,unmarkedFitPCO-method}
 \title{ Methods for Function \code{ranef} in Package \pkg{unmarked} }
 \description{
-Compute conditional posterior distributions of the random variables (latent abundance or
+Estimate posterior distributions of the random variables (latent abundance or
 occurrence) using empirical Bayes methods. These methods return an
 object storing the posterior distributions of the latent variables at
 each site, and for each year (primary period) in the case of open
@@ -92,7 +92,9 @@ fm <- pcount(~1 ~1, umf, K=50)
 
 # Estimates of conditional abundance distribution at each site
 (re <- ranef(fm))
-postMode(re)           # EBUP
+# Best Unbiased Predictors
+bup(re, stat="mean")           # Posterior mean
+bup(re, stat="mode")           # Posterior mode
 confint(re, level=0.9) # 90\% CI
 
 # Plots
@@ -100,7 +102,7 @@ plot(re, subset=site \%in\% c(1:10), layout=c(5, 2), xlim=c(-1,20))
 
 # Compare estimates to truth
 sum(N)
-sum(postMode(re))
+sum(bup(re))
 colSums(confint(re))
 
 # Extract all values in convenient formats

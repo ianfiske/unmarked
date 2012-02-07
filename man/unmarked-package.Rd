@@ -130,9 +130,9 @@ fms <- fitList(m1=fm1, m2=fm2, m3=fm3)
 modSel(fms)
 
 # Empirical Bayes estimates of the number of sites occupied
-sum(postMode(ranef(fm3)))     # Estimate
-colSums(confint(ranef(fm3)))  # 95\% CI
-sum(z)                        # Actual
+sum(bup(ranef(fm3), stat="mode"))     # Sum of posterior modes
+colSums(confint(ranef(fm3)))          # 95\% CI
+sum(z)                                # Actual
 
 
 # Model-averaged prediction and plots

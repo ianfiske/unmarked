@@ -11,7 +11,7 @@ setGeneric("ranef",
 
 
 setClass("unmarkedRanef",
-    representation(bup = "array"))
+    representation(post = "array"))
 
 
 setClassUnion("unmarkedFitGMMorGDS",
@@ -30,8 +30,8 @@ setMethod("ranef", "unmarkedFitPCount",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
-    bup <- array(NA_real_, c(R, length(N), 1))
-    colnames(bup) <- N
+    post <- array(NA_real_, c(R, length(N), 1))
+    colnames(post) <- N
     mix <- object@mixture
     for(i in 1:R) {
         switch(mix,
@@ -53,9 +53,9 @@ setMethod("ranef", "unmarkedFitPCount",
             g <- g + dbinom(y[i,j], N, p[i,j], log=TRUE)
         }
         fudge <- exp(f+g)
-        bup[i,,1] <- fudge / sum(fudge)
+        post[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef", bup=bup)
+    new("unmarkedRanef", post=post)
 })
 
 
@@ -74,8 +74,8 @@ setMethod("ranef", "unmarkedFitOccu",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
-    bup <- array(0, c(R,2,1))
-    colnames(bup) <- z
+    post <- array(0, c(R,2,1))
+    colnames(post) <- z
     for(i in 1:R) {
         f <- dbinom(z, 1, psi[i])
         g <- rep(1, 2)
@@ -85,9 +85,9 @@ setMethod("ranef", "unmarkedFitOccu",
             g <- g * dbinom(y[i,j], 1, z*p[i,j])
         }
         fudge <- f*g
-        bup[i,,1] <- fudge / sum(fudge)
+        post[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef", bup=bup)
+    new("unmarkedRanef", post=post)
 })
 
 
@@ -112,8 +112,8 @@ setMethod("ranef", "unmarkedFitOccuRN",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
-    bup <- array(NA_real_, c(R, length(N), 1))
-    colnames(bup) <- N
+    post <- array(NA_real_, c(R, length(N), 1))
+    colnames(post) <- N
     for(i in 1:R) {
         f <- dpois(N, lam[i])
         g <- rep(1, K+1)
@@ -124,9 +124,9 @@ setMethod("ranef", "unmarkedFitOccuRN",
             g <- g * dbinom(y[i,j], 1, p.ijn)
         }
         fudge <- f*g
-        bup[i,,1] <- fudge / sum(fudge)
+        post[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef", bup=bup)
+    new("unmarkedRanef", post=post)
 })
 
 
@@ -150,8 +150,8 @@ setMethod("ranef", "unmarkedFitMPois",
     cp <- getP(object)
     cp <- cbind(cp, 1-rowSums(cp))
     N <- 0:K
-    bup <- array(0, c(R, K+1, 1))
-    colnames(bup) <- N
+    post <- array(0, c(R, K+1, 1))
+    colnames(post) <- N
     for(i in 1:R) {
         f <- dpois(N, lam[i])
         g <- rep(1, K+1)
@@ -168,9 +168,9 @@ setMethod("ranef", "unmarkedFitMPois",
             g[k] <- g[k] * dmultinom(yi, size=N[k], prob=cp[i,])
         }
         fudge <- f*g
-        bup[i,,1] <- fudge / sum(fudge)
+        post[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef", bup=bup)
+    new("unmarkedRanef", post=post)
 })
 
 
@@ -220,8 +220,8 @@ setMethod("ranef", "unmarkedFitDS",
     cp <- getP(object)
     cp <- cbind(cp, 1-rowSums(cp))
     N <- 0:K
-    bup <- array(0, c(R, K+1, 1))
-    colnames(bup) <- N
+    post <- array(0, c(R, K+1, 1))
+    colnames(post) <- N
     for(i in 1:R) {
         f <- dpois(N, lam[i])
         g <- rep(1, K+1)
@@ -238,30 +238,14 @@ setMethod("ranef", "unmarkedFitDS",
             g[k] <- g[k] * dmultinom(yi, size=N[k], prob=cp[i,])
         }
         fudge <- f*g
-        bup[i,,1] <- fudge / sum(fudge)
+        post[i,,1] <- fudge / sum(fudge)
     }
-    new("unmarkedRanef", bup=bup)
+    new("unmarkedRanef", post=post)
 })
 
 
 
 
-
-
-
-#setMethod("ranef", "unmarkedFitGMM",
-#    function(object, ...)
-#{
-#    stop("method not written yet")
-#})
-
-
-
-#setMethod("ranef", "unmarkedFitGDS",
-#    function(object, ...)
-#{
-#    stop("method not written yet")
-#})
 
 
 
@@ -340,8 +324,8 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
     ya <- array(y, c(nSites,R,T))
 #    ym <- apply(ya, c(1,3), sum, na.rm=TRUE)
 
-    bup <- array(0, c(nSites, K+1, 1))
-    colnames(bup) <- M
+    post <- array(0, c(nSites, K+1, 1))
+    colnames(post) <- M
     mix <- object@mixture
     if(identical(mix, "NB"))
         alpha <- exp(coef(object, type="alpha"))
@@ -366,9 +350,9 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
             }
         }
         fudge <- f*g
-        bup[i,,1] <- fudge/sum(fudge)
+        post[i,,1] <- fudge/sum(fudge)
     }
-    new("unmarkedRanef", bup=bup)
+    new("unmarkedRanef", post=post)
 })
 
 
@@ -435,8 +419,8 @@ setMethod("ranef", "unmarkedFitColExt",
         }
 
     z <- 0:1
-    bup <- array(NA_real_, c(M, 2, nY))
-    colnames(bup) <- z
+    post <- array(NA_real_, c(M, 2, nY))
+    colnames(post) <- z
 
     for(i in 1:M) {
         for(t in 1:nY) {
@@ -447,11 +431,11 @@ setMethod("ranef", "unmarkedFitColExt",
                 g <- g * dbinom(ya[i,j,t], 1, z*detP[j,t,i])
             }
             tmp <- x[,t,i] * g
-            bup[i,,t] <- tmp/sum(tmp)
+            post[i,,t] <- tmp/sum(tmp)
         }
     }
 
-    new("unmarkedRanef", bup=bup)
+    new("unmarkedRanef", post=post)
 })
 
 
@@ -490,8 +474,8 @@ setMethod("ranef", "unmarkedFitPCO",
         y <- y[-object@sitesRemoved,]
     ya <- array(y, c(R, J, T))
     pa <- array(p, c(R, J, T))
-    bup <- array(NA_real_, c(R, length(N), T))
-    colnames(bup) <- N
+    post <- array(NA_real_, c(R, length(N), T))
+    colnames(post) <- N
     mix <- object@mixture
     if(dyn=="notrend")
         gam <- lam*(1-om)
@@ -533,7 +517,7 @@ setMethod("ranef", "unmarkedFitPCO",
             g1 <- g1 * dbinom(ya[i,j,1], N, pa[i,j,1])
         }
         g1g2 <- g1*g2
-        bup[i,,1] <- g1g2 / sum(g1g2)
+        post[i,,1] <- g1g2 / sum(g1g2)
         for(t in 2:T) {
             for(n0 in N) {
                 for(n1 in N) {
@@ -553,11 +537,11 @@ setMethod("ranef", "unmarkedFitPCO",
                     next
                 g1 <- g1 * dbinom(ya[i,j,t], N, pa[i,j,t])
             }
-            g <- colSums(P * bup[i,,t-1]) * g1
-            bup[i,,t] <- g / sum(g)
+            g <- colSums(P * post[i,,t-1]) * g1
+            post[i,,t] <- g / sum(g)
         }
     }
-    new("unmarkedRanef", bup=bup)
+    new("unmarkedRanef", post=post)
 })
 
 
@@ -565,35 +549,23 @@ setMethod("ranef", "unmarkedFitPCO",
 
 
 
-
-
-
-
-
-setGeneric("postMode",
-    function(object, ...) standardGeneric("postMode"))
-setMethod("postMode", "unmarkedRanef", function(object)
-{
-    bup <- object@bup
-    N <- as.integer(colnames(bup))
-    modes <- apply(bup, c(1,3), function(x) N[which.max(x)])
-    modes <- drop(modes) # convert to vector if T=1
-    return(modes)
+setGeneric("bup", function(object, stat=c("mean", "mode"), ...)
+    standardGeneric("bup"))
+setMethod("bup", "unmarkedRanef",
+          function(object, stat=c("mean", "mode"), ...) {
+    stat <- match.arg(stat)
+    post <- object@post
+    re <- as.integer(colnames(post))
+    if(identical(stat, "mean"))
+        out <- apply(post, c(1,3), function(x) sum(re*x))
+    else if(identical(stat, "mode"))
+        out <- apply(post, c(1,3), function(x) re[which.max(x)])
+    out <- drop(out)
+    return(out)
 })
 
 
 
-setGeneric("postMean",
-    function(object, ...) standardGeneric("postMean"))
-setMethod("postMean", "unmarkedRanef", function(object)
-{
-    bup <- object@bup
-    dims <- dim(bup)
-    N <- as.integer(colnames(bup))
-    means <- apply(bup, c(1,3), function(x) sum(N*x))
-    means <- drop(means) # convert to vector if T=1
-    return(means)
-})
 
 
 
@@ -603,10 +575,10 @@ setMethod("confint", "unmarkedRanef", function(object, parm, level=0.95)
 {
     if(!missing(parm))
         warning("parm argument is ignored. Did you mean to specify level?")
-    bup <- object@bup
-    N <- as.integer(colnames(bup))
-    R <- nrow(bup)
-    T <- dim(bup)[3]
+    post <- object@post
+    N <- as.integer(colnames(post))
+    R <- nrow(post)
+    T <- dim(post)[3]
     CI <- array(NA_real_, c(R,2,T))
     alpha <- 1-level
     c1 <- alpha/2
@@ -614,7 +586,7 @@ setMethod("confint", "unmarkedRanef", function(object, parm, level=0.95)
     colnames(CI) <- paste(c(c1,c2)*100, "%", sep="")
     for(i in 1:R) {
         for(t in 1:T) {
-            pr <- bup[i,,t]
+            pr <- post[i,,t]
             ed <- cumsum(pr)
             lower <- N[which(ed >= c1)][1]
             upper <- N[which(ed >= c2)][1]
@@ -632,23 +604,23 @@ setMethod("confint", "unmarkedRanef", function(object, parm, level=0.95)
 
 setMethod("show", "unmarkedRanef", function(object)
 {
-    bup <- object@bup
-    dims <- dim(bup)
+    post <- object@post
+    dims <- dim(post)
     T <- dims[3]
     if(T==1)
-        print(cbind(#Mean=postMean(object),
-                    Mode=postMode(object), confint(object)))
+        print(cbind(Mean=bup(object, stat="mean"),
+                    Mode=bup(object, stat="mode"), confint(object)))
     else if(T>1) {
-#        means <- postMean(object)
-        modes <- postMode(object)
+        means <- bup(object, stat="mean")
+        modes <- bup(object, stat="mode")
         CI <- confint(object)
-        out <- array(NA_real_, c(dims[1], 3, T))
+        out <- array(NA_real_, c(dims[1], 4, T))
         dimnames(out) <- list(NULL,
-                              c(#"Mean",
+                              c("Mean",
                                 "Mode", "2.5%", "97.5%"),
                               paste("Year", 1:T, sep=""))
         for(t in 1:T) {
-            out[,,t] <- cbind(#means[,t],
+            out[,,t] <- cbind(means[,t],
                               modes[,t], CI[,,t])
         }
         print(out)
@@ -658,27 +630,27 @@ setMethod("show", "unmarkedRanef", function(object)
 
 
 setAs("unmarkedRanef", "array", function(from) {
-    bup <- from@bup
-    dims <- dim(bup)
+    post <- from@post
+    dims <- dim(post)
     R <- dims[1]
     T <- dims[3]
-    dimnames(bup) <- list(1:R, colnames(bup), 1:T)
-    bup <- drop(bup)
-    return(bup)
+    dimnames(post) <- list(1:R, colnames(post), 1:T)
+    post <- drop(post)
+    return(post)
 })
 
 
 setAs("unmarkedRanef", "data.frame", function(from) {
-    bup <- from@bup
-    dims <- dim(bup)
+    post <- from@post
+    dims <- dim(post)
     R <- dims[1]
     lN <- dims[2]
     T <- dims[3]
-    N <- as.integer(colnames(bup))
+    N <- as.integer(colnames(post))
     N.ikt <- rep(rep(N, each=R), times=T)
     site <- rep(1:R, times=lN*T)
     year <- rep(1:T, each=R*lN)
-    dat <- data.frame(site=site, year=year, N=N.ikt, p=as.vector(bup))
+    dat <- data.frame(site=site, year=year, N=N.ikt, p=as.vector(post))
     dat <- dat[order(dat$site),]
     if(T==1)
         dat$year <- NULL
@@ -689,9 +661,9 @@ setAs("unmarkedRanef", "data.frame", function(from) {
 
 setMethod("plot", c("unmarkedRanef", "missing"), function(x, y, ...)
 {
-    bup <- x@bup
-    T <- dim(bup)[3]
-    N <- as.integer(colnames(bup))
+    post <- x@post
+    T <- dim(post)[3]
+    N <- as.integer(colnames(post))
     xlb <- ifelse(length(N)>2, "Abundance", "Occurrence")
     ylb <- "Probability"
     dat <- as(x, "data.frame")

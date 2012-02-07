@@ -27,7 +27,7 @@ for(i in 1:nsim) {
     lam.hat <- exp(coef(fm, type="state"))
     re <- ranef(fm)
     N <- sum(sim.i$N)
-    N.hat <- sum(modes <- postMode(re))
+    N.hat <- sum(modes <- bup(re))
     bias <- N.hat - N
     ci <- colSums(confint(re))
     cover <- (N >= ci[1] & N <= ci[2])
@@ -73,7 +73,7 @@ for(i in 1:nsim) {
     fm <- occu(~1 ~1, umf, se=FALSE)
     re <- ranef(fm)
     pao <- sum(sim.i$z)
-    pao.hat <- sum(modes <- postMode(re))
+    pao.hat <- sum(modes <- bup(re))
     bias <- pao.hat - pao
     ci <- colSums(confint(re))
     cover <- (pao >= ci[1] & pao <= ci[2])
@@ -145,11 +145,11 @@ plot(re1)
 re2 <- ranef(m2, K=20)
 plot(re2)
 
-all(postMode(re1) == postMode(re2))
+all(bup(re1) == bup(re2))
 all(confint(re1) == confint(re2))
 
 
-reM <- postMode(re1)
+reM <- bup(re1)
 reCI <- confint(re1)
 
 sum(N)
@@ -195,7 +195,7 @@ umf <- unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
 fm <- multinomPois(~observer-1 ~1, umf)
 
 # Estimates of fixed effects
-e <- postMode(fm)
+e <- bup(fm)
 exp(e[1])
 plogis(e[2:3])
 
@@ -206,7 +206,7 @@ lattice.options(default.theme = ltheme)
 plot(re, layout=c(10,5))
 
 
-sum(postMode(re))
+sum(bup(re))
 colSums(confint(re))
 sum(N)
 
@@ -302,10 +302,10 @@ plot(re1, xlim=c(-1, 30))
 re2 <- ranef(m2)
 plot(re2, xlim=c(-1, 30))
 
-all(postMode(re1) == postMode(re2))
+all(bup(re1) == bup(re2))
 all(confint(re1) == confint(re2))
 
-cbind(postMode(re1), postMode(re2))
+cbind(bup(re1), bup(re2))
 
 
 # ----------------------------- colext ----------------------------------
@@ -359,7 +359,7 @@ summary(umf)
 # Fit model and backtransform
 (m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20))
 
-e <- postMode(m1)
+e <- bup(m1)
 (lam <- exp(e[1]))
 (gam <- exp(e[2]))
 (om <- plogis(e[3]))
@@ -370,10 +370,10 @@ re <- ranef(m1)
 plot(re, layout=c(5,5), subset = site %in% 1:25 & year %in% 1,
      xlim=c(-1,20))
 
-postMode(re)
+bup(re)
 confint(re)
 
-N.hat <- colSums(postMode(re))
+N.hat <- colSums(bup(re))
 CI <- apply(confint(re), c(2,3), sum)
 rbind(N=colSums(N), N.hat=N.hat)
 
