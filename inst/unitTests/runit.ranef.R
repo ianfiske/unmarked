@@ -186,43 +186,40 @@ checkEqualsNumeric(colSums(ar1), c(
 
 
 
+test.ranef.multinomPois <- function() {
+
+    # Simulate independent double observer data
+    nSites <- 10
+    lambda <- 10
+    p1 <- 0.5
+    p2 <- 0.3
+    cp <- c(p1*(1-p2), p2*(1-p1), p1*p2)
+    set.seed(9023)
+    N <- rpois(nSites, lambda)
+    y <- matrix(NA, nSites, 3)
+    for(i in 1:nSites) {
+        y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:3]
+    }
+
+    # Fit model
+    observer <- matrix(c('A','B'), nSites, 2, byrow=TRUE)
+    umf <- unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
+                              type="double")
+    fm <- multinomPois(~observer-1 ~1, umf)
+
+    # Estimates of random effects
+    re <- ranef(fm, K=20)
+    ar <- as(re, "array")
+
+checkEqualsNumeric(colSums(ar), c(
+ 0.0000000000, 0.0837789470, 0.2077360595, 0.3413273644, 0.5043850863,
+ 0.6810201789, 0.9111517583, 1.2124489471, 1.4341939152, 1.3759825087,
+ 1.0500832440, 0.7312585749, 0.5381253818, 0.4003005483, 0.2661348133,
+ 0.1494032715, 0.0705242071, 0.0283773425, 0.0098973528, 0.0030385119,
+ 0.0008319866), tolerance=1e-6)
 
 
-# Simulate independent double observer data
-nSites <- 50
-lambda <- 10
-p1 <- 0.5
-p2 <- 0.3
-cp <- c(p1*(1-p2), p2*(1-p1), p1*p2)
-set.seed(9023)
-N <- rpois(nSites, lambda)
-y <- matrix(NA, nSites, 3)
-for(i in 1:nSites) {
-  y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:3]
 }
-
-# Fit model
-observer <- matrix(c('A','B'), nSites, 2, byrow=TRUE)
-umf <- unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
-    type="double")
-fm <- multinomPois(~observer-1 ~1, umf)
-
-# Estimates of fixed effects
-e <- postMode(fm)
-exp(e[1])
-plogis(e[2:3])
-
-# Estimates of random effects
-re <- ranef(fm, K=20)
-ltheme <- canonical.theme(color = FALSE)
-lattice.options(default.theme = ltheme)
-plot(re, layout=c(10,5))
-
-
-sum(postMode(re))
-colSums(confint(re))
-sum(N)
-
 
 
 
@@ -270,61 +267,107 @@ plot(re, layout=c(5,5), xlim=c(-1,20), subset=site%in%1:25)
 
 # ------------------------------ gdistsamp ------------------------------
 
-set.seed(36837)
-R <- 50 # number of transects
-T <- 5  # number of replicates
-strip.width <- 50
-transect.length <- 60 # so that abund != density
-breaks <- seq(0, 50, by=10)
+test.ranef.gdistsamp <- function() {
 
-lambda <- 10 # Abundance
-phi <- 0.6   # Availability
-sigma <- 30  # Half-normal shape parameter
+    set.seed(36837)
+    R <- 10 # number of transects
+    T <- 5  # number of replicates
+    strip.width <- 50
+    transect.length <- 60 # so that abund != density
+    breaks <- seq(0, 50, by=10)
 
-J <- length(breaks)-1
-y <- array(0, c(R, J, T))
-for(i in 1:R) {
-    M <- rpois(1, lambda) # Individuals within the 1-ha strip
-    for(t in 1:T) {
-        # Distances from point
-        d <- runif(M, 0, strip.width)
-        # Detection process
-        if(length(d)) {
-            cp <- phi*exp(-d^2 / (2 * sigma^2)) # half-normal w/ g(0)<1
-            d <- d[rbinom(length(d), 1, cp) == 1]
-            y[i,,t] <- table(cut(d, breaks, include.lowest=TRUE))
+    lambda <- 10 # Abundance
+    phi <- 0.6   # Availability
+    sigma <- 30  # Half-normal shape parameter
+
+    J <- length(breaks)-1
+    y <- array(0, c(R, J, T))
+    for(i in 1:R) {
+        M <- rpois(1, lambda) # Individuals within the 1-ha strip
+        for(t in 1:T) {
+            # Distances from point
+            d <- runif(M, 0, strip.width)
+            # Detection process
+            if(length(d)) {
+                cp <- phi*exp(-d^2 / (2 * sigma^2)) # half-normal w/ g(0)<1
+                d <- d[rbinom(length(d), 1, cp) == 1]
+                y[i,,t] <- table(cut(d, breaks, include.lowest=TRUE))
             }
         }
     }
-y <- matrix(y, nrow=R) # convert array to matrix
+    y <- matrix(y, nrow=R) # convert array to matrix
+    # Organize data
+    umf <- unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
+                            dist.breaks=breaks,
+                            tlength=rep(transect.length, R), numPrimary=T)
+    # Fit the model
+    m1 <- gdistsamp(~1, ~1, ~1, umf, output="abund", K=20)
+    m2 <- gdistsamp(~1, ~1, ~1, umf, output="density", K=20)
 
-# Organize data
-umf <- unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
-    dist.breaks=breaks, tlength=rep(transect.length, R), numPrimary=T)
-summary(umf)
+    re1 <- ranef(m1)
+    re2 <- ranef(m2)
 
-# Fit the model
-m1 <- gdistsamp(~1, ~1, ~1, umf, output="abund", K=50)
-summary(m1)
-m2 <- gdistsamp(~1, ~1, ~1, umf, output="density", K=50)
-summary(m2)
+    ar1 <- as(re1, "array")
+    ar2 <- as(re2, "array")
 
+    all(colSums(ar1) == colSums(ar2))
 
-re1 <- ranef(m1)
-plot(re1, xlim=c(-1, 30))
-re2 <- ranef(m2)
-plot(re2, xlim=c(-1, 30))
+    checkEqualsNumeric(colSums(ar1), c(
+ 0.0000000000, 0.0000000000, 0.0000000000, 0.0794805049, 0.3358361903,
+ 0.7890001037, 1.2821818211, 1.5909472900, 1.5912280429, 1.3618027022,
+ 1.0580000336, 0.7683322582, 0.5172818071, 0.3155827035, 0.1716581394,
+ 0.0828293871, 0.0355456155, 0.0136513437, 0.0047271247, 0.0014870019,
+ 0.0004279302), tolerance=1e-6)
 
-all(postMode(re1) == postMode(re2))
-all(confint(re1) == confint(re2))
-
-cbind(postMode(re1), postMode(re2))
-
+}
 
 # ----------------------------- colext ----------------------------------
 
 
 
+
+test.ranef.pco <- function() {
+
+    set.seed(7)
+    M <- 10
+    J <- 3
+    T <- 5
+    psi <- 0.5
+    gamma <- 0.4
+    eps <- 0.6
+    p <- 0.5
+    z <- matrix(NA, M, T)
+    y <- array(NA, c(M, J, T))
+    z[,1] <- rbinom(M, 1, psi)
+    y[,,1] <- rbinom(M*J, 1, z[,1]*p)
+    for(t in 1:(T-1)) {
+        mu <- ((1-z[,t])*gamma + z[,t]*(1-eps))
+        z[,t+1] <- rbinom(M, 1, mu)
+        y[,,t+1] <- rbinom(M*J, 1, z[,t+1]*p)
+    }
+
+    # Prepare data
+    umf <- unmarkedMultFrame(y = matrix(y, M), numPrimary=T)
+    summary(umf)
+
+    # Fit model and backtransform
+    (m1 <- colext(~1, ~1, ~1, ~1, umf))
+
+    re1 <- ranef(m1)
+
+    plot(re1, xlim=c(-1,2))
+
+    ar1 <- as(re1, "array")
+
+
+checkEqualsNumeric(colSums(ar1), matrix(c(
+ 7.587399, 3.711435, 3.138038, 4.677841, 3.121028,
+ 2.412601, 6.288565, 6.861962, 5.322159, 6.878972), 2, byrow=TRUE),
+                   tol=1e-6)
+
+
+
+}
 
 
 
@@ -337,71 +380,63 @@ cbind(postMode(re1), postMode(re2))
 
 
 
+test.ranef.pco <- function() {
 
-library(unmarked)
-set.seed(7)
-M <- 100
-J <- 3
-T <- 10
-lambda <- 5
-gamma <- 0.4
-omega <- 0.9
-p <- 0.5
-N <- matrix(NA, M, T)
-y <- array(NA, c(M, J, T))
-S <- G <- matrix(NA, M, T-1)
-N[,1] <- rpois(M, lambda)
-y[,,1] <- rbinom(M*J, N[,1], p)
-for(t in 1:(T-1)) {
-    S[,t] <- rbinom(M, N[,t], omega)
-    G[,t] <- rpois(M, gamma)
-    N[,t+1] <- S[,t] + G[,t]
-    y[,,t+1] <- rbinom(M*J, N[,t+1], p)
+    set.seed(7)
+    M <- 10
+    J <- 3
+    T <- 5
+    lambda <- 5
+    gamma <- 0.4
+    omega <- 0.6
+    p <- 0.5
+    N <- matrix(NA, M, T)
+    y <- array(NA, c(M, J, T))
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    y[,,1] <- rbinom(M*J, N[,1], p)
+    for(t in 1:(T-1)) {
+        S[,t] <- rbinom(M, N[,t], omega)
+        G[,t] <- rpois(M, gamma)
+        N[,t+1] <- S[,t] + G[,t]
+        y[,,t+1] <- rbinom(M*J, N[,t+1], p)
+    }
+
+    # Prepare data
+    umf <- unmarkedFramePCO(y = matrix(y, M), numPrimary=T)
+    summary(umf)
+
+    # Fit model and backtransform
+    (m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20))
+
+    re1 <- ranef(m1)
+    ar1 <- as(re1, "array")
+
+    #write.table( round(colSums(ar1),6), sep=",", row.names=FALSE,
+    #    col.names=FALSE)
+
+    checkEqualsNumeric(colSums(ar1), matrix(c(
+0,0,0.819576,1.882332,0.989637,
+0.480739,2.960528,3.829933,2.832941,6.712276,
+2.288187,2.436992,1.751606,4.066047,2.111822,
+2.570878,2.156641,2.933849,1.144065,0.18163,
+1.250545,1.555231,0.618936,0.072798,0.00458,
+0.971742,0.714645,0.044551,0.001793,5.4e-05,
+0.926152,0.156831,0.001519,2.3e-05,0,
+0.855516,0.017955,2.9e-05,0,0,
+0.469365,0.001134,0,0,0,
+0.15106,4.2e-05,0,0,0,
+0.030947,1e-06,0,0,0,
+0.004375,0,0,0,0,
+0.000455,0,0,0,0,
+3.7e-05,0,0,0,0,
+2e-06,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0), ncol=5, byrow=TRUE), tolerance=1e-6)
+
+
 }
-
-
-colSums(N)
-colMeans(N)
-
-
-# Prepare data
-umf <- unmarkedFramePCO(y = matrix(y, M), numPrimary=T)
-summary(umf)
-
-
-# Fit model and backtransform
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20))
-
-e <- postMode(m1)
-(lam <- exp(e[1]))
-(gam <- exp(e[2]))
-(om <- plogis(e[3]))
-(p <- plogis(e[4]))
-
-re <- ranef(m1)
-
-plot(re, layout=c(5,5), subset = site %in% 1:25 & year %in% 1,
-     xlim=c(-1,20))
-
-postMode(re)
-confint(re)
-
-N.hat <- colSums(postMode(re))
-CI <- apply(confint(re), c(2,3), sum)
-rbind(N=colSums(N), N.hat=N.hat)
-
-plot(1:T, N.hat, ylim=c(0, 1000), cex=1.5)
-points(1:T, colSums(N), pch=16, col="blue")
-segments(1:T, CI[1,], 1:T, CI[2,])
-
-
-
-
-
-(m1nt <- update(m1, dynamics="notrend"))
-
-re <- ranef(m1nt)
-
-plot(re, layout=c(5,5), subset = site %in% sites, xlim=c(-1,10))
-
-

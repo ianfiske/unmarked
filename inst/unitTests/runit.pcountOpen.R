@@ -244,7 +244,7 @@ test.pcountOpen.delta <- function()
                                     numPrimary=4))
 
     dates4 <- dates2
-    dates4[is.na(y)] <- NA
+#    dates4[is.na(y)] <- NA
     mode(dates4) <- "integer"
     delta4 <- formatDelta(dates4, is.na(y))
     umf <- unmarkedFramePCO(y=y, primaryPeriod=dates4, numPrimary=4)
