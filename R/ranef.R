@@ -271,7 +271,8 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
     beta.phi <- coef(object, type="phi")
     beta.det <- coef(object, type="det")
 
-    lambda <- exp(Xlam %*% beta.lam)
+    lambda <- exp(Xlam %*% beta.lam + Xlam.offset)
+    phi <- plogis(Xphi %*% beta.phi + Xphi.offset)
 
     cp <- getP(object)
 
@@ -282,6 +283,8 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
     T <- data@numPrimary
     R <- numY(data) / T
     J <- obsNum(data) / T
+
+    phi <- matrix(phi, nSites, byrow=TRUE)
 
     if(identical(class(object)[1], "unmarkedFitGDS")) {
         if(identical(object@output, "density")) {
@@ -335,7 +338,7 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
                NB = f <- dnbinom(M, mu=lambda[i], size=alpha))
         g <- rep(1, K+1) # outside t loop
         for(t in 1:T) {
-            if(any(is.na(ya[i,,t])))
+            if(any(is.na(ya[i,,t])) | is.na(phi[i,t]))
                 next
             for(k in 1:(K+1)) {
                 y.it <- ya[i,,t]
@@ -345,7 +348,8 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
                     g[k] <- 0
                     next
                 }
-                cp.it <- c(cpa[i,,t], 1-sum(cpa[i,,t]))
+                cp.it <- cpa[i,,t]*phi[i,t]
+                cp.it <- c(cp.it, 1-sum(cp.it))
                 g[k] <- dmultinom(y.it, M[k], cp.it)
             }
         }

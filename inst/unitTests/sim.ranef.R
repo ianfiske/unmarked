@@ -315,6 +315,7 @@ for(i in 1:nsim) {
     if(i %% 1 == 0) {
         cat("sim", i, "\n")
         cat("  lambda =", exp(coef(fm)[1]), "\n")
+        cat("  bias1 =", bias1, "\n")
     }
 }
 
