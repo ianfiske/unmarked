@@ -496,9 +496,10 @@ setMethod("ranef", "unmarkedFitPCO",
         }
     }
 
-    P <- matrix(NA_real_, K+1, K+1)
-
     for(i in 1:R) {
+
+        P <- matrix(1, K+1, K+1)
+
         switch(mix,
                P  = g2 <- dpois(N, lam[i]),
                NB = {
@@ -519,9 +520,11 @@ setMethod("ranef", "unmarkedFitPCO",
         g1g2 <- g1*g2
         post[i,,1] <- g1g2 / sum(g1g2)
         for(t in 2:T) {
-            for(n0 in N) {
-                for(n1 in N) {
-                    P[n0+1, n1+1] <- tp(n0, n1, gam[i,t-1], om[i,t-1])
+            if(!is.na(gam[i,t-1]) & !is.na(om[i,t-1])) {
+                for(n0 in N) {
+                    for(n1 in N) {
+                        P[n0+1, n1+1] <- tp(n0, n1, gam[i,t-1], om[i,t-1])
+                    }
                 }
             }
             delta.it <- delta[i,t-1]

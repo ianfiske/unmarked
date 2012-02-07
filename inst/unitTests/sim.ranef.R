@@ -1,6 +1,6 @@
 
 
-# Evaluate bias of posterior mode
+# Evaluate bias of BUPs
 
 # ----------------------------- pcount ----------------------------------
 
@@ -15,25 +15,27 @@ sim.nmix <- function(R=100, J=5, lambda=5, p=0.7) {
 }
 
 
-nsim <- 200
-out.nmix <- matrix(NA, nsim, 2)
-set.seed(8345)
+nsim <- 100
+out.nmix <- matrix(NA, nsim, 3)
+set.seed(83145)
 for(i in 1:nsim) {
-    lambda <- 10
-    sim.i <- sim.nmix(J=10, lambda=lambda, p=0.5)
+    lambda <- 5
+    sim.i <- sim.nmix(J=5, lambda=lambda, p=0.5)
     umf <- unmarkedFramePCount(y=sim.i$y)
-    K <- 40
+    K <- 50
     fm <- pcount(~1 ~1, umf, K=K, se=FALSE)
     lam.hat <- exp(coef(fm, type="state"))
     re <- ranef(fm)
-    N <- sum(sim.i$N)
-    N.hat <- sum(modes <- bup(re))
-    bias <- N.hat - N
-    ci <- colSums(confint(re))
-    cover <- (N >= ci[1] & N <= ci[2])
-    out.nmix[i,] <- c(mean(modes), lam.hat)
+    N <- sim.i$N
+    N.hat1 <- bup(re, stat="mean")
+    N.hat2 <- bup(re, stat="mode")
+    bias1 <- mean(N.hat1 - N)
+    bias2 <- mean(N.hat2 - N)
+    ci <- confint(re)
+    cover <- mean(N >= ci[,1] & N <= ci[,2])
+    out.nmix[i,] <- c(bias1, bias2, cover)
     cat("sim", i, "\n")
-    cat("  bias =", mean(modes)-lambda, "\n")
+#    cat("  bias =", mean(modes)-lambda, "\n")
 }
 
 hist(out.nmix[,1], breaks=20)
@@ -42,6 +44,8 @@ colMeans(out.nmix)
 
 plot(re, layout=c(5,5))
 
+plot(N.hat1, N); abline(0,1)
+plot(N.hat2, N); abline(0,1)
 
 
 
@@ -62,22 +66,23 @@ sim.occu <- function(R=100, J=5, psi=0.5, p=0.4) {
 }
 
 
-nsim <- 300
-out.occu <- matrix(NA, nsim, 2)
+nsim <- 200
+out.occu <- matrix(NA, nsim, 3)
 set.seed(38845)
 for(i in 1:nsim) {
     cat("sim", i, "\n")
     sim.i <- sim.occu(psi=0.8, p=0.4)
     umf <- unmarkedFrameOccu(y=sim.i$y)
-    K <- 30
     fm <- occu(~1 ~1, umf, se=FALSE)
     re <- ranef(fm)
-    pao <- sum(sim.i$z)
-    pao.hat <- sum(modes <- bup(re))
-    bias <- pao.hat - pao
-    ci <- colSums(confint(re))
-    cover <- (pao >= ci[1] & pao <= ci[2])
-    out.occu[i,] <- c(bias, mean(modes))
+    z <- sim.i$z
+    z.hat1 <- bup(re, stat="mean")
+    z.hat2 <- bup(re, stat="mode")
+    bias1 <- mean(z.hat1 - z)
+    bias2 <- mean(z.hat2 - z)
+    ci <- confint(re)
+    cover <- mean(z >= ci[,1] & z <= ci[,2])
+    out.occu[i,] <- c(bias1, bias2, cover)
 }
 
 hist(out.occu[,1])
@@ -105,64 +110,104 @@ colMeans(out.occu)
 
 
 
-lambda <- 10
-sigma <- 30
-npts <- 100
-radius <- 50
-breaks <- seq(0, 50, by=10)
-A <- (2*radius)^2 / 10000 # Area (ha) of square containing circle
-y <- matrix(0, npts, length(breaks)-1)
-N <- integer(npts)
-for(i in 1:npts) {
-    M <- rpois(1, lambda * A) # Individuals within the square
-    xy <- cbind(x=runif(M, -radius, radius), y=runif(M, -radius, radius))
-    d <- apply(xy, 1, function(x) sqrt(x[1]^2 + x[2]^2))
-    d <- d[d <= radius]
-    N[i] <- length(d)
-    if(length(d)) {
-        p <- exp(-d^2 / (2 * sigma^2)) # half-normal
-        d <- d[rbinom(length(d), 1, p) == 1]
-        y[i,] <- table(cut(d, breaks, include.lowest=TRUE))
+
+
+
+sim.ds <- function(lambda=5, shape=20, scale=10, R=100,
+    breaks=seq(0, 50, by=10), survey="point", detfun="hn",
+    output="density")
+{
+    nb <- length(breaks)
+    J <- nb-1
+    maxDist <- max(breaks)
+    tlength <- 1000
+    if(output=="density") {
+        switch(survey,
+               point = A <- pi*maxDist^2 / 10000,   # Area (ha) of circle
+               line = A <- maxDist*2*100 / 10000 # Area (ha) 100m transect
+               )
+    } else A <- 1
+    a <- pi*breaks[2]^2
+    for(j in 2:J) {
+        a[j] <- pi*breaks[j+1]^2 - sum(a[1:(j-1)])
     }
+    u <- a / sum(a)
+    y <- matrix(0, R, J)
+    N <- rpois(R, lambda*A)
+    for(i in 1:R) {
+        switch(survey,
+               point = {
+                   z <- 2*pi*runif(N[i])
+                   u <- runif(N[i]) + runif(N[i])
+                   r <- ifelse(u>1, 2-u, u)
+                   X <- maxDist*r*cos(z)
+                   Y <- maxDist*r*sin(z)
+                   d <- sqrt(X^2+Y^2)
+                   d <- d[d<=maxDist]
+                   d <- d
+               },
+               line = {
+                   d <- runif(N[i], 0, maxDist)
+               })
+
+        # Detection process
+        if(length(d) > 0) {
+            switch(detfun,
+                   hn   = p <- exp(-d^2 / (2 * shape^2)),
+                   exp  = p <- exp(-d/shape),
+                   haz  = p <- 1-exp(-(d/shape)^-scale),
+                   unif = p <- 1
+                   )
+            cp <- p #* phi
+            d1 <- d[rbinom(length(d), 1, cp) == 1]
+            y[i,] <- table(cut(d1, breaks, include.lowest=TRUE))
+        }
+    }
+    return(list(y=y, N=N))
 }
 
-max(N)
-mean(N)
-
-set.seed(3)
-umf1 <- unmarkedFrameDS(y = y, survey="point",
-    dist.breaks=breaks, unitsIn="m")
-(m1 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20))))
-(m2 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)), output="abund"))
-
-backTransform(m1, type="state")
-backTransform(m1, type="det")
-
-
-re1 <- ranef(m1, K=20)
-plot(re1)
-
-re2 <- ranef(m2, K=20)
-plot(re2)
-
-all(bup(re1) == bup(re2))
-all(confint(re1) == confint(re2))
-
-
-reM <- bup(re1)
-reCI <- confint(re1)
-
-sum(N)
-sum(reM)
-colSums(reCI)
 
 
 
 
+nsim <- 100
+out.ds <- matrix(NA, nsim, 3)
+set.seed(38845)
+for(i in 1:nsim) {
+    cat("sim", i, "\n")
+    br <- seq(0, 50, by=10)
+    sur <- "point"
+    ot <- "density"
+    lambda <- 20
+    sim.i <- sim.ds(lambda=lambda, R=50, breaks=br, survey=sur, output=ot)
+    umf <- unmarkedFrameDS(y=sim.i$y, dist.breaks=br, survey=sur,
+                           unitsIn="m")
+    fm <- distsamp(~1 ~1, umf, output="density", se=FALSE)
+    re <- ranef(fm, K=50)
+    N <- sim.i$N
+    N.hat1 <- bup(re, stat="mean")
+    N.hat2 <- bup(re, stat="mode")
+    bias1 <- mean(N.hat1 - N)
+    bias2 <- mean(N.hat2 - N)
+    ci <- confint(re)
+    cover <- mean(N >= ci[,1] & N <= ci[,2])
+    out.ds[i,] <- c(bias1, bias2, cover)
+}
+
+colMeans(out.ds)
+
+
+plot(N.hat1, N); abline(0,1)
+plot(N.hat2, N); abline(0,1)
 
 
 
+fmia <- update(fm, output="abund")
 
+re1 <- ranef(fm, K=50)
+re2 <- ranef(fmia, K=50)
+
+all.equal(bup(re1), bup(re2), tol=1e-4)
 
 
 
@@ -173,42 +218,51 @@ colSums(reCI)
 
 
 
-
-
-# Simulate independent double observer data
-nSites <- 50
-lambda <- 10
-p1 <- 0.5
-p2 <- 0.3
-cp <- c(p1*(1-p2), p2*(1-p1), p1*p2)
-set.seed(9023)
-N <- rpois(nSites, lambda)
-y <- matrix(NA, nSites, 3)
-for(i in 1:nSites) {
-  y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:3]
+# Simulate independent double observer
+sim.mn <- function(nSites=50, lambda=10, p1=0.5, p2=0.3) {
+    cp <- c(p1*(1-p2), p2*(1-p1), p1*p2)
+    N <- rpois(nSites, lambda)
+    y <- matrix(NA, nSites, 3)
+    for(i in 1:nSites) {
+        y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:3]
+    }
+    return(list(y=y, N=N))
 }
 
-# Fit model
-observer <- matrix(c('A','B'), nSites, 2, byrow=TRUE)
-umf <- unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
-    type="double")
-fm <- multinomPois(~observer-1 ~1, umf)
-
-# Estimates of fixed effects
-e <- bup(fm)
-exp(e[1])
-plogis(e[2:3])
-
-# Estimates of random effects
-re <- ranef(fm, K=20)
-ltheme <- canonical.theme(color = FALSE)
-lattice.options(default.theme = ltheme)
-plot(re, layout=c(10,5))
 
 
-sum(bup(re))
-colSums(confint(re))
-sum(N)
+nsim <- 500
+out.mn <- matrix(NA, nsim, 3)
+set.seed(83145)
+for(i in 1:nsim) {
+    lambda <- 5
+    sim.i <- sim.mn(lambda=lambda)
+    umf <- unmarkedFrameMPois(y=sim.i$y, type="double")
+    fm <- multinomPois(~1 ~1, umf, se=FALSE)
+    lam.hat <- exp(coef(fm, type="state"))
+    re <- ranef(fm, K=50)
+    N <- sim.i$N
+    N.hat1 <- bup(re, stat="mean")
+    N.hat2 <- bup(re, stat="mode")
+    bias1 <- mean(N.hat1 - N)
+    bias2 <- mean(N.hat2 - N)
+    ci <- confint(re)
+    cover <- mean(N >= ci[,1] & N <= ci[,2])
+    out.mn[i,] <- c(bias1, bias2, cover)
+    if(i %% 10 == 0) cat("sim", i, "\n")
+}
+
+hist(out.nmix[,1], breaks=20)
+
+colMeans(out.nmix)
+
+plot(re, layout=c(5,5))
+
+plot(N.hat1, N); abline(0,1)
+plot(N.hat2, N); abline(0,1)
+
+
+
 
 
 
@@ -218,30 +272,65 @@ sum(N)
 # ---------------------------- gmultmix ---------------------------------
 
 
-library(unmarked)
-n <- 100  # number of sites
-T <- 4    # number of primary periods
-J <- 3    # number of secondary periods
 
-lam <- 3
-phi <- 0.5
-p <- 0.3
-
-#set.seed(26)
-y <- array(NA, c(n, T, J))
-M <- rpois(n, lam)          # Local population size
-N <- matrix(NA, n, T)       # Individuals available for detection
-
-for(i in 1:n) {
-    N[i,] <- rbinom(T, M[i], phi)
-    y[i,,1] <- rbinom(T, N[i,], p)    # Observe some
-    Nleft1 <- N[i,] - y[i,,1]         # Remove them
-    y[i,,2] <- rbinom(T, Nleft1, p)   # ...
-    Nleft2 <- Nleft1 - y[i,,2]
-    y[i,,3] <- rbinom(T, Nleft2, p)
+sim.gmn <- function(R=50, T, lam=5, phi=0.5, p=0.3) {
+    y <- array(NA, c(R, 3, T))
+    M <- rpois(R, lam)          # Local population size
+    N <- matrix(NA, R, T)       # Individuals available for detection
+    for(i in 1:R) {
+        N[i,] <- rbinom(T, M[i], phi)
+        y[i,1,] <- rbinom(T, N[i,], p)    # Observe some
+        Nleft1 <- N[i,] - y[i,1,]         # Remove them
+        y[i,2,] <- rbinom(T, Nleft1, p)   # ...
+        Nleft2 <- Nleft1 - y[i,2,]
+        y[i,3,] <- rbinom(T, Nleft2, p)
     }
+    return(list(y=matrix(y,R), M=M))
+}
 
-y.ijt <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
+
+
+
+
+
+nsim <- 100
+out.gmn <- matrix(NA, nsim, 3)
+set.seed(831455)
+for(i in 1:nsim) {
+    R <- 50
+    lambda <- 5
+    T <- 5
+    sim.i <- sim.gmn(R=R, lam=lambda, T=T, p=0.4)
+    umf <- unmarkedFrameGMM(y=sim.i$y, numPrimary=T, type="removal")
+    fm <- gmultmix(~1, ~1, ~1, umf, se=FALSE, K=40)
+    re <- ranef(fm)
+    M <- sim.i$M
+    M.hat1 <- bup(re, stat="mean")
+    M.hat2 <- bup(re, stat="mode")
+    bias1 <- mean(M.hat1 - M)
+    bias2 <- mean(M.hat2 - M)
+    ci <- confint(re)
+    cover <- mean(M >= ci[,1] & M <= ci[,2])
+    out.gmn[i,] <- c(bias1, bias2, cover)
+    if(i %% 1 == 0) {
+        cat("sim", i, "\n")
+        cat("  lambda =", exp(coef(fm)[1]), "\n")
+    }
+}
+
+hist(out.gmn[,1], breaks=20)
+
+colMeans(out.gmn)
+
+plot(re, layout=c(5,5), subset=site %in% 1:25)
+
+plot(M.hat1, M); abline(0,1)
+plot(M.hat2, M); abline(0,1)
+
+
+
+
+
 umf1 <- unmarkedFrameGMM(y=y.ijt, numPrimary=T, type="removal")
 
 (m1 <- gmultmix(~1, ~1, ~1, data=umf1, K=30))
@@ -250,7 +339,7 @@ re <- ranef(m1)
 plot(re, layout=c(5,5), xlim=c(-1,20), subset=site%in%1:25)
 
 
-
+plot(bup(re, "mode"), M)
 
 
 
@@ -302,7 +391,7 @@ plot(re1, xlim=c(-1, 30))
 re2 <- ranef(m2)
 plot(re2, xlim=c(-1, 30))
 
-all(bup(re1) == bup(re2))
+all.equal(bup(re1), bup(re2), tol=1e-4)
 all(confint(re1) == confint(re2))
 
 cbind(bup(re1), bup(re2))
@@ -312,10 +401,51 @@ cbind(bup(re1), bup(re2))
 
 
 
+sim.colext <- function(R=50, J=3, T=5, psi=0.5, gamma=0.4, eps=0.6,
+                       p=0.5) {
+    z <- matrix(NA, R, T)
+    y <- array(NA, c(R, J, T))
+    z[,1] <- rbinom(R, 1, psi)
+    y[,,1] <- rbinom(R*J, 1, z[,1]*p)
+    for(t in 1:(T-1)) {
+        mu <- ((1-z[,t])*gamma + z[,t]*(1-eps))
+        z[,t+1] <- rbinom(R, 1, mu)
+        y[,,t+1] <- rbinom(R*J, 1, z[,t+1]*p)
+    }
+    return(list(y=matrix(y,R), z=z))
+}
 
 
 
+nsim <- 100
+out.colext <- matrix(NA, nsim, 3)
+set.seed(83145)
+for(i in 1:nsim) {
+    R <- 50
+    T <- 10
+    sim.i <- sim.colext(R=R, T=T)
+    umf <- unmarkedMultFrame(y=sim.i$y, numPrimary=T)
+    fm <- colext(~1, ~1, ~1, ~1, umf, se=FALSE)
+    re <- ranef(fm)
+    z <- sim.i$z
+    z.hat1 <- bup(re, stat="mean")
+    z.hat2 <- bup(re, stat="mode")
+    bias1 <- mean(z.hat1 - z)
+    bias2 <- mean(z.hat2 - z)
+    ci <- confint(re)
+    cover <- mean(z >= ci[,1,] & z <= ci[,2,])
+    out.colext[i,] <- c(bias1, bias2, cover)
+    if(i %% 1 == 0) cat("sim", i, "\n")
+}
 
+hist(out.colext[,1], breaks=20)
+
+colMeans(out.colext)
+
+plot(re, layout=c(5,5), xlim=c(-2,3))
+
+plot(z.hat1, z); abline(0,1)
+plot(z.hat2, z); abline(0,1)
 
 
 
@@ -327,68 +457,61 @@ cbind(bup(re1), bup(re2))
 
 library(unmarked)
 set.seed(7)
-M <- 100
-J <- 3
-T <- 10
-lambda <- 5
-gamma <- 0.4
-omega <- 0.9
-p <- 0.5
-N <- matrix(NA, M, T)
-y <- array(NA, c(M, J, T))
-S <- G <- matrix(NA, M, T-1)
-N[,1] <- rpois(M, lambda)
-y[,,1] <- rbinom(M*J, N[,1], p)
-for(t in 1:(T-1)) {
-    S[,t] <- rbinom(M, N[,t], omega)
-    G[,t] <- rpois(M, gamma)
-    N[,t+1] <- S[,t] + G[,t]
-    y[,,t+1] <- rbinom(M*J, N[,t+1], p)
+
+sim.pco <- function(R=100, J=3, T=10, lambda=5, gamma=0.4, omega=0.9,
+                    p=0.5) {
+    N <- matrix(NA, R, T)
+    y <- array(NA, c(R, J, T))
+    S <- G <- matrix(NA, R, T-1)
+    N[,1] <- rpois(R, lambda)
+    y[,,1] <- rbinom(R*J, N[,1], p)
+    for(t in 1:(T-1)) {
+        S[,t] <- rbinom(R, N[,t], omega)
+        G[,t] <- rpois(R, gamma)
+        N[,t+1] <- S[,t] + G[,t]
+        y[,,t+1] <- rbinom(R*J, N[,t+1], p)
+    }
+    return(list(y=matrix(y,R), N=N))
 }
 
 
-colSums(N)
-colMeans(N)
+nsim <- 10
+out.pco <- matrix(NA, nsim, 3)
+set.seed(83145)
+for(i in 1:nsim) {
+    R <- 50
+    lambda <- 5
+    T <- 10
+    sim.i <- sim.pco(R=R, lambda=lambda, T=T)
+    umf <- unmarkedFramePCO(y=sim.i$y, numPrimary=T)
+    fm <- pcountOpen(~1, ~1, ~1, ~1, umf, se=FALSE, K=20)
+    re <- ranef(fm) # really slow
+    N <- sim.i$N
+    N.hat1 <- bup(re, stat="mean")
+    N.hat2 <- bup(re, stat="mode")
+    bias1 <- mean(N.hat1 - N)
+    bias2 <- mean(N.hat2 - N)
+    ci <- confint(re)
+    cover <- mean(N >= ci[,1,] & N <= ci[,2,])
+    out.pco[i,] <- c(bias1, bias2, cover)
+    if(i %% 1 == 0) cat("sim", i, "\n")
+}
 
+hist(out.nmix[,1], breaks=20)
 
-# Prepare data
-umf <- unmarkedFramePCO(y = matrix(y, M), numPrimary=T)
-summary(umf)
+colMeans(out.nmix)
 
+plot(re, layout=c(5,5))
 
-# Fit model and backtransform
-(m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20))
-
-e <- bup(m1)
-(lam <- exp(e[1]))
-(gam <- exp(e[2]))
-(om <- plogis(e[3]))
-(p <- plogis(e[4]))
-
-re <- ranef(m1)
-
-plot(re, layout=c(5,5), subset = site %in% 1:25 & year %in% 1,
-     xlim=c(-1,20))
-
-bup(re)
-confint(re)
-
-N.hat <- colSums(bup(re))
-CI <- apply(confint(re), c(2,3), sum)
-rbind(N=colSums(N), N.hat=N.hat)
-
-plot(1:T, N.hat, ylim=c(0, 1000), cex=1.5)
-points(1:T, colSums(N), pch=16, col="blue")
-segments(1:T, CI[1,], 1:T, CI[2,])
+plot(N.hat1, N); abline(0,1)
+plot(N.hat2, N); abline(0,1)
 
 
 
+(fm.nt <- update(fm, dynamics="notrend"))
 
+re <- ranef(fm.nt)
 
-(m1nt <- update(m1, dynamics="notrend"))
-
-re <- ranef(m1nt)
-
-plot(re, layout=c(5,5), subset = site %in% sites, xlim=c(-1,10))
+plot(re, layout=c(5,5), subset = site %in% 1:25, xlim=c(-1,10))
 
 

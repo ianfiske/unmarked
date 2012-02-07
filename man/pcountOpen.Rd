@@ -82,20 +82,23 @@ additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 the mean is \eqn{\lambda_i(1-\psi)}{lambda_i*(1-psi)}, where psi is the
 zero-inflation parameter.
 
-The latent abundance state following the initial sampling period arises from a
-Markovian process in which survivors are modeled as \eqn{S_it \sim
-Binomial(N_it-1, omega_it)}{S_it ~ Binomial(N_it-1, omega_it)}, and recruits
-follow \eqn{G_it \sim Poisson(gamma_it)}{G_it ~ Poisson(gamma_it)}.
+The latent abundance state following the initial sampling period arises
+from a
+Markovian process in which survivors are modeled as \eqn{S_{it} \sim
+Binomial(N_{it-1}, \omega_{it})}{S(i,t) ~ Binomial(N(i,t-1),
+omega(i,t))}, and recruits
+follow \eqn{G_{it} \sim Poisson(\gamma_{it})}{G(i,t) ~
+  Poisson(gamma(i,t))}.
 Alternative population dynamics can be specified
 using the \code{dynamics} argument.
 
 The detection process is modeled as binomial: \eqn{y_{ijt} \sim
-Binomial(N_{it}, p_{ijt})}{y_ijt ~ Binomial(N_it, p_ijt)}.
+Binomial(N_{it}, p_{ijt})}{y(i,j,t) ~ Binomial(N(i,t), p(i,j,t))}.
 
-Covariates of \eqn{\lambda_i}{lamdba_i} use the log link.
-Covariates of \eqn{\gamma_{it}}{gamma_it} use the log link.
-Covariates of \eqn{\omega_{it}}{omega_it} use the logit link.
-covariates of \eqn{p_{ijt}}{p_ijt} use the logit link.
+\eqn{\lambda_i}{lamdba_i} and \eqn{\gamma_{it}}{gamma_it} are modeled
+using the the log link.
+\eqn{\omega_{it}}{omega_it} and \eqn{p_{ijt}}{p_ijt} are modeled using
+the logit link.
 
 }
 \value{
