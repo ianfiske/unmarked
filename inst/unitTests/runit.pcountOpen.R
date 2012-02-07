@@ -250,7 +250,9 @@ test.pcountOpen.delta <- function()
     umf <- unmarkedFramePCO(y=y, primaryPeriod=dates4, numPrimary=4)
     fm <- pcountOpen(~1, ~1, ~1, ~1, umf, K=10, starts=c(1.2, 0, 1.4, 1.2))
     checkEqualsNumeric(coef(fm),
-        c(1.2543989, -0.5429887, 0.6715887, 5.6593500), tol = 1e-5)
+        c(1.35779948, 0.11911809, -0.06946651, 5.78090618),
+#        c(1.2543989, -0.5429887, 0.6715887, 5.6593500),
+    tol = 1e-5)
 
     y5 <- matrix(c(
         1, NA, 1, 4,

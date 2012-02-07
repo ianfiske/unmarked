@@ -32,35 +32,35 @@ manipulate the returned object.
 \item{\code{signature(object = "unmarkedFitOccuRN")}}{Computes the
   conditional abundance distribution given the data and the estimates of
   the fixed effects, \eqn{Pr(N_i=k | y_{ij}, \hat{\psi}_i, \hat{r}_{ij})
-  for k = 0,1,\dots,K}{Pr(N(i)=k |
+  k = 0,1,\dots,K}{Pr(N(i)=k |
   y(i,j), psi(i), r(i,j)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitPCount")}}{\eqn{Pr(N_i=k |
-  y_{ij}, \hat{\lambda}_i, \hat{p}_{ij})  for k = 0,1,\dots,K}{Pr(N(i)=k |
+  y_{ij}, \hat{\lambda}_i, \hat{p}_{ij}) k = 0,1,\dots,K}{Pr(N(i)=k |
   y(i,j), lambda(i), p(i,j)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitMPois")}}{\eqn{Pr(N_i=k |
-  y_{ij}, \hat{\lambda}_i, \hat{p}_{ij}) for k = 0,1,\dots,K}{Pr(N(i)=k |
+  y_{ij}, \hat{\lambda}_i, \hat{p}_{ij}) k = 0,1,\dots,K}{Pr(N(i)=k |
   y(i,j), lambda(i), p(i,j)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitDS")}}{\eqn{Pr(N_i=k |
-  y_{i,1:J}, \hat{\lambda}_i, \hat{\sigma}_{i}) for k =
+  y_{i,1:J}, \hat{\lambda}_i, \hat{\sigma}_{i}) k =
   0,1,\dots,K}{Pr(N(i)=k |
   y(i,1:J), lambda(i), sigma(i)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitGMM")}}{\eqn{Pr(M_i=k |
-  y_{i,1:J,t}, \hat{\lambda}_i, \hat{\phi}_{it}, \hat{p}_{ijt})  for k =
+  y_{i,1:J,t}, \hat{\lambda}_i, \hat{\phi}_{it}, \hat{p}_{ijt})  k =
   0,1,\dots,K}{Pr(N(i)=k |
   y(i,1:J,t), lambda(i), phi(i,t), p(i,j,t)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitGDS")}}{\eqn{Pr(M_i=k |
-  y_{i,1:J,t}, \hat{\lambda}_i, \hat{\phi}_{it}, \hat{\sigma}_{it}) for
+  y_{i,1:J,t}, \hat{\lambda}_i, \hat{\phi}_{it}, \hat{\sigma}_{it})
   k = 0,1,\dots,K}{Pr(N(i)=k |
   y(i,1:J,t), lambda(i), phi(i,t), sigma(i,t)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitColExt")}}{\eqn{Pr(z_{it}=1 |
   y_{ijt}, \hat{\psi}_i, \hat{\gamma}_{it}, \hat{\epsilon}_{it},
   \hat{p}_{ijt})}{Pr(z(i,t)=1 |
-  y(i,j,t), psi(i), gamma(i,t), epsilon(i,t), p(i,j,t))} for k = 0,1,...,K}
+  y(i,j,t), psi(i), gamma(i,t), epsilon(i,t), p(i,j,t)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitPCO")}}{\eqn{Pr(N_{it}=k |
   y_{ijt}, \hat{\lambda}_i, \hat{\gamma}_{it}, \hat{\omega}_{it},
-  \hat{p}_{ijt}) for k = 0,1,\dots,K}{Pr(N(i,t)=k |
-  y(i,j,t), lambda(i), gamma(i,t), omega(i,t), p(i,j,t)) \verb{for k =
-  0,1,...,K}}}
+  \hat{p}_{ijt}) k = 0,1,...,K}{Pr(N(i,t)=k |
+  y(i,j,t), lambda(i), gamma(i,t), omega(i,t), p(i,j,t)) for k =
+  0,1,...,K}}
 
 }
 }
@@ -77,7 +77,6 @@ manipulate the returned object.
   the Bayes rule), and proceeds as in a standard Bayesian analysis.}
   }
 
-}
 
 \section{Warning}{
   Empirical Bayes methods can underestimate the variance of the
@@ -85,7 +84,8 @@ manipulate the returned object.
   the hyperparameters (lambda or psi). However, we have not found this
   to be the case in a set of limited simulations studies that can be
   found in the inst/unitTests directory of unmarked. Simulations do,
-  however, indicate that the posterior mode is a negatively biased point
+  however, indicate that the posterior mode can exhibit slight (3-5
+  percent) negative bias as a point
   estimator of site-specific abundance. It appears to be safer to use
   the posterior mean even though this will not be an integer in general.
 }

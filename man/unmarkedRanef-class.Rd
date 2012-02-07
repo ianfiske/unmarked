@@ -47,7 +47,8 @@ Objects can be created by calls of the form \code{\link{ranef}}.
   the hyperparameters (lambda or psi). However, we have not found this
   to be the case in a set of limited simulations studies that can be
   found in the inst/unitTests directory of unmarked. Simulations do,
-  however, indicate that the posterior mode is a negatively biased point
+  however, indicate that the posterior mode can exhibit slight (3-5
+  percent) negatively bias as a point
   estimator of site-specific abundance. It appears to be safer to use
   the posterior mean even though this will not be an integer in general.
 }
