@@ -17,23 +17,26 @@ sim.nmix <- function(R=100, J=5, lambda=5, p=0.7) {
 
 nsim <- 200
 out.nmix <- matrix(NA, nsim, 2)
-set.seed(345)
+set.seed(8345)
 for(i in 1:nsim) {
-    cat("sim", i, "\n")
-    sim.i <- sim.nmix(J=10, lambda=5, p=0.5)
+    lambda <- 10
+    sim.i <- sim.nmix(J=10, lambda=lambda, p=0.5)
     umf <- unmarkedFramePCount(y=sim.i$y)
-    K <- 30
+    K <- 40
     fm <- pcount(~1 ~1, umf, K=K, se=FALSE)
+    lam.hat <- exp(coef(fm, type="state"))
     re <- ranef(fm)
     N <- sum(sim.i$N)
-    N.hat <- sum(postMode(re))
+    N.hat <- sum(modes <- postMode(re))
     bias <- N.hat - N
     ci <- colSums(confint(re))
     cover <- (N >= ci[1] & N <= ci[2])
-    out.nmix[i,] <- c(bias, cover)
+    out.nmix[i,] <- c(mean(modes), lam.hat)
+    cat("sim", i, "\n")
+    cat("  bias =", mean(modes)-lambda, "\n")
 }
 
-hist(out.nmix[,1])
+hist(out.nmix[,1], breaks=20)
 
 colMeans(out.nmix)
 
@@ -59,9 +62,9 @@ sim.occu <- function(R=100, J=5, psi=0.5, p=0.4) {
 }
 
 
-nsim <- 200
+nsim <- 300
 out.occu <- matrix(NA, nsim, 2)
-set.seed(345)
+set.seed(38845)
 for(i in 1:nsim) {
     cat("sim", i, "\n")
     sim.i <- sim.occu(psi=0.8, p=0.4)
@@ -70,11 +73,11 @@ for(i in 1:nsim) {
     fm <- occu(~1 ~1, umf, se=FALSE)
     re <- ranef(fm)
     pao <- sum(sim.i$z)
-    pao.hat <- sum(postMode(re))
+    pao.hat <- sum(modes <- postMode(re))
     bias <- pao.hat - pao
     ci <- colSums(confint(re))
     cover <- (pao >= ci[1] & pao <= ci[2])
-    out.occu[i,] <- c(bias, cover)
+    out.occu[i,] <- c(bias, mean(modes))
 }
 
 hist(out.occu[,1])

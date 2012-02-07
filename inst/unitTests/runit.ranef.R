@@ -3,41 +3,59 @@
 
 # ----------------------------- pcount ----------------------------------
 
+test.ranef.pcount <- function() {
+    library(unmarked)
+    set.seed(4564)
+    R <- 10
+    J <- 5
+    N <- rpois(R, 3)
+    y <- matrix(NA, R, J)
+    y[] <- rbinom(R*J, N, 0.5)
+    y[1,] <- NA
+    y[2,1] <- NA
+    K <- 15
 
-library(unmarked)
-set.seed(4564)
-R <- 20
-J <- 5
-N <- rpois(R, 3)
-y <- matrix(NA, R, J)
-y[] <- rbinom(R*J, N, 0.5)
-y[1,] <- NA
-K <- 15
+    umf <- unmarkedFramePCount(y=y)
+    fm <- pcount(~1 ~1, umf, K=K)
 
-umf <- unmarkedFramePCount(y=y)
-fm <- pcount(~1 ~1, umf, K=K)
+    re <- ranef(fm)
+    modes <- postMode(re)
+    CI <- confint(re, level=0.9)
+    checkEqualsNumeric(length(modes), R-1)
+    checkEqualsNumeric(nrow(CI), R-1)
+    checkEqualsNumeric(sum(modes), 42)
+    checkEqualsNumeric(colSums(CI), c(33,60))
+
+    df <- as(re, "data.frame")
+    ar <- as(re, "array")
+    checkEqualsNumeric(nrow(df), 144)
+    checkEqualsNumeric(colSums(ar), c(
+ 0.000000e+00, 0.000000e+00, 8.315871e-01, 1.337063e+00, 1.449232e+00,
+ 1.804784e+00, 1.839209e+00, 1.137807e+00, 4.478077e-01, 1.226691e-01,
+ 2.515083e-02, 4.076864e-03, 5.446213e-04, 6.189493e-05, 6.131061e-06,
+ 5.391007e-07), tolerance=1e-6)
+
+    fm.nb <- update(fm, mix="NB")
+    fm.zip <- update(fm, mix="ZIP")
+
+    ar.nb <- as(ranef(fm.nb), "array")
+    ar.zip <- as(ranef(fm.zip), "array")
+
+    checkEqualsNumeric(colSums(ar.nb), c(
+ 0.000000e+00, 0.000000e+00, 8.316904e-01, 1.337039e+00, 1.449088e+00,
+ 1.804499e+00, 1.839052e+00, 1.137951e+00, 4.480130e-01, 1.227798e-01,
+ 2.518738e-02, 4.085472e-03, 5.461876e-04, 6.212684e-05, 6.160034e-06,
+ 5.422348e-07), tolerance=1e-6)
+
+    checkEqualsNumeric(colSums(ar.zip), c(
+ 0.000000e+00, 0.000000e+00, 8.314699e-01, 1.336961e+00, 1.449185e+00,
+ 1.804676e+00, 1.839226e+00, 1.137965e+00, 4.479355e-01, 1.227225e-01,
+ 2.516552e-02, 4.079841e-03, 5.450965e-04, 6.195753e-05, 6.138095e-06,
+ 5.397913e-07), tolerance=1e-6)
 
 
-(re <- ranef(fm))
-postMode(re)
-confint(re, level=0.9)
-plot(re, xlim=c(-1,10))
+}
 
-sum(N)
-sum(postMode(re))
-colSums(confint(re))
-
-
-df <- as(re, "data.frame")
-ar <- as(re, "array")
-
-site.c <- as.character(df$site)
-nc <- nchar(site.c)
-mc <- max(nc)
-sapply(site.c, function(x) paste(paste(rep("0", mc-nchar(x)),
-                                       collapse=""), x, sep=""))
-
-ifelse(site.c<mc, paste(rep("0",mc-nc), site.c, sep=""), site.c)
 
 
 
@@ -47,29 +65,44 @@ ifelse(site.c<mc, paste(rep("0",mc-nc), site.c, sep=""), site.c)
 
 # ------------------------------- occu ----------------------------------
 
-library(unmarked)
-
-set.seed(320)
-R <- 50
-J <- 3
-z <- rbinom(R, 1, 0.5)
-y <- matrix(NA, R, J)
-y[] <- rbinom(R*J, z, 0.3)
-
-visit <- matrix(as.character(1:J), R, J, byrow=TRUE)
-umf <- unmarkedFrameOccu(y=y, obsCovs=list(visit=visit))
-(fm <- occu(~visit ~1, umf))
 
 
+test.ranef.occu <- function() {
+    set.seed(4564)
+    R <- 10
+    J <- 5
+    z <- rbinom(R, 1, 0.6)
+    y <- matrix(NA, R, J)
+    y[] <- rbinom(R*J, 1, z*0.7)
+    y[1,] <- NA
+    y[2,1] <- NA
 
-(re <- ranef(fm))
-postMode(re)
-confint(re, level=0.9)
-plot(re)
+    x <- y
+    x[] <- rnorm(R*J)
+    x[3,1] <- NA
 
-sum(z)
-sum(postMode(re))
-colSums(confint(re))
+    umf <- unmarkedFrameOccu(y=y, obsCovs=list(x=x))
+    fm <- occu(~1 ~1, umf)
+
+    re <- ranef(fm)
+    modes <- postMode(re)
+    CI <- confint(re, level=0.95)
+    checkEqualsNumeric(length(modes), R-1)
+    checkEqualsNumeric(nrow(CI), R-1)
+    checkEqualsNumeric(sum(modes), 3)
+    checkEqualsNumeric(colSums(CI), c(3,3))
+
+    df <- as(re, "data.frame")
+    ar <- as(re, "array")
+    checkEqualsNumeric(nrow(df), 18)
+    checkEqualsNumeric(colSums(ar), c(5.993957, 3.006043), tolerance=1e-6)
+
+    fmx <- occu(~x ~1, umf)
+    arx <- as(ranef(fmx), "array")
+    checkEqualsNumeric(colSums(arx), c(5.991553, 3.008447), tolerance=1e-6)
+
+}
+
 
 
 
@@ -87,57 +120,54 @@ colSums(confint(re))
 
 
 
+test.distsamp.ranef <- function() {
 
-lambda <- 10
-sigma <- 30
-npts <- 100
-radius <- 50
-breaks <- seq(0, 50, by=10)
-A <- (2*radius)^2 / 10000 # Area (ha) of square containing circle
-y <- matrix(0, npts, length(breaks)-1)
-N <- integer(npts)
-for(i in 1:npts) {
-    M <- rpois(1, lambda * A) # Individuals within the square
-    xy <- cbind(x=runif(M, -radius, radius), y=runif(M, -radius, radius))
-    d <- apply(xy, 1, function(x) sqrt(x[1]^2 + x[2]^2))
-    d <- d[d <= radius]
-    N[i] <- length(d)
-    if(length(d)) {
-        p <- exp(-d^2 / (2 * sigma^2)) # half-normal
-        d <- d[rbinom(length(d), 1, p) == 1]
-        y[i,] <- table(cut(d, breaks, include.lowest=TRUE))
+    set.seed(344)
+    lambda <- 10
+    sigma <- 20
+    npts <- 10
+    radius <- 50
+    breaks <- seq(0, 50, by=10)
+    A <- (2*radius)^2 / 10000 # Area (ha) of square containing circle
+    y <- matrix(0, npts, length(breaks)-1)
+    N <- integer(npts)
+    for(i in 1:npts) {
+        M <- rpois(1, lambda * A) # Individuals within the square
+        xy <- cbind(x=runif(M, -radius, radius),
+                    y=runif(M, -radius, radius))
+        d <- apply(xy, 1, function(x) sqrt(x[1]^2 + x[2]^2))
+        d <- d[d <= radius]
+        N[i] <- length(d)
+        if(length(d)) {
+            p <- exp(-d^2 / (2 * sigma^2)) # half-normal
+            d <- d[rbinom(length(d), 1, p) == 1]
+            y[i,] <- table(cut(d, breaks, include.lowest=TRUE))
+        }
     }
+
+    umf1 <- unmarkedFrameDS(y = y, survey="point",
+                            dist.breaks=breaks, unitsIn="m")
+    (m1 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20))))
+    (m2 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)),
+                    output="abund"))
+
+    re1 <- ranef(m1, K=20)
+    re2 <- ranef(m2, K=20)
+
+    checkEquals(mode1 <- postMode(re1), postMode(re2))
+    checkEquals(confint(re1), confint(re2))
+
+    ar1 <- as(re1, "array")
+
+checkEqualsNumeric(colSums(ar1), c(
+ 0.000000e+00, 2.334960e-01, 8.517322e-01, 1.524261e+00, 1.811577e+00,
+ 1.691348e+00, 1.421738e+00, 1.085003e+00, 7.119743e-01, 3.898376e-01,
+ 1.782052e-01, 6.895313e-02, 2.296231e-02, 6.685198e-03, 1.725009e-03,
+ 3.991224e-04, 8.362689e-05, 1.600128e-05, 2.816112e-06, 4.586885e-07,
+ 6.951721e-08), tolerance=1e-6)
+
+
 }
-
-max(N)
-mean(N)
-
-set.seed(3)
-umf1 <- unmarkedFrameDS(y = y, survey="point",
-    dist.breaks=breaks, unitsIn="m")
-(m1 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20))))
-(m2 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)), output="abund"))
-
-backTransform(m1, type="state")
-backTransform(m1, type="det")
-
-
-re1 <- ranef(m1, K=20)
-plot(re1)
-
-re2 <- ranef(m2, K=20)
-plot(re2)
-
-all(postMode(re1) == postMode(re2))
-all(confint(re1) == confint(re2))
-
-
-reM <- postMode(re1)
-reCI <- confint(re1)
-
-sum(N)
-sum(reM)
-colSums(reCI)
 
 
 

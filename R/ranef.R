@@ -35,23 +35,24 @@ setMethod("ranef", "unmarkedFitPCount",
     mix <- object@mixture
     for(i in 1:R) {
         switch(mix,
-               P  = f <- dpois(N, lam[i]),
+               P  = f <- dpois(N, lam[i], log=TRUE),
                NB = {
                    alpha <- exp(coef(object, type="alpha"))
-                   f <- dnbinom(N, mu=lam[i], size=alpha)
+                   f <- dnbinom(N, mu=lam[i], size=alpha, log=TRUE)
                },
                ZIP = {
                    psi <- plogis(coef(object, type="psi"))
                    f <- (1-psi)*dpois(N, lam[i])
                    f[1] <- psi + (1-psi)*exp(-lam[i])
+                   f <- log(f)
                })
-        g <- rep(1, K+1)
+        g <- rep(0, K+1)
         for(j in 1:ncol(y)) {
             if(is.na(y[i,j]) | is.na(p[i,j]))
                 next
-            g <- g * dbinom(y[i,j], N, p[i,j])
+            g <- g + dbinom(y[i,j], N, p[i,j], log=TRUE)
         }
-        fudge <- f*g
+        fudge <- exp(f+g)
         bup[i,,1] <- fudge / sum(fudge)
     }
     new("unmarkedRanef", bup=bup)
