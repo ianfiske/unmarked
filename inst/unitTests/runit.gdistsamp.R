@@ -4,18 +4,18 @@ test.gdistsamp.covs <- function() {
     umf <- unmarkedFrameGDS(y = y, siteCovs = siteCovs,
         dist.breaks=c(0, 5, 10, 15)/1000, survey="line", tlength=rep(1, 5),
         unitsIn="km", numPrimary=2)
-    fm <- gdistsamp(~x, ~x, ~x, data = umf, starts=c(2,0,-1,0,2,-1),
+    fm <- gdistsamp(~x, ~x, ~x, data = umf, starts=c(3,0,-1,0,9,-3),
                     K=50, se=FALSE)
 
     lam <- fm['lambda']
     phi <- fm['phi']
     det <- fm['det']
 
-    checkEqualsNumeric(coef(lam), c(3.72714393, -0.04496395),
+    checkEqualsNumeric(coef(lam), c(3.72697705, -0.04497333),
                        tolerance = 1e-4)
-    checkEqualsNumeric(coef(phi), c(0.41446960, -0.06101506),
-                       tolerance = 1e-4)
-    checkEqualsNumeric(coef(det), c(10.138343, -3.724821),
+    checkEqualsNumeric(coef(phi), c(0.41504254, -0.06105102),
+                       tolerance = 1e-3)
+    checkEqualsNumeric(coef(det), c(9.227672, -3.497148),
                        tolerance = 1e-4)
 
     }
