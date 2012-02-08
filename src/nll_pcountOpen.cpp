@@ -22,7 +22,7 @@ using namespace Rcpp ;
 void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Z, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
   Rcpp::NumericVector pois1 = dpois(N, gam, true);
   arma::vec pois = as<arma::vec>(pois1);
-  arma::vec bin(nrI1);
+  arma::vec bin = arma::zeros<arma::vec>(nrI1);
   for(int i=0; i<nrI1; i++) {
     bin(i) = Rf_dbinom(I1(i,0), I1(i,1), om, true);
   }
@@ -213,7 +213,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	  g3.zeros();
 	  if(dynamics=="constant" || dynamics=="notrend") {
 	    //	    tp1(g3, lk, gam(i,t-1), om(i,t-1));
-	    tp1(g3, nrI, nrI1, N, I, I1, Z, Ib, Ip, gam(i,t-1), om(0,t-1));
+	    tp1(g3, nrI, nrI1, N, I, I1, Z, Ib, Ip, gam(i,t-1), om(i,t-1));
 	  }
 	  else if(dynamics=="autoreg")
 	    tp2(g3, lk, gam(i,t-1), om(i,t-1));
