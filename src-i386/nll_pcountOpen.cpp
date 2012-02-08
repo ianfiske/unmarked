@@ -7,17 +7,35 @@ using namespace Rcpp ;
 
 
 // constant model
-void tp1(arma::mat& g3, int lk, double gam, double om) {
-    int Nmin=0;
-    for(int n1=0; n1<lk; n1++) {
-	for(int n2=0; n2<lk; n2++) {
-	    Nmin = std::min(n1, n2);
-	    for(int c=0; c<=Nmin; c++) {
-		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
-				  Rf_dpois(n2-c, gam, true));
-	    }
-	}
+//void tp1(arma::mat& g3, int lk, double gam, double om) {
+//    int Nmin=0;
+//    for(int n1=0; n1<lk; n1++) {
+//	for(int n2=0; n2<lk; n2++) {
+//	    Nmin = std::min(n1, n2);
+//	    for(int c=0; c<=Nmin; c++) {
+//		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
+//				  Rf_dpois(n2-c, gam, true));
+//	    }
+//	}
+//    }
+//}
+void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Z, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
+  Rcpp::NumericVector pois1 = dpois(N, gam, true);
+  arma::vec pois = as<arma::vec>(pois1);
+  arma::vec bin(nrI1);
+  for(int i=0; i<nrI1; i++) {
+    bin(i) = Rf_dbinom(I1(i,0), I1(i,1), om, true);
+  }
+  for(int s=0; s<nrI; s++) {
+    arma::uvec c = as<arma::uvec>(Z[s])-1;
+    arma::uvec indB = as<arma::uvec>(Ib[s])-1;
+    arma::uvec indP = as<arma::uvec>(Ip[s])-1;
+    int nc = indB.n_elem;
+    for(int q=0; q<nc; q++) {
+      g3(s) += exp(bin(indB(q)) + pois(indP(q)));
     }
+  }
+  g3.t();
 }
 
 
@@ -51,8 +69,9 @@ void tp3(arma::mat& g3, int lk, double gam) {
 
 
 
-SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_) {
+SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Z_, SEXP Ib_, SEXP Ip_) {
   int lk = as<int>(lk_);
+  Rcpp::IntegerVector N = seq_len(lk)-1;
   int M = as<int>(M_);
   int J = as<int>(J_);
   int T = as<int>(T_);
@@ -74,6 +93,13 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   std::string dynamics = as<std::string>(dynamics_);
   std::string fix = as<std::string>(fix_);
   std::string go_dims = as<std::string>(go_dims_);
+  arma::imat I = as<arma::imat>(I_);
+  arma::imat I1 = as<arma::imat>(I1_);
+  Rcpp::List Z(Z_);
+  Rcpp::List Ib(Ib_);
+  Rcpp::List Ip(Ip_);
+  int nrI = I.n_rows;
+  int nrI1 = I1.n_rows;
   double alpha=0.0, psi=0.0;
   if(mixture=="NB")
     alpha = exp(log_alpha);
@@ -131,8 +157,10 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::cube g3_t = arma::zeros<arma::cube>(lk,lk,T-1);
   // compute g3 is there are no covariates of omega/gamma
   if(go_dims == "scalar") {
-    if(dynamics=="constant" || dynamics=="notrend")
-      tp1(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
+    if(dynamics=="constant" || dynamics=="notrend") {
+      //      tp1(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
+      tp1(g3, nrI, nrI1, N, I, I1, Z, Ib, Ip, gam(0,first[0]-1), om(0,first[0]-1));
+    }
     else if(dynamics=="autoreg")
       tp2(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
     else if(dynamics=="trend")
@@ -148,8 +176,10 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
       if(ytna(first1,t)==1) { // FIXME: this is not generic!
 	continue;
       }
-      if(dynamics=="constant" || dynamics=="notrend")
-	tp1(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
+      if(dynamics=="constant" || dynamics=="notrend") {
+	//	tp1(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
+	tp1(g3_t.slice(t), nrI, nrI1, N, I, I1, Z, Ib, Ip, gam(first1,t), om(first1,t));
+      }
       else if(dynamics=="autoreg")
 	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
       else if(dynamics=="trend")
@@ -181,8 +211,10 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	// computes transition probs for g3
 	if(go_dims == "matrix") {
 	  g3.zeros();
-	  if(dynamics=="constant" || dynamics=="notrend")
-	    tp1(g3, lk, gam(i,t-1), om(i,t-1));
+	  if(dynamics=="constant" || dynamics=="notrend") {
+	    //	    tp1(g3, lk, gam(i,t-1), om(i,t-1));
+	    tp1(g3, nrI, nrI1, N, I, I1, Z, Ib, Ip, gam(i,t-1), om(0,t-1));
+	  }
 	  else if(dynamics=="autoreg")
 	    tp2(g3, lk, gam(i,t-1), om(i,t-1));
 	  else if(dynamics=="trend")

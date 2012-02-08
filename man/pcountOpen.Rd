@@ -179,7 +179,8 @@ p <- plogis(coef(m1, type="det"))
 # Finite sample inference. Abundance at site i, year t
 re <- ranef(m1)
 devAskNewPage(TRUE)
-plot(re, layout=c(5,5), xlim=c(-1,15))
+plot(re, layout=c(5,5), subset = site \%in\% 1:25 & year \%in\% 1:2,
+     xlim=c(-1,15))
 devAskNewPage(FALSE)
 
 (N.hat1 <- colSums(bup(re)))

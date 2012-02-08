@@ -110,6 +110,22 @@ if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
 
 ym <- matrix(y, nrow=M)
+
+
+# Create indices (should be written in C++)
+I <- cbind(rep(k, each=lk),
+           rep(k, times=lk))
+I1 <- I[I[,1] <= I[,2],]
+Z <- Ib <- Ip <- list()
+for(i in 1:nrow(I)) {
+    Z[[i]] <- 0:min(I[i,])
+    Ib[[i]] <- which((I1[,1] %in% Z[[i]]) & (I1[,2]==I[i,1]))
+    Ip[[i]] <- as.integer(I[i,2]-Z[[i]]+1)
+}
+
+
+
+
 nll <- function(parms) {
     beta.lam <- parms[1:nAP]
     beta.gam <- parms[(nAP+1):(nAP+nGP)]
@@ -126,6 +142,7 @@ nll <- function(parms) {
           ytna, yna,
           lk, mixture, first, last, M, J, T,
           delta, dynamics, fix, go.dims,
+          I, I1, Z, Ib, Ip,
           PACKAGE = "unmarked")
 }
 
