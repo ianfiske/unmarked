@@ -113,8 +113,8 @@ ym <- matrix(y, nrow=M)
 
 
 # Create indices (should be written in C++)
-I <- cbind(rep(k, each=lk),
-           rep(k, times=lk))
+I <- cbind(rep(k, times=lk),
+           rep(k, each=lk))
 I1 <- I[I[,1] <= I[,2],]
 Z <- Ib <- Ip <- list()
 for(i in 1:nrow(I)) {

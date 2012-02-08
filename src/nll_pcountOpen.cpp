@@ -35,7 +35,7 @@ void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, 
       g3(s) += exp(bin(indB(q)) + pois(indP(q)));
     }
   }
-  g3.t();
+  //  g3.t();
 }
 
 
