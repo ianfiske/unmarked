@@ -343,7 +343,6 @@ test.pcountOpen.secondSamps <- function()
 test.pcountOpen.dynamics <- function()
 {
 
-    # autoreg
     set.seed(3)
     M <- 20
     T <- 5
@@ -377,7 +376,5 @@ test.pcountOpen.dynamics <- function()
     checkEqualsNumeric(coef(m3),
                        c(1.67211946, -0.06534021, 0.18287762),
                        tolerance=1e-5)
-
-
 
 }
