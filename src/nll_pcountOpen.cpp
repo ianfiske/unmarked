@@ -35,13 +35,13 @@ void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, 
       g3(s) += exp(bin(indB(q)) + pois(indP(q)));
     }
   }
-  //  g3.t();
 }
 
 
 
 
 // autoregressive model
+/*
 void tp2(arma::mat& g3, int lk, double gam, double om) {
     int Nmin=0;
     for(int n1=0; n1<lk; n1++) {
@@ -54,6 +54,29 @@ void tp2(arma::mat& g3, int lk, double gam, double om) {
 	}
     }
 }
+*/
+void tp2(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Z, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
+  //  Rcpp::NumericVector pois1 = dpois(N, gam, true);
+  //  arma::vec pois = as<arma::vec>(pois1);
+  arma::vec pois = arma::zeros<arma::vec>(nrI1);
+  arma::vec bin = arma::zeros<arma::vec>(nrI1);
+  for(int i=0; i<nrI1; i++) {
+    pois(i) = Rf_pois(I1(i,1), gam*I1(i,0), true);
+    bin(i) = Rf_dbinom(I1(i,0), I1(i,1), om, true);
+  }
+  for(int s=0; s<nrI; s++) {
+    arma::uvec c = as<arma::uvec>(Z[s])-1;
+    arma::uvec indB = as<arma::uvec>(Ib[s])-1;
+    arma::uvec indP = as<arma::uvec>(Ip[s])-1;
+    int nc = indB.n_elem;
+    for(int q=0; q<nc; q++) {
+      g3(s) += exp(bin(indB(q)) + pois(indB(q))); // note that this should be indB not indP
+    }
+  }
+}
+
+
+
 
 
 
@@ -65,6 +88,7 @@ void tp3(arma::mat& g3, int lk, double gam) {
 	}
     }
 }
+
 
 
 
