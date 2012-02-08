@@ -808,12 +808,9 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
                            numPrimary=x@numPrimary)
     ysc <- x@yearlySiteCovs
     if(!is.null(ysc)) {
-#        browser()
-#        sites <- 1:nrow(ysc)
         T <- x@numPrimary
         sites <- rep(1:M, each=T)
-        keep <- as.numeric(sapply(i, function(x) sites %in% x))
-#        ysc <- ysc[rep(keep, each=T),, drop=FALSE]
+        keep <- as.vector(sapply(i, function(x) which(sites %in% x)))
         ysc <- ysc[keep,, drop=FALSE]
         u@yearlySiteCovs <- ysc
         }
