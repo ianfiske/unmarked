@@ -22,7 +22,7 @@ test.pcountOpen.null <- function()
   fm2 <- pcountOpen(~1, ~1, ~1, ~1, data = umf, se=FALSE, fix="gamma",
                     K=10)
   checkEqualsNumeric(coef(fm2), c(1.8219354, 8.7416638, -0.2873611),
-      tol = 1e-5)
+      tol = 1e-3)
 
   fm3 <- pcountOpen(~1, ~1, ~1, ~1, data = umf, se=FALSE, fix="omega",
                     K=30)
@@ -105,7 +105,7 @@ test.pcountOpen.na <- function()
       starts=c(1.5, 0, 1, 0))
   checkEqualsNumeric(coef(fm3),
                      c(0.9714456, 0.4481042, -0.8920462, 4.0379739 ),
-                     tol = 1e-5)
+                     tol = 1e-4)
   checkEquals(fm3@sitesRemoved, 6)
 
 
