@@ -328,3 +328,56 @@ test.pcountOpen.secondSamps <- function()
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+test.pcountOpen.dynamics <- function()
+{
+
+    # autoreg
+    set.seed(3)
+    M <- 20
+    T <- 5
+    lambda <- 4
+    gamma <- .2
+    omega <- 0.7
+    p <- 0.7
+    y <- N <- matrix(NA, M, T)
+    S <- G <- matrix(NA, M, T-1)
+    N[,1] <- rpois(M, lambda)
+    for(t in 1:(T-1)) {
+	S[,t] <- rbinom(M, N[,t], omega)
+	G[,t] <- rpois(M, gamma*N[,t])
+	N[,t+1] <- S[,t] + G[,t]
+    }
+    y[] <- rbinom(M*T, N, p)
+    colMeans(y)
+    umf <- unmarkedFramePCO(y = y, numPrimary=T)
+
+    m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, dynamics="autoreg")
+    checkEqualsNumeric(coef(m1),
+                       c(1.5457081, -1.2129776,  0.5668830,  0.4987492),
+                       tolerance=1e-5)
+
+    m2 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, dynamics="notrend")
+    checkEqualsNumeric(coef(m2),
+                       c(1.2131713,  0.7301736,  1.1949289),
+                       tolerance=1e-5)
+
+    m3 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, dynamics="trend")
+    checkEqualsNumeric(coef(m3),
+                       c(1.67211946, -0.06534021, 0.18287762),
+                       tolerance=1e-5)
+
+
+
+}

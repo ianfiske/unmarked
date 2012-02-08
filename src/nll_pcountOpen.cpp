@@ -57,7 +57,7 @@ void tp2(arma::mat& g3, int lk, double gam, double om) {
 
 
 
-// trend model
+// trend model (exponential growth)
 void tp3(arma::mat& g3, int lk, double gam) {
     for(int n1=0; n1<lk; n1++) {
 	for(int n2=0; n2<lk; n2++) {
