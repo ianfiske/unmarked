@@ -2366,6 +2366,7 @@ setMethod("nonparboot", "unmarkedFitOccuRN",
 setMethod("nonparboot", "unmarkedFitColExt",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
+#    browser()
     if (identical(B, 0) && !is.null(object@bootstrapSamples))
         return(object)
     if (B <= 0 && is.null(object@bootstrapSamples))
@@ -2377,7 +2378,7 @@ setMethod("nonparboot", "unmarkedFitColExt",
     extParms <- coef(object, 'ext')
 
     # bootstrap only after removing sites
-    designMats <- getDesign(object@data, formula = object@formula)
+    designMats <- unmarked:::getDesign(object@data, formula=object@formula)
     removed.sites <- designMats$removed.sites
     if(length(removed.sites) > 0) {
         sites <- 1:nrow(getY(data))
