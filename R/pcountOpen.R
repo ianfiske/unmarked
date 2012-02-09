@@ -3,9 +3,9 @@
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     data, mixture=c("P", "NB", "ZIP"), K, dynamics=c("constant", "autoreg", 
-    "notrend", "trend", "ricker", "gompertz", "trendImm"),
+    "notrend", "trend", "ricker", "gompertz"), 
     fix=c("none", "gamma", "omega"),
-    starts, method="BFGS", se=TRUE, ...)
+    starts, method="BFGS", se=TRUE, immigration=FALSE, iotaformula=~1, ...)
 {
 mixture <- match.arg(mixture)
 dynamics <- match.arg(dynamics)
@@ -13,8 +13,10 @@ fix <- match.arg(fix)
 if(identical(dynamics, "notrend") &
    !identical(lambdaformula, omegaformula))
     stop("lambdaformula and omegaformula must be identical for notrend model")
+if((identical(dynamics, "constant") || identical(dynamics, "notrend")) & immigration)
+    stop("You can not include immigration in the constant or notrend models")
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
-    omegaformula=omegaformula, pformula=pformula)
+    omegaformula=omegaformula, pformula=pformula, iotaformula=iotaformula)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- unmarked:::getDesign(data, formula)
 y <- D$y
@@ -23,6 +25,7 @@ Xlam <- D$Xlam
 Xgam <- D$Xgam
 Xom <- D$Xom
 Xp <- D$Xp
+Xiota <- D$Xiota
 
 delta <- D$delta; go.dims <- D$go.dims
 deltamax <- max(delta, na.rm=TRUE)
@@ -34,10 +37,12 @@ Xlam.offset <- D$Xlam.offset
 Xgam.offset <- D$Xgam.offset
 Xom.offset <- D$Xom.offset
 Xp.offset <- D$Xp.offset
+Xiota.offset <- D$Xiota.offset
 if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
 if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
 if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
 if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
+if(is.null(Xiota.offset)) Xiota.offset <- rep(0, M*(T-1))
 
 yna <- is.na(y)
 yna[] <- as.integer(yna)
@@ -67,6 +72,13 @@ nGP <- ncol(Xgam)
 nOP <- ncol(Xom)
 nDP <- ncol(Xp)
 
+if(immigration) {
+  iotaParms <- colnames(Xiota)
+  nIP <- ncol(Xiota)
+} else {
+  nIP <- 0
+  iotaParms <- character(0)
+}
 if(identical(fix, "gamma")) {
     if(!identical(dynamics, "constant"))
         stop("dynamics must be constant when fixing gamma or omega")
@@ -102,10 +114,10 @@ if(identical(fix, "omega")) {
         nOP <- 0
         omParms <- character(0)
     }
-}
+} 
 
 
-nP <- nAP + nGP + nOP + nDP + (mixture!="P")
+nP <- nAP + nGP + nOP + nDP + nIP + (mixture!="P")
 if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
 
@@ -115,17 +127,18 @@ nll <- function(parms) {
     beta.gam <- parms[(nAP+1):(nAP+nGP)]
     beta.om <- parms[(nAP+nGP+1):(nAP+nGP+nOP)]
     beta.p <- parms[(nAP+nGP+nOP+1):(nAP+nGP+nOP+nDP)]
+    beta.iota <- parms[(nAP+nGP+nOP+nDP+1):(nAP+nGP+nOP+nDP+nIP)]
     log.alpha <- 1
     if(mixture %in% c("NB", "ZIP"))
         log.alpha <- parms[nP]
     .Call("nll_pcountOpen",
           ym,
-          Xlam, Xgam, Xom, Xp,
-          beta.lam, beta.gam, beta.om, beta.p, log.alpha,
-          Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
+          Xlam, Xgam, Xom, Xp, Xiota,
+          beta.lam, beta.gam, beta.om, beta.p, beta.iota, log.alpha,
+          Xlam.offset, Xgam.offset, Xom.offset, Xp.offset, Xiota.offset,
           ytna, yna,
           lk, mixture, first, last, M, J, T,
-          delta, dynamics, fix, go.dims,
+          delta, dynamics, fix, go.dims, immigration,
           PACKAGE = "unmarked")
 }
 
@@ -141,7 +154,7 @@ else if(identical(mixture, "ZIP"))
     nbParm <- "psi"
 else
     nbParm <- character(0)
-names(ests) <- c(lamParms, gamParms, omParms, detParms, nbParm)
+names(ests) <- c(lamParms, gamParms, omParms, detParms, iotaParms, nbParm)
 if(se) {
 	covMat <- tryCatch(solve(fm$hessian), error=function(x)
 		simpleError("Hessian is not invertible. Try using fewer covariates or providing starting values."))
@@ -168,8 +181,7 @@ gamName <- switch(dynamics,
                   notrend = "",
                   trend = "gamTrend",
                   ricker = "gamRicker",
-                  gompertz = "gamGomp",
-                  trendImm = "gamTrend")
+                  gompertz = "gamGomp")
 if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
     estimateList@estimates$gamma <- unmarkedEstimate(name = 
         ifelse(identical(dynamics, "constant") | identical(dynamics, "autoreg"), 
@@ -185,13 +197,6 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
-  else if(identical(dynamics, "trendImm"))
-    estimateList@estimates$omega <- unmarkedEstimate(
-        name="Immigration",
-        short.name = "omImm", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
-        covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
-            (nAP+nGP+1) : (nAP+nGP+nOP)]),
-        invlink = "exp", invlinkGrad = "exp")
   else
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Carrying Capacity",
@@ -201,6 +206,14 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
         invlink = "exp", invlinkGrad = "exp")
   }
 estimateList@estimates$det <- detEstimates
+if(immigration) {
+    estimateList@estimates$immigration <- unmarkedEstimate(
+        name="Immigration",
+        short.name = "iota", estimates = ests[(nAP+nGP+nOP+nDP+1) :(nAP+nGP+nOP+nDP+nIP)],
+        covMat = as.matrix(covMat[(nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP),
+            (nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP)]),
+        invlink = "exp", invlinkGrad = "exp")
+}    
 if(identical(mixture, "NB")) {
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
         short.name = "alpha", estimates = ests[nP],

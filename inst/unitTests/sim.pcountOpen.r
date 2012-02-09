@@ -888,6 +888,108 @@ hist(simout12[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)
 hist(simout12[,4], xlab=expression(psi)); abline(v=psi, lwd=2, col=4)
 dev.off()
 
+# Trend + immigration with gamma and iota covariates
+simTrendImm0 <- function(lambda=3, gamma=0.98, iota=1, p=0.5, M=100, T=10) {
+
+  y <- N <- matrix(NA, M, T)
+
+  N[,1] <- rpois(M, lambda)
+  for(t in 1:(T-1)) {
+    N[,t+1] <- rpois(M, N[,t]*gamma+iota)
+  }
+  for(i in 1:M) {
+    y[i,] <- rbinom(T, N[i,], p)
+  }
+  return(list(y=y, N=N))
+}
+
+set.seed(3223)
+nsim14 <- 100
+simout14 <- matrix(NA, nsim14, 4)
+colnames(simout14) <- c('lambda', 'gamma', 'p', 'iota')
+for(i in 1:nsim14) {
+    cat("sim14:", i, "\n")
+    lambda <- 2
+    gamma <- 0.95
+    p <- 0.5
+    iota <- 0.3
+    y.sim14 <- simTrendImm0(lambda, gamma, iota, p)$y
+    umf14 <- unmarkedFramePCO(y = y.sim14, numPrimary=10)
+    m14 <- pcountOpen(~1, ~1, ~1, ~1, umf14, K=40, dynamics="trend", 
+        mixture="P", immigration=T, 
+        starts=c(log(lambda), log(gamma), plogis(p), plogis(psi)),
+        se=FALSE)
+    e <- coef(m14)
+    simout14[i, 1:2] <- exp(e[1:2])
+    simout14[i, 3] <- plogis(e[3])
+    simout14[i, 4] <- exp(e[4])
+    cat("  mle =", simout14[i,], "\n")
+    }
+
+#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout14[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout14[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout14[,3], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+hist(simout14[,4], xlab=expression(iota)); abline(v=iota, lwd=2, col=4)
+#dev.off()
+colMeans(simout14)
+
+# Ricker + immigration with gamma, omega, and immigration covariate
+simRickerImm1 <- function(X, M=100, T=10, lambda=3, alpha=1, gam0=-0.01, gam1=0, 
+  om0=log(3), om1=0, p=0.5, imm0=1, imm1=0) {
+
+  if(!identical(nrow(X), as.integer(M*T)))
+      stop("X ain't formatted right")
+
+  y <- N <- matrix(NA, M, T)
+
+  omega <- exp(X %*% c(om0, om1))
+  omega <- matrix(omega, M, T)
+  gamma <- exp(X %*% c(gam0, gam1))
+  gamma <- matrix(gamma, M, T)
+  immigration <- exp(X %*% c(imm0, imm1))
+  immigration <- matrix(immigration, M, T)
+
+  N[,1] <- rnbinom(M, mu=lambda, size=alpha)
+  for(t in 1:(T-1)) {
+    N[,t+1] <- rpois(M, N[,t]*exp(gamma[,t]*(1-N[,t]/omega[,t]))+immigration[,t])
+  }
+  for(i in 1:M) {
+    y[i,] <- rbinom(T, N[i,], p)
+  }
+  return(list(y=y, N=N))
+}
+
+# Autoregressive + immigration with gamma, omega, and immigration covariate
+simAutoImm1 <- function(X, M=100, T=10, lambda=3, alpha=1, gam0=-0.01, gam1=0, 
+  om0=2, om1=0, p=0.5, imm0=1, imm1=0.5) {
+
+  if(!identical(nrow(X), as.integer(M*T)))
+      stop("X ain't formatted right")
+
+  y <- N <- matrix(NA, M, T)
+  I <- G <- S <- matrix(NA, M, T-1)
+
+  omega <- plogis(X %*% c(om0, om1))
+  omega <- matrix(omega, M, T)
+  gamma <- exp(X %*% c(gam0, gam1))
+  gamma <- matrix(gamma, M, T)
+  immigration <- exp(X %*% c(imm0, imm1))
+  immigration <- matrix(immigration, M, T)
+
+  N[,1] <- rnbinom(M, mu=lambda, size=alpha)
+  for(t in 1:(T-1)) {
+    G[,t] <- rpois(M, N[,t]*gamma[,t])
+    S[,t] <- rbinom(M, N[,t], omega[,t])
+    I[,t] <- rpois(M, immigration[,t])
+    N[,t+1] <- G[,t]+I[,t]+S[,t]
+    }
+  for(i in 1:M) {
+    y[i,] <- rbinom(T, N[i,], p)
+  }
+  return(list(y=y, N=N))
+}
 
 
 
