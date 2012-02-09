@@ -55,7 +55,7 @@ test.pcountOpen.na <- function()
       starts=c(1.6, 0.24, 1.16, -0.268))
   checkEqualsNumeric(coef(fm1),
       c(0.9536852, 0.4611643, -0.8655834, 3.2154420), tol = 1e-5)
- 
+
   y2 <- matrix(c(
       1, 2, 1, 4,
       3, 1, 2, 1,

@@ -239,7 +239,7 @@ setMethod("handleNA", "unmarkedMultFrame",
     nY <- umf@numPrimary
     J <- numY(umf) / nY
 
-    ## treat both X's and W together
+    ## treat both X's #######no: and W together
 #    X <- cbind(X.gam, X.eps, W[rep(1:M, each = nY), ])
     X <- cbind(X.gam, X.eps)
 
@@ -382,14 +382,24 @@ setMethod("getDesign", "unmarkedFramePCO",
     Xgo <- cbind(Xgam, Xom)
     getGOdims <- function(x) {
         xm <- matrix(x, M, T-1, byrow=TRUE)
-        anyNA <- apply(is.na(xm), 1, any)
-        xm <- xm[!anyNA,] # This is not 100% safe
-        nSites <- nrow(xm)
-        if(all(dim(unique(xm, MARGIN=1)) == c(1, T-1)))
+#        anyNA <- apply(is.na(xm), 1, any)
+#        if(all(anyNA))
+#            return("matrix")
+#        xm <- xm[!anyNA,] # This is not 100% safe
+#        nSites <- nrow(xm)
+#        if(all(dim(unique(xm, MARGIN=1)) == c(1, T-1)))
+#            return("rowvec")
+#        else if(all(dim(unique(xm, MARGIN=2)) == c(nSites, 1)))
+#            return("colvec")
+#        else return("matrix")
+        col.table <- apply(xm, 2, table)
+        row.table <- apply(xm, 1, table)
+        if(is.vector(col.table) & !is.list(col.table)) {
             return("rowvec")
-        else if(all(dim(unique(xm, MARGIN=2)) == c(nSites, 1)))
+        } else if(is.vector(row.table) & !is.list(row.table)) {
             return("colvec")
-        else return("matrix")
+        } else
+            return("matrix")
         }
     if(isTRUE(all.equal(gamformula,~1)) & isTRUE(all.equal(omformula, ~1)))
         go.dims <- "scalar"
@@ -492,8 +502,8 @@ setMethod("handleNA", "unmarkedFramePCO",
 	y.new.na <- covs.na & !y.long.na
 
 	if(sum(y.new.na) > 0) {
-        y.long[y.new.na] <- NA
-        warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
+            y.long[y.new.na] <- NA
+            warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
         }
 
 	y.wide <- matrix(y.long, nrow=M, ncol=J*T, byrow = TRUE)
@@ -531,9 +541,9 @@ setMethod("handleNA", "unmarkedFramePCO",
                        drop = FALSE]
             Xom.offset <- Xom.offset[!sites.to.remove[rep(1:M, each = T-1)],,
                        drop = FALSE]
-            Xp <- Xp[!sites.to.remove[rep(1:M, each = T)],,
+            Xp <- Xp[!sites.to.remove[rep(1:M, each = J*T)],,
                      drop = FALSE]
-            Xp.offset <- Xp.offset[!sites.to.remove[rep(1:M, each = T)],,
+            Xp.offset <- Xp.offset[!sites.to.remove[rep(1:M, each = J*T)],,
                      drop = FALSE]
             delta <- delta[!sites.to.remove, ,drop =FALSE]
             warning(paste(num.to.remove, "sites have been discarded because of missing data."), call.=FALSE)

@@ -2252,6 +2252,8 @@ setMethod("plot", signature(x="parboot", y="missing"),
         h <- hist(t.star[,i], plot = FALSE)
         if(missing(xlim))
             xl <- c(min(h$breaks[1], t0[i]), max(max(h$breaks), t0[i]))
+        else
+            xl <- xlim
         hist(t.star[,i], xlab=xlab, xlim = xl, main = main, ...)
         abline(v=t0[i], lty=2)
         devAskNewPage(ask = TRUE)
