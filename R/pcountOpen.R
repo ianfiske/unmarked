@@ -119,8 +119,8 @@ I1 <- I[I[,1] <= I[,2],]
 Z <- Ib <- Ip <- list()
 for(i in 1:nrow(I)) {
     Z[[i]] <- 0:min(I[i,])
-    Ib[[i]] <- which((I1[,1] %in% Z[[i]]) & (I1[,2]==I[i,1]))
-    Ip[[i]] <- as.integer(I[i,2]-Z[[i]]+1)
+    Ib[[i]] <- which((I1[,1] %in% Z[[i]]) & (I1[,2]==I[i,1])) - 1
+    Ip[[i]] <- as.integer(I[i,2]-Z[[i]])
 }
 
 
@@ -142,7 +142,7 @@ nll <- function(parms) {
           ytna, yna,
           lk, mixture, first, last, M, J, T,
           delta, dynamics, fix, go.dims,
-          I, I1, Z, Ib, Ip,
+          I, I1, Ib, Ip,
           PACKAGE = "unmarked")
 }
 
