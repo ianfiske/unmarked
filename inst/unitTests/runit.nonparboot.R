@@ -2,6 +2,37 @@
 
 
 
+test.nonparboot.occu <- function() {
+
+    set.seed(3343)
+    R <- 20
+    J <- 5
+    z <- rbinom(R, 1, 0.6)
+    y <- matrix(NA, R, J)
+    y[] <- rbinom(R*J, 1, z*0.7)
+    x1 <- rnorm(R)
+    x2 <- y
+    x2[] <- rnorm(R*J)
+    x2[1,] <- NA
+    x2[3,1] <- NA
+    umf <- unmarkedFrameOccu(y=y, siteCovs=data.frame(x1=x1),
+                             obsCovs=list(x2=x2))
+    fm1 <- occu(~1 ~1, umf)
+    fm2 <- occu(~x2 ~x1, umf)
+    fm1 <- nonparboot(fm1, B=2)
+    fm2 <- nonparboot(fm2, B=2)
+
+    checkEqualsNumeric(vcov(fm2, method="nonparboot"), matrix(c(
+          0.11708106,  0.07895147, -0.2668053, -0.3152901,
+          0.07895147,  0.05323947, -0.1799153, -0.2126101,
+         -0.26680534, -0.17991529,  0.6079984,  0.7184859,
+         -0.31529012, -0.21261011,  0.7184859,  0.8490516), 4, byrow=TRUE),
+          tolerance=1e-5)
+
+}
+
+
+
 
 
 test.nonparboot.colext <- function() {
