@@ -40,7 +40,7 @@ library(tools)
   can be fitted with
   constant parameters ($M_0$), time-specific parameters ($M_t$),
   and behavioral responses ($M_b$). In addition, spatial
-  variation in abundance or capture probability can also be
+  variation in abundance and capture probability can also be
   modeled using covariates. \texttt{unmarked} has two
   functions for fitting
   capture-recapture models: \texttt{multinomPois} and
@@ -572,13 +572,14 @@ eventually add other options such as the zero-inflated Poisson.
 
 The capture-recapture models that can be fit in \texttt{unmarked} assume
 that variation in capture probability can be
-explained by site, time, or behavior. Currently, individual
+explained by site-specific covariates, time, or behavior. Currently, individual
 heterogeneity cannot be explicitly modeled, although, one could
 partition the data into strata and analyze the strata separately. For
 example, sex-specific
-differences could be studied by dividing the data into 2 subsets.
+differences could be studied by dividing the data on males and females
+into 2 subsets.
 The so-called model $M_h$, which assumes
-random variation in capture probability among individuals is also not
+random variation in capture probability among individuals is not
 currently implemented. Some might find comfort in this given the
 concerns about $M_h$ raised by \citet{link:2003}.
 
@@ -596,7 +597,7 @@ only singing birds were included in the analysis. In addition, SCR
 models would not work well for this dataset because they
 require ``spatial recaptures'' to work effectively. That is,
 SCR models work best when individuals are encountered at multiple
-locations, but the points in the alder flycatcher dataset were
+locations, but the sample locations in the alder flycatcher dataset were
 independent of one another. Nonetheless, we recommend the use of SCR
 models in other contexts such as when using camera traps or fixed
 arrays of live traps.

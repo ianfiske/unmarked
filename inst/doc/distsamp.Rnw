@@ -8,7 +8,7 @@ options(continue=" ")
 \usepackage{Sweave}
 \usepackage{natbib}
 \usepackage{fullpage}
-\bibliographystyle{plain}
+\bibliographystyle{ecology}
 
 \DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
 \DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em}
@@ -158,7 +158,7 @@ hist(umf, xlab="distance (m)", main="", cex.lab=0.8, cex.axis=0.8)
 @
 \begin{figure}[!ht]
   \centering
-  \includegraphics{distsamp-umfhist}
+  \includegraphics[width=4in,height=4in]{distsamp-umfhist}
   \caption{Histogram of detection distances.}
   \label{fig:umfhist}
 \end{figure}

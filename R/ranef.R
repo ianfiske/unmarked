@@ -74,6 +74,7 @@ setMethod("ranef", "unmarkedFitOccu",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
+    y[y>1] <- 1
     post <- array(0, c(R,2,1))
     colnames(post) <- z
     for(i in 1:R) {
@@ -112,6 +113,7 @@ setMethod("ranef", "unmarkedFitOccuRN",
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
+    y[y>1] <- 1
     post <- array(NA_real_, c(R, length(N), 1))
     colnames(post) <- N
     for(i in 1:R) {
@@ -392,6 +394,7 @@ setMethod("ranef", "unmarkedFitColExt",
 #    yumfa <- array(yumf, c(M, J, nY))
 
     y <- designMats$y
+    y[y>1] <- 1
     ya <- array(y, c(M, J, nY))
 
     psiP <- plogis(W.i %*% psiParms)
