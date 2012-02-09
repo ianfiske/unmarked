@@ -34,6 +34,60 @@ test.nonparboot.occu <- function() {
 
 
 
+test.nonparboot.gmultmix <- function() {
+
+    set.seed(34)
+    n <- 10       # number of sites
+    T <- 3        # number of primary periods
+    J <- 3        # number of secondary periods
+    lam <- 3
+    phi <- 0.5
+    p <- 0.3
+    #set.seed(26)
+    y <- array(NA, c(n, J, T))
+    M <- rpois(n, lam)          # Local population size
+    N <- matrix(NA, n, T)       # Individuals available for detection
+    for(i in 1:n) {
+        N[i,] <- rbinom(T, M[i], phi)
+        y[i,1,] <- rbinom(T, N[i,], p)    # Observe some
+        Nleft1 <- N[i,] - y[i,1,]         # Remove them
+        y[i,2,] <- rbinom(T, Nleft1, p)   # ...
+        Nleft2 <- Nleft1 - y[i,2,]
+        y[i,3,] <- rbinom(T, Nleft2, p)
+    }
+    y.ijt <- matrix(y, n)
+    sc1 <- rnorm(n)
+    ysc1 <- matrix(rnorm(n*T), n, T)
+    oc1 <- y.ijt
+    oc1[] <- rnorm(n*T*J)
+    umf1 <- unmarkedFrameGMM(y=y.ijt, siteCovs=data.frame(sc=sc1),
+                             yearlySiteCovs=list(ysc=ysc1),
+                             obsCovs=list(oc=oc1),
+                             numPrimary=T, type="removal")
+    fm1 <- gmultmix(~1, ~1, ~1, umf1, K=10)
+    fm1 <- nonparboot(fm1, B=2)
+
+    umf2 <- unmarkedFrameGMM(y=y.ijt, siteCovs=data.frame(sc=sc1),
+                             obsCovs=list(oc=oc1),
+                             numPrimary=T, type="removal")
+    fm2 <- gmultmix(~1, ~1, ~1, umf2, K=10)
+    fm2 <- nonparboot(fm2, B=2)
+
+    umf3 <- unmarkedFrameGMM(y=y.ijt, siteCovs=data.frame(sc=sc1),
+                             numPrimary=T, type="removal")
+    fm3 <- gmultmix(~1, ~1, ~1, umf3, K=10)
+    fm3 <- nonparboot(fm3, B=2)
+
+    umf4 <- unmarkedFrameGMM(y=y.ijt,
+                             numPrimary=T, type="removal")
+    fm4 <- gmultmix(~1, ~1, ~1, umf4, K=10)
+    fm4 <- nonparboot(fm4, B=2)
+
+
+}
+
+
+
 
 test.nonparboot.colext <- function() {
 

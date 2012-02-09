@@ -212,18 +212,18 @@ setMethod("nonparboot", "unmarkedFitOccuRN",
 
 
 
-setMethod("nonparboot", "unmarkedFitGDS",
-    function(object, B = 0, keepOldSamples = TRUE, ...)
-{
-    stop("Method not yet written")
-})
-
-
-
 setMethod("nonparboot", "unmarkedFitGMM",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
-    stop("Method not yet written")
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="site")
+})
+
+setMethod("nonparboot", "unmarkedFitGDS",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="site")
 })
 
 
@@ -232,7 +232,8 @@ setMethod("nonparboot", "unmarkedFitGMM",
 setMethod("nonparboot", "unmarkedFitPCO",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
-    stop("Method not yet written")
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="site")
 })
 
 
