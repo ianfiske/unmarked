@@ -204,7 +204,6 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   }
   arma::colvec pv = 1.0/(1.0+exp(-1*(Xp*beta_p + Xp_offset)));
   pv.reshape(J*T, M);
-<<<<<<< HEAD
   arma::mat pm = trans(pv); 
   //Immigration
   arma::colvec iotav = arma::zeros<arma::colvec>(M*(T-1));
