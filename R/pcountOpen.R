@@ -197,13 +197,20 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
-  else
+  else if(identical(dynamics, "ricker"))
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Carrying Capacity",
         short.name = "omCarCap", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "exp", invlinkGrad = "exp")
+  else 
+    estimateList@estimates$omega <- unmarkedEstimate(
+        name="Carrying Capacity",
+        short.name = "omCarCap", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+        covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
+            (nAP+nGP+1) : (nAP+nGP+nOP)]),
+        invlink = "exp1", invlinkGrad = "exp")
   }
 estimateList@estimates$det <- detEstimates
 if(immigration) {

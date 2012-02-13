@@ -57,9 +57,6 @@ void tp4(arma::mat& g3, int lk, double gam, double om) {
 
 // Gompertz model
 void tp5(arma::mat& g3, int lk, double gam, double om) {
-    while(om==1) {
-      om = 0.999 + rand() * 0.002 / RAND_MAX;
-    }
     for(int n2=0; n2<lk; n2++) {
 	     g3.at(0, n2) = Rf_dpois(n2, 0, false);
     }
@@ -104,9 +101,6 @@ void tp8(arma::mat& g3, int lk, double gam, double om, double imm) {
 
 // Gompertz + immigration model
 void tp9(arma::mat& g3, int lk, double gam, double om, double imm) {
-    while(om==1) {
-      om = 0.999 + rand() * 0.002 / RAND_MAX;
-    }
     for(int n2=0; n2<lk; n2++) {
 	     g3.at(0, n2) = Rf_dpois(n2, imm, false);
     }
@@ -160,8 +154,10 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
   arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
   if((fix != "omega") && (dynamics != "trend")) {
-    if((dynamics == "ricker")  || (dynamics == "gompertz"))
+    if(dynamics == "ricker")
         omv = exp(Xom*beta_om + Xom_offset);
+    else if(dynamics == "gompertz")
+        omv = exp(Xom*beta_om + Xom_offset) + 1;
     else if((dynamics == "constant")  || (dynamics == "autoreg"))
         omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
   }
