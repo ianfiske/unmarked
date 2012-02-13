@@ -339,6 +339,8 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
         stop("Dimensions of primaryPeriod matrix should be MxT")
     if(any(primaryPeriod < 0, na.rm=TRUE))
         stop("Negative primaryPeriod values are not allowed.")
+    if(any(is.na(primaryPeriod)))
+        stop("Missing values are not allowed in primaryPeriod.")
     if(!identical(typeof(primaryPeriod), "integer")) {
         mode(primaryPeriod) <- "integer"
         warning("primaryPeriod values have been converted to integers")
@@ -714,7 +716,7 @@ setMethod("[", c("unmarkedFrame","numeric", "numeric", "missing"),
 ### list is a ragged array of indices (y's) to include for each site.
 ### Typically useful for multilevel boostrapping.
 setMethod("[", c("unmarkedFrame","list", "missing", "missing"),
-    function(x, i)
+    function(x, i, j)
 {
     m <- numSites(x)
     J <- R <- obsNum(x)
@@ -806,10 +808,10 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
                            numPrimary=x@numPrimary)
     ysc <- x@yearlySiteCovs
     if(!is.null(ysc)) {
-        sites <- 1:nrow(ysc)
         T <- x@numPrimary
-        keep <- sites %in% i
-        ysc <- ysc[rep(keep, each=T),, drop=FALSE]
+        sites <- rep(1:M, each=T)
+        keep <- as.vector(sapply(i, function(x) which(sites %in% x)))
+        ysc <- ysc[keep,, drop=FALSE]
         u@yearlySiteCovs <- ysc
         }
     u
@@ -817,12 +819,66 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 })
 
 
-setMethod("head", "unmarkedFrame",
-		function(x, n) {
-			if(missing(n)) n <- 10
-			umf <- x[1:n,]
-			umf
-		})
+
+setMethod("[", c("unmarkedFrameGMM", "numeric", "missing", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    unmarkedFrameGMM(y=getY(multf), siteCovs=siteCovs(multf),
+                     yearlySiteCovs=yearlySiteCovs(multf),
+                     obsCovs=obsCovs(multf),
+                     piFun=x@piFun, type=x@samplingMethod,
+                     obsToY=x@obsToY, numPrimary=x@numPrimary)
+})
+
+
+
+
+setMethod("[", c("unmarkedFrameGDS", "numeric", "missing", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    sur <- x@survey
+    if(sur=="line")
+        unmarkedFrameGDS(y=getY(multf), siteCovs=siteCovs(multf),
+                         yearlySiteCovs=yearlySiteCovs(multf),
+                         numPrimary=x@numPrimary,
+                         dist.breaks=x@dist.breaks,
+                         tlength=x@tlength[i],
+                         survey=sur,
+                         unitsIn=x@unitsIn)
+    else if(sur=="point")
+        unmarkedFrameGDS(y=getY(multf), siteCovs=siteCovs(multf),
+                         yearlySiteCovs=yearlySiteCovs(multf),
+                         numPrimary=x@numPrimary,
+                         dist.breaks=x@dist.breaks,
+                         survey=sur,
+                         unitsIn=x@unitsIn)
+})
+
+
+
+setMethod("[", c("unmarkedFramePCO", "numeric", "missing", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    unmarkedFramePCO(y=getY(multf), siteCovs=siteCovs(multf),
+                     yearlySiteCovs=yearlySiteCovs(multf),
+                     obsCovs=obsCovs(multf),
+                     numPrimary=x@numPrimary,
+                     primaryPeriod=x@primaryPeriod[i,,drop=FALSE])
+})
+
+
+
+
+
+
+setMethod("head", "unmarkedFrame", function(x, n) {
+    if(missing(n)) n <- 10
+    umf <- x[1:n,]
+    umf
+})
 
 ############################### COERCION #################################
 
@@ -841,7 +897,7 @@ setAs("unmarkedFrame", "data.frame", function(from)
     y <- getY(from)
     colnames(y) <- paste("y",1:ncol(y),sep=".")
     if(is.null(obsToY(from))) {
-				obsNum <- ncol(y)
+        obsNum <- ncol(y)
     } else {
         obsNum <- obsNum(from)
         }

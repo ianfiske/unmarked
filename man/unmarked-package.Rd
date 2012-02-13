@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9-4\cr
+Version: \tab 0.9-5\cr
 License: \tab GPL (>= 3)\cr
 }
 
@@ -108,9 +108,9 @@ psi <- plogis(X \%*\% psipars)
 p <- plogis(X \%*\% ppars)
 
 y <- matrix(NA, nSites, nReps)
-Z <- rbinom(nSites, 1, psi)       # true occupancy state
+z <- rbinom(nSites, 1, psi)       # true occupancy state
 for(i in 1:nSites) {
-    y[i,] <- rbinom(nReps, 1, Z[i]*p[i])
+    y[i,] <- rbinom(nReps, 1, z[i]*p[i])
     }
 
 # Organize data and look at it
@@ -128,6 +128,12 @@ fm3 <- occu(~veght ~veght+habitat, umf)
 # Model selection
 fms <- fitList(m1=fm1, m2=fm2, m3=fm3)
 modSel(fms)
+
+# Empirical Bayes estimates of the number of sites occupied
+sum(bup(ranef(fm3), stat="mode"))     # Sum of posterior modes
+colSums(confint(ranef(fm3)))          # 95\% CI
+sum(z)                                # Actual
+
 
 # Model-averaged prediction and plots
 
@@ -151,22 +157,18 @@ newdata2 <- data.frame(habitat=factor('A', levels=c('A','B')),
 Epsi2 <- predict(fms, type="state", newdata=newdata2, appendData=TRUE)
 Ep <- predict(fms, type="det", newdata=newdata2, appendData=TRUE)
 
-par(mfrow=c(2, 1), mai=c(0.9, 0.8, 0.2, 0.2))
-with(Epsi2, {
-    plot(veght, Predicted, type="l", lwd=2, col="blue", ylim=c(0,1),
-        xlab="Vegetation height (standardized)",
-        ylab=expression(paste("Probability of occurrence (", psi, ")")))
-    lines(veght, Predicted-SE, col="blue")
-    lines(veght, Predicted+SE, col="blue")
-    })
-with(Ep, {
-    plot(veght, Predicted, type="l", lwd=2, col="blue", ylim=c(0,1),
-        xlab="Vegetation height (standardized)",
-        ylab=expression(paste("Detection probability (", italic(p), ")")))
-    lines(veght, Predicted-SE, col="blue")
-    lines(veght, Predicted+SE, col="blue")
-    })
-
+op <- par(mfrow=c(2, 1), mai=c(0.9, 0.8, 0.2, 0.2))
+plot(Predicted~veght, Epsi2, type="l", lwd=2, ylim=c(0,1),
+    xlab="Vegetation height (standardized)",
+    ylab=expression(paste("Probability of occurrence (", psi, ")")))
+    lines(lower ~ veght, Epsi2, col=gray(0.7))
+    lines(upper ~ veght, Epsi2, col=gray(0.7))
+plot(Predicted~veght, Ep, type="l", lwd=2, ylim=c(0,1),
+    xlab="Vegetation height (standardized)",
+    ylab=expression(paste("Detection probability (", italic(p), ")")))
+lines(lower~veght, Ep, col=gray(0.7))
+lines(upper~veght, Ep, col=gray(0.7))
+par(op)
 
 
 }

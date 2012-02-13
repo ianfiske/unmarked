@@ -7,3 +7,6 @@ bc
 *.Rd~
 *.R~
 NAMESPACE~
+*.aux
+*.log
+*.blg

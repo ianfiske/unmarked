@@ -82,20 +82,23 @@ additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 the mean is \eqn{\lambda_i(1-\psi)}{lambda_i*(1-psi)}, where psi is the
 zero-inflation parameter.
 
-The latent abundance state following the initial sampling period arises from a
-Markovian process in which survivors are modeled as \eqn{S_it \sim
-Binomial(N_it-1, omega_it)}{S_it ~ Binomial(N_it-1, omega_it)}, and recruits
-follow \eqn{G_it \sim Poisson(gamma_it)}{G_it ~ Poisson(gamma_it)}.
+The latent abundance state following the initial sampling period arises
+from a
+Markovian process in which survivors are modeled as \eqn{S_{it} \sim
+Binomial(N_{it-1}, \omega_{it})}{S(i,t) ~ Binomial(N(i,t-1),
+omega(i,t))}, and recruits
+follow \eqn{G_{it} \sim Poisson(\gamma_{it})}{G(i,t) ~
+  Poisson(gamma(i,t))}.
 Alternative population dynamics can be specified
 using the \code{dynamics} argument.
 
 The detection process is modeled as binomial: \eqn{y_{ijt} \sim
-Binomial(N_{it}, p_{ijt})}{y_ijt ~ Binomial(N_it, p_ijt)}.
+Binomial(N_{it}, p_{ijt})}{y(i,j,t) ~ Binomial(N(i,t), p(i,j,t))}.
 
-Covariates of \eqn{\lambda_i}{lamdba_i} use the log link.
-Covariates of \eqn{\gamma_{it}}{gamma_it} use the log link.
-Covariates of \eqn{\omega_{it}}{omega_it} use the logit link.
-covariates of \eqn{p_{ijt}}{p_ijt} use the logit link.
+\eqn{\lambda_i}{lamdba_i} and \eqn{\gamma_{it}}{gamma_it} are modeled
+using the the log link.
+\eqn{\omega_{it}}{omega_it} and \eqn{p_{ijt}}{p_ijt} are modeled using
+the logit link.
 
 }
 \value{
@@ -114,11 +117,11 @@ Repeated Counts of an Open Metapopulation. \emph{Biometrics}. 67, pp
 \author{Richard Chandler \email{rchandler@usgs.gov}}
 
 \note{
-When gamma or omega are modeled using observation-level covariates, the
-covariate data for the final survey occasion will be ignored; however,
+When gamma or omega are modeled using year-specific covariates, the
+covariate data for the final year will be ignored; however,
 they must be supplied.
 
-If time intervals vary among primary sampling occasions, an M by T
+If the time gap between primary periods is not constant, an M by T
 matrix of integers should be supplied to \code{\link{unmarkedFramePCO}}
 using the \code{primaryPeriod} argument.
 
@@ -143,8 +146,8 @@ Secondary sampling periods are optional.
 set.seed(3)
 M <- 50
 T <- 5
-lambda <- 1
-gamma <- 0.5
+lambda <- 4
+gamma <- 1.5
 omega <- 0.8
 p <- 0.7
 y <- N <- matrix(NA, M, T)
@@ -160,7 +163,6 @@ y[] <- rbinom(M*T, N, p)
 
 # Prepare data
 umf <- unmarkedFramePCO(y = y, numPrimary=T)
-
 summary(umf)
 
 
@@ -174,14 +176,30 @@ om <- plogis(coef(m1, type="omega"))
 p <- plogis(coef(m1, type="det"))
 
 
-# Calculate population size at each time period
-N.hat <- matrix(NA, M, T)
-N.hat[,1] <- lam
+# Finite sample inference. Abundance at site i, year t
+re <- ranef(m1)
+devAskNewPage(TRUE)
+plot(re, layout=c(5,5), subset = site \%in\% 1:25 & year \%in\% 1:2,
+     xlim=c(-1,15))
+devAskNewPage(FALSE)
+
+(N.hat1 <- colSums(bup(re)))
+CI <- apply(confint(re), c(2,3), sum)
+
+
+# Expected values of N[i,t]
+N.hat2 <- matrix(NA, M, T)
+N.hat2[,1] <- lam
 for(t in 2:T) {
-    N.hat[,t] <- om*N.hat[,t-1] + gam
+    N.hat2[,t] <- om*N.hat2[,t-1] + gam
     }
 
-rbind(N=colSums(N), N.hat=colSums(N.hat))
+rbind(N=colSums(N), N.hat1=N.hat1, N.hat2=colSums(N.hat2))
+
+
+plot(1:T, N.hat1, ylim=c(0,600))
+points(1:T, colSums(N), col="blue", pch=16)
+arrows(1:T, CI[1,], 1:T, CI[2,], code=3, length=0.05, angle=90)
 
 }
 
