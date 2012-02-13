@@ -993,8 +993,7 @@ simGompertzImm1 <- function(lambda=3, gamma=0.05, om=c(log(3), 0.5), p=0.5,
   summer.temp <- matrix(rnorm(M*T), M, T)
   winter.temp <- matrix(rnorm(M*T), M, T)
   
-  omega <- exp(om[1] + om[2]*summer.temp)
-  omega[omega<=1] = 1.0001
+  omega <- exp(om[1] + om[2]*summer.temp) + 1
   iota <- exp(io[1] + io[2]*winter.temp)
   
   N[,1] <- rpois(M, lambda)
@@ -1016,14 +1015,14 @@ colnames(simout16) <- c('lambda', 'gamma', 'om0', 'om1', 'p', 'io0', 'io1')
 for(i in 1:nsim16) {
     cat("sim16:", i, "\n")
     lambda <- 2
-    gamma <- 0.1
-    om <- c(log(3), 0.5)
+    gamma <- 0.2
+    om <- c(1, 0.5)
     p <- 0.5
     io <- c(log(0.25), 0.25)
-    sim16 <- simGompertzImm1(lambda, gamma, om, p, io)
+    sim16 <- simGompertzImm1(lambda, gamma, om, p, io, T=15)
     cat("  Max N:", max(sim16$N), "\n")
     umf16 <- unmarkedFramePCO(y = sim16$y, yearlySiteCovs=sim16$covs, 
-      numPrimary=10)
+      numPrimary=15)
     m16 <- pcountOpen(~1, ~1, ~summer.temp, ~1, umf16, K=40, 
         dynamics="gompertz", immigration=T, iotaformula=~winter.temp,
         starts=c(log(lambda), log(gamma), om, qlogis(p), io), se=FALSE)
@@ -1102,101 +1101,6 @@ hist(simout17[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
 hist(simout17[,5], xlab=expression(iota)); abline(v=iota, lwd=2, col=4)
 dev.off()
 colMeans(simout17)
-
-## Simulate Ricker model 
-
-sim13 <- function(lambda=1, gamma=0.1, omega=1.5, p=0.7, M=100, T=5)
-{
-    y <- N <- matrix(NA, M, T)
-    N[,1] <- rpois(M, lambda)
-    for(t in 2:T) {
-        N[,t] <- rpois(M, N[,t-1]*exp(gamma*(1-N[,t-1]/omega)))
-    }
-    y[] <- rbinom(M*T, N, p)
-    return(y)
-}
-
-
-
-
-
-set.seed(3223)
-nsim13 <- 100
-simout13 <- matrix(NA, nsim13, 4)
-colnames(simout13) <- c('lambda', 'gamma', 'omega', 'p')
-for(i in 1:nsim13) {
-    cat("sim13:", i, "\n")
-    lambda <- 2
-    gamma <- 0.25
-    omega <- 2.3
-    p <- 0.7
-    y.sim13 <- sim13(lambda, gamma, omega, p)
-    umf13 <- unmarkedFramePCO(y = y.sim13, numPrimary=5)
-    m13 <- pcountOpen(~1, ~1, ~1, ~1, umf13, K=40, dynamics="ricker",
-        starts=c(log(lambda), log(gamma), log(omega), plogis(p)),
-        se=FALSE)
-    e <- coef(m13)
-    simout13[i, 1:3] <- exp(e[1:3])
-    simout13[i, 4] <- plogis(e[4])
-    cat("  mle =", simout13[i,], "\n")
-    }
-
-#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
-par(mfrow=c(2,2))
-hist(simout13[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
-hist(simout13[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
-hist(simout13[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
-hist(simout13[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
-dev.off()
-
-
-
-## Simulate Gompertz model 
-
-sim14 <- function(lambda=1, gamma=0.1, omega=1.5, p=0.7, M=100, T=5)
-{
-    if (identical(omega, 1))
-        stop("Omega should not equal 1")
-    y <- N <- matrix(NA, M, T)
-    N[,1] <- rpois(M, lambda)
-    for(t in 2:T) {
-        N[,t] <- rpois(M, N[,t-1]*exp(gamma*(1-ifelse(N[,t-1]==0, 0, log(N[,t-1])/log(omega)))))
-    }
-    y[] <- rbinom(M*T, N, p)
-    return(y)
-}
-
-set.seed(3223)
-nsim14 <- 200
-simout14 <- matrix(NA, nsim14, 4)
-colnames(simout14) <- c('lambda', 'gamma', 'omega', 'p')
-for(i in 1:nsim14) {
-    cat("sim14:", i, "\n")
-    lambda <- 2
-    gamma <- 0.25
-    omega <- 2.3
-    p <- 0.7
-    y.sim14 <- sim14(lambda, gamma, omega, p)
-    umf14 <- unmarkedFramePCO(y = y.sim14, numPrimary=5)
-    m14 <- pcountOpen(~1, ~1, ~1, ~1, umf14, K=40, dynamics="gompertz",
-        starts=c(log(lambda), log(gamma), log(omega), plogis(p)),
-        se=FALSE)
-    e <- coef(m14)
-    simout14[i, 1:3] <- exp(e[1:3])
-    simout14[i, 4] <- plogis(e[4])
-    cat("  mle =", simout14[i,], "\n")
-    }
-
-#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
-par(mfrow=c(2,2))
-hist(simout14[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
-hist(simout14[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
-hist(simout14[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
-hist(simout14[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
-dev.off()
-
-
-
 
 
 
