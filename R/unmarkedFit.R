@@ -883,7 +883,7 @@ setMethod("fitted", "unmarkedFitColExt", function(object, na.rm = FALSE)
 
 
 
-
+# This covers unmarkedFitGDS too
 setMethod("fitted", "unmarkedFitGMM",
     function(object, na.rm = FALSE)
 {
@@ -915,26 +915,6 @@ setMethod("fitted", "unmarkedFitGMM",
     phi.mat <- matrix(phi, nrow=M, ncol=T, byrow=TRUE)
     phi.ijt <- as.numeric(apply(phi.mat, 2, rep, times=J))
     cp <- getP(object, na.rm = na.rm)
-
-# E[y] is the same under the P and NB models
-#    mix <- object@mixture
-#    switch(mix,
-#        P = {
-#            fitted <- lambda * phi.ijt * as.numeric(cp) # recycle
-#            fitted <- matrix(fitted, M, J*T)
-#            },
-#        NB = {
-#            K <- object@K
-#            k <- 0:K
-#            k.ijk <- rep(k, M*J)
-#            lambda.ijk <- lambda[rep(1:M, each = J*(K+1))]
-#            alpha <- exp(coef(object['alpha']))
-#            prob.ijk <- dnbinom(k.ijk, mu = lambda.ijk, size = alpha)
-#            all <- cbind(rep(as.vector(t(cp)), each = K + 1), k.ijk, prob.ijk)
-#            prod.ijk <- rowProds(all)
-#            fitted <- colSums(matrix(prod.ijk, K + 1, M*J))
-#            fitted <- matrix(fitted, M, J*T, byrow = TRUE)
-#            })
 
     fitted <- lambda * phi.ijt * as.numeric(cp) # recycle
     fitted <- matrix(fitted, M, J*T)

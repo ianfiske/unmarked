@@ -18,6 +18,11 @@ test.gdistsamp.covs <- function() {
     checkEqualsNumeric(coef(det), c(9.227672, -3.497148),
                        tolerance = 1e-4)
 
+    fm1 <- update(fm, lambdaformula=~1, phiformula=~1, pformula=~1,
+                  starts=c(2,0,-2))
+
+    invisible(getP(fm1))
+    invisible(getP(update(fm1, keyfun="exp")))
+    invisible(getP(update(fm1, keyfun="hazard", starts=c(3,1,-4,0))))
+
     }
-
-
