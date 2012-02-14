@@ -7,18 +7,6 @@ using namespace Rcpp ;
 
 
 // constant model
-//void tp1(arma::mat& g3, int lk, double gam, double om) {
-//    int Nmin=0;
-//    for(int n1=0; n1<lk; n1++) {
-//	for(int n2=0; n2<lk; n2++) {
-//	    Nmin = std::min(n1, n2);
-//	    for(int c=0; c<=Nmin; c++) {
-//		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
-//				  Rf_dpois(n2-c, gam, true));
-//	    }
-//	}
-//    }
-//}
 void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
   Rcpp::NumericVector pois1 = dpois(N, gam, true);
   arma::vec pois = as<arma::vec>(pois1);
@@ -133,7 +121,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::colvec pv = 1.0/(1.0+exp(-1*(Xp*beta_p + Xp_offset)));
   pv.reshape(J*T, M);
   arma::mat pm = trans(pv);
-  // format matrices as cubes (would be faster to avoid this)
+  // format matrices as cubes (shouldn't be done in likelihood)
   arma::icube y(M,J,T);
   arma::cube p(M,J,T);
   arma::icube yna(M,J,T);
@@ -157,30 +145,31 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::colvec g2 = arma::zeros<arma::colvec>(lk);
   arma::colvec g1_star = arma::zeros<arma::colvec>(lk);
   arma::cube g3_t = arma::zeros<arma::cube>(lk,lk,T-1);
-  // compute g3 is there are no covariates of omega/gamma
-  if(go_dims == "scalar") {
-    if(dynamics=="constant" || dynamics=="notrend") {
-      //      tp1(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
-      tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(0,first[0]-1), om(0,first[0]-1));
+
+  // shouldn't be done in likelihood
+  for(int i=0; i<M; i++) {
+    if(first[i]==1) {
+      first1=i; // site with no missing values at t=1
+      break;
     }
+  }
+
+   // compute g3 is there are no covariates of omega/gamma
+   if(go_dims == "scalar") {
+     if(dynamics=="constant" || dynamics=="notrend") {
+       tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,0), om(first1,0));
+     }
     else if(dynamics=="autoreg") {
-      tp2(g3, lk, gam(0,first[0]-1), om(0,first[0]-1));
+      tp2(g3, lk, gam(first1,0), om(first1,0));
     }
     else if(dynamics=="trend")
-      tp3(g3, lk, gam(0,first[0]-1));
+      tp3(g3, lk, gam(first1,0));
   } else if(go_dims == "rowvec") {
-    for(int i=0; i<M; i++) {
-      if(first[i]==1) {
-	first1=i; // site with no missing values at t=1
-	break;
-      }
-    }
     for(int t=0; t<(T-1); t++) {
       if(ytna(first1,t)==1) { // FIXME: this is not generic!
 	continue;
       }
       if(dynamics=="constant" || dynamics=="notrend") {
-	//	tp1(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
 	tp1(g3_t.slice(t), nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,t), om(first1,t));
       }
       else if(dynamics=="autoreg") {

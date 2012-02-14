@@ -116,11 +116,11 @@ ym <- matrix(y, nrow=M)
 I <- cbind(rep(k, times=lk),
            rep(k, each=lk))
 I1 <- I[I[,1] <= I[,2],]
-Z <- Ib <- Ip <- list()
+Ib <- Ip <- list()
 for(i in 1:nrow(I)) {
-    Z[[i]] <- 0:min(I[i,])
-    Ib[[i]] <- which((I1[,1] %in% Z[[i]]) & (I1[,2]==I[i,1])) - 1
-    Ip[[i]] <- as.integer(I[i,2]-Z[[i]])
+    Z <- 0:min(I[i,])
+    Ib[[i]] <- which((I1[,1] %in% Z) & (I1[,2]==I[i,1])) - 1
+    Ip[[i]] <- as.integer(I[i,2]-Z)
 }
 
 
