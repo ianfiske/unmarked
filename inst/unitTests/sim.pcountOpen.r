@@ -35,7 +35,7 @@ for(i in 1:nsim1) {
     y.sim1 <- sim1(lambda, gamma, omega, p)
     umf1 <- unmarkedFramePCO(y = y.sim1, numPrimary=5)
     m1 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=15,
-        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+        starts=c(log(lambda), log(gamma), qlogis(omega), qlogis(p)),
         se=FALSE)
     e <- coef(m1)
     simout1[i, 1:2] <- exp(e[1:2])
@@ -192,7 +192,7 @@ for(i in 1:nsim3) {
     umf3 <- unmarkedFramePCO(y = y.sim3, primaryPeriod=dates3,
                              numPrimary=T)
     m3 <- pcountOpen(~1, ~1, ~1, ~1, umf3, K=20,
-        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+        starts=c(log(lambda), log(gamma), qlogis(omega), qlogis(p)),
                      se=FALSE)
     e <- coef(m3)
     simout3[i, 1:2] <- exp(e[1:2])
@@ -275,8 +275,8 @@ for(i in 1:nsim4) {
     y.sim4 <- sim4(lambda, gamma, omega, p, T=T)
     umf4 <- unmarkedFramePCO(y = y.sim4, numPrimary=T)
     m4 <- pcountOpen(~1, ~1, ~1, ~1, umf4, K=30, dynamics="autoreg",
-                     starts=c(log(lambda), log(gamma), plogis(omega),
-                     plogis(p)), se=FALSE)
+                     starts=c(log(lambda), log(gamma), qlogis(omega),
+                     qlogis(p)), se=FALSE)
     e <- coef(m4)
     simout4[i, 1:2] <- exp(e[1:2])
     simout4[i, 3:4] <- plogis(e[3:4])
@@ -335,7 +335,7 @@ for(i in 1:nsim5) {
     y.sim5 <- sim5(lambda, omega, p, T=T)
     umf5 <- unmarkedFramePCO(y = y.sim5, numPrimary=T)
     m5 <- pcountOpen(~1, ~1, ~1, ~1, umf5, K=20, dynamics="notrend",
-        starts=c(log(lambda), plogis(omega), plogis(p)), se=FALSE)
+        starts=c(log(lambda), qlogis(omega), qlogis(p)), se=FALSE)
     e <- coef(m5)
     simout5[i, 1] <- exp(e[1])
     simout5[i, 2:3] <- plogis(e[2:3])
@@ -409,7 +409,7 @@ for(i in 1:nsim6) {
     umf6 <- unmarkedFramePCO(y = y.sim6, primaryPeriod=dates6,
                              numPrimary=T)
     m6 <- pcountOpen(~1, ~1, ~1, ~1, umf6, K=25,
-        starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+        starts=c(log(lambda), log(gamma), qlogis(omega), qlogis(p)),
                      se=FALSE)
     e <- coef(m6)
     simout6[i, 1:2] <- exp(e[1:2])
@@ -501,7 +501,7 @@ for(i in 1:nsim7) {
     y.sim7 <- sim7(lambda, gamma, omega, p, T=T)
     umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
     m7 <- pcountOpen(~1, ~1, ~1, ~1, umf7, K=15,
-              starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+              starts=c(log(lambda), log(gamma), qlogis(omega), qlogis(p)),
               se=FALSE)
     e <- coef(m7)
     simout7[i, 1:2] <- exp(e[1:2])
@@ -656,7 +656,7 @@ for(i in 1:nsim9) {
     y.sim9 <- sim9(lambda, gamma, omega, p, T=T, nMissing=100)
     umf9 <- unmarkedFramePCO(y = y.sim9, numPrimary=T)
     m9 <- pcountOpen(~1, ~1, ~1, ~1, umf9, K=15,
-              starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+              starts=c(log(lambda), log(gamma), qlogis(omega), qlogis(p)),
               se=FALSE)
     e <- coef(m9)
     simout9[i, 1:2] <- exp(e[1:2])
@@ -814,7 +814,7 @@ for(i in 1:nsim11) {
     y.sim11 <- sim11(lambda, gamma, p)
     umf11 <- unmarkedFramePCO(y = y.sim11, numPrimary=5)
     m11 <- pcountOpen(~1, ~1, ~1, ~1, umf11, K=40, dynamics="trend",
-        starts=c(log(lambda), log(gamma), plogis(p)),
+        starts=c(log(lambda), log(gamma), qlogis(p)),
         se=FALSE)
     e <- coef(m11)
     simout11[i, 1:2] <- exp(e[1:2])
@@ -872,7 +872,7 @@ for(i in 1:nsim12) {
     umf12 <- unmarkedFramePCO(y = y.sim12, numPrimary=5)
     m12 <- pcountOpen(~1, ~1, ~1, ~1, umf12, K=40, dynamics="trend",
                       mixture="ZIP",
-        starts=c(log(lambda), log(gamma), plogis(p), plogis(psi)),
+        starts=c(log(lambda), log(gamma), qlogis(p), qlogis(psi)),
         se=FALSE)
     e <- coef(m12)
     simout12[i, 1:2] <- exp(e[1:2])
@@ -920,7 +920,7 @@ for(i in 1:nsim13) {
     y.sim13 <- sim13(lambda, gamma, omega, p)
     umf13 <- unmarkedFramePCO(y = y.sim13, numPrimary=5)
     m13 <- pcountOpen(~1, ~1, ~1, ~1, umf13, K=40, dynamics="ricker",
-        starts=c(log(lambda), log(gamma), log(omega), plogis(p)),
+        starts=c(log(lambda), log(gamma), log(omega), qlogis(p)),
         se=FALSE)
     e <- coef(m13)
     simout13[i, 1:3] <- exp(e[1:3])
@@ -934,10 +934,10 @@ hist(simout13[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout13[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
 hist(simout13[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
 hist(simout13[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
-dev.off()
+#dev.off()
 
 
-# Trend + immigration with gamma and iota covariates
+# Trend + immigration 
 simTrendImm0 <- function(lambda=3, gamma=0.98, iota=1, p=0.5, M=100, T=10) {
 
   y <- N <- matrix(NA, M, T)
@@ -1058,7 +1058,7 @@ simGompertzImm1 <- function(lambda=3, gamma=0.05, om=c(log(3), 0.5), p=0.5,
 }
 
 set.seed(3223)
-nsim16 <- 60
+nsim16 <- 50
 simout16 <- matrix(NA, nsim16, 7)
 colnames(simout16) <- c('lambda', 'gamma', 'om0', 'om1', 'p', 'io0', 'io1')
 for(i in 1:nsim16) {
@@ -1156,8 +1156,8 @@ colMeans(simout17)
 
 sim18 <- function(lambda=1, gamma=0.1, omega=1.5, p=0.7, M=100, T=5)
 {
-    if (identical(omega, 1))
-        stop("Omega should not equal 1")
+    if (omega <= 1)
+        stop("Omega should be greater than 1")
     y <- N <- matrix(NA, M, T)
     N[,1] <- rpois(M, lambda)
     for(t in 2:T) {
@@ -1180,10 +1180,11 @@ for(i in 1:nsim18) {
     y.sim18 <- sim18(lambda, gamma, omega, p)
     umf18 <- unmarkedFramePCO(y = y.sim18, numPrimary=5)
     m18 <- pcountOpen(~1, ~1, ~1, ~1, umf18, K=40, dynamics="gompertz",
-        starts=c(log(lambda), log(gamma), log(omega), plogis(p)),
+        starts=c(log(lambda), log(gamma), log(omega-1), qlogis(p)),
         se=FALSE)
     e <- coef(m18)
-    simout18[i, 1:3] <- exp(e[1:3])
+    simout18[i, 1:2] <- exp(e[1:2])
+    simout18[i, 3] <- exp(e[3])+1
     simout18[i, 4] <- plogis(e[4])
     cat("  mle =", simout18[i,], "\n")
     }
@@ -1194,7 +1195,7 @@ hist(simout18[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout18[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
 hist(simout18[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
 hist(simout18[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
-dev.off()
+#dev.off()
 
 
 

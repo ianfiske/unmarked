@@ -231,7 +231,7 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
   }
 estimateList@estimates$det <- detEstimates
 if(immigration) {
-    estimateList@estimates$immigration <- unmarkedEstimate(
+    estimateList@estimates$iota <- unmarkedEstimate(
         name="Immigration",
         short.name = "iota", estimates = ests[(nAP+nGP+nOP+nDP+1) :(nAP+nGP+nOP+nDP+nIP)],
         covMat = as.matrix(covMat[(nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP),
@@ -254,7 +254,7 @@ umfit <- new("unmarkedFitPCO", fitType = "pcountOpen",
     call = match.call(), formula = formula, formlist = formlist, data = data,
     sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC,
     opt = opt, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
-    dynamics = dynamics)
+    dynamics = dynamics, immigration = immigration)
 return(umfit)
 }
 
