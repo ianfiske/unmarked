@@ -3,7 +3,7 @@
 #define _unmarked_DETFUNS_H
 
 // Half-normal detection function for point-transects
-double grhn(int x, double sigma);
+void grhn(double x*, int n, void *ex);
 
 
 #endif

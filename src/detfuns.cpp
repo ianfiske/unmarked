@@ -4,9 +4,27 @@
 #include "detfuns.h"
 
 // Half-normal detection function for point-transects
-double grhn(int x, double sigma) {
-  double p=0.0;
-  p = exp(-x*x / (2*sigma*sigma)) * x
-  return p;
+void grhn(double *x, int n, void *ex) {
+  double *v;
+  v = (double*)ex; // cast to double pointer
+  double sigma = v[0];
+  for(int i=0; i<n; i++) {
+    x[i] = exp(-x[i]*x[i] / (2*sigma*sigma)) * x[i];
+  }
 }
 
+
+
+
+/*
+  void f(double *x, int n, void *ex) {
+  double *v;
+  v = (double*)ex;
+  double sigma = v[0];
+  for(int i=0; i<n; i++) {
+  x[i] = exp(-(x[i]*x[i]) / (2*sigma*sigma));
+  }
+  return;
+  }
+  "
+*/
