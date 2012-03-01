@@ -2,8 +2,9 @@
 distsamp <- function(formula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL,
-    method="BFGS", se = TRUE, ...)
+    method="BFGS", se = TRUE, engine = c("C", "R") ,...)
 {
+    engine <- match.arg(engine)
     keyfun <- match.arg(keyfun)
     output <- match.arg(output)
     unitsOut <- match.arg(unitsOut)
@@ -54,6 +55,7 @@ distsamp <- function(formula, data,
     nDP <- length(detParms)
     nP <- nAP + nDP
     cp <- matrix(NA, M, J)
+    if(engine=="R") {
     switch(keyfun,
     halfnorm = {
         altdetParms <- paste("sigma", colnames(V), sep="")
@@ -202,6 +204,11 @@ distsamp <- function(formula, data,
             -sum(ll)
             }
         })
+} else if(engine=="C") {
+    if(keyfun != "halfnorm" | survey != "point")
+        stop("C code only works for halfnorm keyfun and point-transect surveys")
+
+}
     fm <- optim(starts, nll, method=method, hessian=se, ...)
     opt <- fm
     ests <- fm$par
