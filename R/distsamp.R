@@ -206,7 +206,29 @@ distsamp <- function(formula, data,
         })
 } else if(engine=="C") {
     if(keyfun != "halfnorm" | survey != "point")
-        stop("C code only works for halfnorm keyfun and point-transect surveys")
+        stop("C code only works for keyfun='halfnorm' and survey='point'")
+    nll <- function(param) {
+        sigma <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
+        lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
+        if(identical(output, "density"))
+            lambda <- lambda * A
+        for(i in 1:M) {
+            point = {
+                for(j in 1:J) {
+                    int <- integrate(grhn, db[j], db[j+1], sigma=sigma[i],
+                                     stop.on.error=FALSE)
+                    mess <- int$message
+                    if(identical(mess, "OK"))
+                        cp[i, j] <- int$value * 2*pi / a[i,j]
+                    else {
+                        cp[i, j] <- NA
+                    }
+                }
+                cp[i,] <- cp[i,] * u[i,]
+            }
+            ll <- dpois(y, lambda * cp, log=TRUE)
+            -sum(ll)
+        }}
 
 }
     fm <- optim(starts, nll, method=method, hessian=se, ...)
