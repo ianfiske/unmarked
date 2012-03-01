@@ -207,6 +207,14 @@ distsamp <- function(formula, data,
     } else if(engine=="C") {
         if(keyfun != "halfnorm" | survey != "point")
             stop("C only works if keyfun='halfnorm' and survey='point'")
+        altdetParms <- paste("sigma", colnames(V), sep="")
+        if(is.null(starts)) {
+            starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
+            names(starts) <- c(lamParms, detParms)
+            }
+        else
+            if(is.null(names(starts)))
+                names(starts) <- c(lamParms, detParm)
         nll <- function(param) {
             beta.lam <- param[1:nAP]
             beta.sig <- param[(nAP+1):nP]

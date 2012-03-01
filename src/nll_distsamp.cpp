@@ -15,7 +15,7 @@ SEXP nll_distsamp( SEXP y_, SEXP X_, SEXP V_, SEXP beta_lam_, SEXP beta_sig_, SE
   arma::colvec A = as<arma::colvec>(A_);
   arma::mat a = as<arma::mat>(a_);
   arma::mat u = as<arma::mat>(u_);
-  std::string output = as<std::string>(string_);
+  std::string output = as<std::string>(output_);
   Rcpp::NumericVector db(db_);
 
   int R = y.n_rows;
@@ -42,15 +42,16 @@ SEXP nll_distsamp( SEXP y_, SEXP X_, SEXP V_, SEXP beta_lam_, SEXP beta_sig_, SE
     for(int j=0; j<J; j++) {
       double cp = 0.0;
       void *ex;
-      ex = sig(i);
-      a = db[j];
-      b = db[j+1];
+      ex = &sig(i);
+      double lower = db[j];
+      double upper = db[j+1];
       double result = 0.0;
       double abserr = 0.0;
       int neval = 0;
       int ier = 0;
-      Rdqags(grhn, ex, &a, &b, &epsabs, &epsrel, &result, &abserr,
+      Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result, &abserr,
 	     &neval, &ier, &limit, &lenw, &last, &iwork, &work);
+      /* add error checking/handling here */
       cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
       mu = lam(i)*cp + DOUBLE_XMIN;
       ll += Rf_dpois(y(i,j), lam(i)*cp, true);
