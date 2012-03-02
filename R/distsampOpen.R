@@ -42,6 +42,11 @@ if(is.null(Xsig.offset)) Xsig.offset <- rep(0, M*T*J)
 yna <- is.na(y)
 yna[] <- as.integer(yna)
 y <- array(y, c(M, J, T))
+yt <- apply(y, c(1,3), function(x) {
+    if(all(is.na(x)))
+        return(NA)
+    else return(sum(x, na.rm=TRUE))
+    })
 ytna <- apply(is.na(y), c(1,3), all)
 ytna <- matrix(ytna, nrow=M)
 ytna[] <- as.integer(ytna)
@@ -147,7 +152,7 @@ nll <- function(parms) {
     if(mixture %in% c("NB", "ZIP"))
         log.alpha <- parms[nP]
     .Call("nll_distsampOpen",
-          ym,
+          ym, yt,
           Xlam, Xgam, Xom, Xsig,
           beta.lam, beta.gam, beta.om, beta.sig, log.alpha,
           Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset,

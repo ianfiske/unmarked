@@ -1,72 +1,18 @@
 #include "nll_distsampOpen.h"
 #include "distr.h"
+#include "detfuns.h"
 
 using namespace Rcpp ;
 
 
-
-
-// constant model
-void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
-  Rcpp::NumericVector pois1 = dpois(N, gam, true);
-  arma::vec pois = as<arma::vec>(pois1);
-  arma::vec bin = arma::zeros<arma::vec>(nrI1);
-  for(int i=0; i<nrI1; i++) {
-    bin(i) = Rf_dbinom(I1(i,0), I1(i,1), om, true);
-  }
-  for(int s=0; s<nrI; s++) {
-    arma::uvec indB = as<arma::uvec>(Ib[s]);
-    arma::uvec indP = as<arma::uvec>(Ip[s]);
-    int nc = indB.n_elem;
-    for(int q=0; q<nc; q++) {
-      g3(s) += exp(bin(indB(q)) + pois(indP(q)));
-    }
-  }
-}
-
-
-
-
-// autoregressive model
-void tp2(arma::mat& g3, int lk, double gam, double om) {
-    int Nmin=0;
-    for(int n1=0; n1<lk; n1++) {
-	for(int n2=0; n2<lk; n2++) {
-	    Nmin = std::min(n1, n2);
-	    for(int c=0; c<=Nmin; c++) {
-		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
-				  Rf_dpois(n2-c, gam*n1, true));
-	    }
-	}
-    }
-}
-
-
-
-
-
-
-
-// trend model (exponential growth)
-void tp3(arma::mat& g3, int lk, double gam) {
-    for(int n1=0; n1<lk; n1++) {
-	for(int n2=0; n2<lk; n2++) {
-	  g3.at(n1, n2) = Rf_dpois(n2, gam*n1, false);
-	}
-    }
-}
-
-
-
-
-
-SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
+SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
   int M = as<int>(M_);
   int J = as<int>(J_);
   int T = as<int>(T_);
   arma::imat ym = as<arma::imat>(y_);
+  arma::imat yt = as<arma::imat>(yt_);
   arma::mat Xlam = as<arma::mat>(Xlam_);
   arma::mat Xgam = as<arma::mat>(Xgam_);
   arma::mat Xom = as<arma::mat>(Xom_);
@@ -149,6 +95,15 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, S
   arma::colvec g1_star = arma::zeros<arma::colvec>(lk);
   arma::cube g3_t = arma::zeros<arma::cube>(lk,lk,T-1);
 
+  // Integration settings given to Rdqags
+  double epsabs = 0.01; // should be specific to measurement units
+  double epsrel = 0.01; // should be specific to measurement units
+  int limit = 100;
+  int lenw = 400;
+  int last2 = 0;
+  int iwork = 100;
+  double work = 400.0;
+
   // shouldn't be done in likelihood
   for(int i=0; i<M; i++) {
     if(first[i]==1) {
@@ -159,6 +114,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, S
 
   double cp = 0.0;
   double cpsum = 0.0;
+  double part1 = 0.0;
+  double part2 = 0.0;
+  double part3 = 0.0;
 
   // compute g3 is there are no covariates of omega/gamma
   if(go_dims == "scalar") {
@@ -213,7 +171,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, S
 	      int neval = 0;
 	      int ier = 0;
 	      Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		     &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
+		     &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
 		     &work);
 	      /* add error checking/handling here */
 	      cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
@@ -275,12 +233,12 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, S
 	  int neval = 0;
 	  int ier = 0;
 	  Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		 &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
+		 &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
 		 &work);
 	  /* add error checking/handling here */
 	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
-	  cpsum = cpsum+cp
-	    part2 = lgamma(y(i,j,first_i)+1); // compute outside likelihood
+	  cpsum = cpsum+cp;
+	  part2 = lgamma(y(i,j,first_i)+1); // compute outside likelihood
 	  part3 = log(cp) * y(i,j,first_i);
 	} else {
 	  cp = 1 - cpsum;
