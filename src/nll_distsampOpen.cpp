@@ -280,8 +280,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	ll_i += g1(k) * g2(k) * g_star(k);
     }
 
-    Rprintf("Check 8\n");
-    Rprintf("site : i%\n", i);
+//    Rprintf("Check 8\n");
+    Rprintf("site : %i \n", i);
+    Rprintf("  ll_site : %f \n", ll_i);
 
     if(delta_i0>1) {
       g3_d = g3;
@@ -295,6 +296,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   }
 
   Rprintf("Made it\n");
+  Rprintf("    Log-likelihood : %f \n", ll);
 
   return wrap(-ll);
 }
