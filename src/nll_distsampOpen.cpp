@@ -60,7 +60,7 @@ void tp3(arma::mat& g3, int lk, double gam) {
 
 
 
-SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_) {
+SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
   int M = as<int>(M_);
@@ -70,16 +70,16 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
   arma::mat Xlam = as<arma::mat>(Xlam_);
   arma::mat Xgam = as<arma::mat>(Xgam_);
   arma::mat Xom = as<arma::mat>(Xom_);
-  arma::mat Xp = as<arma::mat>(Xp_);
+  arma::mat Xsig = as<arma::mat>(Xsig_);
   arma::colvec beta_lam = as<arma::colvec>(beta_lam_);
   arma::colvec beta_gam = as<arma::colvec>(beta_gam_);
   arma::colvec beta_om = as<arma::colvec>(beta_om_);
-  arma::colvec beta_p = as<arma::colvec>(beta_p_);
+  arma::colvec beta_sig = as<arma::colvec>(beta_sig_);
   double log_alpha = as<double>(log_alpha_);
   arma::colvec Xlam_offset = as<arma::colvec>(Xlam_offset_);
   arma::colvec Xgam_offset = as<arma::colvec>(Xgam_offset_);
   arma::colvec Xom_offset = as<arma::colvec>(Xom_offset_);
-  arma::colvec Xp_offset = as<arma::colvec>(Xp_offset_);
+  arma::colvec Xsig_offset = as<arma::colvec>(Xsig_offset_);
   std::string mixture = as<std::string>(mixture_);
   std::string dynamics = as<std::string>(dynamics_);
   std::string fix = as<std::string>(fix_);
@@ -100,6 +100,11 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
   arma::imat ytna = as<arma::imat>(ytna_); // y[i,,t] are all NA
   arma::imat ynam = as<arma::imat>(yna_);  // y[i,j,t] is NA
   arma::imat delta = as<arma::imat>(delta_);
+
+  arma::mat a = as<arma::mat>(a_);
+  arma::mat u = as<arma::mat>(u_);
+  Rcpp::NumericVector db(db_);
+
   // linear predictors
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
   arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
@@ -118,16 +123,14 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
       gam = arma::trans(gamv);
     }
   }
-  arma::colvec pv = 1.0/(1.0+exp(-1*(Xp*beta_p + Xp_offset)));
-  pv.reshape(J*T, M);
-  arma::mat pm = trans(pv);
+  arma::colvec sigv = exp(Xsig*beta_sig + Xsig_offset);
+  sigv.reshape(T, M);
+  arma::mat sig = trans(sigv);
   // format matrices as cubes (shouldn't be done in likelihood)
   arma::icube y(M,J,T);
-  arma::cube p(M,J,T);
   arma::icube yna(M,J,T);
   for(int q=0; q<(M*J*T); q++) {
     y(q) = ym(q);
-    p(q) = pm(q);
     yna(q) = ynam(q);
   }
   // initialize
@@ -154,11 +157,14 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
     }
   }
 
-   // compute g3 is there are no covariates of omega/gamma
-   if(go_dims == "scalar") {
-     if(dynamics=="constant" || dynamics=="notrend") {
-       tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,0), om(first1,0));
-     }
+  double cp = 0.0;
+  double cpsum = 0.0;
+
+  // compute g3 is there are no covariates of omega/gamma
+  if(go_dims == "scalar") {
+    if(dynamics=="constant" || dynamics=="notrend") {
+      tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,0), om(first1,0));
+    }
     else if(dynamics=="autoreg") {
       tp2(g3, lk, gam(first1,0), om(first1,0));
     }
@@ -174,7 +180,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
       }
       else if(dynamics=="autoreg") {
 	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
-    }
+      }
       else if(dynamics=="trend")
 	tp3(g3_t.slice(t), lk, gam(first1,t));
     }
@@ -195,8 +201,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
 	for(int k=yt(i,t); k<lk; k++) { // note first index
 	  for(int j=0; j<=J; j++) { // note <=J not <J
 	    part1 = lgamma(k+1); // compute outside likelihood, or ignore
+	    cp = 0.0;
+	    cpsum = 0.0;
 	    if(j<J) {
-	      double cp = 0.0;
 	      void *ex;
 	      ex = &sig(i,t);
 	      double lower = db[j];
@@ -209,13 +216,14 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
 		     &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
 		     &work);
 	      /* add error checking/handling here */
-	      cp(j) = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+	      cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+	      cpsum = cpsum+cp;
 	      part2 = lgamma(y(i,j,t)+1); // compute outside likelihood
-	      part3 = log(cp(j)) * y(i,j,t);
+	      part3 = log(cp) * y(i,j,t);
 	    } else {
-	      cp(j) = 1 - sum(cp);
+	      cp = 1 - cpsum;
 	      part2 = lgamma(k-yt(i,t)+1);
-	      part3 = log(cp(j)) * (k - yt(i,t));
+	      part3 = log(cp) * (k - yt(i,t));
 	    }
 	    g1_t(k) += part1 - part2 + part3;
 	  }
@@ -243,7 +251,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
 	  g3_d = g3;
 	  for(int d=1; d<delta_it; d++) {
 	    g3_d = g3_d * g3;
-	    }
+	  }
 	  g_star = g3_d * g1_t_star;
 	} else
 	  g_star = g3 * g1_t_star;
@@ -252,34 +260,34 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
     ll_i=0.0;
     int delta_i0 = delta(i,0);
     g1.zeros();
-    for(int k=0; k<lk; k++) { // loop over possible values of N
+    for(int k=yt(i,first_i); k<lk; k++) { // loop over possible values of N
       for(int j=0; j<=J; j++) {
-	if(yna(i,j,first_i)==0) { // not necessary?
-	  part1 = lgamma(k+1); // compute outside likelihood, or ignore
-	  if(j<J) {
-	    double cp = 0.0;
-	    void *ex;
-	    ex = &sig(i,first_i);
-	    double lower = db[j];
-	    double upper = db[j+1];
-	    double result = 0.0;
-	    double abserr = 0.0;
-	    int neval = 0;
-	    int ier = 0;
-	    Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
-		   &work);
-	    /* add error checking/handling here */
-	    cp(j) = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+	part1 = lgamma(k+1); // compute outside likelihood, or ignore
+	cp = 0.0;
+	cpsum = 0.0;
+	if(j<J) {
+	  void *ex;
+	  ex = &sig(i,first_i);
+	  double lower = db[j];
+	  double upper = db[j+1];
+	  double result = 0.0;
+	  double abserr = 0.0;
+	  int neval = 0;
+	  int ier = 0;
+	  Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+		 &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
+		 &work);
+	  /* add error checking/handling here */
+	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+	  cpsum = cpsum+cp
 	    part2 = lgamma(y(i,j,first_i)+1); // compute outside likelihood
-	    part3 = log(cp(j)) * y(i,j,first_i);
-	  } else {
-	    cp(j) = 1 - sum(cp);
-	    part2 = lgamma(k-yt(i,first_i)+1);
-	    part3 = log(cp(j)) * (k - yt(i,first_i));
-	  }
-	  g1(k) += part1 - part2 + part3;
+	  part3 = log(cp) * y(i,j,first_i);
+	} else {
+	  cp = 1 - cpsum;
+	  part2 = lgamma(k-yt(i,first_i)+1);
+	  part3 = log(cp) * (k - yt(i,first_i));
 	}
+	g1(k) += part1 - part2 + part3;
       }
       g1(k) = exp(g1(k));
       if(delta_i0>1)
