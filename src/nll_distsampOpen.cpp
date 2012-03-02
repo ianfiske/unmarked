@@ -193,11 +193,31 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
 	g1_t.zeros();
 	// loop over possible value of N at time t
 	for(int k=yt(i,t); k<lk; k++) { // note first index
-	  for(int j=0; j<J; j++) {
-	    if(yna(i,j,t)==0) {
-	      g1_t(k) += lfac_k(k) - lfac_kmyt(i,t,k) +  y(i,j,t) * log(cp(j)) + (k-ys(i,t)) * log(1-)
-//	      g1_t(k) += Rf_dbinom(y(i,j,t), k, p(i,j,t), true);
+	  for(int j=0; j<=J; j++) { // note <=J not <J
+	    part1 = lgamma(k+1); // compute outside likelihood, or ignore
+	    if(j<J) {
+	      double cp = 0.0;
+	      void *ex;
+	      ex = &sig(i,t);
+	      double lower = db[j];
+	      double upper = db[j+1];
+	      double result = 0.0;
+	      double abserr = 0.0;
+	      int neval = 0;
+	      int ier = 0;
+	      Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+		     &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
+		     &work);
+	      /* add error checking/handling here */
+	      cp(j) = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+	      part2 = lgamma(y(i,j,t)+1); // compute outside likelihood
+	      part3 = log(cp(j)) * y(i,j,t);
+	    } else {
+	      cp(j) = 1 - sum(cp);
+	      part2 = lgamma(k-yt(i,t)+1);
+	      part3 = log(cp(j)) * (k - yt(i,t));
 	    }
+	    g1_t(k) += part1 - part2 + part3;
 	  }
 	  g1_t(k) = exp(g1_t(k));
 	  g1_t_star(k) = g1_t(k) * g_star(k);
@@ -233,9 +253,32 @@ SEXP nll_distsampOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEX
     int delta_i0 = delta(i,0);
     g1.zeros();
     for(int k=0; k<lk; k++) { // loop over possible values of N
-      for(int j=0; j<J; j++) {
-	if(yna(i,j,first_i)==0) {
-	  g1(k) += Rf_dbinom(y(i,j,first_i), k, p(i,j,first_i), true);
+      for(int j=0; j<=J; j++) {
+	if(yna(i,j,first_i)==0) { // not necessary?
+	  part1 = lgamma(k+1); // compute outside likelihood, or ignore
+	  if(j<J) {
+	    double cp = 0.0;
+	    void *ex;
+	    ex = &sig(i,first_i);
+	    double lower = db[j];
+	    double upper = db[j+1];
+	    double result = 0.0;
+	    double abserr = 0.0;
+	    int neval = 0;
+	    int ier = 0;
+	    Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
+		   &work);
+	    /* add error checking/handling here */
+	    cp(j) = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+	    part2 = lgamma(y(i,j,first_i)+1); // compute outside likelihood
+	    part3 = log(cp(j)) * y(i,j,first_i);
+	  } else {
+	    cp(j) = 1 - sum(cp);
+	    part2 = lgamma(k-yt(i,first_i)+1);
+	    part3 = log(cp(j)) * (k - yt(i,first_i));
+	  }
+	  g1(k) += part1 - part2 + part3;
 	}
       }
       g1(k) = exp(g1(k));
