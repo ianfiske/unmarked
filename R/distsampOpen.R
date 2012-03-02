@@ -22,7 +22,8 @@ y <- D$y
 Xlam <- D$Xlam
 Xgam <- D$Xgam
 Xom <- D$Xom
-Xsig <- D$Xsig
+Xsig <- D$Xp # Wrong length. Need new getDesign Function
+
 
 delta <- D$delta; go.dims <- D$go.dims
 deltamax <- max(delta, na.rm=TRUE)
@@ -30,14 +31,18 @@ M <- nrow(y)
 T <- data@numPrimary
 J <- ncol(getY(data)) / T
 
+# FIXME: temporary fix until new getDesign is ready
+Xsig <- Xsig[1:(M*T),,drop=FALSE]
+
 Xlam.offset <- D$Xlam.offset
 Xgam.offset <- D$Xgam.offset
 Xom.offset <- D$Xom.offset
-Xsig.offset <- D$Xsig.offset
+Xsig.offset <- D$Xp.offset   # Wrong length
+
 if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
 if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
 if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
-if(is.null(Xsig.offset)) Xsig.offset <- rep(0, M*T*J)
+if(is.null(Xsig.offset)) Xsig.offset <- rep(0, M*T)
 
 yna <- is.na(y)
 yna[] <- as.integer(yna)

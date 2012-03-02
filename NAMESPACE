@@ -7,7 +7,7 @@ importFrom(reshape, melt, cast, recast)
 
 # Fitting functions
 export(occu, occuRN, pcount, pcountOpen, multinomPois, distsamp, colext,
-    gmultmix, gdistsamp)
+    gmultmix, gdistsamp, distsampOpen)
 export(removalPiFun, doublePiFun)
 
 # S4 classes

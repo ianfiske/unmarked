@@ -6,6 +6,9 @@ using namespace Rcpp ;
 
 
 SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
+
+  Rprintf("check 1\n");
+
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
   int M = as<int>(M_);
@@ -47,6 +50,8 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   arma::imat ynam = as<arma::imat>(yna_);  // y[i,j,t] is NA
   arma::imat delta = as<arma::imat>(delta_);
 
+  Rprintf("check 2\n");
+
   arma::mat a = as<arma::mat>(a_);
   arma::mat u = as<arma::mat>(u_);
   Rcpp::NumericVector db(db_);
@@ -79,6 +84,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     y(q) = ym(q);
     yna(q) = ynam(q);
   }
+
+  Rprintf("check 3\n");
+
   // initialize
   double ll=0.0;
   double ll_i=0.0;
@@ -143,6 +151,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	tp3(g3_t.slice(t), lk, gam(first1,t));
     }
   }
+
+  Rprintf("check 4\n");
+
   // loop over sites
   for(int i=0; i<M; i++) {
     first_i = first[i]-1; // remember 0=1st location in C++
@@ -156,6 +167,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	}
 	g1_t.zeros();
 	// loop over possible value of N at time t
+
+//	Rprintf("check 5\n");
+
 	for(int k=yt(i,t); k<lk; k++) { // note first index
 	  for(int j=0; j<=J; j++) { // note <=J not <J
 	    part1 = lgamma(k+1); // compute outside likelihood, or ignore
@@ -177,17 +191,20 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	      cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
 	      cpsum = cpsum+cp;
 	      part2 = lgamma(y(i,j,t)+1); // compute outside likelihood
-	      part3 = log(cp) * y(i,j,t);
+	      part3 = log(cp + DOUBLE_XMIN) * y(i,j,t);
 	    } else {
 	      cp = 1 - cpsum;
 	      part2 = lgamma(k-yt(i,t)+1);
-	      part3 = log(cp) * (k - yt(i,t));
+	      part3 = log(cp + DOUBLE_XMIN) * (k - yt(i,t));
 	    }
 	    g1_t(k) += part1 - part2 + part3;
 	  }
 	  g1_t(k) = exp(g1_t(k));
 	  g1_t_star(k) = g1_t(k) * g_star(k);
 	}
+
+//	Rprintf("check 6\n");
+
 	// computes transition probs for g3
 	if(go_dims == "matrix") {
 	  g3.zeros();
@@ -215,6 +232,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	  g_star = g3 * g1_t_star;
       }
     }
+
+//    Rprintf("check 7\n");
+
     ll_i=0.0;
     int delta_i0 = delta(i,0);
     g1.zeros();
@@ -239,11 +259,11 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
 	  cpsum = cpsum+cp;
 	  part2 = lgamma(y(i,j,first_i)+1); // compute outside likelihood
-	  part3 = log(cp) * y(i,j,first_i);
+	  part3 = log(cp + DOUBLE_XMIN) * y(i,j,first_i);
 	} else {
 	  cp = 1 - cpsum;
 	  part2 = lgamma(k-yt(i,first_i)+1);
-	  part3 = log(cp) * (k - yt(i,first_i));
+	  part3 = log(cp + DOUBLE_XMIN) * (k - yt(i,first_i));
 	}
 	g1(k) += part1 - part2 + part3;
       }
@@ -259,6 +279,10 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
       if(delta_i0==1)
 	ll_i += g1(k) * g2(k) * g_star(k);
     }
+
+    Rprintf("Check 8\n");
+    Rprintf("site : i%\n", i);
+
     if(delta_i0>1) {
       g3_d = g3;
       for(int d=0; d<delta_i0; d++) {
@@ -269,5 +293,8 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     }
     ll += log(ll_i + DOUBLE_XMIN);
   }
+
+  Rprintf("Made it\n");
+
   return wrap(-ll);
 }
