@@ -7,7 +7,7 @@ using namespace Rcpp ;
 
 SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
 
-  Rprintf("check 1\n");
+  //  Rprintf("check 1\n");
 
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
@@ -50,7 +50,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   arma::imat ynam = as<arma::imat>(yna_);  // y[i,j,t] is NA
   arma::imat delta = as<arma::imat>(delta_);
 
-  Rprintf("check 2\n");
+  //  Rprintf("check 2\n");
 
   arma::mat a = as<arma::mat>(a_);
   arma::mat u = as<arma::mat>(u_);
@@ -85,7 +85,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     yna(q) = ynam(q);
   }
 
-  Rprintf("check 3\n");
+  //  Rprintf("check 3\n");
 
   // initialize
   double ll=0.0;
@@ -104,8 +104,8 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   arma::cube g3_t = arma::zeros<arma::cube>(lk,lk,T-1);
 
   // Integration settings given to Rdqags
-  double epsabs = 0.01; // should be specific to measurement units
-  double epsrel = 0.01; // should be specific to measurement units
+  double epsabs = 0.001; // should be specific to measurement units
+  double epsrel = 0.001; // should be specific to measurement units
   int limit = 100;
   int lenw = 400;
   int last2 = 0;
@@ -125,6 +125,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   double part1 = 0.0;
   double part2 = 0.0;
   double part3 = 0.0;
+  double part2m3 = 0.0;
 
   // compute g3 is there are no covariates of omega/gamma
   if(go_dims == "scalar") {
@@ -152,7 +153,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     }
   }
 
-  Rprintf("check 4\n");
+  //  Rprintf("check 4\n");
 
   // loop over sites
   for(int i=0; i<M; i++) {
@@ -171,8 +172,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 //	Rprintf("check 5\n");
 
 	for(int k=yt(i,t); k<lk; k++) { // note first index
+	  part1 = lgamma(k+1);
+	  part2m3 = 0.0;
 	  for(int j=0; j<=J; j++) { // note <=J not <J
-	    part1 = lgamma(k+1); // compute outside likelihood, or ignore
 	    cp = 0.0;
 	    cpsum = 0.0;
 	    if(j<J) {
@@ -190,14 +192,16 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	      /* add error checking/handling here */
 	      cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
 	      cpsum = cpsum+cp;
-	      part2 = lgamma(y(i,j,t)+1); // compute outside likelihood
-	      part3 = log(cp + DOUBLE_XMIN) * y(i,j,t);
+	      part2 = log(cp + DOUBLE_XMIN) * y(i,j,t);
+	      part3 = lgamma(y(i,j,t)+1); // compute outside likelihood
+	      part2m3 = part2m3 + (part2 - part3);
 	    } else {
 	      cp = 1 - cpsum;
-	      part2 = lgamma(k-yt(i,t)+1);
-	      part3 = log(cp + DOUBLE_XMIN) * (k - yt(i,t));
+	      part2 = log(cp + DOUBLE_XMIN) * (k - yt(i,t));
+	      part3 = lgamma(k-yt(i,t)+1);
+	      part2m3 = part2m3 + (part2-part3);
 	    }
-	    g1_t(k) += part1 - part2 + part3;
+	    g1_t(k) += part1 + part2m3;
 	  }
 	  g1_t(k) = exp(g1_t(k));
 	  g1_t_star(k) = g1_t(k) * g_star(k);
@@ -239,8 +243,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     int delta_i0 = delta(i,0);
     g1.zeros();
     for(int k=yt(i,first_i); k<lk; k++) { // loop over possible values of N
+      part1 = lgamma(k+1); // compute outside likelihood, or ignore
+      part2m3 = 0.0;
       for(int j=0; j<=J; j++) {
-	part1 = lgamma(k+1); // compute outside likelihood, or ignore
 	cp = 0.0;
 	cpsum = 0.0;
 	if(j<J) {
@@ -258,14 +263,16 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	  /* add error checking/handling here */
 	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
 	  cpsum = cpsum+cp;
-	  part2 = lgamma(y(i,j,first_i)+1); // compute outside likelihood
-	  part3 = log(cp + DOUBLE_XMIN) * y(i,j,first_i);
+	  part2 = log(cp + DOUBLE_XMIN) * y(i,j,first_i);
+	  part3 = lgamma(y(i,j,first_i)+1); // compute outside likelihood
+	  part2m3 = part2m3 + (part2 - part3);
 	} else {
 	  cp = 1 - cpsum;
-	  part2 = lgamma(k-yt(i,first_i)+1);
-	  part3 = log(cp + DOUBLE_XMIN) * (k - yt(i,first_i));
+	  part2 = log(cp + DOUBLE_XMIN) * (k - yt(i,first_i));
+	  part3 = lgamma(k-yt(i,first_i)+1);
+	  part2m3 = part2m3 + (part2 - part3);
 	}
-	g1(k) += part1 - part2 + part3;
+	g1(k) += part1 + part2m3;
       }
       g1(k) = exp(g1(k));
       if(delta_i0>1)
@@ -281,8 +288,8 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     }
 
 //    Rprintf("Check 8\n");
-    Rprintf("site : %i \n", i);
-    Rprintf("  ll_site : %f \n", ll_i);
+//    Rprintf("site : %i \n", i);
+//    Rprintf("  ll_site : %f \n", ll_i);
 
     if(delta_i0>1) {
       g3_d = g3;
@@ -295,7 +302,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     ll += log(ll_i + DOUBLE_XMIN);
   }
 
-  Rprintf("Made it\n");
+  //  Rprintf("Made it\n");
   Rprintf("    Log-likelihood : %f \n", ll);
 
   return wrap(-ll);
