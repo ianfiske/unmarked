@@ -1,4 +1,5 @@
 #include "detfuns.h"
+#include <Rmath.h>
 
 // Half-normal detection function for point-transects
 void grhn(double *x, int n, void *ex) {
