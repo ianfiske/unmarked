@@ -195,11 +195,11 @@ fmAIC <- 2*fm$value + 2*nP
 lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
     estimates = ests[1:nAP], covMat = as.matrix(covMat[1:nAP,1:nAP]),
     invlink = "exp", invlinkGrad = "exp")
-detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
+detEstimates <- unmarkedEstimate(name = "Detection", short.name = "sigma",
     estimates = ests[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)],
     covMat = as.matrix(covMat[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP),
         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
-        invlink = "logistic", invlinkGrad = "logistic.grad")
+        invlink = "exo", invlinkGrad = "exp")
 estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates))
 gamName <- switch(dynamics,
                   constant = "gamConst",

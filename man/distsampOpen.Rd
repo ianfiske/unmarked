@@ -115,17 +115,24 @@ sim7 <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, M=100, T=5, J=4)
     return(matrix(y, M))
 }
 
-lambda <- 1
-gamma <- 0.5
-omega <- 0.8
-sigma <- 40
-T <- 5
+lambda <- 10
+gamma <- 2
+omega <- 0.5
+sigma <- 20
+T <- 10
 y.sim7 <- sim7(lambda, gamma, omega, sigma, T=T)
 colSums(y.sim7)
 umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
-m7 <- distsampOpen(~1, ~1, ~1, ~1, umf7, K=50,
+fm <- distsampOpen(~1, ~1, ~1, ~1, umf7, K=40,
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
                  se=FALSE)
+fm
+
+e <- coef(fm)
+exp(e[1:2])
+plogis(e[3])
+exp(e[4])
+
 
 
 }

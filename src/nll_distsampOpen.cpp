@@ -7,8 +7,6 @@ using namespace Rcpp ;
 
 SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
 
-  //  Rprintf("check 1\n");
-
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
   int M = as<int>(M_);
@@ -50,8 +48,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   arma::imat ynam = as<arma::imat>(yna_);  // y[i,j,t] is NA
   arma::imat delta = as<arma::imat>(delta_);
 
-  //  Rprintf("check 2\n");
-
   arma::mat a = as<arma::mat>(a_);
   arma::mat u = as<arma::mat>(u_);
   Rcpp::NumericVector db(db_);
@@ -85,8 +81,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     yna(q) = ynam(q);
   }
 
-  //  Rprintf("check 3\n");
-
   // initialize
   double ll=0.0;
   double ll_i=0.0;
@@ -111,6 +105,13 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   int last2 = 0;
   int iwork = 100;
   double work = 400.0;
+
+  double lower=0.0;
+  double upper=0.0;
+  double result=0.0;
+  double abserr=0.0;
+  int neval=0;
+  int ier=0;
 
   // shouldn't be done in likelihood
   for(int i=0; i<M; i++) {
@@ -153,8 +154,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     }
   }
 
-  //  Rprintf("check 4\n");
-
   // loop over sites
   for(int i=0; i<M; i++) {
     first_i = first[i]-1; // remember 0=1st location in C++
@@ -168,50 +167,55 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	}
 	g1_t.zeros();
 	// loop over possible value of N at time t
-
-//	Rprintf("check 5\n");
-
 	for(int k=0; k<lk; k++) { // note first index
 	  part1 = lgamma(k+1);
 	  part2m3 = 0.0;
+	  cpsum = 0.0;
 	  if((k - yt(i,t)) >= 0) {
-	  for(int j=0; j<=J; j++) { // note <=J not <J
-	    cp = 0.0;
-	    cpsum = 0.0;
-	    if(j<J) {
-	      void *ex;
-	      ex = &sig(i,t);
-	      double lower = db[j];
-	      double upper = db[j+1];
-	      double result = 0.0;
-	      double abserr = 0.0;
-	      int neval = 0;
-	      int ier = 0;
-	      Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		     &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
-		     &work);
-	      /* add error checking/handling here */
-	      cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
-	      cp = std::max(cp, DOUBLE_XMIN);
-	      cpsum = cpsum+cp;
-	      part2 = log(cp) * y(i,j,t);
-	      part3 = lgamma(y(i,j,t)+1); // compute outside likelihood
-	      part2m3 = part2m3 + (part2 - part3);
-	    } else {
-	      cp = 1 - cpsum;
-	      cp = std::max(cp, DOUBLE_XMIN);
-	      part2 = log(cp) * (k - yt(i,t));
-	      part3 = lgamma(k-yt(i,t)+1);
-	      part2m3 = part2m3 + (part2-part3);
+	    for(int j=0; j<=J; j++) { // note <=J not <J
+	      cp = 0.0;
+	      if(j<J) {
+		void *ex;
+		ex = &sig(i,t);
+		lower = db[j];
+		upper = db[j+1];
+		result = 0.0;
+		abserr = 0.0;
+		neval = 0;
+		ier = 0;
+
+/*		epsabs = 0.001;
+		epsrel = 0.001;
+		limit = 100;
+		lenw = 400;
+		last2 = 0;
+		iwork = 100;
+		work = 400.0;
+*/
+
+		Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+		       &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
+		       &work);
+		/* add error checking/handling here */
+		cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+		cp = std::max(cp, DOUBLE_XMIN);
+		cpsum = cpsum+cp;
+		part2 = log(cp) * y(i,j,t);
+		part3 = lgamma(y(i,j,t)+1); // compute outside likelihood
+		part2m3 = part2m3 + (part2 - part3);
+	      } else {
+		cp = 1 - cpsum;
+		cp = std::max(cp, DOUBLE_XMIN);
+		part2 = log(cp) * (k - yt(i,t));
+		part3 = lgamma(k-yt(i,t)+1);
+		part2m3 = part2m3 + (part2-part3);
+	      }
 	    }
-	  }
-	  g1_t(k) = part1 + part2m3;
-	  g1_t(k) = exp(g1_t(k));
+	    g1_t(k) = part1 + part2m3;
+	    g1_t(k) = exp(g1_t(k));
 	  }
 	  g1_t_star(k) = g1_t(k) * g_star(k);
 	}
-
-//	Rprintf("check 6\n");
 
 	// computes transition probs for g3
 	if(go_dims == "matrix") {
@@ -241,27 +245,35 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
       }
     }
 
-//    Rprintf("check 7\n");
-
     ll_i=0.0;
     int delta_i0 = delta(i,0);
     g1.zeros();
     for(int k=0; k<lk; k++) { // loop over possible values of N
       if((k-yt(i,first_i)) >= 0) {
-      part1 = lgamma(k+1); // compute outside likelihood, or ignore
+	part1 = lgamma(k+1); // compute outside likelihood, or ignore
       part2m3 = 0.0;
+      cpsum = 0.0;
       for(int j=0; j<=J; j++) {
 	cp = 0.0;
-	cpsum = 0.0;
 	if(j<J) {
 	  void *ex;
 	  ex = &sig(i,first_i);
-	  double lower = db[j];
-	  double upper = db[j+1];
-	  double result = 0.0;
-	  double abserr = 0.0;
-	  int neval = 0;
-	  int ier = 0;
+	  lower = db[j];
+	  upper = db[j+1];
+	  result = 0.0;
+	  abserr = 0.0;
+	  neval = 0;
+	  ier = 0;
+
+/*	  epsabs = 0.001;
+	  epsrel = 0.001;
+	  limit = 100;
+	  lenw = 400;
+	  last2 = 0;
+	  iwork = 100;
+	  work = 400.0;
+*/
+
 	  Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
 		 &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
 		 &work);
@@ -295,10 +307,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	ll_i += g1(k) * g2(k) * g_star(k);
     }
 
-//    Rprintf("Check 8\n");
-//    Rprintf("site : %i \n", i);
-//    Rprintf("  ll_site : %f \n", ll_i);
-
     if(delta_i0>1) {
       g3_d = g3;
       for(int d=0; d<delta_i0; d++) {
@@ -310,8 +318,19 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     ll += log(ll_i + DOUBLE_XMIN);
   }
 
-  //  Rprintf("Made it\n");
+  /*
+  Rprintf("        lower : %f \n", lower);
+  Rprintf("        upper : %f \n", upper);
+  Rprintf("        ier : %d \n", ier);
+  Rprintf("        part1 : %f \n", part1);
+  Rprintf("        part2 : %f \n", part2);
+  Rprintf("        part3 : %f \n", part3);
+  Rprintf("        part2m3 : %f \n", part2m3);
+  Rprintf("        result : %f \n", result);
+  Rprintf("        cpsum : %f \n", cpsum);
+  Rprintf("        cp : %f \n", cp);
   Rprintf("    Log-likelihood : %f \n", ll);
+  */
 
   return wrap(-ll);
 }
