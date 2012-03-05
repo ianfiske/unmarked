@@ -1,6 +1,6 @@
 
-#ifndef _unmarked_DETFUNS_H
-#define _unmarked_DETFUNS_H
+#ifndef _UNMARKED_DETFUNS_H
+#define _UNMARKED_DETFUNS_H
 
 #include <Rmath.h>
 #include <R_ext/Applic.h>
