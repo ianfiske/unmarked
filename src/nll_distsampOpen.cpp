@@ -171,9 +171,10 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 
 //	Rprintf("check 5\n");
 
-	for(int k=yt(i,t); k<lk; k++) { // note first index
+	for(int k=0; k<lk; k++) { // note first index
 	  part1 = lgamma(k+1);
 	  part2m3 = 0.0;
+	  if((k - yt(i,t)) >= 0) {
 	  for(int j=0; j<=J; j++) { // note <=J not <J
 	    cp = 0.0;
 	    cpsum = 0.0;
@@ -191,19 +192,22 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		     &work);
 	      /* add error checking/handling here */
 	      cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+	      cp = std::max(cp, DOUBLE_XMIN);
 	      cpsum = cpsum+cp;
-	      part2 = log(cp + DOUBLE_XMIN) * y(i,j,t);
+	      part2 = log(cp) * y(i,j,t);
 	      part3 = lgamma(y(i,j,t)+1); // compute outside likelihood
 	      part2m3 = part2m3 + (part2 - part3);
 	    } else {
 	      cp = 1 - cpsum;
-	      part2 = log(cp + DOUBLE_XMIN) * (k - yt(i,t));
+	      cp = std::max(cp, DOUBLE_XMIN);
+	      part2 = log(cp) * (k - yt(i,t));
 	      part3 = lgamma(k-yt(i,t)+1);
 	      part2m3 = part2m3 + (part2-part3);
 	    }
-	    g1_t(k) += part1 + part2m3;
 	  }
+	  g1_t(k) = part1 + part2m3;
 	  g1_t(k) = exp(g1_t(k));
+	  }
 	  g1_t_star(k) = g1_t(k) * g_star(k);
 	}
 
@@ -242,7 +246,8 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     ll_i=0.0;
     int delta_i0 = delta(i,0);
     g1.zeros();
-    for(int k=yt(i,first_i); k<lk; k++) { // loop over possible values of N
+    for(int k=0; k<lk; k++) { // loop over possible values of N
+      if((k-yt(i,first_i)) >= 0) {
       part1 = lgamma(k+1); // compute outside likelihood, or ignore
       part2m3 = 0.0;
       for(int j=0; j<=J; j++) {
@@ -262,19 +267,22 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		 &work);
 	  /* add error checking/handling here */
 	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
+	  cp = std::max(cp, DOUBLE_XMIN);
 	  cpsum = cpsum+cp;
-	  part2 = log(cp + DOUBLE_XMIN) * y(i,j,first_i);
+	  part2 = log(cp) * y(i,j,first_i);
 	  part3 = lgamma(y(i,j,first_i)+1); // compute outside likelihood
 	  part2m3 = part2m3 + (part2 - part3);
 	} else {
 	  cp = 1 - cpsum;
-	  part2 = log(cp + DOUBLE_XMIN) * (k - yt(i,first_i));
+	  cp = std::max(cp, DOUBLE_XMIN);
+	  part2 = log(cp) * (k - yt(i,first_i));
 	  part3 = lgamma(k-yt(i,first_i)+1);
 	  part2m3 = part2m3 + (part2 - part3);
 	}
-	g1(k) += part1 + part2m3;
       }
+      g1(k) = part1 + part2m3;
       g1(k) = exp(g1(k));
+      }
       if(delta_i0>1)
 	g1_star(k) = g1(k) * g_star(k);
       if(mixture=="P")

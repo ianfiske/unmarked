@@ -80,32 +80,54 @@ distsampOpen(lambdaformula, gammaformula, omegaformula, sigmaformula, data, mixt
 }
 \examples{
 
-sim7 <- function(lambda=1, gamma=0.5, omega=0.8, p=0.7, M=100, T=5, J=4)
+sim7 <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, M=100, T=5, J=4)
     {
-    y <- matrix(NA, M, J*T)
+    y <- array(NA, c(M, J, T))
     N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
-    N[,1] <- rpois(M, lambda)
+    db <- c(0, 25, 50, 75, 100)
+    if(length(db)-1 != J)
+      stop("hey, what")
+    g <- function(x, sig) exp(-x^2/(2*sig^2))*x
+    cp <- u <- a <- numeric(J)
+    a[1] <- pi*db[2]^2
+    cp[1] <- integrate(g, db[1], db[2], sig=sigma)$value * 2 * pi
+    for(j in 2:J) {
+      a[j] <- pi*db[j+1]^2 - sum(a[1:j])
+      cp[j] <- integrate(g, db[j], db[j+1], sig=sigma)$value * 2*pi
+    }
+    u <- a / sum(a)
+    cp <- cp / a * u
+    cp[j+1] <- 1-sum(cp)
+    for(i in 1:M) {
+    N[i,1] <- rpois(1, lambda)
+    y[i,1:J,1] <- rmultinom(1, N[i,1], cp)[1:J]
     for(t in 1:(T-1)) {
-        S[,t] <- rbinom(M, N[,t], omega)
-        G[,t] <- rpois(M, gamma)
-        N[,t+1] <- S[,t] + G[,t]
+        S[i,t] <- rbinom(1, N[i,t], omega)
+        G[i,t] <- rpois(1, gamma)
+        N[i,t+1] <- S[i,t] + G[i,t]
+        y[i,1:J,t+1] <- rmultinom(1, N[i,t], cp)[1:J]
         }
-    N <- N[,rep(1:T, each=J)]
-    y[] <- rbinom(M*J*T, N, p)
-    return(y)
+    }
+    cp <- array(cp, c(J, M, T))
+    cp <- matrix(aperm(cp, c(2,1,3)), M)
+    cat("max(N) =", max(N), "\n")
+    return(matrix(y, M))
 }
 
 lambda <- 1
 gamma <- 0.5
 omega <- 0.8
-p <- 0.7
+sigma <- 40
 T <- 5
-y.sim7 <- sim7(lambda, gamma, omega, p, T=T)
+y.sim7 <- sim7(lambda, gamma, omega, sigma, T=T)
+colSums(y.sim7)
 umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
-m7 <- distsampOpen(~1, ~1, ~1, ~1, umf7, K=15,
-                 starts=c(log(lambda), log(gamma), plogis(omega), plogis(p)),
+m7 <- distsampOpen(~1, ~1, ~1, ~1, umf7, K=50,
+                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
                  se=FALSE)
+
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
