@@ -172,15 +172,17 @@ setMethod("backTransform", "unmarkedFit", function(obj, type)
         }
 })
 
-setMethod("[", "unmarkedFit", function(x, i, j, drop)
-{
-    x@estimates[i]
-})
 
-setMethod("names", "unmarkedFit", function(x)
-{
-    names(x@estimates)
-})
+setMethod("[", "unmarkedFit",
+          function(x, i, j, drop) {
+              x@estimates[i]
+          })
+
+
+setMethod("names", "unmarkedFit",
+          function(x) {
+              names(x@estimates)
+          })
 
 
 
@@ -226,15 +228,22 @@ setMethod("predict", "unmarkedFit",
                 offset <- model.offset(mf)
                 })
             })
-    out <- data.frame(matrix(NA, nrow(X), 2,
-        dimnames=list(NULL, c("Predicted", "SE"))))
-    lc <- linearComb(object, X, type, offset = offset)
-    if(backTransform) lc <- backTransform(lc)
-    out$Predicted <- coef(lc)
-    out$SE <- SE(lc)
-    ci <- as.data.frame(confint(lc))
-    colnames(ci) <- c("lower", "upper")
-    out <- cbind(out, ci)
+    out <- data.frame(matrix(NA, nrow(X), 4,
+        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+    for(i in 1:nrow(X)) {
+        if(nrow(X) > 5000) {
+            if(i %% 1000 == 0)
+                cat("  doing row", i, "of", nrow(X), "rows\n")
+        }
+        lc <- linearComb(object, X[i,], type, offset = offset)
+        if(backTransform)
+            lc <- backTransform(lc)
+        out$Predicted[i] <- coef(lc)
+        out$SE[i] <- SE(lc)
+        ci <- confint(lc)
+        out$lower[i] <- ci[1]
+        out$upper[i] <- ci[2]
+    }
     if(appendData)
         out <- data.frame(out, as(newdata, "data.frame"))
     return(out)
