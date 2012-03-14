@@ -1,11 +1,12 @@
 #include "nll_distsamp.h"
 #include "detfuns.h"
 
-using namespace Rcpp ;
+// using namespace Rcpp ;
 
 
-SEXP nll_distsamp( SEXP y_, SEXP X_, SEXP V_, SEXP beta_lam_, SEXP beta_sig_, SEXP X_offset_, SEXP V_offset_, SEXP A_, SEXP a_, SEXP u_, SEXP output_, SEXP db_ ) {
+SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP a_, SEXP u_, SEXP db_ ) {
 
+  /*
   arma::imat y = as<arma::imat>(y_);
   arma::mat X = as<arma::mat>(X_);
   arma::mat V = as<arma::mat>(V_);
@@ -17,15 +18,26 @@ SEXP nll_distsamp( SEXP y_, SEXP X_, SEXP V_, SEXP beta_lam_, SEXP beta_sig_, SE
   arma::mat a = as<arma::mat>(a_);
   arma::mat u = as<arma::mat>(u_);
   std::string output = as<std::string>(output_);
+  */
+
+  Rcpp::IntegerMatrix y(y_);
+  Rcpp::NumericVector lam(lam_);
+  Rcpp::NumericVector sig(sig_);
+  Rcpp::NumericMatrix a(a_);
+  Rcpp::NumericMatrix u(u_);
   Rcpp::NumericVector db(db_);
 
-  int R = y.n_rows;
-  int J = y.n_cols;
+  int R = y.nrow();   //y.n_rows;
+  int J = y.ncol();   // y.n_cols;
+
+  /*
   arma::colvec lam = exp(X*beta_lam + X_offset);
   arma::colvec sig = exp(V*beta_sig + V_offset);
   // need to add output option to model density instead of abundance
   if(output=="density")
     lam = lam % A; // double check %
+  */
+
 
   // Integration settings given to Rdqags
   double epsabs = 0.01; // should be specific to measurement units
@@ -58,5 +70,5 @@ SEXP nll_distsamp( SEXP y_, SEXP X_, SEXP V_, SEXP beta_lam_, SEXP beta_sig_, SE
       ll += Rf_dpois(y(i,j), lam(i)*cp, true);
     }
   }
-  return wrap(-ll);
+  return Rcpp::wrap(-ll);
 }

@@ -218,13 +218,18 @@ distsamp <- function(formula, data,
         nll <- function(param) {
             beta.lam <- param[1:nAP]
             beta.sig <- param[(nAP+1):nP]
+            lambda <- drop(exp(X %*% beta.lam + X.offset))
+            if(identical(output, "density"))
+                lambda <- lambda * A
+            sigma <- drop(exp(V %*% beta.sig + V.offset))
             .Call("nll_distsamp",
-                  y,
-                  X, V,
-                  beta.lam, beta.sig,
-                  X.offset, V.offset,
-                  A, a, u,
-                  output,
+                  y, lambda, sigma,
+#                  X, V,
+#                  beta.lam, beta.sig,
+#                  X.offset, V.offset,
+#                  A,
+                  a, u,
+#                  output,
                   db,
                   PACKAGE="unmarked")
         }
