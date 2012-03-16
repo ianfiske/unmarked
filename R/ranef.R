@@ -280,6 +280,7 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
         phi <- plogis(Xphi %*% beta.phi + Xphi.offset)
 
     cp <- getP(object)
+    cp[is.na(y)] <- NA
 
     K <- object@K
     M <- 0:K
@@ -356,7 +357,12 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
                 cp.it <- cpa[i,,t]*phi[i,t]
                 cp.it <- c(cp.it, 1-sum(cp.it, na.rm=TRUE))
                 na.it <- is.na(cp.it)
-                g[k] <- dmultinom(y.it[!na.it], M[k], cp.it[!na.it])
+                y.it[na.it] <- NA
+                if(sum(!is.na(y.it)) < 2)
+                    next
+                if(any(is.na(y.it[!na.it])))
+                    browser()
+                g[k] <- g[k]*dmultinom(y.it[!na.it], M[k], cp.it[!na.it])
             }
         }
         fudge <- f*g

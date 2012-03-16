@@ -2336,6 +2336,7 @@ setMethod("simulate", "unmarkedFitGMM",
 
     cp.arr <- array(NA, c(n, T, J+1))
     cp.mat <- getP(object, na.rm = na.rm)
+    cp.mat[is.na(y)] <- NA
     cp.temp <- array(cp.mat, c(n, J, T))
     cp.arr[,,1:J] <- aperm(cp.temp, c(1,3,2))
     cp.arr[,,J+1] <- 1 - apply(cp.arr[,,1:J,drop=FALSE], 1:2, sum, na.rm=TRUE)
@@ -2348,17 +2349,21 @@ setMethod("simulate", "unmarkedFitGMM",
                 size=exp(coef(object, type="alpha"))))
 
         N <- rbinom(n*T, size=M, prob=phi.mat)
-        N <- matrix(N, nrow=n, ncol=T, byrow=TRUE)
+        # bug fix 3/16/2010
+        N <- matrix(N, nrow=n, ncol=T, byrow=FALSE) # , byrow=TRUE)
 
         y.sim <- array(NA, c(n, J, T))
-        for(i in 1:n)
+        for(i in 1:n) {
             for(t in 1:T) {
+                if(is.na(N[i,t]))
+                    next
                 pi.it <- cp.arr[i,t,]
                 na.it <- is.na(pi.it)
                 pi.it[na.it] <- 0
                 y.sim[i,,t] <- drop(rmultinom(1, N[i,t], pi.it))[1:J]
                 y.sim[i,na.it[1:J],t] <- NA
             }
+        }
         simList[[s]] <- matrix(y.sim, nrow=n, ncol=J*T) # note, byrow=F
         }
     return(simList)
