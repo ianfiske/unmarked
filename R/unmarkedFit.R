@@ -420,8 +420,7 @@ setMethod("predict", "unmarkedFitColExt",
                    X <- model.matrix(X.terms, mf)
                    offset <- model.offset(mf)
                })
-
-           )
+    })
     out <- data.frame(matrix(NA, nrow(X), 4,
         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
     for(i in 1:nrow(X)) {
@@ -543,57 +542,61 @@ setMethod("predict", "unmarkedFitPCO",
                     offset <- model.offset(mf)
                 })
             },
-    RasterStack = {
-        lambdaformula <- formlist$lambdaformula
-        gammaformula <- formlist$gammaformula
-        omegaformula <- formlist$omegaformula
-        pformula <- formlist$pformula
+        RasterStack = {
+            lambdaformula <- formlist$lambdaformula
+            gammaformula <- formlist$gammaformula
+            omegaformula <- formlist$omegaformula
+            pformula <- formlist$pformula
 
-        cd.names <- layerNames(newdata)
-        npix <- prod(dim(newdata)[1:2])
-        isfac <- is.factor(newdata)
-        if(any(isfac))
-            stop("This method currently does not handle factors")
-        z <- as.data.frame(matrix(getValues(newdata), npix))
-        names(z) <- cd.names
-        switch(type,
-               lambda = {
-                   varnames <- all.vars(lambdaformula)
-                   if(!all(varnames %in% cd.names))
-                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
-                   mf <- model.frame(lambdaformula, z, na.action="na.pass")
-                   X.terms <- attr(mf, "terms")
-                   X <- model.matrix(X.terms, mf)
-                   offset <- model.offset(mf)
-               },
-               gamma = {
-                   varnames <- all.vars(gammaformula)
-                   if(!all(varnames %in% cd.names))
-                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
-                   mf <- model.frame(gammaformula, z, na.action="na.pass")
-                   X.terms <- attr(mf, "terms")
-                   X <- model.matrix(X.terms, mf)
-                   offset <- model.offset(mf)
-               },
-               omega = {
-                   varnames <- all.vars(omegaformula)
-                   if(!all(varnames %in% cd.names))
-                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
-                   mf <- model.frame(omegaformula, z, na.action="na.pass")
-                   X.terms <- attr(mf, "terms")
-                   X <- model.matrix(X.terms, mf)
-                   offset <- model.offset(mf)
-               },
-               det= {
-                   varnames <- all.vars(pformula)
-                   if(!all(varnames %in% cd.names))
-                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
-                   mf <- model.frame(pformula, z, na.action="na.pass")
-                   X.terms <- attr(mf, "terms")
-                   X <- model.matrix(X.terms, mf)
-                   offset <- model.offset(mf)
-               })
-           )
+            cd.names <- layerNames(newdata)
+            npix <- prod(dim(newdata)[1:2])
+            isfac <- is.factor(newdata)
+            if(any(isfac))
+                stop("This method currently does not handle factors")
+            z <- as.data.frame(matrix(getValues(newdata), npix))
+            names(z) <- cd.names
+            switch(type,
+                   lambda = {
+                       varnames <- all.vars(lambdaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                       mf <- model.frame(lambdaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   gamma = {
+                       varnames <- all.vars(gammaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                       mf <- model.frame(gammaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   omega = {
+                       varnames <- all.vars(omegaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                       mf <- model.frame(omegaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   det= {
+                       varnames <- all.vars(pformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                       mf <- model.frame(pformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   })
+    })
     out <- data.frame(matrix(NA, nrow(X), 4,
         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
     for(i in 1:nrow(X)) {
@@ -696,43 +699,46 @@ setMethod("predict", "unmarkedFitGMM",
                   offset <- model.offset(mf)
                 })
         },
-    RasterStack = {
-        cd.names <- layerNames(newdata)
-        npix <- prod(dim(newdata)[1:2])
-        isfac <- is.factor(newdata)
-        if(any(isfac))
-            stop("This method currently does not handle factors")
-        z <- as.data.frame(matrix(getValues(newdata), npix))
-        names(z) <- cd.names
-        switch(type,
-               lambda = {
-                   varnames <- all.vars(lambdaformula)
-                   if(!all(varnames %in% cd.names))
-                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
-                   mf <- model.frame(lambdaformula, z, na.action="na.pass")
-                   X.terms <- attr(mf, "terms")
-                   X <- model.matrix(X.terms, mf)
-                   offset <- model.offset(mf)
-               },
-              phi = {
-                   varnames <- all.vars(phiformula)
-                   if(!all(varnames %in% cd.names))
-                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
-                   mf <- model.frame(phiformula, z, na.action="na.pass")
-                   X.terms <- attr(mf, "terms")
-                   X <- model.matrix(X.terms, mf)
-                   offset <- model.offset(mf)
-               },
-               det= {
-                   varnames <- all.vars(pformula)
-                   if(!all(varnames %in% cd.names))
-                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
-                   mf <- model.frame(pformula, z, na.action="na.pass")
-                   X.terms <- attr(mf, "terms")
-                   X <- model.matrix(X.terms, mf)
-                   offset <- model.offset(mf)
-               })
-           )
+        RasterStack = {
+            cd.names <- layerNames(newdata)
+            npix <- prod(dim(newdata)[1:2])
+            isfac <- is.factor(newdata)
+            if(any(isfac))
+                stop("This method currently does not handle factors")
+            z <- as.data.frame(matrix(getValues(newdata), npix))
+            names(z) <- cd.names
+            switch(type,
+                   lambda = {
+                       varnames <- all.vars(lambdaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                       mf <- model.frame(lambdaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   phi = {
+                       varnames <- all.vars(phiformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                       mf <- model.frame(phiformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   det= {
+                       varnames <- all.vars(pformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                       mf <- model.frame(pformula, z, na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   })
+        }
+    )
     out <- data.frame(matrix(NA, nrow(X), 4,
         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
     for(i in 1:nrow(X)) {
@@ -2300,7 +2306,7 @@ setMethod("simulate", "unmarkedFitGMM",
     formula <- object@formula
     umf <- object@data
     mixture <- object@mixture
-    D <- getDesign(umf, formula, na.rm = na.rm)
+    D <- unmarked:::getDesign(umf, formula, na.rm = na.rm)
     y <- D$y
     Xlam <- D$Xlam
     Xphi <- D$Xphi
@@ -2321,15 +2327,18 @@ setMethod("simulate", "unmarkedFitGMM",
     phiParms <- coef(object, type = "phi")
     detParms <- coef(object, type = "det")
     lam <- drop(exp(Xlam %*% lamParms + Xlam.offset))
-    phi <- as.numeric(plogis(Xphi %*% phiParms + Xphi.offset))
-    phi.mat <- matrix(phi, nrow=n, byrow=TRUE)
+    if(is.null(phiParms))
+        phi <- rep(1, nrow(Xphi))
+    else
+        phi <- as.numeric(plogis(Xphi %*% phiParms + Xphi.offset))
+    phi.mat <- matrix(phi, nrow=n, ncol=T, byrow=TRUE)
     p <- as.numeric(plogis(Xdet %*% detParms + Xdet.offset))
 
     cp.arr <- array(NA, c(n, T, J+1))
     cp.mat <- getP(object, na.rm = na.rm)
     cp.temp <- array(cp.mat, c(n, J, T))
     cp.arr[,,1:J] <- aperm(cp.temp, c(1,3,2))
-    cp.arr[,,J+1] <- 1 - apply(cp.arr[,,1:J], 1:2, sum, na.rm=TRUE)
+    cp.arr[,,J+1] <- 1 - apply(cp.arr[,,1:J,drop=FALSE], 1:2, sum, na.rm=TRUE)
 
     simList <- list()
     for(s in 1:nsim) {
@@ -2343,9 +2352,13 @@ setMethod("simulate", "unmarkedFitGMM",
 
         y.sim <- array(NA, c(n, J, T))
         for(i in 1:n)
-            for(t in 1:T)
-                y.sim[i,,t] <- drop(rmultinom(1, N[i,t],
-                     cp.arr[i,t,]))[1:J]
+            for(t in 1:T) {
+                pi.it <- cp.arr[i,t,]
+                na.it <- is.na(pi.it)
+                pi.it[na.it] <- 0
+                y.sim[i,,t] <- drop(rmultinom(1, N[i,t], pi.it))[1:J]
+                y.sim[i,na.it[1:J],t] <- NA
+            }
         simList[[s]] <- matrix(y.sim, nrow=n, ncol=J*T) # note, byrow=F
         }
     return(simList)
