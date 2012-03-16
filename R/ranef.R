@@ -358,10 +358,6 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
                 cp.it <- c(cp.it, 1-sum(cp.it, na.rm=TRUE))
                 na.it <- is.na(cp.it)
                 y.it[na.it] <- NA
-                if(sum(!is.na(y.it)) < 2)
-                    next
-                if(any(is.na(y.it[!na.it])))
-                    browser()
                 g[k] <- g[k]*dmultinom(y.it[!na.it], M[k], cp.it[!na.it])
             }
         }
