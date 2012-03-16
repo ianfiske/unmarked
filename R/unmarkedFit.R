@@ -201,7 +201,12 @@ setMethod("predict", "unmarkedFit",
     stateformula <- as.formula(paste("~", formula[3], sep=""))
     if(inherits(newdata, "unmarkedFrame"))
         class(newdata) <- "unmarkedFrame"
-    cls <- class(newdata)
+    cls <- class(newdata)[1]
+    if(!cls %in% c("unmarkedFrame", "data.frame", "RasterStack"))
+        stop("newdata should be have class 'unmarkedFrame', 'data.frame', or 'RasterStack'")
+    if(identical(cls, "RasterStack"))
+        if(!require(raster))
+            stop("raster package is required")
     switch(cls,
     unmarkedFrame = {
         designMats <- getDesign(newdata, formula, na.rm = na.rm)
@@ -227,7 +232,36 @@ setMethod("predict", "unmarkedFit",
                 X <- model.matrix(detformula, mf)
                 offset <- model.offset(mf)
                 })
-            })
+            },
+    RasterStack = {
+        browser()
+        cd.names <- layerNames(newdata)
+        npix <- prod(dim(newdata)[1:2])
+        isfac <- is.factor(newdata)
+        if(any(isfac))
+            stop("This method currently does not handle factors")
+        z <- as.data.frame(matrix(getValues(newdata), npix))
+        names(z) <- cd.names
+        switch(type,
+               state = {
+                   varnames <- all.vars(stateformula)
+                   if(!all(varnames %in% cd.names))
+                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                   mf <- model.frame(stateformula, z, na.action="na.pass")
+                   X.terms <- attr(mf, "terms")
+                   X <- model.matrix(X.terms, mf)
+                   offset <- model.offset(mf)
+               },
+               det= {
+                   varnames <- all.vars(detformula)
+                   if(!all(varnames %in% cd.names))
+                       stop("at least 1 covariate in the formula is not in the raster stack.\n\t You probably need to assign them using layerNames(object) <- covariate.names")
+                   mf <- model.frame(detformula, z, na.action="na.pass")
+                   X.terms <- attr(mf, "terms")
+                   X <- model.matrix(X.terms, mf)
+                   offset <- model.offset(mf)
+               })
+    })
     out <- data.frame(matrix(NA, nrow(X), 4,
         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
     for(i in 1:nrow(X)) {
@@ -244,8 +278,29 @@ setMethod("predict", "unmarkedFit",
         out$lower[i] <- ci[1]
         out$upper[i] <- ci[2]
     }
-    if(appendData)
-        out <- data.frame(out, as(newdata, "data.frame"))
+    if(appendData) {
+        if(identical(cls, "RasterStack"))
+            out <- data.frame(out, as(newdata, "data.frame"))
+        else
+            out <- data.frame(out, z)
+    }
+    if(identical(cls, "RasterStack")) {
+        E.mat <- matrix(out[,1], dim(newdata)[1], dim(newdata)[2],
+                        byrow=TRUE)
+        E.raster <- raster(E.mat)
+        extent(E.raster) <- extent(newdata)
+        out.rasters <- list(E.raster)
+        for(i in 2:ncol(out)) {
+            i.mat <- matrix(out[,i], dim(newdata)[1], dim(newdata)[2],
+                            byrow=TRUE)
+            i.raster <- raster(i.mat)
+            extent(i.raster) <- extent(newdata)
+            out.rasters[[i]] <- i.raster
+        }
+        out.stack <- stack(out.rasters)
+        layerNames(out.stack) <- colnames(out)
+        out <- out.stack
+    }
     return(out)
 })
 
