@@ -428,7 +428,7 @@ setMethod("predict", "unmarkedFitColExt",
             if(i %% 1000 == 0)
                 cat("  doing row", i, "of", nrow(X), "rows\n")
         }
-        lc <- linearComb(object, X[i,], type, offset = offset)
+        lc <- linearComb(object, X[i,], type)
         if(backTransform)
             lc <- backTransform(lc)
         out$Predicted[i] <- coef(lc)
