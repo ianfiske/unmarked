@@ -197,7 +197,7 @@ flycatchers (\emph{Empidonax alnorum}) by
 \citet{chandler_etal:2009}. Point count data such as these are
 collected on unmarked animals, but one can apply
 capture-recapture models because it is possible to keep track of
-inidividual birds during a short period of time. That is, we can
+inidividual birds during a short period of time \citep{alldredge_etal:2007}. That is, we can
 pretend like birds are marked by noting which time intervals they are
 detected in during a short survey. The alder flycatcher data were
 collected using fixed-area 15-minute point counts, which were divided
@@ -344,7 +344,7 @@ library(unmarked)
 intervalMat <- matrix(c('1','2','3'), 50, 3, byrow=TRUE)
 class(alfl.H1) <- "matrix"
 umf.cr1 <- unmarkedFrameMPois(y=alfl.H1,
-    siteCovs=alfl.covs[,c("woody", "struct", "time.1")],
+    siteCovs=alfl.covs[,c("woody", "struct", "time.1", "date.1")],
     obsCovs=list(interval=intervalMat),
     obsToY=o2y, piFun="crPiFun")
 @
@@ -366,7 +366,7 @@ continous covariate effect on $p$.
 <<>>=
 M0 <- multinomPois(~1 ~1, umf.cr1)
 Mt <- multinomPois(~interval-1 ~1, umf.cr1)
-Mc <- multinomPois(~time.1 ~1, umf.cr1)
+Mx <- multinomPois(~time.1 ~1, umf.cr1)
 @
 
 The first two models can be fit in other software programs. What is
@@ -487,6 +487,135 @@ flycathers were not actually captured. Here is a command to compute
 plogis(confint(Mb, type="det", method="profile"))
 @
 
+There are a few limitations to modeling behavioral effects in this
+way. First, we are limited in the number of parameters we can estimate
+because the \texttt{piFun} can currently only take a single argument,
+\verb+p+. The approach described above makes demonstrates that we
+there is much flexibility in the way that we can use \verb+p+, but it
+would be better to allow \texttt{piFun} to accept multiple
+arguments. This would require some modifications to
+\texttt{multinomPois} and \texttt{gmultmix}, which we may do in the
+future. As it currently stands, we cannot fit certain
+models, such as $M_{btx}$, which includes behavioral, time, and
+site-specific covariate effects
+because there are not enough elements of \verb+p+ to do
+so.
+
+
+
+\section{Individual Heteogeneity in Capture Probability}
+
+The capture-recapture models that can be fit in \texttt{unmarked} assume
+that variation in capture probability can be
+explained by site-specific covariates, time, or behavior. Currently, individual
+heterogeneity attributable to animal-specific covariates cannot be explicitly modeled, although, one could
+partition the data into strata and analyze the strata separately. For
+example, sex-specific
+differences could be studied by dividing the data on males and females
+into 2 subsets.
+
+\subsection{Model $M_h$}
+
+Although individual covariate models cannot be considered, it is possible
+to fit model $M_h$, which assumes
+random variation in capture probability among individuals.
+Here is a \texttt{piFun}, based on code by Andy Royle. It assumes
+a logit-normal distribution for the random effects
+\[
+\mbox{logit}(p_i) \sim Normal(\mu, \sigma^2).
+\]
+These random effects are integrated out of the likelihod to obtain the
+marginal probability of capture.
+
+<<>>=
+MhPiFun <- function(p) {
+mu <- qlogis(p[1,1]) # logit(p)
+sig <- exp(qlogis(p[1,2]))
+J <- ncol(p)
+M <- nrow(p)
+il <- matrix(NA, nrow=M, ncol=7)
+dimnames(il) <- list(NULL, c("001","010","011","100","101","110","111"))
+for(i in 1:M) {
+    il[i,1] <- integrate( function(x) {
+        (1-plogis(mu+x))*(1-plogis(mu+x))*plogis(mu+x)*dnorm(x,0,sig)
+    }, lower=-Inf, upper=Inf, stop.on.error=FALSE)$value
+    il[i,2] <- integrate( function(x) {
+        (1-plogis(mu+x))*plogis(mu+x)*(1-plogis(mu+x))*dnorm(x,0,sig)
+    }, lower=-Inf, upper=Inf, stop.on.error=FALSE)$value
+    il[i,3] <- integrate( function(x) {
+        (1-plogis(mu+x))*plogis(mu+x)*plogis(mu+x)*dnorm(x,0,sig)
+    }, lower=-Inf, upper=Inf, stop.on.error=FALSE)$value
+    il[i,4] <- integrate( function(x) {
+        plogis(mu+x)*(1-plogis(mu+x))*(1-plogis(mu+x))*dnorm(x,0,sig)
+    }, lower=-Inf, upper=Inf, stop.on.error=FALSE)$value
+    il[i,5] <- integrate( function(x) {
+        plogis(mu+x)*(1-plogis(mu+x))*plogis(mu+x)*dnorm(x,0,sig)
+    }, lower=-Inf, upper=Inf, stop.on.error=FALSE)$value
+    il[i,6] <- integrate( function(x) {
+        plogis(mu+x)*plogis(mu+x)*(1-plogis(mu+x))*dnorm(x,0,sig)
+    }, lower=-Inf, upper=Inf, stop.on.error=FALSE)$value
+    il[i,7] <- integrate( function(x) {
+        plogis(mu+x)*plogis(mu+x)*plogis(mu+x)*dnorm(x,0,sig)
+    }, lower=-Inf, upper=Inf, stop.on.error=FALSE)$value
+}
+return(il)
+}
+@
+
+This function does not allow for temporal variation in capture
+probability because we are using the second column of \verb+p+ as
+$\sigma$, the parameter governing the variance of the random
+effects. Once again, this is somewhat clumsy and it would be better to
+allow \texttt{piFun} to accept additional arguments, which could be
+controlled from \texttt{multinomPois} using an additional
+\texttt{formula}. Such features may be added evenually.
+
+Having defined our new \texttt{piFun}, we can fit the model as follows
+<<>>=
+library(unmarked)
+parID <- matrix(c('p','sig','sig'), 50, 3, byrow=TRUE)
+umf.cr2 <- unmarkedFrameMPois(y=alfl.H1,
+       siteCovs=alfl.covs[,c("woody", "struct", "time.1")],
+       obsCovs=list(parID=parID),
+       obsToY=o2y, piFun="MhPiFun")
+multinomPois(~parID-1 ~woody, umf.cr2)
+@
+The estimate of $\sigma$ is high, indicating the existence of substantial
+heterogeneity in detection probability.
+
+One should be aware of the
+concerns about $M_h$ raised by \citet{link:2003} who demonstrated that
+population size $N$ is not an identifiable parameter among various
+classes of models assumed for the random effects. For example, we
+might use a beta distribution rather than a logit-normal distribution,
+and obtain very different estimates of abundance. \citet{link:2003}
+demonstrated that conventional methods such as AIC cannot be used to
+descriminate among these models. Thus, one might avoid model $M_h$
+altogether.
+
+
+
+\subsection{Distance-related heterogeneity}
+
+Another source of individual heterogeneity in capture probability
+arises from the distance between animal activity centers and
+sample locations. Traditional capture-recapture models ignore this
+important source of variation in capture probability, but
+recently developed spatial capture-recapture models overcome this
+limitation
+\citep{efford:2004,royle_young:2008,royle_dorazio:2008}. Distance-related
+heterogeneity in detection
+probability was probably not an important concern in the alder
+flycatcher dataset because the plots were very small (0.785 ha) and
+only singing birds were included in the analysis. In addition, SCR
+models would not work well for this dataset because they
+require ``spatial recaptures'' to work effectively. That is,
+SCR models work best when individuals are encountered at multiple
+locations, but the sample locations in the alder flycatcher dataset were
+independent of one another. Nonetheless, we recommend the use of SCR
+models in other contexts such as when using camera traps or fixed
+arrays of live traps.
+
 
 \section{Modeling Temporary Emigration}
 
@@ -568,39 +697,6 @@ either the Poisson or negative binomial distribution. We might
 eventually add other options such as the zero-inflated Poisson.
 
 
-\section{Individual Heteogeneity in Capture Probability}
-
-The capture-recapture models that can be fit in \texttt{unmarked} assume
-that variation in capture probability can be
-explained by site-specific covariates, time, or behavior. Currently, individual
-heterogeneity cannot be explicitly modeled, although, one could
-partition the data into strata and analyze the strata separately. For
-example, sex-specific
-differences could be studied by dividing the data on males and females
-into 2 subsets.
-The so-called model $M_h$, which assumes
-random variation in capture probability among individuals is not
-currently implemented. Some might find comfort in this given the
-concerns about $M_h$ raised by \citet{link:2003}.
-
-Another source of individual heterogeneity in capture probability
-arises from the distance between animal activity centers and
-sample locations. Traditional capture-recapture models ignore this
-important source of variation in capture probability, but
-recently developed spatial capture-recapture models overcome this
-limitation
-\citep{efford:2004,royle_young:2008,royle_dorazio:2008}. Distance-related
-heterogeneity in detection
-probability was probably not an important concern in the alder
-flycatcher dataset because the plots were very small (0.785 ha) and
-only singing birds were included in the analysis. In addition, SCR
-models would not work well for this dataset because they
-require ``spatial recaptures'' to work effectively. That is,
-SCR models work best when individuals are encountered at multiple
-locations, but the sample locations in the alder flycatcher dataset were
-independent of one another. Nonetheless, we recommend the use of SCR
-models in other contexts such as when using camera traps or fixed
-arrays of live traps.
 
 \bibliography{unmarked}
 
