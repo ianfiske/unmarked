@@ -18,7 +18,7 @@ options(continue=" ")
 
 %%\VignetteIndexEntry{Species distributions}
 
-\title{Mapping species distributions}
+\title{Modeling and mapping species distributions}
 \author{Richard Chandler}
 
 
@@ -28,14 +28,13 @@ options(continue=" ")
 
 \abstract{
 A species' distribution can be characterized by the
-probability that it occurs at some geographic location. An even more
+probability that it occurs at some location in space. An even more
 informative descriptor of distribution is the number of
 individuals at a location in space. The
 \texttt{unmarked} package contains many methods of fitting
-occurrence and abundance models, and thus can be used to
-produce distribution maps. The \texttt{raster} package
-\citep{hijmans_vanEtten:2012} can be used to facilitate mapping
-as is demonstrated
+occurrence and abundance models, and can be used to
+produce distribution maps with the help of the \texttt{raster} package
+\citep{hijmans_vanEtten:2012} as is demonstrated
 in this vignette. Unlike many other tools for modeling
 species distributions, the models in \texttt{unmarked} account for
 bias due to spatial or temporal heterogeneity in detection
@@ -76,7 +75,7 @@ layerNames(forest) <- "forest"
 @
 
 
-<<>>=
+<<fig=TRUE>>=
 (beta <- coef(fm, type="psi"))
 logit.psi <- beta[1] + beta[2]*elevation + beta[3]*forest
 psi <- exp(logit.psi) / (1 + exp(logit.psi))
@@ -84,7 +83,7 @@ plot(psi)
 @
 
 
-<<>>=
+<<fig=TRUE>>=
 (beta <- coef(fm, type="col"))
 logit.col <- beta[1] + beta[2]*elevation + beta[3]*forest
 col <- exp(logit.col) / (1 + exp(logit.col))
