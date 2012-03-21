@@ -96,6 +96,7 @@ components required by model-fitting functions.}
 ## An example site-occupancy analysis
 
 # Simulate occupancy data
+set.seed(344)
 nSites <- 100
 nReps <- 5
 covariates <- data.frame(veght=rnorm(nSites),
