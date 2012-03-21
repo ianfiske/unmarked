@@ -964,9 +964,8 @@ parameter model does not fit the data well.
 \section{Dynamic occupancy models for crossbill data from the Swiss MHB}
 
 \subsection{The crossbill data set}
-The crossbill data are in a comma-delimited text file called
-`crossbill.csv'.
-This file contains the results of nine years of surveys (1999--2007)
+The crossbill data are included with the \texttt{unmarked} package.
+The dataset contains the results of nine years of surveys (1999--2007)
 for the European crossbill (\emph{Loxia curvirostra}),
 a pine-seed eating finch, in 267 1-km$^2$ sample quadrats in Switzerland.
 Quadrats are surveyed annually as part of the Swiss breeding bird
@@ -980,14 +979,14 @@ High-elevation sites are only surveyed twice per breeding season.
 
 
 \subsection{Importing, formatting, and summarizing data}
-We import the data into an open R workspace using a standard method,
-and display the column names.
+The data can be loaded into an open R workspace using the \verb+data+
+command.
 
 \begin{small}
 
 <<eval=true>>=
-crossbill <- read.csv(system.file("csv", "crossbill.csv",
-    package="unmarked"), header=TRUE)
+data(crossbill)
+crossbill <- crossbill.data$crossbill
 colnames(crossbill)
 @
 \end{small}

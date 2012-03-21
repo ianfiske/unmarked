@@ -1,0 +1,107 @@
+<<echo=false>>=
+options(width=70)
+options(continue=" ")
+@
+
+\documentclass[a4paper]{article}
+\usepackage[OT1]{fontenc}
+\usepackage{Sweave}
+\usepackage[authoryear,round]{natbib}
+\usepackage{fullpage}
+\bibliographystyle{ecology}
+
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=2em}
+\fvset{listparameters={\setlength{\topsep}{0pt}}}
+\renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+
+%%\VignetteIndexEntry{Species distributions}
+
+\title{Mapping species distributions}
+\author{Richard Chandler}
+
+
+\begin{document}
+
+\maketitle
+
+\abstract{
+A species' distribution can be characterized by the
+probability that it occurs at some geographic location. An even more
+informative descriptor of distribution is the number of
+individuals at a location in space. The
+\texttt{unmarked} package contains many methods of fitting
+occurrence and abundance models, and thus can be used to
+produce distribution maps. The \texttt{raster} package
+\citep{hijmans_vanEtten:2012} can be used to facilitate mapping
+as is demonstrated
+in this vignette. Unlike many other tools for modeling
+species distributions, the models in \texttt{unmarked} account for
+bias due to spatial or temporal heterogeneity in detection
+probability. Furthermore, \texttt{unmarked} includes explicit models
+of population dynamics, allowing one to map other quantities
+such as local colonization or extinction probability.
+}
+
+\section{Introduction}
+
+
+
+\section{Example}
+
+<<>>=
+data(crossbill)
+crossbill <- crossbill.data$crossbill
+years <- as.character(1999:2007)
+years <- matrix(years, nrow(crossbill), 9, byrow=TRUE)
+umf <- unmarkedMultFrame(y=as.matrix(crossbill[,5:31]),
+    siteCovs=crossbill[,2:3], yearlySiteCovs=list(year=years),
+    numPrimary=9)
+@
+
+
+<<>>=
+fm <- colext(~ele + forest, ~ele + forest, ~1, ~1, umf)
+@
+
+
+
+<<>>=
+library(raster)
+elevation <- raster(crossbill.data$switzerland[[1]])
+layerNames(elevation) <- "ele"
+forest <- raster(crossbill.data$switzerland[[2]])
+layerNames(forest) <- "forest"
+@
+
+
+<<>>=
+(beta <- coef(fm, type="psi"))
+logit.psi <- beta[1] + beta[2]*elevation + beta[3]*forest
+psi <- exp(logit.psi) / (1 + exp(logit.psi))
+plot(psi)
+@
+
+
+<<>>=
+(beta <- coef(fm, type="col"))
+logit.col <- beta[1] + beta[2]*elevation + beta[3]*forest
+col <- exp(logit.col) / (1 + exp(logit.col))
+plot(col)
+@
+
+
+<<eval=FALSE>>=
+rasters <- stack(elevation, forest)
+E.psi <- predict(fm, type="psi", newdata=rasters)
+plot(E.psi)
+@
+
+<<echo=FALSE>>=
+detach(package:raster)
+@
+
+\bibliography{unmarked}
+
+\end{document}

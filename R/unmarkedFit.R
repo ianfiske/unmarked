@@ -269,6 +269,8 @@ setMethod("predict", "unmarkedFit",
             if(i %% 1000 == 0)
                 cat("  doing row", i, "of", nrow(X), "rows\n")
         }
+        if(any(is.na(X[i,])))
+            next
         lc <- linearComb(object, X[i,], type, offset = offset)
         if(backTransform)
             lc <- backTransform(lc)
@@ -428,6 +430,8 @@ setMethod("predict", "unmarkedFitColExt",
             if(i %% 1000 == 0)
                 cat("  doing row", i, "of", nrow(X), "rows\n")
         }
+        if(any(is.na(X[i,])))
+            next
         lc <- linearComb(object, X[i,], type)
         if(backTransform)
             lc <- backTransform(lc)
@@ -604,6 +608,8 @@ setMethod("predict", "unmarkedFitPCO",
             if(i %% 1000 == 0)
                 cat("  doing row", i, "of", nrow(X), "rows\n")
         }
+        if(any(is.na(X[i,])))
+            next
         lc <- linearComb(object, X[i,], type, offset = offset)
         if(backTransform)
             lc <- backTransform(lc)
@@ -762,6 +768,8 @@ setMethod("predict", "unmarkedFitGMM",
             if(i %% 1000 == 0)
                 cat("  doing row", i, "of", nrow(X), "rows\n")
         }
+        if(any(is.na(X[i,])))
+            next
         lc <- linearComb(object, X[i,], type, offset = offset)
         if(backTransform)
             lc <- backTransform(lc)
