@@ -1,5 +1,7 @@
 
 test.occu <- function() {
+    if(!require(raster))
+        stop("raster package required")
     set.seed(55)
     R <- 20
     J <- 4

@@ -14,7 +14,7 @@ test.gdistsamp.covs <- function() {
     checkEqualsNumeric(coef(lam), c(3.72697705, -0.04497333),
                        tolerance = 1e-4)
     checkEqualsNumeric(coef(phi), c(0.41504254, -0.06105102),
-                       tolerance = 1e-3)
+                       tolerance = 1e-2)
     checkEqualsNumeric(coef(det), c(9.227672, -3.497148),
                        tolerance = 1e-4)
 
