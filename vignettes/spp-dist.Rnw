@@ -28,9 +28,9 @@ options(continue=" ")
 
 \abstract{
 A species' distribution can be characterized by the
-probability that it occurs at some location in space. An even more
-informative descriptor of distribution is the number of
-individuals at a location in space. The
+probability that the species occurs at some location in space. Density
+and abundance are alternative metrics that can be used to describe
+species distributions. The
 \texttt{unmarked} package contains many methods of fitting
 occurrence and abundance models, and can be used to
 produce distribution maps with the help of the \texttt{raster} package
@@ -39,16 +39,35 @@ in this vignette. Unlike many other tools for modeling
 species distributions, the models in \texttt{unmarked} account for
 bias due to spatial or temporal heterogeneity in detection
 probability. Furthermore, \texttt{unmarked} includes explicit models
-of population dynamics, allowing one to map other quantities
+of population dynamics, allowing one to map quantities
 such as local colonization or extinction probability.
 }
 
-\section{Introduction}
-
-
-
 \section{Example}
 
+In this example, we fit the multi-season site occupancy model of
+\citep{mackenzie_estimating_2003} to data on the European crossbill
+(\emph{Loxia curvirostra}) collected in 267 1-km$^2$ sample
+quadrats in Switzerland, 1999-2007 \citep{schmid_etal:2004}.
+We then use the model to compute the expected probability of
+occurrence at each pixel in a raster defining the Swiss
+landscape. %Computing confidence intervals for the predictions is also
+%demonstrated, although the delta method approximation used is very
+%time consuming when the number of pixels is high.
+
+First we load the crossbill data, which is a list with two
+components. The first component, \verb+crossbill+, is a data.frame
+containing the
+detection/non-detection data and some covariates such as the percent
+cover of forest at each survey location. The second component,
+\verb+switzerland+, is a list with two matrices defining the
+covariates: elevation and forest cover. Each matrix can be
+converted into a raster using the \texttt{raster} package. First, we
+format the crossbill data and fit the model. For additional details
+about this model, see the ``colext'' vignette that comes with
+\texttt{unmarked}.
+
+\begin{small}
 <<>>=
 data(crossbill)
 crossbill <- crossbill.data$crossbill
@@ -57,13 +76,19 @@ years <- matrix(years, nrow(crossbill), 9, byrow=TRUE)
 umf <- unmarkedMultFrame(y=as.matrix(crossbill[,5:31]),
     siteCovs=crossbill[,2:3], yearlySiteCovs=list(year=years),
     numPrimary=9)
+(fm <- colext(~ele + forest, ~ele + forest, ~1, ~1, umf))
 @
+\end{small}
 
-
-<<>>=
-fm <- colext(~ele + forest, ~ele + forest, ~1, ~1, umf)
-@
-
+Now that we have our fitted model, we can use the estimates to compute
+the expected probability of occupancy at each pixel in the
+landscape. The \texttt{raster} package makes this easy. Here are the
+command to produce the two rasters. We do not specify the landscape
+extent or the projection because they are not relevant to our
+purposes. Note that to use the
+\verb+predict+ function, the rasters need to have
+\verb+layerNames+ corresponding to the names of the variables used to
+fit models.
 
 
 <<>>=
@@ -75,15 +100,26 @@ layerNames(forest) <- "forest"
 @
 
 
+As shown below, we can use the \verb+predict+ function to compute
+spatially-referenced model predictions and standard errors and
+confidence intervals. However, this is computationally demanding when
+there are many pixels in the raster. Thus, if measures of uncertainty
+are not
+required, the following code can be used to quickly produce a species
+distribution map.
+
 <<fig=TRUE>>=
 (beta <- coef(fm, type="psi"))
 logit.psi <- beta[1] + beta[2]*elevation + beta[3]*forest
 psi <- exp(logit.psi) / (1 + exp(logit.psi))
-plot(psi)
+plot(psi, axes=FALSE)
 @
 
 
-<<fig=TRUE>>=
+The same can be done for any other parameter. The following code could
+be used to compute expected colonization probability.
+
+<<eval=FALSE>>=
 (beta <- coef(fm, type="col"))
 logit.col <- beta[1] + beta[2]*elevation + beta[3]*forest
 col <- exp(logit.col) / (1 + exp(logit.col))
@@ -91,11 +127,32 @@ plot(col)
 @
 
 
-<<eval=FALSE>>=
+As of version 0.9-6, the \verb+predict+ method in \texttt{unmarked}
+can make predictions using an object of class \verb+RasterStack+ from the
+\texttt{raster} package. As mentioned previously, the rasters must be
+named, perhaps by using the \verb+layerNames(someraster) <- somename+
+method. The object
+returned by \verb+predict+ is another raster stack with rasters for
+the expected values of the parameter of interest, the standard errors,
+and the upper and lower confidence intervals. The following example
+is very slow because there are many of pixels in the raster.
+
+<<eval=TRUE,fig=TRUE>>=
 rasters <- stack(elevation, forest)
 E.psi <- predict(fm, type="psi", newdata=rasters)
-plot(E.psi)
+plot(E.psi, axes=FALSE)
 @
+
+Users should be cautious when predicting from models that have
+categorical preictor variables, \emph{i.e.} \verb+factor+s. The
+\texttt{raster} package does not have advanced methods for handling
+factors, and thus it is not easy to automatically create dummy
+variables from them as can typically be done using
+\verb+model.matrix+. The safest option is to create the dummy
+variables manually before fitting the models, and to use the same
+variables as rasters for prediction.
+
+
 
 <<echo=FALSE>>=
 detach(package:raster)
