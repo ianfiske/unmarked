@@ -77,7 +77,7 @@ about this model, see the ``colext'' vignette that comes with
 
 \begin{small}
 <<>>=
-data(crossbill)
+data(crossbill, package="unmarked")
 crossbill <- crossbill.data$crossbill
 years <- as.character(1999:2007)
 years <- matrix(years, nrow(crossbill), 9, byrow=TRUE)
