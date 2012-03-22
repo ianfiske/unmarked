@@ -527,7 +527,13 @@ as.numeric(1 - exp(-lambda))
 
 formatDistData <- function(distData, distCol, transectNameCol, dist.breaks)
 {
+    if(!is.numeric(distData[,distCol]))
+        stop("The distances must be numeric")
     transects <- distData[,transectNameCol]
+    if(!is.factor(transects)) {
+        transects <- as.factor(transects)
+        warning("The transects were converted to a factor")
+    }
     M <- nlevels(transects)
     J <- length(dist.breaks) - 1
     y <- matrix(NA, M, J,
