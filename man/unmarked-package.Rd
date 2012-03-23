@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9-5\cr
+Version: \tab 0.9-6\cr
 License: \tab GPL (>= 3)\cr
 }
 
@@ -220,5 +220,5 @@ Royle, J. A. and J. D. Nichols. 2003. Estimating Abundance from
 
 }
 \docType{package}
-\author{Ian Fiske, Richard Chandler, and Andy Royle}
+\author{Ian Fiske, Richard Chandler, Andy Royle, and Marc K\'{e}ry}
 \keyword{package}
