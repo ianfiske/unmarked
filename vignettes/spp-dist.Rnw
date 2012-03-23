@@ -75,9 +75,13 @@ The following commands format the data and fit the model using the
 about this model, see the ``colext'' vignette that comes with
 \texttt{unmarked}.
 
+<<echo=false>>=
+library(unmarked)
+@
+
 \begin{small}
 <<>>=
-data(crossbill, package="unmarked")
+data(crossbill)
 crossbill <- crossbill.data$crossbill
 years <- as.character(1999:2007)
 years <- matrix(years, nrow(crossbill), 9, byrow=TRUE)
