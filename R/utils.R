@@ -553,8 +553,8 @@ formatDistData <- function(distData, distCol, transectNameCol, dist.breaks,
                                include.lowest=TRUE))
     ya <- array(NA, c(M, J, T),
                 dimnames = list(levels(transects),
-                dist.classes,
-                paste("rep", 1:T, sep="")))
+                                dist.classes,
+                                paste("rep", 1:T, sep="")))
     transect.levels <- levels(transects)
     occasion.levels <- levels(occasions)
     for(i in 1:M) {
@@ -571,7 +571,7 @@ formatDistData <- function(distData, distCol, transectNameCol, dist.breaks,
     if(T==1)
         colnames(y) <- dn[[2]]
     else
-        colnames(y) <- paste(rep(dn[[2]],each=T), rep(1:T, each=J), sep="")
+        colnames(y) <- paste(rep(dn[[2]],times=T), rep(1:T, each=J), sep="")
     return(y)
 }
 
