@@ -21,7 +21,7 @@ options(continue=" ")
 \fvset{listparameters={\setlength{\topsep}{0pt}}}
 \renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
 
-%%\VignetteIndexEntry{Dynamic occupancy models in unmarked}
+%%\VignetteIndexEntry{Dynamic occupancy models}
 
 
 \usepackage{amsmath}

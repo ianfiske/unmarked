@@ -16,7 +16,7 @@ options(continue=" ")
 \fvset{listparameters={\setlength{\topsep}{0pt}}}
 \renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
 
-%%\VignetteIndexEntry{Distance sampling analysis in unmarked}
+%%\VignetteIndexEntry{Distance sampling analysis}
 
 \title{Distance sampling analysis in unmarked}
 \author{Richard Chandler\\USGS Patuxent Wildlife Research Center}
