@@ -149,7 +149,6 @@ setMethod("summary", "unmarkedFitDS", function(object)
 
 
 # Compute linear combinations of estimates in unmarkedFit objects.
-
 setMethod("linearComb",
     signature(obj = "unmarkedFit", coefficients = "matrixOrVector"),
     function(obj, coefficients, type, offset = NULL)
