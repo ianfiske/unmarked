@@ -191,7 +191,7 @@ setMethod("names", "unmarkedFit",
 
 setMethod("predict", "unmarkedFit",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-        appendData = FALSE, ...)
+        appendData = FALSE, level=0.95, ...)
 {
     if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
@@ -275,7 +275,7 @@ setMethod("predict", "unmarkedFit",
             lc <- backTransform(lc)
         out$Predicted[i] <- coef(lc)
         out$SE[i] <- SE(lc)
-        ci <- confint(lc)
+        ci <- confint(lc, level=level)
         out$lower[i] <- ci[1]
         out$upper[i] <- ci[2]
     }
@@ -309,7 +309,7 @@ setMethod("predict", "unmarkedFit",
 
 setMethod("predict", "unmarkedFitColExt",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-        appendData = FALSE, ...)
+        appendData = FALSE, level=0.95, ...)
 {
     if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
@@ -436,7 +436,7 @@ setMethod("predict", "unmarkedFitColExt",
             lc <- backTransform(lc)
         out$Predicted[i] <- coef(lc)
         out$SE[i] <- SE(lc)
-        ci <- confint(lc)
+        ci <- confint(lc, level=level)
         out$lower[i] <- ci[1]
         out$upper[i] <- ci[2]
     }
@@ -475,7 +475,7 @@ setMethod("predict", "unmarkedFitColExt",
 
 setMethod("predict", "unmarkedFitPCO",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-        appendData = FALSE, ...)
+        appendData = FALSE, level=0.95, ...)
 {
     if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
@@ -614,7 +614,7 @@ setMethod("predict", "unmarkedFitPCO",
             lc <- backTransform(lc)
         out$Predicted[i] <- coef(lc)
         out$SE[i] <- SE(lc)
-        ci <- confint(lc)
+        ci <- confint(lc, level=level)
         out$lower[i] <- ci[1]
         out$upper[i] <- ci[2]
     }
@@ -650,7 +650,7 @@ setMethod("predict", "unmarkedFitPCO",
 
 setMethod("predict", "unmarkedFitGMM",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-        appendData = FALSE, ...)
+        appendData = FALSE, level=0.95, ...)
 {
     if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
@@ -774,7 +774,7 @@ setMethod("predict", "unmarkedFitGMM",
             lc <- backTransform(lc)
         out$Predicted[i] <- coef(lc)
         out$SE[i] <- SE(lc)
-        ci <- confint(lc)
+        ci <- confint(lc, level=level)
         out$lower[i] <- ci[1]
         out$upper[i] <- ci[2]
     }
