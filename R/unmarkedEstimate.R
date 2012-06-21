@@ -229,7 +229,8 @@ setMethod("coef", "unmarkedEstimate",
     coefs <- object@estimates
     names(coefs)[names(coefs) == "(Intercept)"] <- "Int"
     if(altNames) {
-        names(coefs) <- paste(object@short.name, "(", names(coefs), ")", sep="")
+        names(coefs) <- paste(object@short.name, "(", names(coefs), ")",
+                              sep="")
     }
     coefs
 })

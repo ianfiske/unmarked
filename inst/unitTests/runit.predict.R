@@ -37,3 +37,65 @@ test.occu <- function() {
     checkEquals(as.numeric(E1.6[1,3:4]), c(0.01881844, 0.8538048))
 
 }
+
+
+
+test.pcount <- function() {
+
+    set.seed(55)
+    R <- 20
+    J <- 4
+    N <- rpois(R, 2)
+    y <- matrix(rbinom(R*J, N, 0.7), R, J)
+    umf1 <- unmarkedFramePCount(y=y)
+
+    fm1 <- pcount(~1 ~1, umf1, K=40)
+    E1.1 <- predict(fm1, type="state")
+    E1.2 <- predict(fm1, type="det")
+
+    fm2 <- pcount(~1 ~1, umf1, K=40, mixture="NB")
+    E2.1 <- predict(fm2, type="state")
+    checkException(predict(fm2, type="alpha"))
+
+    fm3 <- pcount(~1 ~1, umf1, K=40, mixture="ZIP")
+    E3.1 <- predict(fm3, type="state")
+    checkException(predict(fm3, type="psi"))
+    checkEquals(E3.1[1,1], 1.818512, tol=1e-6)
+
+}
+
+
+
+
+
+test.pcountOpen <- function() {
+
+    set.seed(55)
+    R <- 10
+    J <- 4
+    T <- 3
+    N <- matrix(NA, R, T)
+    N[,1] <- rpois(R, 4)
+    N[,2] <- rbinom(R, N[,1], 0.8) + rpois(R, 1)
+    N[,3] <- rbinom(R, N[,2], 0.8) + rpois(R, 1)
+    y1 <- matrix(rbinom(R*J, N[,1], 0.7), R, J)
+    y2 <- matrix(rbinom(R*J, N[,2], 0.7), R, J)
+    y3 <- matrix(rbinom(R*J, N[,3], 0.7), R, J)
+    umf1 <- unmarkedFramePCO(y=cbind(y1,y2,y3), numPrimary=T)
+
+#    fm1 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=30)
+#    E1.1 <- predict(fm1, type="lambda")
+#    E1.2 <- predict(fm1, type="det")
+
+    fm2 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=40, mixture="NB")
+    checkException(predict(fm2, type="alpha"))
+
+    fm3 <- pcountOpen(~1, ~1, ~1, ~1, umf1, K=40, mixture="ZIP")
+    E3.1 <- predict(fm3, type="lambda")
+    checkException(predict(fm3, type="psi"))
+    checkEquals(E3.1[1,1], 2.472029, tol=1e-6)
+
+}
+
+
+
