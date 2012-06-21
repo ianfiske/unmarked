@@ -1,5 +1,6 @@
 
 test.occu <- function() {
+
     if(!require(raster))
         stop("raster package required")
     set.seed(55)
@@ -32,5 +33,7 @@ test.occu <- function() {
     E1.5 <- predict(fm1, type="det", newdata=s1)
     E1.5 <- predict(fm1, type="det", newdata=s1, appendData=TRUE)
 
+    E1.6 <- predict(fm1, type="state", level=0.9)
+    checkEquals(as.numeric(E1.6[1,3:4]), c(0.01881844, 0.8538048))
 
 }
