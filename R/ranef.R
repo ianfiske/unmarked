@@ -468,8 +468,7 @@ setMethod("ranef", "unmarkedFitPCO",
     delta <- D$delta
     deltamax <- max(delta, na.rm=TRUE)
 
-    lam <- predict(object, type="lambda")[,1] # Too slow, use D$Xlam instead
-    om <- predict(object, type="omega")[,1]
+    lam <- predict(object, type="lambda")[,1] # Slow, use D$Xlam instead
     R <- length(lam)
     T <- object@data@numPrimary
     p <- getP(object)
@@ -481,7 +480,12 @@ setMethod("ranef", "unmarkedFitPCO",
         gam <- predict(object, type="gamma")[,1]
         gam <- matrix(gam, R, T-1, byrow=TRUE)
     }
-    om <- matrix(om, R, T-1, byrow=TRUE)
+    if(!identical(dyn, "trend")) {
+        om <- predict(object, type="omega")[,1]
+        om <- matrix(om, R, T-1, byrow=TRUE)
+    }
+    else
+        om <- matrix(0, R, T-1)
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
@@ -508,11 +512,8 @@ setMethod("ranef", "unmarkedFitPCO",
             dpois(N1, gam*N0)
         }
     }
-
     for(i in 1:R) {
-
         P <- matrix(1, K+1, K+1)
-
         switch(mix,
                P  = g2 <- dpois(N, lam[i]),
                NB = {

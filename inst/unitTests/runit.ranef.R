@@ -4,6 +4,7 @@
 # ----------------------------- pcount ----------------------------------
 
 test.ranef.pcount <- function() {
+
     library(unmarked)
     set.seed(4564)
     R <- 10
@@ -48,10 +49,10 @@ test.ranef.pcount <- function() {
  5.422348e-07), tolerance=1e-6)
 
     checkEqualsNumeric(colSums(ar.zip), c(
- 0.000000e+00, 0.000000e+00, 8.314699e-01, 1.336961e+00, 1.449185e+00,
- 1.804676e+00, 1.839226e+00, 1.137965e+00, 4.479355e-01, 1.227225e-01,
- 2.516552e-02, 4.079841e-03, 5.450965e-04, 6.195753e-05, 6.138095e-06,
- 5.397913e-07), tolerance=1e-6)
+ 0.000000e+00, 0.000000e+00, 8.315404e-01, 1.337022e+00, 1.449214e+00,
+ 1.804745e+00, 1.839218e+00, 1.137868e+00, 4.478556e-01, 1.226888e-01,
+ 2.515613e-02, 4.077914e-03, 5.447851e-04, 6.191597e-05, 6.133365e-06,
+ 5.393215e-07), tolerance=1e-6)
 
 
 }
@@ -326,7 +327,7 @@ test.ranef.gdistsamp <- function() {
 
 
 
-test.ranef.pco <- function() {
+test.ranef.colext <- function() {
 
     set.seed(7)
     M <- 10
@@ -438,5 +439,9 @@ test.ranef.pco <- function() {
 0,0,0,0,0,
 0,0,0,0,0), ncol=5, byrow=TRUE), tolerance=1e-6)
 
+
+    m2 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, dynamics="trend")
+    re2 <- ranef(m2)
+    checkEqualsNumeric(bup(re2, "mode")[1,], c(8, 5, 3, 1, 1))
 
 }
