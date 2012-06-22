@@ -32,23 +32,116 @@ options(continue=" ")
 \maketitle
 
 \abstract{
-A species' distribution can be characterized by the
-probability that the species occurs at some location in
-space. Alternatively, distribution could be described using a
-spatially-explicit density map. These definitions of species
-distribution avoid the ambiguity surrounding the indices of occurrence
+A species' distribution is naturally characterized by either
+occurrence probability or population density, defined for all
+locations in some spatial domain. Defining distribution in terms of
+these parameters %These definitions of species distribution
+avoids the ambiguity surrounding the indices of occurrence
 or abundance produced by many presence-only algorithms. The
 \texttt{unmarked} package contains methods of fitting
 occurrence and abundance models, and can be used to
-produce distribution maps with the help of the \texttt{raster} package
-\citep{hijmans_vanEtten:2012} as is demonstrated
-in this vignette. Unlike many other tools for modeling
+produce distribution maps with the help of \textbf{R}'s GIS
+capabilities,
+%, such as the \texttt{raster} package
+%\citep{hijmans_vanEtten:2012}
+as is demonstrated in this vignette.
+Unlike many other tools for modeling
 species distributions, the models in \texttt{unmarked} account for
 bias due to spatial or temporal heterogeneity in detection
 probability. Furthermore, \texttt{unmarked} includes models
 of population dynamics, allowing one to map quantities
 such as local colonization or extinction probability.
 }
+
+\section*{Mapping Population Density}
+
+Although distribution is typically described in terms of
+ocurrence probability, density is a better descriptor for several
+reasons. First, density can be readily converted to abundance for any
+region of interest; whereas occurrence probability does not scale with
+area.
+
+<<echo=false>>=
+library(unmarked)
+library(raster)
+@
+
+
+<<>>=
+data(issj)
+data(cruz)
+
+elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
+     crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+
+plot(elev, col=terrain.colors(100))
+points(issj[,c("x","y")], cex=0.5)
+@
+
+
+
+
+<<>>=
+covs <- scale(issj[,c("elevation", "forest", "chaparral")])
+
+area <- pi*300^2 / 10000
+covs <- cbind(covs, area)
+
+jayumf <- unmarkedFrameDS(y=as.matrix(issj[,1:3]),
+                          siteCovs=as.data.frame(covs),
+                          dist.breaks=c(0,100,200,300),
+                          unitsIn="m", survey="point")
+
+fm1 <- distsamp(~chaparral ~chaparral + elevation + offset(area), jayumf,
+                output="abund")
+fm1
+
+@
+
+<<>>=
+
+elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
+     crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+forest <- rasterFromXYZ(cruz[,c("x","y","forest")],
+     crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+chap <- rasterFromXYZ(cruz[,c("x","y","chaparral")],
+     crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+area.raster <- chap
+values(area.raster) <- 300*300/10000 # area of a grid pixel
+
+attr(covs, "scaled:center")
+attr(covs, "scaled:scale")
+
+elev.s <- (elev-202)/125
+forest.s <- (forest-0.0673)/0.137
+chap.s <- (chap-0.270)/0.234
+
+
+habitat <- stack(elev.s, forest.s, chap.s, area.raster)
+layerNames(habitat) <- c("elevation", "forest", "chaparral", "area")
+spplot(habitat[[1:3]], layout=c(1,3), colorkey=FALSE,
+       col.regions=terrain.colors(100))
+
+@
+
+
+
+
+<<>>=
+E <- predict(fm1, type="state", newdata=habitat)
+plot(E)
+
+cellStats(E[["Predicted"]], "sum")
+
+
+
+@
+
+
+
+\begin{comment}
+
+
 
 \section*{Mapping Occurrence Probability}
 
@@ -78,10 +171,6 @@ The following commands format the data and fit the model using the
 about this model, see the ``colext'' vignette that comes with
 \texttt{unmarked}.
 
-<<echo=false>>=
-library(unmarked)
-library(raster)
-@
 
 <<eval=false,echo=false>>=
 data(crossbill)
@@ -261,6 +350,10 @@ variables as rasters for prediction.
 <<echo=FALSE>>=
 detach(package:raster)
 @
+
+
+\end{comment}
+
 
 \newpage
 
