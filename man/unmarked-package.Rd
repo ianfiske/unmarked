@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9-5\cr
+Version: \tab 0.9-7\cr
 License: \tab GPL (>= 3)\cr
 }
 
@@ -96,6 +96,7 @@ components required by model-fitting functions.}
 ## An example site-occupancy analysis
 
 # Simulate occupancy data
+set.seed(344)
 nSites <- 100
 nReps <- 5
 covariates <- data.frame(veght=rnorm(nSites),
@@ -219,5 +220,5 @@ Royle, J. A. and J. D. Nichols. 2003. Estimating Abundance from
 
 }
 \docType{package}
-\author{Ian Fiske, Richard Chandler, and Andy Royle}
+\author{Ian Fiske, Richard Chandler, Andy Royle, and Marc K\'{e}ry}
 \keyword{package}

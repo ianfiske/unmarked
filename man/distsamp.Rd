@@ -41,8 +41,8 @@ The latent transect-level abundance distribution
 with mean \eqn{\lambda}{lambda}.
 
 The detection process is modeled as multinomial:
-\eqn{y_{ij} \sim Multinomial(N_i, pi_{ij})}{y_ij ~ Multinomial(N_i, pi_i1, pi_i2, ..., pi_iJ)},
-where \eqn{pi_ij} is the multinomial cell probability for transect i in
+\eqn{y_{ij} \sim Multinomial(N_i, \pi_{ij})}{y_ij ~ Multinomial(N_i, pi_i1, pi_i2, ..., pi_iJ)},
+where \eqn{\pi_{ij}}{pi_ij} is the multinomial cell probability for transect i in
 distance class j. These are computed based upon a detection function
 \eqn{g(x | \mathbf{\sigma})}{g(x | sigma)}, such as the half-normal,
 negative exponential, or hazard rate.

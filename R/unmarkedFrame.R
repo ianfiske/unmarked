@@ -650,6 +650,8 @@ setMethod("hist", "unmarkedFrameDS", function(x, ...)
 setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
     function(x, i)
 {
+    if(!require(reshape))
+        stop("reshape package required")
     M <- numSites(x)
     if(length(i) == 0) return(x)
     if(any(i < 0) && any(i > 0))
@@ -686,6 +688,8 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 setMethod("[", c("unmarkedFrame", "missing", "numeric", "missing"),
 		function(x, i, j)
 {
+    if(!require(reshape))
+        stop("reshape package required")
     y <- getY(x)
     obsCovs <- obsCovs(x)
     obsToY <- obsToY(x)
@@ -718,6 +722,8 @@ setMethod("[", c("unmarkedFrame","numeric", "numeric", "missing"),
 setMethod("[", c("unmarkedFrame","list", "missing", "missing"),
     function(x, i, j)
 {
+    if(!require(reshape))
+        stop("reshape package required")
     m <- numSites(x)
     J <- R <- obsNum(x)
     o2y <- obsToY(x)
@@ -780,6 +786,8 @@ setMethod("[", c("unmarkedMultFrame", "missing", "numeric", "missing"),
 setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 		function(x, i, j)
 {
+    if(!require(reshape))
+        stop("reshape package required")
     M <- numSites(x)
     if(length(i) == 0) return(x)
     if(any(i < 0) && any(i > 0))
