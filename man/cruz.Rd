@@ -15,8 +15,8 @@
     \item{\code{x}}{Easting (meters)}
     \item{\code{y}}{Northing (meters)}
     \item{\code{elevation}}{a numeric vector, meters}
-    \item{\code{forest}}{a numeric vector, proportion}
-    \item{\code{chaparral}}{a numeric vector}
+    \item{\code{forest}}{a numeric vector, proportion cover}
+    \item{\code{chaparral}}{a numeric vector, proportion cover}
   }
 }
 \details{
@@ -37,10 +37,13 @@
 
 }
 \source{
-%%  ~~ reference to a publication or URL from which the data were obtained ~~
+  Brian Cohen of the Nature Conservancy helped prepare the data
 }
 \references{
-
+Sillett, S. and Chandler, R.B. and Royle, J.A. and Kery, M. and
+  Morrison, S.A. In Press. Hierarchical distance sampling models to
+  estimate population size and habitat-specific abundance of an island
+  endemic. \emph{Ecological Applications}
 }
 \examples{
 data(cruz)
@@ -50,10 +53,10 @@ levelplot(elevation ~ x + y, cruz, aspect="iso",
     col.regions=terrain.colors(100))
 
 if(require(raster)) {
-el.r <- rasterFromXYZ(cruz[,1:3],
+elev <- rasterFromXYZ(cruz[,1:3],
      crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
-el.r
-plot(el.r)
+elev
+plot(elev)
 }
 
 
