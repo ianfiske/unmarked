@@ -757,7 +757,7 @@ setMethod("predict", "unmarkedFitPCO",
     if(identical(mix, "ZIP") & identical(type, "lambda")) {
         psi.hat <- plogis(coef(object, type="psi"))
         if(is.null(offset))
-            offset <- rep(0, nrow(X)
+            offset <- rep(0, nrow(X))
         warning("Method to compute SE for ZIP model has not been written")
     }
     for(i in 1:nrow(X)) {
