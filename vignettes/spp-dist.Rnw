@@ -225,17 +225,72 @@ variables manually before fitting the models, and to use the same
 variables as rasters for prediction.
 
 A more important consideration when creating species distribution maps
-based upon occurrence probability is that of spatial scale.
+based upon occurrence probability is that of spatial scale. Occurrence
+probability will typically depends upon the area of the ``site'' in
+question. Thus, in our crossbill example, it would not be appropriate
+to use our model to predict occcurrence probability for 10-km$^2$
+pixels since the surveys were done in 1-km$^2$ quadrats. In some
+cases it might be possible to directly model the effect of site area
+on occurrence probability, in which case the effect could be accounted
+for in the predictions.
 
 \section*{Mapping Population Density}
 
 Although distribution is typically described in terms of
-ocurrence probability, density is a better descriptor for several
-reasons. First, density can be readily converted to abundance for any
-region of interest; whereas occurrence probability does not scale with
-area.
+ocurrence probability, which is always better than an index of
+occurrence probability, the best parameter for modeling species
+distribution is population density because density allows for
+inference about popualation size in an region of
+the species' range. Furthermore, occurrence probability is simply the
+probablity that abundance is greater than 0, so with density/abundance
+estimates, it is always possible to compute occurrence probablity as a
+derived parameter.
+
+In this example, we create a distribution map for the Island Scrub-Jay
+(\textit{Aphelocoma insularis}), which is restricted to Santa Cruz
+Island, California. To do so, we fit the hierarchical distance
+sampling model of \citet{royle_modeling_2004}, which allows for the
+estimation of abundance in each of the $300 \times 300$m pixels
+representing the island. The data were collected 307, 300-m radius
+point count (or ``point transect'') surveyed during the Fall of 2008.
+
+\color{Red}{Important} This analysis is for demonstration
+purposes only, and the estimates of population size should not be used
+for conservation or management purposes. Indeed, the Poisson
+assumption used here was found to be inadequate by
+\citet{sillett_etal:2012} who conducted a rigorous analysis and
+reported the most reliable estimate of population size available.
+
+Although we are fitting a model of population density, the steps of
+the analysis closely mirror those shown in the previous
+section. First, we format the data and fit a model, then we format the
+island-wide covariates and make predictions. The three covariates
+thought to influence jay abundance are elevation, forest cover, and
+chapararral cover. We also include include the area of the survey
+plots in the analysis so that we can make predictions for regions of
+any area. Here is the code to format the data and fit the model.
+
+<<>>=
+covs <- scale(issj[,c("elevation", "forest", "chaparral")])
+area <- pi*300^2 / 10000
+jayumf <- unmarkedFrameDS(y=as.matrix(issj[,1:3]),
+                          siteCovs=data.frame(covs, area),
+                          dist.breaks=c(0,100,200,300),
+                          unitsIn="m", survey="point")
+head(jayumf)
+fm1 <- distsamp(~chaparral ~chaparral + elevation + offset(log(area)),
+                jayumf, output="abund")
+fm1
+@
+
+Remarks. 1) The distance data were binned into 3 distance classes. 2)
+We used \verb+output="abund"+ even though, by specifying the offset,
+we effectively modeled population density. As stated previously, this
+allows us to make predictions of abundance for regions of arbitrary size.
 
 
+
+\begin{comment}
 
 <<fig=TRUE,width=6,height=4>>=
 data(issj)
@@ -246,6 +301,8 @@ elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
 
 #plot(elev, col=terrain.colors(100))
 #points(issj[,c("x","y")], cex=0.5)
+@
+
 
 print(
 wireframe(elevation ~ x + y, cruz, drape=TRUE,
@@ -258,31 +315,16 @@ wireframe(elevation ~ x + y, cruz, drape=TRUE,
           colorkey=FALSE)
 )
 
-@
+\end{comment}
 
 
-
-
-<<>>=
-covs <- scale(issj[,c("elevation", "forest", "chaparral")])
-
-area <- pi*300^2 / 10000
-
-
-jayumf <- unmarkedFrameDS(y=as.matrix(issj[,1:3]),
-                          siteCovs=data.frame(covs, area),
-                          dist.breaks=c(0,100,200,300),
-                          unitsIn="m", survey="point")
-head(jayumf)
-
-fm1 <- distsamp(~chaparral ~chaparral + elevation + offset(log(area)),
-                jayumf, output="abund")
-fm1
-
-@
+The next thing to do is to format the raster data. For details, see
+the previous section---the process is the same, except that we need a
+raster for ``area'', the size of each pixel in the raster data. This
+is necessary because the survey plots were larger than the pixels for
+which we want predictions of abundance.
 
 <<>>=
-
 elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
      crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
 forest <- rasterFromXYZ(cruz[,c("x","y","forest")],
@@ -291,19 +333,13 @@ chap <- rasterFromXYZ(cruz[,c("x","y","chaparral")],
      crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
 area.raster <- chap
 values(area.raster) <- 300*300/10000 # area of a grid pixel
-
 attr(covs, "scaled:center")
 attr(covs, "scaled:scale")
-
 elev.s <- (elev-202)/125
 forest.s <- (forest-0.0673)/0.137
 chap.s <- (chap-0.270)/0.234
-
-
 habitat <- stack(elev.s, forest.s, chap.s, area.raster)
 layerNames(habitat) <- c("elevation", "forest", "chaparral", "area")
-
-
 @
 
 
