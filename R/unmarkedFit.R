@@ -266,7 +266,7 @@ setMethod("predict", "unmarkedFit",
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
@@ -398,7 +398,7 @@ setMethod("predict", "unmarkedFitPCount",
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
@@ -575,7 +575,7 @@ setMethod("predict", "unmarkedFitColExt",
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
@@ -763,7 +763,7 @@ setMethod("predict", "unmarkedFitPCO",
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
@@ -932,7 +932,7 @@ setMethod("predict", "unmarkedFitGMM",
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
