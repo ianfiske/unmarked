@@ -67,15 +67,27 @@ library(raster)
 @
 
 
-<<>>=
+<<fig=TRUE,width=6,height=4>>=
 data(issj)
 data(cruz)
 
 elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
      crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
 
-plot(elev, col=terrain.colors(100))
-points(issj[,c("x","y")], cex=0.5)
+#plot(elev, col=terrain.colors(100))
+#points(issj[,c("x","y")], cex=0.5)
+
+print(
+wireframe(elevation ~ x + y, cruz, drape=TRUE,
+          screen=list(z=10, x=-10),
+          aspect=0.5, xlab="", ylab="", zlab="",
+#          xlim=c(229900,267000), ylim=c(3762000,3770000),
+          par.settings = list(axis.line = list(col = "transparent")),
+          par.box = c(col = "transparent"),
+          col.regions=terrain.colors(100),
+          colorkey=FALSE)
+)
+
 @
 
 
@@ -91,7 +103,7 @@ jayumf <- unmarkedFrameDS(y=as.matrix(issj[,1:3]),
                           siteCovs=data.frame(covs, area),
                           dist.breaks=c(0,100,200,300),
                           unitsIn="m", survey="point")
-summary(jayumf)
+head(jayumf)
 
 fm1 <- distsamp(~chaparral ~chaparral + elevation + offset(log(area)),
                 jayumf, output="abund")
@@ -121,15 +133,13 @@ chap.s <- (chap-0.270)/0.234
 habitat <- stack(elev.s, forest.s, chap.s, area.raster)
 layerNames(habitat) <- c("elevation", "forest", "chaparral", "area")
 
-#spplot(habitat[[1:3]], layout=c(1,3), colorkey=FALSE,
-#       col.regions=terrain.colors(100))
 
 @
 
 
 
 
-<<>>=
+<<fig=TRUE>>=
 E <- predict(fm1, type="state", newdata=habitat)
 plot(E)
 
@@ -139,7 +149,7 @@ cellStats(E[["Predicted"]], "sum")
 
 
 
-\begin{comment}
+
 
 
 
@@ -155,9 +165,7 @@ landscape. %Computing confidence intervals for the predictions is also
 %demonstrated, although the delta method approximation used is very
 %time consuming when the number of pixels is high.
 
-First we load the crossbill data\footnote{This dataset has been
-  temporarily removed from \texttt{unmarked} until full permission can
-  be secured.}, which is a list with two
+First we load the crossbill data, which is a list with two
 components. The first component, \verb+crossbill+, is a data.frame
 containing the
 detection/non-detection data and some covariates such as the percent
@@ -170,6 +178,9 @@ The following commands format the data and fit the model using the
 \verb+colext+ function. For more information
 about this model, see the ``colext'' vignette that comes with
 \texttt{unmarked}.
+
+
+\begin{comment}
 
 
 <<eval=false,echo=false>>=
