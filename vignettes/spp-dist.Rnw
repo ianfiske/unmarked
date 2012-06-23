@@ -370,6 +370,21 @@ plot(E, axes=FALSE, col=terrain.colors(100))
 \end{figure}
 
 
+\begin{comment}
+<<>>=
+cruz2 <- data.frame(cruz[,1:2],
+                    chaparral=(cruz$chaparral-0.270)/0.234,
+                    elevation=(cruz$elevation-202)/125)
+cruz2$E.N <- exp(-2.827 + 0.957*cruz2$chaparral + -0.244*cruz2$elevation)
+wireframe(E.N ~ x + y, cruz2,
+          shade=TRUE, #shade.colors.palette=terrain.colors(100),
+#          drape=TRUE,
+          aspect=0.5, colorkey=FALSE,
+          screen=list(z=10, x=-10))
+
+@
+\end{comment}
+
 
 
 <<echo=FALSE>>=
