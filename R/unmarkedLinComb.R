@@ -65,6 +65,7 @@ setMethod("show",
 setMethod("backTransform",
           signature(obj = "unmarkedLinComb"),
           function(obj) {
+
     ## In general, MV delta method is Var=J*Sigma*J^T where J is Jacobian
     ## In this case, J is diagonal with elements = gradient
     ## Reduces to scaling the rows then columns of Sigma by the gradient

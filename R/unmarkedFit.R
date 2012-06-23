@@ -266,11 +266,11 @@ setMethod("predict", "unmarkedFit",
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
-        lc <- linearComb(object, X[i,], type, offset = offset)
+        lc <- linearComb(object, X[i,], type, offset = offset[i])
         if(backTransform)
             lc <- backTransform(lc)
         out$Predicted[i] <- coef(lc)
@@ -392,25 +392,25 @@ setMethod("predict", "unmarkedFitPCount",
     if(identical(mix, "ZIP") & identical(type, "state")) {
         psi.hat <- plogis(coef(object, type="psi"))
         if(is.null(offset))
-            offset <- 0
+            offset <- rep(0, nrow(X))
         warning("Method to compute SE for ZIP model has not been written")
     }
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
         if(identical(mix, "ZIP") & identical(type, "state")) {
             out$Predicted[i] <-
-                X[i,] %*% lam.mle + offset + log(1 - psi.hat)
+                X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
             if(backTransform)
                 out$Predicted[i] <- exp(out$Predicted[i])
             out$SE <- NA
             ci <- c(NA, NA)
         } else {
-            lc <- linearComb(object, X[i,], type, offset = offset)
+            lc <- linearComb(object, X[i,], type, offset = offset[i])
             if(backTransform)
                 lc <- backTransform(lc)
             out$Predicted[i] <- coef(lc)
@@ -575,7 +575,7 @@ setMethod("predict", "unmarkedFitColExt",
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
@@ -757,25 +757,25 @@ setMethod("predict", "unmarkedFitPCO",
     if(identical(mix, "ZIP") & identical(type, "lambda")) {
         psi.hat <- plogis(coef(object, type="psi"))
         if(is.null(offset))
-            offset <- 0
+            offset <- rep(0, nrow(X))
         warning("Method to compute SE for ZIP model has not been written")
     }
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
         if(identical(mix, "ZIP") & identical(type, "lambda")) {
             out$Predicted[i] <-
-                X[i,] %*% lam.mle + offset + log(1 - psi.hat)
+                X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
             if(backTransform)
                 out$Predicted[i] <- exp(out$Predicted[i])
             out$SE <- NA
             ci <- c(NA, NA)
         } else {
-            lc <- linearComb(object, X[i,], type, offset = offset)
+            lc <- linearComb(object, X[i,], type, offset = offset[i])
             if(backTransform)
                 lc <- backTransform(lc)
             out$Predicted[i] <- coef(lc)
@@ -932,11 +932,11 @@ setMethod("predict", "unmarkedFitGMM",
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "rows\n")
+                cat("  doing row", i, "of", nrow(X), "\n")
         }
         if(any(is.na(X[i,])))
             next
-        lc <- linearComb(object, X[i,], type, offset = offset)
+        lc <- linearComb(object, X[i,], type, offset = offset[i])
         if(backTransform)
             lc <- backTransform(lc)
         out$Predicted[i] <- coef(lc)
