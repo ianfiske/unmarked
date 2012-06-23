@@ -5,6 +5,7 @@
 \usepackage[authoryear,round]{natbib}
 \usepackage{fullpage}
 \usepackage{verbatim}
+\usepackage{color}
 
 \usepackage[a4paper, hmargin={2cm,2cm}, vmargin={2cm,2cm}]{geometry}
 
@@ -30,7 +31,7 @@
 \abstract{
 A species' distribution can be characterized by either
 occurrence probability or population density, defined for all
-locations in some spatial domain. Defining distribution in terms of
+locations in some spatial extent. Defining distribution in terms of
 these two parameters %These definitions of species distribution
 avoids the ambiguity surrounding the indices of occurrence
 or abundance produced by many presence-only algorithms. The
@@ -56,33 +57,23 @@ such as local colonization or extinction probability.
 
 
 
-In this example, we fit the single-season occupancy model of
+In this example, we use the \verb+occu+ function to fit the
+single-season occupancy model of
 \citep{mackenzie_estimating_2002} to data on the European crossbill
 (\emph{Loxia curvirostra}) collected in 267 1-km$^2$ sample
 quadrats in Switzerland, 1999 \citep{schmid_etal:2004}.
 We then use the model to compute the expected probability of
 occurrence at each pixel in a raster defining the Swiss
-landscape. %Computing confidence intervals for the predictions is also
-%demonstrated, although the delta method approximation used is very
-%time consuming when the number of pixels is high.
+landscape.
 
-First we load the crossbill data, which is a list with two
-components. The first component, \verb+crossbill+, is a data.frame
-containing the
-detection/non-detection data and some covariates such as the percent
-cover of forest at each survey location. %The second component,
-%\verb+switzerland+, is a list with two matrices defining the
-%covariates: elevation and forest cover. Each matrix can be
-%converted into a raster using the \texttt{raster} package. First, we
-%format the crossbill data and fit the model. For additional details
-The following commands format the data and fit the model using the
-\verb+colext+ function. For more information
-about this model, see the ``colext'' vignette that comes with
-\texttt{unmarked}.
-
-
-%\begin{comment}
-
+First we load the \verb+crossbill+ data, which contains the
+detection/non-detection data and covariates. The dataset actually
+contains data from multiple years, but we are only going to analyze
+data from the first year, 1999. A multi-year analysis of occupancy
+dynamics could be accomplished using the \verb+colext+ function, and
+in addition to mapping occurrence probability, it would be possible to
+also map colonization and extinction probabilities. The following
+commands format the data.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -93,44 +84,36 @@ about this model, see the ``colext'' vignette that comes with
      obsCovs=list(date=crossbill[,c("date991", "date992", "date993")]))
 > sc <- scale(siteCovs(umf))
 > siteCovs(umf) <- sc
-> summary(umf)
+> head(umf)
 \end{Sinput}
 \begin{Soutput}
-unmarkedFrame Object
-
-267 sites
-Maximum number of observations per site: 3 
-Mean number of observations per site: 2.59 
-Sites with at least one detection: 63 
-
-Tabulation of y observations:
-   0    1 <NA> 
- 599   92  110 
-
-Site-level covariates:
-      ele               forest        
- Min.   :-1.46606   Min.   :-1.25551  
- 1st Qu.:-0.99783   1st Qu.:-0.94836  
- Median :-0.06138   Median :-0.06307  
- Mean   : 0.00000   Mean   : 0.00000  
- 3rd Qu.: 1.03115   3rd Qu.: 0.78610  
- Max.   : 2.43583   Max.   : 2.32182  
-
-Observation-level covariates:
-      date      
- Min.   : 10.0  
- 1st Qu.: 40.0  
- Median : 59.0  
- Mean   : 57.3  
- 3rd Qu.: 73.0  
- Max.   :115.0  
- NA's   :110    
+Data frame representation of unmarkedFrame object.
+   y.1 y.2 y.3         ele      forest date.1 date.2 date.3
+1    0   0   0 -1.15390803 -1.14710440     34     59     65
+2    0   0   0 -1.15390803 -0.49668159     17     33     65
+3   NA  NA  NA -0.21745379 -0.09920098     NA     NA     NA
+4    0   0   0 -0.37352950 -0.93029679     29     59     65
+5    0   0   0 -0.06137809  0.00920282     24     45     65
+6   NA  NA  NA -0.99783232 -1.18323900     NA     NA     NA
+7    0   0   0 -0.68568091 -1.03870060     26     54     74
+8    0   0   0 -0.84175662  0.91256783     23     43     71
+9    0   0   0 -0.99783232 -1.07483520     21     36     56
+10   0   0   0 -0.99783232 -0.78575839     37     62     75
 \end{Soutput}
 \end{Schunk}
 
+Notice that the site covariates, elevation and forest, were
+standardized using the \verb+scale+ function. Standardization isn't
+always necessary, but it can make it easier to find the maximum
+likelihood estimates. When standardizing covariates and then making
+predictions, it is important to retain the original sample mean and
+standard deviation. The reason for this is explained below.
 
+\newpage
 
-Now we are ready to fit a model.
+Fitting a model is now straight-forward. In many cases, we would fit
+several models corresponding to competing hypotheses, but for
+simplicity, we stick with this single model.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -156,25 +139,30 @@ AIC: 455.3892
 \end{Soutput}
 \end{Schunk}
 
-
-
-Now that we have our fitted model, we can use the estimates to compute
-the expected probability of occurrence at each pixel in the
-landscape. The \verb+Switzerland+ dataset contains country-wide data.
+Now that we have our fitted model, we can use it to predict occurrence
+probability at each pixel in the Swiss landscape. The \verb+Switzerland+
+dataset contains country-wide data. There are many ways to display
+it---here is an example of mapping elevation using the
+\verb+levelplot+ function in the \texttt{lattice} package.
 
 \begin{Schunk}
 \begin{Sinput}
 > data(Switzerland)
 > print(levelplot(elevation ~ x + y, Switzerland, aspect="iso",
+                 xlab="Easting (m)", ylab="Northing (m)",
                  col.regions=terrain.colors(100)))
 \end{Sinput}
 \end{Schunk}
-\includegraphics{spp-dist-005}
+\begin{figure}
+  \centering
+  \includegraphics[width=5in,height=4in]{spp-dist-swiss}
+  \caption{Elevation in Switzerland}
+  \label{fig:swiss}
+\end{figure}
 
 The \texttt{raster} package \citep{hijmans_vanEtten:2012}
-makes this easy. Here are the
-commands to create raster objects from the covariate matrices that
-come with the crossbill data.
+provides another alternative. Here we create two raster objects and
+specify the coordinate system.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -186,6 +174,14 @@ come with the crossbill data.
 \end{Sinput}
 \end{Schunk}
 
+Since we standardized the covariates during the model fitting process,
+we need to transform the country-wide data using the same
+values. Note, we don't want to use the mean and SD of the rasters
+themselves, we want to use the mean and SD of the original covariates
+used to fit the models, which are stored as attributes of the
+\verb+sc+ object. The following commands display the original means
+and SDs and then transform the rasters and join them in a raster
+``stack.''
 
 \begin{Schunk}
 \begin{Sinput}
@@ -210,22 +206,22 @@ come with the crossbill data.
 > plot(ef, col=terrain.colors(100))
 \end{Sinput}
 \end{Schunk}
-\includegraphics{spp-dist-007}
+\begin{figure}
+  \centering
+  \includegraphics[width=6in,height=3in]{spp-dist-ef}
+  \caption{Elevation and forest cover, standardized.}
+\label{fig:ef}
+\end{figure}
 
-
-
-The reason for assigning the layerNames is that the
-\verb+predict+ function, which will be used shortly, requires that the
-rasters have names identical to the names of the variables used in
-the model fitting process.
-
+It is important to assign \verb+layerNames+
+that exactly match the covariate names used to fit the model. This
+is required by the \verb+predict+ function as demonstrated later.
 The \verb+predict+ function is useful for computing
 spatially-referenced model predictions, standard errors, and
 confidence intervals, but it is computationally demanding when
 there are many pixels in the raster. Thus, if measures of uncertainty
-are not
-required, the following code can be used to quickly produce the species
-distribution map shown in Fig.\ref{fig:psi1}.
+are not required, the following code can be used to quickly produce
+the species distribution map shown in Fig.\ref{fig:psi1}.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -242,21 +238,13 @@ distribution map shown in Fig.\ref{fig:psi1}.
 > print(spplot(psi, col.regions=terrain.colors(100)))
 \end{Sinput}
 \end{Schunk}
-
 \begin{figure}
-  \includegraphics[width=6in,height=3in]{spp-dist-psi}
+  \includegraphics[width=4in,height=4in]{spp-dist-psi}
+  \centering
   \caption{A species distribution map for the European crossbill in
-    Switzerland for the year 1999. The colors represent the probability
-    of occurrence.}
+    Switzerland. The colors represent occurrence probability.}
 \label{fig:psi1}
 \end{figure}
-
-The same can be done for any other parameter. For example, if we
-modeled density, perhaps using the \verb+distsamp+ function, we could
-compute the expected number of individuals in each pixel. Another
-option with the crossbill data is to map expected colonization
-probabilities, which can be accomplished using the following code.
-
 
 As of version 0.9-6, the \verb+predict+ method in \texttt{unmarked}
 can make predictions using an object of class \verb+RasterStack+ from the
@@ -267,20 +255,19 @@ returned by \verb+predict+ is another raster stack with rasters for
 the expected values of the parameter of interest, the standard errors,
 and the upper and lower confidence intervals. The following example
 is very slow because there are many of pixels in the raster. The
-resulting map is shown in Fig.\ref{fig:predict}.
+resulting map is shown in Fig.~\ref{fig:predict}.
 
 \begin{Schunk}
 \begin{Sinput}
-> rasters <- stack(elevation, forest)
-> E.psi <- predict(fm, type="psi", newdata=rasters)
+> E.psi <- predict(fm, type="state", newdata=ef)
 \end{Sinput}
 \begin{Sinput}
-> plot(E.psi, axes=FALSE)
+> plot(E.psi, axes=FALSE, col=terrain.colors(100))
 \end{Sinput}
 \end{Schunk}
-\begin{figure}[b!]
+\begin{figure}%[b!]
   \centering
-\includegraphics[width=5in,height=5in]{spp-dist-predict}
+\includegraphics[width=5in,height=5in]{spp-dist-psi2}
 \caption{Expected occurrence probability along with standard errors
   and the limits of the asymptotic 95\% confidence interval.}
 \label{fig:predict}
@@ -295,52 +282,55 @@ variables from them as can typically be done using
 variables manually before fitting the models, and to use the same
 variables as rasters for prediction.
 
-
-
-%\end{comment}
-
-
-
+A more important consideration when creating species distribution maps
+based upon occurrence probability is that of spatial scale. Occurrence
+probability will typically depends upon the area of the ``site'' in
+question. Thus, in our crossbill example, it would not be appropriate
+to use our model to predict occcurrence probability for 10-km$^2$
+pixels since the surveys were done in 1-km$^2$ quadrats. In some
+cases it might be possible to directly model the effect of site area
+on occurrence probability, in which case the effect could be accounted
+for in the predictions.
 
 \section*{Mapping Population Density}
 
 Although distribution is typically described in terms of
-ocurrence probability, density is a better descriptor for several
-reasons. First, density can be readily converted to abundance for any
-region of interest; whereas occurrence probability does not scale with
-area.
+ocurrence probability, which is always better than an index of
+occurrence probability, the best parameter for modeling species
+distribution is population density because density allows for
+inference about popualation size in an region of
+the species' range. Furthermore, occurrence probability is simply the
+probablity that abundance is greater than 0, so with density/abundance
+estimates, it is always possible to compute occurrence probablity as a
+derived parameter.
 
+In this example, we create a distribution map for the Island Scrub-Jay
+(\textit{Aphelocoma insularis}), which is restricted to Santa Cruz
+Island, California. To do so, we fit the hierarchical distance
+sampling model of \citet{royle_modeling_2004}, which allows for the
+estimation of abundance in each of the $300 \times 300$m pixels
+representing the island. The data were collected 307, 300-m radius
+point count (or ``point transect'') surveyed during the Fall of 2008.
 
+{\color{red} Important} This analysis is for demonstration
+purposes only, and the estimates of population size should not be used
+for conservation or management purposes. Indeed, the Poisson
+assumption used here was found to be inadequate by
+\citet{sillett_etal:2012} who conducted a rigorous analysis and
+reported reliable estimate of population size.
+
+Although we are fitting a model of population density, the steps of
+the analysis closely mirror those shown in the previous
+section. First, we format the data and fit a model, then we format the
+island-wide covariates and make predictions. The three covariates
+thought to influence jay abundance are elevation, forest cover, and
+chapararral cover. We also include include the area of the survey
+plots in the analysis so that we can make predictions for regions of
+any area. Here is the code to format the data and fit the model.
 
 \begin{Schunk}
 \begin{Sinput}
 > data(issj)
-> data(cruz)
-> elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
-      crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
-> #plot(elev, col=terrain.colors(100))
-> #points(issj[,c("x","y")], cex=0.5)
-> 
-> print(
- wireframe(elevation ~ x + y, cruz, drape=TRUE,
-           screen=list(z=10, x=-10),
-           aspect=0.5, xlab="", ylab="", zlab="",
- #          xlim=c(229900,267000), ylim=c(3762000,3770000),
-           par.settings = list(axis.line = list(col = "transparent")),
-           par.box = c(col = "transparent"),
-           col.regions=terrain.colors(100),
-           colorkey=FALSE)
- )
-> 
-\end{Sinput}
-\end{Schunk}
-\includegraphics{spp-dist-010}
-
-
-
-
-\begin{Schunk}
-\begin{Sinput}
 > covs <- scale(issj[,c("elevation", "forest", "chaparral")])
 > area <- pi*300^2 / 10000
 > jayumf <- unmarkedFrameDS(y=as.matrix(issj[,1:3]),
@@ -365,17 +355,19 @@ Data frame representation of unmarkedFrame object.
 \end{Soutput}
 \begin{Sinput}
 > fm1 <- distsamp(~chaparral ~chaparral + elevation + offset(log(area)),
-                 jayumf, output="abund")
+                 jayumf, keyfun="halfnorm", output="abund",
+                 starts=c(-2.8,1,0,4.5,0))
 > fm1
 \end{Sinput}
 \begin{Soutput}
 Call:
 distsamp(formula = ~chaparral ~ chaparral + elevation + offset(log(area)), 
-    data = jayumf, output = "abund")
+    data = jayumf, keyfun = "halfnorm", output = "abund", starts = c(-2.8, 
+        1, 0, 4.5, 0))
 
 Abundance:
             Estimate     SE      z  P(>|z|)
-(Intercept)   -2.827 0.1609 -17.57 4.33e-69
+(Intercept)   -2.827 0.1609 -17.57 4.34e-69
 chaparral      0.957 0.1460   6.55 5.60e-11
 elevation     -0.244 0.0932  -2.61 8.96e-03
 
@@ -386,13 +378,51 @@ sigmachaparral      -0.25 0.0744 -3.36 0.000773
 
 AIC: 964.6426 
 \end{Soutput}
-\begin{Sinput}
-> 
-\end{Sinput}
 \end{Schunk}
+
+Remarks. 1) The distance data were binned into 3 distance classes. 2)
+We used \verb+output="abund"+ even though, by specifying the offset,
+we effectively modeled population density. As stated previously, this
+allows us to make predictions of abundance for regions of arbitrary size.
+
+
+
+\begin{comment}
 
 \begin{Schunk}
 \begin{Sinput}
+> data(issj)
+> data(cruz)
+> elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
+      crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+> #plot(elev, col=terrain.colors(100))
+> #points(issj[,c("x","y")], cex=0.5)
+\end{Sinput}
+\end{Schunk}
+\includegraphics{spp-dist-011}
+print(
+wireframe(elevation ~ x + y, cruz, drape=TRUE,
+          screen=list(z=10, x=-10),
+          aspect=0.5, xlab="", ylab="", zlab="",
+#          xlim=c(229900,267000), ylim=c(3762000,3770000),
+          par.settings = list(axis.line = list(col = "transparent")),
+          par.box = c(col = "transparent"),
+          col.regions=terrain.colors(100),
+          colorkey=FALSE)
+)
+
+\end{comment}
+
+
+The next thing to do is to format the raster data. For details, see
+the previous section---the process is the same, except that we need a
+raster for ``area'', the size of each pixel in the raster data. This
+is necessary because the survey plots were larger than the pixels for
+which we want predictions of abundance.
+
+\begin{Schunk}
+\begin{Sinput}
+> data(cruz)
 > elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
       crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
 > forest <- rasterFromXYZ(cruz[,c("x","y","forest")],
@@ -420,39 +450,38 @@ AIC: 964.6426
 > chap.s <- (chap-0.270)/0.234
 > habitat <- stack(elev.s, forest.s, chap.s, area.raster)
 > layerNames(habitat) <- c("elevation", "forest", "chaparral", "area")
-> 
-> 
 \end{Sinput}
 \end{Schunk}
 
 
-
+Now, when we use \verb+predict+, it will return the expected number of
+jays in each pixel along with the standard errors and the 95\%
+confidence intervals. We could sum these up to obtain an estimate of
+total population size. \citet{sillett_etal:2012} did this and used the
+parametric boostrap to estimate the variance of total population
+size.
 
 \begin{Schunk}
 \begin{Sinput}
 > E <- predict(fm1, type="state", newdata=habitat)
 \end{Sinput}
 \begin{Soutput}
-  doing row 1000 of 5625 rows
-  doing row 2000 of 5625 rows
-  doing row 3000 of 5625 rows
-  doing row 4000 of 5625 rows
-  doing row 5000 of 5625 rows
+  doing row 1000 of 5625 
+  doing row 2000 of 5625 
+  doing row 3000 of 5625 
+  doing row 4000 of 5625 
+  doing row 5000 of 5625 
 \end{Soutput}
 \begin{Sinput}
-> plot(E)
-> cellStats(E[["Predicted"]], "sum")
-\end{Sinput}
-\begin{Soutput}
-[1] 932.9886
-\end{Soutput}
-\begin{Sinput}
-> 
+> plot(E, axes=FALSE, col=terrain.colors(100))
 \end{Sinput}
 \end{Schunk}
-\includegraphics{spp-dist-013}
-
-
+\begin{figure}
+  \centering
+\includegraphics[width=6in,height=5in]{spp-dist-issj}
+\caption{Expected Island Scrub-Jay abundance, SEs, and 95\% CIs.}
+\label{fig:issj}
+\end{figure}
 
 
 

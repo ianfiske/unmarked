@@ -9,6 +9,7 @@ options(continue=" ")
 \usepackage[authoryear,round]{natbib}
 \usepackage{fullpage}
 \usepackage{verbatim}
+\usepackage{color}
 
 \usepackage[a4paper, hmargin={2cm,2cm}, vmargin={2cm,2cm}]{geometry}
 
@@ -34,7 +35,7 @@ options(continue=" ")
 \abstract{
 A species' distribution can be characterized by either
 occurrence probability or population density, defined for all
-locations in some spatial domain. Defining distribution in terms of
+locations in some spatial extent. Defining distribution in terms of
 these two parameters %These definitions of species distribution
 avoids the ambiguity surrounding the indices of occurrence
 or abundance produced by many presence-only algorithms. The
@@ -64,7 +65,7 @@ library(raster)
 
 
 
-In this example, we use the verb+occu+ function to fit the
+In this example, we use the \verb+occu+ function to fit the
 single-season occupancy model of
 \citep{mackenzie_estimating_2002} to data on the European crossbill
 (\emph{Loxia curvirostra}) collected in 267 1-km$^2$ sample
@@ -90,7 +91,7 @@ umf <- unmarkedFrameOccu(
     obsCovs=list(date=crossbill[,c("date991", "date992", "date993")]))
 sc <- scale(siteCovs(umf))
 siteCovs(umf) <- sc
-summary(umf)
+head(umf)
 @
 
 Notice that the site covariates, elevation and forest, were
@@ -99,6 +100,8 @@ always necessary, but it can make it easier to find the maximum
 likelihood estimates. When standardizing covariates and then making
 predictions, it is important to retain the original sample mean and
 standard deviation. The reason for this is explained below.
+
+\newpage
 
 Fitting a model is now straight-forward. In many cases, we would fit
 several models corresponding to competing hypotheses, but for
@@ -114,12 +117,18 @@ dataset contains country-wide data. There are many ways to display
 it---here is an example of mapping elevation using the
 \verb+levelplot+ function in the \texttt{lattice} package.
 
-<<fig=TRUE>>=
+<<swiss,fig=TRUE,include=FALSE,width=5,height=4>>=
 data(Switzerland)
 print(levelplot(elevation ~ x + y, Switzerland, aspect="iso",
                 xlab="Easting (m)", ylab="Northing (m)",
                 col.regions=terrain.colors(100)))
 @
+\begin{figure}
+  \centering
+  \includegraphics[width=5in,height=4in]{spp-dist-swiss}
+  \caption{Elevation in Switzerland}
+  \label{fig:swiss}
+\end{figure}
 
 The \texttt{raster} package \citep{hijmans_vanEtten:2012}
 provides another alternative. Here we create two raster objects and
@@ -143,7 +152,7 @@ used to fit the models, which are stored as attributes of the
 and SDs and then transform the rasters and join them in a raster
 ``stack.''
 
-<<ef,fig=TRUE,include=FALSE,height=3,width=7>>=
+<<ef,fig=TRUE,include=FALSE,height=3,width=6>>=
 attr(sc, "scaled:center")
 attr(sc, "scaled:scale")
 ele.s <- (elevation-1189)/640
@@ -154,14 +163,14 @@ plot(ef, col=terrain.colors(100))
 @
 \begin{figure}
   \centering
-  \includegraphics[width=7in,height=3in]{spp-dist-ef}
+  \includegraphics[width=6in,height=3in]{spp-dist-ef}
   \caption{Elevation and forest cover, standardized.}
-\label{fig:psi1}
+\label{fig:ef}
 \end{figure}
 
-Note, it is important to assign \verb+layerNames+ to the raster stack
+It is important to assign \verb+layerNames+
 that exactly match the covariate names used to fit the model. This
-is required by the \verb+predict+ function.
+is required by the \verb+predict+ function as demonstrated later.
 The \verb+predict+ function is useful for computing
 spatially-referenced model predictions, standard errors, and
 confidence intervals, but it is computationally demanding when
@@ -193,7 +202,7 @@ returned by \verb+predict+ is another raster stack with rasters for
 the expected values of the parameter of interest, the standard errors,
 and the upper and lower confidence intervals. The following example
 is very slow because there are many of pixels in the raster. The
-resulting map is shown in Fig.\ref{fig:predict}.
+resulting map is shown in Fig.~\ref{fig:predict}.
 
 <<psi2,eval=false,echo=false,fig=TRUE,include=FALSE>>=
 E.psi <- predict(fm.occu, type="state", newdata=ef)
@@ -207,9 +216,9 @@ plot(E.psi, axes=FALSE, col=terrain.colors(100))
 > plot(E.psi, axes=FALSE, col=terrain.colors(100))
 \end{Sinput}
 \end{Schunk}
-\begin{figure}[b!]
+\begin{figure}%[b!]
   \centering
-\includegraphics[width=5in,height=5in]{spp-dist-psi}
+\includegraphics[width=5in,height=5in]{spp-dist-psi2}
 \caption{Expected occurrence probability along with standard errors
   and the limits of the asymptotic 95\% confidence interval.}
 \label{fig:predict}
@@ -254,12 +263,12 @@ estimation of abundance in each of the $300 \times 300$m pixels
 representing the island. The data were collected 307, 300-m radius
 point count (or ``point transect'') surveyed during the Fall of 2008.
 
-\color{Red}{Important} This analysis is for demonstration
+{\color{red} Important} This analysis is for demonstration
 purposes only, and the estimates of population size should not be used
 for conservation or management purposes. Indeed, the Poisson
 assumption used here was found to be inadequate by
 \citet{sillett_etal:2012} who conducted a rigorous analysis and
-reported the most reliable estimate of population size available.
+reported reliable estimate of population size.
 
 Although we are fitting a model of population density, the steps of
 the analysis closely mirror those shown in the previous
@@ -271,6 +280,7 @@ plots in the analysis so that we can make predictions for regions of
 any area. Here is the code to format the data and fit the model.
 
 <<>>=
+data(issj)
 covs <- scale(issj[,c("elevation", "forest", "chaparral")])
 area <- pi*300^2 / 10000
 jayumf <- unmarkedFrameDS(y=as.matrix(issj[,1:3]),
@@ -279,7 +289,8 @@ jayumf <- unmarkedFrameDS(y=as.matrix(issj[,1:3]),
                           unitsIn="m", survey="point")
 head(jayumf)
 fm1 <- distsamp(~chaparral ~chaparral + elevation + offset(log(area)),
-                jayumf, output="abund")
+                jayumf, keyfun="halfnorm", output="abund",
+                starts=c(-2.8,1,0,4.5,0))
 fm1
 @
 
@@ -295,15 +306,11 @@ allows us to make predictions of abundance for regions of arbitrary size.
 <<fig=TRUE,width=6,height=4>>=
 data(issj)
 data(cruz)
-
 elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
      crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
-
 #plot(elev, col=terrain.colors(100))
 #points(issj[,c("x","y")], cex=0.5)
 @
-
-
 print(
 wireframe(elevation ~ x + y, cruz, drape=TRUE,
           screen=list(z=10, x=-10),
@@ -325,6 +332,7 @@ is necessary because the survey plots were larger than the pixels for
 which we want predictions of abundance.
 
 <<>>=
+data(cruz)
 elev <- rasterFromXYZ(cruz[,c("x","y","elevation")],
      crs="+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
 forest <- rasterFromXYZ(cruz[,c("x","y","forest")],
@@ -343,17 +351,23 @@ layerNames(habitat) <- c("elevation", "forest", "chaparral", "area")
 @
 
 
+Now, when we use \verb+predict+, it will return the expected number of
+jays in each pixel along with the standard errors and the 95\%
+confidence intervals. We could sum these up to obtain an estimate of
+total population size. \citet{sillett_etal:2012} did this and used the
+parametric boostrap to estimate the variance of total population
+size.
 
-
-<<fig=TRUE>>=
+<<issj,fig=TRUE,include=FALSE,width=6,height=5>>=
 E <- predict(fm1, type="state", newdata=habitat)
-plot(E)
-
-cellStats(E[["Predicted"]], "sum")
-
+plot(E, axes=FALSE, col=terrain.colors(100))
 @
-
-
+\begin{figure}
+  \centering
+\includegraphics[width=6in,height=5in]{spp-dist-issj}
+\caption{Expected Island Scrub-Jay abundance, SEs, and 95\% CIs.}
+\label{fig:issj}
+\end{figure}
 
 
 
