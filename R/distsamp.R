@@ -109,13 +109,6 @@ distsamp <- function(formula, data,
     if(engine=="R") {
     switch(keyfun,
     halfnorm = {
-        altdetParms <- paste("sigma", colnames(V), sep="")
-        if(is.null(starts)) {
-            starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
-            names(starts) <- c(lamParms, detParms)
-            }
-        else
-            if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
         nll <- function(param) {
             sigma <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
             lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
@@ -147,13 +140,6 @@ distsamp <- function(formula, data,
             -sum(ll)
             }},
     exp = {
-        altdetParms <- paste("rate", colnames(V), sep="")
-        if(is.null(starts)) {
-            starts <- c(rep(0, nAP), 0, rep(0, nDP-1))
-            names(starts) <- c(lamParms, detParms)
-            }
-        else
-            if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
         nll <- function(param) {
             rate <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
             lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
@@ -190,16 +176,6 @@ distsamp <- function(formula, data,
             -sum(ll)
             }},
     hazard = {
-        nDP <- length(detParms)
-        nP <- nAP + nDP + 1
-        altdetParms <- paste("shape", colnames(V), sep="")
-        if(is.null(starts)) {
-            starts <- c(rep(0, nAP), log(median(db)), rep(0, nDP-1), 1)
-            names(starts) <- c(lamParms, detParms, "scale")
-            }
-        else
-            if(is.null(names(starts)))
-                names(starts) <- c(lamParms, detParms, "scale")
         nll <- function(param) {
             shape <- drop(exp(V %*% param[(nAP+1):(nP-1)] + V.offset))
             scale <- drop(exp(param[nP]))
@@ -238,15 +214,6 @@ distsamp <- function(formula, data,
             -sum(ll)
             }},
     uniform = {
-        detParms <- character(0)
-        altdetParms <- character(0)
-        nDP <- 0
-        if(is.null(starts)) {
-            starts <- rep(0, length(lamParms))
-            names(starts) <- lamParms
-            }
-        else
-            if(is.null(names(starts))) names(starts) <- lamParms
         nll <- function(param) {
             lambda <- drop(exp(X %*% param + X.offset))
             if(identical(output, "density"))
@@ -256,14 +223,6 @@ distsamp <- function(formula, data,
             }
         })
     } else if(engine=="C") {
-        altdetParms <- paste("sigma", colnames(V), sep="")
-        if(is.null(starts)) {
-            starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
-            names(starts) <- c(lamParms, detParms)
-            }
-        else
-            if(is.null(names(starts)))
-                names(starts) <- c(lamParms, detParms)
         nll <- function(param) {
             beta.lam <- param[1:nAP]
             beta.sig <- param[(nAP+1):nP]
