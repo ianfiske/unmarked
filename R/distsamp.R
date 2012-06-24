@@ -7,10 +7,10 @@ distsamp <- function(formula, data,
 {
     engine <- match.arg(engine)
     keyfun <- match.arg(keyfun)
-    if(engine=="C" && !(keyfun %in% c("halfnorm", "exp", "uniform"))) {
-        engine <- "R"
-        warning("C engine not available for hazard model, using R instead")
-    }
+#    if(engine=="C" && !(keyfun %in% c("halfnorm", "exp", "uniform"))) {
+#        engine <- "R"
+#        warning("C engine not available for hazard model, using R instead")
+#    }
     output <- match.arg(output)
     unitsOut <- match.arg(unitsOut)
     db <- data@dist.breaks
@@ -225,13 +225,19 @@ distsamp <- function(formula, data,
     } else if(engine=="C") {
         nll <- function(param) {
             beta.lam <- param[1:nAP]
-            beta.sig <- param[(nAP+1):nP]
+            if(identical(keyfun, "hazard")) {
+                beta.sig <- param[(nAP+1):(nP-1)]
+                scale <- exp(param[nP])
+            } else {
+                beta.sig <- param[(nAP+1):nP]
+                scale <- -99.0
+            }
             lambda <- drop(exp(X %*% beta.lam + X.offset))
             if(identical(output, "density"))
                 lambda <- lambda * A
             sigma <- drop(exp(V %*% beta.sig + V.offset))
             .Call("nll_distsamp",
-                  y, lambda, sigma,
+                  y, lambda, sigma, scale,
                   a, u, w, db,
                   keyfun, survey, rel.tol,
                   PACKAGE="unmarked")
