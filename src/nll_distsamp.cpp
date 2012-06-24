@@ -81,8 +81,7 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 	  cp = result / w(j) * u(i,j);
 	}
       }
-      /* add error checking/handling here */
-      //      mu = lam(i)*cp + DOUBLE_XMIN;
+      /* add error checking/handling here, ier>0 */
       ll += Rf_dpois(y(i,j), lam(i)*cp, true);
     }
   }

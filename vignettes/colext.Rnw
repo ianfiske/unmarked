@@ -1036,15 +1036,8 @@ The data can be loaded into an open R workspace using the \verb+data+
 command.
 
 \begin{small}
-
-<<eval=false,echo=false>>=
-data(crossbill)
-crossbill <- crossbill.data$crossbill
-colnames(crossbill)
-@
 <<>>=
-crossbill <- read.csv(system.file("csv", "crossbill.csv",
-    package="unmarked"), header=TRUE)
+data(crossbill)
 colnames(crossbill)
 @
 \end{small}
