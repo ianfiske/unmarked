@@ -2,7 +2,8 @@
 distsamp <- function(formula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL,
-    method="BFGS", se = TRUE, engine = c("C", "R") ,...)
+    method="BFGS", se = TRUE, engine = c("C", "R"),
+    rel.tol=0.001, ...)
 {
     engine <- match.arg(engine)
     keyfun <- match.arg(keyfun)
@@ -59,6 +60,52 @@ distsamp <- function(formula, data,
     nDP <- length(detParms)
     nP <- nAP + nDP
     cp <- matrix(NA, M, J)
+    switch(keyfun,
+           halfnorm = {
+               altdetParms <- paste("sigma", colnames(V), sep="")
+               if(is.null(starts)) {
+                   starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
+                   names(starts) <- c(lamParms, detParms)
+               } else {
+                   if(is.null(names(starts))) names(starts) <-
+                       c(lamParms, detParms)
+               }
+           },
+           exp = {
+               altdetParms <- paste("rate", colnames(V), sep="")
+               if(is.null(starts)) {
+                   starts <- c(rep(0, nAP), 0, rep(0, nDP-1))
+                   names(starts) <- c(lamParms, detParms)
+               } else {
+                   if(is.null(names(starts))) names(starts) <-
+                       c(lamParms, detParms)
+               }
+           },
+           hazard = {
+               nDP <- length(detParms)
+               nP <- nAP + nDP + 1
+               altdetParms <- paste("shape", colnames(V), sep="")
+               if(is.null(starts)) {
+                   starts <- c(rep(0, nAP), log(median(db)),
+                               rep(0, nDP-1), 1)
+                   names(starts) <- c(lamParms, detParms, "scale")
+               } else {
+                   if(is.null(names(starts)))
+                       names(starts) <- c(lamParms, detParms, "scale")
+               }
+           },
+           uniform = {
+               detParms <- character(0)
+               altdetParms <- character(0)
+               nDP <- 0
+               if(is.null(starts)) {
+                   starts <- rep(0, length(lamParms))
+                   names(starts) <- lamParms
+               } else {
+                   if(is.null(names(starts))) names(starts) <- lamParms
+               }
+           })
+
     if(engine=="R") {
     switch(keyfun,
     halfnorm = {
@@ -227,7 +274,7 @@ distsamp <- function(formula, data,
             .Call("nll_distsamp",
                   y, lambda, sigma,
                   a, u, w, db,
-                  keyfun, survey,
+                  keyfun, survey, rel.tol,
                   PACKAGE="unmarked")
         }
     }
@@ -236,7 +283,7 @@ distsamp <- function(formula, data,
     ests <- fm$par
     if(se) {
         covMat <- tryCatch(solve(fm$hessian), error=function(x)
-        stop(simpleError("Hessian is singular. Try using fewer covariates or providing starting values.")))
+        simpleError("Hessian is singular. Try using fewer covariates or providing starting values."))
         if(class(covMat)[1] == "simpleError") {
             print(covMat$message)
             covMat <- matrix(NA, nP, nP)

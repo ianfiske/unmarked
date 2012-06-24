@@ -2,7 +2,7 @@
 #include "detfuns.h"
 
 
-SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP a_, SEXP u_, SEXP w_, SEXP db_, SEXP keyfun_, SEXP survey_ ) {
+SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP a_, SEXP u_, SEXP w_, SEXP db_, SEXP keyfun_, SEXP survey_, SEXP reltol_ ) {
 
   Rcpp::IntegerMatrix y(y_);
   Rcpp::NumericVector lam(lam_);
@@ -20,7 +20,7 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP a_, SEXP u_, SEXP w_, SEX
   // Integration settings given to Rdqags
   // TODO: Allow for user-defined settings
   double epsabs = 0.01; // should be specific to measurement units
-  double epsrel = 0.00012; // should be specific to measurement units
+  double epsrel = Rcpp::as<double>(reltol_);
   int limit = 100;
   int lenw = 400;
   int last = 0;
