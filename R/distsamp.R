@@ -6,6 +6,10 @@ distsamp <- function(formula, data,
 {
     engine <- match.arg(engine)
     keyfun <- match.arg(keyfun)
+    if(engine=="C" && !(keyfun %in% c("halfnorm", "exp", "uniform"))) {
+        engine <- "R"
+        warning("C engine not available for hazard model, using R instead")
+    }
     output <- match.arg(output)
     unitsOut <- match.arg(unitsOut)
     db <- data@dist.breaks
@@ -205,8 +209,6 @@ distsamp <- function(formula, data,
             }
         })
     } else if(engine=="C") {
-        if(keyfun != "halfnorm" | survey != "point")
-            stop("C only works if keyfun='halfnorm' and survey='point'")
         altdetParms <- paste("sigma", colnames(V), sep="")
         if(is.null(starts)) {
             starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
@@ -214,7 +216,7 @@ distsamp <- function(formula, data,
             }
         else
             if(is.null(names(starts)))
-                names(starts) <- c(lamParms, detParm)
+                names(starts) <- c(lamParms, detParms)
         nll <- function(param) {
             beta.lam <- param[1:nAP]
             beta.sig <- param[(nAP+1):nP]
@@ -224,13 +226,8 @@ distsamp <- function(formula, data,
             sigma <- drop(exp(V %*% beta.sig + V.offset))
             .Call("nll_distsamp",
                   y, lambda, sigma,
-#                  X, V,
-#                  beta.lam, beta.sig,
-#                  X.offset, V.offset,
-#                  A,
-                  a, u,
-#                  output,
-                  db,
+                  a, u, w, db,
+                  keyfun, survey,
                   PACKAGE="unmarked")
         }
     }
