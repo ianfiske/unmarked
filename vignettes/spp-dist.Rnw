@@ -115,7 +115,7 @@ Now that we have our fitted model, we can use it to predict occurrence
 probability at each pixel in the Swiss landscape. The \verb+Switzerland+
 dataset contains country-wide data. There are many ways to display
 it---here is an example of mapping elevation using the
-\verb+levelplot+ function in the \texttt{lattice} package.
+\verb+levelplot+ function in the \texttt{lattice} package \citep{sarkar:2008}.
 
 <<swiss,fig=TRUE,include=FALSE,width=5,height=4>>=
 data(Switzerland)
@@ -249,7 +249,7 @@ Although distribution is typically described in terms of
 ocurrence probability, which is always better than an index of
 occurrence probability, the best parameter for modeling species
 distribution is population density because density allows for
-inference about popualation size in an region of
+inference about popualation size in any region of
 the species' range. Furthermore, occurrence probability is simply the
 probablity that abundance is greater than 0, so with density/abundance
 estimates, it is always possible to compute occurrence probablity as a

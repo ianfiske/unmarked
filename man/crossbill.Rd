@@ -39,14 +39,14 @@
     \item{\code{det053}}{a numeric vector}
     \item{\code{det061}}{a numeric vector}
     \item{\code{det062}}{a numeric vector}
-    \item{\code{det063}}{a numeric vector}
-    \item{\code{det071}}{a numeric vector}
-    \item{\code{det072}}{a numeric vector}
-    \item{\code{det073}}{a numeric vector}
+    \item{\code{det063}}{Detection data for 2006, survey 3}
+    \item{\code{det071}}{Detection data for 2007, survey 1}
+    \item{\code{det072}}{Detection data for 2007, survey 2}
+    \item{\code{det073}}{Detection data for 2007, survey 3}
     \item{\code{date991}}{Day of the season for 1999, survey 1}
-    \item{\code{date992}}{a numeric vector}
-    \item{\code{date993}}{a numeric vector}
-    \item{\code{date001}}{a numeric vector}
+    \item{\code{date992}}{Day of the season for 1999, survey 2}
+    \item{\code{date993}}{Day of the season for 1999, survey 3}
+    \item{\code{date001}}{Day of the season for 2000, survey 1}
     \item{\code{date002}}{a numeric vector}
     \item{\code{date003}}{a numeric vector}
     \item{\code{date011}}{a numeric vector}
@@ -69,7 +69,7 @@
     \item{\code{date063}}{a numeric vector}
     \item{\code{date071}}{a numeric vector}
     \item{\code{date072}}{a numeric vector}
-    \item{\code{date073}}{a numeric vector}
+    \item{\code{date073}}{Day of the season for 2007, survey 3}
   }
 }
 \source{
