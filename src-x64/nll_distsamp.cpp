@@ -15,21 +15,14 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
   std::string keyfun = Rcpp::as<std::string>(keyfun_);
   std::string survey = Rcpp::as<std::string>(survey_);
 
+  bool verbose=false;
+
   int R = y.nrow();   //y.n_rows;
   int J = y.ncol();   // y.n_cols;
 
-  // Integration settings given to Rdqags
-  // TODO: Allow for user-defined settings
-  double epsrel = Rcpp::as<double>(reltol_);
-  double epsabs = epsrel;
-  int limit = 100;
-  int lenw = 400;
-  int last = 0;
-  int iwork = 100;
-  double work = 400.0;
-
   //  double mu = 0.0;
   double ll = 0.0;
+  double lnmin = log(DOUBLE_XMIN);
 
   //  void *ex;
   double *ex;
@@ -43,9 +36,17 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
       if(keyfun=="uniform") {
 	cp = u(i,j);
       } else {
+	// Integration settings given to Rdqags
 	double lower = db[j];
 	double upper = db[j+1];
-	double result = 0.0;
+	double epsrel = Rcpp::as<double>(reltol_);
+	double epsabs = epsrel;
+	int limit = 100;
+	int lenw = 400;
+	int last = 0;
+	int iwork = 100;
+	double work = 400.0;
+	double result = DOUBLE_XMIN;
 	double abserr = 0.0;
 	int neval = 0;
 	int ier = 0;
@@ -63,6 +64,9 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
 		   &work);
 	  }
+	  if(ier > 0 && verbose) {
+	    Rf_warning("The integration was not successful.");
+	  }
 	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
 	} else if(survey=="line") {
 	  if(keyfun=="halfnorm") {
@@ -78,11 +82,13 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
 		   &work);
 	  }
+	  if(ier > 0 && verbose) {
+	    Rf_warning("Warning: the integration was not successful.");
+	  }
 	  cp = result / w(j) * u(i,j);
 	}
       }
-      /* add error checking/handling here, ier>0 */
-      ll += Rf_dpois(y(i,j), lam(i)*cp, true);
+      ll += std::max(Rf_dpois(y(i,j), lam(i)*cp, true), lnmin);
     }
   }
   return Rcpp::wrap(-ll);
