@@ -149,8 +149,6 @@ if(missing(starts))
     starts <- rep(0, nP)
 fm <- optim(starts, nll, method=method, hessian=se, ...)
 
-rm(I, I1, Ib, Ip, Z) # REMOVE ME!!!!!!!!
-
 opt <- fm
 ests <- fm$par
 if(identical(mixture,"NB"))
