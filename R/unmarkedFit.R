@@ -99,6 +99,15 @@ setClass("unmarkedFitGDS",
     contains = "unmarkedFitGMM")
 
 
+setClass("unmarkedFitGPC",
+    representation(
+        formlist = "list",
+        mixture = "character",
+        K = "numeric"),
+    contains = "unmarkedFit")
+
+
+
 # -------------------------- Show and Summary ----------------------------
 
 

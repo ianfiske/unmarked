@@ -18,6 +18,8 @@ Xphi <- D$Xphi
 Xdet <- D$Xdet
 y <- D$y  # MxJT
 
+#browser()
+
 Xlam.offset <- D$Xlam.offset
 Xphi.offset <- D$Xphi.offset
 Xdet.offset <- D$Xdet.offset
@@ -31,20 +33,13 @@ if(missing(K) || is.null(K)) {
 }
 M <- N <- 0:K
 lM <- length(M)
-M <- nrow(y)
+I <- nrow(y)
 T <- data@numPrimary
 if(T==1)
     stop("use pcount instead")
-R <- numY(data) / T
-J <- obsNum(data) / T
+J <- numY(data) / T
 
-y <- array(y, c(M, R, T))
-y <- aperm(y, c(1,3,2))
-yt <- apply(y, 1:2, function(x) {
-    if(all(is.na(x)))
-        return(NA)
-    else return(sum(x, na.rm=TRUE))
-    })
+y <- array(y, c(I, J, T))
 
 lamPars <- colnames(Xlam)
 detPars <- colnames(Xdet)
@@ -59,21 +54,24 @@ if(!missing(starts) && length(starts) != nP)
 
 # Minus negative log-likelihood
 nll <- function(pars) {
+#    browser()
     lam <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
     phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
-    p <- plogis(Xdet %*% pars[(nLP+nPP+1]):(nLP+nPP+nDP)] + Xdet.offset)
+    phi <- matrix(phi, I, T, byrow=TRUE) # byrow?
+    p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
+    p <- array(p, c(I,J,T))  # byrow?
     L <- rep(NA, nSites)
-    for(i in 1:nSites) {
+    for(i in 1:I) {
         f <- dpois(M, lam[i], log=TRUE)
-        for(j in 1:nVisits) {
+        for(t in 1:T) {
             gh <- matrix(-Inf, lM, lM) #
             for(m in M) {
-                if(m < max(y[i,j,]))
+                if(m < max(y[i,,t]))
                     next
-                g <- dbinom(N, m, phi, log=TRUE)
+                g <- dbinom(N, m, phi[i,t], log=TRUE)
                 h <- rep(0, lM)
-                for(k in 1:nReps) {
-                    h <- h + dbinom(y[i,j,k], N, p, log=TRUE)
+                for(j in 1:J) {
+                    h <- h + dbinom(y[i,j,t], N, p[i,j,t], log=TRUE)
                 }
                 gh[,m+1] <- g + h
             }
@@ -125,7 +123,7 @@ detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
         covMat[(nLP+nPP+1):(nLP+nPP+nDP), (nLP+nPP+1):(nLP+nPP+nDP)]),
     invlink = "logistic", invlinkGrad = "logistic.grad")
 
-estimateList <- unmarkedEstimateList(list(lambda=lamEstimates, phi=phiEstimates, det=detEstimates))
+estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates, phi=phiEstimates, det=detEstimates))
 
 if(identical(mixture,"NB"))
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",

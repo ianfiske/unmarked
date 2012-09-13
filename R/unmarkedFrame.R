@@ -102,6 +102,9 @@ setClass("unmarkedFrameGDS",
         unitsIn = "character"),
     contains = "unmarkedFrameG3")
 
+setClass("unmarkedFrameGPC",
+    contains = "unmarkedFrameG3")
+
 
 
 # ------------------------------- CONSTRUCTORS ---------------------------
@@ -160,6 +163,51 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
     umf <- as(umf, "unmarkedFrameOccu")
     umf
 }
+
+
+
+
+unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
+{
+    J <- ncol(y)
+    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J),
+        mapInfo = mapInfo)
+    umf <- as(umf, "unmarkedFramePCount")
+    umf
+}
+
+
+
+unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
+    obsToY, mapInfo, piFun)
+{
+    if(!missing(type)) {
+        switch(type,
+            removal = {
+                obsToY <- matrix(1, ncol(y), ncol(y))
+                obsToY[col(obsToY) < row(obsToY)] <- 0
+                #obsToY <- diag(ncol(y))
+                #obsToY[upper.tri(obsToY)] <- 1
+                piFun <- "removalPiFun"
+                },
+            double = {
+                #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
+                obsToY <- matrix(1, 2, 3)
+                piFun <- "doublePiFun"
+                })
+    } else {
+        if(missing(obsToY))
+            stop("obsToY is required for multinomial-Poisson data with no specified type.")
+        type <- "userDefined"
+        }
+    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY,
+        mapInfo = mapInfo)
+    umf <- as(umf, "unmarkedFrameMPois")
+    umf@piFun <- piFun
+    umf@samplingMethod <- type
+    umf
+}
+
 
 
 # This function constructs an unmarkedMultFrame object.
@@ -284,46 +332,39 @@ unmarkedFrameGDS <- function(y, siteCovs, numPrimary,
 
 
 
-unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
-{
-    J <- ncol(y)
-    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J),
-        mapInfo = mapInfo)
-    umf <- as(umf, "unmarkedFramePCount")
-    umf
-}
+# This function constructs an unmarkedMultFrame object.
+unmarkedFrameGPC <- function(y, siteCovs, numPrimary, yearlySiteCovs) {
+    if(numPrimary < 2)
+        stop("numPrimary must be >1. Use pcount of numPrimary=1")
+    J <- ncol(y) / numPrimary
+    obsToY <- diag(J*numPrimary)
+    if(missing(siteCovs))
+        siteCovs <- NULL
 
-
-
-unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
-    obsToY, mapInfo, piFun)
-{
-    if(!missing(type)) {
-        switch(type,
-            removal = {
-                obsToY <- matrix(1, ncol(y), ncol(y))
-                obsToY[col(obsToY) < row(obsToY)] <- 0
-                #obsToY <- diag(ncol(y))
-                #obsToY[upper.tri(obsToY)] <- 1
-                piFun <- "removalPiFun"
-                },
-            double = {
-                #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
-                obsToY <- matrix(1, 2, 3)
-                piFun <- "doublePiFun"
-                })
-    } else {
-        if(missing(obsToY))
-            stop("obsToY is required for multinomial-Poisson data with no specified type.")
-        type <- "userDefined"
+    umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)
+    umf <- as(umf, "unmarkedMultFrame")
+    umf@numPrimary <- numPrimary
+    if(missing(yearlySiteCovs))
+        yearlySiteCovs <- NULL
+    if(class(yearlySiteCovs) == "list") {
+        yearlySiteVars <- names(yearlySiteCovs)
+        for(i in seq(length(yearlySiteVars))) {
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix","data.frame")))
+                stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
+            if(ncol(yearlySiteCovs[[i]]) != numPrimary |
+                nrow(yearlySiteCovs[[i]]) != nrow(y))
+                    stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
+            }
+        yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x)
+            as.vector(t(x))))
         }
-    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY,
-        mapInfo = mapInfo)
-    umf <- as(umf, "unmarkedFrameMPois")
-    umf@piFun <- piFun
-    umf@samplingMethod <- type
+
+    umf@yearlySiteCovs <- yearlySiteCovs
+    umf <- as(umf, "unmarkedFrameGPC")
     umf
 }
+
+
 
 
 
