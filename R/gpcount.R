@@ -54,7 +54,6 @@ if(!missing(starts) && length(starts) != nP)
 
 # Minus negative log-likelihood
 nll <- function(pars) {
-#    browser()
     lam <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
     phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
     phi <- matrix(phi, I, T, byrow=TRUE) # byrow?
@@ -63,10 +62,11 @@ nll <- function(pars) {
     L <- rep(NA, nSites)
     for(i in 1:I) {
         f <- dpois(M, lam[i], log=TRUE)
+        ghi <- rep(0, lM)
         for(t in 1:T) {
             gh <- matrix(-Inf, lM, lM) #
             for(m in M) {
-                if(m < max(y[i,,t]))
+                if(m < max(y[i,,], na.rm=TRUE))
                     next
                 g <- dbinom(N, m, phi[i,t], log=TRUE)
                 h <- rep(0, lM)
@@ -75,9 +75,9 @@ nll <- function(pars) {
                 }
                 gh[,m+1] <- g + h
             }
-            ghi <- colSums(exp(gh)) # sum over N(t)
-            fgh <- f + log(ghi)
+            ghi <- ghi + log(colSums(exp(gh))) # sum over N(t)
         }
+        fgh <- f + ghi
         L[i] <- sum(exp(fgh)) # sum over M
     }
     return(-sum(log(L)))
