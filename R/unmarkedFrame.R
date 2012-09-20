@@ -332,7 +332,7 @@ unmarkedFrameGDS <- function(y, siteCovs, numPrimary,
 
 
 
-# This function constructs an unmarkedMultFrame object.
+# This function constructs an  object.
 unmarkedFrameGPC <- function(y, siteCovs, numPrimary, yearlySiteCovs) {
     if(numPrimary < 2)
         stop("numPrimary must be >1. Use pcount of numPrimary=1")
