@@ -58,19 +58,21 @@ nll <- function(pars) {
     phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
     phi <- matrix(phi, I, T, byrow=TRUE) # byrow?
     p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
-    p <- array(p, c(I,J,T))  # byrow?
-    L <- rep(NA, nSites)
+    p <- array(p, c(I, J, T))  # byrow?
+    L <- rep(NA, I)
     for(i in 1:I) {
         f <- dpois(M, lam[i], log=TRUE)
         ghi <- rep(0, lM)
         for(t in 1:T) {
-            gh <- matrix(-Inf, lM, lM) #
+            gh <- matrix(-Inf, lM, lM)
             for(m in M) {
                 if(m < max(y[i,,], na.rm=TRUE))
                     next
                 g <- dbinom(N, m, phi[i,t], log=TRUE)
                 h <- rep(0, lM)
                 for(j in 1:J) {
+                    if(is.na(y[i,j,t]))
+                        next
                     h <- h + dbinom(y[i,j,t], N, p[i,j,t], log=TRUE)
                 }
                 gh[,m+1] <- g + h
@@ -82,8 +84,6 @@ nll <- function(pars) {
     }
     return(-sum(log(L)))
 }
-
-
 
 if(missing(starts)) starts <- rep(0, nP)
 fm <- optim(starts, nll, method = method, hessian = se, ...)

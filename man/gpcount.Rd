@@ -67,31 +67,35 @@ The interpretation of the parameter phi
 \link{\code{gmultmix}}, \link{\code{gdistsamp}}
 }
 \examples{
-nSites <- 100
-nVisits <- 5
-nReps <- 4
+set.seed(54)
+
+nSites <- 50
+nVisits <- 4
+nReps <- 3
 
 lambda <- 5
 phi <- 0.6
 p <- 0.4
 
-M <- rpois(nSites, lambda)
+M <- rpois(nSites, lambda) # super-population size
 
 N <- matrix(NA, nSites, nVisits)
-y <- array(NA, c(nSites, nVisits, nReps))
+y <- array(NA, c(nSites, nReps, nVisits))
 for(i in 1:nVisits) {
-    N[,i] <- rbinom(nSites, M, phi)
+    N[,i] <- rbinom(nSites, M, phi) # population available during vist j
 }
 colMeans(N)
 
 for(i in 1:nSites) {
     for(j in 1:nVisits) {
-        y[i,j,] <- rbinom(nReps, N[i,j], p)
+        y[i,,j] <- rbinom(nReps, N[i,j], p)
     }
 }
 
-ya <- aperm(y, c(1,3,2))
-ym <- matrix(ya, nSites)
+ym <- matrix(y, nSites)
+ym[1,] <- NA
+ym[2, 1:nReps] <- NA
+ym[3, (nReps+1):(nReps+nReps)] <- NA
 umf <- unmarkedFrameGPC(y=ym, numPrimary=nVisits)
 
 fmu <- gpcount(~1, ~1, ~1, umf, K=40, control=list(trace=TRUE, REPORT=1))
@@ -101,7 +105,3 @@ backTransform(fmu, type="phi")
 backTransform(fmu, type="det")
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
