@@ -1,12 +1,14 @@
 
 # data will need to be an unmarkedMultFrame
 gpcount <- function(lambdaformula, phiformula, pformula, data,
-    mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE, ...)
+    mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE,
+    engine=c('R', 'C'), ...)
 {
 if(!is(data, "unmarkedFrameGPC"))
     stop("Data is not of class unmarkedFrameGPC.")
 
 mixture <- match.arg(mixture)
+engine <- match.arg(engine)
 
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula,
     pformula = pformula)
@@ -16,9 +18,7 @@ D <- unmarked:::getDesign(data, formula = form)
 Xlam <- D$Xlam
 Xphi <- D$Xphi
 Xdet <- D$Xdet
-y <- D$y  # MxJT
-
-#browser()
+ym <- D$y  # MxJT
 
 Xlam.offset <- D$Xlam.offset
 Xphi.offset <- D$Xphi.offset
@@ -28,18 +28,18 @@ if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
 if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
 
 if(missing(K) || is.null(K)) {
-    K <- max(y, na.rm=TRUE) + 100
+    K <- max(ym, na.rm=TRUE) + 100
     warning("K was not specified, so was set to max(y)+100 =", K)
 }
 M <- N <- 0:K
 lM <- length(M)
-I <- nrow(y)
+I <- nrow(ym)
 T <- data@numPrimary
 if(T==1)
     stop("use pcount instead")
 J <- numY(data) / T
 
-y <- array(y, c(I, J, T))
+y <- array(ym, c(I, J, T))
 
 lamPars <- colnames(Xlam)
 detPars <- colnames(Xdet)
@@ -51,7 +51,7 @@ nP <- nLP + nPP + nDP + (mixture=='NB')
 if(!missing(starts) && length(starts) != nP)
     stop("There should be", nP, "starting values, not", length(starts))
 
-
+if(identical(engine, "R")) {
 # Minus negative log-likelihood
 nll <- function(pars) {
     lam <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
@@ -83,6 +83,24 @@ nll <- function(pars) {
         L[i] <- sum(exp(fgh)) # sum over M
     }
     return(-sum(log(L)))
+}
+} else
+if(identical(engine, "C")) {
+    nll <- function(pars) {
+        beta.lam <- pars[1:nLP]
+        beta.phi <- pars[(nLP+1):(nLP+nPP)]
+        beta.p <- pars[(nLP+nPP+1):(nLP+nPP+nDP)]
+        log.alpha <- 1
+        if(mixture %in% c("NB", "ZIP"))
+            log.alpha <- parms[nP]
+        .Call("nll_gpcount",
+              ym, Xlam, Xphi, Xdet,
+              beta.lam, beta.phi, beta.p, log.alpha,
+              Xlam.offset, Xphi.offset, Xdet.offset,
+              as.integer(K),
+              mixture, T,
+              PACKAGE = "unmarked")
+    }
 }
 
 if(missing(starts)) starts <- rep(0, nP)

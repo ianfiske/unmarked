@@ -320,7 +320,8 @@ m5
 plogis(1.429)
 plogis(0.395)
 
-
+1-((1-plogis(1.429))*(1-plogis(0.395)))
+plogis(1.429) + plogis(0.395)*(1-plogis(1.429))
 
 
 
