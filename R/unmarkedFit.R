@@ -1432,6 +1432,47 @@ setMethod("fitted", "unmarkedFitGMM",
 
 
 
+# Identical to method for unmarkedFitGMM. Need to fix class structure
+setMethod("fitted", "unmarkedFitGPC",
+    function(object, na.rm = FALSE)
+{
+    data <- object@data
+    D <- unmarked:::getDesign(data, object@formula, na.rm = na.rm)
+    Xlam <- D$Xlam
+    Xphi <- D$Xphi
+    Xdet <- D$Xdet
+
+    Xlam.offset <- D$Xlam.offset
+    Xphi.offset <- D$Xphi.offset
+    Xdet.offset <- D$Xdet.offset
+    if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
+    if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
+    if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
+
+    y <- D$y
+    M <- nrow(y)
+    T <- data@numPrimary
+    J <- ncol(y) / T
+    lambda <- drop(exp(Xlam %*% coef(object, 'lambda') + Xlam.offset))
+    if(T==1)
+        phi <- 1
+    else
+        phi <- plogis(Xphi %*% coef(object, 'phi') + Xphi.offset)
+    phi.mat <- matrix(phi, nrow=M, ncol=T, byrow=TRUE)
+    phi.ijt <- as.numeric(apply(phi.mat, 2, rep, times=J))
+    cp <- getP(object, na.rm = na.rm)
+
+    fitted <- lambda * phi.ijt * as.numeric(cp) # recycle
+    fitted <- matrix(fitted, M, J*T)
+    return(fitted)
+})
+
+
+
+
+
+
+
 setMethod("profile", "unmarkedFit",
     function(fitted, type, parm, seq)
 {
