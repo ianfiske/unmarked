@@ -6,9 +6,10 @@ gpcount <- function(lambdaformula, phiformula, pformula, data,
 {
 if(!is(data, "unmarkedFrameGPC"))
     stop("Data is not of class unmarkedFrameGPC.")
-
 mixture <- match.arg(mixture)
 engine <- match.arg(engine)
+if(identical(mixture, "ZIP") & identical(engine, "R"))
+    stop("ZIP mixture not available when 'engine=R'")
 
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula,
     pformula = pformula)
@@ -63,8 +64,8 @@ nll <- function(pars) {
     for(i in 1:I) {
         f <- switch(mixture,
             P = dpois(M, lam[i], log=TRUE),
-            NB = dnbinom(M, mu=lam[i], size=exp(pars[nP]), log=TRUE),
-            ZIP = dzip()) # FIXME
+            NB = dnbinom(M, mu=lam[i], size=exp(pars[nP]), log=TRUE))
+#            ZIP = dzip())
         ghi <- rep(0, lM)
         for(t in 1:T) {
             gh <- matrix(-Inf, lM, lM)

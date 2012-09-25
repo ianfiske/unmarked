@@ -333,7 +333,8 @@ unmarkedFrameGDS <- function(y, siteCovs, numPrimary,
 
 
 # This function constructs an  object.
-unmarkedFrameGPC <- function(y, siteCovs, numPrimary, yearlySiteCovs) {
+unmarkedFrameGPC <- function(y, siteCovs=NULL, obsCovs=NULL, numPrimary,
+                             yearlySiteCovs=NULL) {
     if(numPrimary < 2)
         stop("numPrimary must be >1. Use pcount of numPrimary=1")
     J <- ncol(y) / numPrimary
@@ -341,7 +342,8 @@ unmarkedFrameGPC <- function(y, siteCovs, numPrimary, yearlySiteCovs) {
     if(missing(siteCovs))
         siteCovs <- NULL
 
-    umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)
+    umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsCovs = obsCovs,
+                         obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
     if(missing(yearlySiteCovs))
