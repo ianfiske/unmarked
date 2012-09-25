@@ -1,81 +1,126 @@
 \name{gpcount}
 \alias{gpcount}
 \title{
-Generalized N-mixture model for repeated count data
+Generalized binomial N-mixture model for repeated count data
 }
 \description{
-Fit the model of Chandler et al. (2011).
+Fit the model of Chandler et al. (2011) to repeated count data collected
+using the robust design. This model allows for inference about
+population size, availability, and detection probability.
 }
 \usage{
-gpcount(lambdaformula, phiformula, pformula, data, mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE, ...)
+gpcount(lambdaformula, phiformula, pformula, data,
+mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE,
+engine = c("C", "R"), ...)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{lambdaformula}{
-%%     ~~Describe \code{lambdaformula} here~~
+    Right-hand sided formula describing covariates of abundance.
 }
   \item{phiformula}{
-%%     ~~Describe \code{phiformula} here~~
+    Right-hand sided formula describing availability covariates
 }
   \item{pformula}{
-%%     ~~Describe \code{pformula} here~~
+    Right-hand sided formula for detection probability covariates
 }
   \item{data}{
-%%     ~~Describe \code{data} here~~
+    An object of class unmarkedFrameGPC
 }
   \item{mixture}{
-%%     ~~Describe \code{mixture} here~~
+    Either "P" or "NB" for Poisson and negative binomial distributions
 }
   \item{K}{
-%%     ~~Describe \code{K} here~~
+    The maximum possible value of M, the super-population size.
 }
   \item{starts}{
-%%     ~~Describe \code{starts} here~~
+    Starting values
 }
   \item{method}{
-%%     ~~Describe \code{method} here~~
+    Optimization method used by \code{\link{optim}}
 }
   \item{se}{
-%%     ~~Describe \code{se} here~~
+    Logical. Should standard errors be calculated?
+}
+  \item{engine}{
+    Either "C" or "R" for the C++ or R versions of the likelihood. The C++
+    code is faster, but harder to debug.
 }
   \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
+    Additional arguments to \code{\link{optim}}, such as lower and upper
+    bounds
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+  The latent transect-level super-population abundance distribution
+  \eqn{f(M | \mathbf{\theta})}{f(M | theta)} can be set as either a
+  Poisson or a negative binomial random variable, depending on the
+  setting of the \code{mixture} argument. The expected value of
+  \eqn{M_i} is \eqn{\lambda_i}{lambda_i}.  If \eqn{M_i \sim NB}{M_i ~ NB},
+  then an additional parameter, \eqn{\alpha}{alpha}, describes
+  dispersion (lower \eqn{\alpha}{alpha} implies higher variance).
+
+  The number of individuals available for detection at time j
+  is a modeled as binomial:
+  \eqn{N_{ij} \sim Binomial(M_i, \mathbf{\phi_{ij}})}{N(i,j) ~
+    Binomial(M(i), phi(i,j))}.
+
+  The detection process is also modeled as binomial:
+  \eqn{y_{ikj} \sim Binomial(N_{ij}, p_{ikj})}{y(i,k,j) ~
+    Binomial(N(i,t), p(i,k,j))}.
+
+  Parameters \eqn{\lambda}{lambda}, \eqn{\phi}{phi} and \eqn{p}{p} can be
+  modeled as linear functions of covariates using the log, logit and logit
+  links respectively.
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+  An object of class unmarkedFitGPC
 }
 \references{
-%% ~put references to the literature/web site here ~
+  Royle, J. A. 2004. N-Mixture models for estimating population size from
+  spatially replicated counts. \emph{Biometrics} 60:108--105.
+
+  Chandler, R. B., J. A. Royle, and D. I. King. 2011. Inference about
+  density and temporary emigration in unmarked populations. Ecology
+  92:1429-1435.
 }
 \author{
-Richard Chandler
+  Richard Chandler \email{rchandler@usgs.gov}
 }
 \note{
-The interpretation of the parameter phi
+In the case where availability for detection is due to random temporary
+emigration, population density at time j, D(i,j), can be estimated by
+N(i,j)/plotArea.
+
+This model is also applicable to sampling designs in which the local
+population size is closed during the J repeated counts, and availability
+is related to factors such as the probability of vocalizing. In this
+case, density can be estimated by M(i)/plotArea.
+
+If availability is a function of both temporary emigration and other
+processess such as song rate, then density cannot be directly estimated,
+but inference about the super-population size, M(i), is possible.
+
+Three types of covariates can be supplied, site-level,
+site-by-year-level, and observation-level. These must be formatted
+correctly when organizing the data with \code{\link{unmarkedFrameGPC}}
 }
 
 
 \seealso{
-\link{\code{gmultmix}}, \link{\code{gdistsamp}}
+\code{\link{gmultmix}}, \code{\link{gdistsamp}},
+  \code{\link{unmarkedFrameGPC}}
 }
+
 \examples{
 set.seed(54)
 
-nSites <- 50
+nSites <- 20
 nVisits <- 4
 nReps <- 3
 
 lambda <- 5
-phi <- 0.6
-p <- 0.4
+phi <- 0.7
+p <- 0.5
 
 M <- rpois(nSites, lambda) # super-population size
 
