@@ -411,7 +411,7 @@ setMethod("ranef", "unmarkedFitGPC",
     ya <- array(y, c(R,J,T))
 
     K <- object@K
-    M <- 0:K
+    M <- N <- 0:K
     lM <- K+1
 
     post <- array(0, c(R, K+1, 1))
@@ -428,14 +428,21 @@ setMethod("ranef", "unmarkedFitGPC",
         for(t in 1:T) {
             gh <- matrix(-Inf, lM, lM)
             for(m in M) {
-                if(m < max(ya[i,,], na.rm=TRUE))
+                if(m < max(ya[i,,], na.rm=TRUE)) {
+                    gh[,m+1] <- -Inf
                     next
-                g <- dbinom(M, m, phi[i,t], log=TRUE)
+                }
+                if(is.na(phi[i,t])) {
+                    g <- rep(0, lM)
+                    g[N>m] <- -Inf
+                }
+                else
+                    g <- dbinom(N, m, phi[i,t], log=TRUE)
                 h <- rep(0, lM)
                 for(j in 1:J) {
                     if(is.na(ya[i,j,t]) | is.na(pa[i,j,t]))
                         next
-                    h <- h + dbinom(ya[i,j,t], M, pa[i,j,t], log=TRUE)
+                    h <- h + dbinom(ya[i,j,t], N, pa[i,j,t], log=TRUE)
                 }
                 gh[,m+1] <- g + h
             }
