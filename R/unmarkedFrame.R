@@ -77,15 +77,12 @@ setClass("unmarkedFrameMPois",
 
 
 setClass("unmarkedFrameG3",
-    representation(
-        primaryPeriod = "matrix"),
-    contains = "unmarkedMultFrame")
+         contains = "unmarkedMultFrame")
 
 
 setClass("unmarkedFramePCO",
-    representation(
-        primaryPeriod = "matrix"),
-    contains = "unmarkedMultFrame")
+         representation(primaryPeriod = "matrix"),
+         contains = "unmarkedMultFrame")
 
 
 setClass("unmarkedFrameGMM",
@@ -871,6 +868,8 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 
 
 
+
+
 setMethod("[", c("unmarkedFrameGMM", "numeric", "missing", "missing"),
 		function(x, i, j)
 {
@@ -879,8 +878,27 @@ setMethod("[", c("unmarkedFrameGMM", "numeric", "missing", "missing"),
                      yearlySiteCovs=yearlySiteCovs(multf),
                      obsCovs=obsCovs(multf),
                      piFun=x@piFun, type=x@samplingMethod,
-                     obsToY=x@obsToY, numPrimary=x@numPrimary)
+                     obsToY=multf@obsToY, numPrimary=multf@numPrimary)
 })
+
+
+setMethod("[", c("unmarkedFrameGPC", "numeric", "missing", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    class(multf) <- "unmarkedFrameGPC"
+    multf
+})
+
+
+setMethod("[", c("unmarkedFrameGPC", "missing", "numeric", "missing"),
+		function(x, i, j)
+{
+    multf <- as(x, "unmarkedMultFrame")
+    out <- callNextMethod(multf, i, j) # unmarkedMultFrame
+    as(out, "unmarkedFrameGPC")
+})
+
 
 
 
@@ -918,6 +936,18 @@ setMethod("[", c("unmarkedFramePCO", "numeric", "missing", "missing"),
                      obsCovs=obsCovs(multf),
                      numPrimary=x@numPrimary,
                      primaryPeriod=x@primaryPeriod[i,,drop=FALSE])
+})
+
+
+setMethod("[", c("unmarkedFramePCO", "missing", "numeric", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    unmarkedFramePCO(y=getY(multf), siteCovs=siteCovs(multf),
+                     yearlySiteCovs=yearlySiteCovs(multf),
+                     obsCovs=obsCovs(multf),
+                     numPrimary=length(j),
+                     primaryPeriod=x@primaryPeriod[,j,drop=FALSE])
 })
 
 
