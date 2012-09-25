@@ -821,9 +821,6 @@ setMethod("predict", "unmarkedFitPCO",
 })
 
 
-
-
-
 setMethod("predict", "unmarkedFitGMM",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
         appendData = FALSE, level=0.95, ...)
@@ -2143,6 +2140,28 @@ setMethod("getP", "unmarkedFitGMM",
     cp <- matrix(cp, nrow=M, ncol=numY(object@data))
 
     return(cp)
+})
+
+
+setMethod("getP", "unmarkedFitGPC",
+    function(object, na.rm = TRUE)
+{
+    formula <- object@formula
+    detformula <- object@formlist$pformula
+    umf <- object@data
+    D <- getDesign(umf, formula, na.rm = na.rm)
+    y <- D$y
+    Xdet <- D$Xdet
+    Xdet.offset <- D$Xdet.offset
+    if (is.null(Xdet.offset))
+        Xdet.offset <- rep(0, nrow(Xdet))
+    R <- nrow(y)
+    T <- object@data@numPrimary
+    J <- ncol(y) / T
+    ppars <- coef(object, type = "det")
+    p <- plogis(Xdet %*% ppars + Xdet.offset)
+    p <- matrix(p, nrow=R, byrow=TRUE)
+    return(p)
 })
 
 
