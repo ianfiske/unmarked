@@ -1468,11 +1468,6 @@ setMethod("fitted", "unmarkedFitGPC",
 })
 
 
-
-
-
-
-
 setMethod("profile", "unmarkedFit",
     function(fitted, type, parm, seq)
 {
@@ -2625,6 +2620,73 @@ setMethod("simulate", "unmarkedFitGMM",
         }
         simList[[s]] <- matrix(y.sim, nrow=n, ncol=J*T) # note, byrow=F
         }
+    return(simList)
+})
+
+
+
+
+
+setMethod("simulate", "unmarkedFitGPC",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+    formula <- object@formula
+    umf <- object@data
+    mixture <- object@mixture
+    D <- unmarked:::getDesign(umf, formula, na.rm = na.rm)
+    y <- D$y
+    browser()
+    Xlam <- D$Xlam
+    Xphi <- D$Xphi
+    Xdet <- D$Xdet
+
+    Xlam.offset <- D$Xlam.offset
+    Xphi.offset <- D$Xphi.offset
+    Xdet.offset <- D$Xdet.offset
+    if (is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
+    if (is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
+    if (is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
+
+    R <- nrow(y)
+    T <- umf@numPrimary
+    J <- ncol(y) / T
+
+    lamParms <- coef(object, type = "lambda")
+    phiParms <- coef(object, type = "phi")
+    detParms <- coef(object, type = "det")
+    lam <- drop(exp(Xlam %*% lamParms + Xlam.offset))
+    if(is.null(phiParms))
+        phi <- rep(1, nrow(Xphi))
+    else
+        phi <- as.numeric(plogis(Xphi %*% phiParms + Xphi.offset))
+    phi.mat <- matrix(phi, nrow=R, ncol=T, byrow=TRUE)
+    p <- as.numeric(plogis(Xdet %*% detParms + Xdet.offset))
+    p <- matrix(p, R, J*T, byrow=TRUE)
+    p <- array(p, c(R, J, T))
+
+    simList <- list()
+    for(s in 1:nsim) {
+        switch(mixture,
+               P = M <- rpois(n=R, lambda=lam),
+               #               FIXME: Add ZIP
+               NB = M <- rnbinom(n=R, mu=lam,
+               size=exp(coef(object, type="alpha"))))
+
+        N <- rbinom(R*T, size=M, prob=phi.mat)
+        N <- matrix(N, nrow=R, ncol=T, byrow=FALSE)
+
+        y.sim <- array(NA, c(R, J, T))
+        for(i in 1:R) {
+            for(t in 1:T) {
+                if(is.na(N[i,t]))
+                    next
+                y.sim[i,,t] <- rbinom(J, N[i,t], p[i,,t])
+            }
+        }
+        y.sim <- matrix(y.sim, nrow=R, ncol=J*T)
+        y.sim[is.na(y)] <- NA # Not necessary if covariates exist!
+        simList[[s]] <- y.sim
+    }
     return(simList)
 })
 
