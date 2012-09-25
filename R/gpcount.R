@@ -2,7 +2,7 @@
 # data will need to be an unmarkedMultFrame
 gpcount <- function(lambdaformula, phiformula, pformula, data,
     mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE,
-    engine=c('R', 'C'), ...)
+    engine=c('C', 'R'), ...)
 {
 if(!is(data, "unmarkedFrameGPC"))
     stop("Data is not of class unmarkedFrameGPC.")
