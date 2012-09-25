@@ -61,7 +61,10 @@ nll <- function(pars) {
     p <- array(p, c(I, J, T))  # byrow?
     L <- rep(NA, I)
     for(i in 1:I) {
-        f <- dpois(M, lam[i], log=TRUE)
+        f <- switch(mixture,
+            P = dpois(M, lam[i], log=TRUE),
+            NB = dnbinom(M, mu=lam[i], size=exp(pars[nP]), log=TRUE),
+            ZIP = dzip()) # FIXME
         ghi <- rep(0, lM)
         for(t in 1:T) {
             gh <- matrix(-Inf, lM, lM)
@@ -92,7 +95,7 @@ if(identical(engine, "C")) {
         beta.p <- pars[(nLP+nPP+1):(nLP+nPP+nDP)]
         log.alpha <- 1
         if(mixture %in% c("NB", "ZIP"))
-            log.alpha <- parms[nP]
+            log.alpha <- pars[nP]
         .Call("nll_gpcount",
               ym, Xlam, Xphi, Xdet,
               beta.lam, beta.phi, beta.p, log.alpha,
