@@ -24,9 +24,9 @@ y1[3, 4:6] <- NA
 umf <- unmarkedFrameGPC(y=y1, numPrimary=3)
 
 fm1.1 <- gpcount(~1, ~1, ~1, umf, K=40, control=list(trace=TRUE, REPORT=1))
+fm1.1r <- gpcount(~1, ~1, ~1, umf, K=40, engine="R",
+                  control=list(trace=TRUE, REPORT=1))
 fm1.2 <- gpcount(~1, ~1, ~1, umf, K=40, mixture="NB",
-                 control=list(trace=TRUE, REPORT=1))
-fm1.3 <- gpcount(~1, ~1, ~1, umf, K=40, mixture="ZIP",
                  control=list(trace=TRUE, REPORT=1))
 
 
@@ -38,7 +38,7 @@ p1 <- 0.4
 nPrimary1 <- 3
 for(i in 1:nsim1) {
     if(i %% 10 == 0) cat("doing", i, "\n")
-    sim1.i <- sim1(lambda=lam1, phi=phi1, p=p1, J=nPrimary1)
+    sim1.i <- sim1(lambda=lam1, phi=phi1, p=p1, J=nPrimary1)$y
     umf1.i <- unmarkedFrameGPC(y=sim1.i, numPrimary=nPrimary1)
     fm1.i <- gpcount(~1, ~1, ~1, umf1.i, K=50, engine="C")
     mle1.i <- coef(fm1.i)
@@ -71,6 +71,10 @@ K <- 3
 x1 <- rnorm(R)
 x2 <- matrix(rnorm(R*J), R, J)
 x3 <- matrix(rnorm(R*K*J), R, K*J)
+x1[2] <- NA
+x2[3,] <- NA
+x2[4,2] <- NA
+x3[5,1:K] <- NA
 
 sim2 <- function(x1, x2, x3,
                  lam0=0, lam1=1, phi0=1, phi1=1, p0=0, p1=1) {
@@ -101,5 +105,40 @@ umf2 <- unmarkedFrameGPC(y=y2,
                          obsCovs = list(x3=x3), numPrimary=J)
 summary(umf2)
 
-fm2.1 <- gpcount(~x1, ~x2, ~x3, umf2, K=40,
+fm2.1 <- gpcount(~x1, ~x2, ~x3, umf2, K=40, engine="C",
                  control=list(trace=TRUE, REPORT=1))
+fm2.1r <- gpcount(~x1, ~x2, ~x3, umf2, K=40, engine="R",
+                 control=list(trace=TRUE, REPORT=1))
+
+
+
+nsim2 <- 50
+simout2 <- matrix(NA, nsim2, 6)
+nPrimary2 <- 4
+lam0 <- 0
+lam1 <- 1
+phi0 <- 1
+phi1 <- 1
+p0 <- 0
+p1 <- 1
+set.seed(3434)
+for(i in 1:nsim2) {
+    if(i %% 1 == 5) cat("doing", i, "\n")
+    sim2.i <- sim2(x1, x2, x3, lam0, lam1, phi0, phi1, p0, p1)$y
+    umf2.i <- unmarkedFrameGPC(y=sim2.i, siteCovs=data.frame(x1),
+                               obsCovs=list(x3=x3),
+                               yearlySiteCovs=list(x2=x2),
+                               numPrimary=nPrimary2)
+    fm2.i <- gpcount(~x1, ~x2, ~x3, umf2.i, K=50, engine="C")
+    mle2.i <- coef(fm2.i)
+    simout2[i,] <- mle2.i
+}
+
+op <- par(mfrow=c(3,2), mai=c(0.5,0.5,0.1,0.1))
+hist(simout2[,1]); abline(v=lam0, lwd=2, col=4)
+hist(simout2[,2]); abline(v=lam1, lwd=2, col=4)
+hist(simout2[,3]); abline(v=phi0, lwd=2, col=4)
+hist(simout2[,4]); abline(v=phi1, lwd=2, col=4)
+hist(simout2[,5]); abline(v=p0, lwd=2, col=4)
+hist(simout2[,6]); abline(v=p1, lwd=2, col=4)
+par(op)

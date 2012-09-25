@@ -57,8 +57,9 @@ if(identical(engine, "R")) {
 nll <- function(pars) {
     lam <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
     phi <- plogis(Xphi %*% pars[(nLP+1):(nLP+nPP)] + Xphi.offset)
-    phi <- matrix(phi, I, T, byrow=TRUE) # byrow?
+    phi <- matrix(phi, I, T, byrow=TRUE)
     p <- plogis(Xdet %*% pars[(nLP+nPP+1):(nLP+nPP+nDP)] + Xdet.offset)
+    p <- matrix(p, I, byrow=TRUE)
     p <- array(p, c(I, J, T))  # byrow?
     L <- rep(NA, I)
     for(i in 1:I) {
@@ -70,9 +71,14 @@ nll <- function(pars) {
         for(t in 1:T) {
             gh <- matrix(-Inf, lM, lM)
             for(m in M) {
-                if(m < max(y[i,,], na.rm=TRUE))
-                    next
-                g <- dbinom(N, m, phi[i,t], log=TRUE)
+#                if(m < max(y[i,,], na.rm=TRUE))
+#                    next
+                if(is.na(phi[i,t])) {
+                    g <- rep(0, lM)
+                    g[N>m] <- -Inf
+                }
+                else
+                    g <- dbinom(N, m, phi[i,t], log=TRUE)
                 h <- rep(0, lM)
                 for(j in 1:J) {
                     if(is.na(y[i,j,t]))
