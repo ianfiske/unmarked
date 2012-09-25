@@ -5,6 +5,7 @@ using namespace Rcpp ;
 
 SEXP nll_gpcount( SEXP y_, SEXP Xlam_, SEXP Xphi_, SEXP Xp_, SEXP beta_lam_, SEXP beta_phi_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xphi_offset_, SEXP Xp_offset_, SEXP M_, SEXP mixture_, SEXP numPrimary_ ) {
   arma::mat ym = as<arma::mat>(y_); // Can't test for NAs if y is imat using is_finite??
+  arma::mat yimax = max(ym, 1);
   arma::mat Xlam = as<arma::mat>(Xlam_);
   arma::mat Xphi = as<arma::mat>(Xphi_);
   arma::mat Xp = as<arma::mat>(Xp_); // needs to be a cube
@@ -49,7 +50,9 @@ SEXP nll_gpcount( SEXP y_, SEXP Xlam_, SEXP Xphi_, SEXP Xp_, SEXP beta_lam_, SEX
   for(int i=0; i<R; i++) {
     //    Rprintf("log-like %f \\n", L);
     for(int m=0; m<lM; m++) {
-      if(mixture=="P")
+      if(m < yimax(i))
+	f(m) = log(0.0);
+      else if(mixture=="P")
 	f(m) = Rf_dpois(m, lam(i), true);
       else if(mixture=="NB")
         f(m) = dnbinom_mu(m, alpha, lam(i), true);
@@ -61,7 +64,7 @@ SEXP nll_gpcount( SEXP y_, SEXP Xlam_, SEXP Xphi_, SEXP Xp_, SEXP beta_lam_, SEX
       gh.zeros();
       for(int m=0; m<lM; m++) { // FIXME: increment from max(y[i,])
 	for(int n=0; n<lM; n++) {
-	  if(n > m) {
+	  if((n > m) || (m < yimax(i))) {
 	    gh(n,m) = log(0.0);
 	    continue;
 	  }

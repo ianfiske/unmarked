@@ -30,17 +30,18 @@ fm1.2 <- gpcount(~1, ~1, ~1, umf, K=40, mixture="NB",
                  control=list(trace=TRUE, REPORT=1))
 
 
-nsim1 <- 50
+nsim1 <- 5
 simout1 <- matrix(NA, nsim1, 3)
 lam1 <- 5
 phi1 <- 0.5
 p1 <- 0.4
 nPrimary1 <- 3
+set.seed(404)
 for(i in 1:nsim1) {
     if(i %% 10 == 0) cat("doing", i, "\n")
     sim1.i <- sim1(lambda=lam1, phi=phi1, p=p1, J=nPrimary1)$y
     umf1.i <- unmarkedFrameGPC(y=sim1.i, numPrimary=nPrimary1)
-    fm1.i <- gpcount(~1, ~1, ~1, umf1.i, K=50, engine="C")
+    fm1.i <- gpcount(~1, ~1, ~1, umf1.i, K=50, engine="C", se=FALSE)
     mle1.i <- coef(fm1.i)
     simout1[i,] <- c(exp(mle1.i[1]), plogis(mle1.i[2:3]))
 }
@@ -129,7 +130,7 @@ for(i in 1:nsim2) {
                                obsCovs=list(x3=x3),
                                yearlySiteCovs=list(x2=x2),
                                numPrimary=nPrimary2)
-    fm2.i <- gpcount(~x1, ~x2, ~x3, umf2.i, K=50, engine="C")
+    fm2.i <- gpcount(~x1, ~x2, ~x3, umf2.i, K=50, engine="C", se=FALSE)
     mle2.i <- coef(fm2.i)
     simout2[i,] <- mle2.i
 }

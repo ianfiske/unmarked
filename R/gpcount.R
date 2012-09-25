@@ -71,8 +71,10 @@ nll <- function(pars) {
         for(t in 1:T) {
             gh <- matrix(-Inf, lM, lM)
             for(m in M) {
-#                if(m < max(y[i,,], na.rm=TRUE))
-#                    next
+                if(m < max(y[i,,], na.rm=TRUE)) {
+                    gh[,m+1] <- -Inf
+                    next
+                }
                 if(is.na(phi[i,t])) {
                     g <- rep(0, lM)
                     g[N>m] <- -Inf
