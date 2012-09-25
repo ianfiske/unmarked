@@ -30,7 +30,7 @@ fm1.2 <- gpcount(~1, ~1, ~1, umf, K=40, mixture="NB",
                  control=list(trace=TRUE, REPORT=1))
 
 
-nsim1 <- 5
+nsim1 <- 10
 simout1 <- matrix(NA, nsim1, 3)
 lam1 <- 5
 phi1 <- 0.5
@@ -38,18 +38,20 @@ p1 <- 0.4
 nPrimary1 <- 3
 set.seed(404)
 for(i in 1:nsim1) {
-    if(i %% 10 == 0) cat("doing", i, "\n")
+    cat("doing", i, "\n")
     sim1.i <- sim1(lambda=lam1, phi=phi1, p=p1, J=nPrimary1)$y
     umf1.i <- unmarkedFrameGPC(y=sim1.i, numPrimary=nPrimary1)
     fm1.i <- gpcount(~1, ~1, ~1, umf1.i, K=50, engine="C", se=FALSE)
     mle1.i <- coef(fm1.i)
     simout1[i,] <- c(exp(mle1.i[1]), plogis(mle1.i[2:3]))
+    cat("  mle =", simout1[i,], "\n")
 }
 
+op <- par(mfrow=c(3,1), mai=c(0.5,0.5,0.1,0.1))
 hist(simout1[,1]); abline(v=lam1, lwd=2, col=4)
 hist(simout1[,2]); abline(v=phi1, lwd=2, col=4)
 hist(simout1[,3]); abline(v=p1, lwd=2, col=4)
-
+par(op)
 
 
 
@@ -113,7 +115,7 @@ fm2.1r <- gpcount(~x1, ~x2, ~x3, umf2, K=40, engine="R",
 
 
 
-nsim2 <- 50
+nsim2 <- 5
 simout2 <- matrix(NA, nsim2, 6)
 nPrimary2 <- 4
 lam0 <- 0
@@ -124,7 +126,8 @@ p0 <- 0
 p1 <- 1
 set.seed(3434)
 for(i in 1:nsim2) {
-    if(i %% 1 == 5) cat("doing", i, "\n")
+#    if(i %% 1 == 5)
+    cat("doing", i, "\n")
     sim2.i <- sim2(x1, x2, x3, lam0, lam1, phi0, phi1, p0, p1)$y
     umf2.i <- unmarkedFrameGPC(y=sim2.i, siteCovs=data.frame(x1),
                                obsCovs=list(x3=x3),
@@ -133,6 +136,7 @@ for(i in 1:nsim2) {
     fm2.i <- gpcount(~x1, ~x2, ~x3, umf2.i, K=50, engine="C", se=FALSE)
     mle2.i <- coef(fm2.i)
     simout2[i,] <- mle2.i
+    cat("  mle =", mle2.i, "\n")
 }
 
 op <- par(mfrow=c(3,2), mai=c(0.5,0.5,0.1,0.1))
