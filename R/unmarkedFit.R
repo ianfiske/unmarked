@@ -2065,7 +2065,10 @@ setMethod("getP", "unmarkedFitGDS",
                 cp[i,,t] <- cp[i,,t] * u[i,]
                 }}
             },
-	uniform = cp <- u)
+	uniform = {
+#            browser()
+            cp[] <- u
+        })
     cp <- matrix(cp, nrow=M)
     return(cp)
 })

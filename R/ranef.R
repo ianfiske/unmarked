@@ -268,7 +268,6 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
     if(is.null(Xlam.offset)) Xlam.offset <- rep(0, nrow(Xlam))
     if(is.null(Xphi.offset)) Xphi.offset <- rep(0, nrow(Xphi))
     if(is.null(Xdet.offset)) Xdet.offset <- rep(0, nrow(Xdet))
-
     beta.lam <- coef(object, type="lambda")
     beta.phi <- coef(object, type="phi")
     beta.det <- coef(object, type="det")
