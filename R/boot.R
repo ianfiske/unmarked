@@ -184,7 +184,7 @@ setMethod("nonparboot", "unmarkedFitPCount",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
     callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
-                   bsType="both")
+                   bsType="site")
 })
 
 
