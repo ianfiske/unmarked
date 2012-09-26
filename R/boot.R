@@ -130,9 +130,10 @@ setMethod("nonparboot", "unmarkedFit",
     }
     data <- object@data
     formula <- object@formula
-    designMats <- getDesign(data, formula) # bootstrap after removing sites
+    designMats <- unmarked:::getDesign(data, formula) # bootstrap after removing sites
     removed.sites <- designMats$removed.sites
-    data <- data[-removed.sites,]
+    if(length(removed.sites)>0)
+        data <- data[-removed.sites,]
     y <- getY(data)
     colnames(y) <- NULL
     data@y <- y
