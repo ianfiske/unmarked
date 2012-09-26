@@ -52,19 +52,19 @@ void gxhaz(double *x, int n, void *ex) {
   double shape = v[0];
   double scale = v[1];
   for(int i=0; i<n; i++) {
-    x[i] = 1 - exp(-pow(x[i]/shape, -scale));
+    x[i] = 1 - exp(-1*pow(x[i]/shape, -scale));
   }
 }
 
 
-// Hazard-rate detection function for line-transects
+// Hazard-rate detection function for point-transects
 void grhaz(double *x, int n, void *ex) {
   double *v;
   v = (double*)ex; // cast to double pointer
   double shape = v[0];
   double scale = v[1];
   for(int i=0; i<n; i++) {
-    x[i] = 1 - exp(-pow(x[i]/shape, -scale)) * x[i];
+    x[i] = (1 - exp(-1*pow(x[i]/shape, -scale))) * x[i];
   }
 }
 

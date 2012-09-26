@@ -725,6 +725,7 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 
 
 ## remove obs only
+### RBC: Why??? this doesn't allow umf[,c(1,1)]
 setMethod("[", c("unmarkedFrame", "missing", "numeric", "missing"),
 		function(x, i, j)
 {

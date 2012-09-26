@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9-8\cr
+Version: \tab 0.9-9\cr
 License: \tab GPL (>= 3)\cr
 }
 
@@ -42,6 +42,10 @@ Royle et al. (2004) to distance data recorded in discrete intervals.
 \code{\link{gdistsamp}} fits the generalized distance sampling model
 described by Chandler et al. (2011) to distance data recorded in
 discrete intervals.
+
+\code{\link{gpcount}} fits the generalized N-mixture model
+described by Chandler et al. (2011) to repeated count data collected
+using the robust design.
 
 \code{\link{multinomPois}} fits the multinomial-Poisson model of Royle (2004b)
 to data collected using methods such as removal sampling or double observer
