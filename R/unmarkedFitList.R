@@ -105,6 +105,8 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
             backTransform = backTransform, level=level)
         E <- sapply(ese, function(x) x[,"Predicted"])
         SE <- sapply(ese, function(x) x[,"SE"])
+        lower <- sapply(ese, function(x) x[,"lower"])
+        upper <- sapply(ese, function(x) x[,"upper"])
         ic <- sapply(fitList, slot, "AIC")
         deltaic <- ic - min(ic)
         wts <- exp(-deltaic / 2)
@@ -112,8 +114,8 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
         parav <- as.numeric(E %*% wts)
         seav <- as.numeric(sqrt(SE^2 + (E - parav)^2) %*% wts)
         out <- data.frame(Predicted = parav, SE = seav)
-        out$lower <- out$Predicted - 1.96*out$SE
-        out$upper <- out$Predicted + 1.96*out$SE
+        out$lower <- as.numeric(lower %*% wts)
+        out$upper <- as.numeric(upper %*% wts)
         if(appendData) {
             if(missing(newdata))
                 newdata <- getData(object@fits[[1]])
