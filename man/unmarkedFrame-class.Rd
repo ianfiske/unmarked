@@ -41,6 +41,7 @@
 \alias{unmarkedFramePCO-class}
 \alias{unmarkedFrameGMM-class}
 \alias{unmarkedFrameGDS-class}
+\alias{unmarkedFrameGPC-class}
 \alias{show,unmarkedFrame-method}
 \alias{show,unmarkedMultFrame-method}
 \alias{summary,unmarkedFrame-method}
@@ -49,14 +50,15 @@
 
 
 \title{Class "unmarkedFrame" }
-\description{Methods for manipulating, summarizing and viewing unmarkedFrames}
+\description{Methods for manipulating, summarizing and viewing
+  unmarkedFrames}
 \section{Objects from the Class}{
 Objects can be created by calls to the constructor function
-	\code{\link{unmarkedFrame}}. These objects are passed to the data argument
-	of the fitting functions.
+\code{\link{unmarkedFrame}}. These objects are passed to the data
+argument of the fitting functions.
 }
 \section{Slots}{
-	 \describe{
+  \describe{
     \item{\code{y}:}{Object of class \code{"matrix"}}
     \item{\code{obsCovs}:}{Object of class \code{"optionalDataFrame"}}
     \item{\code{siteCovs}:}{Object of class \code{"optionalDataFrame"}}
@@ -66,40 +68,42 @@ Objects can be created by calls to the constructor function
 }
 \section{Methods}{
   \describe{
-    \item{[}{\code{signature(x = "unmarkedFrame", i = "numeric", j = "missing",
-	 	drop = "missing")}: ... }
-    \item{[}{\code{signature(x = "unmarkedFrame", i = "numeric", j = "numeric",
-		drop = "missing")}: ... }
-    \item{[}{\code{signature(x = "unmarkedFrame", i = "missing", j = "numeric",
-		drop = "missing")}: ... }
+    \item{[}{\code{signature(x = "unmarkedFrame", i = "numeric", j =
+	"missing", drop = "missing")}: ... }
+    \item{[}{\code{signature(x = "unmarkedFrame", i = "numeric", j =
+	"numeric", drop = "missing")}: ... }
+    \item{[}{\code{signature(x = "unmarkedFrame", i = "missing", j =
+	"numeric", drop = "missing")}: ... }
     \item{coordinates}{\code{signature(object = "unmarkedFrame")}: extract
 		coordinates }
-    \item{getY}{\code{signature(object = "unmarkedFrame")}: extract y matrix }
+    \item{getY}{\code{signature(object = "unmarkedFrame")}: extract y
+      matrix }
     \item{numSites}{\code{signature(object = "unmarkedFrame")}: extract M }
-    \item{numY}{\code{signature(object = "unmarkedFrame")}: extract ncol(y) }
+    \item{numY}{\code{signature(object = "unmarkedFrame")}: extract
+      ncol(y) }
     \item{obsCovs}{\code{signature(object = "unmarkedFrame")}: extract
 		observation-level covariates }
-    \item{obsCovs<-}{\code{signature(object = "unmarkedFrame")}: add or modify
-		observation-level covariates }
-    \item{obsNum}{\code{signature(object = "unmarkedFrame")}: extract number of
-		observations }
+    \item{obsCovs<-}{\code{signature(object = "unmarkedFrame")}: add or
+      modify observation-level covariates }
+    \item{obsNum}{\code{signature(object = "unmarkedFrame")}: extract
+      number of observations }
     \item{obsToY}{\code{signature(object = "unmarkedFrame")}:  }
     \item{obsToY<-}{\code{signature(object = "unmarkedFrame")}: ... }
-    \item{plot}{\code{signature(x = "unmarkedFrame", y = "missing")}: visualize
-      response variable.
-
-    Takes additional argument \code{panels} which specifies how many
-    panels data should be split over.}
+    \item{plot}{\code{signature(x = "unmarkedFrame", y = "missing")}:
+      visualize response variable.
+      Takes additional argument \code{panels} which specifies how many
+      panels data should be split over.}
     \item{projection}{\code{signature(object = "unmarkedFrame")}: extract
 		projection information }
     \item{show}{\code{signature(object = "unmarkedFrame")}: view data as
 		data.frame }
     \item{siteCovs}{\code{signature(object = "unmarkedFrame")}: extract
 		site-level covariates }
-    \item{siteCovs<-}{\code{signature(object = "unmarkedFrame")}: add or modify
-		site-level covariates }
-    \item{summary}{\code{signature(object = "unmarkedFrame")}: summarize data }
-	 }
+    \item{siteCovs<-}{\code{signature(object = "unmarkedFrame")}: add or
+      modify site-level covariates }
+    \item{summary}{\code{signature(object = "unmarkedFrame")}: summarize
+      data }
+  }
 }
 \note{ This is a superclass with child classes for each fitting function }
 

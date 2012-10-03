@@ -1,6 +1,6 @@
 \name{gmultmix}
 \alias{gmultmix}
-\title{Generalized multinomial-mixture model}
+\title{Generalized multinomial N-mixture model}
 \description{
 A three level hierarchical model for designs involving
 repeated counts that yield multinomial outcomes.  Possible data collection
@@ -40,9 +40,9 @@ then an
 additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 \eqn{\alpha}{alpha} implies higher variance).
 
-The number of individuals available for detection at time t
+The number of individuals available for detection at time j
 is a modeled as binomial:
-\eqn{N_{it} \sim Binomial(M_i, \mathbf{\phi_{ij}})}{N(i,t) ~
+\eqn{N_{ij} \sim Binomial(M_i, \mathbf{\phi_{ij}})}{N(i,j) ~
   Binomial(M(i), phi(i,j))}.
 
 The detection process is modeled as multinomial:
@@ -75,19 +75,32 @@ Royle, J. A. (2004) Generalized estimators of avian abundance from count
 survey data. \emph{Animal Biodiversity and Conservation} 27,
 pp. 375--386.
 
-Chandler, R. B., J. A. Royle, and D. I. King. In Press. Inference about
+Chandler, R. B., J. A. Royle, and D. I. King. 2011. Inference about
 density and temporary emigration in unmarked populations. Ecology
+92:1429-1435.
 
 }
 \author{
 Richard Chandler \email{rchandler@usgs.gov} and Andy Royle
 }
+
 \note{
+In the case where availability for detection is due to random temporary
+emigration, population density at time j, D(i,j), can be estimated by
+N(i,j)/plotArea.
+
+This model is also applicable to sampling designs in which the local
+population size is closed during the J repeated counts, and availability
+is related to factors such as the probability of vocalizing. In this
+case, density can be estimated by M(i)/plotArea.
+
+If availability is a function of both temporary emigration and other
+processess such as song rate, then density cannot be directly estimated,
+but inference about the super-population size, M(i), is possible.
+
 Three types of covariates can be supplied, site-level,
-site-by-year-level, and
-observation-level. These must be formatted correctly when organizing the
-data
-with \code{\link{unmarkedFrameGMM}}
+site-by-year-level, and observation-level. These must be formatted
+correctly when organizing the data with \code{\link{unmarkedFrameGPC}}
 }
 
 \seealso{

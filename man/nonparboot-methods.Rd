@@ -53,6 +53,10 @@ get bootstrap estimates of standard errors.
   instructed to use bootstrap samples by providing the argument
   \code{method = "nonparboot"}.
 
+  For \code{\link{occu}} and \code{\link{occuRN}} both sites and
+  occassions are re-sampled. For all other fitting functions, only sites
+  are re-sampled.
+
 }
 \examples{
 data(ovendata)

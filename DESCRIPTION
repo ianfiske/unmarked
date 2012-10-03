@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 0.9-7
-Date: 2012-03-29
+Version: 0.9-9
+Date: 2012-09-26
 Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske, Richard Chandler, Andy Royle, Marc Kery
@@ -17,7 +17,7 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'unmarkedFit.R' 'utils.R' 'getDesign.R' 'colext.R' 'distsamp.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'pcount.R' 'gmultmix.R'
     'pcountOpen.R' 'gdistsamp.R' 'unmarkedFitList.R' 'unmarkedLinComb.R'
-    'ranef.R' 'boot.R' 'occuFP.R' 'colextFP.R'
+    'ranef.R' 'boot.R' 'occuFP.R' 'colextFP.R' 'gpcount.R'
 Encoding: UTF-8
 LinkingTo: Rcpp
 SystemRequirements: GNU make

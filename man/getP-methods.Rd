@@ -9,10 +9,11 @@
 \alias{getP,unmarkedFitPCO-method}
 \alias{getP,unmarkedFitGMM-method}
 \alias{getP,unmarkedFitGDS-method}
+\alias{getP,unmarkedFitGPC-method}
 \title{Methods for Function getP in Package `unmarked'}
 \description{
-Methods for function \code{getP} in Package `unmarked'. These methods return a
-matrix of detection probabilities.
+Methods for function \code{getP} in Package `unmarked'. These methods
+return a matrix of detection probabilities.
 }
 \section{Methods}{
 \describe{

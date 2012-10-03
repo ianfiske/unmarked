@@ -88,15 +88,12 @@ setClass("unmarkedFrameMPois",
 
 
 setClass("unmarkedFrameG3",
-    representation(
-        primaryPeriod = "matrix"),
-    contains = "unmarkedMultFrame")
+         contains = "unmarkedMultFrame")
 
 
 setClass("unmarkedFramePCO",
-    representation(
-        primaryPeriod = "matrix"),
-    contains = "unmarkedMultFrame")
+         representation(primaryPeriod = "matrix"),
+         contains = "unmarkedMultFrame")
 
 
 setClass("unmarkedFrameGMM",
@@ -111,6 +108,9 @@ setClass("unmarkedFrameGDS",
         tlength = "numeric",
         survey = "character",
         unitsIn = "character"),
+    contains = "unmarkedFrameG3")
+
+setClass("unmarkedFrameGPC",
     contains = "unmarkedFrameG3")
 
 
@@ -181,6 +181,51 @@ unmarkedFrameOccuFP <- function(y, siteCovs = NULL, obsCovs = NULL, type, mapInf
   umf@type <- type
   umf
 }
+
+
+
+
+unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
+{
+    J <- ncol(y)
+    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J),
+        mapInfo = mapInfo)
+    umf <- as(umf, "unmarkedFramePCount")
+    umf
+}
+
+
+
+unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
+    obsToY, mapInfo, piFun)
+{
+    if(!missing(type)) {
+        switch(type,
+            removal = {
+                obsToY <- matrix(1, ncol(y), ncol(y))
+                obsToY[col(obsToY) < row(obsToY)] <- 0
+                #obsToY <- diag(ncol(y))
+                #obsToY[upper.tri(obsToY)] <- 1
+                piFun <- "removalPiFun"
+                },
+            double = {
+                #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
+                obsToY <- matrix(1, 2, 3)
+                piFun <- "doublePiFun"
+                })
+    } else {
+        if(missing(obsToY))
+            stop("obsToY is required for multinomial-Poisson data with no specified type.")
+        type <- "userDefined"
+        }
+    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY,
+        mapInfo = mapInfo)
+    umf <- as(umf, "unmarkedFrameMPois")
+    umf@piFun <- piFun
+    umf@samplingMethod <- type
+    umf
+}
+
 
 
 # This function constructs an unmarkedMultFrame object.
@@ -330,46 +375,41 @@ unmarkedFrameGDS <- function(y, siteCovs, numPrimary,
 
 
 
-unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
-{
-    J <- ncol(y)
-    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J),
-        mapInfo = mapInfo)
-    umf <- as(umf, "unmarkedFramePCount")
-    umf
-}
+# This function constructs an  object.
+unmarkedFrameGPC <- function(y, siteCovs=NULL, obsCovs=NULL, numPrimary,
+                             yearlySiteCovs=NULL) {
+    if(numPrimary < 2)
+        stop("numPrimary must be >1. Use pcount of numPrimary=1")
+    J <- ncol(y) / numPrimary
+    obsToY <- diag(J*numPrimary)
+    if(missing(siteCovs))
+        siteCovs <- NULL
 
-
-
-unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
-    obsToY, mapInfo, piFun)
-{
-    if(!missing(type)) {
-        switch(type,
-            removal = {
-                obsToY <- matrix(1, ncol(y), ncol(y))
-                obsToY[col(obsToY) < row(obsToY)] <- 0
-                #obsToY <- diag(ncol(y))
-                #obsToY[upper.tri(obsToY)] <- 1
-                piFun <- "removalPiFun"
-                },
-            double = {
-                #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
-                obsToY <- matrix(1, 2, 3)
-                piFun <- "doublePiFun"
-                })
-    } else {
-        if(missing(obsToY))
-            stop("obsToY is required for multinomial-Poisson data with no specified type.")
-        type <- "userDefined"
+    umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsCovs = obsCovs,
+                         obsToY = obsToY)
+    umf <- as(umf, "unmarkedMultFrame")
+    umf@numPrimary <- numPrimary
+    if(missing(yearlySiteCovs))
+        yearlySiteCovs <- NULL
+    if(class(yearlySiteCovs) == "list") {
+        yearlySiteVars <- names(yearlySiteCovs)
+        for(i in seq(length(yearlySiteVars))) {
+            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix","data.frame")))
+                stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
+            if(ncol(yearlySiteCovs[[i]]) != numPrimary |
+                nrow(yearlySiteCovs[[i]]) != nrow(y))
+                    stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
+            }
+        yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x)
+            as.vector(t(x))))
         }
-    umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = obsToY,
-        mapInfo = mapInfo)
-    umf <- as(umf, "unmarkedFrameMPois")
-    umf@piFun <- piFun
-    umf@samplingMethod <- type
+
+    umf@yearlySiteCovs <- yearlySiteCovs
+    umf <- as(umf, "unmarkedFrameGPC")
     umf
 }
+
+
 
 
 
@@ -783,6 +823,7 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 
 
 ## remove obs only
+### RBC: Why??? this doesn't allow umf[,c(1,1)]
 setMethod("[", c("unmarkedFrame", "missing", "numeric", "missing"),
 		function(x, i, j)
 {
@@ -986,6 +1027,8 @@ setMethod("[", c("unmarkedMultFPFrame", "numeric", "missing", "missing"),
           })
 
 
+
+
 setMethod("[", c("unmarkedFrameGMM", "numeric", "missing", "missing"),
 		function(x, i, j)
 {
@@ -994,8 +1037,27 @@ setMethod("[", c("unmarkedFrameGMM", "numeric", "missing", "missing"),
                      yearlySiteCovs=yearlySiteCovs(multf),
                      obsCovs=obsCovs(multf),
                      piFun=x@piFun, type=x@samplingMethod,
-                     obsToY=x@obsToY, numPrimary=x@numPrimary)
+                     obsToY=multf@obsToY, numPrimary=multf@numPrimary)
 })
+
+
+setMethod("[", c("unmarkedFrameGPC", "numeric", "missing", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    class(multf) <- "unmarkedFrameGPC"
+    multf
+})
+
+
+setMethod("[", c("unmarkedFrameGPC", "missing", "numeric", "missing"),
+		function(x, i, j)
+{
+    multf <- as(x, "unmarkedMultFrame")
+    out <- callNextMethod(multf, i, j) # unmarkedMultFrame
+    as(out, "unmarkedFrameGPC")
+})
+
 
 
 
@@ -1033,6 +1095,18 @@ setMethod("[", c("unmarkedFramePCO", "numeric", "missing", "missing"),
                      obsCovs=obsCovs(multf),
                      numPrimary=x@numPrimary,
                      primaryPeriod=x@primaryPeriod[i,,drop=FALSE])
+})
+
+
+setMethod("[", c("unmarkedFramePCO", "missing", "numeric", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    unmarkedFramePCO(y=getY(multf), siteCovs=siteCovs(multf),
+                     yearlySiteCovs=yearlySiteCovs(multf),
+                     obsCovs=obsCovs(multf),
+                     numPrimary=length(j),
+                     primaryPeriod=x@primaryPeriod[,j,drop=FALSE])
 })
 
 
