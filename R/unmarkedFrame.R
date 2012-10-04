@@ -37,11 +37,6 @@ setClass("unmarkedMultFrame",
         yearlySiteCovs = "optionalDataFrame"),
     contains="unmarkedFrame")
 
-setClass("unmarkedMultFPFrame",
-         representation(numPrimary = "numeric",
-                        #data frame in site-major, year-minor order describing siteCovs
-                        yearlySiteCovs = "optionalDataFrame"),
-         contains="unmarkedFrame")
 
 
 ## a class for distance sampling data
@@ -254,31 +249,9 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     umf
 }
 
-# This function constructs an unmarkedMultFrame object.
-unmarkedMultFPFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
-                              numPrimary, yearlySiteCovs = NULL)
-{
-  J <- ncol(y)
-  umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
-  umf <- as(umf, "unmarkedMultFPFrame")
-  umf@numPrimary <- numPrimary
-  
-  if(class(yearlySiteCovs) == "list") {
-    yearlySiteVars <- names(yearlySiteCovs)
-    for(i in seq(length(yearlySiteVars))) {
-      if(!(class(yearlySiteCovs[[i]]) %in% c("matrix", "data.frame")))
-        stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
-      if(ncol(yearlySiteCovs[[i]]) != numPrimary |
-        nrow(yearlySiteCovs[[i]]) != nrow(y))
-        stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
-    }
-    yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x)
-      as.vector(t(x))))
-  }
-  
-  umf@yearlySiteCovs <- yearlySiteCovs
-  umf
-}
+
+
+
 
 # This function constructs an unmarkedMultFrame object.
 unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
@@ -508,23 +481,6 @@ setMethod("show", "unmarkedMultFrame",
         }
 })
 
-setMethod("show", "unmarkedMultFPFrame",
-          function(object)
-          {
-            df <- as(object, "data.frame")
-            ysc <- yearlySiteCovs(object)
-            if(is.null(ysc)) {
-              cat("Data frame representation of unmarkedFrame object.\n")
-              print(df)
-            }
-            else {
-              T <- object@numPrimary
-              yscwide <- lapply(ysc, matrix, ncol=T, byrow=TRUE)
-              df <- data.frame(df, yscwide)
-              cat("Data frame representation of unmarkedFrame object.\n")
-              print(df)
-            }
-          })
 
 ############################ EXTRACTORS ##################################
 
@@ -539,9 +495,6 @@ setGeneric("yearlySiteCovs", function(object,...)
     standardGeneric("yearlySiteCovs"))
 setMethod("yearlySiteCovs", "unmarkedMultFrame", function(object) {
     return(object@yearlySiteCovs)
-})
-setMethod("yearlySiteCovs", "unmarkedMultFPFrame", function(object) {
-  return(object@yearlySiteCovs)
 })
 
 
@@ -603,11 +556,6 @@ setReplaceMethod("yearlySiteCovs", "unmarkedMultFrame",
         object@yearlySiteCovs <- as.data.frame(value)
         object
     })
-setReplaceMethod("yearlySiteCovs", "unmarkedMultFPFrame",
-                 function(object, value) {
-                   object@yearlySiteCovs <- as.data.frame(value)
-                   object
-                 })
 
 setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
 setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
@@ -712,33 +660,6 @@ setMethod("summary", "unmarkedMultFrame", function(object,...) {
     }
 })
 
-setMethod("summary", "unmarkedMultFPFrame", function(object,...) {
-  cat("unmarkedFrame Object\n\n")
-  cat(nrow(object@y), "sites\n")
-  cat("Maximum number of observations per site:",ncol(object@y),"\n")
-  mean.obs <- mean(rowSums(!is.na(getY(object))))
-  cat("Mean number of observations per site:",round(mean.obs,2),"\n")
-  cat("Number of primary survey periods:", object@numPrimary, "\n")
-  cat("Number of secondary survey periods:",
-      obsNum(object) / object@numPrimary, "\n")
-  cat("Sites with at least one detection:",
-      sum(apply(getY(object), 1, function(x) any(x > 0, na.rm=TRUE))),
-      "\n\n")
-  cat("Tabulation of y observations:")
-  print(table(object@y, exclude=NULL))
-  if(!is.null(object@siteCovs)) {
-    cat("\nSite-level covariates:\n")
-    print(summary(object@siteCovs))
-  }
-  if(!is.null(object@obsCovs)) {
-    cat("\nObservation-level covariates:\n")
-    print(summary(object@obsCovs))
-  }
-  if(!is.null(object@yearlySiteCovs)) {
-    cat("\nYearly-site-level covariates:\n")
-    print(summary(object@yearlySiteCovs))
-  }
-})
 
 
 
@@ -920,25 +841,8 @@ setMethod("[", c("unmarkedMultFrame", "missing", "numeric", "missing"),
     return(u)
 })
 
-## for multframes, must remove years at a time
-setMethod("[", c("unmarkedMultFPFrame", "missing", "numeric", "missing"),
-          function(x, i, j)
-          {
-            J <- obsNum(x)/x@numPrimary
-            obs <- rep(1:x@numPrimary, each = J)
-            years <- 1:x@numPrimary
-            numPrimary <- length(j)
-            obsj <- match(obs, j)
-            j2 <- which(!is.na(obsj))
-            u <- callNextMethod(x, i, j2)
-            ysc <- yearlySiteCovs(x)
-            if(!is.null(ysc)) {
-              ysc <- ysc[rep(!is.na(match(years, j)), nrow(getY(x))),, drop=FALSE]
-              u@yearlySiteCovs <- ysc
-            }
-            u@numPrimary <- numPrimary
-            return(u)
-          })
+
+
 ## for multframes, must remove years at a time
 setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 		function(x, i, j)
@@ -982,49 +886,6 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
     u
 
 })
-
-setMethod("[", c("unmarkedMultFPFrame", "numeric", "missing", "missing"),
-          function(x, i, j)
-          {
-            if(!require(reshape))
-              stop("reshape package required")
-            M <- numSites(x)
-            if(length(i) == 0) return(x)
-            if(any(i < 0) && any(i > 0))
-              stop("i must be all positive or all negative indices.")
-            if(all(i < 0)) { # if i is negative, then convert to positive
-              i <- (1:M)[i]
-            }
-            oldy <- getY(x)
-            y <- oldy[i,]
-            siteCovs <- siteCovs(x)
-            obsCovs <- obsCovs(x)
-            if (!is.null(siteCovs)) {
-              siteCovs <- siteCovs(x)[i, , drop = FALSE]
-            }
-            if (!is.null(obsCovs)) {
-              R <- obsNum(x)
-              obsCovs <- cbind(.site=rep(1:M, each = R), obsCovs(x))
-              obsCovs <- ldply(i, function(site) {
-                subset(obsCovs, .site == site)
-              })
-              obsCovs$.site <- NULL
-            }
-            u <- unmarkedMultFPFrame(y=matrix(y, ncol=ncol(oldy)),
-                                   siteCovs=siteCovs,
-                                   obsCovs=obsCovs,
-                                   numPrimary=x@numPrimary)
-            ysc <- x@yearlySiteCovs
-            if(!is.null(ysc)) {
-              T <- x@numPrimary
-              sites <- rep(1:M, each=T)
-              keep <- as.vector(sapply(i, function(x) which(sites %in% x)))
-              ysc <- ysc[keep,, drop=FALSE]
-              u@yearlySiteCovs <- ysc
-            }
-            u
-            
-          })
 
 
 
