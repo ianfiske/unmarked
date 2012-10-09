@@ -4,6 +4,7 @@
 \alias{fitted,unmarkedFit-method}
 \alias{fitted,unmarkedFitColExt-method}
 \alias{fitted,unmarkedFitOccu-method}
+\alias{fitted,unmarkedFitOccuFP-method}
 \alias{fitted,unmarkedFitOccuRN-method}
 \alias{fitted,unmarkedFitPCount-method}
 \alias{fitted,unmarkedFitDS-method}

@@ -3,6 +3,7 @@
 \alias{ranef}
 \alias{ranef-methods}
 \alias{ranef,unmarkedFitOccu-method}
+\alias{ranef,unmarkedFitOccuFP-method}
 \alias{ranef,unmarkedFitOccuRN-method}
 \alias{ranef,unmarkedFitPCount-method}
 \alias{ranef,unmarkedFitMPois-method}

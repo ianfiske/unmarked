@@ -18,6 +18,7 @@
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{residuals,unmarkedFitOccu-method}
+\alias{residuals,unmarkedFitOccuFP-method}
 \alias{residuals,unmarkedFitOccuRN-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
@@ -26,6 +27,7 @@
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
+\alias{unmarkedFitOccuFP-class}
 \alias{unmarkedFitPCount-class}
 \alias{unmarkedFitDS-class}
 \alias{unmarkedFitMPois-class}
@@ -85,6 +87,10 @@ extracted using the methods described below.
     \item{getData}{\code{signature(object = "unmarkedFit")}: extracts data }
     \item{getP}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
 		expected detection probabilities }
+    \item{getFP}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
+  	expected false positive detection probabilities }
+    \item{getB}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
+  	expected probabilities a true positive detection was classified as certain }
     \item{hessian}{\code{signature(object = "unmarkedFit")}: Returns hessian 
 		matrix }
     \item{linearComb}{\code{signature(obj = "unmarkedFit", 
