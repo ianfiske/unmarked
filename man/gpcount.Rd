@@ -143,10 +143,12 @@ ym[2, 1:nReps] <- NA
 ym[3, (nReps+1):(nReps+nReps)] <- NA
 umf <- unmarkedFrameGPC(y=ym, numPrimary=nVisits)
 
+\dontrun{
 fmu <- gpcount(~1, ~1, ~1, umf, K=40, control=list(trace=TRUE, REPORT=1))
 
 backTransform(fmu, type="lambda")
 backTransform(fmu, type="phi")
 backTransform(fmu, type="det")
+}
 
 }

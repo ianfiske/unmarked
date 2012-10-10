@@ -178,7 +178,7 @@ gam <- exp(coef(m1, type="gamma"))
 om <- plogis(coef(m1, type="omega"))
 p <- plogis(coef(m1, type="det"))
 
-
+\dontrun{
 # Finite sample inference. Abundance at site i, year t
 re <- ranef(m1)
 devAskNewPage(TRUE)
@@ -203,6 +203,7 @@ rbind(N=colSums(N), N.hat1=N.hat1, N.hat2=colSums(N.hat2))
 plot(1:T, N.hat1, ylim=c(0,600))
 points(1:T, colSums(N), col="blue", pch=16)
 arrows(1:T, CI[1,], 1:T, CI[2,], code=3, length=0.05, angle=90)
+}
 
 }
 
