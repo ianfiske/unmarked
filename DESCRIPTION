@@ -1,9 +1,9 @@
 Package: unmarked
 Version: 0.9-9
-Date: 2012-09-26
+Date: 2012-10-10
 Type: Package
 Title: Models for Data from Unmarked Animals
-Author: Ian Fiske, Richard Chandler, Andy Royle, Marc Kery
+Author: Ian Fiske, Richard Chandler, David Miller, Andy Royle, Marc Kery
 Maintainer: Richard Chandler <rchandler@usgs.gov>
 Depends: R (>= 2.12.0), methods, reshape, lattice, Rcpp (>= 0.8.0),
     RcppArmadillo (>= 0.2.0)

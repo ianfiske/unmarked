@@ -6,33 +6,33 @@
 
 \usage{unmarkedFrameOccuFP(y, siteCovs=NULL, obsCovs=NULL, type, mapInfo)}
 
-\description{Organizes detection, non-detection data along with the covariates. 
+\description{Organizes detection, non-detection data along with the covariates.
     This S4 class is required by the data argument of \code{\link{occu}} and
     \code{\link{occuRN}}}
 
 \arguments{
-    \item{y}{An RxJ matrix of the detection, non-detection data, where R is the 
+    \item{y}{An RxJ matrix of the detection, non-detection data, where R is the
         number of sites, J is the maximum number of sampling periods per site.}
-    \item{siteCovs}{A \code{\link{data.frame}} of covariates that vary at the 
+    \item{siteCovs}{A \code{\link{data.frame}} of covariates that vary at the
         site level. This should have M rows and one column per covariate}
-    \item{obsCovs}{Either a named list of \code{\link{data.frame}}s of 
-        covariates that vary within sites, or a \code{\link{data.frame}} with 
+    \item{obsCovs}{Either a named list of \code{\link{data.frame}}s of
+        covariates that vary within sites, or a \code{\link{data.frame}} with
         RxJ rows in site-major order.}
     \item{type}{A vector with 3 values designating the number of occassions
-	where data is of type 1, type 2, and type 3 - see code{\link{occuFP}}
+	where data is of type 1, type 2, and type 3 - see \code{\link{occuFP}}
 	for more details about data types.}
     \item{mapInfo}{Currently ignored}
-  
+
 }
 
 \details{
-    unmarkedFrameOccuFP is the S4 class that holds data to be passed 
+    unmarkedFrameOccuFP is the S4 class that holds data to be passed
     to the \code{\link{occu}} and \code{\link{occuRN}} model-fitting function.
 }
 
 \value{an object of class unmarkedFrameOccuFP}
 
-\seealso{\code{\link{unmarkedFrame-class}}, \code{\link{unmarkedFrame}}, 
+\seealso{\code{\link{unmarkedFrame-class}}, \code{\link{unmarkedFrame}},
     \code{\link{occuFP}}}
 
 \examples{
