@@ -461,6 +461,96 @@ setMethod("predict", "unmarkedFitPCount",
 })
 
 
+### prediction
+
+setMethod("predict", "unmarkedFitOccuFP",
+          function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
+                   appendData = FALSE, ...)
+          {
+            if(missing(newdata) || is.null(newdata))
+              newdata <- getData(object)
+            detformula <- object@detformula
+            stateformula <- object@stateformula
+            FPformula <- object@FPformula
+            Bformula <- object@Bformula
+            if(inherits(newdata, "unmarkedFrameOccuFP"))
+              class(newdata) <- "unmarkedFrameOccuFP"
+            cls <- class(newdata)[1]
+            if(!cls %in% c("unmarkedFrameOccuFP", "data.frame", "RasterStack"))
+              stop("newdata should be an unmarkedFrameOccuFP, data.frame, or RasterStack", call.=FALSE)
+            if(identical(cls, "RasterStack"))
+              stop("RasterStack not implemented for occuFP")
+            switch(cls,
+                   unmarkedFrameOccuFP = {
+                     designMats <- getDesign(newdata, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
+                     switch(type,
+                            state = {
+                              X <- designMats$X
+                              offset <- designMats$X.offset
+                            },
+                            det = {
+                              X <- designMats$V
+                              offset <- designMats$V.offset
+                            },
+                            fp = {
+                              X <- designMats$U
+                              offset <- designMats$U.offset
+                            },
+                            b = {
+                              X <- designMats$W
+                              offset <- designMats$W.offset
+                            })
+                   },
+                   data.frame = {
+                     switch(type,
+                            state = {
+                              mf <- model.frame(stateformula, newdata)
+                              X <- model.matrix(stateformula, mf)
+                              offset <- model.offset(mf)
+                            },
+                            det = {
+                              mf <- model.frame(detformula, newdata)
+                              X <- model.matrix(detformula, mf)
+                              offset <- model.offset(mf)
+                            },
+                            fp = {
+                              mf <- model.frame(FPformula, newdata)
+                              X <- model.matrix(FPformula, mf)
+                              offset <- model.offset(mf)
+                            },
+                            b = {
+                              mf <- model.frame(Bformula, newdata)
+                              X <- model.matrix(Bformula, mf)
+                              offset <- model.offset(mf)
+                            })
+                   })
+            
+            out <- data.frame(matrix(NA, nrow(X), 4,
+                                     dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+            for(i in 1:nrow(X)) {
+              if(nrow(X) > 5000) {
+                if(i %% 1000 == 0)
+                  cat("  doing row", i, "of", nrow(X), "rows\n")
+              }
+              if(any(is.na(X[i,])))
+                next
+              lc <- linearComb(object, X[i,], type, offset = offset)
+              if(backTransform)
+                lc <- backTransform(lc)
+              out$Predicted[i] <- coef(lc)
+              out$SE[i] <- SE(lc)
+              ci <- confint(lc)
+              out$lower[i] <- ci[1]
+              out$upper[i] <- ci[2]
+            }
+            if(appendData) {
+              out <- data.frame(out, z)
+            }
+            return(out)
+          })
+
+
+
 
 
 
