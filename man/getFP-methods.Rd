@@ -5,7 +5,7 @@
 \alias{getFP,unmarkedFitOccuFP-method}
 \title{Methods for Function getFP in Package `unmarked'}
 \description{
-Methods for function \code{getP} in Package `unmarked'. These methods
+Methods for function \code{getFP} in Package `unmarked'. These methods
 return a matrix of false positive detection probabilities.
 }
 \keyword{methods}

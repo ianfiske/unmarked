@@ -30,8 +30,9 @@ abundance and detection (MacKenzie et al. 2002).
 exploiting the link between detection probability and abundance (Royle and
 Nichols 2003).
 
-\code{\link{occuFP}} Fit occupancy models when false positive detections
-occur (e.g., Royle and Link [2006] and Miller et al. [2011]).
+\code{\link{occuFP}} fits occupancy models to data characterized by
+false negatives and false positive detections (e.g., Royle and Link
+[2006] and Miller et al. [2011]).
 
 \code{\link{colext}} fits the mutli-season occupancy model of
 MacKenzie et al. (2003).
