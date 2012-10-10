@@ -6,6 +6,7 @@
 \alias{simulate,unmarkedFitMPois-method}
 \alias{simulate,unmarkedFitOccu-method}
 \alias{simulate,unmarkedFitOccuRN-method}
+\alias{simulate,unmarkedFitOccuFP-method}
 \alias{simulate,unmarkedFitPCount-method}
 \alias{simulate,unmarkedFitPCO-method}
 \alias{simulate,unmarkedFitGMM-method}

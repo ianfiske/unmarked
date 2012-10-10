@@ -38,6 +38,7 @@ setClass("unmarkedMultFrame",
     contains="unmarkedFrame")
 
 
+
 ## a class for distance sampling data
 setClass("unmarkedFrameDS",
     representation(
@@ -63,6 +64,11 @@ setClass("unmarkedFrameDS",
 
 setClass("unmarkedFrameOccu",
 		contains = "unmarkedFrame")
+
+setClass("unmarkedFrameOccuFP",
+         representation(
+           type = "numeric"),
+         contains = "unmarkedFrame")
 
 
 setClass("unmarkedFramePCount",
@@ -161,6 +167,16 @@ unmarkedFrameOccu <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
     umf
 }
 
+unmarkedFrameOccuFP <- function(y, siteCovs = NULL, obsCovs = NULL, type, mapInfo)
+{
+  J <- ncol(y)
+  umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J),
+                       mapInfo = mapInfo)
+  umf <- as(umf, "unmarkedFrameOccuFP")
+  umf@type <- type
+  umf
+}
+
 
 
 
@@ -232,6 +248,9 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     umf@yearlySiteCovs <- yearlySiteCovs
     umf
 }
+
+
+
 
 
 # This function constructs an unmarkedMultFrame object.
@@ -478,6 +497,7 @@ setMethod("yearlySiteCovs", "unmarkedMultFrame", function(object) {
     return(object@yearlySiteCovs)
 })
 
+
 setGeneric("obsCovs", function(object,...) standardGeneric("obsCovs"))
 setMethod("obsCovs", "unmarkedFrame", function(object, matrices = FALSE) {
     M <- numSites(object)
@@ -536,7 +556,6 @@ setReplaceMethod("yearlySiteCovs", "unmarkedMultFrame",
         object@yearlySiteCovs <- as.data.frame(value)
         object
     })
-
 
 setGeneric("obsToY<-", function(object, value) standardGeneric("obsToY<-"))
 setReplaceMethod("obsToY", "unmarkedFrame", function(object, value) {
@@ -823,6 +842,7 @@ setMethod("[", c("unmarkedMultFrame", "missing", "numeric", "missing"),
 })
 
 
+
 ## for multframes, must remove years at a time
 setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 		function(x, i, j)
@@ -866,7 +886,6 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
     u
 
 })
-
 
 
 
