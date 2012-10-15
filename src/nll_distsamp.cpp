@@ -27,29 +27,35 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
   //  void *ex;
   double *ex;
   ex = (double *) R_alloc(2, sizeof(double));
+  // Integration settings given to Rdqags
+  double lower=0.0, upper=0.0, epsrel=0.0, epsabs=0.0;
+  int limit = 100, lenw=400, last=0, iwork=100;
+  double work = 0.0, result=0.0, abserr=0.0;
+  int neval = 0, ier=0;
+  double cp=0.0;
 
   for(int i=0; i<R; i++) {
     for(int j=0; j<J; j++) {
-      double cp = 0.0;
-      ex[0] = sig(i);
+      cp = 0.0;
+      ex[0] = sig[i];
       ex[1] = scale;
       if(keyfun=="uniform") {
 	cp = u(i,j);
       } else {
 	// Integration settings given to Rdqags
-	double lower = db[j];
-	double upper = db[j+1];
-	double epsrel = Rcpp::as<double>(reltol_);
-	double epsabs = epsrel;
-	int limit = 100;
-	int lenw = 400;
-	int last = 0;
-	int iwork = 100;
-	double work = 400.0;
-	double result = DOUBLE_XMIN;
-	double abserr = 0.0;
-	int neval = 0;
-	int ier = 0;
+	lower = db[j];
+	upper = db[j+1];
+	epsrel = Rcpp::as<double>(reltol_);
+	epsabs = epsrel;
+	limit = 100;
+	lenw = 400;
+	last = 0;
+	iwork = 100;
+	work = 400.0;
+	result = DOUBLE_XMIN;
+	abserr = 0.0;
+	neval = 0;
+	ier = 0;
 	if(survey=="point") {
 	  if(keyfun=="halfnorm") {
 	    Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
@@ -70,9 +76,12 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
 	} else if(survey=="line") {
 	  if(keyfun=="halfnorm") {
-	    Rdqags(gxhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
-		   &work);
+	    result = (Rf_pnorm5(upper, 0.0, sig[i], true, false) -
+		      Rf_pnorm5(lower, 0.0, sig[i], true, false)) /
+	      Rf_dnorm4(0.0, 0.0, sig[i], false);
+	    //	    Rdqags(gxhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+	    //		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
+	    //		   &work);
 	  } else if(keyfun=="exp") {
 	    Rdqags(gxexp, ex, &lower, &upper, &epsabs, &epsrel, &result,
 		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
@@ -85,10 +94,10 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 	  if(ier > 0 && verbose) {
 	    Rf_warning("Warning: the integration was not successful.");
 	  }
-	  cp = result / w(j) * u(i,j);
+	  cp = result / w[j] * u(i,j);
 	}
       }
-      ll += std::max(Rf_dpois(y(i,j), lam(i)*cp, true), lnmin);
+      ll += std::max(Rf_dpois(y(i,j), lam[i]*cp, true), lnmin);
     }
   }
   return Rcpp::wrap(-ll);
