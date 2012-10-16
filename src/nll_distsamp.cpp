@@ -28,13 +28,17 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
   double *ex;
   ex = (double *) R_alloc(2, sizeof(double));
   // Integration settings given to Rdqags
-  double lower=0.0, upper=0.0, epsrel=0.0, epsabs=0.0;
-  int limit = 100, lenw=400, last=0, iwork=100;
-  double work = 0.0, result=0.0, abserr=0.0;
+  double lower = 0.0, upper = 0.0, epsrel = 0.0, epsabs = 0.0;
+  int limit = 100, lenw = 400, last=0, iwork = 100;
+  double work = 0.0, result = 0.0, abserr = 0.0;
   int neval = 0, ier=0;
-  double cp=0.0;
+  double cp = 0.0;
+
+  double f0 = 0.0;
 
   for(int i=0; i<R; i++) {
+    if((survey=="line") & (keyfun=="halfnorm"))
+      f0 = Rf_dnorm4(0.0, 0.0, sig[i], false);
     for(int j=0; j<J; j++) {
       cp = 0.0;
       ex[0] = sig[i];
@@ -58,9 +62,11 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 	ier = 0;
 	if(survey=="point") {
 	  if(keyfun=="halfnorm") {
-	    Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
-		   &work);
+	    result = sig[i]*sig[i]*(1-exp(-upper*upper/(2*sig[i]*sig[i]))) -
+	      sig[i]*sig[i]*(1-exp(-lower*lower/(2*sig[i]*sig[i])));
+	    // Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+	    // 	   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
+	    // 	   &work);
 	  } else if(keyfun=="exp") {
 	    Rdqags(grexp, ex, &lower, &upper, &epsabs, &epsrel, &result,
 		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
@@ -77,8 +83,7 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 	} else if(survey=="line") {
 	  if(keyfun=="halfnorm") {
 	    result = (Rf_pnorm5(upper, 0.0, sig[i], true, false) -
-		      Rf_pnorm5(lower, 0.0, sig[i], true, false)) /
-	      Rf_dnorm4(0.0, 0.0, sig[i], false);
+		      Rf_pnorm5(lower, 0.0, sig[i], true, false)) / f0;
 	    //	    Rdqags(gxhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
 	    //		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
 	    //		   &work);
