@@ -18,8 +18,8 @@ occuFP <- function(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula 
     X <- designMats$X; V <- designMats$V; U <- designMats$U; W <- designMats$W;  
     y <- designMats$y
     
-    if(any(type[1:2]>0)) if(any(y[,1:sum(type[1:2])]>1))   stop("Values of y for type 1 and type 2 data must be 0 or 1.")
-    if(type[3]>0) if(any(y[,1:sum(type[3])]>2))   stop("Values of y for type 3 data must be 0, 1, or 2.")
+    if(any(type[1:2]>0)) if(any(y[,1:sum(type[1:2])]>1,na.rm = TRUE))   stop("Values of y for type 1 and type 2 data must be 0 or 1.")
+    if(type[3]>0) if(any(y[,1:sum(type[3])]>2,na.rm = TRUE))   stop("Values of y for type 3 data must be 0, 1, or 2.")
                                                     
     
     removed <- designMats$removed.sites
