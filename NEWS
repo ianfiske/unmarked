@@ -1,0 +1,4 @@
+Version 1.0-0
+
+  o  Fixed integration setting in C++ code that were causing segfaults
+     when calling distsamp

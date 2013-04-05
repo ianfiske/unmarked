@@ -24,15 +24,6 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
   double ll = 0.0;
   double lnmin = log(DOUBLE_XMIN);
 
-  //  void *ex;
-  double *ex;
-  ex = (double *) R_alloc(2, sizeof(double));
-  // Integration settings given to Rdqags
-  double lower = 0.0, upper = 0.0, epsrel = 0.0, epsabs = 0.0;
-  int limit = 100, lenw = 400, last=0, iwork = 100;
-  double work = 0.0, result = 0.0, abserr = 0.0;
-  int neval = 0, ier=0;
-  double cp = 0.0;
 
   double f0 = 0.0;
 
@@ -42,6 +33,29 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
     if((survey=="line") & (keyfun=="exp"))
       f0 = Rf_dexp(0.0, 1/sig[i], false);
     for(int j=0; j<J; j++) {
+      double cp = 0.0;
+      //  void *ex;
+      double *ex;
+      ex = (double *) R_alloc(2, sizeof(double));
+      ex[0] = sig[i];
+      ex[1] = scale;
+
+      // Integration settings given to Rdqags
+      double lower = db[j];
+      double upper = db[j+1];
+      double epsrel = Rcpp::as<double>(reltol_);
+      double epsabs = epsrel;
+      int limit = 100;
+      int lenw = 400;
+      int last=0;
+      int iwork[100];
+      double work[400];
+      double result = DOUBLE_XMIN;
+      double abserr = 0.0;
+      int neval = 0;
+      int ier=0;
+
+      /*
       cp = 0.0;
       ex[0] = sig[i];
       ex[1] = scale;
@@ -53,12 +67,14 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
       limit = 100;
       lenw = 400;
       last = 0;
-      iwork = 100;
-      work = 400.0;
+      //      iwork = 100;
+      //      work = 400.0;
       result = DOUBLE_XMIN;
       abserr = 0.0;
       neval = 0;
       ier = 0;
+      */
+
       if(keyfun=="uniform") {
 	cp = u(i,j);
       } else {
@@ -71,12 +87,12 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 	    // 	   &work);
 	  } else if(keyfun=="exp") {
 	    Rdqags(grexp, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
-		   &work);
+		   &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
+		   work);
 	  } else if(keyfun=="hazard") {
 	    Rdqags(grhaz, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
-		   &work);
+		   &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
+		   work);
 	  }
 	  if(ier > 0 && verbose) {
 	    Rf_warning("The integration was not successful.");
@@ -97,8 +113,8 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 	    // 	   &work);
 	  } else if(keyfun=="hazard") {
 	    Rdqags(gxhaz, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
-		   &work);
+		   &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
+		   work);
 	  }
 	  if(ier > 0 && verbose) {
 	    Rf_warning("Warning: the integration was not successful.");
