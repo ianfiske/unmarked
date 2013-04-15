@@ -1,4 +1,6 @@
 Version 1.0-0
 
+  o  Fixed NA handling in occuFP()
+
   o  Fixed integration setting in C++ code that were causing segfaults
      when calling distsamp
