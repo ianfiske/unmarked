@@ -24,7 +24,6 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
   double ll = 0.0;
   double lnmin = log(DOUBLE_XMIN);
 
-
   double f0 = 0.0;
 
   for(int i=0; i<R; i++) {
@@ -47,33 +46,13 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
       double epsabs = epsrel;
       int limit = 100;
       int lenw = 400;
-      int last=0;
+      int last = 0;
       int iwork[100];
       double work[400];
-      double result = DOUBLE_XMIN;
+      double result = 0.0; //DOUBLE_XMIN;
       double abserr = 0.0;
       int neval = 0;
       int ier=0;
-
-      /*
-      cp = 0.0;
-      ex[0] = sig[i];
-      ex[1] = scale;
-      // Integration settings given to Rdqags
-      lower = db[j];
-      upper = db[j+1];
-      epsrel = Rcpp::as<double>(reltol_);
-      epsabs = epsrel;
-      limit = 100;
-      lenw = 400;
-      last = 0;
-      //      iwork = 100;
-      //      work = 400.0;
-      result = DOUBLE_XMIN;
-      abserr = 0.0;
-      neval = 0;
-      ier = 0;
-      */
 
       if(keyfun=="uniform") {
 	cp = u(i,j);
@@ -106,8 +85,10 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 	    //     &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
 	    //	   &work);
 	  } else if(keyfun=="exp") {
-	    result = (Rf_pexp(upper, 1/sig[i], true, false) -
-		      Rf_pexp(lower, 1/sig[i], true, false)) / f0;
+	    result = sig[i]*(1-exp(-upper/sig[i])) -
+	      sig[i]*(1-exp(-lower/sig[i]));
+	    // result = (Rf_pexp(upper, 1/sig[i], true, false) -
+	    // Rf_pexp(lower, 1/sig[i], true, false)) / f0;
 	    // Rdqags(gxexp, ex, &lower, &upper, &epsabs, &epsrel, &result,
 	    // 	   &abserr, &neval, &ier, &limit, &lenw, &last, &iwork,
 	    // 	   &work);
