@@ -265,6 +265,8 @@ integrate(f, 0, 10, a=0.5)$value
 
 fp(10, a=-.5)
 integrate(f, 0, 10, a=-0.5)$value
+fp2 <- function(x, a) (a*x - 1)*exp(a*x) / a^2
+fp2(10, a=-.5)
 
 
 # Integral of exp(x*a)*x
@@ -307,6 +309,43 @@ nexp2
 
 
 # ------------------------------ Line transects ----------------------
+
+
+
+# Half-normal
+
+sigma <- 30
+br <- seq(0, 50, 10)
+a <- br[2]
+
+# numeric
+hn1 <- integrate(gxhn, br[1], br[2], sigma=sigma)$value
+p1 <- hn1/a
+for(i in 2:(length(br)-1)) {
+    hn1[i] <- integrate(gxhn, br[i], br[i+1], sigma=sigma)$value
+    a[i] <- br[i+1] - sum(a[1:(i-1)])
+    p1[i] <- hn1[i]/a[i]
+}
+p1
+
+
+# analytical
+hn2 <- sigma^2*(1 - exp(-br[2]^2/(2*sigma^2))) -
+    sigma^2*(1 - exp(-br[1]^2/(2*sigma^2)))
+p2 <- hn2/a
+for(i in 2:(length(br)-1)) {
+    hn2[i] <- sigma*(1 - exp(-br[i+1]/sigma)) -
+    sigma*(1 - exp(-br[i]/sigma))
+    p2[i] <- hn2[i]/a
+}
+p2
+
+p1
+
+hn1
+hn2
+
+
 
 
 
