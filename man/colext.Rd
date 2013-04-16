@@ -126,9 +126,7 @@ projected(fm)
 # Empirical Bayes estimates of number of sites occupied in each year
 re <- ranef(fm)
 modes <- colSums(bup(re, stat="mode"))
-CI <- colSums(confint(re))
 plot(1:7, modes, xlab="Year", ylab="Sites occupied", ylim=c(0, 70))
-arrows(1:7, CI[1,], 1:7, CI[2,], code=3, angle=90, length=0.05)
 
 \dontrun{
 ## Find bootstrap standard errors for smoothed trajectory
