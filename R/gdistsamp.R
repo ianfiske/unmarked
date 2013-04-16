@@ -195,24 +195,13 @@ halfnorm = {
                 cp <- p * u[i,] * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
 
-#                if(any(cp < 0, na.rm=TRUE) || any(is.na(cp)))
-#                    next
-
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
                     kmyt[i, t,] * log(cp[J+1])
-#                for(n in k) {
-#                    xx <- c(y[i,t,], n-sum(y[i,t,]))
-#                    if(any(xx < 0))
-#                        next
-#                    mn[n+1,t] <- dmultinom(c(y[i,t,], n-sum(y[i,t,])),
-#                                           n, cp, log=TRUE)
-#                }
             }
             g[i,] <- exp(rowSums(mn))
         }
-#        browser()
         f[!fin] <- g[!fin] <- 0
         ll <- rowSums(f*g)
         -sum(log(ll))
