@@ -195,8 +195,8 @@ halfnorm = {
                 cp <- p * u[i,] * phi[i, t]
                 cp[J+1] <- 1 - sum(cp)
 
-                if(any(cp < 0, na.rm=TRUE) || any(is.na(cp)))
-                    next
+#                if(any(cp < 0, na.rm=TRUE) || any(is.na(cp)))
+#                    next
 
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
@@ -212,7 +212,7 @@ halfnorm = {
             }
             g[i,] <- exp(rowSums(mn))
         }
-        browser()
+#        browser()
         f[!fin] <- g[!fin] <- 0
         ll <- rowSums(f*g)
         -sum(log(ll))
