@@ -38,7 +38,7 @@ false negatives and false positive detections (e.g., Royle and Link
 MacKenzie et al. (2003).
 
 \code{\link{pcount}} fits N-mixture models (aka binomial mixture models) to
-repeated count data (Royle 2004a, Kéry et al 2005).
+repeated count data (Royle 2004a, Kery et al 2005).
 
 \code{\link{distsamp}} fits the distance sampling model of
 Royle et al. (2004) to distance data recorded in discrete intervals.
@@ -194,7 +194,7 @@ Fiske, I. and R. B. Chandler. 2011. \emph{unmarked}: An R package for
   fitting hierarchical models of wildlife occurrence and
   abundance. \emph{Journal of Statistical Software} 43:1--23.
 
-Kéry, M., Royle, J. A., and Schmid, H. 2005 Modeling avian abundance from
+Kery, M., Royle, J. A., and Schmid, H. 2005 Modeling avian abundance from
   replicated counts using binomial mixture models. \emph{Ecological
   Applications} 15:1450--1461.
 
