@@ -16,7 +16,7 @@
     \item{K}{Integer upper index of integration for N-mixture. This should be
         set high enough so that it does not affect the parameter estimates. Note
         that computation time will increase with K.}
-    \item{mixture}{character specifying mixture: either "P" or "NB".}
+    \item{mixture}{character specifying mixture: "P", "NB", or "ZIP".}
     \item{starts}{vector of starting values}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{logical specifying whether or not to compute standard

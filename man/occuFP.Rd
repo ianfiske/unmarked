@@ -112,7 +112,8 @@ occ <- list(METH = occ)
 
 umf1 <- unmarkedFrameOccuFP(y,site,occ, type = type)
 
-m1 <- occuFP(detformula = ~ METH, FPformula = ~1, stateformula = ~ habitat, data = umf1)
+m1 <- occuFP(detformula = ~ METH, FPformula = ~1,
+             stateformula = ~ habitat, data = umf1)
 predict(m1, type = 'fp')
 coef(m1)
 confint(m1, type = 'det')
