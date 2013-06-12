@@ -5,7 +5,8 @@
 \title{Fit occupancy models when false positive detections occur (e.g., Royle and Link [2006]
 and Miller et al. [2011]) }
 
-\usage{occuFP(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula = ~ 1, data, starts, method="BFGS", se = TRUE, engine = "R", ...)}
+\usage{occuFP(detformula = ~ 1, FPformula = ~ 1, Bformula = ~ 1, 
+stateformula = ~ 1, data, starts, method="BFGS", se = TRUE, engine = "R", ...)}
 
 \arguments{
     \item{detformula}{formula describing covariates of
