@@ -2,9 +2,9 @@
 \alias{unmarked}
 \alias{unmarked-package}
 \title{Models for Data from Unmarked Animals}
-\description{\emph{unmarked} fits hierarchical models of animal
-  occurrence and abundance to data collected on species subject to
-  imperfect detection.  Examples include single- and multi-season site
+\description{This package fits hierarchical models of animal
+  occurrence and abundance to data collected on species that may be
+  detected imperfectly.  Models include single- and multi-season site
   occupancy models, binomial N-mixture models, and multinomial N-mixture
   models. The data can arise from survey methods such as occurrence
   sampling, temporally replicated counts, removal sampling, double
