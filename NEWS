@@ -3,6 +3,23 @@ https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
 
+Version 0.10-2
+
+  Bug fixes
+
+  o Thanks for Dirk Eddelbuettel for patch to deal with change in Armadillo's 
+    in-place reshape function. Serious problems might occur if you use a recent 
+    version of RcppArmadillo and an old version of unmarked.
+
+  o Dave Miller added another NA handling fix in occuFP(). I forgot to add 
+    this one in the previous version. 
+
+
+Version 0.10-1
+
+  o Doc fixes requested by CRAN 
+
+
 Version 0.10-0
 
   Bug fixes
