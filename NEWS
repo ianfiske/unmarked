@@ -3,6 +3,12 @@ https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
 
+Version 0.10-3
+
+  o RcppArmadillo was moved from "Depends" section of DESCRIPTION file to 	
+    "LinkingTo"
+
+
 Version 0.10-2
 
   Bug fixes
