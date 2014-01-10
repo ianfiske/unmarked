@@ -7,7 +7,7 @@ Author: Ian Fiske, Richard Chandler, David Miller, Andy Royle, Marc Kery
 Maintainer: Richard Chandler <rbchan@uga.edu>
 Depends: R (>= 2.12.0), methods, reshape, lattice, Rcpp (>= 0.8.0)
 Suggests: raster
-Imports: graphics, stats, utils
+Imports: graphics, stats, utils, Rcpp, lattice, methods
 Description: This package fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates.
 License: GPL (>=3)
 LazyLoad: yes
