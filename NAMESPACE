@@ -4,7 +4,7 @@ importFrom(stats, confint, fitted, coef, vcov, predict, update, profile,
 importFrom(graphics, plot, hist)
 importFrom(utils, head)
 importFrom(reshape, melt, cast, recast)
-importFrom("plyr", "ldply")
+importFrom(plyr, ldply, alply, ddply)
 import(lattice, methods, Rcpp)
 
 # Fitting functions
@@ -14,13 +14,12 @@ export(removalPiFun, doublePiFun)
 
 # S4 classes
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
-    unmarkedFitPCount, unmarkedFitMPois, unmarkedFitPCO,
-    unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
-    unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
-    unmarkedFrameGMM, unmarkedFrameGDS, unmarkedFramePCO,
-    unmarkedFrameGPC,
-    unmarkedEstimate, unmarkedFitList, unmarkedModSel,
-    unmarkedRanef)
+              unmarkedFitPCount, unmarkedFitMPois, unmarkedFitPCO,
+              unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
+              unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
+              unmarkedFrameGMM, unmarkedFrameGDS, unmarkedFramePCO,
+              unmarkedFrameGPC, unmarkedEstimate, unmarkedFitList,
+              unmarkedModSel, unmarkedRanef)
 
 # Methods
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
