@@ -4,11 +4,12 @@ importFrom(stats, confint, fitted, coef, vcov, predict, update, profile,
 importFrom(graphics, plot, hist)
 importFrom(utils, head)
 importFrom(reshape, melt, cast, recast)
+importFrom("plyr", "ldply")
 import(lattice, methods, Rcpp)
 
 # Fitting functions
-export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp, colext,
-    gmultmix, gdistsamp, gpcount)
+export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
+       colext, gmultmix, gdistsamp, gpcount)
 export(removalPiFun, doublePiFun)
 
 # S4 classes
@@ -23,12 +24,13 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
 
 # Methods
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
-    getP, getFP, getB, getY, head, hessian, linearComb, mle, modSel, nllFun, numSites,
-    numY, obsCovs, obsNum, "obsCovs<-", obsToY, "obsToY<-", parboot, plot,
-    hist, predict, profile, projection, residuals, sampleSize, SE,
-    show, simulate, siteCovs, "siteCovs<-", summary, update, vcov,
-    yearlySiteCovs, "yearlySiteCovs<-", "[", smoothed, projected,
-    nonparboot, logLik, LRT, ranef, bup)
+              getP, getFP, getB, getY, head, hessian, linearComb, mle,
+              modSel, nllFun, numSites, numY, obsCovs, obsNum, "obsCovs<-",
+              obsToY, "obsToY<-", parboot, plot, hist, predict, profile,
+              projection, residuals, sampleSize, SE, show, simulate, siteCovs,
+              "siteCovs<-", summary, update, vcov, yearlySiteCovs,
+              "yearlySiteCovs<-", "[", smoothed, projected, nonparboot, logLik,
+              LRT, ranef, bup)
 
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
