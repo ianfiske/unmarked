@@ -121,13 +121,11 @@ void tp8(arma::mat& g3, int lk, double gam, double om, double imm) {
 }
 
 // Gompertz + immigration model
+// Changing log(N)/log(K) to log(N+1)/log(K+1)
 void tp9(arma::mat& g3, int lk, double gam, double om, double imm) {
-    for(int n2=0; n2<lk; n2++) {
-	     g3.at(0, n2) = Rf_dpois(n2, imm, false);
-    }
-    for(int n1=1; n1<lk; n1++) {
+    for(int n1=0; n1<lk; n1++) {
 	   for(int n2=0; n2<lk; n2++) {
-	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(n1)/log(om))) + imm, false);
+	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(n1 + 1)/log(om + 1))) + imm, false);
 	   }
     }
 }
@@ -185,7 +183,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     if(dynamics == "ricker")
         omv = exp(Xom*beta_om + Xom_offset);
     else if(dynamics == "gompertz")
-        omv = exp(Xom*beta_om + Xom_offset) + 1;
+        omv = exp(Xom*beta_om + Xom_offset);
     else if((dynamics == "constant")  || (dynamics == "autoreg"))
         omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
   }

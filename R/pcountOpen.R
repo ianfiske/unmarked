@@ -227,7 +227,7 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
         short.name = "omCarCap", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
-        invlink = "exp1", invlinkGrad = "exp")
+        invlink = "exp", invlinkGrad = "exp")
   }
 estimateList@estimates$det <- detEstimates
 if(immigration) {
