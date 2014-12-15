@@ -304,6 +304,126 @@ setMethod("nonparboot", "unmarkedFitColExt",
 })
 
 
+setMethod("nonparboot", "unmarkedFitOccuPEN",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+#    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+#                   bsType="site")
+    bsType <- "site"
+    if (identical(B, 0) && !is.null(object@bootstrapSamples)) {
+        return(object)
+    }
+    if (B <= 0 && is.null(object@bootstrapSamples)) {
+        stop("B must be greater than 0 when fit has no bootstrap samples.")
+    }
+    data <- object@data
+    formula <- object@formula
+    designMats <- getDesign(data, formula) # bootstrap after removing sites
+    removed.sites <- designMats$removed.sites
+    if(length(removed.sites)>0)
+        data <- data[-removed.sites,]
+    y <- getY(data)
+    colnames(y) <- NULL
+    data@y <- y
+    M <- numSites(data)
+    boot.iter <- function() {
+        sites <- sort(sample(1:M, M, replace = TRUE))
+        data.b <- data[sites,]
+        y <- getY(data.b)
+        if (bsType == "both") {
+            obs.per.site <- alply(y, 1, function(row) {
+                which(!is.na(row))
+            })
+            obs <- lapply(obs.per.site,
+                          function(obs) sample(obs, replace = TRUE))
+            data.b <- data.b[obs]
+        }
+        fm <- update(object, data = data.b)
+        return(fm)
+    }
+    if (!keepOldSamples) {
+        object@bootstrapSamples <- NULL
+    }
+    object@bootstrapSamples <- c(object@bootstrapSamples,
+                                 replicate(B, boot.iter(),
+                                           simplify = FALSE))
+    coefs <- t(sapply(object@bootstrapSamples,
+                      function(x) coef(x)))
+    v <- cov(coefs)
+    object@covMatBS <- v
+    inds <- .estimateInds(object)
+    for (est in names(inds)) {
+        v.est <- v[inds[[est]], inds[[est]], drop = FALSE]
+        object@estimates@estimates[[est]]@covMatBS <- v.est
+    }
+    object
+
+  
+})
+
+
+setMethod("nonparboot", "unmarkedFitOccuPEN_CV",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+#    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+#                   bsType="site")
+    bsType <- "site"
+    if (identical(B, 0) && !is.null(object@bootstrapSamples)) {
+        return(object)
+    }
+    if (B <= 0 && is.null(object@bootstrapSamples)) {
+        stop("B must be greater than 0 when fit has no bootstrap samples.")
+    }
+    data <- object@data
+    formula <- object@formula
+    designMats <- getDesign(data, formula) # bootstrap after removing sites
+    removed.sites <- designMats$removed.sites
+    if(length(removed.sites)>0)
+        data <- data[-removed.sites,]
+    y <- getY(data)
+    colnames(y) <- NULL
+    data@y <- y
+    M <- numSites(data)
+    boot.iter <- function() {
+        sites <- sort(sample(1:M, M, replace = TRUE))
+        data.b <- data[sites,]
+        y <- getY(data.b)
+        if (bsType == "both") {
+            obs.per.site <- alply(y, 1, function(row) {
+                which(!is.na(row))
+            })
+            obs <- lapply(obs.per.site,
+                          function(obs) sample(obs, replace = TRUE))
+            data.b <- data.b[obs]
+        }
+	if (object@pen.type=="MPLE") {
+	  MPLElambda = computeMPLElambda(formula,data.b)
+	  fm <- update(object, data = data.b,lambda=MPLElambda)
+	} else {
+          fm <- update(object, data = data.b)
+	}
+        return(fm)
+    }
+    if (!keepOldSamples) {
+        object@bootstrapSamples <- NULL
+    }
+    object@bootstrapSamples <- c(object@bootstrapSamples,
+                                 replicate(B, boot.iter(),
+                                           simplify = FALSE))
+    coefs <- t(sapply(object@bootstrapSamples,
+                      function(x) coef(x)))
+    v <- cov(coefs)
+    object@covMatBS <- v
+    inds <- .estimateInds(object)
+    for (est in names(inds)) {
+        v.est <- v[inds[[est]], inds[[est]], drop = FALSE]
+        object@estimates@estimates[[est]]@covMatBS <- v.est
+    }
+    object
+
+  
+})
+
 
 
 
