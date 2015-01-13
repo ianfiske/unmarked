@@ -7,8 +7,10 @@
 \alias{yearlySiteCovs<-,unmarkedMultFrame-method}
 \alias{unmarkedFrameGMM}
 \alias{unmarkedFrameGDS}
+\alias{unmarkedFrameGPC}
 
-\title{Create an unmarkedMultFrame or an unmarkedFrameGMM.}
+\title{Create an unmarkedMultFrame, unmarkedFrameGMM, unmarkedFrameGDS,
+  or unmarkedFrameGPC object}
 
 \usage{
   unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
@@ -16,6 +18,7 @@
     obsToY, piFun)
   unmarkedFrameGDS(y, siteCovs, numPrimary, yearlySiteCovs, dist.breaks,
     survey, unitsIn, tlength)
+  unmarkedFrameGPC(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
 }
 
 
@@ -29,6 +32,8 @@ unmarkedMultFrame objects are used by \code{\link{colext}}.
 unmarkedFrameGMM objects are used by \code{\link{gmultmix}}.
 
 unmarkedFrameGDS objects are used by \code{\link{gdistsamp}}.
+
+unmarkedFrameGPC objects are used by \code{\link{gpcount}}.
 
 For a study with \emph{M} sites, \emph{T} years, and a maximum of
 \emph{J} observations per site-year, the data are shaped as follows.
@@ -92,7 +97,10 @@ unmarkedMultFrame using the
     \item{tlength}{see \code{\link{unmarkedFrameDS}}}
   }
 
-\seealso{\code{\link{formatMult}}}
+  \seealso{
+    \code{\link{formatMult}}, \code{\link{colext}},
+    \code{\link{gmultmix}}, \code{\link{gpcount}}
+  }
 
 \examples{
 

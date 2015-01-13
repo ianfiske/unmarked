@@ -132,7 +132,8 @@ setMethod("nonparboot", "unmarkedFit",
     formula <- object@formula
     designMats <- getDesign(data, formula) # bootstrap after removing sites
     removed.sites <- designMats$removed.sites
-    data <- data[-removed.sites,]
+    if(length(removed.sites)>0)
+        data <- data[-removed.sites,]
     y <- getY(data)
     colnames(y) <- NULL
     data@y <- y
@@ -183,7 +184,7 @@ setMethod("nonparboot", "unmarkedFitPCount",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
     callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
-                   bsType="both")
+                   bsType="site")
 })
 
 
@@ -255,7 +256,7 @@ setMethod("nonparboot", "unmarkedFitColExt",
     extParms <- coef(object, 'ext')
 
     # bootstrap only after removing sites
-    designMats <- unmarked:::getDesign(object@data, formula=object@formula)
+    designMats <- getDesign(object@data, formula=object@formula)
     removed.sites <- designMats$removed.sites
     if(length(removed.sites) > 0) {
         sites <- 1:nrow(getY(data))

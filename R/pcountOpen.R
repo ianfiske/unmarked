@@ -18,7 +18,7 @@ if((identical(dynamics, "constant") || identical(dynamics, "notrend")) & immigra
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula, iotaformula=iotaformula)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
-D <- unmarked:::getDesign(data, formula)
+D <- getDesign(data, formula)
 y <- D$y
 
 Xlam <- D$Xlam
@@ -128,11 +128,11 @@ ym <- matrix(y, nrow=M)
 I <- cbind(rep(k, times=lk),
            rep(k, each=lk))
 I1 <- I[I[,1] <= I[,2],]
-Z <- Ib <- Ip <- list()
+Ib <- Ip <- list()
 for(i in 1:nrow(I)) {
-    Z[[i]] <- 0:min(I[i,])
-    Ib[[i]] <- which((I1[,1] %in% Z[[i]]) & (I1[,2]==I[i,1])) - 1
-    Ip[[i]] <- as.integer(I[i,2]-Z[[i]])
+    Z <- 0:min(I[i,])
+    Ib[[i]] <- which((I1[,1] %in% Z) & (I1[,2]==I[i,1])) - 1
+    Ip[[i]] <- as.integer(I[i,2]-Z)
 }
 
 
@@ -158,11 +158,11 @@ nll <- function(parms) {
           I, I1, Ib, Ip,
           PACKAGE = "unmarked")
 }
-
 if(missing(starts))
     starts <- rep(0, nP)
 #browser()
 fm <- optim(starts, nll, method=method, hessian=se, ...)
+
 opt <- fm
 ests <- fm$par
 if(identical(mixture,"NB"))
@@ -191,7 +191,7 @@ detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
     covMat = as.matrix(covMat[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP),
         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
-estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates))
+estimateList <- unmarkedEstimateList(list(lambda=lamEstimates))
 gamName <- switch(dynamics,
                   constant = "gamConst",
                   autoreg = "gamAR",

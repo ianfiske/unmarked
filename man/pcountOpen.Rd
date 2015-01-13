@@ -1,7 +1,7 @@
 \name{pcountOpen}
 \alias{pcountOpen}
 \title{Fit the open N-mixture model of Dail and Madsen}
-\description{Fit the model of Dail and Madsen, which is
+\description{Fit the model of Dail and Madsen (2011), which is
 a generalized form of the Royle (2004) N-mixture model for open
 populations.}
 \usage{
@@ -43,7 +43,9 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula,
     omega and gamma. "autoreg" is an auto-regressive model in which
     recruitment is modeled as gamma*N[i,t-1]. "notrend" model gamma as
     lambda*(1-omega) such that there is no temporal trend. "trend" is
-    N[i,t] = N[i,t-1]*gamma.
+    a model for exponential growth, N[i,t] = N[i,t-1]*gamma, where gamma
+    in this case is finite rate of increase (normally referred to as
+    lambda).
   }
   \item{fix}{
     If "omega", omega is fixed at 1. If "gamma", gamma is fixed at 0.
@@ -114,7 +116,7 @@ Repeated Counts of an Open Metapopulation. \emph{Biometrics}. 67, pp
 
 }
 
-\author{Richard Chandler \email{rchandler@usgs.gov}}
+\author{Richard Chandler \email{rbchan@uga.edu}}
 
 \note{
 When gamma or omega are modeled using year-specific covariates, the
@@ -125,7 +127,8 @@ If the time gap between primary periods is not constant, an M by T
 matrix of integers should be supplied to \code{\link{unmarkedFramePCO}}
 using the \code{primaryPeriod} argument.
 
-Secondary sampling periods are optional.
+Secondary sampling periods are optional, but can greatly improve the
+precision of the estimates.
 }
 
 \section{Warning}{This function can be extremely slow, especially if
@@ -175,7 +178,7 @@ gam <- exp(coef(m1, type="gamma"))
 om <- plogis(coef(m1, type="omega"))
 p <- plogis(coef(m1, type="det"))
 
-
+\dontrun{
 # Finite sample inference. Abundance at site i, year t
 re <- ranef(m1)
 devAskNewPage(TRUE)
@@ -200,6 +203,7 @@ rbind(N=colSums(N), N.hat1=N.hat1, N.hat2=colSums(N.hat2))
 plot(1:T, N.hat1, ylim=c(0,600))
 points(1:T, colSums(N), col="blue", pch=16)
 arrows(1:T, CI[1,], 1:T, CI[2,], code=3, length=0.05, angle=90)
+}
 
 }
 

@@ -95,7 +95,7 @@ starts, method = "BFGS", se = TRUE, rel.tol=1e-4, ...)
     populations. \emph{Ecology}  92:1429--1435.
     }
 \author{
-    Richard Chandler \email{rchandler@usgs.gov}
+    Richard Chandler \email{rbchan@uga.edu}
     }
 \note{
     You cannot use obsCovs, but you can use yearlySiteCovs (a confusing name
@@ -144,8 +144,10 @@ umf <- unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
     dist.breaks=breaks, tlength=rep(transect.length, R), numPrimary=T)
 summary(umf)
 
+
 # Fit the model
-m1 <- gdistsamp(~1, ~1, ~1, umf, output="density")
+m1 <- gdistsamp(~1, ~1, ~1, umf, output="density", K=50)
+
 summary(m1)
 
 
@@ -153,10 +155,11 @@ backTransform(m1, type="lambda")
 backTransform(m1, type="phi")
 backTransform(m1, type="det")
 
-
+\dontrun{
 # Empirical Bayes estimates of abundance at each site
 re <- ranef(m1)
 plot(re, layout=c(10,5), xlim=c(-1, 20))
+}
 
 }
 \keyword{ models }

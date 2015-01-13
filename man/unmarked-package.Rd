@@ -2,9 +2,9 @@
 \alias{unmarked}
 \alias{unmarked-package}
 \title{Models for Data from Unmarked Animals}
-\description{\emph{unmarked} fits hierarchical models of animal
-  occurrence and abundance to data collected on species subject to
-  imperfect detection.  Examples include single- and multi-season site
+\description{This package fits hierarchical models of animal
+  occurrence and abundance to data collected on species that may be
+  detected imperfectly.  Models include single- and multi-season site
   occupancy models, binomial N-mixture models, and multinomial N-mixture
   models. The data can arise from survey methods such as occurrence
   sampling, temporally replicated counts, removal sampling, double
@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.9-5\cr
+Version: \tab 0.10-4\cr
 License: \tab GPL (>= 3)\cr
 }
 
@@ -30,11 +30,15 @@ abundance and detection (MacKenzie et al. 2002).
 exploiting the link between detection probability and abundance (Royle and
 Nichols 2003).
 
+\code{\link{occuFP}} fits occupancy models to data characterized by
+false negatives and false positive detections (e.g., Royle and Link
+[2006] and Miller et al. [2011]).
+
 \code{\link{colext}} fits the mutli-season occupancy model of
 MacKenzie et al. (2003).
 
 \code{\link{pcount}} fits N-mixture models (aka binomial mixture models) to
-repeated count data (Royle 2004a, Kéry et al 2005).
+repeated count data (Royle 2004a, Kery et al 2005).
 
 \code{\link{distsamp}} fits the distance sampling model of
 Royle et al. (2004) to distance data recorded in discrete intervals.
@@ -42,6 +46,10 @@ Royle et al. (2004) to distance data recorded in discrete intervals.
 \code{\link{gdistsamp}} fits the generalized distance sampling model
 described by Chandler et al. (2011) to distance data recorded in
 discrete intervals.
+
+\code{\link{gpcount}} fits the generalized N-mixture model
+described by Chandler et al. (2011) to repeated count data collected
+using the robust design.
 
 \code{\link{multinomPois}} fits the multinomial-Poisson model of Royle (2004b)
 to data collected using methods such as removal sampling or double observer
@@ -96,6 +104,7 @@ components required by model-fitting functions.}
 ## An example site-occupancy analysis
 
 # Simulate occupancy data
+set.seed(344)
 nSites <- 100
 nReps <- 5
 covariates <- data.frame(veght=rnorm(nSites),
@@ -131,7 +140,6 @@ modSel(fms)
 
 # Empirical Bayes estimates of the number of sites occupied
 sum(bup(ranef(fm3), stat="mode"))     # Sum of posterior modes
-colSums(confint(ranef(fm3)))          # 95\% CI
 sum(z)                                # Actual
 
 
@@ -175,49 +183,73 @@ par(op)
 
 \references{
 
+Chandler, R. B., J. A. Royle, and D. I. King. 2011. Inference about
+  density and temporary emigration in unmarked populations. \emph{Ecology}
+  92:1429-1435.
+
 Dail, D. and L. Madsen. 2011. Models for estimating abundance from
-repeated counts of an open metapopulation. \emph{Biometrics} 67:577-587.
+  repeated counts of an open metapopulation. \emph{Biometrics} 67:577-587.
 
 Fiske, I. and R. B. Chandler. 2011. \emph{unmarked}: An R package for
-fitting hierarchical models of wildlife occurrence and
-abundance. \emph{Journal of Statistical Software} 43:1--23.
+  fitting hierarchical models of wildlife occurrence and
+  abundance. \emph{Journal of Statistical Software} 43:1--23.
 
-Kéry, M., Royle, J. A., and Schmid, H. 2005 Modeling avian abundance from
+Kery, M., Royle, J. A., and Schmid, H. 2005 Modeling avian abundance from
   replicated counts using binomial mixture models. \emph{Ecological
   Applications} 15:1450--1461.
 
 MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
   J. A. Royle, and C. A. Langtimm. 2002. Estimating site occupancy rates
-  when detection probabilities are less than one. \emph{Ecology} 83: 2248--2255.
+  when detection probabilities are less than one. \emph{Ecology} 83:
+  2248--2255.
 
-MacKenzie, D. I., J. D. Nichols, J. E. Hines, M. G. Knutson, and A. B. Franklin.
-  2003. Estimating site occupancy, colonization, and local extinction when a
-  species is detected imperfectly. \emph{Ecology} 84:2200--2207.
+MacKenzie, D. I., J. D. Nichols, J. E. Hines, M. G. Knutson, and
+  A. B. Franklin. 2003. Estimating site occupancy, colonization, and
+  local extinction when a species is detected
+  imperfectly. \emph{Ecology} 84:2200--2207.
 
-MacKenzie, D. I., J. D. Nichols, J. A. Royle, K. H. Pollock, L. L. Bailey, and
-  J. E. Hines. 2006. \emph{Occupancy Estimation and Modeling}.
-  Amsterdam: Academic Press.
+MacKenzie, D. I., J. D. Nichols, J. A. Royle, K. H. Pollock,
+  L. L. Bailey, and J. E. Hines. 2006. \emph{Occupancy Estimation and
+    Modeling}. Amsterdam: Academic Press.
+
+Miller, D.A., J.D. Nichols, B.T. McClintock, E.H.C. Grant, L.L. Bailey,
+  and L.A. Weir. 2011. Improving occupancy estimation when two types of
+  observational error occur: non-detection and species
+  misidentification. \emph{Ecology} 92:1422-1428.
 
 Royle, J. A. 2004a. N-Mixture models for estimating population size from
   spatially replicated counts. \emph{Biometrics} 60:108--105.
 
 Royle, J. A. 2004b. Generalized estimators of avian abundance from
-  count survey data. \emph{Animal Biodiversity and Conservation} 27:375--386.
+  count survey data. \emph{Animal Biodiversity and Conservation}
+  27:375--386.
 
-Royle, J. A., D. K. Dawson, and S. Bates. 2004. Modeling abundance effects in
-  distance sampling. \emph{Ecology} 85:1591--1597.
+Royle, J. A., D. K. Dawson, and S. Bates. 2004. Modeling abundance
+  effects in distance sampling. \emph{Ecology} 85:1591--1597.
 
-Royle, J. A., and R. M. Dorazio. 2006. Hierarchical models of animal abundance
-  and occurrence. \emph{Journal Of Agricultural Biological And Environmental
-  Statistics} 11:249--263.
+Royle, J. A., and R. M. Dorazio. 2006. Hierarchical models of animal
+  abundance and occurrence. \emph{Journal Of Agricultural Biological And
+    Environmental Statistics} 11:249--263.
 
-Royle, J. A. and R. M. Dorazio. 2008. \emph{Hierarchical Modeling and Inference
-  in Ecology}. Academic Press.
+Royle, J.A., and W.A. Link. 2006. Generalized site occupancy models
+  allowing for false positive and false negative errors. \emph{Ecology}
+  87:835-841.
+
+Royle, J. A. and R. M. Dorazio. 2008. \emph{Hierarchical Modeling and
+  Inference in Ecology}. Academic Press.
 
 Royle, J. A. and J. D. Nichols. 2003. Estimating Abundance from
-  Repeated Presence-Absence Data or Point Counts. \emph{Ecology}, 84:777--790.
+  Repeated Presence-Absence Data or Point Counts. \emph{Ecology},
+  84:777--790.
+
+Sillett, S. and Chandler, R.B. and Royle, J.A. and Kery, M. and
+  Morrison, S.A. In Press. Hierarchical distance sampling models to
+  estimate population size and habitat-specific abundance of an island
+  endemic. \emph{Ecological Applications}
 
 }
+
+
 \docType{package}
-\author{Ian Fiske, Richard Chandler, and Andy Royle}
+\author{Ian Fiske, Richard Chandler, Andy Royle, and Marc K\'{e}ry}
 \keyword{package}

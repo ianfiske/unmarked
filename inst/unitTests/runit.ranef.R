@@ -4,6 +4,7 @@
 # ----------------------------- pcount ----------------------------------
 
 test.ranef.pcount <- function() {
+
     library(unmarked)
     set.seed(4564)
     R <- 10
@@ -48,10 +49,10 @@ test.ranef.pcount <- function() {
  5.422348e-07), tolerance=1e-6)
 
     checkEqualsNumeric(colSums(ar.zip), c(
- 0.000000e+00, 0.000000e+00, 8.314699e-01, 1.336961e+00, 1.449185e+00,
- 1.804676e+00, 1.839226e+00, 1.137965e+00, 4.479355e-01, 1.227225e-01,
- 2.516552e-02, 4.079841e-03, 5.450965e-04, 6.195753e-05, 6.138095e-06,
- 5.397913e-07), tolerance=1e-6)
+ 0.000000e+00, 0.000000e+00, 8.315404e-01, 1.337022e+00, 1.449214e+00,
+ 1.804745e+00, 1.839218e+00, 1.137868e+00, 4.478556e-01, 1.226888e-01,
+ 2.515613e-02, 4.077914e-03, 5.447851e-04, 6.191597e-05, 6.133365e-06,
+ 5.393215e-07), tolerance=1e-6)
 
 
 }
@@ -262,6 +263,34 @@ plot(re, layout=c(5,5), xlim=c(-1,20), subset=site%in%1:25)
 
 
 
+# ---------------------------- gpcount ---------------------------------
+
+
+library(unmarked)
+test.ranef.gpcount <- function()
+{
+    y <- matrix(c(1,1,1, 1,0,1, 2,2,2,
+                3,2,3, 2,2,2, 1,1,1,
+                NA,0,0, 0,0,0, 0,0,0,
+                3,3,3, 3,2,3, 2,2,2,
+                0,0,0, 0,0,0, 0,0,0), 5, 9, byrow=TRUE)
+    siteCovs <- data.frame(x = c(0,2,-1,4,-1))
+    obsCovs <- list(o1 = matrix(seq(-3, 3, length=length(y)), 5, 9))
+    obsCovs$o1[5,4:6] <- NA
+    yrSiteCovs <- list(yr=matrix(c('1','2','2'), 5, 3, byrow=TRUE))
+    yrSiteCovs$yr[4,2] <- NA
+
+    umf <- unmarkedFrameGPC(y = y, siteCovs = siteCovs, obsCovs = obsCovs,
+        yearlySiteCovs = yrSiteCovs, numPrimary=3)
+    fm <- gpcount(~x, ~1, ~o1, data = umf, K=30)
+    re <- ranef(fm)
+    checkEqualsNumeric(bup(re, "mode"), c(2,3,0,4,0))
+
+    fm0 <- gpcount(~1, ~1, ~1, data = umf, K=23)
+    re0 <- ranef(fm0)
+    checkEqualsNumeric(bup(re0, "mode"), c(2,3,0,3,0))
+}
+
 
 
 
@@ -313,11 +342,11 @@ test.ranef.gdistsamp <- function() {
     checkEquals(colSums(ar1), colSums(ar2), tol=1e-5)
 
     checkEqualsNumeric(colSums(ar1), c(
- 0.000000000, 0.000000000, 0.000000000, 0.003533637, 0.025933013,
- 0.098696956, 0.256391431, 0.507281096, 0.811068034, 1.089219429,
- 1.265074757, 1.301668643, 1.210303802, 1.032619707, 0.816755480,
- 0.602213948, 0.414763224, 0.266876924, 0.160376514, 0.090010656,
- 0.047212748), tolerance=1e-6)
+ 0.000000000, 0.000000000, 0.000000000, 0.118002086, 0.307044478,
+ 0.310241436, 0.239886364, 0.448502098, 0.977448196, 1.436982755,
+ 1.548430326, 1.359997401, 1.020206300, 0.655381337, 0.372519278,
+ 0.233418189, 0.218220126, 0.242683228, 0.232040811, 0.174834734,
+ 0.104160860), tolerance=1e-6)
 
 }
 
@@ -326,7 +355,7 @@ test.ranef.gdistsamp <- function() {
 
 
 
-test.ranef.pco <- function() {
+test.ranef.colext <- function() {
 
     set.seed(7)
     M <- 10
@@ -438,5 +467,9 @@ test.ranef.pco <- function() {
 0,0,0,0,0,
 0,0,0,0,0), ncol=5, byrow=TRUE), tolerance=1e-6)
 
+
+    m2 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, dynamics="trend")
+    re2 <- ranef(m2)
+    checkEqualsNumeric(bup(re2, "mode")[1,], c(8, 5, 3, 1, 1))
 
 }
