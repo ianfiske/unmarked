@@ -906,7 +906,7 @@ sim14 <- function(lambda=1, gamma=0.1, omega=1.5, p=0.7, M=100, T=5)
 }
 
 set.seed(3223)
-nsim14 <- 200
+nsim14 <- 100
 simout14 <- matrix(NA, nsim14, 4)
 colnames(simout14) <- c('lambda', 'gamma', 'omega', 'p')
 for(i in 1:nsim14) {
@@ -950,7 +950,7 @@ sim15 <- function(lambda=1, gamma=0.5, iota=1, p=0.7, M=100, T=5)
 }
 
 set.seed(3223)
-nsim15 <- 200
+nsim15 <- 100
 simout15 <- matrix(NA, nsim15, 4)
 colnames(simout15) <- c('lambda', 'gamma', 'iota', 'p')
 for(i in 1:nsim15) {
