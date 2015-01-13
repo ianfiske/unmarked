@@ -888,7 +888,7 @@ hist(simout13[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout13[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
 hist(simout13[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
 hist(simout13[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
-dev.off()
+#dev.off()
 
 
 
@@ -932,7 +932,7 @@ hist(simout14[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
 hist(simout14[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
 hist(simout14[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
 hist(simout14[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
-dev.off()
+#dev.off()
 
 
 
