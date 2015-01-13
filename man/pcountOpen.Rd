@@ -1,24 +1,30 @@
 \name{pcountOpen}
 \alias{pcountOpen}
-\title{Fit the open N-mixture model of Dail and Madsen}
-\description{Fit the model of Dail and Madsen (2011), which is
-a generalized form of the Royle (2004) N-mixture model for open
+\title{Fit the open N-mixture models of Dail and Madsen and extensions}
+\description{Fit the models of Dail and Madsen (2011) and Hostetler and
+Chandler (in press), which are
+generalized forms of the Royle (2004) N-mixture model for open
 populations.}
-\usage{
+\usage{ 
 pcountOpen(lambdaformula, gammaformula, omegaformula, pformula,
   data, mixture = c("P", "NB", "ZIP"), K, dynamics=c("constant", "autoreg",
-  "notrend", "trend"), fix=c("none", "gamma", "omega"), starts,
-  method = "BFGS", se = TRUE, ...)
+  "notrend", "trend", "ricker", "gompertz"), fix=c("none", "gamma", "omega"), 
+  starts, method = "BFGS", se = TRUE, immigration = FALSE, 
+  iotaformula = ~1, ...)
 }
 \arguments{
   \item{lambdaformula}{
     Right-hand sided formula for initial abundance
   }
   \item{gammaformula}{
-    Right-hand sided formula for recruitment rate
+    Right-hand sided formula for recruitment rate (when dynamics is "constant", 
+    "autoreg", or "notrend") or population growth rate (when dynamics is 
+    "trend", "ricker", or "gompertz")
   }
   \item{omegaformula}{
-    Right-hand sided formula for apparent survival probability
+    Right-hand sided formula for apparent survival probability 
+    (when dynamics is "constant", "autoreg", or "notrend") or equilibrium 
+    abundance (when dynamics is "ricker" or "gompertz")
   }
   \item{pformula}{
     Right-hand sided formula for detection probability
@@ -45,7 +51,14 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula,
     lambda*(1-omega) such that there is no temporal trend. "trend" is
     a model for exponential growth, N[i,t] = N[i,t-1]*gamma, where gamma
     in this case is finite rate of increase (normally referred to as
-    lambda).
+    lambda). "ricker" and "gompertz" are models for density-dependent 
+    population growth.  "ricker" is the Ricker-logistic model, N[i,t] =
+    N[i,t-1]*exp(gamma*(1-N[i,t-1]/omega)), where gamma is the maximum 
+    instantaneous population growth rate (normally referred to as r) and 
+    omega is the equilibrium abundance (normally referred to as K).  "gompertz" 
+    is a modified version of the Gompertz-logistic model, N[i,t] =
+    N[i,t-1]*exp(gamma*(1-log(N[i,t-1]+1)/log(omega+1))), where the 
+    interpretations of gamma and omega are similar to in the Ricker model. 
   }
   \item{fix}{
     If "omega", omega is fixed at 1. If "gamma", gamma is fixed at 0.
@@ -59,18 +72,36 @@ pcountOpen(lambdaformula, gammaformula, omegaformula, pformula,
   \item{se}{
     logical specifying whether or not to compute standard errors.
   }
+  \item{immigration}{
+    logical specifying whether or not to include an immigration term (iota) in 
+    population dynamics.  
+  }
+  \item{iotaformula}{
+    Right-hand sided formula for average number of immigrants to a site 
+    per time step
+  }
   \item{\dots}{
     additional arguments to be passed to \code{\link{optim}}.
   }
 }
 \details{
-This model generalizes the Royle (2004) N-mixture model by relaxing the
-closure assumption. The model includes two additional parameters: gamma,
-the recruitment rate (births and immigrations), and omega,
-the apparent survival rate (deaths and emigrations). Estimates of
+These models generalize the Royle (2004) N-mixture model by relaxing the
+closure assumption. The models include two or three additional parameters: 
+gamma, either the recruitment rate (births and immigrations), the 
+finite rate of increase, or the maximum instantaneous rate of increase; 
+omega, either the apparent survival rate (deaths and emigrations) or the 
+equilibrium abundance (carrying capacity); and iota, the number of immigrants
+per site and year. Estimates of
 population size at each time period can be derived from these
 parameters, and thus so can trend estimates. Or, trend can be estimated
 directly using dynamics="trend".
+
+When immigration is set to FALSE (the default), iota is not modeled.  
+When immigration is set to TRUE and dynamics is set to "autoreg", the model
+will separately estimate birth rate (gamma) and number of immigrants (iota).
+When immigration is set to TRUE and dynamics is set to "trend", "ricker", or 
+"gompertz", the model will separately estimate local contributions to 
+population growth (gamma and omega) and number of immigrants (iota).
 
 The latent abundance distribution, \eqn{f(N | \mathbf{\theta})}{f(N |
 theta)} can be set as a Poisson, negative binomial, or zero-inflated
@@ -84,7 +115,8 @@ additional parameter, \eqn{\alpha}{alpha}, describes dispersion (lower
 the mean is \eqn{\lambda_i(1-\psi)}{lambda_i*(1-psi)}, where psi is the
 zero-inflation parameter.
 
-The latent abundance state following the initial sampling period arises
+For "constant", "autoreg", or "notrend" dynamics, the latent abundance state 
+following the initial sampling period arises
 from a
 Markovian process in which survivors are modeled as \eqn{S_{it} \sim
 Binomial(N_{it-1}, \omega_{it})}{S(i,t) ~ Binomial(N(i,t-1),
@@ -92,16 +124,20 @@ omega(i,t))}, and recruits
 follow \eqn{G_{it} \sim Poisson(\gamma_{it})}{G(i,t) ~
   Poisson(gamma(i,t))}.
 Alternative population dynamics can be specified
-using the \code{dynamics} argument.
+using the \code{dynamics} and \code{immigration} arguments.
 
 The detection process is modeled as binomial: \eqn{y_{ijt} \sim
 Binomial(N_{it}, p_{ijt})}{y(i,j,t) ~ Binomial(N(i,t), p(i,j,t))}.
 
-\eqn{\lambda_i}{lamdba_i} and \eqn{\gamma_{it}}{gamma_it} are modeled
+\eqn{\lambda_i}{lamdba_i}, \eqn{\gamma_{it}}{gamma_it}, and  
+\eqn{\iota_{it}}{iota_it} are modeled
 using the the log link.
-\eqn{\omega_{it}}{omega_it} and \eqn{p_{ijt}}{p_ijt} are modeled using
+\eqn{p_{ijt}}{p_ijt} is modeled using
 the logit link.
-
+\eqn{\omega_{it}}{omega_it} is either modeled using the logit link (for 
+"constant", "autoreg", or "notrend" dynamics) or the log link (for "ricker" 
+or "gompertz" dynamics).  For "trend" dynamics, \eqn{\omega_{it}}{omega_it} 
+is not modeled. 
 }
 \value{
 An object of class unmarkedFitPCO.
@@ -114,9 +150,12 @@ Dail, D. and L. Madsen (2011) Models for Estimating Abundance from
 Repeated Counts of an Open Metapopulation. \emph{Biometrics}. 67, pp
 577-587.
 
+Hostetler, J. A. and R. B. Chandler (in press) Improved State-space Models for 
+Inference about Spatial and Temporal Variation in Abundance from Count Data. 
+\emph{Ecology}. 
 }
 
-\author{Richard Chandler \email{rbchan@uga.edu}}
+\author{Richard Chandler \email{rbchan@uga.edu} and Jeff Hostetler?}
 
 \note{
 When gamma or omega are modeled using year-specific covariates, the
