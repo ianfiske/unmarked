@@ -207,7 +207,7 @@ if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
                            (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")
 if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
-  if(identical(dynamics, "constant") | identical(dynamics, "autoreg"))
+  if(identical(dynamics, "constant") | identical(dynamics, "autoreg") | identical(dynamics, "notrend"))
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Apparent Survival",
         short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],

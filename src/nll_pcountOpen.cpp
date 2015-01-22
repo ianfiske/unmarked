@@ -118,7 +118,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   if((fix != "omega") && (dynamics != "trend")) {
     if((dynamics == "ricker")  || (dynamics == "gompertz"))
         omv = exp(Xom*beta_om + Xom_offset);
-    else if((dynamics == "constant")  || (dynamics == "autoreg"))
+    else if((dynamics == "constant")  || (dynamics == "autoreg") || (dynamics == "notrend"))
         omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
   }
   omv.reshape(T-1, M);
