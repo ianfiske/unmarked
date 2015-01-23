@@ -129,8 +129,8 @@ using the \code{dynamics} and \code{immigration} arguments.
 The detection process is modeled as binomial: \eqn{y_{ijt} \sim
 Binomial(N_{it}, p_{ijt})}{y(i,j,t) ~ Binomial(N(i,t), p(i,j,t))}.
 
-\eqn{\lambda_i}{lamdba_i}, \eqn{\gamma_{it}}{gamma_it}, and
-\eqn{\iota_{it}}{iota_it} are modeled
+\eqn{\lambda_i}{lambda_i}, \eqn{\gamma_{it}}{gamma_it}, and
+\eqn{\iota_{it}}{iota_it} are modeled 
 using the the log link.
 \eqn{p_{ijt}}{p_ijt} is modeled using
 the logit link.
@@ -155,7 +155,7 @@ Inference about Spatial and Temporal Variation in Abundance from Count Data.
 \emph{Ecology}.
 }
 
-\author{Richard Chandler \email{rbchan@uga.edu} and Jeff Hostetler?}
+\author{Richard Chandler \email{rbchan@uga.edu} and Jeff Hostetler}
 
 \note{
 When gamma or omega are modeled using year-specific covariates, the
