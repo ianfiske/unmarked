@@ -61,7 +61,7 @@ void tp4(arma::mat& g3, int lk, double gam, double om, double imm) {
 void tp5(arma::mat& g3, int lk, double gam, double om, double imm) {
     for(int n1=0; n1<lk; n1++) {
 	   for(int n2=0; n2<lk; n2++) {
-	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(n1 + 1)/log(om + 1))) + imm, false);
+	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(double (n1) + 1)/log(om + 1))) + imm, false);
 	   }
     }
 }
