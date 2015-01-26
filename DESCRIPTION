@@ -18,6 +18,7 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'pcountOpen.R' 'gdistsamp.R' 'unmarkedFitList.R' 'unmarkedLinComb.R'
     'ranef.R' 'boot.R' 'occuFP.R' 'gpcount.R'
 LinkingTo: Rcpp, RcppArmadillo (>= 0.2.0)
+SystemRequirements: GNU make
 URL: http://groups.google.com/group/unmarked,
      https://sites.google.com/site/unmarkedinfo/home,
      http://github.com/ianfiske/unmarked,
