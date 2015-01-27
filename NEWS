@@ -3,6 +3,11 @@ https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
 
+Version 0.10-6
+
+  o Fixed bug in C++ code that was causing problems on Solaris 
+
+
 Version 0.10-5
 
   o Added new models of population dynamics to pcountOpen. Most
