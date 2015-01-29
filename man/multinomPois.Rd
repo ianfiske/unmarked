@@ -85,7 +85,7 @@ data(ovendata)
 ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
     siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])),
     type = "removal")
-(fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+(fm1 <- multinomPois(~ 1 ~ ufc + trba, ovenFrame))
 
 # Detection probability for a single pass
 backTransform(fm1, type="det")
