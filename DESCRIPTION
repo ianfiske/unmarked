@@ -1,14 +1,14 @@
 Package: unmarked
-Version: 0.10-4
-Date: 2014-04-28
+Version: 0.10-6
+Date: 2015-01-27
 Type: Package
 Title: Models for Data from Unmarked Animals
-Author: Ian Fiske, Richard Chandler, David Miller, Andy Royle, Marc Kery
+Author: Ian Fiske, Richard Chandler, David Miller, Andy Royle, Marc Kery, Jeff Hostetler
 Maintainer: Richard Chandler <rbchan@uga.edu>
 Depends: R (>= 2.12.0), methods, reshape, lattice, Rcpp (>= 0.8.0)
 Suggests: raster
 Imports: graphics, stats, utils, plyr
-Description: This package fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates.
+Description: Fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates.
 License: GPL (>=3)
 LazyLoad: yes
 LazyData: yes

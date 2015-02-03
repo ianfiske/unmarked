@@ -30,7 +30,7 @@ SEXP nll_pcount( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_lamR, SEXP beta_pR, SEXP l
   double L_i=0.0;
   double ll=0.0;
   arma::colvec f(lk);
-  f.zeros();
+  f.zeros(); 
   arma::colvec g(lk);
   for(int i=0; i<R; i++) {
     g.zeros();

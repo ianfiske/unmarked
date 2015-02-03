@@ -36,7 +36,8 @@ unmarkedFrameGDS objects are used by \code{\link{gdistsamp}}.
 unmarkedFrameGPC objects are used by \code{\link{gpcount}}.
 
 For a study with \emph{M} sites, \emph{T} years, and a maximum of
-\emph{J} observations per site-year, the data are shaped as follows.
+\emph{J} observations per site-year, the data can be supplied in a
+variety of ways but are stored as follows.
 \code{y} is an \eqn{M \times TJ}{M by TJ} matrix, with each row
 corresponding to a site.  \code{siteCovs} is a data frame with \eqn{M}
 rows.  \code{yearlySiteCovs} is a data frame with \eqn{MT} rows which

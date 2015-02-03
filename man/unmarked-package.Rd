@@ -2,7 +2,7 @@
 \alias{unmarked}
 \alias{unmarked-package}
 \title{Models for Data from Unmarked Animals}
-\description{This package fits hierarchical models of animal
+\description{Fits hierarchical models of animal
   occurrence and abundance to data collected on species that may be
   detected imperfectly.  Models include single- and multi-season site
   occupancy models, binomial N-mixture models, and multinomial N-mixture
@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.10-4\cr
+Version: \tab 0.10-5\cr
 License: \tab GPL (>= 3)\cr
 }
 

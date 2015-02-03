@@ -47,7 +47,8 @@ setClass("unmarkedFitPCount",
 setClass("unmarkedFitPCO",
         representation(
             formlist = "list",
-            dynamics = "character"),
+            dynamics = "character",
+            immigration = "logical"),
         contains = "unmarkedFitPCount")
 
 
@@ -730,10 +731,13 @@ setMethod("predict", "unmarkedFitPCO",
     if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
     dynamics <- object@dynamics
+    immigration <- tryCatch(object@immigration, error=function(e) FALSE)
     if(identical(dynamics, "notrend") & identical(type, "gamma"))
         stop("gamma is a derived parameter for this model: (1-omega)*lambda")
     if(identical(dynamics, "trend") && identical(type, "omega"))
         stop("omega is not a parameter in the dynamics='trend' model")
+    if(!immigration && identical(type, "iota"))
+        stop("iota is not a parameter in the immigration=FALSE model")
     formula <- object@formula
     formlist <- object@formlist
     if(inherits(newdata, "unmarkedFrame"))
@@ -763,6 +767,10 @@ setMethod("predict", "unmarkedFitPCO",
                     X <- D$Xom
                     offset <- D$Xom.offset
                 },
+                iota = {
+                    X <- D$Xiota
+                    offset <- D$Xiota.offset
+                },
                 det = {
                     X <- D$Xp
                     offset <- D$Xp.offset
@@ -773,6 +781,7 @@ setMethod("predict", "unmarkedFitPCO",
             gammaformula <- formlist$gammaformula
             omegaformula <- formlist$omegaformula
             pformula <- formlist$pformula
+            iotaformula <- formlist$iotaformula
             switch(type,
                 lambda = {
                     mf <- model.frame(lambdaformula, newdata)
@@ -787,6 +796,11 @@ setMethod("predict", "unmarkedFitPCO",
                 omega = {
                     mf <- model.frame(omegaformula, newdata)
                     X <- model.matrix(omegaformula, mf)
+                    offset <- model.offset(mf)
+                },
+                iota = {
+                    mf <- model.frame(iotaformula, newdata)
+                    X <- model.matrix(iotaformula, mf)
                     offset <- model.offset(mf)
                 },
                 det = {
@@ -1326,11 +1340,13 @@ setMethod("fitted", "unmarkedFitPCO",
 {
     dynamics <- object@dynamics
     mixture <- object@mixture
+    immigration <- tryCatch(object@immigration, error=function(e) FALSE)
     data <- getData(object)
     D <- getDesign(data, object@formula, na.rm = na.rm)
-    Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
+    Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp; Xiota <- D$Xiota
     Xlam.offset <- D$Xlam.offset; Xgam.offset <- D$Xgam.offset
     Xom.offset <- D$Xom.offset; Xp.offset <- D$Xp.offset
+    Xiota.offset <- D$Xiota.offset
     delta <- D$delta #FIXME this isn't returned propertly when na.rm=F
 
     y <- D$y
@@ -1342,15 +1358,21 @@ setMethod("fitted", "unmarkedFitPCO",
     if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
     if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
     if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
+    if(is.null(Xiota.offset)) Xiota.offset <- rep(0, M*(T-1))
 
     lambda <- exp(Xlam %*% coef(object, 'lambda') + Xlam.offset)
     if(identical(mixture, "ZIP")) {
         psi <- plogis(coef(object, type="psi"))
         lambda <- (1-psi)*lambda
     }
-    if(!identical(dynamics, "trend"))
-        omega <- matrix(plogis(Xom %*% coef(object, 'omega') + Xom.offset),
+    if(!identical(dynamics, "trend")) {
+        if(identical(dynamics, "ricker") || identical(dynamics, "gompertz"))
+            omega <- matrix(exp(Xom %*% coef(object, 'omega') + Xom.offset),
                         M, T-1, byrow=TRUE)
+        else
+            omega <- matrix(plogis(Xom %*% coef(object, 'omega') + Xom.offset),
+                        M, T-1, byrow=TRUE)
+    }
     if(!identical(dynamics, "notrend"))
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma') + Xgam.offset),
                         M, T-1, byrow=TRUE)
@@ -1358,6 +1380,11 @@ setMethod("fitted", "unmarkedFitPCO",
         if(identical(dynamics, "notrend"))
             gamma <- (1-omega)*lambda
         }
+    if(immigration)
+        iota <- matrix(exp(Xiota %*% coef(object, 'iota') + Xiota.offset),
+                        M, T-1, byrow=TRUE)
+    else
+        iota <- matrix(0, M, T-1)
     p <- getP(object, na.rm = na.rm) # Should return MxJT
     N <- matrix(NA, M, T)
     for(i in 1:M) {
@@ -1365,28 +1392,49 @@ setMethod("fitted", "unmarkedFitPCO",
         if(delta[i, 1] > 1) {
             for(d in 2:delta[i ,1]) {
                 if(identical(dynamics, "autoreg"))
-                    gamma[i, 1] <- N[i, 1] * gamma[i, 1]
-            if(identical(dynamics, "trend"))
-                N[i,1] <- N[i,1] * gamma[i,1]
+                    N[i, 1] <- N[i, 1] * (omega[i,1] + gamma[i, 1]) + iota[i, 1]
+            else if(identical(dynamics, "trend"))
+                N[i,1] <- N[i,1] * gamma[i,1] + iota[i, 1]
+            else if(identical(dynamics, "ricker"))
+                N[i,1] <- N[i,1] * exp(gamma[i,1]*(1-N[i,1]/omega[i,1])) + 
+                    iota[i, 1]
+            else if(identical(dynamics, "gompertz"))
+                N[i,1] <- N[i,1] * exp(gamma[i,1]*(1-log(N[i,1]+1)/
+                  log(omega[i,1]+1))) + iota[i, 1]
             else
                 N[i,1] <- N[i,1] * omega[i,1] + gamma[i,1]
                 }
             }
         for(t in 2:T) {
             if(identical(dynamics, "autoreg"))
-                gamma[i, t-1] <- N[i, t-1] * gamma[i, t-1]
-            if(identical(dynamics, "trend"))
-                N[i,t] <- N[i,t-1] * gamma[i,t-1]
+                N[i, t] <- N[i, t-1] * (omega[i, t-1] + gamma[i, t-1]) + 
+                    iota[i, t-1]
+            else if(identical(dynamics, "trend"))
+                N[i,t] <- N[i,t-1] * gamma[i,t-1] + iota[i, t-1]
+            else if(identical(dynamics, "ricker"))
+                N[i,t] <- N[i,t-1]*exp(gamma[i,t-1]*(1-N[i,t-1]/omega[i,t-1]))+ 
+                    iota[i, t-1]
+            else if(identical(dynamics, "gompertz"))
+                N[i,1] <- N[i,t-1] * exp(gamma[i,t-1]*(1-log(N[i,t-1]+1)/
+                  log(omega[i,t-1]+1))) + iota[i, t-1]
             else
                 N[i,t] <- N[i,t-1] * omega[i,t-1] + gamma[i,t-1]
             if(delta[i, t] > 1) {
                 for(d in 2:delta[i, t]) {
                     if(identical(dynamics, "autoreg"))
-                        gamma[i, t-1] <- N[i, t] * gamma[i, t-1]
-                    if(identical(dynamics, "trend"))
-                        N[i,t] <- N[i,t]*gamma[i,t-1]
+                        N[i, t] <- N[i, t] * (omega[i, t-1] + gamma[i, t-1]) + 
+                            iota[i, t-1]
+                    else if(identical(dynamics, "trend"))
+                        N[i, t] <- N[i, t] * gamma[i, t-1] + iota[i, t-1]
+                    else if(identical(dynamics, "ricker"))
+                        N[i, t] <- N[i, t] * exp(gamma[i, t-1] * (1 - N[i,t] / 
+                            omega[i,t-1]))+ iota[i, t-1]
+                    else if(identical(dynamics, "gompertz"))
+                        N[i, 1] <- N[i, t] * exp(gamma[i, t-1] * (1 - 
+                            log(N[i, t]+1) / log(omega[i, t-1] + 1))) + 
+                            iota[i, t-1]
                     else
-                        N[i,t] <- N[i,t] * omega[i,t-1] + gamma[i,t-1]
+                        N[i,t] <- N[i,t] * omega[i, t-1] + gamma[i, t-1]
                     }
                 }
             }
@@ -1703,12 +1751,13 @@ setMethod("update", "unmarkedFitGMM",
 
 setMethod("update", "unmarkedFitPCO",
     function(object, lambdaformula., gammaformula., omegaformula.,
-        pformula., ..., evaluate = TRUE) {
+        pformula., iotaformula., ..., evaluate = TRUE) {
     call <- object@call
     lambdaformula <- as.formula(call[['lambdaformula']])
     gammaformula <- as.formula(call[['gammaformula']])
     omegaformula <- as.formula(call[['omegaformula']])
     pformula <- as.formula(call[['pformula']])
+    iotaformula <- as.formula(call[['iotaformula']])
     extras <- match.call(call=sys.call(-1),
                          expand.dots = FALSE)$...
     if (!missing(lambdaformula.)) {
@@ -1727,6 +1776,10 @@ setMethod("update", "unmarkedFitPCO",
     if (!missing(pformula.)) {
         upPformula <- update.formula(pformula, pformula.)
         call[['pformula']] <- upPformula
+    }
+    if (!missing(iotaformula.)) {
+        upIotaformula <- update.formula(iotaformula, iotaformula.)
+        call[['iotaformula']] <- upIotaformula
     }
     if (length(extras) > 0) {
         existing <- !is.na(match(names(extras), names(call)))
@@ -2481,10 +2534,12 @@ setMethod("simulate", "unmarkedFitPCO",
     mix <- object@mixture
     dynamics <- object@dynamics
     umf <- object@data
+    immigration <- tryCatch(object@immigration, error=function(e) FALSE)
     D <- getDesign(umf, object@formula, na.rm = na.rm)
-    Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp
+    Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp; Xiota <- D$Xiota
     Xlam.offset <- D$Xlam.offset; Xgam.offset <- D$Xgam.offset
-    Xom.offset <- D$Xom.offset; Xp.offset <- D$Xp.offset
+    Xom.offset <- D$Xom.offset; Xp.offset <- D$Xp.offset 
+    Xiota.offset <- D$Xiota.offset
     delta <- D$delta
 
     y <- D$y
@@ -2496,6 +2551,7 @@ setMethod("simulate", "unmarkedFitPCO",
     if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
     if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
     if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
+    if(is.null(Xiota.offset)) Xiota.offset <- rep(0, M*(T-1))
 
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda') + Xlam.offset))
     if(dynamics != "notrend")
@@ -2503,11 +2559,22 @@ setMethod("simulate", "unmarkedFitPCO",
                         M, T-1, byrow=TRUE)
     else
         gamma <- matrix(NA, M, T-1)
-    if(dynamics != "trend")
-        omega <- matrix(plogis(Xom %*% coef(object, 'omega') + Xom.offset),
+    if(dynamics == "trend")
+        omega <- matrix(-999, M, T-1) # placeholder
+    else if(identical(dynamics, "ricker"))
+        omega <- matrix(exp(Xom %*% coef(object, 'omega') + Xom.offset),
+                        M, T-1, byrow=TRUE)
+    else if(identical(dynamics, "gompertz"))
+        omega <- matrix(exp(Xom %*% coef(object, 'omega') + Xom.offset),
                         M, T-1, byrow=TRUE)
     else
-        omega <- matrix(-999, M, T-1) # placeholder
+        omega <- matrix(plogis(Xom %*% coef(object, 'omega') + Xom.offset),
+                        M, T-1, byrow=TRUE)
+    if(immigration)
+        iota <- matrix(exp(Xiota %*% coef(object, 'iota') + Xiota.offset),
+                        M, T-1, byrow=TRUE)
+    else
+        iota <- matrix(0, M, T-1)
     if(identical(mix, "ZIP"))
         psi <- plogis(coef(object, type="psi"))
     p <- getP(object, na.rm = na.rm)
@@ -2525,10 +2592,17 @@ setMethod("simulate", "unmarkedFitPCO",
             if(delta[i, 1] > 1) {
                 for(d in 2:delta[i, 1]) {
                     if(dynamics == "trend")
-                        N[i,1] <- rpois(1, N[i,1]*gamma[i,1])
+                        N[i,1] <- rpois(1, N[i,1]*gamma[i,1]+iota[i,1])
+                    else if(dynamics == "ricker")
+                        N[i,1] <- rpois(1, N[i,1]*exp(gamma[i, 1] * (1 - 
+                          N[i, 1] / omega[i, 1])) + iota[i, 1])
+                    else if(dynamics == "gompertz")
+                        N[i,1] <- rpois(1, N[i, 1] * exp(gamma[i, 1] * (1 -  
+                          log(N[i, 1] + 1)/log(omega[i, 1] + 1))) +
+                          iota[i, 1])
                     else if(dynamics == "autoreg")
                         N[i,1] <- rbinom(1, N[i,1], omega[i,1]) +
-                            rpois(1, gamma[i,1]*N[i,1])
+                            rpois(1, gamma[i,1]*N[i,1] + iota[i, 1])
                     else
                         N[i,1] <- rbinom(1, N[i,1], omega[i,1]) +
                             rpois(1, gamma[i, 1])
@@ -2542,18 +2616,33 @@ setMethod("simulate", "unmarkedFitPCO",
                     if(!identical(dynamics, "trend"))
                         S[i, t-1] <- rbinom(1, N[i, t-1], omega[i, t-1])
                     if(identical(dynamics, "autoreg"))
-                        gamma[i, t-1] <- gamma[i, t-1] * N[i, t-1]
+                        gamma[i, t-1] <- gamma[i, t-1] * N[i,t-1] + iota[i,t-1]
                     else if(identical(dynamics, "notrend"))
                         gamma[i, t-1] <- (1-omega[i, t-1]) * lambda[i]
                     G[i, t-1] <- rpois(1, gamma[i, t-1])
                     if(identical(dynamics, "trend"))
-                        N[i,t] <- rpois(1, N[i,t-1]*gamma[i,t-1])
+                        N[i,t] <- rpois(1, N[i,t-1]*gamma[i,t-1]+iota[i,t-1])
+                    else if(identical(dynamics, "ricker"))
+                        N[i,t] <- rpois(1, N[i,t-1]*exp(gamma[i,t-1]*(1-N[i,
+                            t-1]/omega[i,t-1]))+iota[i,t-1])
+                    else if(identical(dynamics, "gompertz"))
+                        N[i,t] <- rpois(1, N[i,t-1]*exp(gamma[i,t-1]*(1-
+                            log(N[i,t-1] + 1) / log(omega[i,t-1] + 1))) + 
+                            iota[i,t-1])
                     else
                         N[i, t] <- S[i, t-1] + G[i, t-1]
                     if(delta[i, t] > 1) {
                         for(d in 2:delta[i, 1]) {
                             if(dynamics == "trend")
-                                N[i,t] <- rpois(1, N[i,t]*gamma[i,t-1])
+                                N[i,t] <- rpois(1, N[i,t]*gamma[i,t-1]+
+                                    iota[i,t-1])
+                            else if(identical(dynamics, "ricker"))
+                                N[i,t] <- rpois(1, N[i,t]*exp(gamma[i,t-1]*(1-
+                                    N[i,t]/omega[i,t-1]))+iota[i,t-1])
+                            else if(identical(dynamics, "gompertz"))
+                                N[i,t] <- rpois(1, N[i,t]*exp(gamma[i,t-1]*(1-
+                                    log(N[i,t] + 1)/
+                                    log(omega[i,t-1] + 1))) + iota[i,t-1])
                             else {
                                 S[i,t-1] <- rbinom(1, N[i,t], omega[i,t-1])
                                 G[i,t-1] <- rpois(1, gamma[i, t-1])
