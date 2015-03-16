@@ -58,7 +58,8 @@ across runs; to eliminate the randomness, supply foldAssignments.
 
 Hutchinson, R. A., J. V. Valente, S. C. Emerson, M. G. Betts, and
 T. G. Dietterich. 2015. Penalized Likelihood Methods Improve Parameter
-Estimates in Occupancy Models. in preparation.
+Estimates in Occupancy Models. Methods in Ecology and Evolution. DOI:
+10.1111/2041-210X.12368
 
 MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
   J. Andrew Royle, and C. A. Langtimm. 2002. Estimating Site Occupancy Rates
