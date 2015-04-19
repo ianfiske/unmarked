@@ -60,8 +60,8 @@ used to manipulate the returned object.
   y(i,j,t), psi(i), gamma(i,t), epsilon(i,t), p(i,j,t)) for k = 0,1,...,K}}
 \item{\code{signature(object = "unmarkedFitPCO")}}{\eqn{Pr(N_{it}=k |
   y_{ijt}, \hat{\lambda}_i, \hat{\gamma}_{it}, \hat{\omega}_{it},
-  \hat{p}_{ijt}) k = 0,1,...,K}{Pr(N(i,t)=k |
-  y(i,j,t), lambda(i), gamma(i,t), omega(i,t), p(i,j,t)) for k =
+  \hat{\iota}_{it}, \hat{p}_{ijt}) k = 0,1,...,K}{Pr(N(i,t)=k |
+  y(i,j,t), lambda(i), gamma(i,t), omega(i,t), iota(i,t), p(i,j,t)) for k =
   0,1,...,K}}
 
 }
