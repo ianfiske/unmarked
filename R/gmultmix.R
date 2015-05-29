@@ -94,6 +94,7 @@ nll <- function(pars) {
 
     for(t in 1:T) cp[,t,1:R] <- do.call(piFun, list(p[,t,]))
     cp[,,1:R] <- cp[,,1:R] * phi
+    cp[,, 1:R][is.na(y)]<- NA   # andy added 5/29 
     cp[,,R+1] <- 1 - apply(cp[,,1:R,drop=FALSE], 1:2, sum, na.rm=TRUE)
 
     switch(mixture,
