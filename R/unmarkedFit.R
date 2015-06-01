@@ -2915,7 +2915,7 @@ setMethod("simulate", "unmarkedFitGMM",
     cp.mat[is.na(y)] <- NA
     cp.temp <- array(cp.mat, c(n, J, T))
     cp.arr[,,1:J] <- aperm(cp.temp, c(1,3,2))
-    cp[,, 1:J][is.na(y)]<- NA   # Andy added 5/30
+    cp.arr[,, 1:J][is.na(y)]<- NA   # Andy added 5/30
     cp.arr[,,J+1] <- 1 - apply(cp.arr[,,1:J,drop=FALSE], 1:2, sum, na.rm=TRUE)
 
     simList <- list()
