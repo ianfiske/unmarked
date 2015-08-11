@@ -148,7 +148,7 @@ ovenFrame <- unmarkedFrameMPois(y = ovendata.list$data,
 	type = "removal")
 
 # Fit a couple of models
-(fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+(fm1 <- multinomPois(~ 1 ~ ufc + trba, ovenFrame))
 summary(fm1)
 
 # Apply a bunch of methods to the fitted model
@@ -185,7 +185,7 @@ logLik(fm1)
 backTransform(fm1, type ='det')
 
 # Predicted abundance at specified covariate values
-(lc <- linearComb(fm1, c(Int = 1, ufp = 0, trba = 0), type='state'))
+(lc <- linearComb(fm1, c(Int = 1, ufc = 0, trba = 0), type='state'))
 backTransform(lc)
 
 # Assess goodness-of-fit
@@ -193,7 +193,7 @@ parboot(fm1)
 plot(fm1)
 
 # Predict abundance at specified covariate values.
-newdat <- data.frame(ufp = 0, trba = seq(-1, 1, length=10))
+newdat <- data.frame(ufc = 0, trba = seq(-1, 1, length=10))
 predict(fm1, type='state', newdata=newdat)
 
 # Number of sites in the sample

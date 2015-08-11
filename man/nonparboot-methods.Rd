@@ -70,7 +70,7 @@ get bootstrap estimates of standard errors.
 data(ovendata)
 ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
 siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
-(fm <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+(fm <- multinomPois(~ 1 ~ ufc + trba, ovenFrame))
 fm <- nonparboot(fm, B = 20) # should use larger B in real life.
 vcov(fm, method = "hessian")
 vcov(fm, method = "nonparboot")
