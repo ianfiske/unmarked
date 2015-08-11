@@ -11,6 +11,9 @@
 \alias{[,unmarkedFrameGMM,numeric,missing,missing-method}
 \alias{[,unmarkedFrameGDS,numeric,missing,missing-method}
 \alias{[,unmarkedFramePCO,numeric,missing,missing-method}
+\alias{[,unmarkedFramePCO,missing,numeric,missing-method}
+\alias{[,unmarkedFrameGPC,numeric,missing,missing-method}
+\alias{[,unmarkedFrameGPC,missing,numeric,missing-method}
 \alias{[,unmarkedFrame,list,missing,missing-method}
 \title{Methods for bracket extraction [ in Package `unmarked'}
 \description{

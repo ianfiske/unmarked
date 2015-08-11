@@ -1,6 +1,6 @@
 \name{colext}
 \alias{colext}
-\title{Fit the colonization-extinction model.}
+\title{Fit the dynamic occupancy model of MacKenzie et. al (2003)}
 \usage{colext(psiformula= ~1, gammaformula =  ~ 1, epsilonformula = ~ 1,
     pformula = ~ 1, data, starts, method="BFGS", se=TRUE, ...)}
 
@@ -105,6 +105,7 @@ fm
 
 
 
+\dontrun{
 # Real data
 data(frogs)
 umf <- formatMult(masspcru)
@@ -126,17 +127,12 @@ projected(fm)
 # Empirical Bayes estimates of number of sites occupied in each year
 re <- ranef(fm)
 modes <- colSums(bup(re, stat="mode"))
-CI <- colSums(confint(re))
 plot(1:7, modes, xlab="Year", ylab="Sites occupied", ylim=c(0, 70))
-arrows(1:7, CI[1,], 1:7, CI[2,], code=3, angle=90, length=0.05)
 
-\dontrun{
 ## Find bootstrap standard errors for smoothed trajectory
 fm <- nonparboot(fm, B = 100)  # This takes a while!
 fm@smoothed.mean.bsse
-}
 
-\dontrun{
 ## try yearly transition rates
 yearlySiteCovs(umf) <- data.frame(year = factor(rep(1:7, numSites(umf))))
 (fm.yearly <- colext(psiformula = ~ 1,

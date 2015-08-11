@@ -256,8 +256,12 @@ hist(simout[,5]); abline(v=0.5, col=4)
 
 
 sim.dep.double <- function(nSites=200, numPrimary=2, lambda=1, phi=0.6,
-                           pA=0.8, pB=0.6, alpha=0.5)
+                           pA=0.8, pB=0.6, obsmat, alpha=0.5)
 {
+    if(numPrimary==1 & phi<1) {
+        phi <- 1
+        warning("phi has been set to 1 because it can't be estimated when numPrimary=1")
+    }
 
     N <- matrix(NA, nSites, numPrimary)
     y <- array(NA, c(nSites, 2, numPrimary))
@@ -270,18 +274,27 @@ sim.dep.double <- function(nSites=200, numPrimary=2, lambda=1, phi=0.6,
         N[i,] <- rbinom(numPrimary, M[i], phi)
         }
 
+    if(!all(names(table(obsmat)) == c("A", "B")))
+        stop("This function assumes that 'obsmat' is a matrix of A's and B's")
+    obsmat <- array(obsmat, c(nSites, 2, numPrimary))
+
     # Number observed
     for(i in 1:nSites) {
         for(t in 1:numPrimary) {
-            cp <- c(pA, pB * (1 - pA))
-            cp[3] <- 1 - sum(cp)
+            if(obsmat[i,1,t]=="A") {
+                cp <- c(pA, pB * (1 - pA))
+                cp[3] <- 1 - sum(cp)
+            }
+            if(obsmat[i,1,t]=="B") {
+                cp <- c(pB, pA * (1 - pB))
+                cp[3] <- 1 - sum(cp)
+            }
             y[i,,t] <- c(rmultinom(1, N[i,t], cp)[1:2])
             }
         }
     return(matrix(y, nSites))
 }
 
-str(sim.dep.double())
 
 
 # piFun
@@ -304,9 +317,10 @@ obsToY <- kronecker(diag(numPrimary), obsToY)
 
 set.seed(4)
 nSites <- 200
-T <- 10
-y.sim <- sim.dep.double(nSites=nSites, numPrimary=T, lambda=3)
-observer <- matrix(c("A", "B"), nSites, T*2, byrow=TRUE)
+T <- 1
+observer <- matrix(c("A", "B", "B", "A"), nSites, T*2, byrow=TRUE)
+y.sim <- sim.dep.double(nSites=nSites, numPrimary=T, lambda=3,
+                        pA=0.8, pB=0.6, obsmat=observer)
 obsToY <- matrix(1, 2, 2)
 obsToY <- kronecker(diag(T), obsToY)
 umf <- unmarkedFrameGMM(y = y.sim,
@@ -316,12 +330,20 @@ summary(umf)
 
 m5 <- gmultmix(~1, ~1, ~observer-1, umf, mixture="NB")
 m5
+m6 <- gmultmix(~1, ~1, ~1, umf, mixture="NB")
+m6
 
-plogis(1.429)
-plogis(0.395)
+(pAhat <- plogis(coef(m5, type="det")[1]))
+(pBhat <- plogis(coef(m5, type="det")[2]))
+1 - (1-pAhat)*(1-pBhat)
 
+plogis(coef(m6, type="det"))
 
-
+# export data for DOBSERV
+dataout <- data.frame(obs1=ifelse(observer[,1]=="A", 1, 2),
+                      Species="MALL", y.sim)
+head(dataout)
+write.csv(dataout, "C:/R/dobserv/simdata.csv", row.names=FALSE)
 
 
 
@@ -330,18 +352,19 @@ nsim <- 50
 simout <- matrix(NA, nsim, 4)
 colnames(simout) <- c("lambda", "phi", "pA", "pB")
 for(i in 1:nsim) {
-    cat("sim", i, "\n"); flush.console()
-    y.sim <- sim.dep.double(nSites=200, alpha=1000, numPrimary=5)
-    T <- ncol(y.sim)/2
+    cat("sim", i, "\n")
+    T <- 5
+    observer <- matrix(c("A", "B", "B", "A"), nSites, T*2, byrow=TRUE)
+    y.sim <- sim.dep.double(nSites=200, alpha=1000, numPrimary=T,
+                            obsmat=observer)
     obsToY <- matrix(1, 2, 2)
     obsToY <- kronecker(diag(T), obsToY)
-    observer <- matrix(c("A", "B", "B", "A"), nrow(y.sim), T*2, byrow=TRUE)
     umf <- unmarkedFrameGMM(y = y.sim, obsCovs=list(observer=observer),
         numPrimary=T, obsToY=obsToY, piFun="depDoubPiFun")
     m.sim5 <- gmultmix(~1, ~1, ~observer-1, umf, mixture="P", se=FALSE)
     e <- coef(m.sim5)
     simout[i,] <- c(exp(e[1]), plogis(e[2:4]))
-    cat("   beta =", simout[i,], "\n")
+    cat("   mle =", simout[i,], "\n")
     }
 
 par(mfrow=c(2,2), mai=c(0.8,0.8,0.2,0.2))

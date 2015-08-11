@@ -21,7 +21,7 @@ Objects can be created by calls of the form \code{\link{ranef}}.
 
 \section{Slots}{
   \describe{
-    \item{\code{post}:}{A \code{\link{array}} with nSites rows and Nmax
+    \item{\code{post}:}{An \code{\link{array}} with nSites rows and Nmax
   (K+1) columns and nPrimaryPeriod slices }
   }
 }
@@ -44,10 +44,8 @@ Objects can be created by calls of the form \code{\link{ranef}}.
 \section{Warnings}{
   Empirical Bayes methods can underestimate the variance of the
   posterior distribution because they do not account for uncertainty in
-  the hyperparameters (lambda or psi). However, we have not found this
-  to be the case in a set of limited simulations studies that can be
-  found in the inst/unitTests directory of unmarked. Simulations do,
-  however, indicate that the posterior mode can exhibit slight (3-5
+  the hyperparameters (lambda or psi). Simulation studies
+  indicate that the posterior mode can exhibit (3-5
   percent) negatively bias as a point
   estimator of site-specific abundance. It appears to be safer to use
   the posterior mean even though this will not be an integer in general.

@@ -127,6 +127,173 @@ setMethod("handleNA", "unmarkedFrame",
     })
 
 
+# unmarkedFrameOccuFP
+# like the occuFP but there are 3 osbservation formula which are stored in V (true positive detections), 
+# U (false positive detections), and W (b or probability detetion is certain)
+
+
+setMethod("getDesign", "unmarkedFrameOccuFP",
+          function(umf, detformula,FPformula,Bformula = ~.,stateformula, na.rm=TRUE)
+          {
+            
+            M <- numSites(umf)
+            R <- obsNum(umf)
+            
+            ## Compute state design matrix
+            if(is.null(siteCovs(umf))) {
+              siteCovs <- data.frame(placeHolder = rep(1, M))
+            } else {
+              siteCovs <- siteCovs(umf)
+            }
+            X.mf <- model.frame(stateformula, siteCovs, na.action = NULL)
+            X <- model.matrix(stateformula, X.mf)
+            X.offset <- as.vector(model.offset(X.mf))
+            if (!is.null(X.offset)) {
+              X.offset[is.na(X.offset)] <- 0
+            }
+            
+            ## Compute detection design matrix
+            if(is.null(obsCovs(umf))) {
+              obsCovs <- data.frame(placeHolder = rep(1, M*R))
+            } else {
+              obsCovs <- obsCovs(umf)
+            }
+            
+            ## Record future column names for obsCovs
+            colNames <- c(colnames(obsCovs), colnames(siteCovs))
+            
+            ## add site Covariates at observation-level
+            obsCovs <- cbind(obsCovs, siteCovs[rep(1:M, each = R),])
+            colnames(obsCovs) <- colNames
+            
+            ## add observation number if not present
+            if(!("obsNum" %in% names(obsCovs))) {
+              obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:R, M)))
+            }
+            
+            
+            
+            V.mf <- model.frame(detformula, obsCovs, na.action = NULL)
+            V <- model.matrix(detformula, V.mf)
+            V.offset <- as.vector(model.offset(V.mf))
+            if (!is.null(V.offset)) {
+              V.offset[is.na(V.offset)] <- 0
+            }
+            
+            
+            U.mf <- model.frame(FPformula, obsCovs, na.action = NULL)
+            U <- model.matrix(FPformula, U.mf)
+            U.offset <- as.vector(model.offset(U.mf))
+            if (!is.null(U.offset)) {
+              U.offset[is.na(U.offset)] <- 0
+            }
+            
+            W.mf <- model.frame(Bformula, obsCovs, na.action = NULL)
+            W <- model.matrix(Bformula, W.mf)
+            W.offset <- as.vector(model.offset(W.mf))
+            if (!is.null(W.offset)) {
+              W.offset[is.na(W.offset)] <- 0
+            }
+            
+            if (na.rm) {
+              out <- handleNA(umf, X, X.offset, V,V.offset, U, U.offset, W, W.offset)
+              y <- out$y
+              X <- out$X
+              X.offset <- out$X.offset
+              V <- out$V
+              V.offset <- out$V.offset
+              U <- out$U
+              U.offset <- out$U.offset
+              U <- out$U
+              U.offset <- out$U.offset
+              removed.sites <- out$removed.sites
+            } else {
+              y=getY(umf)
+              removed.sites=integer(0)
+            }
+            
+            
+            
+            return(list(y = y, X = X, X.offset = X.offset, V = V,
+                        V.offset = V.offset,U = U, U.offset = U.offset,W = W,
+                        W.offset = W.offset, removed.sites = removed.sites))
+          })
+
+
+setMethod("handleNA", "unmarkedFrameOccuFP",
+          function(umf, X, X.offset, V, V.offset, U, U.offset, W, W.offset)
+          {
+            obsToY <- obsToY(umf)
+            if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
+            
+            J <- numY(umf)
+            R <- obsNum(umf)
+            M <- numSites(umf)
+            
+            X.long <- X[rep(1:M, each = J),]
+            X.long.na <- is.na(X.long)
+            
+            V.long.na <- apply(V, 2, function(x) {
+              x.mat <- matrix(x, M, R, byrow = TRUE)
+              x.mat <- is.na(x.mat)
+              x.mat <- x.mat %*% obsToY
+              x.long <- as.vector(t(x.mat))
+              x.long > 0
+            })
+            V.long.na <- apply(V.long.na, 1, any)
+            
+            U.long.na <- apply(U, 2, function(x) {
+              x.mat <- matrix(x, M, R, byrow = TRUE)
+              x.mat <- is.na(x.mat)
+              x.mat <- x.mat %*% obsToY
+              x.long <- as.vector(t(x.mat))
+              x.long > 0
+            })
+            U.long.na <- apply(U.long.na, 1, any)
+            
+            W.long.na <- apply(W, 2, function(x) {
+              x.mat <- matrix(x, M, R, byrow = TRUE)
+              x.mat <- is.na(x.mat)
+              x.mat <- x.mat %*% obsToY
+              x.long <- as.vector(t(x.mat))
+              x.long > 0
+            })
+            W.long.na <- apply(W.long.na, 1, any)
+            
+            y.long <- as.vector(t(getY(umf)))
+            y.long.na <- is.na(y.long)
+            
+            covs.na <- apply(cbind(X.long.na, V.long.na, U.long.na, W.long.na), 1, any)
+            
+            ## are any NA in covs not in y already?
+            y.new.na <- covs.na & !y.long.na
+            
+            if(sum(y.new.na) > 0) {
+              y.long[y.new.na] <- NA
+              warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
+            }
+            
+            y <- matrix(y.long, M, J, byrow = TRUE)
+            sites.to.remove <- apply(y, 1, function(x) all(is.na(x)))
+            
+            num.to.remove <- sum(sites.to.remove)
+            if(num.to.remove > 0) {
+              y <- y[!sites.to.remove, ,drop = FALSE]
+              X <- X[!sites.to.remove, ,drop = FALSE]
+              X.offset <- X.offset[!sites.to.remove]
+              V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
+              V.offset <- V.offset[!sites.to.remove[rep(1:M, each = R)], ]
+              U <- U[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
+              U.offset <- U.offset[!sites.to.remove[rep(1:M, each = R)], ]
+              W <- W[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
+              W.offset <- W.offset[!sites.to.remove[rep(1:M, each = R)], ]
+              warning(paste(num.to.remove,"sites have been discarded because of missing data."), call. = FALSE)
+            }
+            
+            list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset, 
+                 U = U, U.offset = U.offset, W = W, W.offset = W.offset,
+                 removed.sites = which(sites.to.remove))
+          })
 
 
 # UnmarkedMultFrame
@@ -307,11 +474,13 @@ setMethod("getDesign", "unmarkedFramePCO",
     aschar1 <- as.character(formula)
     aschar2 <- as.character(formula[[2]])
     aschar3 <- as.character(formula[[2]][[2]])
+    aschar4 <- as.character(formula[[2]][[2]][[2]])
 
-    pformula <- as.formula(paste(aschar1[1], aschar1[3]))
-    omformula <- as.formula(paste(aschar2[1], aschar2[3]))
-    gamformula <- as.formula(paste(aschar3[1], aschar3[3]))
-    lamformula <- as.formula(formula[[2]][[2]][[2]])
+    iotaformula <- as.formula(paste(aschar1[1], aschar1[3]))
+    pformula <- as.formula(paste(aschar2[1], aschar2[3]))
+    omformula <- as.formula(paste(aschar3[1], aschar3[3]))
+    gamformula <- as.formula(paste(aschar4[1], aschar4[3]))
+    lamformula <- as.formula(formula[[2]][[2]][[2]][[2]])
 
     y <- getY(umf)
     M <- nrow(y)
@@ -361,6 +530,11 @@ setMethod("getDesign", "unmarkedFramePCO",
         if(is.factor(transCovs[,i]))
             transCovs[,i] <- factor(transCovs[,i]) # drop unused levels
 
+    Xiota.mf <- model.frame(iotaformula, transCovs, na.action = NULL)
+    Xiota <- model.matrix(iotaformula, Xiota.mf)
+    Xiota.offset <- as.vector(model.offset(Xiota.mf))
+    if(!is.null(Xiota.offset))
+        Xiota.offset[is.na(Xiota.offset)] <- 0
     Xp.mf <- model.frame(pformula, obsCovs, na.action = NULL)
     Xp <- model.matrix(pformula, Xp.mf)
     Xp.offset <- as.vector(model.offset(Xp.mf))
@@ -377,9 +551,9 @@ setMethod("getDesign", "unmarkedFramePCO",
     if(!is.null(Xom.offset))
         Xom.offset[is.na(Xom.offset)] <- 0
 
-    # determine if gamma and omega are scalar, vector, or matrix valued
+    # determine if gamma, omega, and iota are scalar, vector, or matrix valued
     # Runtime is much faster for scalars and vectors
-    Xgo <- cbind(Xgam, Xom)
+    Xgo <- cbind(Xgam, Xom, Xiota)
     getGOdims <- function(x) {
         xm <- matrix(x, M, T-1, byrow=TRUE)
 #        anyNA <- apply(is.na(xm), 1, any)
@@ -401,7 +575,8 @@ setMethod("getDesign", "unmarkedFramePCO",
         } else
             return("matrix")
         }
-    if(isTRUE(all.equal(gamformula,~1)) & isTRUE(all.equal(omformula, ~1)))
+    if(isTRUE(all.equal(gamformula,~1)) & isTRUE(all.equal(omformula, ~1)) & 
+      isTRUE(all.equal(iotaformula, ~1)))
         go.dims <- "scalar"
     else {
         go.dims.vec <- apply(Xgo, 2, getGOdims)
@@ -414,25 +589,26 @@ setMethod("getDesign", "unmarkedFramePCO",
     }
 
     if(na.rm)
-        out <- handleNA(umf, Xlam, Xgam, Xom, Xp,
-                        Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
-                        delta)
+        out <- handleNA(umf, Xlam, Xgam, Xom, Xp, Xiota,
+            Xlam.offset, Xgam.offset, Xom.offset, Xp.offset, Xiota.offset,
+            delta)
     else {   # delta needs to be formatted first
         ya <- array(y, c(M, J, T))
         yna <- apply(is.na(ya), c(1,3), all)
         delta <- formatDelta(delta, yna)
-        out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp,
+        out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, Xiota=Xiota,
                     Xlam.offset=Xlam.offset, Xgam.offset=Xgam.offset,
-                    Xom.offset=Xom.offset, Xp.offset=Xp.offset,
-                    delta=delta, removed.sites=integer(0), go.dims=go.dims)
+                    Xom.offset=Xom.offset, Xp.offset=Xp.offset, 
+                    Xiota.offset=Xiota.offset,
+                    delta=delta, removed.sites=integer(0))
     }
 
     return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam,
-                Xom = out$Xom, Xp = out$Xp,
+                Xom = out$Xom, Xp = out$Xp, Xiota = out$Xiota,
                 Xlam.offset=Xlam.offset, Xgam.offset=Xgam.offset,
-                Xom.offset=Xom.offset, Xp.offset=Xp.offset,
-                delta = out$delta, removed.sites = out$removed.sites,
-                go.dims = go.dims))
+                Xom.offset=Xom.offset, Xp.offset=Xp.offset, 
+                Xiota.offset=Xiota.offset, delta = out$delta, 
+                removed.sites = out$removed.sites, go.dims = go.dims))
 })
 
 
@@ -443,8 +619,8 @@ setMethod("getDesign", "unmarkedFramePCO",
 
 
 setMethod("handleNA", "unmarkedFramePCO",
-    function(umf, Xlam, Xgam, Xom, Xp, Xlam.offset, Xgam.offset,
-             Xom.offset, Xp.offset, delta)
+    function(umf, Xlam, Xgam, Xom, Xp, Xiota, Xlam.offset, Xgam.offset,
+             Xom.offset, Xp.offset, Xiota.offset, delta)
 {
 	obsToY <- obsToY(umf)
 	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
@@ -545,14 +721,19 @@ setMethod("handleNA", "unmarkedFramePCO",
                      drop = FALSE]
             Xp.offset <- Xp.offset[!sites.to.remove[rep(1:M, each = J*T)],,
                      drop = FALSE]
+            Xiota <- Xiota[!sites.to.remove[rep(1:M, each = T-1)],,
+                       drop = FALSE]
+            Xiota.offset <- Xiota.offset[!sites.to.remove[rep(1:M, each = T-1)],,
+                       drop = FALSE]
             delta <- delta[!sites.to.remove, ,drop =FALSE]
             warning(paste(num.to.remove, "sites have been discarded because of missing data."), call.=FALSE)
 	}
 
-	list(y = y.wide, Xlam = Xlam, Xgam = Xgam, Xom = Xom, Xp = Xp,
+	list(y = y.wide, Xlam = Xlam, Xgam = Xgam, Xom = Xom, Xp = Xp, Xiota = Xiota, 
              Xlam.offset=Xlam.offset, Xgam.offset=Xgam.offset,
-             Xom.offset=Xom.offset, Xp.offset=Xp.offset,
-             delta = delta, removed.sites = which(sites.to.remove))
+             Xom.offset=Xom.offset, Xp.offset=Xp.offset, 
+             Xiota.offset=Xiota.offset, delta = delta, 
+             removed.sites = which(sites.to.remove))
 })
 
 
@@ -652,6 +833,8 @@ setMethod("getDesign", "unmarkedFrameG3",
 setMethod("handleNA", "unmarkedFrameG3",
     function(umf, Xlam, Xlam.offset, Xphi, Xphi.offset, Xdet, Xdet.offset)
 {
+
+#    browser()
 
     obsToY <- obsToY(umf)
     if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")

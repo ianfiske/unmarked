@@ -7,8 +7,10 @@
 \alias{yearlySiteCovs<-,unmarkedMultFrame-method}
 \alias{unmarkedFrameGMM}
 \alias{unmarkedFrameGDS}
+\alias{unmarkedFrameGPC}
 
-\title{Create an unmarkedMultFrame or an unmarkedFrameGMM.}
+\title{Create an unmarkedMultFrame, unmarkedFrameGMM, unmarkedFrameGDS,
+  or unmarkedFrameGPC object}
 
 \usage{
   unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
@@ -16,6 +18,7 @@
     obsToY, piFun)
   unmarkedFrameGDS(y, siteCovs, numPrimary, yearlySiteCovs, dist.breaks,
     survey, unitsIn, tlength)
+  unmarkedFrameGPC(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
 }
 
 
@@ -30,8 +33,11 @@ unmarkedFrameGMM objects are used by \code{\link{gmultmix}}.
 
 unmarkedFrameGDS objects are used by \code{\link{gdistsamp}}.
 
+unmarkedFrameGPC objects are used by \code{\link{gpcount}}.
+
 For a study with \emph{M} sites, \emph{T} years, and a maximum of
-\emph{J} observations per site-year, the data are shaped as follows.
+\emph{J} observations per site-year, the data can be supplied in a
+variety of ways but are stored as follows.
 \code{y} is an \eqn{M \times TJ}{M by TJ} matrix, with each row
 corresponding to a site.  \code{siteCovs} is a data frame with \eqn{M}
 rows.  \code{yearlySiteCovs} is a data frame with \eqn{MT} rows which
@@ -92,7 +98,10 @@ unmarkedMultFrame using the
     \item{tlength}{see \code{\link{unmarkedFrameDS}}}
   }
 
-\seealso{\code{\link{formatMult}}}
+  \seealso{
+    \code{\link{formatMult}}, \code{\link{colext}},
+    \code{\link{gmultmix}}, \code{\link{gpcount}}
+  }
 
 \examples{
 

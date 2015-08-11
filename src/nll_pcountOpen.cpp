@@ -4,9 +4,69 @@
 using namespace Rcpp ;
 
 
+// constant model
+void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
+  Rcpp::NumericVector pois1 = dpois(N, gam, true);
+  arma::vec pois = as<arma::vec>(pois1);
+  arma::vec bin = arma::zeros<arma::vec>(nrI1);
+  for(int i=0; i<nrI1; i++) {
+    bin(i) = Rf_dbinom(I1(i,0), I1(i,1), om, true);
+  }
+  for(int s=0; s<nrI; s++) {
+    arma::uvec indB = as<arma::uvec>(Ib[s]);
+    arma::uvec indP = as<arma::uvec>(Ip[s]);
+    int nc = indB.n_elem;
+    for(int q=0; q<nc; q++) {
+      g3(s) += exp(bin(indB(q)) + pois(indP(q)));
+    }
+  }
+}
 
 
-SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_) {
+// autoregressive + immigration model
+void tp2(arma::mat& g3, int lk, double gam, double om, double imm) {
+    int Nmin=0;
+    for(int n1=0; n1<lk; n1++) {
+	for(int n2=0; n2<lk; n2++) {
+	    Nmin = std::min(n1, n2);
+	    for(int c=0; c<=Nmin; c++) {
+		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
+				  Rf_dpois(n2-c, gam*n1 + imm, true));
+	    }
+	}
+    }
+}
+ 
+// trend + immigration model 
+void tp3(arma::mat& g3, int lk, double gam, double imm) {
+    for(int n1=0; n1<lk; n1++) {
+      for(int n2=0; n2<lk; n2++) {
+        g3.at(n1, n2) = Rf_dpois(n2, n1*gam+imm, false);
+      }
+    }
+}
+
+// Ricker + immigration model
+void tp4(arma::mat& g3, int lk, double gam, double om, double imm) {
+    for(int n1=0; n1<lk; n1++) {
+	for(int n2=0; n2<lk; n2++) {
+	  g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam*(1-n1/om)) + imm, false);
+	}
+    }
+}
+
+// Gompertz + immigration model
+void tp5(arma::mat& g3, int lk, double gam, double om, double imm) {
+    for(int n1=0; n1<lk; n1++) {
+	   for(int n2=0; n2<lk; n2++) {
+	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(double (n1) + 1)/log(om + 1))) + imm, false);
+	   }
+    }
+}
+
+
+
+SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_) {
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
   int M = as<int>(M_);
@@ -17,19 +77,23 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::mat Xgam = as<arma::mat>(Xgam_);
   arma::mat Xom = as<arma::mat>(Xom_);
   arma::mat Xp = as<arma::mat>(Xp_);
+  arma::mat Xiota = as<arma::mat>(Xiota_);
   arma::colvec beta_lam = as<arma::colvec>(beta_lam_);
   arma::colvec beta_gam = as<arma::colvec>(beta_gam_);
   arma::colvec beta_om = as<arma::colvec>(beta_om_);
   arma::colvec beta_p = as<arma::colvec>(beta_p_);
+  arma::colvec beta_iota = as<arma::colvec>(beta_iota_);
   double log_alpha = as<double>(log_alpha_);
   arma::colvec Xlam_offset = as<arma::colvec>(Xlam_offset_);
   arma::colvec Xgam_offset = as<arma::colvec>(Xgam_offset_);
   arma::colvec Xom_offset = as<arma::colvec>(Xom_offset_);
   arma::colvec Xp_offset = as<arma::colvec>(Xp_offset_);
+  arma::colvec Xiota_offset = as<arma::colvec>(Xiota_offset_);
   std::string mixture = as<std::string>(mixture_);
   std::string dynamics = as<std::string>(dynamics_);
   std::string fix = as<std::string>(fix_);
   std::string go_dims = as<std::string>(go_dims_);
+  bool immigration = as<bool>(immigration_);
   arma::imat I = as<arma::imat>(I_);
   arma::imat I1 = as<arma::imat>(I1_);
   Rcpp::List Ib(Ib_);
@@ -48,9 +112,13 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   arma::imat delta = as<arma::imat>(delta_);
   // linear predictors
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
-  arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
-  if((fix != "omega") && (dynamics != "trend"))
-    omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
+  arma::mat omv = arma::ones<arma::colvec>(M*(T-1));
+  if((fix != "omega") && (dynamics != "trend")) {
+    if((dynamics == "ricker")  || (dynamics == "gompertz"))
+        omv = exp(Xom*beta_om + Xom_offset);
+    else if((dynamics == "constant")  || (dynamics == "autoreg") || (dynamics == "notrend"))
+        omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
+  }
   omv.reshape(T-1, M);
   arma::mat om = arma::trans(omv);
   arma::mat gam = arma::zeros<arma::mat>(M, T-1);
@@ -59,14 +127,21 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     gam = (1-om) % lamMat;
   } else {
     if(fix != "gamma") {
-      arma::colvec gamv = exp(Xgam*beta_gam + Xgam_offset);
+      arma::mat gamv = exp(Xgam*beta_gam + Xgam_offset);
       gamv.reshape(T-1, M);
       gam = arma::trans(gamv);
     }
   }
-  arma::colvec pv = 1.0/(1.0+exp(-1*(Xp*beta_p + Xp_offset)));
+  arma::mat pv = 1.0/(1.0+exp(-1*(Xp*beta_p + Xp_offset)));
   pv.reshape(J*T, M);
   arma::mat pm = trans(pv);
+  //Immigration
+  arma::mat iotav = arma::zeros<arma::colvec>(M*(T-1));
+  if(immigration) {
+    iotav = exp(Xiota*beta_iota + Xiota_offset);
+  }
+  iotav.reshape(T-1, M);
+  arma::mat iota = arma::trans(iotav);
   // format matrices as cubes (shouldn't be done in likelihood)
   arma::icube y(M,J,T);
   arma::cube p(M,J,T);
@@ -100,16 +175,18 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
     }
   }
 
-   // compute g3 is there are no covariates of omega/gamma
-   if(go_dims == "scalar") {
-     if(dynamics=="constant" || dynamics=="notrend") {
-       tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,0), om(first1,0));
-     }
-    else if(dynamics=="autoreg") {
-      tp2(g3, lk, gam(first1,0), om(first1,0));
-    }
+  // compute g3 if there are no covariates of omega/gamma
+  if(go_dims == "scalar") {
+    if(dynamics=="constant" || dynamics=="notrend")
+      tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,0), om(first1,0));
+    else if(dynamics=="autoreg")
+      tp2(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
     else if(dynamics=="trend")
-      tp3(g3, lk, gam(first1,0));
+      tp3(g3, lk, gam(first1,0), iota(first1,0));
+    else if(dynamics=="ricker")
+      tp4(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
+    else if(dynamics=="gompertz")
+      tp5(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
   } else if(go_dims == "rowvec") {
     for(int t=0; t<(T-1); t++) {
       if(ytna(first1,t)==1) { // FIXME: this is not generic!
@@ -119,10 +196,14 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	tp1(g3_t.slice(t), nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,t), om(first1,t));
       }
       else if(dynamics=="autoreg") {
-	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
+	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
     }
       else if(dynamics=="trend")
-	tp3(g3_t.slice(t), lk, gam(first1,t));
+	tp3(g3_t.slice(t), lk, gam(first1,t), iota(first1,t));
+      else if(dynamics=="ricker")
+	tp4(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
+      else if(dynamics=="gompertz")
+	tp5(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
     }
   }
   // loop over sites
@@ -155,10 +236,14 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	    tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(i,t-1), om(i,t-1));
 	  }
 	  else if(dynamics=="autoreg") {
-	    tp2(g3, lk, gam(i,t-1), om(i,t-1));
+	    tp2(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
 	  }
 	  else if(dynamics=="trend")
-	    tp3(g3, lk, gam(i,t-1));
+	    tp3(g3, lk, gam(i,t-1), iota(first1,t-1));
+	  else if(dynamics=="ricker")
+	    tp4(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
+	  else if(dynamics=="gompertz")
+	    tp5(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
 	} else if(go_dims == "rowvec") {
 	  g3 = g3_t.slice(t-1);
 	}

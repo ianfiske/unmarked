@@ -844,6 +844,143 @@ hist(simout12[,4], xlab=expression(psi)); abline(v=psi, lwd=2, col=4)
 
 
 
+## Simulate Ricker model 
+
+sim13 <- function(lambda=1, gamma=0.1, omega=1.5, p=0.7, M=100, T=5)
+{
+    y <- N <- matrix(NA, M, T)
+    N[,1] <- rpois(M, lambda)
+    for(t in 2:T) {
+        N[,t] <- rpois(M, N[,t-1]*exp(gamma*(1-N[,t-1]/omega)))
+    }
+    y[] <- rbinom(M*T, N, p)
+    return(y)
+}
+
+
+
+
+
+set.seed(3223)
+nsim13 <- 100
+simout13 <- matrix(NA, nsim13, 4)
+colnames(simout13) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim13) {
+    cat("sim13:", i, "\n")
+    lambda <- 2
+    gamma <- 0.25
+    omega <- 2.3
+    p <- 0.7
+    y.sim13 <- sim13(lambda, gamma, omega, p)
+    umf13 <- unmarkedFramePCO(y = y.sim13, numPrimary=5)
+    m13 <- pcountOpen(~1, ~1, ~1, ~1, umf13, K=40, dynamics="ricker",
+        starts=c(log(lambda), log(gamma), log(omega), plogis(p)),
+        se=FALSE)
+    e <- coef(m13)
+    simout13[i, 1:3] <- exp(e[1:3])
+    simout13[i, 4] <- plogis(e[4])
+    cat("  mle =", simout13[i,], "\n")
+    }
+
+#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout13[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout13[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout13[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout13[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+#dev.off()
+
+
+
+## Simulate Gompertz model 
+
+sim14 <- function(lambda=1, gamma=0.1, omega=1.5, p=0.7, M=100, T=5)
+{
+    y <- N <- matrix(NA, M, T)
+    N[,1] <- rpois(M, lambda)
+    for(t in 2:T) {
+        N[,t] <- rpois(M, N[,t-1]*exp(gamma*(1-log(N[,t-1]+1)/log(omega+1))))
+    }
+    y[] <- rbinom(M*T, N, p)
+    return(y)
+}
+
+set.seed(3223)
+nsim14 <- 100
+simout14 <- matrix(NA, nsim14, 4)
+colnames(simout14) <- c('lambda', 'gamma', 'omega', 'p')
+for(i in 1:nsim14) {
+    cat("sim14:", i, "\n")
+    lambda <- 2
+    gamma <- 0.25
+    omega <- 2.3
+    p <- 0.7
+    y.sim14 <- sim14(lambda, gamma, omega, p)
+    umf14 <- unmarkedFramePCO(y = y.sim14, numPrimary=5)
+    m14 <- pcountOpen(~1, ~1, ~1, ~1, umf14, K=40, dynamics="gompertz",
+        starts=c(log(lambda), log(gamma), log(omega), plogis(p)),
+        se=FALSE)
+    e <- coef(m14)
+    simout14[i, 1:3] <- exp(e[1:3])
+    simout14[i, 4] <- plogis(e[4])
+    cat("  mle =", simout14[i,], "\n")
+    }
+
+#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout14[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout14[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout14[,3], xlab=expression(omega)); abline(v=omega, lwd=2, col=4)
+hist(simout14[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+#dev.off()
+
+
+
+## Simulate trend + immigration model 
+
+sim15 <- function(lambda=1, gamma=0.5, iota=1, p=0.7, M=100, T=5)
+{
+    y <- N <- matrix(NA, M, T)
+    N[,1] <- rpois(M, lambda)
+    for(t in 2:T) {
+        N[,t] <- rpois(M, gamma*N[,t-1] + iota)
+        }
+    y[] <- rbinom(M*T, N, p)
+    return(y)
+}
+
+set.seed(3223)
+nsim15 <- 100
+simout15 <- matrix(NA, nsim15, 4)
+colnames(simout15) <- c('lambda', 'gamma', 'iota', 'p')
+for(i in 1:nsim15) {
+    cat("sim15:", i, "\n")
+    lambda <- 2
+    gamma <- 0.25
+    iota <- 0.5
+    p <- 0.7
+    y.sim15 <- sim15(lambda, gamma, iota, p)
+    umf15 <- unmarkedFramePCO(y = y.sim15, numPrimary=5)
+    m15 <- pcountOpen(~1, ~1, ~1, ~1, umf15, K=40, dynamics="trend",
+        starts=c(log(lambda), log(gamma), plogis(p), log(iota)),
+        se=TRUE, immigration=TRUE, iotaformula=~1)
+    e <- coef(m15)
+    simout15[i, 1:3] <- exp(e[c(1:2,4)])
+    simout15[i, 4] <- plogis(e[3])
+    cat("  mle =", simout15[i,], "\n")
+    }
+
+#png("pcountOpenSim1.png", width=6, height=6, units="in", res=360)
+par(mfrow=c(2,2))
+hist(simout15[,1], xlab=expression(lambda)); abline(v=lambda, lwd=2, col=4)
+hist(simout15[,2], xlab=expression(gamma)); abline(v=gamma, lwd=2, col=4)
+hist(simout15[,3], xlab=expression(iota)); abline(v=iota, lwd=2, col=4)
+hist(simout15[,4], xlab=expression(p)); abline(v=p, lwd=2, col=4)
+dev.off()
+
+
+
+
 
 
 

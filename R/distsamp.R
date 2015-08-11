@@ -2,10 +2,15 @@
 distsamp <- function(formula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL,
-    method="BFGS", se = TRUE, engine = c("C", "R") ,...)
+    method="BFGS", se = TRUE, engine = c("C", "R"),
+    rel.tol=0.001, ...)
 {
     engine <- match.arg(engine)
     keyfun <- match.arg(keyfun)
+#    if(engine=="C" && !(keyfun %in% c("halfnorm", "exp", "uniform"))) {
+#        engine <- "R"
+#        warning("C engine not available for hazard model, using R instead")
+#    }
     output <- match.arg(output)
     unitsOut <- match.arg(unitsOut)
     db <- data@dist.breaks
@@ -13,7 +18,7 @@ distsamp <- function(formula, data,
     survey <- data@survey
     w <- diff(db)
     unitsIn <- data@unitsIn
-    designMats <- unmarked:::getDesign(data, formula)
+    designMats <- getDesign(data, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
     X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
     if(is.null(X.offset))
@@ -55,16 +60,55 @@ distsamp <- function(formula, data,
     nDP <- length(detParms)
     nP <- nAP + nDP
     cp <- matrix(NA, M, J)
+    switch(keyfun,
+           halfnorm = {
+               altdetParms <- paste("sigma", colnames(V), sep="")
+               if(is.null(starts)) {
+                   starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
+                   names(starts) <- c(lamParms, detParms)
+               } else {
+                   if(is.null(names(starts))) names(starts) <-
+                       c(lamParms, detParms)
+               }
+           },
+           exp = {
+               altdetParms <- paste("rate", colnames(V), sep="")
+               if(is.null(starts)) {
+                   starts <- c(rep(0, nAP), 0, rep(0, nDP-1))
+                   names(starts) <- c(lamParms, detParms)
+               } else {
+                   if(is.null(names(starts))) names(starts) <-
+                       c(lamParms, detParms)
+               }
+           },
+           hazard = {
+               nDP <- length(detParms)
+               nP <- nAP + nDP + 1
+               altdetParms <- paste("shape", colnames(V), sep="")
+               if(is.null(starts)) {
+                   starts <- c(rep(0, nAP), log(median(db)),
+                               rep(0, nDP-1), 1)
+                   names(starts) <- c(lamParms, detParms, "scale")
+               } else {
+                   if(is.null(names(starts)))
+                       names(starts) <- c(lamParms, detParms, "scale")
+               }
+           },
+           uniform = {
+               detParms <- character(0)
+               altdetParms <- character(0)
+               nDP <- 0
+               if(is.null(starts)) {
+                   starts <- rep(0, length(lamParms))
+                   names(starts) <- lamParms
+               } else {
+                   if(is.null(names(starts))) names(starts) <- lamParms
+               }
+           })
+
     if(engine=="R") {
     switch(keyfun,
     halfnorm = {
-        altdetParms <- paste("sigma", colnames(V), sep="")
-        if(is.null(starts)) {
-            starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
-            names(starts) <- c(lamParms, detParms)
-            }
-        else
-            if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
         nll <- function(param) {
             sigma <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
             lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
@@ -96,13 +140,6 @@ distsamp <- function(formula, data,
             -sum(ll)
             }},
     exp = {
-        altdetParms <- paste("rate", colnames(V), sep="")
-        if(is.null(starts)) {
-            starts <- c(rep(0, nAP), 0, rep(0, nDP-1))
-            names(starts) <- c(lamParms, detParms)
-            }
-        else
-            if(is.null(names(starts))) names(starts) <- c(lamParms, detParms)
         nll <- function(param) {
             rate <- drop(exp(V %*% param[(nAP+1):nP] + V.offset))
             lambda <- drop(exp(X %*% param[1:nAP] + X.offset))
@@ -139,16 +176,6 @@ distsamp <- function(formula, data,
             -sum(ll)
             }},
     hazard = {
-        nDP <- length(detParms)
-        nP <- nAP + nDP + 1
-        altdetParms <- paste("shape", colnames(V), sep="")
-        if(is.null(starts)) {
-            starts <- c(rep(0, nAP), log(median(db)), rep(0, nDP-1), 1)
-            names(starts) <- c(lamParms, detParms, "scale")
-            }
-        else
-            if(is.null(names(starts)))
-                names(starts) <- c(lamParms, detParms, "scale")
         nll <- function(param) {
             shape <- drop(exp(V %*% param[(nAP+1):(nP-1)] + V.offset))
             scale <- drop(exp(param[nP]))
@@ -187,15 +214,6 @@ distsamp <- function(formula, data,
             -sum(ll)
             }},
     uniform = {
-        detParms <- character(0)
-        altdetParms <- character(0)
-        nDP <- 0
-        if(is.null(starts)) {
-            starts <- rep(0, length(lamParms))
-            names(starts) <- lamParms
-            }
-        else
-            if(is.null(names(starts))) names(starts) <- lamParms
         nll <- function(param) {
             lambda <- drop(exp(X %*% param + X.offset))
             if(identical(output, "density"))
@@ -205,27 +223,23 @@ distsamp <- function(formula, data,
             }
         })
     } else if(engine=="C") {
-        if(keyfun != "halfnorm" | survey != "point")
-            stop("C only works if keyfun='halfnorm' and survey='point'")
-        altdetParms <- paste("sigma", colnames(V), sep="")
-        if(is.null(starts)) {
-            starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
-            names(starts) <- c(lamParms, detParms)
-            }
-        else
-            if(is.null(names(starts)))
-                names(starts) <- c(lamParms, detParm)
         nll <- function(param) {
             beta.lam <- param[1:nAP]
-            beta.sig <- param[(nAP+1):nP]
+            if(identical(keyfun, "hazard")) {
+                beta.sig <- param[(nAP+1):(nP-1)]
+                scale <- exp(param[nP])
+            } else {
+                beta.sig <- param[(nAP+1):nP]
+                scale <- -99.0
+            }
+            lambda <- drop(exp(X %*% beta.lam + X.offset))
+            if(identical(output, "density"))
+                lambda <- lambda * A
+            sigma <- drop(exp(V %*% beta.sig + V.offset))
             .Call("nll_distsamp",
-                  y,
-                  X, V,
-                  beta.lam, beta.sig,
-                  X.offset, V.offset,
-                  A, a, u,
-                  output,
-                  db,
+                  y, lambda, sigma, scale,
+                  a, u, w, db,
+                  keyfun, survey, rel.tol,
                   PACKAGE="unmarked")
         }
     }
@@ -234,7 +248,7 @@ distsamp <- function(formula, data,
     ests <- fm$par
     if(se) {
         covMat <- tryCatch(solve(fm$hessian), error=function(x)
-        stop(simpleError("Hessian is singular. Try using fewer covariates or providing starting values.")))
+        simpleError("Hessian is singular. Try using fewer covariates or providing starting values."))
         if(class(covMat)[1] == "simpleError") {
             print(covMat$message)
             covMat <- matrix(NA, nP, nP)
@@ -267,18 +281,18 @@ distsamp <- function(formula, data,
         estimates = estsDP, covMat = covMatDP, invlink = "exp",
         invlinkGrad = "exp")
         if(keyfun != "hazard")
-            estimateList <- unmarked:::unmarkedEstimateList(list(
+            estimateList <- unmarkedEstimateList(list(
                 state=stateEstimates, det=detEstimates))
         else {
             scaleEstimates <- unmarkedEstimate(name = "Hazard-rate(scale)",
                 short.name = "p", estimates = estsScale,
                 covMat = covMatScale, invlink = "exp", invlinkGrad = "exp")
-            estimateList <- unmarked:::unmarkedEstimateList(list(state=stateEstimates,
+            estimateList <- unmarkedEstimateList(list(state=stateEstimates,
                 det=detEstimates, scale=scaleEstimates))
             }
         }
     else
-        estimateList <- unmarked:::unmarkedEstimateList(list(state=stateEstimates))
+        estimateList <- unmarkedEstimateList(list(state=stateEstimates))
     dsfit <- new("unmarkedFitDS", fitType = "distsamp", call = match.call(),
         opt = opt, formula = formula, data = data, keyfun=keyfun,
         sitesRemoved = designMats$removed.sites, unitsOut=unitsOut,
