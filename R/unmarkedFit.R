@@ -1690,8 +1690,8 @@ setMethod("update", "unmarkedFit",
         newStateformula <- as.formula(paste("~", formula.[3], sep=""))
         upStateformula <- update.formula(stateformula, newStateformula)
         call$formula <- as.formula(paste(
-			deparse(upDetformula, width=500),
-            deparse(upStateformula, width=500)))
+			deparse(upDetformula, width.cutoff=500),
+            deparse(upStateformula, width.cutoff=500)))
             }
     if (length(extras) > 0) {
         existing <- !is.na(match(names(extras), names(call)))
