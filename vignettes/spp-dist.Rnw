@@ -210,7 +210,7 @@ plot(E.psi, axes=FALSE, col=terrain.colors(100))
 @
 \begin{Schunk}
 \begin{Sinput}
-> E.psi <- predict(fm, type="state", newdata=ef)
+> E.psi <- predict(fm.occu, type="state", newdata=ef)
 \end{Sinput}
 \begin{Sinput}
 > plot(E.psi, axes=FALSE, col=terrain.colors(100))
@@ -235,7 +235,7 @@ variables as rasters for prediction.
 
 A more important consideration when creating species distribution maps
 based upon occurrence probability is that of spatial scale. Occurrence
-probability will typically depends upon the area of the ``site'' in
+probability will typically depend upon the area of the ``site'' in
 question. Thus, in our crossbill example, it would not be appropriate
 to use our model to predict occcurrence probability for 10-km$^2$
 pixels since the surveys were done in 1-km$^2$ quadrats. In some
