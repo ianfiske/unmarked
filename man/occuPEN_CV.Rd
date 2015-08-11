@@ -100,16 +100,20 @@ obsCovs(umf) <- covariates
 head(umf)
 summary(umf)
 
+\dontrun{
+
 # Fit some models
 fmMLE <- occu(~veght+habitat ~veght+habitat, umf)
 fmMLE@estimates
 
-fm1penCV <- occuPEN_CV(~veght+habitat ~veght+habitat, umf,pen.type="Ridge",foldAssignments=rep(1:5,ceiling(nSites/5))[1:nSites])
+fm1penCV <- occuPEN_CV(~veght+habitat ~veght+habitat,
+ umf,pen.type="Ridge", foldAssignments=rep(1:5,ceiling(nSites/5))[1:nSites])
 fm1penCV@lambdaVec
 fm1penCV@chosenLambda
 fm1penCV@estimates
 
-fm2penCV <- occuPEN_CV(~veght+habitat ~veght+habitat, umf,pen.type="Bayes",foldAssignments=rep(1:5,ceiling(nSites/5))[1:nSites])
+fm2penCV <- occuPEN_CV(~veght+habitat ~veght+habitat,
+umf,pen.type="Bayes",foldAssignments=rep(1:5,ceiling(nSites/5))[1:nSites])
 fm2penCV@lambdaVec
 fm2penCV@chosenLambda
 fm2penCV@estimates
@@ -123,6 +127,8 @@ vcov(fm2penCV,method="nonparboot")
 mean((c(psipars,ppars)-c(fmMLE[1]@estimates,fmMLE[2]@estimates))^2)
 mean((c(psipars,ppars)-c(fm1penCV[1]@estimates,fm1penCV[2]@estimates))^2)
 mean((c(psipars,ppars)-c(fm2penCV[1]@estimates,fm2penCV[2]@estimates))^2)
+}
+
 
 }
 

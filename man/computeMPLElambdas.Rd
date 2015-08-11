@@ -4,7 +4,8 @@
 
 \title{Compute the penalty weight for the MPLE penalized likelihood method}
 
-\usage{computeMPLElambda(formula, data, knownOcc=numeric(0), starts, method="BFGS", engine=c("C", "R"))}
+\usage{computeMPLElambda(formula, data, knownOcc=numeric(0), starts,
+method="BFGS",engine=c("C", "R"))}
 
 \arguments{
     \item{formula}{Double right-hand side formula describing covariates of

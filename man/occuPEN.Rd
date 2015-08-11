@@ -104,6 +104,7 @@ obsCovs(umf) <- covariates
 head(umf)
 summary(umf)
 
+
 # Fit some models
 fmMLE <- occu(~veght+habitat ~veght+habitat, umf)
 fm1pen <- occuPEN(~veght+habitat ~veght+habitat, umf,lambda=0.33,pen.type="Ridge")
@@ -117,6 +118,9 @@ fm4pen <- occuPEN(~veght+habitat ~veght+habitat, umf,lambda=MPLElambda,pen.type=
 # nonparametric bootstrap for uncertainty analysis:
 fm1pen <- nonparboot(fm1pen,B=20) # should use more samples
 vcov(fm1pen,method="nonparboot")
+
+
+
 
 }
 
