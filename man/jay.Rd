@@ -58,17 +58,11 @@ List of 4
   ..$ length: num [1:238] 6.2 5.1 4.3 5.4 3.6 6.1 5.1 3.7 3.8 7.7 ...
   ..$ forest: int [1:238] 3 21 32 35 2 60 5 13 50 57 ...
 }
-\details{
-%%  ~~ If necessary, more details than the __description__ above ~~
-}
 \source{
-%%  ~~ reference to a publication or URL from which the data were obtained ~~
-}
-\references{
-%%  ~~ possibly secondary sources and usages ~~
+Swiss Ornithological Institute
 }
 \examples{
 data(jay)
-## maybe str(jay) ; plot(jay) ...
+str(jay)
 }
 \keyword{datasets}
