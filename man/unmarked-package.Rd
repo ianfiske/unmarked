@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.10-5\cr
+Version: \tab 0.11-0\cr
 License: \tab GPL (>= 3)\cr
 }
 
@@ -251,5 +251,6 @@ Sillett, S. and Chandler, R.B. and Royle, J.A. and Kery, M. and
 
 
 \docType{package}
-\author{Ian Fiske, Richard Chandler, Andy Royle, and Marc K\'{e}ry}
+\author{Ian Fiske, Richard Chandler, Andy Royle, Marc K\'{e}ry, David
+  Miller, and Rebecca Hutchinson}
 \keyword{package}
