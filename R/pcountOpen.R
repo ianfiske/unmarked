@@ -2,17 +2,17 @@
 
 
 pcountOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
-    data, mixture=c("P", "NB", "ZIP"), K, dynamics=c("constant", "autoreg", 
-    "notrend", "trend", "ricker", "gompertz"), 
+    data, mixture=c("P", "NB", "ZIP"), K, dynamics=c("constant", "autoreg",
+    "notrend", "trend", "ricker", "gompertz"),
     fix=c("none", "gamma", "omega"),
     starts, method="BFGS", se=TRUE, immigration=FALSE, iotaformula=~1, ...)
 {
 mixture <- match.arg(mixture)
 dynamics <- match.arg(dynamics)
 fix <- match.arg(fix)
-if(identical(dynamics, "notrend") &
-   !identical(lambdaformula, omegaformula))
-    stop("lambdaformula and omegaformula must be identical for notrend model")
+## if(identical(dynamics, "notrend") &
+##    !identical(lambdaformula, omegaformula))
+##     stop("lambdaformula and omegaformula must be identical for notrend model")
 if((identical(dynamics, "constant") || identical(dynamics, "notrend")) & immigration)
     stop("You can not include immigration in the constant or notrend models")
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
@@ -114,7 +114,7 @@ if(identical(fix, "omega")) {
         nOP <- 0
         omParms <- character(0)
     }
-} 
+}
 
 
 nP <- nAP + nGP + nOP + nDP + nIP + (mixture!="P")
@@ -200,9 +200,9 @@ gamName <- switch(dynamics,
                   ricker = "gamRicker",
                   gompertz = "gamGomp")
 if(!(identical(fix, "gamma") | identical(dynamics, "notrend")))
-    estimateList@estimates$gamma <- unmarkedEstimate(name = 
-        ifelse(identical(dynamics, "constant") | identical(dynamics, "autoreg"), 
-        "Recruitment", "Growth Rate"), short.name = gamName, 
+    estimateList@estimates$gamma <- unmarkedEstimate(name =
+        ifelse(identical(dynamics, "constant") | identical(dynamics, "autoreg"),
+        "Recruitment", "Growth Rate"), short.name = gamName,
         estimates = ests[(nAP+1) : (nAP+nGP)], covMat = as.matrix(covMat[(nAP+1) :
                            (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")
@@ -221,7 +221,7 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "exp", invlinkGrad = "exp")
-  else 
+  else
     estimateList@estimates$omega <- unmarkedEstimate(
         name="Carrying Capacity",
         short.name = "omCarCap", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
@@ -237,7 +237,7 @@ if(immigration) {
         covMat = as.matrix(covMat[(nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP),
             (nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP)]),
         invlink = "exp", invlinkGrad = "exp")
-}    
+}
 if(identical(mixture, "NB")) {
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
         short.name = "alpha", estimates = ests[nP],
