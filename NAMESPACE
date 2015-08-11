@@ -9,7 +9,7 @@ import(lattice, methods, Rcpp)
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
-       colext, gmultmix, gdistsamp, gpcount)
+       colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, computeMPLElambda)
 export(removalPiFun, doublePiFun)
 
 # S4 classes

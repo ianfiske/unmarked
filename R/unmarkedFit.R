@@ -56,6 +56,24 @@ setClass("unmarkedFitOccu",
     representation(knownOcc = "logical"),
     contains = "unmarkedFit")
 
+setClass("unmarkedFitOccuPEN",
+    representation(
+	knownOcc = "logical",
+	pen.type = "character",
+	lambda = "numeric"),
+    contains = "unmarkedFit")
+
+setClass("unmarkedFitOccuPEN_CV",
+    representation(
+	knownOcc = "logical",
+	pen.type = "character",
+	lambdaVec = "numeric",
+	k = "numeric",
+	foldAssignments = "numeric",
+	lambdaScores = "numeric",
+	chosenLambda = "numeric"),
+    contains = "unmarkedFit")
+
 setClass("unmarkedFitOccuFP",
          representation(knownOcc = "logical",
             detformula = "formula",

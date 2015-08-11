@@ -27,6 +27,8 @@
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
+\alias{unmarkedFitOccuPEN-class}
+\alias{unmarkedFitOccuPEN_CV-class}
 \alias{unmarkedFitOccuFP-class}
 \alias{unmarkedFitPCount-class}
 \alias{unmarkedFitDS-class}
