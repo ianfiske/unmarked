@@ -13,6 +13,8 @@ Version 0.11-0
 
   o Removed constraint in pcountOpen that lambdaformula==omegaformula 
 
+  o Fixed bug in gdistsamp that caused error when NAs were present in half-normal model
+
 
 Version 0.10-6
 
