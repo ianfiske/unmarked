@@ -165,7 +165,7 @@ halfnorm = {
             NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda,
                 size=exp(pars[nP]))))
         for(i in 1:M) {
-            mn <- matrix(-Inf, lk, T)
+            mn <- matrix(0, lk, T)
             for(t in 1:T) {
                 if(all(naflag[i,t,]))
                     next
