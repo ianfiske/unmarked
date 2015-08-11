@@ -3,6 +3,17 @@ https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
 
+Version 0.11-0
+
+  o Andy Royle is the new maintainer  
+
+  o Added Rebecca Hutchinson's penalized likelihood function occuPEN
+
+  o Changed variable 'ufp' to 'ufc' in ovenbird data and related functions.
+
+  o Removed constraint in pcountOpen that lambdaformula==omegaformula 
+
+
 Version 0.10-6
 
   o Fixed bug in C++ code that was causing problems on Solaris 
