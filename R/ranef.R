@@ -558,6 +558,10 @@ setMethod("ranef", "unmarkedFitPCO",
     D <- getDesign(object@data, formula)
     delta <- D$delta
     deltamax <- max(delta, na.rm=TRUE)
+    if(!.hasSlot(object, "immigration")) #For backwards compatibility
+      imm <- FALSE
+    else
+      imm <- object@immigration
 
     lam <- predict(object, type="lambda")[,1] # Slow, use D$Xlam instead
     R <- length(lam)
@@ -577,6 +581,12 @@ setMethod("ranef", "unmarkedFitPCO",
     }
     else
         om <- matrix(0, R, T-1)
+    if(imm) {
+        iota <- predict(object, type="iota")[,1]
+        iota <- matrix(iota, R, T-1, byrow=TRUE)
+    }
+    else
+      iota <- matrix(0, R, T-1)
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
@@ -589,18 +599,26 @@ setMethod("ranef", "unmarkedFitPCO",
         gam <- lam*(1-om)
 
     if(dyn %in% c("constant", "notrend")) {
-        tp <- function(N0, N1, gam, om) {
+        tp <- function(N0, N1, gam, om, iota) {
             c <- 0:min(N0, N1)
             sum(dbinom(c, N0, om) * dpois(N1-c, gam))
         }
     } else if(dyn=="autoreg") {
-        tp <- function(N0, N1, gam, om) {
+        tp <- function(N0, N1, gam, om, iota) {
             c <- 0:min(N0, N1)
-            sum(dbinom(c, N0, om) * dpois(N1-c, gam*N0))
+            sum(dbinom(c, N0, om) * dpois(N1-c, gam*N0 + iota))
         }
     } else if(dyn=="trend") {
-        tp <- function(N0, N1, gam, om) {
-            dpois(N1, gam*N0)
+        tp <- function(N0, N1, gam, om, iota) {
+            dpois(N1, gam*N0 + iota)
+        }
+    } else if(dyn=="ricker") {
+        tp <- function(N0, N1, gam, om, iota) {
+            dpois(N1, N0*exp(gam*(1-N0/om)) + iota)
+        }
+    } else if(dyn=="gompertz") {
+        tp <- function(N0, N1, gam, om, iota) {
+            dpois(N1, N0*exp(gam*(1-log(N0 + 1)/log(om + 1))) + iota)
         }
     }
     for(i in 1:R) {
@@ -628,7 +646,7 @@ setMethod("ranef", "unmarkedFitPCO",
             if(!is.na(gam[i,t-1]) & !is.na(om[i,t-1])) {
                 for(n0 in N) {
                     for(n1 in N) {
-                        P[n0+1, n1+1] <- tp(n0, n1, gam[i,t-1], om[i,t-1])
+                        P[n0+1, n1+1] <- tp(n0, n1, gam[i,t-1], om[i,t-1], iota[i,t-1])
                     }
                 }
             }

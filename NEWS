@@ -15,6 +15,11 @@ Version 0.11-0
 
   o Fixed bug in gdistsamp that caused error when NAs were present in half-normal model
 
+  o Fixed bug in ranef (it was giving an error message for pcountOpen with the 
+    new dynamics options (Ricker and Gompertz) and working incorrectly for
+    pcountOpen with immigration)
+
+
 
 Version 0.10-6
 
