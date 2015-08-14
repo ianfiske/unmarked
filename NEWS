@@ -19,6 +19,7 @@ Version 0.11-0
     new dynamics options (Ricker and Gompertz) and working incorrectly for
     pcountOpen with immigration)
 
+  o Fixed bug in pcountOpen that occurred when covariates were time varying but not varying among sites
 
 
 Version 0.10-6
