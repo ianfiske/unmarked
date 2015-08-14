@@ -1,10 +1,17 @@
 # Methods needed from other packages
 importFrom(stats, confint, fitted, coef, vcov, predict, update, profile,
-    simulate, residuals, logLik)
-importFrom(graphics, plot, hist)
-importFrom(utils, head)
+    simulate, residuals, logLik, as.formula, binomial, cov, dbinom,
+           dmultinom, dnbinom, dnorm, dpois, formula,
+           glm.fit, integrate, median, model.frame,
+           model.matrix, model.offset, optim, pchisq, plogis,
+           pnorm, qchisq, qnorm, quantile, rbinom,
+           rmultinom, rnbinom, rpois, runif, sd, uniroot,
+           update.formula)
+importFrom(graphics, plot, hist, abline)
+importFrom(utils, head, read.csv)
 importFrom(reshape, melt, cast, recast)
 importFrom(plyr, ldply, alply, ddply)
+importFrom(grDevices, devAskNewPage)
 import(lattice, methods, Rcpp)
 
 # Fitting functions
