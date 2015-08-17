@@ -238,14 +238,14 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	    tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(i,t-1), om(i,t-1));
 	  }
 	  else if(dynamics=="autoreg") {
-	    tp2(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
+	    tp2(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	  }
 	  else if(dynamics=="trend")
-	    tp3(g3, lk, gam(i,t-1), iota(first1,t-1));
+	    tp3(g3, lk, gam(i,t-1), iota(i,t-1));
 	  else if(dynamics=="ricker")
-	    tp4(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
+	    tp4(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	  else if(dynamics=="gompertz")
-	    tp5(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
+	    tp5(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	} else if(go_dims == "rowvec") {
 	  g3 = g3_t.slice(t-1);
 	}
