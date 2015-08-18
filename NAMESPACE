@@ -12,6 +12,7 @@ importFrom(utils, head, read.csv)
 importFrom(reshape, melt, cast, recast)
 importFrom(plyr, ldply, alply, ddply)
 importFrom(grDevices, devAskNewPage)
+importFrom("utils","stack")
 import(lattice, methods, Rcpp)
 
 # Fitting functions
