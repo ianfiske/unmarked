@@ -563,7 +563,7 @@ setMethod("predict", "unmarkedFitOccuFP",
               out$upper[i] <- ci[2]
             }
             if(appendData) {
-              out <- data.frame(out, z)
+              out <- data.frame(out, newdata)
             }
             return(out)
           })
@@ -2036,7 +2036,7 @@ setMethod("getP", "unmarkedFitOccuFP", function(object, na.rm = TRUE)
   FPformula <- object@FPformula
   Bformula <- object@Bformula
   umf <- object@data
-  designMats <- getDesign(newdata, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
+  designMats <- getDesign(umf, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
   y <- designMats$y
   V <- designMats$V
   V.offset <- designMats$V.offset
@@ -2059,7 +2059,7 @@ setMethod("getFP", "unmarkedFitOccuFP", function(object, na.rm = TRUE)
   FPformula <- object@FPformula
   Bformula <- object@Bformula
   umf <- object@data
-  designMats <- getDesign(newdata, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
+  designMats <- getDesign(umf, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
   type = object@type
   y <- designMats$y
   U <- designMats$U
@@ -2085,7 +2085,7 @@ setMethod("getB", "unmarkedFitOccuFP", function(object, na.rm = TRUE)
   FPformula <- object@FPformula
   Bformula <- object@Bformula
   umf <- object@data
-  designMats <- getDesign(newdata, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
+  designMats <- getDesign(umf, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
   y <- designMats$y
   W <- designMats$W
   W.offset <- designMats$W.offset
@@ -2747,7 +2747,7 @@ setMethod("simulate", "unmarkedFitOccuFP",
             FPformula <- object@FPformula
             Bformula <- object@Bformula
             umf <- object@data
-            designMats <- getDesign(newdata, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
+            designMats <- getDesign(umf, detformula,FPformula,Bformula,stateformula, na.rm = na.rm)
             X <- designMats$X; V <- designMats$V; U <- designMats$U; W <- designMats$W;
             y <- designMats$y
             X.offset <- designMats$X.offset; V.offset <- designMats$V.offset; U.offset <- designMats$U.offset; W.offset <- designMats$W.offset
