@@ -14,7 +14,7 @@
   \describe{
     \item{\code{x}}{Easting (meters)}
     \item{\code{y}}{Northing (meters)}
-    \item{\code{elevation}}{a numeric vector, meters}
+    \item{\code{elevation}}{a numeric vector, FEET (multiply by 0.3048 to convert to meters) }
     \item{\code{forest}}{a numeric vector, proportion cover}
     \item{\code{chaparral}}{a numeric vector, proportion cover}
   }
