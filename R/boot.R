@@ -37,7 +37,7 @@ setMethod("parboot", "unmarkedFit",
         cat("t0 =", t0, "\n")
     simdata <- umf
     simList <- simulate(object, nsim = nsim, na.rm = FALSE)
-	    set.seed(seed, "L'Ecuyer")
+    set.seed(seed, "L'Ecuyer")
     coresToUse <- detectCores() - 1
 
     if (coresToUse < 2 || nsim < 100 || parallel == FALSE) {
