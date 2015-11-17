@@ -134,7 +134,7 @@ if(!missing(starts) && length(starts) != nP)
 ym <- matrix(y, nrow=M)
 
 
-# Create indices (should be written in C++)
+# Create indices (should be written in C++), all possible combinatinos of survivors and recruits, finding all unique likelihood transitions
 I <- cbind(rep(k, times=lk),
            rep(k, each=lk))
 I1 <- I[I[,1] <= I[,2],]
