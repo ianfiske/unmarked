@@ -15,8 +15,9 @@ setClass("parboot",
 
 
 setMethod("parboot", "unmarkedFit",
-    function(object, statistic=SSE, nsim=10, report, ...)
+    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ...)
 {
+    dots <- list(...)
     statistic <- match.fun(statistic)
     call <- match.call(call = sys.call(-1))
     formula <- object@formula
@@ -34,23 +35,49 @@ setMethod("parboot", "unmarkedFit",
     else colnames(t.star) <- paste("t*", 1:lt0, sep="")
     if(!missing(report))
         cat("t0 =", t0, "\n")
-    fits <- list()
     simdata <- umf
     simList <- simulate(object, nsim = nsim, na.rm = FALSE)
-    for(i in 1:nsim) {
+    set.seed(seed, "L'Ecuyer")
+    coresToUse <- detectCores() - 1
+
+    if (coresToUse < 2 || nsim < 100 || parallel == FALSE) {
+	  for(i in 1:nsim) {
+		y.sim <- simList[[i]]
+		is.na(y.sim) <- is.na(y)
+		simdata@y <- y.sim
+		fit <- update(object, data=simdata, starts=ests, se=FALSE)
+		t.star[i,] <- statistic(fit, ...)
+		  if(!missing(report)) {
+            if (nsim > report && i %in% seq(report, nsim, by=report))
+                cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=","), fill=TRUE)
+#            flush.console()
+          }
+		  out <- new("parboot", call=call, t0 = t0, t.star = t.star)
+        }
+	  } else {
+	  if (!missing(report)) cat("Running in parallel.  Bootstrapped statistics not reported.\n")
+      cl <- makeCluster(coresToUse)
+      on.exit(stopCluster(cl))
+      varList <- c("simList", "y", "object", "simdata", "ests", "statistic", "dots")
+      ## Hack to get piFun for unmarkedFitGMM and unmarkedFitMPois
+      if (class(object) == "unmarkedFitGMM" | class(object) == "unmarkedFitMPois") 
+        varList <- c(varList, umf@piFun)
+      clusterExport(cl, varList, envir = environment())
+      clusterEvalQ(cl, library(unmarked))
+      clusterEvalQ(cl, list2env(dots))
+      clusterSetRNGStream(cl, seed)
+      t.star.parallel <- parLapply(cl, 1:nsim, function(i) {
         y.sim <- simList[[i]]
         is.na(y.sim) <- is.na(y)
         simdata@y <- y.sim
-        fits[[i]] <- update(object, data=simdata, starts=ests, se=FALSE)
-        t.star[i,] <- statistic(fits[[i]], ...)
-        if(!missing(report)) {
-            if(nsim > report && i %in% seq(report, nsim, by=report))
-                cat(paste(round(t.star[(i-(report-1)):i,], 1),
-                          collapse=","), fill=TRUE)
-#            flush.console()
-            }
-        }
-    out <- new("parboot", call=call, t0 = t0, t.star = t.star)
+        fit <- update(object, data = simdata, starts = ests, se = FALSE)
+        t.star <- statistic(fit, ...)
+      })
+      t.star <- matrix(unlist(t.star.parallel), nrow = length(t.star.parallel), byrow = TRUE)
+      colnames(t.star) <- names(t.star.parallel[[1]])
+      out <- new("parboot", call = call, t0 = t0, t.star = t.star)
+	  }
+		
     return(out)
 })
 

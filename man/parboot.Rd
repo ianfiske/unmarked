@@ -12,6 +12,10 @@
     Default is sum of squared residuals.}
   \item{nsim}{number of bootstrap replicates}
   \item{report}{print fit statistic every 'report' iterations during resampling}
+  \item{seed}{set seed for reproducible bootstrap}
+  \item{parallel}{logical (default = \code{TRUE}) indicating whether to compute 
+    bootstrap on multiple cores, if present.  If \code{TRUE}, suppresses reporting
+    of bootstrapped statistics.  Defaults to serial calculation when \code{nsim} < 100.}
   \item{...}{Additional arguments to be passed to statistic}}
 \details{This function simulates datasets based upon a fitted model,
   refits the model, and evaluates a user-specified fit-statistic for each
@@ -24,7 +28,7 @@
   \item{t0}{Numeric vector of statistics for original fitted model.}
   \item{t.star}{nsim by length(t0) matrix of statistics for each simulation fit.}}
 
-\author{Richard Chandler \email{rbchan@uga.edu}}
+\author{Richard Chandler \email{rbchan@uga.edu} and Adam Smith}
 
 \seealso{
   \code{\link{ranef}}

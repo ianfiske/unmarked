@@ -13,7 +13,7 @@ importFrom(reshape, melt, cast, recast)
 importFrom(plyr, ldply, alply, ddply)
 importFrom(grDevices, devAskNewPage)
 importFrom("raster","stack")
-import(lattice, methods, Rcpp)
+import(lattice, methods, parallel, Rcpp)
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
