@@ -333,6 +333,10 @@ formatMult <- function(df.in)
     dfnm <- colnames(df.obs)
     nV <- length(dfnm) - 1  # last variable is obsNum
 
+    ### Identify variables that are not factors
+    fac <- sapply(df.obs[, 5:nV], is.factor)
+    nonfac <- names(df.obs[, 5:nV])[!fac]
+    
     # create y matrix using reshape
     expr <- substitute(recast(df.obs, var1 ~ year + obsNum + variable,
                               id.var = c(dfnm[2],"year","obsNum"),
@@ -353,6 +357,15 @@ formatMult <- function(df.in)
     y <- as.matrix(y)
 
     obsvars.list <- arrToList(obsvars)
+    
+    # Return any non-factors to the correct mode
+    if (length(nonfac) >= 1) {
+      modes <- apply(df.obs[, nonfac], 2, mode)
+      for (i in 1:length(nonfac)) {
+        mode(obsvars.list[[nonfac[i]]]) <- modes[i]
+      }
+    }
+    
     obsvars.list <- lapply(obsvars.list, function(x) as.vector(t(x)))
     obsvars.df <- as.data.frame(obsvars.list)
 
