@@ -480,6 +480,7 @@ setMethod("getDesign", "unmarkedFramePCO",
     pformula <- as.formula(paste(aschar2[1], aschar2[3]))
     omformula <- as.formula(paste(aschar3[1], aschar3[3]))
     gamformula <- as.formula(paste(aschar4[1], aschar4[3]))
+    browser()
     lamformula <- as.formula(formula[[2]][[2]][[2]][[2]])
 
     y <- getY(umf)
