@@ -128,7 +128,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 
   // linear predictors
   arma::colvec lam = exp(Xlam*beta_lam + Xlam_offset);
-  arma::colvec omv = arma::ones<arma::colvec>(M*(T-1));
+  arma::mat omv = arma::ones<arma::colvec>(M*(T-1));
   if((fix != "omega") && (dynamics != "trend"))
     omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
   omv.reshape(T-1, M);
@@ -139,12 +139,12 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
     gam = (1-om) % lamMat;
   } else {
     if(fix != "gamma") {
-      arma::colvec gamv = exp(Xgam*beta_gam + Xgam_offset);
+      arma::mat gamv = exp(Xgam*beta_gam + Xgam_offset);
       gamv.reshape(T-1, M);
       gam = arma::trans(gamv);
     }
   }
-  arma::colvec sigv = exp(Xsig*beta_sig + Xsig_offset);
+  arma::mat sigv = exp(Xsig*beta_sig + Xsig_offset);
   sigv.reshape(T, M);
   arma::mat sig = trans(sigv);
   //* 12/22/2015  *//
@@ -166,6 +166,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 
   // initialize
   double ll=0.0;
+
+  double f0 = 0.0; 
+
   double ll_i=0.0;
   int first_i=0;
   int last_i=0;
@@ -181,20 +184,20 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   arma::cube g3_t = arma::zeros<arma::cube>(lk,lk,T-1);
 
   // Integration settings given to Rdqags
-  double epsabs = 0.001; // should be specific to measurement units
+  /* double epsabs = 0.001; // should be specific to measurement units
   double epsrel = 0.001; // should be specific to measurement units
   int limit = 100;
   int lenw = 400;
   int last2 = 0;
-  int iwork = 100;
-  double work = 400.0;
+  int iwork[100];
+  double work[400.0];  */
 
   double lower=0.0;
   double upper=0.0;
   double result=0.0;
-  double abserr=0.0;
+  /* double abserr=0.0;
   int neval=0;
-  int ier=0;
+  int ier=0;  */
 
   // shouldn't be done in likelihood
   for(int i=0; i<M; i++) {
@@ -247,6 +250,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 
   // loop over sites
   for(int i=0; i<M; i++) {
+    // important: fix this!
+    f0 = Rf_dnorm4(0.0, 0.0, sig(i,0), false);
+
     first_i = first[i]-1; // remember 0=1st location in C++
     last_i = last[i]-1;
     g_star.ones();
@@ -259,6 +265,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	g1_t.zeros();
 	// loop over possible value of N at time t
 	for(int k=0; k<lk; k++) { // note first index
+
+    
+
 	  part1 = lgamma(k+1);
 	  part2m3 = 0.0;
 	  cpsum = 0.0;
@@ -266,14 +275,14 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	    for(int j=0; j<=J; j++) { // note <=J not <J
 	      cp = 0.0;
 	      if(j<J) {
-		void *ex;
-		ex = &sig(i,t);
+		/* void *ex;
+		   ex = &sig(i,t);  */
 		lower = db[j];
 		upper = db[j+1];
 		result = 0.0;
-		abserr = 0.0;
-		neval = 0;
-		ier = 0;
+		// abserr = 0.0;
+		// neval = 0;
+		// ier = 0;
 
 /*		epsabs = 0.001;
 		epsrel = 0.001;
@@ -282,11 +291,13 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		last2 = 0;
 		iwork = 100;
 		work = 400.0;
-*/
+               */
+		result = (Rf_pnorm5(upper, 0.0, sig(i,0), true, false) -
+			  Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;
 
-		Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		       &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
-		       &work);
+		/*	Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+		       &abserr, &neval, &ier, &limit, &lenw, &last2, iwork,
+		       &work); */
 		/* add error checking/handling here */
 		cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
 		cp = std::max(cp, DOUBLE_XMIN);
@@ -351,14 +362,14 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
       for(int j=0; j<=J; j++) {
 	cp = 0.0;
 	if(j<J) {
-	  void *ex;
-	  ex = &sig(i,first_i);
+	  // void *ex;
+	  // ex = &sig(i,first_i);
 	  lower = db[j];
 	  upper = db[j+1];
 	  result = 0.0;
-	  abserr = 0.0;
-	  neval = 0;
-	  ier = 0;
+	  //  abserr = 0.0;
+	  // neval = 0;
+	  // ier = 0;
 
 /*	  epsabs = 0.001;
 	  epsrel = 0.001;
@@ -368,10 +379,12 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	  iwork = 100;
 	  work = 400.0;
 */
+	  result = (Rf_pnorm5(upper, 0.0, sig(i,0), true, false) -
+		    Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;
 
-	  Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+	/*	  Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
 		 &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
-		 &work);
+		 &work);                 */ 
 	  /* add error checking/handling here */
 	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
 	  cp = std::max(cp, DOUBLE_XMIN);
