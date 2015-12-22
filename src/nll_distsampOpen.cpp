@@ -4,73 +4,7 @@
 
 using namespace Rcpp ;
 
-
-// constant model
-void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
-  Rcpp::NumericVector pois1 = dpois(N, gam, true);
-  arma::vec pois = as<arma::vec>(pois1);
-  arma::vec bin = arma::zeros<arma::vec>(nrI1);
-  for(int i=0; i<nrI1; i++) {
-    bin(i) = Rf_dbinom(I1(i,0), I1(i,1), om, true);
-  }
-  for(int s=0; s<nrI; s++) {
-    arma::uvec indB = as<arma::uvec>(Ib[s]);
-    arma::uvec indP = as<arma::uvec>(Ip[s]);
-    int nc = indB.n_elem;
-    for(int q=0; q<nc; q++) {
-      g3(s) += exp(bin(indB(q)) + pois(indP(q)));
-    }
-  }
-}
-
-
-// autoregressive + immigration model
-void tp2(arma::mat& g3, int lk, double gam, double om, double imm) {
-    int Nmin=0;
-    for(int n1=0; n1<lk; n1++) {
-	for(int n2=0; n2<lk; n2++) {
-	    Nmin = std::min(n1, n2);
-	    for(int c=0; c<=Nmin; c++) {
-		g3.at(n1, n2) += exp(Rf_dbinom(c, n1, om, true) +
-				  Rf_dpois(n2-c, gam*n1 + imm, true));
-	    }
-	}
-    }
-}
- 
-// trend + immigration model 
-void tp3(arma::mat& g3, int lk, double gam, double imm) {
-    for(int n1=0; n1<lk; n1++) {
-      for(int n2=0; n2<lk; n2++) {
-        g3.at(n1, n2) = Rf_dpois(n2, n1*gam+imm, false);
-      }
-    }
-}
-
-
-
-
-
-// Ricker + immigration model
-void tp4(arma::mat& g3, int lk, double gam, double om, double imm) {
-    for(int n1=0; n1<lk; n1++) {
-	for(int n2=0; n2<lk; n2++) {
-	  g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam*(1-n1/om)) + imm, false);
-	}
-    }
-}
-
-// Gompertz + immigration model
-void tp5(arma::mat& g3, int lk, double gam, double om, double imm) {
-    for(int n1=0; n1<lk; n1++) {
-	   for(int n2=0; n2<lk; n2++) {
-	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(double (n1) + 1)/log(om + 1))) + imm, false);
-	   }
-    }
-}
-
-
-SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
+SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
 
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
@@ -199,10 +133,10 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
       tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,0), om(first1,0));
     }
     else if(dynamics=="autoreg") {
-      tp2(g3, lk, gam(first1,0), om(first1,0));
+      tp2(g3, lk, gam(first1,0), om(first1,0), 0.0);
     }
     else if(dynamics=="trend")
-      tp3(g3, lk, gam(first1,0));
+      tp3(g3, lk, gam(first1,0), 0.0);
   } else if(go_dims == "rowvec") {
     for(int t=0; t<(T-1); t++) {
       if(ytna(first1,t)==1) { // FIXME: this is not generic!
@@ -212,10 +146,10 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	tp1(g3_t.slice(t), nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,t), om(first1,t));
       }
       else if(dynamics=="autoreg") {
-	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t));
+	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t), 0.0);
       }
       else if(dynamics=="trend")
-	tp3(g3_t.slice(t), lk, gam(first1,t));
+	tp3(g3_t.slice(t), lk, gam(first1,t), 0.0);
     }
   }
 
@@ -290,10 +224,10 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	    tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(i,t-1), om(i,t-1));
 	  }
 	  else if(dynamics=="autoreg") {
-	    tp2(g3, lk, gam(i,t-1), om(i,t-1));
+	    tp2(g3, lk, gam(i,t-1), om(i,t-1), 0.0);
 	  }
 	  else if(dynamics=="trend")
-	    tp3(g3, lk, gam(i,t-1));
+	    tp3(g3, lk, gam(i,t-1), 0.0);
 	} else if(go_dims == "rowvec") {
 	  g3 = g3_t.slice(t-1);
 	}

@@ -25,7 +25,7 @@ Xlam <- D$Xlam
 Xgam <- D$Xgam
 Xom <- D$Xom
 Xsig <- D$Xp # Wrong length. Need new getDesign Function
-
+Xiota<- D$Xiota
 
 delta <- D$delta; go.dims <- D$go.dims
 deltamax <- max(delta, na.rm=TRUE)
@@ -40,11 +40,13 @@ Xlam.offset <- D$Xlam.offset
 Xgam.offset <- D$Xgam.offset
 Xom.offset <- D$Xom.offset
 Xsig.offset <- D$Xp.offset   # Wrong length
+Xiota.offset<- D$Xiota.offset
 
 if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
 if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
 if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
 if(is.null(Xsig.offset)) Xsig.offset <- rep(0, M*T)
+if(is.null(Xiota.offset)) Xiota.offset<- rep(0, M*(T-1))
 
 yna <- is.na(y)
 yna[] <- as.integer(yna)
@@ -90,6 +92,15 @@ nAP <- ncol(Xlam)
 nGP <- ncol(Xgam)
 nOP <- ncol(Xom)
 nDP <- ncol(Xsig)
+
+if(immigration){
+    iotaParms <- colnames(Xiota)
+    nIP <- ncol(Xiota)
+}else{
+    nIP <- 0
+    iotaParms<- character(0)
+    }
+
 
 if(identical(fix, "gamma")) {
     if(!identical(dynamics, "constant"))
@@ -155,14 +166,16 @@ nll <- function(parms) {
     beta.gam <- parms[(nAP+1):(nAP+nGP)]
     beta.om <- parms[(nAP+nGP+1):(nAP+nGP+nOP)]
     beta.sig <- parms[(nAP+nGP+nOP+1):(nAP+nGP+nOP+nDP)]
+    beta.iota<- parms[(nAP + nGP + nOP + 1):(nAP + nGP + nOP + nDP + nIP)]
+    
     log.alpha <- 1
     if(mixture %in% c("NB", "ZIP"))
         log.alpha <- parms[nP]
     .Call("nll_distsampOpen",
           ym, yt,
-          Xlam, Xgam, Xom, Xsig,
-          beta.lam, beta.gam, beta.om, beta.sig, log.alpha,
-          Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset,
+          Xlam, Xgam, Xom, Xsig, Xiota, 
+          beta.lam, beta.gam, beta.om, beta.sig, beta.iota, log.alpha,
+          Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset, Xiota.offset, 
           ytna, yna,
           lk, mixture, first, last, M, J, T,
           delta, dynamics, fix, go.dims,
@@ -182,7 +195,7 @@ else if(identical(mixture, "ZIP"))
     nbParm <- "psi"
 else
     nbParm <- character(0)
-names(ests) <- c(lamParms, gamParms, omParms, detParms, nbParm)
+names(ests) <- c(lamParms, gamParms, omParms, detParms, iotaParms, nbParm)
 if(se) {
 	covMat <- tryCatch(solve(fm$hessian), error=function(x)
 		simpleError("Hessian is not invertible. Try using fewer covariates or providing starting values."))
@@ -222,6 +235,14 @@ if(!(identical(fix, "omega") | identical(dynamics, "trend")))
             (nAP+nGP+1) : (nAP+nGP+nOP)]),
         invlink = "logistic", invlinkGrad = "logistic.grad")
 estimateList@estimates$det <- detEstimates
+if(immigration) {
+    estimateList@estimates$iota <- unmarkedEstimate(
+        name="Immigration",
+        short.name = "iota", estimates = ests[(nAP+nGP+nOP+nDP+1) :(nAP+nGP+nOP+nDP+nIP)],
+        covMat = as.matrix(covMat[(nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP),
+            (nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP)]),
+        invlink = "exp", invlinkGrad = "exp")
+}
 if(identical(mixture, "NB")) {
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
         short.name = "alpha", estimates = ests[nP],
