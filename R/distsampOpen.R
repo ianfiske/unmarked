@@ -1,10 +1,11 @@
 
 
 
-distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula, iotaformula = ~1,
+distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula, 
     data, mixture=c("P", "NB", "ZIP"), K,
     dynamics=c("constant", "autoreg", "notrend", "trend"),
     fix=c("none", "gamma", "omega"),
+    iotaformula = ~1, 
     starts, method="BFGS", se=TRUE, ...)
 {
 mixture <- match.arg(mixture)
@@ -15,6 +16,7 @@ if(identical(dynamics, "notrend") &
     stop("lambdaformula and omegaformula must be identical for notrend model")
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, sigmaformula=sigmaformula, iotaformula=iotaformula)
+  
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- unmarked:::getDesign(data, formula)
 y <- D$y

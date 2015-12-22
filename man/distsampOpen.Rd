@@ -123,7 +123,7 @@ T <- 10
 y.sim7 <- sim7(lambda, gamma, omega, sigma, T=T)
 colSums(y.sim7)
 umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
-fm <- distsampOpen(~1, ~1, ~1, ~1, umf7, K=40,
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
                  se=FALSE)
 fm
