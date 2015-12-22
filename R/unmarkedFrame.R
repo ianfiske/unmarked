@@ -729,11 +729,10 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
         }
     if (!is.null(obsCovs)) {
         R <- obsNum(x)
-        obsCovs <- cbind(.site=rep(1:M, each = R), obsCovs(x))
+        .site <- rep(1:M, each = R)
         obsCovs <- ldply(i, function(site) {
             subset(obsCovs, .site == site)
             })
-        obsCovs$.site <- NULL
         }
     umf <- x
     umf@y <- y
@@ -865,11 +864,10 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
         }
     if (!is.null(obsCovs)) {
         R <- obsNum(x)
-        obsCovs <- cbind(.site=rep(1:M, each = R), obsCovs(x))
+        .site <- rep(1:M, each = obsNum(x)) #NULL     ## testing
         obsCovs <- ldply(i, function(site) {
             subset(obsCovs, .site == site)
             })
-        obsCovs$.site <- NULL
         }
     u <- unmarkedMultFrame(y=matrix(y, ncol=ncol(oldy)),
                            siteCovs=siteCovs,
