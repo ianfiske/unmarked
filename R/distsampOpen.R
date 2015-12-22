@@ -6,7 +6,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
     dynamics=c("constant", "autoreg", "notrend", "trend"),
     fix=c("none", "gamma", "omega"),
     iotaformula = ~1, 
-    starts, method="BFGS", se=TRUE, ...)
+    starts, method="BFGS", se=TRUE, immigration=FALSE, ...)
 {
 mixture <- match.arg(mixture)
 dynamics <- match.arg(dynamics)
@@ -178,7 +178,7 @@ nll <- function(parms) {
           Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset, Xiota.offset, 
           ytna, yna,
           lk, mixture, first, last, M, J, T,
-          delta, dynamics, fix, go.dims,
+          delta, dynamics, fix, go.dims, immigration, 
           I, I1, Ib, Ip,
           a, u, db,
           PACKAGE = "unmarked")

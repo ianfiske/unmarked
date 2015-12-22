@@ -1,6 +1,6 @@
 #include "tranprobs.h"
 
-
+/*
 // constant model
 void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
   Rcpp::NumericVector pois1 = dpois(N, gam, true);
@@ -65,3 +65,8 @@ void tp5(arma::mat& g3, int lk, double gam, double om, double imm) {
     }
 }
 
+
+
+
+
+*/
