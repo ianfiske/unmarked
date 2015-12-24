@@ -42,5 +42,4 @@ RcppExport SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP
 //void tp9(arma::mat& g3, int lk, double gam, double om, double imm);
 
 
-
 #endif
