@@ -1,11 +1,11 @@
 
 
 
-distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula, 
+distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula,
     data, mixture=c("P", "NB", "ZIP"), K,
     dynamics=c("constant", "autoreg", "notrend", "trend"),
     fix=c("none", "gamma", "omega"),
-    iotaformula = ~1, 
+    iotaformula = ~1,
     starts, method="BFGS", se=TRUE, immigration=FALSE, ...)
 {
 mixture <- match.arg(mixture)
@@ -16,7 +16,7 @@ if(identical(dynamics, "notrend") &
     stop("lambdaformula and omegaformula must be identical for notrend model")
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, sigmaformula=sigmaformula, iotaformula=iotaformula)
-  
+
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- unmarked:::getDesign(data, formula)
 y <- D$y
@@ -77,9 +77,18 @@ db <- c(0, 25, 50, 75, 100)
 if(length(db)-1 != J)
     stop("duh")
 a <- numeric(J)
+if(1==2){
+# Andy commented this on 12/25/2015. Merry Christmas
 a[1] <- pi*db[2]^2
 for(j in 2:J)
     a[j] <- pi*db[j+1]^2 - sum(a[1:(j-1)])
+}
+
+L<- 1
+a[1] <- L*db[2]
+for(j in 2:J)
+    a[j] <- L*db[j+1] - sum(a[1:(j-1)])
+
 u <- a / sum(a)
 a <- t(matrix(a, J, M))
 u <- t(matrix(u, J, M))
@@ -167,18 +176,18 @@ nll <- function(parms) {
     beta.om <- parms[(nAP+nGP+1):(nAP+nGP+nOP)]
     beta.sig <- parms[(nAP+nGP+nOP+1):(nAP+nGP+nOP+nDP)]
     beta.iota<- parms[(nAP + nGP + nOP + 1):(nAP + nGP + nOP + nDP + nIP)]
-    
+
     log.alpha <- 1
     if(mixture %in% c("NB", "ZIP"))
         log.alpha <- parms[nP]
     .Call("nll_distsampOpen",
           ym, yt,
-          Xlam, Xgam, Xom, Xsig, Xiota, 
+          Xlam, Xgam, Xom, Xsig, Xiota,
           beta.lam, beta.gam, beta.om, beta.sig, beta.iota, log.alpha,
-          Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset, Xiota.offset, 
+          Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset, Xiota.offset,
           ytna, yna,
           lk, mixture, first, last, M, J, T,
-          delta, dynamics, fix, go.dims, immigration, 
+          delta, dynamics, fix, go.dims, immigration,
           I, I1, Ib, Ip,
           a, u, db,
           PACKAGE = "unmarked")
