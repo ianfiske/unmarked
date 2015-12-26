@@ -5,8 +5,9 @@
   Open population model for distance sampling data
 }
 \description{
-  Fit the model of Dail and Madsen (2011) with a multinomial instead of
-  a binomial observation model.
+  Fit the model of Dail and Madsen (2011) and Hostetler and Chandler
+  (2015) with a distance sampling
+  observation model. 
 }
 \usage{
 distsampOpen(lambdaformula, gammaformula, omegaformula, sigmaformula, data, mixture = c("P", "NB", "ZIP"), K, dynamics = c("constant", "autoreg", "notrend", "trend"), fix = c("none", "gamma", "omega"), starts, method = "BFGS", se = TRUE, ...)
@@ -14,41 +15,73 @@ distsampOpen(lambdaformula, gammaformula, omegaformula, sigmaformula, data, mixt
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{lambdaformula}{
-%%     ~~Describe \code{lambdaformula} here~~
+        Right-hand sided formula for initial abundance
 }
-  \item{gammaformula}{
-%%     ~~Describe \code{gammaformula} here~~
+\item{gammaformula}{
+  Right-hand sided formula for recruitment rate (when dynamics is "constant",
+    "autoreg", or "notrend") or population growth rate (when dynamics is
+    "trend", "ricker", or "gompertz")
 }
-  \item{omegaformula}{
-%%     ~~Describe \code{omegaformula} here~~
+\item{omegaformula}{
+  Right-hand sided formula for apparent survival probability
+    (when dynamics is "constant", "autoreg", or "notrend") or equilibrium
+    abundance (when dynamics is "ricker" or "gompertz")
 }
-  \item{sigmaformula}{
-%%     ~~Describe \code{sigmaformula} here~~
+\item{sigmaformula}{
+      Right-hand sided formula for detection probability
 }
-  \item{data}{
-%%     ~~Describe \code{data} here~~
+\item{data}{
+      An object of class \code{\link{unmarkedFramePCO}}. See details
+XXXXX will change soon XXXXX 
 }
-  \item{mixture}{
-%%     ~~Describe \code{mixture} here~~
+\item{mixture}{
+  character specifying mixture: "P", "NB", or "ZIP" for
+    the Poisson, negative binomial, and zero-inflated Poisson
+    distributions.
 }
-  \item{K}{
-%%     ~~Describe \code{K} here~~
+\item{K}{
+   Integer defining upper bound of discrete integration. This
+    should be higher than the maximum observed count and high enough
+    that it does not affect the parameter estimates. However, the higher
+    the value the slower the compuatation.
 }
-  \item{dynamics}{
-%%     ~~Describe \code{dynamics} here~~
+\item{dynamics}{
+  Character string describing the type of population
+    dynamics. "constant" indicates that there is no relationship between
+    omega and gamma. "autoreg" is an auto-regressive model in which
+    recruitment is modeled as gamma*N[i,t-1]. "notrend" model gamma as
+    lambda*(1-omega) such that there is no temporal trend. "trend" is
+    a model for exponential growth, N[i,t] = N[i,t-1]*gamma, where gamma
+    in this case is finite rate of increase (normally referred to as
+    lambda). "ricker" and "gompertz" are models for density-dependent
+    population growth.  "ricker" is the Ricker-logistic model, N[i,t] =
+    N[i,t-1]*exp(gamma*(1-N[i,t-1]/omega)), where gamma is the maximum
+    instantaneous population growth rate (normally referred to as r) and
+    omega is the equilibrium abundance (normally referred to as K).  "gompertz"
+    is a modified version of the Gompertz-logistic model, N[i,t] =
+    N[i,t-1]*exp(gamma*(1-log(N[i,t-1]+1)/log(omega+1))), where the
+    interpretations of gamma and omega are similar to in the Ricker model.
 }
-  \item{fix}{
-%%     ~~Describe \code{fix} here~~
+\item{fix}{
+  If "omega", omega is fixed at 1. If "gamma", gamma is fixed at 0.
 }
-  \item{starts}{
-%%     ~~Describe \code{starts} here~~
+\item{starts}{
+      vector of starting values
 }
-  \item{method}{
-%%     ~~Describe \code{method} here~~
+\item{method}{
+      Optimization method used by \code{\link{optim}}.
 }
-  \item{se}{
-%%     ~~Describe \code{se} here~~
-}
+\item{se}{
+   logical specifying whether or not to compute standard errors.
+ }
+   \item{immigration}{
+    logical specifying whether or not to include an immigration term (iota) in
+    population dynamics.
+  }
+  \item{iotaformula}{
+    Right-hand sided formula for average number of immigrants to a site
+    per time step
+  }
   \item{\dots}{
 %%     ~~Describe \code{\dots} here~~
 }
@@ -67,7 +100,7 @@ distsampOpen(lambdaformula, gammaformula, omegaformula, sigmaformula, data, mixt
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Richard Chandler, Jeff Hostetler, Andy Royle 
 }
 \note{
 %%  ~~further notes~~

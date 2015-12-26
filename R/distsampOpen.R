@@ -74,6 +74,8 @@ lk <- length(k)
 
 # FIXME: These should be arguments
 db <- c(0, 25, 50, 75, 100)
+L<- 1
+
 if(length(db)-1 != J)
     stop("duh")
 a <- numeric(J)
@@ -84,8 +86,8 @@ for(j in 2:J)
     a[j] <- pi*db[j+1]^2 - sum(a[1:(j-1)])
 }
 
-L<- 1
-a[1] <- L*db[2]
+
+a[1] <- L*db[2]   # Note L should probably be tlength
 for(j in 2:J)
     a[j] <- L*db[j+1] - sum(a[1:(j-1)])
 
