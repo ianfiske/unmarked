@@ -80,7 +80,8 @@ distsampOpen(lambdaformula, gammaformula, omegaformula, sigmaformula, data, mixt
 }
 \examples{
 
-sim7 <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, M=100, T=5, J=4)
+
+sim7 <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, M=100, T=5, J=4,type="line")
     {
     y <- array(NA, c(M, J, T))
     N <- matrix(NA, M, T)
@@ -88,14 +89,29 @@ sim7 <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, M=100, T=5, J=4)
     db <- c(0, 25, 50, 75, 100)
     if(length(db)-1 != J)
       stop("hey, what")
+    if(type=="point")
     g <- function(x, sig) exp(-x^2/(2*sig^2))*x
+    if(type=="line")
+    g <- function(x, sig) exp(-x^2/(2*sig^2)) 
     cp <- u <- a <- numeric(J)
-    a[1] <- pi*db[2]^2
+  if(type=="point"){ 
+   a[1] <- pi*db[2]^2
     cp[1] <- integrate(g, db[1], db[2], sig=sigma)$value * 2 * pi
     for(j in 2:J) {
       a[j] <- pi*db[j+1]^2 - sum(a[1:j])
       cp[j] <- integrate(g, db[j], db[j+1], sig=sigma)$value * 2*pi
     }
+    }
+if(type=="line"){ 
+   L <-  1
+   a[1] <- L*db[2]
+    cp[1] <- integrate(g, db[1], db[2], sig=sigma)$value  
+    for(j in 2:J) {
+      a[j] <-  db[j+1]  - sum(a[1:j])
+      cp[j] <- integrate(g, db[j], db[j+1], sig=sigma)$value 
+    }
+    }
+
     u <- a / sum(a)
     cp <- cp / a * u
     cp[j+1] <- 1-sum(cp)
@@ -115,23 +131,48 @@ sim7 <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, M=100, T=5, J=4)
     return(matrix(y, M))
 }
 
-lambda <- 10
+
+lambda <- 4
 gamma <- 2
 omega <- 0.5
 sigma <- 20
-T <- 10
-y.sim7 <- sim7(lambda, gamma, omega, sigma, T=T)
+T <- 20
+
+# Do one case
+y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="line")
 colSums(y.sim7)
 umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
                  se=FALSE)
-fm
 
-e <- coef(fm)
-exp(e[1:2])
-plogis(e[3])
-exp(e[4])
+# Do a simulation study
+simout<- matrix(NA,nrow=100,ncol=4)
+for(sim in 1:100){
+y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="line")
+colSums(y.sim7)
+umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
+                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
+                 se=FALSE)
+simout[sim,]<- fm@opt$par
+
+}
+
+#
+#  > apply(simout,2,mean)
+#  [1] 1.38359217 0.67011133 0.03584008 2.99542523
+#  > exp(1.3835)
+#  [1] 3.988838
+#  > exp(0.67)
+#  [1] 1.954237
+#  > plogis(0.036)
+#  [1] 0.508999
+#  > exp(2.995)
+#  [1] 19.98536
+
+
+
 
 
 
