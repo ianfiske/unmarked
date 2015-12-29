@@ -99,18 +99,18 @@ lk <- length(k)
 if(length(db)-1 != J)
     stop("duh")
 a <- numeric(J)
-if(1==2){
-# Andy commented this on 12/25/2015. Merry Christmas
+
+if(survey=="point"){
 a[1] <- pi*db[2]^2
 for(j in 2:J)
     a[j] <- pi*db[j+1]^2 - sum(a[1:(j-1)])
 }
 
-
-a[1] <- tlength*db[2]   # Note L should probably be tlength
+if(survey=="line"){
+a[1] <- tlength*db[2]   # Note: should be vector valued.... a and u are passed to cpp routine
 for(j in 2:J)
     a[j] <- tlength*db[j+1] - sum(a[1:(j-1)])
-
+}
 u <- a / sum(a)
 a <- t(matrix(a, J, M))
 u <- t(matrix(u, J, M))
