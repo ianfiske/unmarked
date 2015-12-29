@@ -32,7 +32,7 @@ setClass("unmarkedFitDS",
         keyfun = "character",
         unitsOut = "character",
         output = "character"),
-    contains = "unmarkedFit")
+        contains = "unmarkedFit")
 
 
 
@@ -50,6 +50,15 @@ setClass("unmarkedFitPCO",
             dynamics = "character",
             immigration = "logical"),
         contains = "unmarkedFitPCount")
+
+setClass("unmarkedFitDSO",
+        representation(
+            formlist = "list",
+            dynamics = "character",
+            immigration = "logical",
+            K="numeric",
+            mixture="character"),
+        contains = "unmarkedFitDS")
 
 
 setClass("unmarkedFitOccu",

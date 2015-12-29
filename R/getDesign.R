@@ -894,7 +894,7 @@ setMethod("handleNA", "unmarkedFramePCO",
 })
 
 
-## Andy added this to deal with DSO
+## Andy added this to deal with DSO, copied directly from PCO version....
 
 setMethod("handleNA", "unmarkedFrameDSO",
     function(umf, Xlam, Xgam, Xom, Xp, Xiota, Xlam.offset, Xgam.offset,
