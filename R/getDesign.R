@@ -775,40 +775,6 @@ setMethod("getDesign", "unmarkedFrameDSO",
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 setMethod("handleNA", "unmarkedFramePCO",
     function(umf, Xlam, Xgam, Xom, Xp, Xiota, Xlam.offset, Xgam.offset,
              Xom.offset, Xp.offset, Xiota.offset, delta)
@@ -926,6 +892,155 @@ setMethod("handleNA", "unmarkedFramePCO",
              Xiota.offset=Xiota.offset, delta = delta,
              removed.sites = which(sites.to.remove))
 })
+
+
+## Andy added this to deal with DSO
+
+setMethod("handleNA", "unmarkedFrameDSO",
+    function(umf, Xlam, Xgam, Xom, Xp, Xiota, Xlam.offset, Xgam.offset,
+             Xom.offset, Xp.offset, Xiota.offset, delta)
+{
+	obsToY <- obsToY(umf)
+	if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
+
+	M <- numSites(umf)
+	T <- umf@numPrimary
+	y <- getY(umf)
+	J <- ncol(y) / T
+
+	Xlam.long <- Xlam[rep(1:M, each = J*T),]
+	Xlam.long.na <- is.na(Xlam.long)
+
+	long.na <- function(x) {
+            x.mat <- matrix(x, M, J*T, byrow = TRUE)
+            x.mat <- is.na(x.mat)
+            x.mat <- x.mat %*% obsToY
+            x.long <- as.vector(t(x.mat))
+            x.long > 0
+        }
+
+        o2y2 <- diag(T)
+        o2y2 <- o2y2[-T, -T]
+
+	long.na2 <- function(x) {
+            x.mat <- matrix(x, M, T-1, byrow = TRUE)
+            x.mat <- is.na(x.mat)
+            x.mat <- x.mat %*% o2y2
+            x.long <- as.vector(t(x.mat))
+            x.long > 0
+        }
+
+	Xp.long.na <- apply(Xp, 2, long.na)
+	Xp.long.na <- apply(Xp.long.na, 1, any)
+
+        Xgam.long.na <- apply(Xgam, 2, long.na2)
+	Xgam.long.na <- apply(Xgam.long.na, 1, any)
+	Xom.long.na <- apply(Xom, 2, long.na2)
+	Xom.long.na <- apply(Xom.long.na, 1, any)
+
+	y.long <- as.vector(t(y))
+	y.long.na <- is.na(y.long)
+
+#  delta.long <- as.vector(t(delta))
+#	delta.long.na <- is.na(delta.long)
+
+	covs.na <- apply(cbind(Xlam.long.na, Xp.long.na), 1, any)
+	covs.na2 <- apply(cbind(Xgam.long.na, Xom.long.na), 1, any)
+	covs.na3 <- rep(covs.na2, each=J)
+	# If gamma[1, 1] is NA, remove y[1, 2]
+	#common <- 1:(M*J*(T-1))
+        ignore <- rep(seq(1, M*J*T, by=J*T), each=J) + 0:(J-1)
+        covs.na[-ignore] <- covs.na[-ignore] | covs.na3
+
+	## are any NA in covs not in y already?
+	y.new.na <- covs.na & !y.long.na
+
+	if(sum(y.new.na) > 0) {
+            y.long[y.new.na] <- NA
+            warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
+        }
+
+	y.wide <- matrix(y.long, nrow=M, ncol=J*T, byrow = TRUE)
+#	delta <- matrix(delta.long, nrow=M, ncol=T, byrow = TRUE)
+	sites.to.remove <- apply(y.wide, 1, function(x) all(is.na(x)))
+  # Should also remove sites with no omega and gamma before an observation
+  # remove all observations before the one after the first real omega/gamma
+#  covs.na2.mat <- matrix(covs.na2, M, T-1, byrow=TRUE)
+#  last.y <- apply(y, 1, function(x) max(which(!is.na(y))))
+#  last.go <- apply(covs.na2.mat, 1, function(x)
+#      if(any(x)) {
+#          if(all(x))
+#              return(0)
+#          else
+#              return(max(which(!x)))
+#          }
+#      else
+#          return(T-1))
+#  no.go.before.y <- last.y <= last.go
+
+	ya <- array(y.wide, c(M, J, T))
+	yna <- apply(is.na(ya), c(1,3), all)
+	delta <- formatDelta(delta, yna)
+
+	num.to.remove <- sum(sites.to.remove)
+	if(num.to.remove > 0) {
+            y.wide <- y.wide[!sites.to.remove, ,drop = FALSE]
+            Xlam <- Xlam[!sites.to.remove, ,drop = FALSE]
+            Xlam.offset <- Xlam.offset[!sites.to.remove]
+            Xgam <- Xgam[!sites.to.remove[rep(1:M, each = T-1)],,
+                         drop = FALSE]
+            Xgam.offset <- Xgam.offset[!sites.to.remove[rep(1:M, each = T-1)],,
+                         drop = FALSE]
+            Xom <- Xom[!sites.to.remove[rep(1:M, each = T-1)],,
+                       drop = FALSE]
+            Xom.offset <- Xom.offset[!sites.to.remove[rep(1:M, each = T-1)],,
+                       drop = FALSE]
+            Xp <- Xp[!sites.to.remove[rep(1:M, each = J*T)],,
+                     drop = FALSE]
+            Xp.offset <- Xp.offset[!sites.to.remove[rep(1:M, each = J*T)],,
+                     drop = FALSE]
+            Xiota <- Xiota[!sites.to.remove[rep(1:M, each = T-1)],,
+                       drop = FALSE]
+            Xiota.offset <- Xiota.offset[!sites.to.remove[rep(1:M, each = T-1)],,
+                       drop = FALSE]
+            delta <- delta[!sites.to.remove, ,drop =FALSE]
+            warning(paste(num.to.remove, "sites have been discarded because of missing data."), call.=FALSE)
+	}
+
+	list(y = y.wide, Xlam = Xlam, Xgam = Xgam, Xom = Xom, Xp = Xp, Xiota = Xiota,
+             Xlam.offset=Xlam.offset, Xgam.offset=Xgam.offset,
+             Xom.offset=Xom.offset, Xp.offset=Xp.offset,
+             Xiota.offset=Xiota.offset, delta = delta,
+             removed.sites = which(sites.to.remove))
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

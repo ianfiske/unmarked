@@ -109,7 +109,8 @@ setClass("unmarkedFrameGPC",
 
 ## Andy 12/27/2015
 setClass("unmarkedFrameDSO",
-          contains = "unmarkedFrameGDS")
+         representation(primaryPeriod = "matrix"),
+         contains = "unmarkedFrameGDS")
 
 
 # ------------------------------- CONSTRUCTORS ---------------------------
