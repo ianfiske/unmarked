@@ -122,7 +122,6 @@ Richard Chandler, Jeff Hostetler, Andy Royle
 }
 \examples{
 
-
 sim7 <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, M=100, T=5, J=4,type="line")
     {
     y <- array(NA, c(M, J, T))
@@ -172,8 +171,8 @@ if(type=="line"){
     cat("max(N) =", max(N), "\n")
     return(matrix(y, M))
 }
-
-
+library(unmarked)
+set.seed(711)
 lambda <- 4
 gamma <- 2
 omega <- 0.5
@@ -182,36 +181,41 @@ T <- 20
 
 # Do one case
 y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="line")
-colSums(y.sim7)
-umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
-fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
+umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T, 
+    dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=1)
+# want to test this out
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=40,keyfun="half",
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
                  se=FALSE)
 
-# Do a simulation study
+
 simout<- matrix(NA,nrow=100,ncol=4)
 for(sim in 1:100){
-y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="line")
+y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,
+type="line")
 colSums(y.sim7)
-umf7 <- unmarkedFramePCO(y = y.sim7, numPrimary=T)
+umf7 <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
+    dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=1)
+
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
                  se=FALSE)
 simout[sim,]<- fm@opt$par
 
 }
+# apply(simout,2,mean)
+#[1] 1.37633799 0.65631764 0.05651401 2.99502916
+# exp(1.376)
+#[1] 3.959034
+# exp(0.656)
+#[1] 1.927069
+#> plogis(0.056)
+#[1] 0.5139963
+#> exp(2.995)
+#[1] 19.98536
+ 
 
-#
-#  > apply(simout,2,mean)
-#  [1] 1.38359217 0.67011133 0.03584008 2.99542523
-#  > exp(1.3835)
-#  [1] 3.988838
-#  > exp(0.67)
-#  [1] 1.954237
-#  > plogis(0.036)
-#  [1] 0.508999
-#  > exp(2.995)
-#  [1] 19.98536
+
 
 
 
