@@ -333,6 +333,9 @@ if(missing(primaryPeriod))
         warning("primaryPeriod values have been converted to integers")
         }
 
+    #######well fuck, not sure why this needs to be this way:
+    obsToY = diag(J*T)
+    ### This is from unmarkedFramePCO
 
     umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
@@ -550,6 +553,7 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
     umf@yearlySiteCovs <- yearlySiteCovs
     umf <- as(umf, "unmarkedFramePCO")
     umf@primaryPeriod <- primaryPeriod
+    # There is no obsToY function
     return(umf)
 }
 

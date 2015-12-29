@@ -286,11 +286,11 @@ if(identical(mixture, "ZIP")) {
         covMat = as.matrix(covMat[nP, nP]), invlink = "logistic",
         invlinkGrad = "logistic.grad")
     }
-umfit <- new("unmarkedFitGDS", fitType = "pcountOpen",
+umfit <- new("unmarkedFitDSO", fitType = "distsampOpen",
     call = match.call(), formula = formula, formlist = formlist, data = data,
     sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC,
     opt = opt, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
-    dynamics = dynamics, keyfun=keyfun, unitsOut=unitsOut)
+    dynamics = dynamics, immigration=immigration, keyfun=keyfun, unitsOut=unitsOut)
 return(umfit)
 }
 
