@@ -615,6 +615,200 @@ setMethod("getDesign", "unmarkedFramePCO",
 
 
 
+
+
+
+
+
+
+
+
+# need a getDesign for distsampOpen.... not sure how to set this up
+# pcountOpenDS
+setMethod("getDesign", "unmarkedFrameDSO",
+    function(umf, formula, na.rm = TRUE)
+{
+    aschar1 <- as.character(formula)
+    aschar2 <- as.character(formula[[2]])
+    aschar3 <- as.character(formula[[2]][[2]])
+    aschar4 <- as.character(formula[[2]][[2]][[2]])
+
+    iotaformula <- as.formula(paste(aschar1[1], aschar1[3]))
+    pformula <- as.formula(paste(aschar2[1], aschar2[3]))
+    omformula <- as.formula(paste(aschar3[1], aschar3[3]))
+    gamformula <- as.formula(paste(aschar4[1], aschar4[3]))
+    lamformula <- as.formula(formula[[2]][[2]][[2]][[2]])
+
+    y <- getY(umf)
+    M <- nrow(y)
+    T <- umf@numPrimary
+    J <- ncol(y) / T
+    delta <- umf@primaryPeriod
+
+    if(is.null(umf@yearlySiteCovs))
+        yearlySiteCovs <- data.frame(placeHolder = rep(1, M*T))
+    else
+        yearlySiteCovs <- umf@yearlySiteCovs
+
+    ## add siteCovs in so they can be used as well
+    if(!is.null(umf@siteCovs)) {
+        sC <- umf@siteCovs[rep(1:M, each = T),,drop=FALSE]
+        yearlySiteCovs <- cbind(yearlySiteCovs, sC)
+        }
+
+    if(is.null(siteCovs(umf)))
+        siteCovs <- data.frame(placeHolder = rep(1, M))
+    else
+        siteCovs <- siteCovs(umf)
+
+    Xlam.mf <- model.frame(lamformula, siteCovs, na.action = NULL)
+    Xlam <- model.matrix(lamformula, Xlam.mf)
+    Xlam.offset <- as.vector(model.offset(Xlam.mf))
+    if(!is.null(Xlam.offset))
+        Xlam.offset[is.na(Xlam.offset)] <- 0
+
+    if(is.null(obsCovs(umf)))
+        obsCovs <- data.frame(placeHolder = rep(1, M*J*T))
+    else
+        obsCovs <- obsCovs(umf)
+
+    colNames <- c(colnames(obsCovs), colnames(yearlySiteCovs))
+
+    # Add yearlySiteCovs, which contains siteCovs
+    obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),])
+    colnames(obsCovs) <- colNames
+
+    if(!("obsNum" %in% names(obsCovs)))
+        obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:(J*T), M)))
+
+    # Ignore last year of data
+    transCovs <- yearlySiteCovs[-seq(T, M*T, by=T),,drop=FALSE]
+    for(i in 1:ncol(transCovs))
+        if(is.factor(transCovs[,i]))
+            transCovs[,i] <- factor(transCovs[,i]) # drop unused levels
+
+    Xiota.mf <- model.frame(iotaformula, transCovs, na.action = NULL)
+    Xiota <- model.matrix(iotaformula, Xiota.mf)
+    Xiota.offset <- as.vector(model.offset(Xiota.mf))
+    if(!is.null(Xiota.offset))
+        Xiota.offset[is.na(Xiota.offset)] <- 0
+    Xp.mf <- model.frame(pformula, obsCovs, na.action = NULL)
+    Xp <- model.matrix(pformula, Xp.mf)
+    Xp.offset <- as.vector(model.offset(Xp.mf))
+    if(!is.null(Xp.offset))
+        Xp.offset[is.na(Xp.offset)] <- 0
+    Xgam.mf <- model.frame(gamformula, transCovs, na.action = NULL)
+    Xgam <- model.matrix(gamformula, Xgam.mf)
+    Xgam.offset <- as.vector(model.offset(Xgam.mf))
+    if(!is.null(Xgam.offset))
+        Xgam.offset[is.na(Xgam.offset)] <- 0
+    Xom.mf <- model.frame(omformula, transCovs, na.action = NULL)
+    Xom <- model.matrix(omformula, Xom.mf)
+    Xom.offset <- as.vector(model.offset(Xom.mf))
+    if(!is.null(Xom.offset))
+        Xom.offset[is.na(Xom.offset)] <- 0
+
+    # determine if gamma, omega, and iota are scalar, vector, or matrix valued
+    # Runtime is much faster for scalars and vectors
+    Xgo <- cbind(Xgam, Xom, Xiota)
+    getGOdims <- function(x) {
+        xm <- matrix(x, M, T-1, byrow=TRUE)
+#        anyNA <- apply(is.na(xm), 1, any)
+#        if(all(anyNA))
+#            return("matrix")
+#        xm <- xm[!anyNA,] # This is not 100% safe
+#        nSites <- nrow(xm)
+#        if(all(dim(unique(xm, MARGIN=1)) == c(1, T-1)))
+#            return("rowvec")
+#        else if(all(dim(unique(xm, MARGIN=2)) == c(nSites, 1)))
+#            return("colvec")
+#        else return("matrix")
+        col.table <- apply(xm, 2, table)
+        row.table <- apply(xm, 1, table)
+        if(is.vector(col.table) & !is.list(col.table)) {
+            return("rowvec")
+        } else if(is.vector(row.table) & !is.list(row.table)) {
+            return("colvec")
+        } else
+            return("matrix")
+        }
+    if(isTRUE(all.equal(gamformula,~1)) & isTRUE(all.equal(omformula, ~1)) &
+      isTRUE(all.equal(iotaformula, ~1)))
+        go.dims <- "scalar"
+    else {
+        go.dims.vec <- apply(Xgo, 2, getGOdims)
+        if(all(go.dims.vec == "rowvec"))
+            go.dims <- "rowvec"
+        else if(all(go.dims.vec == "colvec"))
+            go.dims <- "matrix" ##"colvec"  ## NOTE: Temporary fix to the problem reported with time-only-varying covariates
+        else
+            go.dims <- "matrix"
+    }
+
+    if(na.rm)
+        out <- handleNA(umf, Xlam, Xgam, Xom, Xp, Xiota,
+            Xlam.offset, Xgam.offset, Xom.offset, Xp.offset, Xiota.offset,
+            delta)
+    else {   # delta needs to be formatted first
+        ya <- array(y, c(M, J, T))
+        yna <- apply(is.na(ya), c(1,3), all)
+        delta <- formatDelta(delta, yna)
+        out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, Xiota=Xiota,
+                    Xlam.offset=Xlam.offset, Xgam.offset=Xgam.offset,
+                    Xom.offset=Xom.offset, Xp.offset=Xp.offset,
+                    Xiota.offset=Xiota.offset,
+                    delta=delta, removed.sites=integer(0))
+    }
+
+    return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam,
+                Xom = out$Xom, Xp = out$Xp, Xiota = out$Xiota,
+                Xlam.offset=Xlam.offset, Xgam.offset=Xgam.offset,
+                Xom.offset=Xom.offset, Xp.offset=Xp.offset,
+                Xiota.offset=Xiota.offset, delta = out$delta,
+                removed.sites = out$removed.sites, go.dims = go.dims))
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 setMethod("handleNA", "unmarkedFramePCO",
     function(umf, Xlam, Xgam, Xom, Xp, Xiota, Xlam.offset, Xgam.offset,
              Xom.offset, Xp.offset, Xiota.offset, delta)

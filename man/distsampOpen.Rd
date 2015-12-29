@@ -97,7 +97,16 @@ XXXXX will change soon XXXXX
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+  Royle, J. A. (2004) N-Mixture Models for Estimating Population Size from
+Spatially Replicated Counts. \emph{Biometrics} 60, pp. 108--105.
+
+Dail, D. and L. Madsen (2011) Models for Estimating Abundance from
+Repeated Counts of an Open Metapopulation. \emph{Biometrics}. 67, pp
+577-587.
+
+Hostetler, J. A. and R. B. Chandler (2015) Improved State-space Models for
+Inference about Spatial and Temporal Variation in Abundance from Count Data.
+\emph{Ecology} 96:1713-1723.
 }
 \author{
 Richard Chandler, Jeff Hostetler, Andy Royle 
@@ -109,7 +118,7 @@ Richard Chandler, Jeff Hostetler, Andy Royle
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{pcount}, \link{unmarkedFramePCO}}
 }
 \examples{
 

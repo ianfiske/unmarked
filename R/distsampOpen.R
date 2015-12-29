@@ -1,13 +1,33 @@
 
 
 
-distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula,
-    data, mixture=c("P", "NB", "ZIP"), K,
+distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula,    data,
+    keyfun=c("halfnorm", "exp", "hazard", "uniform"),
+    output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
+                         mixture=c("P", "NB", "ZIP"), K,
     dynamics=c("constant", "autoreg", "notrend", "trend"),
     fix=c("none", "gamma", "omega"),
     iotaformula = ~1,
     starts, method="BFGS", se=TRUE, immigration=FALSE, ...)
 {
+
+### This block below andy put here from gdistsamp
+if(!is(data, "unmarkedFrameDSO"))
+    stop("Data is not of class unmarkedFrameDSO.")
+
+keyfun <- match.arg(keyfun)
+if(!keyfun %in% c("halfnorm", "exp", "hazard", "uniform"))
+    stop("keyfun must be 'halfnorm', 'exp', 'hazard', or 'uniform'")
+output <- match.arg(output)
+unitsOut <- match.arg(unitsOut)
+db <- data@dist.breaks
+w <- diff(db)
+tlength <- data@tlength
+survey <- data@survey
+unitsIn <- data@unitsIn
+#####
+
+
 mixture <- match.arg(mixture)
 dynamics <- match.arg(dynamics)
 fix <- match.arg(fix)
@@ -73,8 +93,8 @@ k <- 0:K
 lk <- length(k)
 
 # FIXME: These should be arguments
-db <- c(0, 25, 50, 75, 100)
-L<- 1
+#db <- c(0, 25, 50, 75, 100)
+#tlength <- 1
 
 if(length(db)-1 != J)
     stop("duh")
@@ -87,9 +107,9 @@ for(j in 2:J)
 }
 
 
-a[1] <- L*db[2]   # Note L should probably be tlength
+a[1] <- tlength*db[2]   # Note L should probably be tlength
 for(j in 2:J)
-    a[j] <- L*db[j+1] - sum(a[1:(j-1)])
+    a[j] <- tlength*db[j+1] - sum(a[1:(j-1)])
 
 u <- a / sum(a)
 a <- t(matrix(a, J, M))
@@ -266,11 +286,11 @@ if(identical(mixture, "ZIP")) {
         covMat = as.matrix(covMat[nP, nP]), invlink = "logistic",
         invlinkGrad = "logistic.grad")
     }
-umfit <- new("unmarkedFitPCO", fitType = "pcountOpen",
+umfit <- new("unmarkedFitGDS", fitType = "pcountOpen",
     call = match.call(), formula = formula, formlist = formlist, data = data,
     sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC,
     opt = opt, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
-    dynamics = dynamics)
+    dynamics = dynamics, keyfun=keyfun, unitsOut=unitsOut)
 return(umfit)
 }
 

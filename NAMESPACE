@@ -26,7 +26,9 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
               unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
               unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
               unmarkedFrameGMM, unmarkedFrameGDS, unmarkedFramePCO,
-              unmarkedFrameGPC, unmarkedEstimate, unmarkedFitList,
+              unmarkedFrameGPC, 
+              unmarkedFrameDSO, 
+              unmarkedEstimate, unmarkedFitList,
               unmarkedModSel, unmarkedRanef)
 
 # Methods
@@ -43,7 +45,7 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
     unmarkedFrameOccu, unmarkedFrameOccuFP, unmarkedFramePCount, unmarkedFrameMPois,
     unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
-    unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC)
+    unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC, unmarkedFrameDSO)
 
 # Formatting
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
