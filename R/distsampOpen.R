@@ -98,22 +98,43 @@ lk <- length(k)
 
 if(length(db)-1 != J)
     stop("duh")
-a <- numeric(J)
+####a <- numeric(J)
+a<- u<- matrix(NA, M, J)
 
 if(survey=="point"){
-a[1] <- pi*db[2]^2
+## not done yet
+    a[,1] <- pi*db[2]^2
 for(j in 2:J)
-    a[j] <- pi*db[j+1]^2 - sum(a[1:(j-1)])
+    a[,j] <- pi*db[j+1]^2 - sum(a[, 1:(j-1)])
 }
 
 if(survey=="line"){
-a[1] <- tlength*db[2]   # Note: should be vector valued.... a and u are passed to cpp routine
-for(j in 2:J)
-    a[j] <- tlength*db[j+1] - sum(a[1:(j-1)])
-}
-u <- a / sum(a)
-a <- t(matrix(a, J, M))
-u <- t(matrix(u, J, M))
+        for(i in 1:M) {
+            a[i,] <- tlength[i] * w
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+    }
+#   a[1] <- tlength*db[2]   # Note: should be vector valued.... a and u are passed to cpp routine
+  # They both seem to be (i,j) matrices within the .cpp function
+#for(j in 2:J)
+#    a[j] <- tlength*db[j+1] - sum(a[1:(j-1)])
+#}
+#u <- a / sum(a)
+#a <- t(matrix(a, J, M))     # re: above note --- right just like this
+#u <- t(matrix(u, J, M))
+
+
+switch(survey,
+    line = A <- rowSums(a) * 2,
+    point = A <- rowSums(a))
+switch(unitsIn,
+    m = A <- A / 1e6,
+    km = A <- A)
+switch(unitsOut,
+    ha = A <- A * 100,
+    kmsq = A <- A)
+
+
 
 lamParms <- colnames(Xlam)
 gamParms <- colnames(Xgam)

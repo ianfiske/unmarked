@@ -1,7 +1,5 @@
-
 #  Fit the penalized occupancy models of Hutchinson et al (2015).
-
-computeMPLElambda = function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", engine = c("C", "R")) {
+computeMPLElambda = function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", engine = c("C", "R")){
 
   designMats <- getDesign(data, formula)
   X <- designMats$X; V <- designMats$V; y <- designMats$y
@@ -27,37 +25,37 @@ computeMPLElambda = function(formula, data, knownOcc = numeric(0), starts, metho
                  method = "BFGS", engine = c("C", "R"), se = TRUE)
   meanDet = mean((1+exp(-occuOutMLE[2]@estimates%*%t(V)))^-1)
   MPLElambda = sqrt(sum(diag(occuOutMLE[2]@covMat)))*(1-(1-meanDet)^(dim(y)[2]))*(1-naiveOcc) # what if there are different numbers of visits to different sites?
-  return(MPLElambda)      
+  return(MPLElambda)
 }
 
 occuPEN_CV <- function(formula, data, knownOcc = numeric(0), starts,
-                 method = "BFGS", engine = c("C", "R"), 
+                 method = "BFGS", engine = c("C", "R"),
 		 lambdaVec = c(0,2^seq(-4,4)),
 		 pen.type = c("Bayes","Ridge"),
 		 k = 5,
 		 foldAssignments = NA,
-		 ...) 
+		 ...)
 {
   if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
   pen.type = pen.type[1]
   if (pen.type=="MPLE") stop("MPLE does not require cross-validation.")
-  if (!(pen.type=="Bayes" | pen.type=="Ridge")) 
+  if (!(pen.type=="Bayes" | pen.type=="Ridge"))
       stop("pen.type not recognized.  Choose Bayes or Ridge.")
 
   if (length(lambdaVec)==1) stop("Must provide more than one lambda for cross-validation.")
-  
+
   engine <- match.arg(engine, c("C", "R"))
   designMats <- getDesign(data, formula)
   X <- designMats$X; V <- designMats$V; y <- designMats$y
   y <- truncateToBinary(y)
   J <- ncol(y)
   M <- nrow(y)
-  
+
   if (!(length(foldAssignments)==1 & is.na(foldAssignments)[1])) { # user-supplied foldAssignments
     if (!(k==length(unique(foldAssignments)))) stop("Value of k does not match number of folds indicated in foldAssignments.")
-  } else { # create foldAssignments 
+  } else { # create foldAssignments
   # attempt to include sites with and without observations in each fold
     foldAssignments = c(1:M)
     idxsWithObs = which(rowSums(y)>0)
@@ -69,7 +67,7 @@ occuPEN_CV <- function(formula, data, knownOcc = numeric(0), starts,
       foldAssignments = sample(rep(1:k,ceiling(M/k)))[1:M]
     } else {
       stop("k>M. More folds than sites creates folds. Specify a smaller k.")
-    }     
+    }
   }
   #print(foldAssignments)
   foldNames = unique(foldAssignments)
@@ -80,7 +78,7 @@ occuPEN_CV <- function(formula, data, knownOcc = numeric(0), starts,
           beta.p <- params[(nOP+1):nP]
           .Call("nll_occu",
                   yvec, X, V, beta.psi, beta.p, nd, knownOccLog, navec,
-                  X.offset, V.offset, 
+                  X.offset, V.offset,
                   PACKAGE = "unmarked")
       }
   } else {
@@ -95,14 +93,14 @@ occuPEN_CV <- function(formula, data, knownOcc = numeric(0), starts,
         -sum(loglik)
     }
   } # end if (engine)
- 
+
   lambdaScores = lambdaVec*0 # score by held-out likelihood
 
-  for (f in 1:k) {				  
+  for (f in 1:k) {
     fold = foldNames[f]
     occuTrain = data[which(foldAssignments!=fold),] # train on NOT this fold
     occuTest = data[which(foldAssignments==fold),] # test on this fold
-    
+
     designMats <- getDesign(occuTest, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
     removed <- designMats$removed.sites
@@ -140,8 +138,8 @@ occuPEN_CV <- function(formula, data, knownOcc = numeric(0), starts,
 
     # For each lambda, get parameters on the training set, and use them
     #  to compute the likelihood on the held-out test fold.
-    for (la in 1:length(lambdaVec)) { 
-      occuOut = occuPEN(formula, occuTrain, starts, lambda=lambdaVec[la],pen.type=pen.type) 
+    for (la in 1:length(lambdaVec)) {
+      occuOut = occuPEN(formula, occuTrain, starts, lambda=lambdaVec[la],pen.type=pen.type)
       ests = c(as.numeric(occuOut[1]@estimates),as.numeric(occuOut[2]@estimates))
       lambdaScores[la] = lambdaScores[la] + nll(ests)
     } # la
@@ -150,15 +148,15 @@ occuPEN_CV <- function(formula, data, knownOcc = numeric(0), starts,
   bestLambda = lambdaVec[which.min(lambdaScores)]
   #print(lambdaScores)
 
-  occuOut = occuPEN(formula, data, starts=starts, lambda=bestLambda, pen.type=pen.type) 
- 
+  occuOut = occuPEN(formula, data, starts=starts, lambda=bestLambda, pen.type=pen.type)
+
   umfit <- new("unmarkedFitOccuPEN_CV", fitType = "occu", call = match.call(),
                  formula = formula, data = data,
                  sitesRemoved = designMats$removed.sites,
-                 estimates = occuOut@estimates, AIC = occuOut@AIC, 
+                 estimates = occuOut@estimates, AIC = occuOut@AIC,
 		 opt = occuOut@opt,
                  negLogLike = occuOut@negLogLike,
-                 nllFun = occuOut@nllFun, knownOcc = knownOccLog, 
+                 nllFun = occuOut@nllFun, knownOcc = knownOccLog,
 		 pen.type = pen.type, lambdaVec = lambdaVec,
 		 k = k, foldAssignments = foldAssignments,
 		 lambdaScores = lambdaScores, chosenLambda = bestLambda)
@@ -169,16 +167,17 @@ occuPEN_CV <- function(formula, data, knownOcc = numeric(0), starts,
 
 occuPEN <- function(formula, data, knownOcc = numeric(0), starts,
                  method = "BFGS", engine = c("C", "R"),
-#		 se = TRUE, 
-		 lambda = 0, 
+#		 se = TRUE,
+		 lambda = 0,
 		 pen.type = c("Bayes","Ridge","MPLE"),
-		 ...) 
- {
+		 ...)
+{
+
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
     pen.type = pen.type[1]
-    if (!(pen.type=="Bayes" | pen.type=="Ridge" | pen.type=="MPLE")) 
+    if (!(pen.type=="Bayes" | pen.type=="Ridge" | pen.type=="MPLE"))
         stop("pen.type not recognized.  Choose Bayes, Ridge, or MPLE.")
 
     engine <- match.arg(engine, c("C", "R"))
@@ -232,7 +231,7 @@ occuPEN <- function(formula, data, knownOcc = numeric(0), starts,
       MPLElambda = computeMPLElambda(formula, data, knownOcc = numeric(0), starts, method = "BFGS", engine = c("C", "R"))
       if (MPLElambda != lambda) warning("Supplied lambda does not match the computed value. Proceeding with the supplied lambda.")
     }
-    
+
     if(identical(engine, "C")) {
         nll <- function(params) {
             beta.psi <- params[1:nOP]
@@ -250,7 +249,7 @@ occuPEN <- function(formula, data, knownOcc = numeric(0), starts,
 	    } else {
 	      stop("pen.type not found")
 	    }
-	
+
             .Call("nll_occuPEN",
                   yvec, X, V, beta.psi, beta.p, nd, knownOccLog, navec,
                   X.offset, V.offset, penalty,
@@ -266,7 +265,7 @@ occuPEN <- function(formula, data, knownOcc = numeric(0), starts,
           cpmat <- matrix(cp, M, J, byrow = TRUE) #
           loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi))
           #-sum(loglik)
- 
+
   	  if (pen.type=="Bayes") {
 	    penalty = sum(params^2)*lambda*0.5
   	  } else if (pen.type=="Ridge") {
@@ -313,8 +312,9 @@ occuPEN <- function(formula, data, knownOcc = numeric(0), starts,
                  sitesRemoved = designMats$removed.sites,
                  estimates = estimateList, AIC = fmAIC, opt = opt,
                  negLogLike = fm$value,
-                 nllFun = nll, knownOcc = knownOccLog, 
+                 nllFun = nll, knownOcc = knownOccLog,
 		 pen.type = pen.type, lambda = c(lambda))
 
     return(umfit)
 }
+

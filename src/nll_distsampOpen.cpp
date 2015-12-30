@@ -294,7 +294,13 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
                */
 		result = (Rf_pnorm5(upper, 0.0, sig(i,0), true, false) -
 			  Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;
-
+                  // nintervals = 10   // pass this as an argument to the function
+                  // delta = (upper-lower)/nintervals 
+                  //  for(int subint=0; subint<nintervals; subint++) {
+                // eval at this point:   lower + int*delta + (delta/2)
+                  //      for(int subinterval = last_i; t>first_i; t--) {
+  //                  result +=
+                  
 		/*	Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
 		       &abserr, &neval, &ier, &limit, &lenw, &last2, iwork,
 		       &work); */

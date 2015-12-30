@@ -182,7 +182,8 @@ T <- 20
 # Do one case
 y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="line")
 umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T, 
-    dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=1)
+    dist.breaks = c(0, 25, 50, 75, 100), survey="line",
+unitsIn="m",tlength=rep(1, 200) )
 # want to test this out
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=40,keyfun="half",
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
@@ -195,7 +196,8 @@ y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,
 type="line")
 colSums(y.sim7)
 umf7 <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
-    dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=1)
+    dist.breaks = c(0, 25, 50, 75, 100), survey="line",
+unitsIn="m",tlength=rep(1, 200) )
 
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
