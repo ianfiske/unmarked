@@ -183,21 +183,24 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   arma::colvec g1_star = arma::zeros<arma::colvec>(lk);
   arma::cube g3_t = arma::zeros<arma::cube>(lk,lk,T-1);
 
+  /*  
   // Integration settings given to Rdqags
-  /* double epsabs = 0.001; // should be specific to measurement units
+  double epsabs = 0.001; // should be specific to measurement units
   double epsrel = 0.001; // should be specific to measurement units
   int limit = 100;
   int lenw = 400;
   int last2 = 0;
   int iwork[100];
-  double work[400.0];  */
-
+  double work[400];  
+  double abserr=0.0;
+  int neval=0;
+  int ier=0;  
+  */
   double lower=0.0;
   double upper=0.0;
   double result=0.0;
-  /* double abserr=0.0;
-  int neval=0;
-  int ier=0;  */
+  double frogdick = 0.0; 
+  double result2 = 0.0; 
 
   // shouldn't be done in likelihood
   for(int i=0; i<M; i++) {
@@ -214,6 +217,8 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   double part3 = 0.0;
   double part2m3 = 0.0;
 
+  int nintervals = 10;   // pass this as an argument to the function
+  double intwidth = 0.0; //(upper-lower)/nintervals; 
 
 
 // compute g3 if there are no covariates of omega/gamma
@@ -275,35 +280,42 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	    for(int j=0; j<=J; j++) { // note <=J not <J
 	      cp = 0.0;
 	      if(j<J) {
-		/* void *ex;
-		   ex = &sig(i,t);  */
-		lower = db[j];
+               	lower = db[j];
 		upper = db[j+1];
 		result = 0.0;
-		// abserr = 0.0;
-		// neval = 0;
-		// ier = 0;
+                frogdick = 0.0; 
+                result2 = 0.0; 
+              
 
-/*		epsabs = 0.001;
+		/*	        void *ex;
+	        ex = &sig(i,t); 
+	
+        	abserr = 0.0;
+		neval = 0;
+		ier = 0;
+
+		epsabs = 0.001;
 		epsrel = 0.001;
 		limit = 100;
 		lenw = 400;
 		last2 = 0;
 		iwork = 100;
-		work = 400.0;
-               */
-		result = (Rf_pnorm5(upper, 0.0, sig(i,0), true, false) -
-			  Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;
-                  // nintervals = 10   // pass this as an argument to the function
-                  // delta = (upper-lower)/nintervals 
-                  //  for(int subint=0; subint<nintervals; subint++) {
-                // eval at this point:   lower + int*delta + (delta/2)
-                  //      for(int subinterval = last_i; t>first_i; t--) {
+		 work = 400.0;    
+		*/
+		//        	result = (Rf_pnorm5(upper, 0.0, sig(i,0), true, false) -
+     		//	Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;  
+		// The code below here tries to do the integral by summation 
+              intwidth = (upper-lower)/nintervals; 
+              for(int subint=0; subint<nintervals; subint++) {
+		frogdick  = lower + subint*intwidth + intwidth/2; 
+		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
+	      }
+            // eval at this point:   lower + subint*intwidth + (intwidth/2)
   //                  result +=
-                  
-		/*	Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		       &abserr, &neval, &ier, &limit, &lenw, &last2, iwork,
-		       &work); */
+	
+		/*      result = Rdqags(gxhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+		       &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
+		       &work);   */
 		/* add error checking/handling here */
                   // andy 12/24 
                   // cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
@@ -370,33 +382,43 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
       for(int j=0; j<=J; j++) {
 	cp = 0.0;
 	if(j<J) {
-	  // void *ex;
-	  // ex = &sig(i,first_i);
-	  lower = db[j];
+          lower = db[j];
 	  upper = db[j+1];
 	  result = 0.0;
-	  //  abserr = 0.0;
-	  // neval = 0;
-	  // ier = 0;
+	  /*          void *ex;
+	  ex = &sig(i,first_i);
+	  abserr = 0.0;
+	  neval = 0;
+	  ier = 0;
 
-/*	  epsabs = 0.001;
+	  epsabs = 0.001;
 	  epsrel = 0.001;
 	  limit = 100;
 	  lenw = 400;
 	  last2 = 0;
 	  iwork = 100;
-	  work = 400.0;
-*/
-	  result = (Rf_pnorm5(upper, 0.0, sig(i,0), true, false) -
-		    Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;
+	  work = 400.0;  */
 
-	/*	  Rdqags(grhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
-		 &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
-		 &work);                 */ 
+	  // result = (Rf_pnorm5(upper, 0.0, sig(i,0), true, false) -
+       	  //   Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;
+	  /*	result =  Rdqags(gxhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
+		&abserr, &neval, &ier, &limit, &lenw, &last2, &iwork, &work); */
+
+              intwidth = (upper-lower)/nintervals; 
+              for(int subint=0; subint<nintervals; subint++) {
+		frogdick  = lower + subint*intwidth + intwidth/2; 
+		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
+	      }
+
+
+
             /* add error checking/handling here */
             // andy 12/24
             //	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
             	  cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi
+
+
+
 	  cp = std::max(cp, DOUBLE_XMIN);
 	  cpsum = cpsum+cp;
 	  part2 = log(cp) * y(i,j,first_i);
