@@ -212,6 +212,18 @@ fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
 simout[sim,]<- fm@opt$par
 
 }
+
+
+
+
+
+# results of using nintervals=5
+#> apply(simout,2,mean)
+#[1] 1.37376613 0.65539517 0.05327946 2.99762181
+ 
+
+
+# results using the analytic solution to the cell probabilities
 # apply(simout,2,mean)
 #[1] 1.37633799 0.65631764 0.05651401 2.99502916
 # exp(1.376)
@@ -223,7 +235,7 @@ simout[sim,]<- fm@opt$par
 #> exp(2.995)
 #[1] 19.98536
  
-
+ 
 
 
 

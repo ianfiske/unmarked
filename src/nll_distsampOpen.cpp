@@ -308,10 +308,19 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
      		//	Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;  
 		// The code below here tries to do the integral by summation 
               intwidth = (upper-lower)/nintervals; 
-              for(int subint=0; subint<nintervals; subint++) {
+	      if(survey == "line"){      
+            for(int subint=0; subint<nintervals; subint++) {
 		frogdick  = lower + subint*intwidth + intwidth/2; 
 		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
 	      }
+	      }
+	      if(survey == "point"){      
+            for(int subint=0; subint<nintervals; subint++) {
+		frogdick  = lower + subint*intwidth + intwidth/2; 
+		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
+	      }
+	      }
+
             // eval at this point:   lower + subint*intwidth + (intwidth/2)
   //                  result +=
 	
@@ -407,11 +416,18 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		&abserr, &neval, &ier, &limit, &lenw, &last2, &iwork, &work); */
 
               intwidth = (upper-lower)/nintervals; 
+	      if(survey == "line"){
               for(int subint=0; subint<nintervals; subint++) {
 		frogdick  = lower + subint*intwidth + intwidth/2; 
 		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
 	      }
-
+	      }
+	      if(survey == "point"){
+              for(int subint=0; subint<nintervals; subint++) {
+		frogdick  = lower + subint*intwidth + intwidth/2; 
+		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
+	      }
+	      }
 
 
             /* add error checking/handling here */

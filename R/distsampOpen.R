@@ -102,12 +102,13 @@ if(length(db)-1 != J)
 a<- u<- matrix(NA, M, J)
 
 if(survey=="point"){
-## not done yet
-    a[,1] <- pi*db[2]^2
-for(j in 2:J)
-    a[,j] <- pi*db[j+1]^2 - sum(a[, 1:(j-1)])
-}
-
+                for(i in 1:M) {
+                a[i, 1] <- pi*db[2]^2
+                for(j in 2:J)
+                    a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+                u[i,] <- a[i,] / sum(a[i,])
+            }
+            }
 if(survey=="line"){
         for(i in 1:M) {
             a[i,] <- tlength[i] * w
