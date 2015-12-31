@@ -10,7 +10,9 @@
   observation model. 
 }
 \usage{
-distsampOpen(lambdaformula, gammaformula, omegaformula, sigmaformula, data, mixture = c("P", "NB", "ZIP"), K, dynamics = c("constant", "autoreg", "notrend", "trend"), fix = c("none", "gamma", "omega"), starts, method = "BFGS", se = TRUE, ...)
+distsampOpen(lambdaformula, gammaformula, omegaformula, sigmaformula, data, mixture = c("P", "NB", "ZIP"), K, 
+dynamics = c("constant", "autoreg", "notrend", "trend"), fix = c("none", "gamma", "omega"), starts, method = "BFGS", 
+se = TRUE, nintervals=10, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -82,6 +84,11 @@ XXXXX will change soon XXXXX
     Right-hand sided formula for average number of immigrants to a site
     per time step
   }
+  \item{nintervals}{
+    number of intervals used in computing the  integral of the distance function by the rectangular rule in order
+    to compute multinomial cell probabilities.  This is NOT the number of distance bands but rather the number of intervals that each band is divided into.
+    Default is 10. 
+}
   \item{\dots}{
 %%     ~~Describe \code{\dots} here~~
 }
@@ -187,7 +194,7 @@ unitsIn="m",tlength=rep(1, 200) )
 # want to test this out
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=40,keyfun="half",
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
-                 se=FALSE)
+                 se=FALSE, nintervals=5)
 
 
 simout<- matrix(NA,nrow=100,ncol=4)
@@ -201,7 +208,7 @@ unitsIn="m",tlength=rep(1, 200) )
 
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
-                 se=FALSE)
+                 se=FALSE, nintervals=5)
 simout[sim,]<- fm@opt$par
 
 }

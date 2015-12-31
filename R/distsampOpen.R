@@ -8,7 +8,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
     dynamics=c("constant", "autoreg", "notrend", "trend"),
     fix=c("none", "gamma", "omega"),
     iotaformula = ~1,
-    starts, method="BFGS", se=TRUE, immigration=FALSE, ...)
+    starts, method="BFGS", se=TRUE, immigration=FALSE, nintervals=10, ...)
 {
 
 ### This block below andy put here from gdistsamp
@@ -219,20 +219,20 @@ nll <- function(parms) {
     beta.om <- parms[(nAP+nGP+1):(nAP+nGP+nOP)]
     beta.sig <- parms[(nAP+nGP+nOP+1):(nAP+nGP+nOP+nDP)]
     beta.iota<- parms[(nAP + nGP + nOP + 1):(nAP + nGP + nOP + nDP + nIP)]
-
+# 12/31/2015 Andy added arguments "survey" and also "nintervals" -- number of integration slices      
     log.alpha <- 1
     if(mixture %in% c("NB", "ZIP"))
         log.alpha <- parms[nP]
-    .Call("nll_distsampOpen",
+   .Call("nll_distsampOpen",
           ym, yt,
           Xlam, Xgam, Xom, Xsig, Xiota,
           beta.lam, beta.gam, beta.om, beta.sig, beta.iota, log.alpha,
           Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset, Xiota.offset,
           ytna, yna,
           lk, mixture, first, last, M, J, T,
-          delta, dynamics, fix, go.dims, immigration,
+          delta, dynamics, survey, fix, go.dims, immigration,
           I, I1, Ib, Ip,
-          a, u, db,
+          a, u, db, nintervals, 
           PACKAGE = "unmarked")
 }
 

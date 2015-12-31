@@ -75,7 +75,7 @@ void tp5ds(arma::mat& g3, int lk, double gam, double om, double imm) {
 
 
 
-SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_ ) {
+SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP survey_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_, SEXP nintervals_) {
 
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
@@ -105,6 +105,8 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   std::string fix = as<std::string>(fix_);
   std::string go_dims = as<std::string>(go_dims_);
   bool immigration = as<bool>(immigration_); 
+  std::string survey = as<std::string>(survey_);  // andy added this 
+  int nintervals = as<int>(nintervals_); // andy added this 
   arma::imat I = as<arma::imat>(I_);
   arma::imat I1 = as<arma::imat>(I1_);
   Rcpp::List Ib(Ib_);
@@ -217,7 +219,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   double part3 = 0.0;
   double part2m3 = 0.0;
 
-  int nintervals = 10;   // pass this as an argument to the function
+  //  int nintervals = 10;   // pass this as an argument to the function
   double intwidth = 0.0; //(upper-lower)/nintervals; 
 
 
