@@ -313,13 +313,16 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		frogdick  = lower + subint*intwidth + intwidth/2; 
 		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
 	      }
-	      }
+                    cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi  
+              }
 	      if(survey == "point"){      
             for(int subint=0; subint<nintervals; subint++) {
 		frogdick  = lower + subint*intwidth + intwidth/2; 
-		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
-	      }
-	      }
+		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
+            }
+                 cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
+
+              }
 
             // eval at this point:   lower + subint*intwidth + (intwidth/2)
   //                  result +=
@@ -421,19 +424,22 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		frogdick  = lower + subint*intwidth + intwidth/2; 
 		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
 	      }
-	      }
+         	  cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi
+              }
 	      if(survey == "point"){
               for(int subint=0; subint<nintervals; subint++) {
 		frogdick  = lower + subint*intwidth + intwidth/2; 
-		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
+		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
 	      }
+               cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
+
 	      }
 
 
             /* add error checking/handling here */
             // andy 12/24
             //	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
-            	  cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi
+  
 
 
 

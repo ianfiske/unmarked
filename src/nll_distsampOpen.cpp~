@@ -75,7 +75,7 @@ void tp5ds(arma::mat& g3, int lk, double gam, double om, double imm) {
 
 
 
-SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP survey_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_, SEXP nintervals_ ) {
+SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP survey_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_, SEXP nintervals_) {
 
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
@@ -308,10 +308,22 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
      		//	Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;  
 		// The code below here tries to do the integral by summation 
               intwidth = (upper-lower)/nintervals; 
-              for(int subint=0; subint<nintervals; subint++) {
+	      if(survey == "line"){      
+            for(int subint=0; subint<nintervals; subint++) {
 		frogdick  = lower + subint*intwidth + intwidth/2; 
 		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
 	      }
+                    cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi  
+              }
+	      if(survey == "point"){      
+            for(int subint=0; subint<nintervals; subint++) {
+		frogdick  = lower + subint*intwidth + intwidth/2; 
+		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
+            }
+                 cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
+
+              }
+
             // eval at this point:   lower + subint*intwidth + (intwidth/2)
   //                  result +=
 	
@@ -407,17 +419,27 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		&abserr, &neval, &ier, &limit, &lenw, &last2, &iwork, &work); */
 
               intwidth = (upper-lower)/nintervals; 
+	      if(survey == "line"){
               for(int subint=0; subint<nintervals; subint++) {
 		frogdick  = lower + subint*intwidth + intwidth/2; 
 		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
 	      }
+         	  cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi
+              }
+	      if(survey == "point"){
+              for(int subint=0; subint<nintervals; subint++) {
+		frogdick  = lower + subint*intwidth + intwidth/2; 
+		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
+	      }
+               cp = result * / a(i,j) * u(i,j); // M_2PI is 2*pi
 
+	      }
 
 
             /* add error checking/handling here */
             // andy 12/24
             //	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
-            	  cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi
+  
 
 
 
