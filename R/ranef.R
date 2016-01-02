@@ -675,6 +675,203 @@ setMethod("ranef", "unmarkedFitPCO",
 
 
 
+###
+###  ranef method for DSO objects -- distsampOpen -- need to be based on PCO and GDS
+##
+
+
+setMethod("ranef", "unmarkedFitDSO",
+    function(object, ...)
+{
+#    browser()
+    dyn <- object@dynamics
+    formlist <- object@formlist
+    formula <- as.formula(paste(unlist(formlist), collapse=" "))
+    D <- getDesign(object@data, formula)
+    delta <- D$delta
+    deltamax <- max(delta, na.rm=TRUE)
+    if(!.hasSlot(object, "immigration")) #For backwards compatibility
+      imm <- FALSE
+    else
+      imm <- object@immigration
+
+    lam <- predict(object, type="lambda")[,1] # Slow, use D$Xlam instead
+    R <- length(lam)
+    T <- object@data@numPrimary
+    p <- getP(object)   # Will this work for DSO object?  NEEDS DONE
+    K <- object@K
+    N <- 0:K
+    y <- getY(getData(object))
+    J <- ncol(y)/T
+###
+    cp <- getP(object)
+    cp[is.na(y)] <- NA
+#####
+
+    # andy added this block. COMMENT OUT THE IFF STATEMENT
+if(identical(class(object)[1], "unmarkedFitGDS")) {
+        if(identical(object@output, "density")) {
+            survey <- object@data@survey
+            tlength <- object@data@tlength
+            unitsIn <- object@data@unitsIn
+            unitsOut <- object@unitsOut
+            db <- object@data@dist.breaks
+            w <- diff(db)
+            u <- a <- matrix(NA, nSites, R)
+            switch(survey,
+                   line = {
+                       for(i in 1:nSites) {
+                           a[i,] <- tlength[i] * w
+                           u[i,] <- a[i,] / sum(a[i,])
+                       }
+                   },
+                   point = {
+                       for(i in 1:nSites) {
+                           a[i, 1] <- pi*db[2]^2
+                           for(j in 2:R)
+                               a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+                           u[i,] <- a[i,] / sum(a[i,])
+                       }
+                   })
+            switch(survey,
+                   line = A <- rowSums(a) * 2,
+                   point = A <- rowSums(a))
+            switch(unitsIn,
+                   m = A <- A / 1e6,
+                   km = A <- A)
+            switch(unitsOut,
+                   ha = A <- A * 100,
+                   kmsq = A <- A)
+            lambda <- lambda*A # Density to abundance
+        }
+    }
+###
+    #### END HERE
+    ### COMMENT OUT THE CLOSE IF STATEMENT
+
+
+    if(dyn != "notrend") {
+        gam <- predict(object, type="gamma")[,1]
+        gam <- matrix(gam, R, T-1, byrow=TRUE)
+    }
+    if(!identical(dyn, "trend")) {
+        om <- predict(object, type="omega")[,1]
+        om <- matrix(om, R, T-1, byrow=TRUE)
+    }
+    else
+        om <- matrix(0, R, T-1)
+    if(imm) {
+        iota <- predict(object, type="iota")[,1]
+        iota <- matrix(iota, R, T-1, byrow=TRUE)
+    }
+    else
+      iota <- matrix(0, R, T-1)
+    srm <- object@sitesRemoved
+    if(length(srm) > 0)
+        y <- y[-object@sitesRemoved,]
+    ya <- array(y, c(R, J, T))  # HERE J should be number of dist int
+#####
+    cpa <- array(cp, c(R,J,T))   # ADDED
+
+    pa <- array(p, c(R, J, T))  # probably not needed for DSO
+    post <- array(NA_real_, c(R, length(N), T))
+    colnames(post) <- N
+    mix <- object@mixture
+    if(dyn=="notrend")
+        gam <- lam*(1-om)
+
+    if(dyn %in% c("constant", "notrend")) {
+        tp <- function(N0, N1, gam, om, iota) {
+            c <- 0:min(N0, N1)
+            sum(dbinom(c, N0, om) * dpois(N1-c, gam))
+        }
+    } else if(dyn=="autoreg") {
+        tp <- function(N0, N1, gam, om, iota) {
+            c <- 0:min(N0, N1)
+            sum(dbinom(c, N0, om) * dpois(N1-c, gam*N0 + iota))
+        }
+    } else if(dyn=="trend") {
+        tp <- function(N0, N1, gam, om, iota) {
+            dpois(N1, gam*N0 + iota)
+        }
+    } else if(dyn=="ricker") {
+        tp <- function(N0, N1, gam, om, iota) {
+            dpois(N1, N0*exp(gam*(1-N0/om)) + iota)
+        }
+    } else if(dyn=="gompertz") {
+        tp <- function(N0, N1, gam, om, iota) {
+            dpois(N1, N0*exp(gam*(1-log(N0 + 1)/log(om + 1))) + iota)
+        }
+    }
+
+### This needs compared with the GDS version and the observation model inserted where
+    ## HERE it is binomial
+    ##
+    for(i in 1:R) {                # R = nsites I think.
+        P <- matrix(1, K+1, K+1)
+        switch(mix,
+               P  = g2 <- dpois(N, lam[i]),
+               NB = {
+                   alpha <- exp(coef(object, type="alpha"))
+                   g2 <- dnbinom(N, mu=lam[i], size=alpha)
+               },
+               ZIP = {
+                   psi <- plogis(coef(object, type="psi"))
+                   g2 <- (1-psi)*dpois(N, lam[i])
+                   g2[1] <- psi + (1-psi)*exp(-lam[i])
+               })
+
+        g1 <- rep(1, K+1)
+        for(j in 1:J) {      # I think the J loop should not be here for DSO == distance category
+            if(is.na(ya[i,j,1]) | is.na(pa[i,j,1]))
+                next
+            g1 <- g1 * dbinom(ya[i,j,1], N, pa[i,j,1])   ### Observation model right here
+        }
+        g1g2 <- g1*g2
+        post[i,,1] <- g1g2 / sum(g1g2)
+        for(t in 2:T) {
+            if(!is.na(gam[i,t-1]) & !is.na(om[i,t-1])) {
+                for(n0 in N) {
+                    for(n1 in N) {
+                        P[n0+1, n1+1] <- tp(n0, n1, gam[i,t-1], om[i,t-1], iota[i,t-1])
+                    }
+                }
+            }
+            delta.it <- delta[i,t-1]
+            if(delta.it > 1) {
+                P1 <- P
+                for(d in 2:delta.it) {
+                    P <- P %*% P1
+                }
+            }
+            g1 <- rep(1, K+1)
+            for(j in 1:J) {
+                if(is.na(ya[i,j,t]) | is.na(pa[i,j,t]))
+                    next
+                g1 <- g1 * dbinom(ya[i,j,t], N, pa[i,j,t])   #### Observation model
+            }
+            g <- colSums(P * post[i,,t-1]) * g1
+            post[i,,t] <- g / sum(g)
+        }
+    }
+    new("unmarkedRanef", post=post)
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 setGeneric("bup", function(object, stat=c("mean", "mode"), ...)
     standardGeneric("bup"))
 setMethod("bup", "unmarkedRanef",
