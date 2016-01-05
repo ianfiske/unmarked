@@ -236,6 +236,17 @@ simout[sim,]<- fm@opt$par
 #[1] 19.98536
  
  
+# Point transect test 
+
+y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="point")
+umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T, 
+    dist.breaks = c(0, 25, 50, 75, 100), survey="point", unitsIn="m" )
+
+# want to test this out
+ 
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=40,keyfun="half",
+                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
+                 se=FALSE, nintervals=5)
 
 
 

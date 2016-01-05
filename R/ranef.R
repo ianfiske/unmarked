@@ -683,7 +683,7 @@ setMethod("ranef", "unmarkedFitPCO",
 setMethod("ranef", "unmarkedFitDSO",
     function(object, ...)
 {
-#    browser()
+    browser()
     dyn <- object@dynamics
     formlist <- object@formlist
     formula <- as.formula(paste(unlist(formlist), collapse=" "))
@@ -703,6 +703,7 @@ setMethod("ranef", "unmarkedFitDSO",
     N <- 0:K
     y <- getY(getData(object))
     J <- ncol(y)/T
+##
 ###
     cp <- getP(object)
     cp[is.na(y)] <- NA
