@@ -709,7 +709,7 @@ setMethod("ranef", "unmarkedFitDSO",
 #####
 
     # andy added this block. COMMENT OUT THE IFF STATEMENT
-if(identical(class(object)[1], "unmarkedFitGDS")) {
+#####if(identical(class(object)[1], "unmarkedFitGDS")) {
         if(identical(object@output, "density")) {
             survey <- object@data@survey
             tlength <- object@data@tlength
@@ -744,11 +744,9 @@ if(identical(class(object)[1], "unmarkedFitGDS")) {
                    kmsq = A <- A)
             lambda <- lambda*A # Density to abundance
         }
-    }
+###    }
 ###
     #### END HERE
-    ### COMMENT OUT THE CLOSE IF STATEMENT
-
 
     if(dyn != "notrend") {
         gam <- predict(object, type="gamma")[,1]
@@ -820,16 +818,61 @@ if(identical(class(object)[1], "unmarkedFitGDS")) {
                    g2 <- (1-psi)*dpois(N, lam[i])
                    g2[1] <- psi + (1-psi)*exp(-lam[i])
                })
-
+        #
+        #
+        #
         g1 <- rep(1, K+1)
-        for(j in 1:J) {      # I think the J loop should not be here for DSO == distance category
-            if(is.na(ya[i,j,1]) | is.na(pa[i,j,1]))
-                next
-            g1 <- g1 * dbinom(ya[i,j,1], N, pa[i,j,1])   ### Observation model right here
-        }
+#        for(j in 1:J) {      # I think the J loop should not be here for DSO == distance category
+#            if(is.na(ya[i,j,1]) | is.na(pa[i,j,1]))    # commented out. Note: I thhink pa not needed....
+#                next
+         t<- 1
+             if(all(is.na(ya[i,,t])) )
+                 next
+         # added
+             for(k in 1:(K+1)) {
+                y.it <- ya[i,,t]
+                ydot <- N[k]-sum(y.it, na.rm=TRUE)    # changed M[k] to N[k]
+                y.it <- c(y.it, ydot)
+                if(ydot < 0) {
+                    g[k] <- 0
+                    next
+                }
+                cp.it <- cpa[i,,t] #####*phi[i,t]  temp emig bit left from GDS
+                cp.it <- c(cp.it, 1-sum(cp.it, na.rm=TRUE))
+                na.it <- is.na(cp.it)
+                y.it[na.it] <- NA
+                g[k] <- g[k]*dmultinom(y.it[!na.it], N[k], cp.it[!na.it])
+            }
+            ####     g1 <- g1 * dbinom(ya[i,j,1], N, pa[i,j,1])   ### binomial Observation model right here
+
+
+
+#        }
+
+#  from GDS
+#         if(all(is.na(ya[i,,t])) | is.na(phi[i,t]))
+#                next
+#            for(k in 1:(K+1)) {
+#                y.it <- ya[i,,t]
+#                ydot <- M[k]-sum(y.it, na.rm=TRUE)
+#                y.it <- c(y.it, ydot)
+#                if(ydot < 0) {
+#                    g[k] <- 0
+#                    next
+#                }
+#                cp.it <- cpa[i,,t]*phi[i,t]
+#                cp.it <- c(cp.it, 1-sum(cp.it, na.rm=TRUE))
+#                na.it <- is.na(cp.it)
+#                y.it[na.it] <- NA
+#                g[k] <- g[k]*dmultinom(y.it[!na.it], M[k], cp.it[!na.it])
+#            }
+        #
+        #
+        #
         g1g2 <- g1*g2
         post[i,,1] <- g1g2 / sum(g1g2)
         for(t in 2:T) {
+
             if(!is.na(gam[i,t-1]) & !is.na(om[i,t-1])) {
                 for(n0 in N) {
                     for(n1 in N) {
@@ -844,12 +887,33 @@ if(identical(class(object)[1], "unmarkedFitGDS")) {
                     P <- P %*% P1
                 }
             }
+            #
+            #
+            #
             g1 <- rep(1, K+1)
-            for(j in 1:J) {
-                if(is.na(ya[i,j,t]) | is.na(pa[i,j,t]))
+            #####for(j in 1:J) {
+            ######if(is.na(ya[i,j,t]) | is.na(pa[i,j,t]))
+            if(all(is.na(ya[i,,t])) )
                     next
-                g1 <- g1 * dbinom(ya[i,j,t], N, pa[i,j,t])   #### Observation model
+            for(k in 1:(K+1)) {
+                y.it <- ya[i,,t]
+                ydot <- N[k]-sum(y.it, na.rm=TRUE)    # changed M[k] to N[k]
+                y.it <- c(y.it, ydot)
+                if(ydot < 0) {
+                    g[k] <- 0
+                    next
+                }
+                cp.it <- cpa[i,,t] #####*phi[i,t]  temp emig bit left from GDS
+                cp.it <- c(cp.it, 1-sum(cp.it, na.rm=TRUE))
+                na.it <- is.na(cp.it)
+                y.it[na.it] <- NA
+                g[k] <- g[k]*dmultinom(y.it[!na.it], N[k], cp.it[!na.it])
             }
+            ########g1 <- g1 * dbinom(ya[i,j,t], N, pa[i,j,t])   #### Observation model
+            #######}
+            #
+            #
+            #
             g <- colSums(P * post[i,,t-1]) * g1
             post[i,,t] <- g / sum(g)
         }
