@@ -683,7 +683,6 @@ setMethod("ranef", "unmarkedFitPCO",
 setMethod("ranef", "unmarkedFitDSO",
     function(object, ...)
 {
-    browser()
     dyn <- object@dynamics
     formlist <- object@formlist
     formula <- as.formula(paste(unlist(formlist), collapse=" "))
@@ -694,11 +693,13 @@ setMethod("ranef", "unmarkedFitDSO",
       imm <- FALSE
     else
       imm <- object@immigration
-
+### need a predict class for DSO
     lam <- predict(object, type="lambda")[,1] # Slow, use D$Xlam instead
+
     R <- length(lam)
     T <- object@data@numPrimary
-    p <- getP(object)   # Will this work for DSO object?  NEEDS DONE
+    # 
+    ###########    p <- getP(object)   # Will this work for DSO object?  NEEDS DONE
     K <- object@K
     N <- 0:K
     y <- getY(getData(object))
@@ -708,6 +709,7 @@ setMethod("ranef", "unmarkedFitDSO",
     cp <- getP(object)
     cp[is.na(y)] <- NA
 #####
+ browser()
 
     # andy added this block. COMMENT OUT THE IFF STATEMENT
 #####if(identical(class(object)[1], "unmarkedFitGDS")) {
