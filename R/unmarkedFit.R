@@ -953,6 +953,277 @@ setMethod("predict", "unmarkedFitPCO",
 })
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# andy just copied this over from PCO
+# NOTE: I DID NO EDITS TO THIS FUNCTION AT ALL , HOW CAN IT POSSIBLY WORK?
+
+setMethod("predict", "unmarkedFitDSO",
+    function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
+        appendData = FALSE, level=0.95, ...)
+{
+    if(type %in% c("psi", "alpha"))
+        stop(type, " is scalar, so use backTransform instead")
+    if(missing(newdata) || is.null(newdata))
+        newdata <- getData(object)
+    dynamics <- object@dynamics
+    immigration <- tryCatch(object@immigration, error=function(e) FALSE)
+    if(identical(dynamics, "notrend") & identical(type, "gamma"))
+        stop("gamma is a derived parameter for this model: (1-omega)*lambda")
+    if(identical(dynamics, "trend") && identical(type, "omega"))
+        stop("omega is not a parameter in the dynamics='trend' model")
+    if(!immigration && identical(type, "iota"))
+        stop("iota is not a parameter in the immigration=FALSE model")
+    formula <- object@formula
+    formlist <- object@formlist
+    if(inherits(newdata, "unmarkedFrame"))
+        cls <- "unmarkedFrame"
+    else if(identical(class(newdata)[1], "data.frame"))
+        cls <- "data.frame"
+    else if(identical(class(newdata)[1], "RasterStack"))
+        cls <- "RasterStack"
+    else
+        stop("newdata should be a data.frame, unmarkedFrame, or RasterStack")
+    if(identical(cls, "RasterStack"))
+        if(!require(raster))
+            stop("raster package must be loaded")
+    switch(cls,
+        unmarkedFrame = {
+            D <- getDesign(newdata, formula, na.rm = na.rm)
+            switch(type,
+                lambda = {
+                    X <- D$Xlam
+                    offset <- D$Xlam.offset
+                },
+                gamma = {
+                    X <- D$Xgam
+                    offset <- D$Xgam.offset
+                },
+                omega = {
+                    X <- D$Xom
+                    offset <- D$Xom.offset
+                },
+                iota = {
+                    X <- D$Xiota
+                    offset <- D$Xiota.offset
+                },
+                det = {
+                    X <- D$Xp
+                    offset <- D$Xp.offset
+                    })
+                },
+        data.frame = {
+            lambdaformula <- formlist$lambdaformula
+            gammaformula <- formlist$gammaformula
+            omegaformula <- formlist$omegaformula
+            pformula <- formlist$pformula
+            iotaformula <- formlist$iotaformula
+            switch(type,
+                lambda = {
+                    mf <- model.frame(lambdaformula, newdata)
+                    X <- model.matrix(lambdaformula, mf)
+                    offset <- model.offset(mf)
+                },
+                gamma = {
+                    mf <- model.frame(gammaformula, newdata)
+                    X <- model.matrix(gammaformula, mf)
+                    offset <- model.offset(mf)
+                },
+                omega = {
+                    mf <- model.frame(omegaformula, newdata)
+                    X <- model.matrix(omegaformula, mf)
+                    offset <- model.offset(mf)
+                },
+                iota = {
+                    mf <- model.frame(iotaformula, newdata)
+                    X <- model.matrix(iotaformula, mf)
+                    offset <- model.offset(mf)
+                },
+                det = {
+                    mf <- model.frame(pformula, newdata)
+                    X <- model.matrix(pformula, mf)
+                    offset <- model.offset(mf)
+                })
+            },
+        RasterStack = {
+            lambdaformula <- formlist$lambdaformula
+            gammaformula <- formlist$gammaformula
+            omegaformula <- formlist$omegaformula
+            pformula <- formlist$pformula
+
+            cd.names <- names(newdata)
+            npix <- prod(dim(newdata)[1:2])
+            isfac <- is.factor(newdata)
+            if(any(isfac))
+                stop("This method currently does not handle factors")
+            z <- as.data.frame(matrix(raster::getValues(newdata), npix))
+            names(z) <- cd.names
+            switch(type,
+                   lambda = {
+                       varnames <- all.vars(lambdaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                       mf <- model.frame(lambdaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   gamma = {
+                       varnames <- all.vars(gammaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                       mf <- model.frame(gammaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   omega = {
+                       varnames <- all.vars(omegaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                       mf <- model.frame(omegaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   det= {
+                       varnames <- all.vars(pformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                       mf <- model.frame(pformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   })
+    })
+    out <- data.frame(matrix(NA, nrow(X), 4,
+        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+    mix <- object@mixture
+    lam.mle <- coef(object, type="lambda")
+    if(identical(mix, "ZIP") & identical(type, "lambda")) {
+        psi.hat <- plogis(coef(object, type="psi"))
+        if(is.null(offset))
+            offset <- rep(0, nrow(X))
+        warning("Method to compute SE for ZIP model has not been written")
+    }
+    for(i in 1:nrow(X)) {
+        if(nrow(X) > 5000) {
+            if(i %% 1000 == 0)
+                cat("  doing row", i, "of", nrow(X), "\n")
+        }
+        if(any(is.na(X[i,])))
+            next
+        if(identical(mix, "ZIP") & identical(type, "lambda")) {
+            out$Predicted[i] <-
+                X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
+            if(backTransform)
+                out$Predicted[i] <- exp(out$Predicted[i])
+            out$SE <- NA
+            ci <- c(NA, NA)
+        } else {
+            lc <- linearComb(object, X[i,], type, offset = offset[i])
+            if(backTransform)
+                lc <- backTransform(lc)
+            out$Predicted[i] <- coef(lc)
+            out$SE[i] <- SE(lc)
+            ci <- confint(lc, level=level)
+        }
+        out$lower[i] <- ci[1]
+        out$upper[i] <- ci[2]
+    }
+    if(appendData) {
+        if(!identical(cls, "RasterStack"))
+            out <- data.frame(out, as(newdata, "data.frame"))
+        else
+            out <- data.frame(out, z)
+    }
+    if(identical(cls, "RasterStack")) {
+        E.mat <- matrix(out[,1], dim(newdata)[1], dim(newdata)[2],
+                        byrow=TRUE)
+        E.raster <- raster::raster(E.mat)
+        raster::extent(E.raster) <- raster::extent(newdata)
+        out.rasters <- list(E.raster)
+        for(i in 2:ncol(out)) {
+            i.mat <- matrix(out[,i], dim(newdata)[1], dim(newdata)[2],
+                            byrow=TRUE)
+            i.raster <- raster::raster(i.mat)
+            raster::extent(i.raster) <- raster::extent(newdata)
+            out.rasters[[i]] <- i.raster
+        }
+        out.stack <- stack(out.rasters)
+        names(out.stack) <- colnames(out)
+        out <- out.stack
+    }
+    return(out)
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 setMethod("predict", "unmarkedFitGMM",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
         appendData = FALSE, level=0.95, ...)
@@ -1108,6 +1379,73 @@ setMethod("predict", "unmarkedFitGMM",
     }
     return(out)
 })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2351,22 +2689,23 @@ setMethod("getP", "unmarkedFitGDS",
 setMethod("getP", "unmarkedFitDSO",
     function(object, na.rm = TRUE)
 {
-    browser()
     formula <- object@formula
     detformula <- as.formula(formula[[2]])
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    Xdet <- designMats$Xdet
+    Xdet <- designMats$Xp   # Note "Xp" here not Xdet -- differs by function
     M <- nrow(y)
     T <- umf@numPrimary
     J <- ncol(y) / T
     ## copied from distsampOpen.R because getDesign isn't written yet
     Xdet<- Xdet[1:(M*T),,drop=FALSE]
     Xdet.offset <- designMats$Xdet.offset
-    if (is.null(Xdet.offset))
-        Xdet.offset <- rep(0, nrow(Xdet))
-    
+   # andy edited this line.....  Jan 7 2016.... not sure if this is general
+    if (is.null(Xdet.offset)){
+     #   Xdet.offset <- rep(0, nrow(Xdet))
+         Xdet.offset <- rep(0, length(Xdet))
+    }
     ppars <- coef(object, type = "det")
     db <- umf@dist.breaks
     w <- diff(db)

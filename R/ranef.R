@@ -686,7 +686,9 @@ setMethod("ranef", "unmarkedFitDSO",
     dyn <- object@dynamics
     formlist <- object@formlist
     formula <- as.formula(paste(unlist(formlist), collapse=" "))
+cat("getDesign....",fill=TRUE)
     D <- getDesign(object@data, formula)
+cat("done with getDesign", fill=TRUE)
     delta <- D$delta
     deltamax <- max(delta, na.rm=TRUE)
     if(!.hasSlot(object, "immigration")) #For backwards compatibility
@@ -695,10 +697,11 @@ setMethod("ranef", "unmarkedFitDSO",
       imm <- object@immigration
 ### need a predict class for DSO
     lam <- predict(object, type="lambda")[,1] # Slow, use D$Xlam instead
-
+cat("Done using predict", fill=TRUE)
+    cat("dim lam: ", dim(lam), fill=TRUE)
     R <- length(lam)
     T <- object@data@numPrimary
-    # 
+    #
     ###########    p <- getP(object)   # Will this work for DSO object?  NEEDS DONE
     K <- object@K
     N <- 0:K
@@ -706,10 +709,12 @@ setMethod("ranef", "unmarkedFitDSO",
     J <- ncol(y)/T
 ##
 ###
+    cat("using getP",fill=TRUE)
     cp <- getP(object)
+cat("done using getP", fill=TRUE)
     cp[is.na(y)] <- NA
 #####
- browser()
+
 
     # andy added this block. COMMENT OUT THE IFF STATEMENT
 #####if(identical(class(object)[1], "unmarkedFitGDS")) {
@@ -774,7 +779,7 @@ setMethod("ranef", "unmarkedFitDSO",
 #####
     cpa <- array(cp, c(R,J,T))   # ADDED
 
-    pa <- array(p, c(R, J, T))  # probably not needed for DSO
+####    pa <- array(p, c(R, J, T))  # probably not needed for DSO
     post <- array(NA_real_, c(R, length(N), T))
     colnames(post) <- N
     mix <- object@mixture
@@ -837,14 +842,14 @@ setMethod("ranef", "unmarkedFitDSO",
                 ydot <- N[k]-sum(y.it, na.rm=TRUE)    # changed M[k] to N[k]
                 y.it <- c(y.it, ydot)
                 if(ydot < 0) {
-                    g[k] <- 0
+                    g1[k] <- 0
                     next
                 }
                 cp.it <- cpa[i,,t] #####*phi[i,t]  temp emig bit left from GDS
                 cp.it <- c(cp.it, 1-sum(cp.it, na.rm=TRUE))
                 na.it <- is.na(cp.it)
                 y.it[na.it] <- NA
-                g[k] <- g[k]*dmultinom(y.it[!na.it], N[k], cp.it[!na.it])
+                g1[k] <- g1[k]*dmultinom(y.it[!na.it], N[k], cp.it[!na.it])
             }
             ####     g1 <- g1 * dbinom(ya[i,j,1], N, pa[i,j,1])   ### binomial Observation model right here
 
@@ -903,14 +908,14 @@ setMethod("ranef", "unmarkedFitDSO",
                 ydot <- N[k]-sum(y.it, na.rm=TRUE)    # changed M[k] to N[k]
                 y.it <- c(y.it, ydot)
                 if(ydot < 0) {
-                    g[k] <- 0
+                    g1[k] <- 0
                     next
                 }
                 cp.it <- cpa[i,,t] #####*phi[i,t]  temp emig bit left from GDS
                 cp.it <- c(cp.it, 1-sum(cp.it, na.rm=TRUE))
                 na.it <- is.na(cp.it)
                 y.it[na.it] <- NA
-                g[k] <- g[k]*dmultinom(y.it[!na.it], N[k], cp.it[!na.it])
+                g1[k] <- g1[k]*dmultinom(y.it[!na.it], N[k], cp.it[!na.it])
             }
             ########g1 <- g1 * dbinom(ya[i,j,t], N, pa[i,j,t])   #### Observation model
             #######}
