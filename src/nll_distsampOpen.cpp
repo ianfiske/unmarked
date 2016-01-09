@@ -333,7 +333,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		/* add error checking/handling here */
                   // andy 12/24 
                   // cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
-                cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi  
+ /// wtf?        cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi  
 		cp = std::max(cp, DOUBLE_XMIN);
 		cpsum = cpsum+cp;
 		part2 = log(cp) * y(i,j,t);
@@ -440,9 +440,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
             // andy 12/24
             //	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
   
-
-
-
 	  cp = std::max(cp, DOUBLE_XMIN);
 	  cpsum = cpsum+cp;
 	  part2 = log(cp) * y(i,j,first_i);

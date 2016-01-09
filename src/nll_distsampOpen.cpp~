@@ -431,7 +431,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		frogdick  = lower + subint*intwidth + intwidth/2; 
 		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
 	      }
-               cp = result * / a(i,j) * u(i,j); // M_2PI is 2*pi
+               cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
 
 	      }
 
