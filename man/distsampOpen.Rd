@@ -176,47 +176,31 @@ if(type=="line"){
     cp <- array(cp, c(J, M, T))
     cp <- matrix(aperm(cp, c(2,1,3)), M)
     cat("max(N) =", max(N), "\n")
-    return(matrix(y, M))
+    return(list(y=matrix(y, M),N=N))
 }
 library(unmarked)
 set.seed(711)
-lambda <- 4
+lambda <- 12
 gamma <- 2
 omega <- 0.5
 sigma <- 20
 T <- 20
-
-# Do one case
-y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="line")
-umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T, 
-    dist.breaks = c(0, 25, 50, 75, 100), survey="line",
-unitsIn="m",tlength=rep(1, 200) )
-# want to test this out
-fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=40,keyfun="half",
-                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
-                 se=FALSE, nintervals=5)
-
-
 simout<- matrix(NA,nrow=100,ncol=4)
 for(sim in 1:100){
-y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,
-type="line")
+y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="line")$y
 colSums(y.sim7)
 umf7 <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
-    dist.breaks = c(0, 25, 50, 75, 100), survey="line",
-unitsIn="m",tlength=rep(1, 200) )
+    dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200) )
 
-fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=150,
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
-                 se=FALSE, nintervals=5)
+                 se=FALSE, nintervals = 12)
 simout[sim,]<- fm@opt$par
 
 }
+colMeans(simout)
 
-
-
-
-
+# results for lambda = 4 seem to work
 # results of using nintervals=5
 #> apply(simout,2,mean)
 #[1] 1.37376613 0.65539517 0.05327946 2.99762181
@@ -235,23 +219,83 @@ simout[sim,]<- fm@opt$par
 #> exp(2.995)
 #[1] 19.98536
  
- 
-# Point transect test 
 
-y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="point")
+
+library(unmarked)
+
+set.seed(12)
+y.sim7 <- sim7(lambda=6, gamma, omega, sigma=50, M=200, T=T,type="line")$y
 umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T, 
+    dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200))
+
+# want to test this out
+ 
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=120,keyfun="half",
+                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
+                 se=FALSE, nintervals=5)
+
+set.seed(123)
+y.sim7 <- sim7(lambda=12, gamma, omega, sigma=50, M=200, T=T,type="point")
+umf7b <- unmarkedFrameDSO(y = y.sim7$y, numPrimary=T, 
     dist.breaks = c(0, 25, 50, 75, 100), survey="point", unitsIn="m" )
 
 # want to test this out
  
-fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=40,keyfun="half",
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=100,keyfun="half",
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
                  se=FALSE, nintervals=5)
 
+victory<-  ranef(fm)
+Nhat.mn<- bup(victory)
+Nhat.md<- bup(victory,"mode")
+
+ N<- y.sim7$N
+n<- matrix(NA,nrow=200,ncol=T)
+mn<- matrix(NA,nrow=200,ncol=T)
+idx<- sort(rep(1:20,4))
+for(s in 1:20){
+ tmpy<- y.sim7$y[s,]
+ n[s,]<- tapply(tmpy,idx,sum)
+ pp<- victory@post[s,,]
+ mn[s,]<- apply( (row(pp)-1)*pp,2,sum)
+ }
 
 
 
 
+## Now simulate the point transect case
+set.seed(711)
+lambda <- 4
+gamma <- 2
+omega <- 0.5
+sigma <- 20
+T <- 20
+simout<- matrix(NA,nrow=100,ncol=4)
+for(sim in 1:100){
+y.sim7 <- sim7(lambda, gamma, omega, sigma, M=200, T=T,type="point")
+colSums(y.sim7)
+umf7 <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
+    dist.breaks = c(0, 25, 50, 75, 100), survey="point", unitsIn="m" )
+
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7, K=40,
+                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
+                 se=FALSE, nintervals = 5)
+simout[sim,]<- fm@opt$par
+
+}
+
+
+# results:
+#> apply(simout,2,mean)
+#[1]  1.37105167  0.64604188 -0.09652492  2.99713509
+#> exp(1.37)
+#[1] 3.935351
+#> exp(0.646)
+#[1] 1.907894
+#> plogis(-0.0965)
+#[1] 0.4758937
+#> exp(2.997)
+#[1] 20.02537
 
 
 }
