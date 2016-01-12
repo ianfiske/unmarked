@@ -170,7 +170,7 @@ if(type=="line"){
         S[i,t] <- rbinom(1, N[i,t], omega)
         G[i,t] <- rpois(1, gamma)
         N[i,t+1] <- S[i,t] + G[i,t]
-        y[i,1:J,t+1] <- rmultinom(1, N[i,t], cp)[1:J]
+        y[i,1:J,t+1] <- rmultinom(1, N[i,t+1], cp)[1:J]
         }
     }
     cp <- array(cp, c(J, M, T))

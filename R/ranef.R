@@ -697,7 +697,8 @@ cat("done with getDesign", fill=TRUE)
       imm <- object@immigration
 ### need a predict class for DSO
     lam <- predict(object, type="lambda")[,1] # Slow, use D$Xlam instead
-cat("Done using predict", fill=TRUE)
+
+    cat("Done using predict", fill=TRUE)
     cat("dim lam: ", dim(lam), fill=TRUE)
     R <- length(lam)
     T <- object@data@numPrimary
@@ -834,7 +835,7 @@ cat("done using getP", fill=TRUE)
 #            if(is.na(ya[i,j,1]) | is.na(pa[i,j,1]))    # commented out. Note: I thhink pa not needed....
 #                next
          t<- 1
-             if(all(is.na(ya[i,,t])) )
+         if(all(is.na(ya[i,,t])) )
                  next
          # added
              for(k in 1:(K+1)) {
@@ -916,6 +917,7 @@ cat("done using getP", fill=TRUE)
                 na.it <- is.na(cp.it)
                 y.it[na.it] <- NA
                 g1[k] <- g1[k]*dmultinom(y.it[!na.it], N[k], cp.it[!na.it])
+
             }
             ########g1 <- g1 * dbinom(ya[i,j,t], N, pa[i,j,t])   #### Observation model
             #######}
