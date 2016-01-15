@@ -9,7 +9,7 @@ RcppExport SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP
 
 // constant model
 //void tp1(arma::mat& g3, int lk, double gam, double om);
-void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om);
+//void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om);
 
 
 
@@ -29,16 +29,16 @@ void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, 
 //void tp5(arma::mat& g3, int lk, double gam, double om);
 
 // autoregressive + immigration model
-void tp6(arma::mat& g3, int lk, double gam, double om, double imm);
+//void tp6(arma::mat& g3, int lk, double gam, double om, double imm);
 
 // trend + immigration model
-void tp7(arma::mat& g3, int lk, double gam, double imm);
+//void tp7(arma::mat& g3, int lk, double gam, double imm);
 
 // Ricker + immigration model
-void tp8(arma::mat& g3, int lk, double gam, double om, double imm);
+//void tp8(arma::mat& g3, int lk, double gam, double om, double imm);
 
 // Gompertz + immigration model
-void tp9(arma::mat& g3, int lk, double gam, double om, double imm);
+//void tp9(arma::mat& g3, int lk, double gam, double om, double imm);
 
 
 #endif
