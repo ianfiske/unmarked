@@ -422,6 +422,14 @@ formatMult <- function(df.in)
                                                            is.null)])
     if(nrow(yearlySiteCovs) == 0) yearlySiteCovs <- NULL
 
+    # Extract siteCovs and yearlySiteCovs from obsvars
+    finalobsvars.df <- as.data.frame(obsvars.df[, !(names(obsvars.df) %in%
+                                                      c(names(siteCovs),
+                                                        names(yearlySiteCovs)))])
+    names(finalobsvars.df) <- names(obsvars.df)[!(names(obsvars.df) %in% 
+                                                    c(names(siteCovs),
+                                                      names(yearlySiteCovs)))]
+
     umf <- unmarkedMultFrame(y = y, siteCovs = siteCovs,
                              obsCovs = obsvars.df, yearlySiteCovs =
                              yearlySiteCovs,

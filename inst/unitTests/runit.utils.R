@@ -27,38 +27,41 @@ test.formatMult <- function() {
   checkEquals(withfac,
               new("unmarkedMultFrame"
                   , numPrimary = 2L
-                  , yearlySiteCovs = structure(list(ysfac = structure(c(1L, 1L, 1L, 2L, 1L, 2L, 1L, 2L), 
-                                                                      .Label = c("0", "1"), class = "factor"), 
-                                                    yscov = c(1.3, 6.5, 2.6, 7.8, 3.9, 9.1, 5.2, 10.4)), 
-                                               .Names = c("ysfac", "yscov"), row.names = c(NA, -8L), class = "data.frame")
+                  , yearlySiteCovs = structure(list(ysfac = structure(c(1L, 1L, 1L, 2L, 1L, 2L, 1L, 
+                                                                        2L), .Label = c("0", "1"), class = "factor"), yscov = c(1.3, 
+                                                                                                                                6.5, 2.6, 7.8, 3.9, 9.1, 5.2, 10.4)), .Names = c("ysfac", "yscov"
+                                                                                                                                ), row.names = c(NA, -8L), class = "data.frame")
                   , y = structure(c(0L, 1L, 3L, 3L, 2L, 2L, 2L, 1L, 1L, 0L, 3L, 3L, 1L, 
                                     1L, 0L, 0L, 3L, 1L, 2L, 2L, 2L, 1L, 3L, 3L), .Dim = c(4L, 6L), .Dimnames = list(
-                                      structure(c("A", "B", "C", "D"), .Names = c("1", "43", "85", "127")), 
-                                      structure(c("2015-1", "2015-2", "2015-3", "2016-1", "2016-2", "2016-3"), 
-                                                .Names = c("1", "8", "15", "22", "29", "36"))))
-                  , obsCovs = structure(list(visit = structure(c(1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 
-                                                                 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L), 
-                                                               .Label = c("1", "2", "3"), class = "factor"), 
-                                             ysfac = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 
-                                                                 2L, 2L, 2L, 1L, 1L, 1L, 2L, 2L, 2L), 
-                                                               .Label = c("0", "1"), class = "factor"), 
-                                             sitefac = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 
-                                                                   2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L), 
-                                                                 .Label = c("0", "1"), class = "factor"), 
-                                             obsfac = structure(c(2L, 1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 2L, 1L, 2L, 2L, 1L, 
-                                                                  1L, 2L, 2L, 2L, 1L, 2L, 2L, 1L, 1L), .Label = c("A", "B"), class = "factor"), 
+                                      structure(c("A", "B", "C", "D"), .Names = c("1", "43", "85", 
+                                                                                  "127")), structure(c("2015-1", "2015-2", "2015-3", "2016-1", 
+                                                                                                       "2016-2", "2016-3"), .Names = c("1", "8", "15", "22", "29", 
+                                                                                                                                       "36"))))
+                  , obsCovs = structure(list(visit = structure(c(1L, 2L, 3L, 1L, 2L, 3L, 1L, 
+                                                                 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 
+                                                                 3L), .Label = c("1", "2", "3"), class = "factor"), ysfac = structure(c(1L, 
+                                                                                                                                        1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 2L, 2L, 
+                                                                                                                                        2L, 1L, 1L, 1L, 2L, 2L, 2L), .Label = c("0", "1"), class = "factor"), 
+                                             sitefac = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+                                                                   1L, 1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L
+                                             ), .Label = c("0", "1"), class = "factor"), obsfac = structure(c(2L, 
+                                                                                                              1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 2L, 1L, 2L, 2L, 1L, 1L, 
+                                                                                                              2L, 2L, 2L, 1L, 2L, 2L, 1L, 1L), .Label = c("A", "B"), class = "factor"), 
                                              yscov = c(1.3, 1.3, 1.3, 6.5, 6.5, 6.5, 2.6, 2.6, 2.6, 7.8, 
                                                        7.8, 7.8, 3.9, 3.9, 3.9, 9.1, 9.1, 9.1, 5.2, 5.2, 5.2, 10.4, 
-                                                       10.4, 10.4), 
-                                             scov = c(2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8), 
-                                             ocov = c(0.28, -1.41, -0.31, 0.05, -0.53, 0.84, -0.95, 1.63, 0.87, 1.03, 1.41, 
-                                                      1.25, -0.32, 0.11, -0.45, -0.83, 0.17, 0.28, -0.13, -1.86, -1.82, 0.11, 1.29, -0.31)),
-                                        .Names = c("visit", "ysfac", "sitefac", "obsfac", "yscov", "scov", "ocov"), 
-                                        row.names = c(NA, -24L), class = "data.frame")
-                  , siteCovs = structure(list(sitefac = structure(c(1L, 1L, 2L, 2L), .Label = c("0", "1"), class = "factor"), 
-                                              scov = c(2, 4, 6, 8)), .Names = c("sitefac", "scov"), row.names = c(NA, -4L), class = "data.frame")
+                                                       10.4, 10.4), scov = c(2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 
+                                                                             6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8), ocov = c(0.28, -1.41, 
+                                                                                                                           -0.31, 0.05, -0.53, 0.84, -0.95, 1.63, 0.87, 1.03, 1.41, 
+                                                                                                                           1.25, -0.32, 0.11, -0.45, -0.83, 0.17, 0.28, -0.13, -1.86, 
+                                                                                                                           -1.82, 0.11, 1.29, -0.31)), .Names = c("visit", "ysfac", 
+                                                                                                                                                                  "sitefac", "obsfac", "yscov", "scov", "ocov"), row.names = c(NA, 
+                                                                                                                                                                                                                               -24L), class = "data.frame")
+                  , siteCovs = structure(list(sitefac = structure(c(1L, 1L, 2L, 2L), .Label = c("0", 
+                                                                                                "1"), class = "factor"), scov = c(2, 4, 6, 8)), .Names = c("sitefac", 
+                                                                                                                                                           "scov"), row.names = c(NA, -4L), class = "data.frame")
                   , mapInfo = NULL
                   , obsToY = structure(c(1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 
-                                         0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1), .Dim = c(6L, 6L))
+                                         0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1), .Dim = c(6L, 
+                                                                                                            6L))
               ))
 }
