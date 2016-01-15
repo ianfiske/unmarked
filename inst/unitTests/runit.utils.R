@@ -39,23 +39,14 @@ test.formatMult <- function() {
                                                                                                                                        "36"))))
                   , obsCovs = structure(list(visit = structure(c(1L, 2L, 3L, 1L, 2L, 3L, 1L, 
                                                                  2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 3L, 1L, 2L, 
-                                                                 3L), .Label = c("1", "2", "3"), class = "factor"), ysfac = structure(c(1L, 
-                                                                                                                                        1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 2L, 2L, 
-                                                                                                                                        2L, 1L, 1L, 1L, 2L, 2L, 2L), .Label = c("0", "1"), class = "factor"), 
-                                             sitefac = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
-                                                                   1L, 1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L
-                                             ), .Label = c("0", "1"), class = "factor"), obsfac = structure(c(2L, 
-                                                                                                              1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 2L, 1L, 2L, 2L, 1L, 1L, 
-                                                                                                              2L, 2L, 2L, 1L, 2L, 2L, 1L, 1L), .Label = c("A", "B"), class = "factor"), 
-                                             yscov = c(1.3, 1.3, 1.3, 6.5, 6.5, 6.5, 2.6, 2.6, 2.6, 7.8, 
-                                                       7.8, 7.8, 3.9, 3.9, 3.9, 9.1, 9.1, 9.1, 5.2, 5.2, 5.2, 10.4, 
-                                                       10.4, 10.4), scov = c(2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 
-                                                                             6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8), ocov = c(0.28, -1.41, 
-                                                                                                                           -0.31, 0.05, -0.53, 0.84, -0.95, 1.63, 0.87, 1.03, 1.41, 
-                                                                                                                           1.25, -0.32, 0.11, -0.45, -0.83, 0.17, 0.28, -0.13, -1.86, 
-                                                                                                                           -1.82, 0.11, 1.29, -0.31)), .Names = c("visit", "ysfac", 
-                                                                                                                                                                  "sitefac", "obsfac", "yscov", "scov", "ocov"), row.names = c(NA, 
-                                                                                                                                                                                                                               -24L), class = "data.frame")
+                                                                 3L), .Label = c("1", "2", "3"), class = "factor"), obsfac = structure(c(2L, 
+                                                                                                                                         1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 2L, 1L, 2L, 2L, 1L, 1L, 2L, 
+                                                                                                                                         2L, 2L, 1L, 2L, 2L, 1L, 1L), .Label = c("A", "B"), class = "factor"), 
+                                             ocov = c(0.28, -1.41, -0.31, 0.05, -0.53, 0.84, -0.95, 1.63, 
+                                                      0.87, 1.03, 1.41, 1.25, -0.32, 0.11, -0.45, -0.83, 0.17, 
+                                                      0.28, -0.13, -1.86, -1.82, 0.11, 1.29, -0.31)), .Names = c("visit", 
+                                                                                                                 "obsfac", "ocov"), class = "data.frame", row.names = c(NA, -24L
+                                                                                                                 ))
                   , siteCovs = structure(list(sitefac = structure(c(1L, 1L, 2L, 2L), .Label = c("0", 
                                                                                                 "1"), class = "factor"), scov = c(2, 4, 6, 8)), .Names = c("sitefac", 
                                                                                                                                                            "scov"), row.names = c(NA, -4L), class = "data.frame")

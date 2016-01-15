@@ -431,7 +431,7 @@ formatMult <- function(df.in)
                                                       names(yearlySiteCovs)))]
 
     umf <- unmarkedMultFrame(y = y, siteCovs = siteCovs,
-                             obsCovs = obsvars.df, yearlySiteCovs =
+                             obsCovs = finalobsvars.df, yearlySiteCovs =
                              yearlySiteCovs,
                              numPrimary = nY)
     return(umf)
