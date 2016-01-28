@@ -193,7 +193,7 @@ if(identical(fix, "omega")) {
 }
 
 
-nP <- nAP + nGP + nOP + nDP + (mixture!="P")
+nP <- nAP + nGP + nOP + nDP + (mixture!="P") + (keyfun == "hazard")
 if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
 
@@ -211,20 +211,26 @@ for(i in 1:nrow(I)) {
     Ip[[i]] <- as.integer(I[i,2]-Z)
 }
 
-
-
-
 nll <- function(parms) {
     beta.lam <- parms[1:nAP]
     beta.gam <- parms[(nAP+1):(nAP+nGP)]
     beta.om <- parms[(nAP+nGP+1):(nAP+nGP+nOP)]
     beta.sig <- parms[(nAP+nGP+nOP+1):(nAP+nGP+nOP+nDP)]
     beta.iota<- parms[(nAP + nGP + nOP + 1):(nAP + nGP + nOP + nDP + nIP)]
-# 12/31/2015 Andy added arguments "survey" and also "nintervals" -- number of integration slices      
+# 12/31/2015 Andy added arguments "survey" and also "nintervals" -- number of integration slices
     log.alpha <- 1
-    if(mixture %in% c("NB", "ZIP"))
+    scale<- -99.0
+    if(mixture %in% c("NB", "ZIP") & keyfun=="hazard"){
         log.alpha <- parms[nP]
-   .Call("nll_distsampOpen",
+        scale<- -1*exp(parms[nP+1])
+    }
+    if(mixture %in% c("P") & keyfun=="hazard"){
+        log.alpha <- 1
+        scale<- -1*exp(parms[nP])
+    }
+
+
+    .Call("nll_distsampOpen",
           ym, yt,
           Xlam, Xgam, Xom, Xsig, Xiota,
           beta.lam, beta.gam, beta.om, beta.sig, beta.iota, log.alpha,
@@ -233,7 +239,8 @@ nll <- function(parms) {
           lk, mixture, first, last, M, J, T,
           delta, dynamics, survey, fix, go.dims, immigration,
           I, I1, Ib, Ip,
-          a, u, db, nintervals, 
+          scale,
+          a, u, db, nintervals, keyfun,
           PACKAGE = "unmarked")
 }
 

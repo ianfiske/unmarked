@@ -75,7 +75,7 @@ void tp5ds(arma::mat& g3, int lk, double gam, double om, double imm) {
 
 
 
-SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP survey_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP a_, SEXP u_, SEXP db_, SEXP nintervals_) {
+SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xsig_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_sig_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP survey_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP scale_, SEXP a_, SEXP u_, SEXP db_, SEXP nintervals_, SEXP keyfun_) {
 
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
@@ -94,7 +94,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   arma::colvec beta_om = as<arma::colvec>(beta_om_);
   arma::colvec beta_sig = as<arma::colvec>(beta_sig_);
   arma::colvec beta_iota = as<arma::colvec>(beta_iota_);
-  double log_alpha = as<double>(log_alpha_);
+    double log_alpha = as<double>(log_alpha_);
+//    double scale = Rcpp::as<double>(scale_); 
+  double scale = as<double>(scale_); 
   arma::colvec Xlam_offset = as<arma::colvec>(Xlam_offset_);
   arma::colvec Xgam_offset = as<arma::colvec>(Xgam_offset_);
   arma::colvec Xom_offset = as<arma::colvec>(Xom_offset_);
@@ -123,7 +125,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   arma::imat ytna = as<arma::imat>(ytna_); // y[i,,t] are all NA
   arma::imat ynam = as<arma::imat>(yna_);  // y[i,j,t] is NA
   arma::imat delta = as<arma::imat>(delta_);
-
+  std::string keyfun = as<std::string>(keyfun_);
   arma::mat a = as<arma::mat>(a_);
   arma::mat u = as<arma::mat>(u_);
   Rcpp::NumericVector db(db_);
@@ -202,6 +204,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
   double upper=0.0;
   double result=0.0;
   double frogdick = 0.0; 
+  double parta = 0.0;    
   double result2 = 0.0; 
 
   // shouldn't be done in likelihood
@@ -286,6 +289,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		upper = db[j+1];
 		result = 0.0;
                 frogdick = 0.0; 
+                parta = 0.0;    
                 result2 = 0.0; 
               
 
@@ -307,25 +311,67 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 		//        	result = (Rf_pnorm5(upper, 0.0, sig(i,0), true, false) -
      		//	Rf_pnorm5(lower, 0.0, sig(i,0), true, false)) / f0;  
 		// The code below here tries to do the integral by summation 
-              intwidth = (upper-lower)/nintervals; 
-	      if(survey == "line"){      
-            for(int subint=0; subint<nintervals; subint++) {
-		frogdick  = lower + subint*intwidth + intwidth/2; 
+       intwidth = (upper-lower)/nintervals; 
+                  
+     if(keyfun=="uniform"){
+                      cp = u(i,j);
+      }
+     if(keyfun=="halfnorm"){
+            if(survey == "line"){      
+              for(int subint=0; subint<nintervals; subint++) {
+	 	frogdick  = lower + subint*intwidth + intwidth/2; 
 		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
 	      }
                     cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi  
-              }
-	      if(survey == "point"){      
-            for(int subint=0; subint<nintervals; subint++) {
-		frogdick  = lower + subint*intwidth + intwidth/2; 
-		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
-            }
+             }
+           if(survey == "point"){      
+              for(int subint=0; subint<nintervals; subint++) {
+		 frogdick  = lower + subint*intwidth + intwidth/2; 
+		 result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
+               }
+              cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
+           }              
+       }
+                  
+    if(keyfun=="exp"){
+            if(survey == "line"){      
+              for(int subint=0; subint<nintervals; subint++) {
+	 	frogdick  = lower + subint*intwidth + intwidth/2; 
+		result += exp(-frogdick/(sig(i,0)))*intwidth; 
+	      }
+                    cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi  
+             }
+           if(survey == "point"){      
+              for(int subint=0; subint<nintervals; subint++) {
+		 frogdick  = lower + subint*intwidth + intwidth/2; 
+		 result += exp(-frogdick/(sig(i,0)))*frogdick*M_2PI*intwidth; 
+               }
+              cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
+           }              
+    }
+     if(keyfun=="hazard"){
+            if(survey == "line"){      
+              for(int subint=0; subint<nintervals; subint++) {
+                  frogdick  = lower + subint*intwidth + intwidth/2; 
+                  parta =  -frogdick/sig(i,0) ;
+		  result += (1-  exp( pow( parta, scale) ) ) *intwidth; 
+	      }
+                  cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi  
+             }
+           if(survey == "point"){      
+              for(int subint=0; subint<nintervals; subint++) {
+		 frogdick  = lower + subint*intwidth + intwidth/2; 
+                 parta = -frogdick/sig(i,0) ;
+                 result +=(1- exp( pow( parta, scale) ) )*frogdick*M_2PI*intwidth; 
+               }
                  cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
-
-              }
-
-            // eval at this point:   lower + subint*intwidth + (intwidth/2)
-  //                  result +=
+           }
+     }
+ 
+                  
+                  
+ // eval at this point:   lower + subint*intwidth + (intwidth/2)
+ //                  result +=
 	
 		/*      result = Rdqags(gxhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
 		       &abserr, &neval, &ier, &limit, &lenw, &last2, &iwork,
@@ -418,24 +464,68 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	  /*	result =  Rdqags(gxhn, ex, &lower, &upper, &epsabs, &epsrel, &result,
 		&abserr, &neval, &ier, &limit, &lenw, &last2, &iwork, &work); */
 
-              intwidth = (upper-lower)/nintervals; 
-	      if(survey == "line"){
-              for(int subint=0; subint<nintervals; subint++) {
-		frogdick  = lower + subint*intwidth + intwidth/2; 
-		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
-	      }
+            intwidth = (upper-lower)/nintervals; 
+            
+            if(keyfun=="uniform"){
+                      cp = u(i,j);
+            }
+            if(keyfun == "halfnorm"){
+            if(survey == "line"){
+                 for(int subint=0; subint<nintervals; subint++) {
+	        	frogdick  = lower + subint*intwidth + intwidth/2; 
+	        	result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*intwidth; 
+	          }
          	  cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi
-              }
+            }
 	      if(survey == "point"){
+                  for(int subint=0; subint<nintervals; subint++) {
+		    frogdick  = lower + subint*intwidth + intwidth/2; 
+		    result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
+  	          }
+                 cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
+               }
+             }
+            
+            
+            if(keyfun == "exp"){
+            if(survey == "line"){
+                 for(int subint=0; subint<nintervals; subint++) {
+	        	frogdick  = lower + subint*intwidth + intwidth/2; 
+	        	result += exp(-frogdick/(sig(i,0)))*intwidth; 
+	          }
+         	  cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi
+            }
+	      if(survey == "point"){
+                  for(int subint=0; subint<nintervals; subint++) {
+		    frogdick  = lower + subint*intwidth + intwidth/2; 
+		    result += exp(-frogdick/(sig(i,0)))*frogdick*M_2PI*intwidth; 
+  	          }
+                 cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
+               }
+             }
+            
+            
+         
+     if(keyfun=="hazard"){
+            if(survey == "line"){      
               for(int subint=0; subint<nintervals; subint++) {
-		frogdick  = lower + subint*intwidth + intwidth/2; 
-		result += exp(-frogdick*frogdick/(2*sig(i,0)*sig(i,0)))*frogdick*M_2PI*intwidth; 
-	      }
-               cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
-
-	      }
-
-
+                  frogdick  = lower + subint*intwidth + intwidth/2; 
+                  parta =  -frogdick/sig(i,0) ;
+	          result += (1-  exp( pow( parta, scale) ) ) *intwidth; 
+  	      }
+                    cp = result / a(i,j) * u(i,j); // M_2PI is 2*pi  
+             }
+           if(survey == "point"){      
+              for(int subint=0; subint<nintervals; subint++) {
+		 frogdick  = lower + subint*intwidth + intwidth/2; 
+                 parta = -frogdick/sig(i,0) ;
+                 result +=(1- exp( pow( parta, scale) ) )*frogdick*M_2PI*intwidth; 
+               }
+              cp = result  / a(i,j) * u(i,j); // M_2PI is 2*pi
+           }
+    }     
+         
+            
             /* add error checking/handling here */
             // andy 12/24
             //	  cp = result * M_2PI / a(i,j) * u(i,j); // M_2PI is 2*pi
