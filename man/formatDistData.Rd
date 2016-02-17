@@ -71,9 +71,6 @@ cutpt <- seq(0, 100, by=25)
 y2 <- formatDistData(dat2, "distance", "site", cutpt, "visit")
 umf <- unmarkedFrameGDS(y=y2, numPrimary=4, survey="point",
                         dist.breaks=cutpt, unitsIn="m")
-
-}
- 
  ## Example for datda from multiple occasions with effortMatrix
  
  dat3 <-  data.frame(distance=1:100, site=gl(5, 20), visit=factor(rep(1:4, each=5)))
@@ -82,3 +79,4 @@ umf <- unmarkedFrameGDS(y=y2, numPrimary=4, survey="point",
  effortMatrix <- matrix(ncol=4, nrow=5, rbinom(20,1,0.8))
  
  y3 <- formatDistData(dat2, "distance", "site", cutpt, "visit", effortMatrix)
+ }
