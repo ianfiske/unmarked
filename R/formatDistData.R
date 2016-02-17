@@ -22,13 +22,15 @@ formatDistData <- function (distData, distCol, transectNameCol, dist.breaks, occ
   }
   M <- nlevels(transects)
   J <- length(dist.breaks) - 1
-  if (!is.numeric(effortMatrix)){
-    warning("effortMatrix is not numeric, replaced with matrix of 1s")
-    effortMatrix <- matrix(nrow=M,ncol=T,1)
-  }
   if (missing(effortMatrix)) {
     effortMatrix <- matrix(nrow=M,ncol=T,1)
   }
+  
+    if (!is.numeric(effortMatrix)){
+    stop("effortMatrix is not numeric")
+    effortMatrix <- matrix(nrow=M,ncol=T,1)
+  }
+
   
   dist.classes <- levels(cut(distData[, distCol], dist.breaks, 
                              include.lowest = TRUE))
