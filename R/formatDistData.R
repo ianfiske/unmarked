@@ -7,6 +7,7 @@ formatDistData <- function (distData, distCol, transectNameCol, dist.breaks, occ
     transects <- as.factor(transects)
     warning("The transects were converted to a factor")
   }
+
   if (missing(occasionCol)) {
     T <- 1
     occasions <- factor(rep(1, nrow(distData)))
@@ -21,6 +22,10 @@ formatDistData <- function (distData, distCol, transectNameCol, dist.breaks, occ
   }
   M <- nlevels(transects)
   J <- length(dist.breaks) - 1
+  if (!is.numeric(effortMatrix)){
+    warning("effortMatrix is not numeric, replaced with matrix of 1s")
+    effortMatrix <- matrix(nrow=M,ncol=T,1)
+  }
   if (missing(effortMatrix)) {
     effortMatrix <- matrix(nrow=M,ncol=T,1)
   }
