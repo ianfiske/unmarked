@@ -1,4 +1,5 @@
 #include "nll_distsampOpen.h"
+#include "tranProbs.h"
 #include "distr.h"
 #include "detfuns.h"
 
@@ -6,7 +7,7 @@ using namespace Rcpp;
 
 
 
-
+/*
 // constant model
 void tp1ds(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
   Rcpp::NumericVector pois1 = dpois(N, gam, true);
@@ -70,6 +71,10 @@ void tp5ds(arma::mat& g3, int lk, double gam, double om, double imm) {
 	   }
     }
 }
+
+
+
+*/
 
 
 
@@ -229,32 +234,32 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 // compute g3 if there are no covariates of omega/gamma
   if(go_dims == "scalar") {
     if(dynamics=="constant" || dynamics=="notrend")
-      tp1ds(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,0), om(first1,0));
+      tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,0), om(first1,0));
     else if(dynamics=="autoreg")
-      tp2ds(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
+      tp2(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
     else if(dynamics=="trend")
-      tp3ds(g3, lk, gam(first1,0), iota(first1,0));
+      tp3(g3, lk, gam(first1,0), iota(first1,0));
     else if(dynamics=="ricker")
-      tp4ds(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
+      tp4(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
     else if(dynamics=="gompertz")
-      tp5ds(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
+      tp5(g3, lk, gam(first1,0), om(first1,0), iota(first1,0));
   } else if(go_dims == "rowvec") {
     for(int t=0; t<(T-1); t++) {
       if(ytna(first1,t)==1) { // FIXME: this is not generic!
 	continue;
       }
       if(dynamics=="constant" || dynamics=="notrend") {
-	tp1ds(g3_t.slice(t), nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,t), om(first1,t));
+	tp1(g3_t.slice(t), nrI, nrI1, N, I, I1, Ib, Ip, gam(first1,t), om(first1,t));
       }
       else if(dynamics=="autoreg") {
-	tp2ds(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
+	tp2(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
     }
       else if(dynamics=="trend")
-	tp3ds(g3_t.slice(t), lk, gam(first1,t), iota(first1,t));
+	tp3(g3_t.slice(t), lk, gam(first1,t), iota(first1,t));
       else if(dynamics=="ricker")
-	tp4ds(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
+	tp4(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
       else if(dynamics=="gompertz")
-	tp5ds(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
+	tp5(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
     }
   }
 
@@ -404,17 +409,17 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEX
 	  g3.zeros();
 	  if(dynamics=="constant" || dynamics=="notrend") {
 	    //	    tp1(g3, lk, gam(i,t-1), om(i,t-1));
-	    tp1ds(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(i,t-1), om(i,t-1));
+	    tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(i,t-1), om(i,t-1));
 	  }
 	  else if(dynamics=="autoreg") {
-	    tp2ds(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
+	    tp2(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	  }
 	  else if(dynamics=="trend")
-	    tp3ds(g3, lk, gam(i,t-1), iota(i,t-1));
+	    tp3(g3, lk, gam(i,t-1), iota(i,t-1));
 	  else if(dynamics=="ricker")
-	    tp4ds(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
+	    tp4(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	  else if(dynamics=="gompertz")
-	    tp5ds(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
+	    tp5(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	} else if(go_dims == "rowvec") {
 	  g3 = g3_t.slice(t-1);
 	}

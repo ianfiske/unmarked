@@ -1,4 +1,5 @@
 #include "nll_pcountOpen.h"
+#include "tranProbs.h"
 #include "distr.h"
 
 
@@ -9,7 +10,7 @@ using namespace Rcpp ;
 //void tp3(arma::mat& g3, int lk, double gam, double imm);
 
 
-
+/*
 // constant model
 void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om) {
   Rcpp::NumericVector pois1 = dpois(N, gam, true);
@@ -74,6 +75,7 @@ void tp5(arma::mat& g3, int lk, double gam, double om, double imm) {
     }
 }
 
+*/
 
 
 
