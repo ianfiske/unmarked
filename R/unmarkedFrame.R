@@ -274,7 +274,8 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
           piFun <- "doublePiFun"
           })
     } else {
-        type <- "userDefined"
+cat("this is a test message",fill=TRUE)
+       type <- "userDefined"
         # ncol(obsToY) should be ncol(y) (numPrimary*J)
         if(missing(obsToY))
             stop("obsToY is required for gmultmix data with no specified type.")
