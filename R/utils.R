@@ -334,8 +334,9 @@ formatMult <- function(df.in)
     nV <- length(dfnm) - 1  # last variable is obsNum
 
     ### Identify variables that are not factors
-    fac <- sapply(df.obs[, 5:nV], is.factor)
-    nonfac <- names(df.obs[, 5:nV])[!fac]
+    # Include julian date/visit in search as it is added back in later
+    fac <- sapply(df.obs[, c(3, 5:nV)], is.factor) 
+    nonfac <- names(df.obs[, c(3, 5:nV)])[!fac]
     
     # create y matrix using reshape
     expr <- substitute(recast(df.obs, var1 ~ year + obsNum + variable,
