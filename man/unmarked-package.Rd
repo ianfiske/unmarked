@@ -17,7 +17,7 @@
 \details{\tabular{ll}{
 Package: \tab unmarked\cr
 Type: \tab Package\cr
-Version: \tab 0.11-0\cr
+Version: \tab 0.12-0\cr
 License: \tab GPL (>= 3)\cr
 }
 
