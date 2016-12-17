@@ -1324,12 +1324,17 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
     state <- exp(X %*% coef(object, 'state') + X.offset)
     p <- getP(object, na.rm = na.rm)
     mix <- object@mixture
+##    if(!is.missing(K))
+##        warning("The K argument is ignored")
     switch(mix,
            P = {
                fitted <- as.numeric(state) * p
            },
-           NB = { # I don't think this sum is necessary
-               if(missing(K)) K <- max(y, na.rm = TRUE) + 20
+           NB = {
+               ## I don't think this sum is necessary. Could do:
+               ## fitted <- as.numeric(state) * p
+               if(missing(K))
+                   K <- object@K
                k <- 0:K
                k.ijk <- rep(k, M*J)
                state.ijk <- state[rep(1:M, each = J*(K+1))]
@@ -1482,12 +1487,10 @@ setMethod("fitted", "unmarkedFitOccuRN", function(object, K, na.rm = FALSE)
     J <- ncol(y)
     lam <- exp(X %*% coef(object, 'state') + X.offset)
     r <- plogis(V %*% coef(object, 'det') + V.offset)
-    if(missing(K)) K <- max(y, na.rm = TRUE) + 20
-
+    if(missing(K))
+        K <- object@K ##max(y, na.rm = TRUE) + 20
     lam <- rep(lam, each = J)
-
     fitted <- 1 - exp(-lam*r) ## analytical integration.
-
     return(matrix(fitted, M, J, byrow = TRUE))
 })
 

@@ -3,25 +3,36 @@ https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
 
+Version 0.12-0
+
+  o Fixed mistake in turnover calculations in colext vignette (thanks
+    to Giacomo Tavecchia) 
+
+
 Version 0.11-0
 
   o Andy Royle is the new maintainer  
 
-  o Added Rebecca Hutchinson's penalized likelihood function occuPEN (experimental)
+  o Added Rebecca Hutchinson's penalized likelihood function occuPEN
+    (experimental) 
 
-  o fixed bug in gmultmix to accommodate mixed sampling protocols (NA in count frequency vector is not counted in the constraint that multinomial cell probabilities sum to 1) 
+  o fixed bug in gmultmix to accommodate mixed sampling protocols (NA
+    in count frequency vector is not counted in the constraint that
+    multinomial cell probabilities sum to 1)  
 
   o Changed variable 'ufp' to 'ufc' in ovenbird data and related functions.
 
   o Removed constraint in pcountOpen that lambdaformula==omegaformula 
 
-  o Fixed bug in gdistsamp that caused error when NAs were present in half-normal model 
+  o Fixed bug in gdistsamp that caused error when NAs were present in
+    half-normal model  
 
   o Fixed bug in ranef (it was giving an error message for pcountOpen with the 
     new dynamics options (Ricker and Gompertz) and working incorrectly for
     pcountOpen with immigration)
 
-  o Fixed bug in pcountOpen that occurred when covariates were time varying but not varying among sites
+  o Fixed bug in pcountOpen that occurred when covariates were time
+    varying but not varying among sites 
 
 
 Version 0.10-6
