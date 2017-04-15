@@ -8,7 +8,19 @@ Version 0.12-0
   o Fixed mistake in turnover calculations in colext vignette (thanks
     to Giacomo Tavecchia) 
 
-
+  o added pcount.spHDS from AHM book. 
+  
+  o updated predict method for pcount to include ZIP model
+  
+  o Adam Smith added some parallel capabilities to the parboot functionality
+  
+  o Adam Smith fixed formatMult conversion of julian date to factor
+  
+  o Aurelie Fournier fixed formatDistData to pad data with NA
+  
+  o fixed error in obsToY for custom pi function
+  
+  
 Version 0.11-0
 
   o Andy Royle is the new maintainer  

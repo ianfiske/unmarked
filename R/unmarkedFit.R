@@ -222,121 +222,121 @@ setMethod("names", "unmarkedFit",
 
 
 
-## setMethod("predict", "unmarkedFit",
-##     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-##         appendData = FALSE, level=0.95, ...)
-## {
-##     if(missing(newdata) || is.null(newdata))
-##         newdata <- getData(object)
-##     formula <- object@formula
-##     detformula <- as.formula(formula[[2]])
-##     stateformula <- as.formula(paste("~", formula[3], sep=""))
-##     if(inherits(newdata, "unmarkedFrame"))
-##         class(newdata) <- "unmarkedFrame"
-##     cls <- class(newdata)[1]
-##     if(!cls %in% c("unmarkedFrame", "data.frame", "RasterStack"))
-##         stop("newdata should be an unmarkedFrame, data.frame, or RasterStack", call.=FALSE)
-##     if(identical(cls, "RasterStack"))
-##         if(!require(raster))
-##             stop("raster package is required")
-##     switch(cls,
-##     unmarkedFrame = {
-##         designMats <- getDesign(newdata, formula, na.rm = na.rm)
-##         switch(type,
-##             state = {
-##                 X <- designMats$X
-##                 offset <- designMats$X.offset
-##                 },
-##             det = {
-##                 X <- designMats$V
-##                 offset <- designMats$V.offset
-##                 })
-##         },
-##     data.frame = {
-##         switch(type,
-##             state = {
-##                 mf <- model.frame(stateformula, newdata)
-##                 X <- model.matrix(stateformula, mf)
-##                 offset <- model.offset(mf)
-##                 },
-##             det = {
-##                 mf <- model.frame(detformula, newdata)
-##                 X <- model.matrix(detformula, mf)
-##                 offset <- model.offset(mf)
-##                 })
-##             },
-##     RasterStack = {
-## #        browser()
-##         cd.names <- names(newdata)
-##         npix <- prod(dim(newdata)[1:2])
-##         isfac <- is.factor(newdata)
-##         if(any(isfac))
-##             stop("This method currently does not handle factors")
-##         z <- as.data.frame(matrix(raster::getValues(newdata), npix))
-##         names(z) <- cd.names
-##         switch(type,
-##                state = {
-##                    varnames <- all.vars(stateformula)
-##                    if(!all(varnames %in% cd.names))
-##                        stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
-##                    mf <- model.frame(stateformula, z, na.action="na.pass")
-##                    X.terms <- attr(mf, "terms")
-##                    X <- model.matrix(X.terms, mf)
-##                    offset <- model.offset(mf)
-##                },
-##                det= {
-##                    varnames <- all.vars(detformula)
-##                    if(!all(varnames %in% cd.names))
-##                        stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
-##                    mf <- model.frame(detformula, z, na.action="na.pass")
-##                    X.terms <- attr(mf, "terms")
-##                    X <- model.matrix(X.terms, mf)
-##                    offset <- model.offset(mf)
-##                })
-##     })
-##     out <- data.frame(matrix(NA, nrow(X), 4,
-##         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
-##     for(i in 1:nrow(X)) {
-##         if(nrow(X) > 5000) {
-##             if(i %% 1000 == 0)
-##                 cat("  doing row", i, "of", nrow(X), "\n")
-##         }
-##         if(any(is.na(X[i,])))
-##             next
-##         lc <- linearComb(object, X[i,], type, offset = offset[i])
-##         if(backTransform)
-##             lc <- backTransform(lc)
-##         out$Predicted[i] <- coef(lc)
-##         out$SE[i] <- SE(lc)
-##         ci <- confint(lc, level=level)
-##         out$lower[i] <- ci[1]
-##         out$upper[i] <- ci[2]
-##     }
-##     if(appendData) {
-##         if(!identical(cls, "RasterStack"))
-##             out <- data.frame(out, as(newdata, "data.frame"))
-##         else
-##             out <- data.frame(out, z)
-##     }
-##     if(identical(cls, "RasterStack")) {
-##         E.mat <- matrix(out[,1], dim(newdata)[1], dim(newdata)[2],
-##                         byrow=TRUE)
-##         E.raster <- raster::raster(E.mat)
-##         raster::extent(E.raster) <- raster::extent(newdata)
-##         out.rasters <- list(E.raster)
-##         for(i in 2:ncol(out)) {
-##             i.mat <- matrix(out[,i], dim(newdata)[1], dim(newdata)[2],
-##                             byrow=TRUE)
-##             i.raster <- raster::raster(i.mat)
-##             raster::extent(i.raster) <- raster::extent(newdata)
-##             out.rasters[[i]] <- i.raster
-##         }
-##         out.stack <- stack(out.rasters)
-##         names(out.stack) <- colnames(out)
-##         out <- out.stack
-##     }
-##     return(out)
-## })
+ setMethod("predict", "unmarkedFit",
+     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
+         appendData = FALSE, level=0.95, ...)
+ {
+     if(missing(newdata) || is.null(newdata))
+         newdata <- getData(object)
+     formula <- object@formula
+     detformula <- as.formula(formula[[2]])
+     stateformula <- as.formula(paste("~", formula[3], sep=""))
+     if(inherits(newdata, "unmarkedFrame"))
+         class(newdata) <- "unmarkedFrame"
+     cls <- class(newdata)[1]
+     if(!cls %in% c("unmarkedFrame", "data.frame", "RasterStack"))
+         stop("newdata should be an unmarkedFrame, data.frame, or RasterStack", call.=FALSE)
+     if(identical(cls, "RasterStack"))
+         if(!require(raster))
+             stop("raster package is required")
+     switch(cls,
+     unmarkedFrame = {
+         designMats <- getDesign(newdata, formula, na.rm = na.rm)
+         switch(type,
+             state = {
+                 X <- designMats$X
+                 offset <- designMats$X.offset
+                 },
+             det = {
+                 X <- designMats$V
+                 offset <- designMats$V.offset
+                 })
+         },
+     data.frame = {
+         switch(type,
+             state = {
+                 mf <- model.frame(stateformula, newdata)
+                 X <- model.matrix(stateformula, mf)
+                 offset <- model.offset(mf)
+                 },
+             det = {
+                 mf <- model.frame(detformula, newdata)
+                 X <- model.matrix(detformula, mf)
+                 offset <- model.offset(mf)
+                 })
+             },
+     RasterStack = {
+ #        browser()
+         cd.names <- names(newdata)
+         npix <- prod(dim(newdata)[1:2])
+         isfac <- is.factor(newdata)
+         if(any(isfac))
+             stop("This method currently does not handle factors")
+         z <- as.data.frame(matrix(raster::getValues(newdata), npix))
+         names(z) <- cd.names
+         switch(type,
+                state = {
+                    varnames <- all.vars(stateformula)
+                    if(!all(varnames %in% cd.names))
+                        stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                    mf <- model.frame(stateformula, z, na.action="na.pass")
+                    X.terms <- attr(mf, "terms")
+                    X <- model.matrix(X.terms, mf)
+                    offset <- model.offset(mf)
+                },
+                det= {
+                    varnames <- all.vars(detformula)
+                    if(!all(varnames %in% cd.names))
+                        stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                    mf <- model.frame(detformula, z, na.action="na.pass")
+                    X.terms <- attr(mf, "terms")
+                    X <- model.matrix(X.terms, mf)
+                    offset <- model.offset(mf)
+                })
+     })
+     out <- data.frame(matrix(NA, nrow(X), 4,
+         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+     for(i in 1:nrow(X)) {
+         if(nrow(X) > 5000) {
+             if(i %% 1000 == 0)
+                 cat("  doing row", i, "of", nrow(X), "\n")
+         }
+         if(any(is.na(X[i,])))
+             next
+         lc <- linearComb(object, X[i,], type, offset = offset[i])
+         if(backTransform)
+             lc <- backTransform(lc)
+         out$Predicted[i] <- coef(lc)
+         out$SE[i] <- SE(lc)
+         ci <- confint(lc, level=level)
+         out$lower[i] <- ci[1]
+         out$upper[i] <- ci[2]
+     }
+     if(appendData) {
+         if(!identical(cls, "RasterStack"))
+             out <- data.frame(out, as(newdata, "data.frame"))
+         else
+             out <- data.frame(out, z)
+     }
+     if(identical(cls, "RasterStack")) {
+         E.mat <- matrix(out[,1], dim(newdata)[1], dim(newdata)[2],
+                         byrow=TRUE)
+         E.raster <- raster::raster(E.mat)
+         raster::extent(E.raster) <- raster::extent(newdata)
+         out.rasters <- list(E.raster)
+         for(i in 2:ncol(out)) {
+             i.mat <- matrix(out[,i], dim(newdata)[1], dim(newdata)[2],
+                             byrow=TRUE)
+             i.raster <- raster::raster(i.mat)
+             raster::extent(i.raster) <- raster::extent(newdata)
+             out.rasters[[i]] <- i.raster
+         }
+         out.stack <- stack(out.rasters)
+         names(out.stack) <- colnames(out)
+         out <- out.stack
+     }
+     return(out)
+ })
 
 
 
@@ -480,9 +480,6 @@ setMethod("names", "unmarkedFit",
 
 
 
-
-
-
 # Functions for the book Applied Hierarchical Modeling in Ecology (AHM)
 # Marc Kery & Andy Royle, Academic Press, 2016.
 
@@ -588,22 +585,19 @@ setMethod("predict", "unmarkedFitPCount",
         if(identical(mix, "ZIP") & identical(type, "state")) {
 ## for the ZIP model the predicted values on the log scale have us add log(1-psi.hat) to
 ### the normal linear prediction
-            out$Predicted[i] <-                X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
+            out$Predicted[i] <-   X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
 ## to compute the approximate SE, I compute the variance of the usual linear part -- that is easy
 ## and to that I add the variance of log(1-psi.hat) obtained by the delta approximation
 logit.psi<-coef(object,type="psi")
 #  To do that I took derivative of log(1-psi.hat) using application of chain rule.... hopefully correctly.
 delta.approx.2ndpart<-   ( ((1/(1-psi.hat))*(exp(logit.psi)/((1+exp(logit.psi))^2)))^2 ) * (SE(object)["psi(psi)"]^2)
 ## now the SE is the sqrt of the whole thing
-out$SE[i]<- sqrt(
-# t(X[i,])%*%vcov(object)[1:ncol(X),1:ncol(X)]%*%X[i,] +
-# delta.approx.2ndpart   )
+out$SE[i]<- sqrt( t(X[i,])%*%vcov(object)[1:ncol(X),1:ncol(X)]%*%X[i,] + delta.approx.2ndpart   )
 
 #From Mike Meredith
 alf <- (1 - level) / 2
-crit <- qnorm(c(alf, 1 - alf))
+crit<-qnorm(c(alf, 1 - alf))
 ci <- out$Predicted[i] + crit * out$SE[i]
-
 ## Here I use a 95% confidence interval b/c I'm not sure how to use "confint"!!!
 ####   ci <- c(out$Predicted[i]-1.96*out$SE[i],out$Predicted[i] + 1.96*out$SE[i])
 ##
