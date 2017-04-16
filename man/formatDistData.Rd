@@ -2,7 +2,7 @@
 \alias{formatDistData}
 \title{Bin distance data}
 \usage{formatDistData(distData, distCol, transectNameCol, dist.breaks,
-                      occasionCol)}
+                      occasionCol, effortMatrix)}
 \description{Convert individual-level distance data to the transect-level
 format required by \code{\link{distsamp}} or \code{\link{gdistsamp}}}
 \arguments{
