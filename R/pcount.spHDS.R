@@ -15,7 +15,7 @@ pcount.spHDS <- function (formula, data, K, mixture = c("P", "NB", "ZIP"), start
     engine <- match.arg(engine, c("C", "R"))
     if (identical(mixture, "ZIP") & identical(engine, "R"))
         stop("ZIP mixture not available for engine='R'")
-    designMats <- unmarked:::getDesign(data, formula)
+    designMats <- getDesign(data, formula)
     X <- designMats$X
     V <- designMats$V
     y <- designMats$y
@@ -110,7 +110,7 @@ pcount.spHDS <- function (formula, data, K, mixture = c("P", "NB", "ZIP"), start
         estimates = ests[(nAP + 1):(nAP + nDP)], covMat = as.matrix(covMat[(nAP +
             1):(nAP + nDP), (nAP + 1):(nAP + nDP)]), invlink = "logistic",
         invlinkGrad = "logistic.grad")
-    estimateList <- unmarked:::unmarkedEstimateList(list(state = stateEstimates,
+    estimateList <- unmarkedEstimateList(list(state = stateEstimates,
         det = detEstimates))
     if (identical(mixture, "NB")) {
         estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",

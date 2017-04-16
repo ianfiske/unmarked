@@ -511,7 +511,7 @@ setMethod("predict", "unmarkedFitPCount",
             stop("raster package is required")
     switch(cls,
     unmarkedFrame = {
-        designMats <- unmarked:::getDesign(newdata, formula, na.rm = na.rm)
+        designMats <- getDesign(newdata, formula, na.rm = na.rm)
         switch(type,
             state = {
                 X <- designMats$X
