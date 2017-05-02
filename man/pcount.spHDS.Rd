@@ -10,11 +10,21 @@ Function fits spatial hierarchical distance sampling model; \pkg{unmarked} model
 }
 \usage{
 pcount.spHDS(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
-  method = "BFGS", se = TRUE, engine = c("C", "R"), ...)
+  method = "BFGS", se = TRUE, ...)
 }
 \arguments{
   \item{formula}{
 Double right-hand side formula describing covariates of detection and abundance, in that order
+
+Detection model should be specified without an intercept, for example:
+~ -1 + I(dist^2)
+Internally this forces the intercept p(0) = 1, conventional for distance
+sampling models (see section 9.8.4 for explanation). More general models
+work but may not honor that constraint. e.g., 
+~ 1,
+~ dist,
+~ I(dist^2),
+~ dist + I(dist^2)
 }
   \item{data}{
 an \code{unmarkedFramePCount} object supplying data to the model.
