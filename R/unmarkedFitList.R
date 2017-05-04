@@ -6,12 +6,12 @@ setClass("unmarkedFitList",
         testY <- function(fit) {
             f <- fit@formula
             umf <- getData(fit)
-            D <- unmarked:::getDesign(umf, f)
+            D <- getDesign(umf, f)
             D$y
             }
         umf1 <- getData(fl[[1]])
         form1 <- fl[[1]]@formula
-        y1 <- unmarked:::getDesign(umf1, form1)$y
+        y1 <- getDesign(umf1, form1)$y
         dataTest <- sapply(fl, function(x) isTRUE(all.equal(umf1, getData(x))))
         yTest <- sapply(fl, function(x) isTRUE(all.equal(y1, testY(x))))
         if(!all(dataTest)) {
@@ -60,21 +60,62 @@ setMethod("summary", "unmarkedFitList", function(object) {
     })
 
 
+setMethod("coef", "unmarkedFitList", function(object)
+{
+    fits <- object@fits
+    coef.list <- lapply(fits, coef)
+    coef.names <- unique(unlist(lapply(coef.list, names)))
+    coef.out <- matrix(NA, length(fits), length(coef.names))
+    colnames(coef.out) <- coef.names
+    if(!is.null(names(fits)))
+        rownames(coef.out) <- names(fits)
+    for(i in 1:length(coef.list))
+        coef.out[i, names(coef.list[[i]])] <- coef.list[[i]]
+    return(coef.out)
+})
 
-setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL, 
-    backTransform = TRUE, appendData = FALSE) {
+
+setMethod("SE", "unmarkedFitList", function(obj)
+{
+    fits <- obj@fits
+    se.list <- lapply(fits, function(x) {
+        tr <- try(SE(x))
+        if(class(tr)[1] == "try-error")
+            return(rep(NA, length(coef(x))))
+        else
+            return(tr)
+        })
+    se.names <- unique(unlist(lapply(se.list, names)))
+    se.out <- matrix(NA, length(fits), length(se.names))
+    colnames(se.out) <- se.names
+    if(!is.null(names(fits)))
+        rownames(se.out) <- names(fits)
+    for(i in 1:length(se.list))
+        se.out[i, names(se.list[[i]])] <- se.list[[i]]
+    return(se.out)
+})
+
+
+
+
+setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
+    backTransform = TRUE, appendData = FALSE, level=0.95) {
         fitList <- object@fits
-        ese <- lapply(fitList, predict, type = type, newdata = newdata, 
-            backTransform = backTransform)
+        ese <- lapply(fitList, predict, type = type, newdata = newdata,
+            backTransform = backTransform, level=level)
         E <- sapply(ese, function(x) x[,"Predicted"])
         SE <- sapply(ese, function(x) x[,"SE"])
+        lower <- sapply(ese, function(x) x[,"lower"])
+        upper <- sapply(ese, function(x) x[,"upper"])
         ic <- sapply(fitList, slot, "AIC")
         deltaic <- ic - min(ic)
         wts <- exp(-deltaic / 2)
         wts <- wts / sum(wts)
         parav <- as.numeric(E %*% wts)
-        seav <- as.numeric((SE + (E - parav)^2) %*% wts) # Double check this
+        seav <- as.numeric(sqrt(SE^2 + (E - parav)^2) %*% wts)
         out <- data.frame(Predicted = parav, SE = seav)
+        out$lower <- as.numeric(lower %*% wts)
+        out$upper <- as.numeric(upper %*% wts)
         if(appendData) {
             if(missing(newdata))
                 newdata <- getData(object@fits[[1]])
@@ -91,6 +132,7 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
 # Condition number
 cn <- function(object) {
     h <- hessian(object)
+    if(is.null(h)) return(NA)
     if(any(is.na(h))) return(NA)
         else {
    	        ev <- eigen(h)$value
@@ -100,7 +142,7 @@ cn <- function(object) {
 
 
 
-# R-squared index from Nagelkerke (1991)				  
+# R-squared index from Nagelkerke (1991)
 nagR2 <- function(fit, nullfit)
 {
     n <- sampleSize(fit)
@@ -119,7 +161,7 @@ setGeneric("modSel",
             }
         )
 
-setClass("unmarkedModSel", 
+setClass("unmarkedModSel",
     representation(
         Full = "data.frame",
         Names = "matrix"
@@ -129,17 +171,23 @@ setClass("unmarkedModSel",
 
 
 # Model selection results from an unmarkedFitList
-setMethod("modSel", "unmarkedFitList", 
-	function(object, nullmod=NULL) 
+setMethod("modSel", "unmarkedFitList",
+	function(object, nullmod=NULL)
 {
     if (!is.character(nullmod) && !is.null(nullmod)) {
         stop("nullmod must be character name of null model fit in the fitlist.")
         }
     fits <- object@fits
     estList <- lapply(fits, coef, altNames=TRUE)
-    seList <- lapply(fits, function(x) 
-        if(any(is.na(x@opt$hessian))) rep(NA, length(coef(x))) 
-            else sqrt(diag(vcov(x, altNames=TRUE))))
+    seList <- lapply(fits, function(x) {
+		se <- tryCatch(sqrt(diag(vcov(x, altNames=TRUE))),
+			error=function(e) simpleError("Hessian is singular."))
+        if(identical(class(se)[1], "simpleError")) {
+            cat(se$message, fill=TRUE)
+            se <- rep(NA, length(coef(x)))
+            }
+        return(se)
+        })
     eNames <- sort(unique(unlist(sapply(estList, names))))
     seNames <- paste("SE", eNames, sep="")
     eseNames <- character(l <- length(c(eNames, seNames)))
@@ -177,7 +225,7 @@ setMethod("modSel", "unmarkedFitList",
         }
     out <- out[order(out$AIC),]
     out$cumltvWt <- cumsum(out$AICwt)
-    msout <- new("unmarkedModSel", Full = out, 
+    msout <- new("unmarkedModSel", Full = out,
         Names = rbind(Coefs = eNames, SEs = seNames))
     return(msout)
 })
@@ -192,18 +240,18 @@ setAs("unmarkedModSel", "data.frame", function(from) {
 
 
 
-setMethod("show", "unmarkedModSel", function(object) 
+setMethod("show", "unmarkedModSel", function(object)
 {
     out <- as(object, "data.frame")
     rownames(out) <- out$model
-    out <- out[,c('n', 'nPars', 'AIC', 'delta', 'AICwt', 'cumltvWt', 'Rsq')]
+    out <- out[,c('nPars', 'AIC', 'delta', 'AICwt', 'cumltvWt', 'Rsq')]
     if (all(is.na(out$Rsq))) out$Rsq <- NULL
     print(format(out, digits=2, nsmall=2))
 })
 
 
 
-setMethod("coef", "unmarkedModSel", function(object) 
+setMethod("coef", "unmarkedModSel", function(object)
 {
     coefNames <- object@Names["Coefs",]
     msdf <- as(object, "data.frame")
@@ -213,7 +261,7 @@ setMethod("coef", "unmarkedModSel", function(object)
 })
 
 
-setMethod("SE", "unmarkedModSel", function(obj) 
+setMethod("SE", "unmarkedModSel", function(obj)
 {
     seNames <- obj@Names["SEs",]
     msdf <- as(obj, "data.frame")
