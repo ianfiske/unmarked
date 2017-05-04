@@ -7,8 +7,13 @@
 \alias{nonparboot,unmarkedFitDS-method}
 \alias{nonparboot,unmarkedFitMPois-method}
 \alias{nonparboot,unmarkedFitOccu-method}
+\alias{nonparboot,unmarkedFitOccuPEN-method}
+\alias{nonparboot,unmarkedFitOccuPEN_CV-method}
 \alias{nonparboot,unmarkedFitOccuRN-method}
 \alias{nonparboot,unmarkedFitPCount-method}
+\alias{nonparboot,unmarkedFitGDS-method}
+\alias{nonparboot,unmarkedFitGMM-method}
+\alias{nonparboot,unmarkedFitPCO-method}
 \title{ Nonparametric bootstrapping in unmarked }
 \description{
 Call \code{nonparboot} on an unmarkedFit to obtain non-parametric
@@ -33,6 +38,12 @@ get bootstrap estimates of standard errors.
 \item{\code{signature(object = "unmarkedFitOccu")}}{  Obtain nonparametric
   bootstrap samples for a occu fits. }
 
+\item{\code{signature(object = "unmarkedFitOccuPEN")}}{  Obtain nonparametric
+  bootstrap samples for an occuPEN fit. }
+
+\item{\code{signature(object = "unmarkedFitOccuPEN_CV")}}{  Obtain nonparametric
+  bootstrap samples for occuPEN_CV fit. }
+
 \item{\code{signature(object = "unmarkedFitOccuRN")}}{  Obtain nonparametric
   bootstrap samples for a occuRN fits. }
 
@@ -50,12 +61,16 @@ get bootstrap estimates of standard errors.
   instructed to use bootstrap samples by providing the argument
   \code{method = "nonparboot"}.
 
+  For \code{\link{occu}} and \code{\link{occuRN}} both sites and
+  occassions are re-sampled. For all other fitting functions, only sites
+  are re-sampled.
+
 }
 \examples{
 data(ovendata)
 ovenFrame <- unmarkedFrameMPois(ovendata.list$data,
 siteCovs=as.data.frame(scale(ovendata.list$covariates[,-1])), type = "removal")
-(fm <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+(fm <- multinomPois(~ 1 ~ ufc + trba, ovenFrame))
 fm <- nonparboot(fm, B = 20) # should use larger B in real life.
 vcov(fm, method = "hessian")
 vcov(fm, method = "nonparboot")

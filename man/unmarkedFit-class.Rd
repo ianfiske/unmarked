@@ -15,20 +15,26 @@
 \alias{nllFun,unmarkedFit-method}
 \alias{parboot,unmarkedFit-method}
 \alias{plot,unmarkedFit,missing-method}
-\alias{predict,unmarkedFit-method}
-\alias{predict,unmarkedFitColExt-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{residuals,unmarkedFitOccu-method}
+\alias{residuals,unmarkedFitOccuFP-method}
 \alias{residuals,unmarkedFitOccuRN-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
+\alias{update,unmarkedFitPCO-method}
+\alias{update,unmarkedFitGMM-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
+\alias{unmarkedFitOccuPEN-class}
+\alias{unmarkedFitOccuPEN_CV-class}
+\alias{unmarkedFitOccuFP-class}
 \alias{unmarkedFitPCount-class}
 \alias{unmarkedFitDS-class}
 \alias{unmarkedFitMPois-class}
+\alias{unmarkedFitPCO-class}
+\alias{unmarkedFitGMM-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}
@@ -37,6 +43,10 @@
 \alias{smoothed,unmarkedFitColExt-method}
 \alias{projected}
 \alias{projected,unmarkedFitColExt-method}
+\alias{logLik}
+\alias{logLik,unmarkedFit-method}
+\alias{LRT}
+\alias{LRT,unmarkedFit,unmarkedFit-method}
 
 \title{Class "unmarkedFit" }
 \description{Contains fitted model information which can be manipulated or 
@@ -79,6 +89,10 @@ extracted using the methods described below.
     \item{getData}{\code{signature(object = "unmarkedFit")}: extracts data }
     \item{getP}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
 		expected detection probabilities }
+    \item{getFP}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
+  	expected false positive detection probabilities }
+    \item{getB}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
+  	expected probabilities a true positive detection was classified as certain }
     \item{hessian}{\code{signature(object = "unmarkedFit")}: Returns hessian 
 		matrix }
     \item{linearComb}{\code{signature(obj = "unmarkedFit", 
@@ -115,7 +129,12 @@ extracted using the methods described below.
     \item{projected}{\code{signature(object="unmarkedFitColExt")}:
       Returns the projected trajectory from a colonization-extinction
       model fit.  Takes additional logical argument mean which specifies
-    whether or not to return the average over sites.} 
+    whether or not to return the average over sites.}
+    \item{logLik}{\code{signature(object="unmarkedFit")}:
+        Returns the log-likelihood.}
+    \item{LRT}{\code{signature(m1="unmarkedFit", m2="unmarkedFit")}:
+        Returns the chi-squared statistic, degrees-of-freedom, and p-value from
+        a Likelihood Ratio Test.} 
 	 }
 }
 \note{ This is a superclass with child classes for each fit type }
@@ -128,47 +147,63 @@ ovenFrame <- unmarkedFrameMPois(y = ovendata.list$data,
 	siteCovs = as.data.frame(scale(ovendata.list$covariates[,-1])), 
 	type = "removal")
 
-# Fit a model
-(fm1 <- multinomPois(~ 1 ~ ufp + trba, ovenFrame))
+# Fit a couple of models
+(fm1 <- multinomPois(~ 1 ~ ufc + trba, ovenFrame))
+summary(fm1)
 
 # Apply a bunch of methods to the fitted model
 
+# Look at the different parameter types
 names(fm1)
 fm1['state']
 fm1['det']
 
-backTransform(fm1, type ='det')
-
+# Coefficients from abundance part of the model
 coef(fm1, type='state')
 
+# Variance-covariance matrix
+vcov(fm1, type='state')
+
+# Confidence intervals using profiled likelihood
 confint(fm1, type='state', method='profile')
 
+# Expected values
 fitted(fm1)
 
+# Original data
 getData(fm1)
 
+# Detection probabilities
 getP(fm1)
 
-# Return predicted abundance at specified covariate values
-linearComb(fm1, c(Int = 1, ufp = 0, trba = 0), type='state')
+# log-likelihood
+logLik(fm1)
+
+# Back-transform detection probability to original scale
+# backTransform only works on models with no covariates or 
+#     in conjunction with linearComb (next example)
+backTransform(fm1, type ='det')
+
+# Predicted abundance at specified covariate values
+(lc <- linearComb(fm1, c(Int = 1, ufc = 0, trba = 0), type='state'))
+backTransform(lc)
 
 # Assess goodness-of-fit
 parboot(fm1)
-
 plot(fm1)
 
 # Predict abundance at specified covariate values.
-newdat <- data.frame(ufp = 0, trba = seq(-1, 1, length=10))
-
+newdat <- data.frame(ufc = 0, trba = seq(-1, 1, length=10))
 predict(fm1, type='state', newdata=newdat)
 
+# Number of sites in the sample
 sampleSize(fm1)
 
-summary(fm1)
-
+# Fit a new model without covariates
 (fmNull <- update(fm1, formula = ~1 ~1))
 
-vcov(fm1, type='state')
+# Likelihood ratio test
+LRT(fm1, fmNull)
 
 
 }
