@@ -19,7 +19,8 @@ fm1 <- pcount.spHDS(~ -1 + I(dist^2) ~ Habitat, umf, K=20)
 
 checkEqualsNumeric(
                    coef(fm1), 
-                   structure(c(0.636160424745768, 0.947060298081711, -0.186743819727118
-                               ), .Names = c("lam(Int)", "lam(Habitat)", "p(I(dist^2))")), tol=1e-5)
+structure(c(-0.0521147712416163, 0.952296442491614, -1.66812493149504
+), .Names = c("lam(Int)", "lam(Habitat)", "p(I(dist^2))"))
+                    , tol=1e-5)
 }
 
