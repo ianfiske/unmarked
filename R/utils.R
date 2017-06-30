@@ -203,6 +203,12 @@ formatLong <- function(dfin, species = NULL, type)
     dfin <- dateToObs(dfin)
     dfnm <- colnames(dfin)
     nV <- length(dfnm) - 1  # last variable is obsNum
+    
+    ### Identify variables that are not factors
+    # Include julian date/visit in search as it is added back in later
+    fac <- sapply(dfin[, 4:nV], is.factor) 
+    nonfac <- names(dfin[, 4:nV])[!fac]
+    
     expr <- substitute(recast(dfin, newvar ~ obsNum + variable,
                               id.var = c(dfnm[1],"obsNum"),
                               measure.var = dfnm[3]),
@@ -220,9 +226,47 @@ formatLong <- function(dfin, species = NULL, type)
 
     obsvars.matlist <- arrToList(obsvars)
     obsvars.veclist <- lapply(obsvars.matlist, function(x) as.vector(t(x)))
+    
+    # Return any non-factors to the correct mode
+    if (length(nonfac) >= 1) {
+      modes <- apply(dfin[, nonfac], 2, mode)
+      nonfac[which(nonfac == "Date")] <- "JulianDate"
+      for (i in seq_along(nonfac)) {
+        mode(obsvars.veclist[[nonfac[i]]]) <- modes[i]
+      }
+    }
+    
     obsvars.df <- data.frame(obsvars.veclist)
+    
+    ## check for siteCovs
+    obsNum <- ncol(y)
+    M <- nrow(y)
+    site.inds <- matrix(1:(M*obsNum), M, obsNum, byrow = TRUE)
+    siteCovs <- sapply(obsvars.df, function(x) {
+      obsmat <- matrix(x, M, obsNum, byrow = TRUE)
+      l.u <- apply(obsmat, 1, function(y) {
+        row.u <- unique(y)
+        length(row.u[!is.na(row.u)])
+      })
+      # if there are 0 or 1 unique vals per row, we have a sitecov
+      if (all(l.u <= 1)) {
+        u <- apply(obsmat, 1, function(y) {
+          row.u <- unique(y)
+          ## only remove NAs if there are some non-NAs.
+          if(!all(is.na(row.u)))
+            row.u <- row.u[!is.na(row.u)]
+          row.u
+        })
+        u
+      }
+    })
+    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
+    if(nrow(siteCovs) == 0) siteCovs <- NULL
+    
+    ## remove sitecovs from obsvars
+    obsvars.df <- obsvars.df[, !(names(obsvars.df) %in% names(siteCovs)), drop = FALSE]
 
-    do.call(type, list(y = y, obsCovs = obsvars.df))
+    do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsvars.df))
 }
 
 # column names must be
