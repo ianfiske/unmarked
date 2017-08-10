@@ -16,7 +16,7 @@ Version 0.12-0
   
   o Adam Smith fixed formatMult conversion of julian date to factor
   
-  o Aurelie Fournier fixed formatDistData to pad data with NA
+  o Auriel Fournier fixed formatDistData to pad data with NA
   
   o fixed error in obsToY for custom pi function
   
