@@ -850,7 +850,7 @@ setMethod("predict", "unmarkedFitColExt",
                    X <- model.matrix(X.terms, mf)
 #                   offset <- model.offset(mf)
                },
-               exp = {
+               ext = {
                    varnames <- all.vars(epsformula)
                    if(!all(varnames %in% cd.names))
                        stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
