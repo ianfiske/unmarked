@@ -2,6 +2,43 @@ test.formatLong <- function() {
   df <- read.csv(system.file("csv","frog2001pcru.csv", package = "unmarked"))
   umf <- formatLong(df, type = "unmarkedFrameOccu")
   ## Add some assertions...
+  
+  test <- expand.grid.df(expand.grid(site = LETTERS[1:4], julian = c(13, 20, 26)))
+  test <- test[with(test, order(site, julian)), ]
+  
+  set.seed(42)
+  test <- within(test, {
+    obsfac = factor(sample(LETTERS[1:2], nrow(test), replace = TRUE))
+    sitefac = factor(round(as.numeric(site)/5))
+    ocov = round(rnorm(nrow(test)), 2)
+    scov = 2 * as.numeric(test$site)
+    y = rbinom(nrow(test), 1, 0.6)
+  })
+  
+  withfac <- unmarked:::formatLong(test, type = "unmarkedFrameOccu")
+  
+  checkEquals(withfac,
+              new("unmarkedFrameOccu", 
+                  y = structure(c(1L, 0L, 1L, 0L, 1L, 1L, 0L, 0L, 0L, 1L, 1L, 0L), 
+                                .Dim = c(4L, 3L), .Dimnames = list(NULL, NULL), class = "matrix"),
+                  obsCovs = structure(list(ocov = c(1.51, -0.09, 2.02, -0.06, 1.3, 2.29, -1.39, 
+                                                    -0.28, -0.13, 0.64, -0.28, -2.66), 
+                                           obsfac = structure(c(2L, 2L, 1L, 2L, 2L, 2L, 2L, 1L, 2L, 2L, 1L, 2L), 
+                                                              .Label = c("A", "B"), class = "factor"), 
+                                           JulianDate = c(13, 20, 26, 13, 20, 26, 13, 20, 26, 13, 20, 26)), 
+                                      .Names = c("ocov", "obsfac", "JulianDate"), 
+                                      class = "data.frame", 
+                                      row.names = c(NA, -12L)),
+                  siteCovs = structure(list(scov = c(2, 4, 6, 8), 
+                                            sitefac = structure(c(1L, 1L, 2L, 2L), 
+                                                                .Label = c("0", "1"), class = "factor")), 
+                                       .Names = c("scov", "sitefac"), row.names = c(NA, -4L), class = "data.frame"),
+                  mapInfo = NULL,
+                  obsToY = structure(c(1, 0, 0, 0, 1, 0, 0, 0, 1), .Dim = c(3L, 3L))))
+              
+  
+
+    
 }
 
 
