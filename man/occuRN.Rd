@@ -22,29 +22,35 @@
       bounds}
   }
 
-\description{Fit the occupancy model of Royle and Nichols (2003)}
+\description{Fit the occupancy model of Royle and Nichols (2003), which relates probability
+of detection of the species to the number of individuals available for detection at each site.
+Probability of occupancy is a derived parameter: the probability that at least one
+individual is available for detection at the site.}
 
 \details{
 
 This function fits the latent abundance mixture model described in
 Royle and Nichols (2003).
 
-The latent abundance of site \eqn{i} is modelled as Poisson:
+The number of animals available for detection at site \eqn{i} is modelled as Poisson:
 
 \deqn{N_i \sim Poisson(\lambda_i)}{N_i ~ Poisson(lambda_i)}
 
-The detection of a single individual in site \eqn{i} during sample
-\eqn{j} is modelled as Bernoulli:
-
-\deqn{w_{ij} \sim Bernoulli(r_{ij})}{w_ij ~ Bernoulli(r_ij)}.
-
-Thus, the detection probability for a single site is linked to the
+We assume that all individuals at site \eqn{i} during sample \eqn{j} have identical
+detection probabilities, \eqn{r_{ij}}{r_ij}, and that detections are independent. The species
+will be recorded if at least one individual is detected. Thus, the detection
+probability for the species is linked to the
 detection probability for an individual by
 
 \deqn{p_{ij} = 1 - (1 - r_{ij}) ^ {N_i}}{p_ij = 1 - (1 - r_ij) ^ N_i}
 
+Note that if \eqn{N_i = 0}, then \eqn{p_{ij} = 0}{p_ij = 0}, and increasing values of \eqn{N_i} lead to higher values of \eqn{p_{ij}}{p_ij} The equation for the detection history is then:
+
+\deqn{y_{ij} \sim Bernoulli(p_{ij})}{y_ij ~ Bernoulli(p_ij)}
+
 Covariates of \eqn{\lambda_i}{lambda_i} are modelled with the log link
-and covariates of \eqn{r_{ij}}{r_ij} are modelled with the logit link.}
+and covariates of \eqn{r_{ij}}{r_ij} are modelled with the logit link.
+}
 
 \value{unmarkedFit object describing the model fit.}
 
