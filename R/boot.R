@@ -36,8 +36,8 @@ setMethod("parboot", "unmarkedFit",
     if(!missing(report))
         cat("t0 =", t0, "\n")
     simdata <- umf
+    if (!is.null(seed)) set.seed(seed)
     simList <- simulate(object, nsim = nsim, na.rm = FALSE)
-    set.seed(seed, "L'Ecuyer")
     coresToUse <- detectCores() - 1
 
     if (coresToUse < 2 || nsim < 100 || parallel == FALSE) {
@@ -59,13 +59,15 @@ setMethod("parboot", "unmarkedFit",
       cl <- makeCluster(coresToUse)
       on.exit(stopCluster(cl))
       varList <- c("simList", "y", "object", "simdata", "ests", "statistic", "dots")
+      # If call formula is an object, include it too
+      fm.nms <- all.names(object@call)
+      if (!any(grepl("~", fm.nms))) varList <- c(varList, fm.nms[2])
       ## Hack to get piFun for unmarkedFitGMM and unmarkedFitMPois
       if (class(object) == "unmarkedFitGMM" | class(object) == "unmarkedFitMPois") 
         varList <- c(varList, umf@piFun)
       clusterExport(cl, varList, envir = environment())
       clusterEvalQ(cl, library(unmarked))
       clusterEvalQ(cl, list2env(dots))
-      clusterSetRNGStream(cl, seed)
       t.star.parallel <- parLapply(cl, 1:nsim, function(i) {
         y.sim <- simList[[i]]
         is.na(y.sim) <- is.na(y)
