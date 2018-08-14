@@ -36,8 +36,8 @@ setMethod("parboot", "unmarkedFit",
     if(!missing(report))
         cat("t0 =", t0, "\n")
     simdata <- umf
+    if (!is.null(seed)) set.seed(seed)
     simList <- simulate(object, nsim = nsim, na.rm = FALSE)
-    set.seed(seed, "L'Ecuyer")
     coresToUse <- detectCores() - 1
 
     if (coresToUse < 2 || nsim < 100 || parallel == FALSE) {
@@ -65,7 +65,6 @@ setMethod("parboot", "unmarkedFit",
       clusterExport(cl, varList, envir = environment())
       clusterEvalQ(cl, library(unmarked))
       clusterEvalQ(cl, list2env(dots))
-      clusterSetRNGStream(cl, seed)
       t.star.parallel <- parLapply(cl, 1:nsim, function(i) {
         y.sim <- simList[[i]]
         is.na(y.sim) <- is.na(y)
