@@ -59,6 +59,9 @@ setMethod("parboot", "unmarkedFit",
       cl <- makeCluster(coresToUse)
       on.exit(stopCluster(cl))
       varList <- c("simList", "y", "object", "simdata", "ests", "statistic", "dots")
+      # If call formula is an object, include it too
+      fm.nms <- all.names(object@call)
+      if (!any(grepl("~", fm.nms))) varList <- c(varList, fm.nms[2])
       ## Hack to get piFun for unmarkedFitGMM and unmarkedFitMPois
       if (class(object) == "unmarkedFitGMM" | class(object) == "unmarkedFitMPois") 
         varList <- c(varList, umf@piFun)
