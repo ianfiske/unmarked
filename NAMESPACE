@@ -9,17 +9,16 @@ importFrom(stats, confint, fitted, coef, vcov, predict, update, profile,
            update.formula)
 importFrom(graphics, plot, hist, abline)
 importFrom(utils, head, read.csv)
-importFrom(reshape, melt, cast, recast)
 importFrom(plyr, ldply, alply, ddply)
 importFrom(grDevices, devAskNewPage)
 importFrom("raster","stack")
 importFrom("raster", "raster", "extent", "extent<-", "getValues") ## MM
 
-import(lattice, methods, parallel, Rcpp)
+import(lattice, methods, parallel, Rcpp, reshape2)
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
-       colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, 
+       colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV,
        computeMPLElambda, pcount.spHDS)
 export(removalPiFun, doublePiFun)
 

@@ -691,8 +691,8 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
     y$site <- 1:M
     sites.per.panel <- M/panels
     y$group <- as.factor(round(seq(1,panels,length=M)))
-    y2 <- melt(y, #measure.var = c("V1", "V2", "V3"),
-        id.var=c("site","group"))
+    y2 <- melt(y, #measure.vars = c("V1", "V2", "V3"),
+        id.vars=c("site","group"))
     if(missing(colorkey))
         colorkey <- list(at=0:(ym+1), labels=list(labels=as.character(0:ym),
             at=(0:ym)+0.5))
@@ -721,8 +721,6 @@ setMethod("hist", "unmarkedFrameDS", function(x, ...)
 setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
     function(x, i)
 {
-    if(!require(reshape))
-        stop("reshape package required")
     M <- numSites(x)
     if(length(i) == 0) return(x)
     if(any(i < 0) && any(i > 0))
@@ -759,8 +757,6 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
 setMethod("[", c("unmarkedFrame", "missing", "numeric", "missing"),
 		function(x, i, j)
 {
-    if(!require(reshape))
-        stop("reshape package required")
     y <- getY(x)
     obsCovs <- obsCovs(x)
     obsToY <- obsToY(x)
@@ -793,8 +789,6 @@ setMethod("[", c("unmarkedFrame","numeric", "numeric", "missing"),
 setMethod("[", c("unmarkedFrame","list", "missing", "missing"),
     function(x, i, j)
 {
-    if(!require(reshape))
-        stop("reshape package required")
     m <- numSites(x)
     J <- R <- obsNum(x)
     o2y <- obsToY(x)
@@ -858,8 +852,6 @@ setMethod("[", c("unmarkedMultFrame", "missing", "numeric", "missing"),
 setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 		function(x, i, j)
 {
-    if(!require(reshape))
-        stop("reshape package required")
     M <- numSites(x)
     if(length(i) == 0) return(x)
     if(any(i < 0) && any(i > 0))

@@ -2,10 +2,30 @@ test.formatLong <- function() {
   df <- read.csv(system.file("csv","frog2001pcru.csv", package = "unmarked"))
   umf <- formatLong(df, type = "unmarkedFrameOccu")
   ## Add some assertions...
-  
-  test <- expand.grid.df(expand.grid(site = LETTERS[1:4], julian = c(13, 20, 26)))
+
+  # Try simple with dates
+  test <- expand.grid(site = LETTERS[1:2], date = as.Date(c("2017-04-06", "2017-04-11")))
+  test <- test[with(test, order(site, date)), ]
+  set.seed(1231)
+  test <- within(test, {
+    # ocov = round(rnorm(nrow(test)), 2)
+    y = rbinom(nrow(test), 1, 0.6)
+  })
+  withdate <- formatLong(test, type = "unmarkedFrameOccu")
+
+  checkEquals(withdate,
+              new("unmarkedFrameOccu", y = structure(c(1L, 0L, 1L, 1L), .Dim = c(2L, 2L)),
+                  obsCovs = structure(list(JulianDate = structure(c(17262, 17267, 17262, 17267),
+                                                                  class = "Date")),
+                                      class = "data.frame",
+                                      row.names = c(NA, -4L)),
+                  siteCovs = NULL,
+                  mapInfo = NULL,
+                  obsToY = structure(c(1, 0, 0, 1), .Dim = c(2L, 2L))))
+
+  test <- expand.grid(site = LETTERS[1:4], julian = c(13, 20, 26))
   test <- test[with(test, order(site, julian)), ]
-  
+
   set.seed(42)
   test <- within(test, {
     obsfac = factor(sample(LETTERS[1:2], nrow(test), replace = TRUE))
@@ -14,28 +34,26 @@ test.formatLong <- function() {
     scov = 2 * as.numeric(test$site)
     y = rbinom(nrow(test), 1, 0.6)
   })
-  
-  withfac <- unmarked:::formatLong(test, type = "unmarkedFrameOccu")
-  
+
+  withfac <- formatLong(test, type = "unmarkedFrameOccu")
+
   checkEquals(withfac,
-              new("unmarkedFrameOccu", 
-                  y = structure(c(1L, 0L, 1L, 0L, 1L, 1L, 0L, 0L, 0L, 1L, 1L, 0L), 
-                                .Dim = c(4L, 3L), .Dimnames = list(NULL, NULL), class = "matrix"),
-                  obsCovs = structure(list(ocov = c(1.51, -0.09, 2.02, -0.06, 1.3, 2.29, -1.39, 
-                                                    -0.28, -0.13, 0.64, -0.28, -2.66), 
-                                           obsfac = structure(c(2L, 2L, 1L, 2L, 2L, 2L, 2L, 1L, 2L, 2L, 1L, 2L), 
-                                                              .Label = c("A", "B"), class = "factor"), 
-                                           JulianDate = c(13, 20, 26, 13, 20, 26, 13, 20, 26, 13, 20, 26)), 
-                                      .Names = c("ocov", "obsfac", "JulianDate"), 
-                                      class = "data.frame", 
-                                      row.names = c(NA, -12L)),
-                  siteCovs = structure(list(scov = c(2, 4, 6, 8), 
-                                            sitefac = structure(c(1L, 1L, 2L, 2L), 
-                                                                .Label = c("0", "1"), class = "factor")), 
-                                       .Names = c("scov", "sitefac"), row.names = c(NA, -4L), class = "data.frame"),
+              new("unmarkedFrameOccu",
+                  y = structure(c(1L, 0L, 1L, 0L, 1L, 1L, 0L, 0L, 0L, 1L, 1L, 0L), .Dim = 4:3),
+                  obsCovs = structure(list(ocov = c(1.51, -0.09, 2.02, -0.06, 1.3, 2.29, -1.39, -0.28,
+                                                    -0.13, 0.64, -0.28, -2.66),
+                                           obsfac = structure(c(2L, 2L, 1L, 2L, 2L, 2L, 2L, 1L, 2L, 2L,
+                                                                1L, 2L),
+                                                              .Label = c("A", "B"), class = "factor"),
+                                           JulianDate = c(13, 20, 26, 13, 20, 26, 13, 20, 26, 13, 20, 26)),
+                                      class = "data.frame", row.names = c(NA, -12L)),
+                  siteCovs = structure(list(scov = c(2, 4, 6, 8),
+                                            sitefac = structure(c(1L, 1L, 2L, 2L),
+                                                                .Label = c("0", "1"), class = "factor")),
+                                       class = "data.frame", row.names = c(NA, -4L)),
                   mapInfo = NULL,
                   obsToY = structure(c(1, 0, 0, 0, 1, 0, 0, 0, 1), .Dim = c(3L, 3L))))
-              
+
   
 
     
@@ -43,11 +61,10 @@ test.formatLong <- function() {
 
 
 test.formatMult <- function() {
-  test <- expand.grid.df(expand.grid(site = LETTERS[1:4], visit = 1:3), 
-                         data.frame(year = 2015:2016))
+  test <- expand.grid(site = LETTERS[1:4], visit = 1:3, year = 2015:2016)
   test <- test[with(test, order(site, year, visit)), ]
   test <- test[, c("year", "site", "visit")]
-  
+
   set.seed(18939)
   test <- within(test, {
     ocov = round(rnorm(nrow(test)), 2)
@@ -59,31 +76,32 @@ test.formatMult <- function() {
     y  = rpois(nrow(test), lambda = 2)
   })
 
-  withfac <- formatMult(test) 
-  
+  withfac <- formatMult(test)
+
   checkEquals(withfac,
-              new("unmarkedMultFrame"
-                  , numPrimary = 2L
-                  , yearlySiteCovs = structure(list(ysfac = structure(c(1L, 1L, 1L, 2L, 1L, 2L, 1L, 
-                                                                        2L), .Label = c("0", "1"), class = "factor"), 
-                                                    yscov = c(1.3, 6.5, 2.6, 7.8, 3.9, 9.1, 5.2, 10.4)), 
-                                               .Names = c("ysfac", "yscov"), row.names = c(NA, -8L), class = "data.frame")
-                  , y = structure(c(0L, 1L, 3L, 3L, 2L, 2L, 2L, 1L, 1L, 0L, 3L, 3L, 1L, 
-                                    1L, 0L, 0L, 3L, 1L, 2L, 2L, 2L, 1L, 3L, 3L), .Dim = c(4L, 6L), .Dimnames = list(
-                                      structure(c("A", "B", "C", "D"), .Names = c("1", "43", "85", "127")), 
-                                      structure(c("2015-1", "2015-2", "2015-3", "2016-1", "2016-2", "2016-3"), 
-                                                .Names = c("1", "8", "15", "22", "29", "36"))))
-                  , obsCovs = structure(list(visit = c(1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3), 
-                                             obsfac = structure(c(2L, 1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 2L, 1L, 2L, 2L, 1L, 
-                                                                  1L, 2L,2L, 2L, 1L, 2L, 2L, 1L, 1L), .Label = c("A", "B"), class = "factor"), 
-                                             ocov = c(0.28, -1.41, -0.31, 0.05, -0.53, 0.84, -0.95, 1.63, 0.87, 1.03, 1.41, 
-                                                      1.25, -0.32, 0.11, -0.45, -0.83, 0.17, 0.28, -0.13, -1.86, -1.82, 0.11, 
-                                                      1.29, -0.31)), .Names = c("visit", "obsfac", "ocov"), 
-                                        class = "data.frame", row.names = c(NA, -24L))
-                  , siteCovs = structure(list(sitefac = structure(c(1L, 1L, 2L, 2L), .Label = c("0", "1"), class = "factor"), 
-                                              scov = c(2, 4, 6, 8)), .Names = c("sitefac", "scov"), row.names = c(NA, -4L), class = "data.frame")
-                  , mapInfo = NULL
-                  , obsToY = structure(c(1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 
-                                         0, 0, 0, 0, 0, 0, 1), .Dim = c(6L, 6L))
-              ))
+              new("unmarkedMultFrame",
+                  numPrimary = 2L,
+                  yearlySiteCovs = structure(list(ysfac = structure(c(1L, 1L, 1L, 2L, 1L, 2L, 1L, 2L),
+                                                                    .Label = c("0", "1"), class = "factor"),
+                                                  yscov = c(1.3, 6.5, 2.6, 7.8, 3.9, 9.1, 5.2, 10.4)),
+                                             class = "data.frame", row.names = c(NA, -8L)),
+                  y = structure(c(0L, 1L, 3L, 3L, 2L, 2L, 2L, 1L, 1L, 0L, 3L, 3L, 1L, 1L, 0L, 0L, 3L, 1L, 2L,
+                                  2L, 2L, 1L, 3L, 3L), .Dim = c(4L, 6L)),
+                  obsCovs = structure(list(visit = c(1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1,
+                                                     2, 3, 1, 2, 3),
+                                           obsfac = structure(c(2L, 1L, 1L, 1L, 2L, 2L, 2L, 1L, 1L, 1L, 2L,
+                                                                1L, 2L, 2L, 1L, 1L, 2L, 2L, 2L, 1L, 2L, 2L,
+                                                                1L, 1L), .Label = c("A", "B"), class = "factor"),
+                                           ocov = c(0.28, -1.41, -0.31, 0.05, -0.53, 0.84, -0.95, 1.63, 0.87,
+                                                    1.03, 1.41, 1.25, -0.32, 0.11, -0.45, -0.83, 0.17, 0.28,
+                                                    -0.13, -1.86, -1.82, 0.11, 1.29, -0.31)),
+                                      class = "data.frame", row.names = c(NA, -24L)),
+                  siteCovs = structure(list(sitefac = structure(c(1L, 1L, 2L, 2L),
+                                                                .Label = c("0", "1"), class = "factor"),
+                                            scov = c(2, 4, 6, 8)), class = "data.frame",
+                                       row.names = c(NA, -4L)),
+                  mapInfo = NULL,
+                  obsToY = structure(c(1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+                                       0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+                                       0, 0, 0, 0, 1), .Dim = c(6L, 6L))))
 }
