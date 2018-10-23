@@ -86,7 +86,7 @@ test.formatLong <- function() {
   checkEquals(umf@y, umf1@y)
   checkEquals(umf@siteCovs, umf1@siteCovs)
   checkEquals(umf@obsCovs, umf1@obsCovs[, c("x3", "x4")])
-  checkEquals(umf@obsToY, umf2@obsToY)
+  checkEquals(umf@obsToY, umf1@obsToY)
 
   # Compare manual and automatic open point count frame
   y1 <- matrix(c(
