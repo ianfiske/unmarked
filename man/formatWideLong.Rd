@@ -11,7 +11,7 @@ Convert a data.frame between wide and long formats.
 }
 \usage{
 formatWide(dfin, sep = ".", obsToY, type, ...)
-formatLong(dfin, species = NULL, type)
+formatLong(dfin, species = NULL, type, ...)
 }
 \details{
   In order for these functions to work, the columns of \code{dfin} need to be in the
@@ -32,7 +32,7 @@ formatLong(dfin, species = NULL, type)
     \item columns of site-level covariates, each with a relevant name per column.
     \item groups of columns of observation-level covariates, each group
   having the name form \dQuote{someObsCov.1}, \dQuote{someObsCov.2},
-  \ldots, 
+  \ldots,
   \dQuote{someObsCov.J}.
   }
 }
@@ -48,7 +48,7 @@ formatLong(dfin, species = NULL, type)
 }
   \item{species}{Character name of species response column
 }
-  \item{\dots}{Further arguments}
+  \item{\dots}{Further arguments to the unmarkedFrame* constructor functions}
 }
 \value{A data.frame}
 

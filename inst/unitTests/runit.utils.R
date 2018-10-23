@@ -54,9 +54,48 @@ test.formatLong <- function() {
                   mapInfo = NULL,
                   obsToY = structure(c(1, 0, 0, 0, 1, 0, 0, 0, 1), .Dim = c(3L, 3L))))
 
-  
+  # Compare manual and automatic open point count frame
+  y1 <- matrix(c(
+    0, 2, 3, 2, 0,
+    2, 2, 3, 1, 1,
+    1, 1, 0, 0, 3,
+    0, 0, 0, 0, 0), nrow=4, ncol=5, byrow=TRUE)
 
-    
+  # Site-specific covariates
+  sc1 <- data.frame(x1 = 1:4, x2 = c('A','A','B','B'))
+
+  # Observation-specific covariates
+  oc1 <- list(
+    x3 = matrix(1:5, nrow=4, ncol=5, byrow=TRUE),
+    x4 = matrix(letters[1:5], nrow=4, ncol=5, byrow=TRUE))
+
+  # Primary periods of surveys
+  primaryPeriod1 <- matrix(as.integer(c(
+    1, 2, 5, 7, 8,
+    1, 2, 3, 4, 5,
+    1, 2, 4, 5, 6,
+    1, 3, 5, 6, 7)), nrow=4, ncol=5, byrow=TRUE)
+
+  # Create the unmarkedFrame
+  umf1 <- unmarkedFramePCO(y=y1, siteCovs=sc1, obsCovs=oc1, numPrimary=5,
+                           primaryPeriod=primaryPeriod1)
+
+  test <- data.frame(site = rep(1:4, each = 5),
+                     obsnum = 1:5,
+                     y = as.vector(t(y1)),
+                     x1 = rep(1:4, each = 5),
+                     x2 = rep(c('A','A','B','B'), each = 5),
+                     x3 = 1:5,
+                     x4 = letters[1:5])
+  umf2 <- formatLong(test, type = "unmarkedFramePCO", numPrimary = 5,
+                     primaryPeriod = primaryPeriod1)
+  # formatLong tacks on JulianDate to obsCovs, so ignore this difference
+  checkEquals(umf1@y, umf2@y)
+  checkEquals(umf1@siteCovs, umf2@siteCovs)
+  checkEquals(umf1@obsCovs, umf2@obsCovs[, c("x3", "x4")])
+  checkEquals(umf1@obsToY, umf2@obsToY)
+  checkEquals(umf1@primaryPeriod, umf2@primaryPeriod)
+
 }
 
 

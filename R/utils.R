@@ -171,7 +171,7 @@ dateToObs <- function(dfin)
 # date, one column
 # response, one column
 # obs vars, one per column
-formatLong <- function(dfin, species = NULL, type)
+formatLong <- function(dfin, species = NULL, type, ...)
 {
 
     if(missing(type)) stop("type must be supplied")
@@ -264,11 +264,11 @@ formatLong <- function(dfin, species = NULL, type)
     })
     siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
     if(nrow(siteCovs) == 0) siteCovs <- NULL
-    
+
     ## remove sitecovs from obsvars
     obsvars.df <- obsvars.df[, !(names(obsvars.df) %in% names(siteCovs)), drop = FALSE]
 
-    do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsvars.df))
+    do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsvars.df, ...))
 }
 
 # column names must be
