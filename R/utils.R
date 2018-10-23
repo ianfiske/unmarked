@@ -171,21 +171,21 @@ dateToObs <- function(dfin)
 # date, one column
 # response, one column
 # obs vars, one per column
-formatLong <- function(dfin, species = NULL, type)
-{
+formatLong <- function(dfin, species = NULL, type, ...) {
+  if (type %in% c("umarkedFrameMPois", "unmarkedFrameGMM"))
+    stop("Multinomial data sets are not supported.")
+  if(missing(type)) stop("type must be supplied")
 
-    if(missing(type)) stop("type must be supplied")
+  ## copy dates to last column so that they are also a covdata var
+  nc <- ncol(dfin)
+  dfin[[nc+1]] <- dfin[[2]]
+  names(dfin)[nc+1] <- "Date"
 
-    ## copy dates to last column so that they are also a covdata var
-    nc <- ncol(dfin)
-    dfin[[nc+1]] <- dfin[[2]]
-    names(dfin)[nc+1] <- "Date"
-
-    if(!is.null(species)) {
-        dfin$y <- ifelse(dfin$species == species, dfin$y, 0)
-        dfin$y[is.na(dfin$y)] <- 0
-        dfin$species = NULL
-    }
+  if(!is.null(species)) {
+    dfin$y <- ifelse(dfin$species == species, dfin$y, 0)
+    dfin$y[is.na(dfin$y)] <- 0
+    dfin$species = NULL
+  }
 # TODO: dbl check that multiple cells per site*time are handled correctly.
 #  # sum up counts within time/site
 #  expr <- substitute(recast(dfin[,1:3], sv + dv ~ ..., id.var = 1:2,
@@ -203,41 +203,43 @@ formatLong <- function(dfin, species = NULL, type)
     dfin <- dateToObs(dfin)
     dfnm <- colnames(dfin)
     nV <- length(dfnm) - 1  # last variable is obsNum
-    
+
     ### Identify variables that are not factors
     # Include julian date/visit in search as it is added back in later
-    fac <- sapply(dfin[, 4:nV], is.factor) 
-    nonfac <- names(dfin[, 4:nV])[!fac]
-    
-    expr <- substitute(recast(dfin, newvar ~ obsNum + variable,
-                              id.var = c(dfnm[1],"obsNum"),
-                              measure.var = dfnm[3]),
-                       list(newvar=as.name(dfnm[1])))
-    y <- as.matrix(eval(expr)[,-1])
-    attr(y,"class") <- "matrix"
+    fac <- sapply(dfin[, 4:nV, drop = FALSE], is.factor)
+    nonfac <- names(dfin[, 4:nV, drop = FALSE])[!fac]
 
-    expr <- substitute(recast(dfin, newvar ~ obsNum ~ variable,
-                              id.var = c(dfnm[1],"obsNum"),
-                              measure.var = dfnm[4:nV]),
+    expr <- substitute(acast(melt(dfin,
+                                  id.vars = c(dfnm[1],"obsNum"),
+                                  measure.vars = dfnm[3]),
+                             newvar ~ obsNum + variable),
+                       list(newvar=as.name(dfnm[1])))
+    y <- unname(eval(expr))
+
+    expr <- substitute(acast(melt(dfin,
+                                  id.vars = c(dfnm[1],"obsNum"),
+                                  measure.vars = dfnm[4:nV]),
+                             newvar ~ obsNum ~ variable),
                        list(newvar=as.name(dfnm[1])))
     obsvars <- eval(expr)
+    names(dimnames(obsvars)) <- list(dfnm[1], "obsNum", "variable")
     which.date <- which(dimnames(obsvars)$variable == "Date")
     dimnames(obsvars)$variable[which.date] <- "JulianDate"
 
     obsvars.matlist <- arrToList(obsvars)
     obsvars.veclist <- lapply(obsvars.matlist, function(x) as.vector(t(x)))
-    
+
     # Return any non-factors to the correct mode
     if (length(nonfac) >= 1) {
-      modes <- apply(dfin[, nonfac], 2, mode)
+      classes <- sapply(dfin[, nonfac], class)
       nonfac[which(nonfac == "Date")] <- "JulianDate"
       for (i in seq_along(nonfac)) {
-        mode(obsvars.veclist[[nonfac[i]]]) <- modes[i]
+        class(obsvars.veclist[[nonfac[i]]]) <- classes[i]
       }
     }
-    
+
     obsvars.df <- data.frame(obsvars.veclist)
-    
+
     ## check for siteCovs
     obsNum <- ncol(y)
     M <- nrow(y)
@@ -262,11 +264,15 @@ formatLong <- function(dfin, species = NULL, type)
     })
     siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
     if(nrow(siteCovs) == 0) siteCovs <- NULL
-    
+
     ## remove sitecovs from obsvars
     obsvars.df <- obsvars.df[, !(names(obsvars.df) %in% names(siteCovs)), drop = FALSE]
 
-    do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsvars.df))
+    if (type %in% c("unmarkedFrameDS", "unmarkedFrameGDS"))
+      # obsCovs cannot be used with distsamp
+      do.call(type, list(y = y, siteCovs = siteCovs, ...))
+    else
+      do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsvars.df, ...))
 }
 
 # column names must be
@@ -275,8 +281,10 @@ formatLong <- function(dfin, species = NULL, type)
 # site vars: namefoo, namebar, ...
 # obs v: namefoo.1, namefoo.2, ..., namefoo.J, namebar.1, .., namebar.J,..
 
-formatWide <- function(dfin, sep = ".", obsToY, type, ...)
-{
+formatWide <- function(dfin, sep = ".", obsToY, type, ...) {
+  if (type %in% c("umarkedFrameMPois", "unmarkedFrameGMM", "double", "removal"))
+    stop("Multinomial data sets are not supported.")
+
         # escape separater if it is regexp special
     reg.specials <- c('.', '\\', ':', '|', '(', ')', '[', '{', '^', '$',
                       '*', '+', '?')
@@ -379,38 +387,37 @@ formatMult <- function(df.in)
 
     ### Identify variables that are not factors
     # Include julian date/visit in search as it is added back in later
-    fac <- sapply(df.obs[, c(3, 5:nV)], is.factor) 
-    nonfac <- names(df.obs[, c(3, 5:nV)])[!fac]
-    
+    fac <- sapply(df.obs[, c(3, 5:nV), drop = FALSE], is.factor)
+    nonfac <- names(df.obs[, c(3, 5:nV), drop = FALSE])[!fac]
+
     # create y matrix using reshape
-    expr <- substitute(recast(df.obs, var1 ~ year + obsNum + variable,
-                              id.var = c(dfnm[2],"year","obsNum"),
-                              measure.var = dfnm[4]),
+    expr <- substitute(acast(melt(df.obs,
+                                  id.vars = c(dfnm[2],"year","obsNum"),
+                                  measure.vars = dfnm[4]),
+                             var1 ~ year + obsNum + variable),
                        list(var1 = as.name(dfnm[2])))
-    y <- as.matrix(eval(expr)[,-1])
+    y <- unname(eval(expr))
 
     # create obsdata with reshape
     # include date (3rd col) and other measured vars
-    expr <- substitute(recast(df.obs, newvar ~ year + obsNum ~ variable,
-                              id.var = c(dfnm[2],"year","obsNum"),
-                              measure.var = dfnm[c(3,5:nV)]),
+    expr <- substitute(acast(melt(df.obs,
+                                  id.vars = c(dfnm[2],"year","obsNum"),
+                                  measure.vars = dfnm[c(3,5:nV)]),
+                             newvar ~ year + obsNum ~ variable),
                        list(newvar=as.name(dfnm[2])))
     obsvars <- eval(expr)
-
-    rownames(y) <- dimnames(obsvars)[[1]]
-    colnames(y) <- dimnames(obsvars)[[2]]
-    y <- as.matrix(y)
+    names(dimnames(obsvars)) <- list(dfnm[1], "obsNum", "variable")
 
     obsvars.list <- arrToList(obsvars)
-    
+
     # Return any non-factors to the correct mode
     if (length(nonfac) >= 1) {
-      modes <- apply(df.obs[, nonfac], 2, mode)
+      classes <- apply(df.obs[, nonfac], 2, class)
       for (i in 1:length(nonfac)) {
-        mode(obsvars.list[[nonfac[i]]]) <- modes[i]
+        class(obsvars.list[[nonfac[i]]]) <- classes[i]
       }
     }
-    
+
     obsvars.list <- lapply(obsvars.list, function(x) as.vector(t(x)))
     obsvars.df <- as.data.frame(obsvars.list)
 
@@ -471,7 +478,7 @@ formatMult <- function(df.in)
     finalobsvars.df <- as.data.frame(obsvars.df[, !(names(obsvars.df) %in%
                                                       c(names(siteCovs),
                                                         names(yearlySiteCovs)))])
-    names(finalobsvars.df) <- names(obsvars.df)[!(names(obsvars.df) %in% 
+    names(finalobsvars.df) <- names(obsvars.df)[!(names(obsvars.df) %in%
                                                     c(names(siteCovs),
                                                       names(yearlySiteCovs)))]
 
@@ -490,7 +497,7 @@ formatMult <- function(df.in)
 sppLongToWide <- function(df.in)
 {
     df.m <- melt(df.in, id = c("site", "spp"))
-    df.out <- cast(df.m, site ~ spp, add.missing=T, fill = 0)
+    df.out <- dcast(df.m, site ~ spp, add.missing=T, fill = 0)
     df.out <- df.out[order(df.out$site),]
     df.out
 }
@@ -593,16 +600,16 @@ as.numeric(1 - exp(-lambda))
 # Convert individual-level distance data to the
 # transect-level format required by distsamp()
 
-formatDistData <- function (distData, distCol, transectNameCol, dist.breaks, occasionCol,effortMatrix) 
+formatDistData <- function (distData, distCol, transectNameCol, dist.breaks, occasionCol,effortMatrix)
 {
-  if (!is.numeric(distData[, distCol])) 
+  if (!is.numeric(distData[, distCol]))
     stop("The distances must be numeric")
   transects <- distData[, transectNameCol]
   if (!is.factor(transects)) {
     transects <- as.factor(transects)
     warning("The transects were converted to a factor")
   }
-  
+
   if (missing(occasionCol)) {
     T <- 1
     occasions <- factor(rep(1, nrow(distData)))
@@ -620,29 +627,29 @@ formatDistData <- function (distData, distCol, transectNameCol, dist.breaks, occ
   if (missing(effortMatrix)) {
     effortMatrix <- matrix(nrow=M,ncol=T,1)
   }
-  
+
   if (!is.numeric(effortMatrix)){
     stop("effortMatrix is not numeric")
     effortMatrix <- matrix(nrow=M,ncol=T,1)
   }
-  
-  
-  dist.classes <- levels(cut(distData[, distCol], dist.breaks, 
+
+
+  dist.classes <- levels(cut(distData[, distCol], dist.breaks,
                              include.lowest = TRUE))
-  ya <- array(NA, c(M, J, T), dimnames = list(levels(transects), 
+  ya <- array(NA, c(M, J, T), dimnames = list(levels(transects),
                                               dist.classes, paste("rep", 1:T, sep = "")))
   transect.levels <- levels(transects)
   occasion.levels <- levels(occasions)
   for (i in 1:M) {
     for (t in 1:T) {
-      sub <- distData[transects == transect.levels[i] & 
+      sub <- distData[transects == transect.levels[i] &
                         occasions == occasion.levels[t], , drop = FALSE]
-      ya[i, , t] <- table(cut(sub[, distCol], dist.breaks, 
+      ya[i, , t] <- table(cut(sub[, distCol], dist.breaks,
                               include.lowest = TRUE))
     }
   }
   y <- matrix(ya, nrow = M, ncol = J * T)
-  # takes into account the effortMatrix to allow for the insertion of NAs instead of 0s for surveys which were not completed  
+  # takes into account the effortMatrix to allow for the insertion of NAs instead of 0s for surveys which were not completed
   ee <- array(NA, c(M,length(occasion.levels)*(length(dist.breaks)-1)))
   for(i in 1:length(occasion.levels)){
     ee[,((ncol(ee)/length(occasion.levels)*(i-1)+1):(ncol(ee)/length(occasion.levels)*i))] <- matrix(effortMatrix[,i], ncol=J, nrow=M)
@@ -651,7 +658,7 @@ formatDistData <- function (distData, distCol, transectNameCol, dist.breaks, occ
   y <- y * ee
   dn <- dimnames(ya)
   rownames(y) <- dn[[1]]
-  if (T == 1) 
+  if (T == 1)
     colnames(y) <- dn[[2]]
   else colnames(y) <- paste(rep(dn[[2]], times = T), rep(1:T, each = J), sep = "")
   return(y)
