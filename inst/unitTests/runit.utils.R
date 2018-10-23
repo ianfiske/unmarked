@@ -130,6 +130,29 @@ test.formatLong <- function() {
   checkEquals(umf1@obsToY, umf2@obsToY)
   checkEquals(umf1@primaryPeriod, umf2@primaryPeriod)
 
+  # Compare manual and automatic unmarkedFrameDS object
+  # Manual creation from help
+  R <- 4 # number of sites
+  J <- 3 # number of distance classes
+  db <- c(0, 10, 20, 30) # distance break points
+  y <- matrix(c(
+    5,4,3, # 5 detections in 0-10 distance class at this transect
+    0,0,0,
+    2,1,1,
+    1,1,0), nrow=R, ncol=J, byrow=TRUE)
+  site.covs <- data.frame(x1=1:4, x2=factor(c('A','B','A','B')))
+  umf <- unmarkedFrameDS(y=y, siteCovs=site.covs, dist.breaks=db, survey="point",
+                         unitsIn="m")            # organize data
+  # Corresponding long data.frame
+  dsdf <- data.frame(site = rep(seq(R), each = J),
+                     occasion = rep(1:J, R),
+                     y = as.vector(t(y)),
+                     x1 = rep(1:4, each = J),
+                     x2 = factor(rep(c('A','B', 'A', 'B'), each = J)))
+  umf1 <- formatLong(dsdf, type = "unmarkedFrameDS", dist.breaks = db,
+                     survey = "point", unitsIn = "m")
+  checkEquals(umf, umf1)
+
 }
 
 

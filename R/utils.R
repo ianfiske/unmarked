@@ -268,7 +268,11 @@ formatLong <- function(dfin, species = NULL, type, ...)
     ## remove sitecovs from obsvars
     obsvars.df <- obsvars.df[, !(names(obsvars.df) %in% names(siteCovs)), drop = FALSE]
 
-    do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsvars.df, ...))
+    if (type %in% c("unmarkedFrameDS", "unmarkedFrameGDS"))
+      # obsCovs cannot be used with distsamp
+      do.call(type, list(y = y, siteCovs = siteCovs, ...))
+    else
+      do.call(type, list(y = y, siteCovs = siteCovs, obsCovs = obsvars.df, ...))
 }
 
 # column names must be
