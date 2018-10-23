@@ -54,6 +54,40 @@ test.formatLong <- function() {
                   mapInfo = NULL,
                   obsToY = structure(c(1, 0, 0, 0, 1, 0, 0, 0, 1), .Dim = c(3L, 3L))))
 
+  # Compare manual and automatic unmarkedPCount frames
+  # Manual creation from help
+  R <- 4 # number of sites
+  J <- 3 # number of visits
+  y <- matrix(c(1,2,0,0,0,0,1,1,1,2,2,1), nrow=R, ncol=J, byrow=TRUE)
+  site.covs <- data.frame(x1=1:4, x2=factor(c('A','B','A','B')))
+  obs.covs <- list(
+    x3 = matrix(c(
+      -1,0,1,
+      -2,0,0,
+      -3,1,0,
+      0,0,0), nrow=R, ncol=J, byrow=TRUE),
+    x4 = matrix(c(
+      'a','b','c',
+      'd','b','a',
+      'a','a','c',
+      'a','b','a'), nrow=R, ncol=J, byrow=TRUE))
+  umf <- unmarkedFramePCount(y=y, siteCovs=site.covs,
+                             obsCovs=obs.covs)          # organize data
+  # Corresponding long data.frame
+  pcdf <- data.frame(site = rep(seq(R), each = J),
+                     occasion = rep(1:J, R),
+                     y = as.vector(t(y)),
+                     x1 = rep(1:4, each = J),
+                     x2 = factor(rep(c('A','B', 'A', 'B'), each = J)),
+                     x3 = as.vector(t(obs.covs$x3)),
+                     x4 = as.vector(t(obs.covs$x4)))
+  umf1 <- formatLong(pcdf, type = "unmarkedFramePCount")
+  # formatLong tacks on JulianDate to obsCovs, so ignore this difference
+  checkEquals(umf@y, umf1@y)
+  checkEquals(umf@siteCovs, umf1@siteCovs)
+  checkEquals(umf@obsCovs, umf1@obsCovs[, c("x3", "x4")])
+  checkEquals(umf@obsToY, umf2@obsToY)
+
   # Compare manual and automatic open point count frame
   y1 <- matrix(c(
     0, 2, 3, 2, 0,
