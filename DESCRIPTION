@@ -22,4 +22,3 @@ URL: http://groups.google.com/group/unmarked,
      https://sites.google.com/site/unmarkedinfo/home,
      http://github.com/ianfiske/unmarked,
      http://github.com/rbchan/unmarked
-LinkingTo: Rcpp, RcppArmadillo
