@@ -3,7 +3,7 @@ Version: 0.12-2
 Date: 2017-05-14
 Type: Package
 Title: Models for Data from Unmarked Animals
-Author: Ian Fiske, Richard Chandler, David Miller, Andy Royle, Marc Kery, Jeff Hostetler, Rebecca Hutchinson 
+Author: Ian Fiske, Richard Chandler, David Miller, Andy Royle, Marc Kery, Jeff Hostetler, Rebecca Hutchinson, Adam Smith 
 Maintainer: Andy Royle <aroyle@usgs.gov>
 Depends: R (>= 2.12.0), methods, lattice, parallel, Rcpp (>= 0.8.0), reshape2
 Imports: graphics, stats, utils, plyr, raster
