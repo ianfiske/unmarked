@@ -171,21 +171,21 @@ dateToObs <- function(dfin)
 # date, one column
 # response, one column
 # obs vars, one per column
-formatLong <- function(dfin, species = NULL, type, ...)
-{
+formatLong <- function(dfin, species = NULL, type, ...) {
+  if (type %in% c("umarkedFrameMPois", "unmarkedFrameGMM"))
+    stop("Multinomial data sets are not supported.")
+  if(missing(type)) stop("type must be supplied")
 
-    if(missing(type)) stop("type must be supplied")
+  ## copy dates to last column so that they are also a covdata var
+  nc <- ncol(dfin)
+  dfin[[nc+1]] <- dfin[[2]]
+  names(dfin)[nc+1] <- "Date"
 
-    ## copy dates to last column so that they are also a covdata var
-    nc <- ncol(dfin)
-    dfin[[nc+1]] <- dfin[[2]]
-    names(dfin)[nc+1] <- "Date"
-
-    if(!is.null(species)) {
-        dfin$y <- ifelse(dfin$species == species, dfin$y, 0)
-        dfin$y[is.na(dfin$y)] <- 0
-        dfin$species = NULL
-    }
+  if(!is.null(species)) {
+    dfin$y <- ifelse(dfin$species == species, dfin$y, 0)
+    dfin$y[is.na(dfin$y)] <- 0
+    dfin$species = NULL
+  }
 # TODO: dbl check that multiple cells per site*time are handled correctly.
 #  # sum up counts within time/site
 #  expr <- substitute(recast(dfin[,1:3], sv + dv ~ ..., id.var = 1:2,
@@ -281,8 +281,10 @@ formatLong <- function(dfin, species = NULL, type, ...)
 # site vars: namefoo, namebar, ...
 # obs v: namefoo.1, namefoo.2, ..., namefoo.J, namebar.1, .., namebar.J,..
 
-formatWide <- function(dfin, sep = ".", obsToY, type, ...)
-{
+formatWide <- function(dfin, sep = ".", obsToY, type, ...) {
+  if (type %in% c("umarkedFrameMPois", "unmarkedFrameGMM", "double", "removal"))
+    stop("Multinomial data sets are not supported.")
+
         # escape separater if it is regexp special
     reg.specials <- c('.', '\\', ':', '|', '(', ')', '[', '{', '^', '$',
                       '*', '+', '?')

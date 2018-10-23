@@ -14,6 +14,11 @@ formatWide(dfin, sep = ".", obsToY, type, ...)
 formatLong(dfin, species = NULL, type, ...)
 }
 \details{
+  Note that not all possible \code{unmarkedFrame}* classes have been tested with these
+  functions. Multinomial data sets (e.g., removal, double-observer, capture-recapture)
+  are almost certainly easier to enter directly to the constructor function and are not
+  supported by \code{formatLong} or \code{formatWide}.
+
   In order for these functions to work, the columns of \code{dfin} need to be in the
   correct order.  \code{formatLong} requires that the columns are in the
   following scheme:
