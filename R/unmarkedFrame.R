@@ -70,6 +70,31 @@ setClass("unmarkedFrameOccuFP",
            type = "numeric"),
          contains = "unmarkedFrame")
 
+setClass("unmarkedFrameOccuMulti",
+    representation(ylist = "list"),
+    contains = "unmarkedFrame",
+    validity = function(object) {
+      errors <- character(0)
+      M <- nrow(object@y)
+      J <- ncol(object@y)
+      Ms <- sapply(object@ylist,nrow)
+      Js <- sapply(object@ylist,ncol)
+      if(length(unique(Ms)) != 1)
+        errors <- c(errors, "All species must have same number of sites")
+      if(length(unique(Js)) != 1)
+        errors <- c(errors, "All species must have same number of observations")
+      if(!is.null(object@siteCovs))
+        if(nrow(object@siteCovs) != M)
+            errors <- c(errors,
+               "siteCovData does not have same size number of sites as y.")
+      if(!is.null(obsCovs(object)) & !is.null(obsNum(object)))
+        if(nrow(object@obsCovs) != M*obsNum(object))
+            errors <- c(errors, "obsCovData does not have M*obsNum rows.")
+      if(length(errors) == 0)
+        TRUE
+      else
+        errors
+      })
 
 setClass("unmarkedFramePCount",
 		contains = "unmarkedFrame")
@@ -177,7 +202,18 @@ unmarkedFrameOccuFP <- function(y, siteCovs = NULL, obsCovs = NULL, type, mapInf
   umf
 }
 
-
+unmarkedFrameOccuMulti <- function(y, siteCovs = NULL, obsCovs = NULL,
+                                   mapInfo = NULL)
+{
+    ylist <- y
+    y <- ylist[[1]]
+    J <- ncol(y)
+    if(is.null(names(ylist)))
+       names(ylist) <- paste('species',1:length(ylist),sep='')
+    umfmo <- new("unmarkedFrameOccuMulti", y=y, ylist = ylist,
+                 obsCovs = obsCovs, siteCovs = siteCovs, obsToY = diag(J))
+    return(umfmo)
+}
 
 
 unmarkedFramePCount <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo)
@@ -493,6 +529,13 @@ setMethod("show", "unmarkedMultFrame",
         }
 })
 
+setMethod("show", "unmarkedFrameOccuMulti", function(object)
+{
+    df <- as(object, "data.frame")
+    cat("Data frame representation of unmarkedFrame object.\n")
+    cat("Only showing observation matrix for species 1.\n")
+    print(df)
+})
 
 ############################ EXTRACTORS ##################################
 
@@ -673,6 +716,33 @@ setMethod("summary", "unmarkedMultFrame", function(object,...) {
 })
 
 
+setMethod("summary", "unmarkedFrameOccuMulti", function(object,...) {
+    cat("unmarkedFrame Object\n\n")
+    cat(nrow(object@y), "sites\n")
+    cat(length(object@ylist), "species:", names(object@ylist),"\n")
+    cat("Maximum number of observations per site:",obsNum(object),"\n")
+    mean.obs <- sapply(object@ylist,function(x) mean(rowSums(!is.na(x))))
+    cat("Mean number of observations per site:\n")
+    invisible(sapply(1:length(mean.obs), function(x)
+        cat(paste(names(mean.obs)[x],': ',mean.obs[x],'  ',sep='')))); cat("\n")   
+    s.one <- sapply(object@ylist,function(x) sum(rowSums(x,na.rm=T)>0))
+    cat("Sites with at least one detection:\n")
+    invisible(sapply(1:length(s.one), function(x)
+        cat(paste(names(s.one)[x],': ',s.one[x],'  ',sep='')))); cat("\n")   
+    cat("Tabulation of y observations:\n")
+    for (i in 1:length(object@ylist)){
+      cat(paste(names(object@ylist)[i],':',sep=''))
+      print(table(object@ylist[[i]], exclude=NULL))
+    }
+    if(!is.null(object@siteCovs)) {
+        cat("\nSite-level covariates:\n")
+        print(summary(object@siteCovs))
+    }
+    if(!is.null(object@obsCovs)) {
+        cat("\nObservation-level covariates:\n")
+        print(summary(object@obsCovs))
+    }
+})
 
 
 ################################# PLOT METHODS ###########################
@@ -701,6 +771,28 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
         colorkey=colorkey, strip=strip, xlab=xlab, ylab=ylab, ...)
 })
 
+setMethod("plot", c(x="unmarkedFrameOccuMulti", y="missing"),
+	function (x, y, colorkey, ylab="Site", xlab="Observation", ...)
+{
+    y <- getY(x)
+    ym <- max(y, na.rm=TRUE)
+    M <- nrow(y)
+    J <- ncol(y)
+    S <- length(x@ylist)
+    y <- as.data.frame(do.call(rbind,x@ylist))
+    colnames(y) <- paste("obs",1:J)
+    y$site <- rep(1:M,S)
+    y$species <- as.factor(rep(names(x@ylist),each=M))
+    y2 <- melt(y, #measure.vars = c("V1", "V2", "V3"),
+        id.vars=c("site","species"))
+    if(missing(colorkey))
+        colorkey <- list(at=0:(ym+1), labels=list(labels=as.character(0:ym),
+            at=(0:ym)+0.5))
+    levelplot(value ~ variable*site | species, y2,
+        scales=list(relation="free", x=list(labels=1:J)),
+        colorkey=colorkey, strip=T, xlab=xlab, ylab=ylab, 
+        labels=names(x@ylist), ...)
+})
 
 setMethod("hist", "unmarkedFrameDS", function(x, ...)
 {
@@ -824,6 +916,52 @@ setMethod("[", c("unmarkedFrame","list", "missing", "missing"),
 })
 
 
+#[ Methods for multispecies occupancy frames
+setMethod("[", c("unmarkedFrameOccuMulti", "numeric", "missing", "missing"),
+    function(x, i)
+{
+    if(length(i) == 0) return(x) 
+    M <- numSites(x)
+
+    ylist <- lapply(x@ylist,function(x) x[i,,drop=F])                     
+    siteCovs <- siteCovs(x)
+    obsCovs <- obsCovs(x)
+    if (!is.null(siteCovs)) {
+        siteCovs <- siteCovs(x)[i, , drop = FALSE]
+        }
+    if (!is.null(obsCovs)) {
+        R <- obsNum(x)
+        .site <- rep(1:M, each = R)
+        obsCovs <- ldply(i, function(site) {
+            subset(obsCovs, .site == site)
+            })
+        }
+    umf <- x
+    umf@y <- ylist[[1]]
+    umf@ylist <- ylist
+    umf@siteCovs <- siteCovs
+    umf@obsCovs <- obsCovs
+    umf
+})
+
+setMethod("[", c("unmarkedFrameOccuMulti", "missing", "numeric", "missing"),
+		function(x, i, j)
+{
+    y <- getY(x)
+    obsCovs <- obsCovs(x)
+    obsToY <- obsToY(x)
+    obs.remove <- rep(TRUE, obsNum(x))
+    obs.remove[j] <- FALSE
+    y.remove <- t(obs.remove) %*% obsToY > 0
+    ylist <- lapply(x@ylist, function(z) z[,!y.remove, drop=F])
+    obsCovs <- obsCovs[!rep(obs.remove, numSites(x)),, drop=FALSE]
+    
+    x@obsCovs <- obsCovs
+    x@y <- ylist[[1]]
+    x@ylist <- ylist
+    x@obsToY <- obsToY[!obs.remove,!y.remove, drop=FALSE]
+    x
+})
 
 
 ## for multframes, must remove years at a time
