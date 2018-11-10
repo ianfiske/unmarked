@@ -18,13 +18,14 @@ import(lattice, methods, parallel, Rcpp, reshape2)
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
-       colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV,
+       colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
        computeMPLElambda, pcount.spHDS)
 export(removalPiFun, doublePiFun)
 
 # S4 classes
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
               unmarkedFitPCount, unmarkedFitMPois, unmarkedFitPCO,
+              unmarkedFitOccuMulti,
               unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
               unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
               unmarkedFrameGMM, unmarkedFrameGDS, unmarkedFramePCO,

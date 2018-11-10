@@ -83,6 +83,11 @@ setClass("unmarkedFitOccuFP",
             type = "numeric"),
          contains = "unmarkedFit")
 
+setClass("unmarkedFitOccuMulti",
+         representation(
+            detformulas = "list",
+            stateformulas = "list"),
+         contains = "unmarkedFit")
 
 setClass("unmarkedFitMPois",
     contains = "unmarkedFit")
