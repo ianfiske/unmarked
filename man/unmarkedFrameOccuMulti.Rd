@@ -31,6 +31,8 @@
 
 \value{an object of class unmarkedFrameOccuMulti}
 
+\author{Ken Kellner \email{contact@kenkellner.com}}
+
 \seealso{\code{\link{unmarkedFrame-class}}, \code{\link{unmarkedFrame}}, 
     \code{\link{occuMulti}}}
 

@@ -15,12 +15,13 @@
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{Logical specifying whether or not to compute standard
       errors.}
-    \item{engine}{Only the native R engine is currently available.}
+    \item{engine}{Either "C" to use fast C++ code or "R" to use native R
+      code during the optimization.}
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
   }
 
-\description{This function fits the multispecies occupancy model of MacKenzie et al (2016).}
+\description{This function fits the multispecies occupancy model of Rota et al (2016).}
 
 \details{
 
@@ -38,7 +39,7 @@ Rota, C.T., et al. 2016. A multi-species occupancy model for two or more
   interacting species. Methods in Ecology and Evolution 7: 1164-1173.
 }
 
-\author{Ken Kellner}
+\author{Ken Kellner \email{contact@kenkellner.com}}
 
 \seealso{\code{\link{unmarked}}, \code{\link{unmarkedFrameOccuMulti}}}
 

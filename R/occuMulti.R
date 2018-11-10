@@ -1,14 +1,12 @@
 occuMulti <- function(detformulas, stateformulas,  data, starts,
-                      method='BFGS', se=TRUE, engine="R", ...){
+                      method='BFGS', se=TRUE, engine=c("C","R"), ...){
   
   #Format input data-----------------------------------------------------------
   #Check data object
   if(!class(data) == "unmarkedFrameOccuMulti")
     stop("Data must be created with unmarkedFrameOccuMulti()")
-  
-  #Check engine
-  if(!engine=="R")
-    stop("Only R engine is available for now")
+ 
+  engine <- match.arg(engine, c("C", "R"))
 
   #Generate some indices
   S <- length(data@ylist) # of species
@@ -95,7 +93,7 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
     psi <- psi/rowSums(psi)
 
     #p
-    p <- matrix(NA,nrow=N*J,ncol=S)
+    p <- matrix(NA,nrow=nrow(y),ncol=S)
     for (i in 1:S){
       p[,i] <- plogis(dmDet[[i]] %*% params[dStart[i]:dStop[i]])
     }
@@ -112,14 +110,31 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
       prdProbY[i,] <- apply(prbSeq,1,prod)
     }
     
-    log_lik <- sum(log(rowSums(psi*prdProbY)))
-    -log_lik
+    #neg log likelihood
+    -sum(log(rowSums(psi*prdProbY)))
+  }
+  #----------------------------------------------------------------------------
+
+  #Likelihood function in C----------------------------------------------------
+  nll_C <- function(params) {
+    .Call("nll_occuMulti",
+          fStart-1, fStop-1, dmF, dmOcc, params, dmDet, dStart-1, dStop-1,
+          y, yStart-1, yStop-1, Iy0, as.matrix(z),
+          PACKAGE = "unmarked")
   }
   #----------------------------------------------------------------------------
 
   #Run optim()-----------------------------------------------------------------
+  if(engine=="C"){
+    nll <- nll_C
+  } else if(engine=="R"){
+    nll <- nll_R
+  } else {
+    stop("Invalid engine choice. Options are C or R.")
+  }
+  
   if(missing(starts)) starts <- rep(0, nP)
-  fm <- optim(starts, nll_R, method = method, hessian = se, ...)
+  fm <- optim(starts, nll, method = method, hessian = se, ...)
 
   if(se) {
     tryCatch(covMat <- solve(fm$hessian),
