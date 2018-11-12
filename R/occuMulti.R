@@ -69,16 +69,34 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
   ylong <- as.data.frame(do.call(rbind,ylong))
   ylong <- melt(ylong,id.vars=c("site","species"),variable.name='sample')
   ylong <- dcast(ylong, site + sample ~ species)
+ 
+  #Remove missing values
+  navec <- apply(ylong, 1, function(x) any(is.na(x)))
+  sites_with_missing <- unique(ylong$site[navec])
+
+  ylong <- ylong[!navec,,drop=FALSE]
+  dmDet <- lapply(dmDet, function(x) x[!navec,,drop=FALSE])
   
+  no_data_sites <- which(! 1:N %in% ylong$site)
+  if(length(no_data_sites>0)){
+    stop(paste("No non-missing detections at sites:",
+                  paste(no_data_sites,collapse=", ")))
+  }
+
+  if(sum(navec)>0){  
+    warning(paste("Missing values for detections at sites:",
+                  paste(sites_with_missing,collapse=", ")))
+  }
+
   #Start-stop indices for sites
   yStart <- c(1,1+which(diff(ylong$site)!=0))
-  yStop <- yStart + J - 1
-
+  yStop <- c(yStart[2:length(yStart)]-1,nrow(ylong)) 
+  
   y <- as.matrix(subset(ylong,select=-c(site,sample)))
 
   #Indicator matrix for no detections at a site
-  Iy0 <- do.call(cbind,
-                 lapply(data@ylist, function(x) as.numeric(rowSums(x)==0)))
+  Iy0 <- do.call(cbind, lapply(data@ylist, 
+                               function(x) as.numeric(rowSums(x, na.rm=T)==0)))
   #----------------------------------------------------------------------------
 
   #Likelihood function in R----------------------------------------------------
