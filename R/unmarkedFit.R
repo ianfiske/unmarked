@@ -1285,7 +1285,67 @@ setMethod("predict", "unmarkedFitGMM",
     return(out)
 })
 
+# OccuMulti
 
+setMethod("predict", "unmarkedFitOccuMulti",
+     function(object, type, newdata, 
+              #backTransform = TRUE, na.rm = TRUE,
+         #appendData = FALSE, level=0.95, 
+              ...)
+  {
+
+  type <- match.arg(type, c("state", "det"))
+
+  if(missing(newdata)){
+    newdata <- object@data
+  }
+
+  if(! class(newdata) %in% c('unmarkedFrameOccuMulti','data.frame')){
+    stop("newdata must be a data frame or an unmarkedFrameOccuMulti object")
+  }
+
+  if (class(newdata) == 'data.frame') {
+    temp <- object@data
+    if(type=="state"){
+      temp@siteCovs <- newdata
+    } else {
+      temp@obsCovs <- newdata
+    }
+    newdata <- temp
+  }
+
+  dm <- unmarked:::getDesign(newdata,object@detformulas,object@stateformulas,
+                             na.rm=F)
+  params <- coef(object) 
+
+  if(type=="state"){
+    N <- nrow(newdata@siteCovs); nF <- dm$nF; dmOcc <- dm$dmOcc; dmF <- dm$dmF
+    fStart <- dm$fStart; fStop <- dm$fStop
+    
+    f <- matrix(NA,nrow=N,ncol=nF)
+    for (i in 1:nF){
+      f[,i] <- dmOcc[[i]] %*% params[fStart[i]:fStop[i]]
+    }
+    psi <- exp(f %*% t(dmF))
+    out <- psi/rowSums(psi)
+    codes <- apply(z,1,function(x) paste(x,collapse=""))
+    colnames(out) <- paste('psi[',codes,']',sep='') 
+  }
+
+  if(type=="det"){
+    S <- dm$S; dmDet <- dm$dmDet
+    dStart <- dm$dStart; dStop <- dm$dStop
+
+    out <- matrix(NA,nrow=nrow(newdata@obsCovs),ncol=S)
+    for (i in 1:S){
+      out[,i] <- plogis(dmDet[[i]] %*% params[dStart[i]:dStop[i]])
+    }
+    colnames(out) <- names(object@data@ylist) 
+  }
+
+  out
+
+})
 
 
 # ---------------------- coef, vcov, and SE ------------------------------
