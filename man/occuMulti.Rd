@@ -5,11 +5,11 @@
 \title{Fit the Rota et al. (2016) Multi-species Occupancy Model}
 
 \usage{occuMulti(detformulas, stateformulas, data, starts, method="BFGS",
-    se=TRUE, engine=c("R"), ...)}
+    se=TRUE, engine=c("C","R"), ...)}
 
 \arguments{
     \item{detformulas}{List of formulas for the detection models, one per species.}
-    \item{stateformulas}{List of formulas for the natural (*f*) parameters.}
+    \item{stateformulas}{List of formulas for the natural parameters.}
     \item{data}{An \code{\link{unmarkedFrameOccuMulti}} object}
     \item{starts}{Vector of parameter starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}

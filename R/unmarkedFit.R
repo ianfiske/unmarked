@@ -1314,8 +1314,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
     newdata <- temp
   }
 
-  dm <- unmarked:::getDesign(newdata,object@detformulas,object@stateformulas,
-                             na.rm=F)
+  dm <- getDesign(newdata,object@detformulas,object@stateformulas,na.rm=F)
   params <- coef(object) 
 
   if(type=="state"){
@@ -1328,7 +1327,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
     }
     psi <- exp(f %*% t(dmF))
     out <- psi/rowSums(psi)
-    codes <- apply(z,1,function(x) paste(x,collapse=""))
+    codes <- apply(dm$z,1,function(x) paste(x,collapse=""))
     colnames(out) <- paste('psi[',codes,']',sep='') 
   }
 

@@ -5,6 +5,7 @@
 \alias{ranef,unmarkedFitOccu-method}
 \alias{ranef,unmarkedFitOccuFP-method}
 \alias{ranef,unmarkedFitOccuRN-method}
+\alias{ranef,unmarkedFitOccuMulti-method}
 \alias{ranef,unmarkedFitPCount-method}
 \alias{ranef,unmarkedFitMPois-method}
 \alias{ranef,unmarkedFitDS-method}

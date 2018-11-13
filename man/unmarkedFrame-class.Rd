@@ -25,6 +25,7 @@
 \alias{obsToY}
 \alias{obsToY<-}
 \alias{plot,unmarkedFrame,missing-method}
+\alias{plot,unmarkedFrameOccuMulti,missing-method}
 \alias{powerAnalysis}
 \alias{powerAnalysis,formula,unmarkedFramePCount,numeric-method}
 \alias{projection,unmarkedFrame-method}
@@ -34,6 +35,7 @@
 \alias{siteCovs}
 \alias{siteCovs<-}
 \alias{unmarkedFrameOccu-class}
+\alias{unmarkedFrameOccuMulti-class}
 \alias{unmarkedFrameMPois-class}
 \alias{unmarkedFramePCount-class}
 \alias{unmarkedFrameDS-class}
@@ -43,11 +45,14 @@
 \alias{unmarkedFrameGDS-class}
 \alias{unmarkedFrameGPC-class}
 \alias{show,unmarkedFrame-method}
+\alias{show,unmarkedFrameOccuMulti-method}
 \alias{show,unmarkedMultFrame-method}
 \alias{summary,unmarkedFrame-method}
 \alias{summary,unmarkedFrameDS-method}
 \alias{summary,unmarkedMultFrame-method}
-
+\alias{summary,unmarkedFrameOccuMulti-method}
+\alias{[,unmarkedFrameOccuMulti,missing,numeric,missing-method}
+\alias{[,unmarkedFrameOccuMulti,numeric,missing,missing-method}
 
 \title{Class "unmarkedFrame" }
 \description{Methods for manipulating, summarizing and viewing

@@ -219,7 +219,8 @@ unmarkedFrameOccuMulti <- function(y, siteCovs = NULL, obsCovs = NULL,
     attr(fDesign,'assign') <- NULL
     zinds <- apply(z,1,function(x) paste(x,collapse=''))
     rownames(fDesign) <- paste('psi[',zinds,']',sep='')
-    colnames(fDesign) <- paste('f',1:ncol(dm),'[',colnames(dm),']',sep='')
+    colnames(fDesign) <- paste('f',1:ncol(fDesign),'[',
+                               colnames(fDesign),']',sep='')
 
     umfmo <- new("unmarkedFrameOccuMulti", y=y, ylist = ylist, fDesign=fDesign,
                  obsCovs = obsCovs, siteCovs = siteCovs, obsToY = diag(J))

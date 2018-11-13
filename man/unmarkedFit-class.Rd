@@ -35,6 +35,7 @@
 \alias{unmarkedFitMPois-class}
 \alias{unmarkedFitPCO-class}
 \alias{unmarkedFitGMM-class}
+\alias{unmarkedFitOccuMulti-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}
