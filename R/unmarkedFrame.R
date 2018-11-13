@@ -71,7 +71,7 @@ setClass("unmarkedFrameOccuFP",
          contains = "unmarkedFrame")
 
 setClass("unmarkedFrameOccuMulti",
-    representation(ylist = "list"),
+    representation(ylist = "list", fDesign = "matrix"),
     contains = "unmarkedFrame",
     validity = function(object) {
       errors <- character(0)
@@ -209,8 +209,19 @@ unmarkedFrameOccuMulti <- function(y, siteCovs = NULL, obsCovs = NULL,
     y <- ylist[[1]]
     J <- ncol(y)
     if(is.null(names(ylist)))
-       names(ylist) <- paste('species',1:length(ylist),sep='')
-    umfmo <- new("unmarkedFrameOccuMulti", y=y, ylist = ylist,
+       names(ylist) <- paste('sp',1:length(ylist),sep='')
+
+    #f design matrix guide
+    S <- length(ylist)
+    z <- expand.grid(rep(list(1:0),S))[,S:1]
+    colnames(z) <- names(ylist)
+    fDesign <- model.matrix(as.formula(paste0("~.^",S,"-1")),z)
+    attr(fDesign,'assign') <- NULL
+    zinds <- apply(z,1,function(x) paste(x,collapse=''))
+    rownames(fDesign) <- paste('psi[',zinds,']',sep='')
+    colnames(fDesign) <- paste('f',1:ncol(dm),'[',colnames(dm),']',sep='')
+
+    umfmo <- new("unmarkedFrameOccuMulti", y=y, ylist = ylist, fDesign=fDesign,
                  obsCovs = obsCovs, siteCovs = siteCovs, obsToY = diag(J))
     return(umfmo)
 }

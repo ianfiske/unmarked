@@ -91,8 +91,14 @@ y <- list(y1,y2)
 #Create data object
 data = unmarkedFrameOccuMulti(y=y,siteCovs=occ_covs,obsCovs=det_covs)
 
+#Look at f design matrix for help setting up formulas
+data@fDesign
+
 # Formulas
+# Length should match number/order of columns in fDesign
 occFormulas <- list('~par1','~par2','~1')
+
+#Length should match number/order of species in data@ylist
 detFormulas <- list('~1','~1')
 
 #Fit model

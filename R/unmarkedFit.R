@@ -3035,6 +3035,37 @@ setMethod("simulate", "unmarkedFitOccuFP",
           })
 
 
+setMethod("simulate", "unmarkedFitOccuMulti",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+    data <- object@data
+    dm <- getDesign(object@data, object@detformulas, object@stateformulas)
+    psi <- predict(object, "state")
+    p <- predict(object, "det")
+    
+    simList <- list()
+    for (s in 1:nsim){
+      #True state
+      ztruth <- matrix(NA,nrow=dm$N,ncol=dm$S)
+      nZ <- nrow(dm$z)
+      for (i in 1:dm$N){
+        ztruth[i,] <- as.matrix(dm$z[sample(nZ,1,prob=psi[i,]),])
+      }
+
+      y <- list()
+      for (i in 1:dm$S){
+        y[[i]] <- matrix(NA,dm$N,dm$J)
+        for (j in 1:dm$N){
+          for (k in 1:dm$J){
+            y[[i]][j,k] <- rbinom(1,1,ztruth[j,i]*p[j,i])
+          }
+        }
+      }
+      simList[[s]] <- y
+    }
+    simList
+})
+
 
 setMethod("simulate", "unmarkedFitColExt",
     function(object, nsim = 1, seed = NULL, na.rm = TRUE)

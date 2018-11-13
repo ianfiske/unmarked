@@ -98,7 +98,10 @@ setMethod("ranef", "unmarkedFitOccuFP", function(object, na.rm = FALSE)
 })
 
 
-
+setMethod("ranef", "unmarkedFitOccuMulti", function(object, na.rm = FALSE)
+{
+  cat("ranef is not implemented for occuMulti at this time")
+})
 
 
 
