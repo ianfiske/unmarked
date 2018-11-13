@@ -462,7 +462,105 @@ setMethod("handleNA", "unmarkedMultFrame",
         removed.sites = which(sites.to.remove))
 })
 
+# occuMulti
 
+setMethod("getDesign", "unmarkedFrameOccuMulti",
+    function(umf, detformulas, stateformulas, na.rm=TRUE)
+{
+
+  #Generate some indices
+  S <- length(umf@ylist) # of species
+  z <- expand.grid(rep(list(1:0),S))[,S:1] # z matrix
+  M <- nrow(z) # of possible z states
+  dmF <- model.matrix(as.formula(paste0("~.^",S,"-1")),z) # f design matrix
+  nF <- ncol(dmF) # of f parameters
+  J <- ncol(umf@ylist[[1]]) # max # of samples at a site
+  N <- nrow(umf@ylist[[1]]) # of sites
+
+  #Check formulas
+  if(length(stateformulas) != nF)
+    stop(paste(nF,"formulas are required in stateformulas list"))
+  if(length(detformulas) != S)
+    stop(paste(S,"formulas are required in detformulas list"))
+ 
+  #Design matrices + parameter counts
+  #For f/occupancy
+  fInd <- c()
+  dmOcc <- lapply(seq_along(stateformulas),function(i){
+                    out <- model.matrix(stateformulas[[i]],umf@siteCovs)
+                    colnames(out) <- paste('f',i,'_',colnames(out),sep='')
+                    fInd <<- c(fInd,rep(i,ncol(out)))
+                    out
+          })
+  fStart <- c(1,1+which(diff(fInd)!=0))
+  fStop <- c(fStart[2:length(fStart)]-1,length(fInd)) 
+  occParams <- unlist(lapply(dmOcc,colnames))
+  nOP <- length(occParams)
+  
+  #For detection
+  dInd <- c()
+  dmDet <- lapply(seq_along(detformulas),function(i){
+                    out <- model.matrix(detformulas[[i]],umf@obsCovs)
+                    colnames(out) <- paste('sp',i,'_',colnames(out),sep='')
+                    dInd <<- c(dInd,rep(i,ncol(out)))
+                    out
+          })
+  dStart <- c(1,1+which(diff(dInd)!=0)) + nOP
+  dStop <- c(dStart[2:length(dStart)]-1,length(dInd)+nOP) 
+  detParams <- unlist(lapply(dmDet,colnames))
+  #nD <- length(detParams)
+  
+  #Combined
+  paramNames <- c(occParams,detParams)
+  nP <- length(paramNames)
+ 
+  #Re-format ylist
+  index <- 1
+  ylong <- lapply(umf@ylist, function(x) {
+                   colnames(x) <- 1:J
+                   x <- cbind(x,site=1:N,species=index)
+                   index <<- index+1
+                   x
+          })
+  ylong <- as.data.frame(do.call(rbind,ylong))
+  ylong <- melt(ylong,id.vars=c("site","species"),variable.name='sample')
+  ylong <- dcast(ylong, site + sample ~ species)
+
+  #Remove missing values
+  if(na.rm){
+
+    navec <- apply(ylong, 1, function(x) any(is.na(x)))
+    sites_with_missing <- unique(ylong$site[navec])
+
+    ylong <- ylong[!navec,,drop=FALSE]
+    dmDet <- lapply(dmDet, function(x) x[!navec,,drop=FALSE])
+  
+    no_data_sites <- which(! 1:N %in% ylong$site)
+    if(length(no_data_sites>0)){
+      stop(paste("No non-missing detections at sites:",
+                  paste(no_data_sites,collapse=", ")))
+    }
+
+    if(sum(navec)>0){  
+      warning(paste("Missing values for detections at sites:",
+                    paste(sites_with_missing,collapse=", ")))
+    }
+
+  }
+
+  #Start-stop indices for sites
+  yStart <- c(1,1+which(diff(ylong$site)!=0))
+  yStop <- c(yStart[2:length(yStart)]-1,nrow(ylong)) 
+  
+  y <- as.matrix(subset(ylong,select=-c(site,sample)))
+
+  #Indicator matrix for no detections at a site
+  Iy0 <- do.call(cbind, lapply(data@ylist, 
+                               function(x) as.numeric(rowSums(x, na.rm=T)==0)))
+
+  mget(c("N","S","J","M","nF","fStart","fStop","dmF","dmOcc","dmDet","dStart",
+         "dStop","y","yStart","yStop","Iy0","z","nOP","nP","paramNames"))
+})
 
 
 
