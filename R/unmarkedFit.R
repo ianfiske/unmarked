@@ -1290,7 +1290,8 @@ setMethod("predict", "unmarkedFitGMM",
 setMethod("predict", "unmarkedFitOccuMulti",
      function(object, type, newdata, 
               #backTransform = TRUE, na.rm = TRUE,
-         #appendData = FALSE, level=0.95, 
+              #appendData = FALSE, 
+              level=0.95, species=NULL, cond=NULL, nsims=100,
               ...)
   {
 
@@ -1315,31 +1316,115 @@ setMethod("predict", "unmarkedFitOccuMulti",
   }
 
   dm <- getDesign(newdata,object@detformulas,object@stateformulas,na.rm=F)
-  params <- coef(object) 
+  params <- coef(object)
+  ses <- SE(object)
 
+  low_bound <- (1-level)/2
+  up_bound <- level + (1-level)/2
+  
   if(type=="state"){
     N <- nrow(newdata@siteCovs); nF <- dm$nF; dmOcc <- dm$dmOcc; dmF <- dm$dmF
     fStart <- dm$fStart; fStop <- dm$fStop
     
-    f <- matrix(NA,nrow=N,ncol=nF)
-    for (i in 1:nF){
-      f[,i] <- dmOcc[[i]] %*% params[fStart[i]:fStop[i]]
+    calc_psi <- function(params){
+
+      f <- matrix(NA,nrow=N,ncol=nF)
+      for (i in 1:nF){
+        f[,i] <- dmOcc[[i]] %*% params[fStart[i]:fStop[i]]
+      }
+      psi <- exp(f %*% t(dmF))
+      psi/rowSums(psi)
     }
-    psi <- exp(f %*% t(dmF))
-    out <- psi/rowSums(psi)
-    codes <- apply(dm$z,1,function(x) paste(x,collapse=""))
-    colnames(out) <- paste('psi[',codes,']',sep='') 
+
+    psi_est <- calc_psi(params)
+    
+    cat('Bootstrapping confidence intervals with',nsims,'samples\n')
+    samp <- array(NA,c(dim(psi_est),nsims))
+    for (i in 1:nsims){
+      samp[,,i] <- calc_psi(stats::rnorm(length(params),params,ses))
+    }
+
+    if(!is.null(species)){
+      
+      sel_col <- species
+      
+      if(!is.null(cond)){
+        if(sel_col %in% abs(cond)){
+          stop("Species can't be conditional on itself")
+        }
+        ftemp <- object@data@fDesign
+        swap <- -1*cond[which(cond<0)]
+        ftemp[,swap] <- 1 - ftemp[,swap]
+        num_inds <- apply(ftemp[,c(sel_col,abs(cond))] == 1,1,all) 
+        denom_inds <- apply(ftemp[,abs(cond),drop=F] == 1,1,all)
+        est <- rowSums(psi_est[,num_inds,drop=F]) / 
+          rowSums(psi_est[,denom_inds, drop=F])
+        samp_num <- apply(samp[,num_inds,,drop=F],3,rowSums)
+        samp_denom <- apply(samp[,denom_inds,,drop=F],3,rowSums)
+        samp <- samp_num / samp_denom
+
+      } else {
+        num_inds <- which(object@data@fDesign[,sel_col] == 1)
+        est <- rowSums(psi_est[,num_inds])
+        samp <- samp[,num_inds,]
+        samp <- apply(samp, 3, rowSums)
+      }
+      
+      boot_se <- apply(samp,1,sd)
+      boot_low <- apply(samp,1,quantile,low_bound)
+      boot_up <- apply(samp,1,quantile,up_bound)
+      return(data.frame(Predicted=est,
+                        SE=boot_se,
+                        lower=boot_low,
+                        upper=boot_up))
+
+    } else {
+
+      boot_se <- apply(samp,c(1,2),sd)
+      boot_low <- apply(samp,c(1,2),quantile,low_bound)
+      boot_up <- apply(samp,c(1,2),quantile,up_bound)
+      codes <- apply(dm$z,1,function(x) paste(x,collapse=""))
+      colnames(psi_est) <- colnames(boot_se) <- colnames(boot_low) <-
+        colnames(boot_up) <- paste('psi[',codes,']',sep='') 
+      return(list(Predicted=psi_est,
+                  SE=boot_se,
+                  lower=boot_low,
+                  upper=boot_up))
+
+    }
   }
 
   if(type=="det"){
+    #based on 
+    #https://blog.methodsconsultants.com/posts/delta-method-standard-errors/
     S <- dm$S; dmDet <- dm$dmDet
     dStart <- dm$dStart; dStop <- dm$dStop
 
-    out <- matrix(NA,nrow=nrow(newdata@obsCovs),ncol=S)
+    out <- list()
+    z <- qnorm(low_bound,lower.tail=F)
+    N <- nrow(dmDet[[1]])
     for (i in 1:S){
-      out[,i] <- plogis(dmDet[[i]] %*% params[dStart[i]:dStop[i]])
+
+      inds <- dStart[i]:dStop[i]
+      param_sub <- params[inds]
+      est <- plogis(dmDet[[i]] %*% param_sub)
+      cov_sub <- vcov(object)[inds,inds]
+      
+      se_est <- lower <- upper <- numeric(N)
+      for (j in 1:N){
+        x <- dmDet[[i]][j]
+        xb <- stats::dlogis(t(x) %*% param_sub)
+        v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
+        se_est[j] <- sqrt(v)
+        lower[j] <- est[j] - z*se_est[j]
+        upper[j] <- est[j] + z*se_est[j]
+      }
+
+      out[[i]] <- data.frame(Predicted=est,SE=se_est,
+                             lower=lower,upper=upper)
+      
     }
-    colnames(out) <- names(object@data@ylist) 
+      names(out) <- names(object@data@ylist)
   }
 
   out

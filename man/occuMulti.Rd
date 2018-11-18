@@ -105,6 +105,21 @@ detFormulas <- list('~1','~1')
 fit <- occuMulti(detFormulas,occFormulas,data,se=T)
 
 fit
+
+#predict detection probabilities
+lapply(predict(fit,'det'),head)
+
+#predict probabilities for all unique occupancy states
+lapply(predict(fit,'state'),head)
+
+#predict marginal probability of species 2 occupancy
+head(predict(fit,'state',species=2))
+
+#predict conditional probability of species 2 occupancy given species 1 present
+head(predict(fit,'state',species=2,cond=1))
+
+#predict conditional probability of species 2 occupancy given species 1 absent
+head(predict(fit,'state',species=2,cond=-1))
 }
 
 \keyword{models}

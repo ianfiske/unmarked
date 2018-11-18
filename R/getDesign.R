@@ -552,7 +552,7 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   yStart <- c(1,1+which(diff(ylong$site)!=0))
   yStop <- c(yStart[2:length(yStart)]-1,nrow(ylong)) 
   
-  y <- as.matrix(subset(ylong,select=-c("site","sample")))
+  y <- as.matrix(ylong[,3:ncol(ylong)])
 
   #Indicator matrix for no detections at a site
   Iy0 <- do.call(cbind, lapply(umf@ylist, 
