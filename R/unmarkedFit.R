@@ -1823,6 +1823,36 @@ setMethod("fitted", "unmarkedFitOccuRN", function(object, K, na.rm = FALSE)
     return(matrix(fitted, M, J, byrow = TRUE))
 })
 
+setMethod("fitted", "unmarkedFitOccuMulti", function(object)
+{
+
+  S <- length(object@data@ylist)
+  N <- nrow(object@data@ylist[[1]])
+  J <- ncol(object@data@ylist[[1]])
+  dm <- getDesign(object@data,object@detformulas,object@stateformulas)
+  pred <- predict(object,'det')
+  dets <- do.call(cbind,lapply(pred,`[`,,1))
+  
+  #ugly mess
+  fitted_list <- list()
+  for (i in 1:S){
+    #fix this later
+    null <- utils::capture.output(
+      marg_occ <- predict(object,'state',species=i)$Predicted
+    )
+
+    occmat <- t(tcrossprod(rep(1,J),marg_occ))
+    pmat <- array(NA,dim(object@data@ylist[[1]]))
+    for (j in 1:N){
+      ps <- dets[dm$yStart[j]:dm$yStop[j],i]
+      pmat[j,1:length(ps)] <- ps
+    }
+    fitted_list[[i]] <- pmat * occmat
+  }
+  names(fitted_list) <- names(object@data@ylist)
+  fitted_list 
+
+})
 
 setMethod("fitted", "unmarkedFitColExt", function(object, na.rm = FALSE)
 {
@@ -2216,6 +2246,17 @@ setMethod("residuals", "unmarkedFitOccuRN", function(object, ...) {
     return(r)
 })
 
+setMethod("residuals", "unmarkedFitOccuMulti", function(object, ...) {
+  res_list <- list()
+  ylist <- object@data@ylist
+  fitlist <- fitted(object)
+
+  for (i in seq_along(ylist)){
+    res_list[[i]] <- ylist[[i]] - fitlist[[i]]
+  }
+  names(res_list) <- names(ylist)
+  res_list
+})
 
 setMethod("plot", c(x = "unmarkedFit", y = "missing"), function(x, y, ...)
 {
@@ -2225,7 +2266,13 @@ setMethod("plot", c(x = "unmarkedFit", y = "missing"), function(x, y, ...)
     abline(h = 0, lty = 3, col = "gray")
 })
 
-
+setMethod("plot", c(x = "unmarkedFitOccuMulti", y = "missing"), function(x, y, ...)
+{
+  r <- do.call(rbind,residuals(x))
+  e <- do.call(rbind,fitted(x))
+  plot(e, r, ylab = "Residuals", xlab = "Predicted values")
+  abline(h = 0, lty = 3, col = "gray")
+})
 
 
 setMethod("hist", "unmarkedFitDS", function(x, lwd=1, lty=1, ...) {

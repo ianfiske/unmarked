@@ -15,11 +15,13 @@
 \alias{nllFun,unmarkedFit-method}
 \alias{parboot,unmarkedFit-method}
 \alias{plot,unmarkedFit,missing-method}
+\alias{plot,unmarkedFitOccuMulti,missing-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{residuals,unmarkedFitOccu-method}
 \alias{residuals,unmarkedFitOccuFP-method}
 \alias{residuals,unmarkedFitOccuRN-method}
+\alias{residuals,unmarkedFitOccuMulti-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
 \alias{update,unmarkedFitPCO-method}
