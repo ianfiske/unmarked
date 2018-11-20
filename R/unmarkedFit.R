@@ -1291,7 +1291,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
      function(object, type, newdata, 
               #backTransform = TRUE, na.rm = TRUE,
               #appendData = FALSE, 
-              level=0.95, species=NULL, cond=NULL, nsims=100,
+              se.fit=TRUE, level=0.95, species=NULL, cond=NULL, nsims=100,
               ...)
   {
 
@@ -1338,10 +1338,12 @@ setMethod("predict", "unmarkedFitOccuMulti",
 
     psi_est <- calc_psi(params)
     
-    cat('Bootstrapping confidence intervals with',nsims,'samples\n')
-    samp <- array(NA,c(dim(psi_est),nsims))
-    for (i in 1:nsims){
-      samp[,,i] <- calc_psi(stats::rnorm(length(params),params,ses))
+    if(se.fit){
+      cat('Bootstrapping confidence intervals with',nsims,'samples\n')
+      samp <- array(NA,c(dim(psi_est),nsims))
+      for (i in 1:nsims){
+        samp[,,i] <- calc_psi(stats::rnorm(length(params),params,ses))
+      }
     }
 
     if(!is.null(species)){
@@ -1359,38 +1361,49 @@ setMethod("predict", "unmarkedFitOccuMulti",
         denom_inds <- apply(ftemp[,abs(cond),drop=F] == 1,1,all)
         est <- rowSums(psi_est[,num_inds,drop=F]) / 
           rowSums(psi_est[,denom_inds, drop=F])
-        samp_num <- apply(samp[,num_inds,,drop=F],3,rowSums)
-        samp_denom <- apply(samp[,denom_inds,,drop=F],3,rowSums)
-        samp <- samp_num / samp_denom
+        if(se.fit){
+          samp_num <- apply(samp[,num_inds,,drop=F],3,rowSums)
+          samp_denom <- apply(samp[,denom_inds,,drop=F],3,rowSums)
+          samp <- samp_num / samp_denom
+        }
 
       } else {
         num_inds <- which(object@data@fDesign[,sel_col] == 1)
         est <- rowSums(psi_est[,num_inds])
-        samp <- samp[,num_inds,]
-        samp <- apply(samp, 3, rowSums)
+        if(se.fit){
+          samp <- samp[,num_inds,]
+          samp <- apply(samp, 3, rowSums)
+        }
       }
       
-      boot_se <- apply(samp,1,sd)
-      boot_low <- apply(samp,1,quantile,low_bound)
-      boot_up <- apply(samp,1,quantile,up_bound)
+      if(se.fit){
+        boot_se <- apply(samp,1,sd)
+        boot_low <- apply(samp,1,quantile,low_bound)
+        boot_up <- apply(samp,1,quantile,up_bound)
+      } else{
+        boot_se <- boot_low <- boot_up <- NA
+      }
       return(data.frame(Predicted=est,
                         SE=boot_se,
                         lower=boot_low,
                         upper=boot_up))
 
     } else {
-
-      boot_se <- apply(samp,c(1,2),sd)
-      boot_low <- apply(samp,c(1,2),quantile,low_bound)
-      boot_up <- apply(samp,c(1,2),quantile,up_bound)
       codes <- apply(dm$z,1,function(x) paste(x,collapse=""))
-      colnames(psi_est) <- colnames(boot_se) <- colnames(boot_low) <-
-        colnames(boot_up) <- paste('psi[',codes,']',sep='') 
+      colnames(psi_est)  <- paste('psi[',codes,']',sep='') 
+      if(se.fit){
+        boot_se <- apply(samp,c(1,2),sd)
+        boot_low <- apply(samp,c(1,2),quantile,low_bound)
+        boot_up <- apply(samp,c(1,2),quantile,up_bound)
+        colnames(boot_se) <- colnames(boot_low) <- colnames(boot_up) <-
+          colnames(psi_est)
+      } else {
+        boot_se <- boot_low <- boot_up <- NA
+      }
       return(list(Predicted=psi_est,
                   SE=boot_se,
                   lower=boot_low,
                   upper=boot_up))
-
     }
   }
 
@@ -1408,27 +1421,28 @@ setMethod("predict", "unmarkedFitOccuMulti",
       inds <- dStart[i]:dStop[i]
       param_sub <- params[inds]
       est <- plogis(dmDet[[i]] %*% param_sub)
-      cov_sub <- vcov(object)[inds,inds]
       
-      se_est <- lower <- upper <- numeric(N)
-      for (j in 1:N){
-        x <- dmDet[[i]][j]
-        xb <- stats::dlogis(t(x) %*% param_sub)
-        v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
-        se_est[j] <- sqrt(v)
-        lower[j] <- est[j] - z*se_est[j]
-        upper[j] <- est[j] + z*se_est[j]
+      if(se.fit){
+        cov_sub <- vcov(object)[inds,inds]
+        se_est <- lower <- upper <- numeric(N)
+        for (j in 1:N){
+          x <- dmDet[[i]][j]
+          xb <- stats::dlogis(t(x) %*% param_sub)
+          v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
+          se_est[j] <- sqrt(v)
+          lower[j] <- est[j] - z*se_est[j]
+          upper[j] <- est[j] + z*se_est[j]
+        }
+      } else {
+        se_est <- lower <- upper <- NA
       }
-
       out[[i]] <- data.frame(Predicted=est,SE=se_est,
-                             lower=lower,upper=upper)
-      
+                            lower=lower,upper=upper)
     }
-      names(out) <- names(object@data@ylist)
+    names(out) <- names(object@data@ylist)
+    return(out)
   }
-
-  out
-
+  stop("type must be 'det' or 'state'")
 })
 
 
@@ -1827,27 +1841,14 @@ setMethod("fitted", "unmarkedFitOccuMulti", function(object)
 {
 
   S <- length(object@data@ylist)
-  N <- nrow(object@data@ylist[[1]])
   J <- ncol(object@data@ylist[[1]])
-  dm <- getDesign(object@data,object@detformulas,object@stateformulas)
-  pred <- predict(object,'det')
-  dets <- do.call(cbind,lapply(pred,`[`,,1))
+  pmat <- getP(object)
   
-  #ugly mess
   fitted_list <- list()
   for (i in 1:S){
-    #fix this later
-    null <- utils::capture.output(
-      marg_occ <- predict(object,'state',species=i)$Predicted
-    )
-
+    marg_occ <- predict(object,'state',se.fit=F,species=i)$Predicted
     occmat <- t(tcrossprod(rep(1,J),marg_occ))
-    pmat <- array(NA,dim(object@data@ylist[[1]]))
-    for (j in 1:N){
-      ps <- dets[dm$yStart[j]:dm$yStop[j],i]
-      pmat[j,1:length(ps)] <- ps
-    }
-    fitted_list[[i]] <- pmat * occmat
+    fitted_list[[i]] <- pmat[[i]] * occmat
   }
   names(fitted_list) <- names(object@data@ylist)
   fitted_list 
@@ -2429,6 +2430,29 @@ setMethod("getP", "unmarkedFitOccuFP", function(object, na.rm = TRUE)
   return(p)
 })
 
+setMethod("getP", "unmarkedFitOccuMulti", function(object)
+{
+  
+  ylist <- object@data@ylist
+  S <- length(ylist)
+  N <- nrow(ylist[[1]])
+  dm <- getDesign(object@data,object@detformulas,object@stateformulas)
+  pred <- predict(object,'det',se.fit=F)
+  dets <- do.call(cbind,lapply(pred,`[`,,1))
+  #ugly mess
+  out <- list()
+  for (i in 1:S){
+    pmat <- array(NA,dim(ylist[[1]]))
+    for (j in 1:N){
+      ps <- dets[dm$yStart[j]:dm$yStop[j],i]
+      not_na <- !is.na(ylist[[i]][j,])
+      pmat[j,not_na] <- ps
+    }
+    out[[i]] <- pmat
+  }
+  names(out) <- names(ylist)
+  out
+})
 
 setMethod("getFP", "unmarkedFitOccuFP", function(object, na.rm = TRUE)
 {
@@ -3171,8 +3195,8 @@ setMethod("simulate", "unmarkedFitOccuMulti",
 {
     data <- object@data
     dm <- getDesign(object@data, object@detformulas, object@stateformulas)
-    psi <- predict(object, "state")
-    p <- predict(object, "det")
+    psi <- predict(object, "state",se.fit=F)$Predicted
+    p <- getP(object)
     
     simList <- list()
     for (s in 1:nsim){
@@ -3188,7 +3212,9 @@ setMethod("simulate", "unmarkedFitOccuMulti",
         y[[i]] <- matrix(NA,dm$N,dm$J)
         for (j in 1:dm$N){
           for (k in 1:dm$J){
-            y[[i]][j,k] <- rbinom(1,1,ztruth[j,i]*p[j,i])
+            if(!is.na(p[[i]][j,k])){
+              y[[i]][j,k] <- rbinom(1,1,ztruth[j,i]*p[[i]][j,k])
+            }
           }
         }
       }

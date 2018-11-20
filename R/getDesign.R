@@ -465,7 +465,7 @@ setMethod("handleNA", "unmarkedMultFrame",
 # occuMulti
 
 setMethod("getDesign", "unmarkedFrameOccuMulti",
-    function(umf, detformulas, stateformulas, na.rm=TRUE)
+    function(umf, detformulas, stateformulas, na.rm=TRUE, warn=FALSE)
 {
 
   #Generate some indices
@@ -541,7 +541,7 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
                   paste(no_data_sites,collapse=", ")))
     }
 
-    if(sum(navec)>0){  
+    if(sum(navec)>0&warn){  
       warning(paste("Missing values for detections at sites:",
                     paste(sites_with_missing,collapse=", ")))
     }
