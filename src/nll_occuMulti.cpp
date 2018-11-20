@@ -46,7 +46,7 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
   for(int i = 0; i < S; i++){
     mat X = as<mat>(dmDet[i]);
     colvec beta_sub = beta.subvec(dStart[i], dStop[i]);
-    p.col(i) = X * ( 1.0 / ( 1.0 + exp( -1.0 * beta_sub )));
+    p.col(i) = 1.0 / ( 1.0 + exp( -1.0 * (X * beta_sub) ));
   }
 
   //Probability of detection history

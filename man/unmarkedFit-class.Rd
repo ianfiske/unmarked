@@ -26,6 +26,7 @@
 \alias{update,unmarkedFitColExt-method}
 \alias{update,unmarkedFitPCO-method}
 \alias{update,unmarkedFitGMM-method}
+\alias{update,unmarkedFitOccuMulti-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
