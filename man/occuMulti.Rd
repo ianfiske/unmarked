@@ -46,10 +46,11 @@ Rota, C.T., et al. 2016. A multi-species occupancy model for two or more
 
 
 \examples{
+\dontrun{
 
-#Simulate data
-N <- 100
-nspecies <- 2
+#Simulate 3 species `data
+N <- 1000
+nspecies <- 3
 J <- 5
 
 occ_covs <- as.data.frame(matrix(rnorm(N * 10),ncol=10))
@@ -59,12 +60,17 @@ det_covs <- as.data.frame(matrix(rnorm(N*J*3),ncol=3))
 names(det_covs) <- paste('par',1:3,sep='')
 
 #True vals
-beta <- c(0.5,0.5,-0.5,1.2,-1)
+beta <- c(0.5,0.2,0.4,0.5,-0.1,-0.3,0.2,0.1,-1,0.1)
 f1 <- beta[1] + beta[2]*occ_covs$par1
 f2 <- beta[3] + beta[4]*occ_covs$par2
-f3 <- beta[5]
-f <- cbind(f1,f2,f3)
+f3 <- beta[5] + beta[6]*occ_covs$par3
+f4 <- beta[7]
+f5 <- beta[8]
+f6 <- beta[9]
+f7 <- beta[10]
+f <- cbind(f1,f2,f3,f4,f5,f6,f7)
 z <- expand.grid(rep(list(1:0),nspecies))[,nspecies:1]
+colnames(z) <- paste('sp',1:nspecies,sep='')
 dm <- model.matrix(as.formula(paste0("~.^",nspecies,"-1")),z)
 
 psi <- exp(f %*% t(dm))
@@ -73,54 +79,90 @@ psi <- psi/rowSums(psi)
 #True state
 ztruth <- matrix(NA,nrow=N,ncol=nspecies)
 for (i in 1:N){
-  ztruth[i,] <- as.matrix(z[sample(4,1,prob=psi[i,]),])
+  ztruth[i,] <- as.matrix(z[sample(8,1,prob=psi[i,]),])
 }
 
-p_true <- c(0.6,0.7)
+p_true <- c(0.6,0.7,0.5)
 
 # fake y data
+y <- list()
 
-y1 <- y2 <- matrix(NA,N,J)
-for (i in 1:N){
-  for (j in 1:J){
-    y1[i,j] <- rbinom(1,1,ztruth[i,1]*p_true[1])
-    y2[i,j] <- rbinom(1,1,ztruth[i,2]*p_true[2])
-}}
+for (i in 1:nspecies){
+  y[[i]] <- matrix(NA,N,J)
+  for (j in 1:N){
+    for (k in 1:J){
+      y[[i]][j,k] <- rbinom(1,1,ztruth[j,i]*p_true[i])
+    }
+  }
+}
+y[[1]][1,5] <- y[[2]][1,5] <- y[[3]][1,5] <- NA
+names(y) <- c('coyote','tiger','bear')
 
-y <- list(y1,y2)
+##############
 
-#Create data object
 data = unmarkedFrameOccuMulti(y=y,siteCovs=occ_covs,obsCovs=det_covs)
 
-#Look at f design matrix for help setting up formulas
+#Summary
+summary(data)
+plot(data)
+
+# Look at f parameter design matrix
 data@fDesign
 
 # Formulas
+
 # Length should match number/order of columns in fDesign
-occFormulas <- list('~par1','~par2','~1')
+occFormulas <- list('~par1','~par2','~par3','~1','~1','~1','~1')
 
 #Length should match number/order of species in data@ylist
-detFormulas <- list('~1','~1')
+detFormulas <- list('~1','~1','~1')
 
-#Fit model
 fit <- occuMulti(detFormulas,occFormulas,data,se=T)
 
+#Look at output
 fit
+plot(fit)
 
-#predict detection probabilities
+#Compare with known values
+cbind(c(beta,log(p_true/(1-p_true))),fit@opt$par)
+
+#predict method
+lapply(predict(fit,'state'),head)
 lapply(predict(fit,'det'),head)
 
-#predict probabilities for all unique occupancy states
-lapply(predict(fit,'state'),head)
-
-#predict marginal probability of species 2 occupancy
+#marginal occupancy
 head(predict(fit,'state',species=2))
+head(predict(fit,'state',species='bear'))
+head(predict(fit,'det',species='coyote'))
 
-#predict conditional probability of species 2 occupancy given species 1 present
-head(predict(fit,'state',species=2,cond=1))
+#conditional occupancy
+head(predict(fit,'state',species=2,cond=3)) #tiger | bear present
+head(predict(fit,'state',species='tiger',cond='bear')) #tiger | bear present
+head(predict(fit,'state',species='tiger',cond='-bear')) #bear absent
+head(predict(fit,'state',species='tiger',cond=c('coyote','-bear')))
 
-#predict conditional probability of species 2 occupancy given species 1 absent
-head(predict(fit,'state',species=2,cond=-1))
+#residuals (by species)
+lapply(residuals(fit),head)
+
+#ranef (by species)
+ranef(fit, species='coyote')
+
+#parametric bootstrap
+bt <- parboot(fit,nsim=30)
+
+#update model
+occFormulas <- list('~par1','~par2','~par2+par3','~1','~1','~1','~1')
+fit2 <- update(fit,stateformulas=occFormulas)
+
+#List of fitted models
+fl <- fitList(fit,fit2)
+coef(fl)
+
+#Model selection
+modSel(fl)
+
+}
+
 }
 
 \keyword{models}

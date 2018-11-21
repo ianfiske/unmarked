@@ -101,8 +101,10 @@ setMethod("ranef", "unmarkedFitOccuFP", function(object, na.rm = FALSE)
 setMethod("ranef", "unmarkedFitOccuMulti", function(object, species, na.rm = FALSE)
 {
     if(missing(species)){
-      stop("Must specify species number in arguments (e.g. species = 1)")
+      stop("Must specify species name or index in arguments (e.g. species = 1)")
     }
+    species <- name_to_ind(species, names(object@data@ylist))
+
     psi <- predict(object, type="state", se.fit=F, species=species)$Predicted
     R <- length(psi)
     p <- getP(object)[[species]]

@@ -6,12 +6,21 @@ setClass("unmarkedFitList",
         testY <- function(fit) {
             f <- fit@formula
             umf <- getData(fit)
-            D <- getDesign(umf, f)
-            D$y
+            #hack to support occuMulti
+            if(class(fit) == 'unmarkedFitOccuMulti'){
+              getDesign(umf,fit@detformulas,fit@stateformulas)$y 
+            } else {
+              D <- getDesign(umf, f)
+              D$y
             }
+        }
         umf1 <- getData(fl[[1]])
         form1 <- fl[[1]]@formula
-        y1 <- getDesign(umf1, form1)$y
+        if(class(fl[[1]]) == 'unmarkedFitOccuMulti'){
+          y1 <- getDesign(umf1, fl[[1]]@detformulas, fl[[1]]@stateformulas)$y
+        } else {
+          y1 <- getDesign(umf1, form1)$y
+        }
         dataTest <- sapply(fl, function(x) isTRUE(all.equal(umf1, getData(x))))
         yTest <- sapply(fl, function(x) isTRUE(all.equal(y1, testY(x))))
         if(!all(dataTest)) {

@@ -1296,6 +1296,9 @@ setMethod("predict", "unmarkedFitOccuMulti",
   {
 
   type <- match.arg(type, c("state", "det"))
+  
+  species <- name_to_ind(species, names(object@data@ylist))
+  cond <- name_to_ind(cond, names(object@data@ylist))
 
   if(missing(newdata)){
     newdata <- object@data
@@ -1440,6 +1443,9 @@ setMethod("predict", "unmarkedFitOccuMulti",
                             lower=lower,upper=upper)
     }
     names(out) <- names(object@data@ylist)
+    if(!is.null(species)){
+      return(out[[species]])
+    }
     return(out)
   }
   stop("type must be 'det' or 'state'")

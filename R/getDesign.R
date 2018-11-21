@@ -471,6 +471,7 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   #Generate some indices
   S <- length(umf@ylist) # of species
   z <- expand.grid(rep(list(1:0),S))[,S:1] # z matrix
+  colnames(z) <- names(umf@ylist)
   M <- nrow(z) # of possible z states
   dmF <- model.matrix(as.formula(paste0("~.^",S,"-1")),z) # f design matrix
   nF <- ncol(dmF) # of f parameters
@@ -488,7 +489,8 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   fInd <- c()
   dmOcc <- lapply(seq_along(stateformulas),function(i){
                     out <- model.matrix(stateformulas[[i]],umf@siteCovs)
-                    colnames(out) <- paste('f',i,'_',colnames(out),sep='')
+                    colnames(out) <- paste('[',colnames(dmF)[i],'] ',
+                                           colnames(out), sep='')
                     fInd <<- c(fInd,rep(i,ncol(out)))
                     out
           })
@@ -501,7 +503,8 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   dInd <- c()
   dmDet <- lapply(seq_along(detformulas),function(i){
                     out <- model.matrix(detformulas[[i]],umf@obsCovs)
-                    colnames(out) <- paste('sp',i,'_',colnames(out),sep='')
+                    colnames(out) <- paste('[',names(umf@ylist)[i],'] ',
+                                           colnames(out),sep='')
                     dInd <<- c(dInd,rep(i,ncol(out)))
                     out
           })
