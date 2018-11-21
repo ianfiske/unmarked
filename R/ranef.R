@@ -98,9 +98,30 @@ setMethod("ranef", "unmarkedFitOccuFP", function(object, na.rm = FALSE)
 })
 
 
-setMethod("ranef", "unmarkedFitOccuMulti", function(object, na.rm = FALSE)
+setMethod("ranef", "unmarkedFitOccuMulti", function(object, species, na.rm = FALSE)
 {
-  cat("ranef is not implemented for occuMulti at this time")
+    if(missing(species)){
+      stop("Must specify species number in arguments (e.g. species = 1)")
+    }
+    psi <- predict(object, type="state", se.fit=F, species=species)$Predicted
+    R <- length(psi)
+    p <- getP(object)[[species]]
+    z <- 0:1
+    y <- object@data@ylist[[species]]
+    post <- array(0, c(R,2,1))
+    colnames(post) <- z
+    for(i in 1:R) {
+        f <- dbinom(z, 1, psi[i])
+        g <- rep(1, 2)
+        for(j in 1:ncol(y)) {
+            if(is.na(y[i,j]) | is.na(p[i,j]))
+                next
+            g <- g * dbinom(y[i,j], 1, z*p[i,j])
+        }
+        fudge <- f*g
+        post[i,,1] <- fudge / sum(fudge)
+    }
+    new("unmarkedRanef", post=post)
 })
 
 

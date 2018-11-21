@@ -5,7 +5,7 @@
 \title{Fit the Rota et al. (2016) Multi-species Occupancy Model}
 
 \usage{occuMulti(detformulas, stateformulas, data, starts, method="BFGS",
-    se=TRUE, engine=c("C","R"), ...)}
+    se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
 
 \arguments{
     \item{detformulas}{List of formulas for the detection models, one per species.}
@@ -17,6 +17,7 @@
       errors.}
     \item{engine}{Either "C" to use fast C++ code or "R" to use native R
       code during the optimization.}
+    \item{silent}{Boolean; if \code{TRUE}, suppress warnings.}
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
   }

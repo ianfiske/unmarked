@@ -14,6 +14,7 @@
 \alias{nllFun}
 \alias{nllFun,unmarkedFit-method}
 \alias{parboot,unmarkedFit-method}
+\alias{parboot,unmarkedFitOccuMulti-method}
 \alias{plot,unmarkedFit,missing-method}
 \alias{plot,unmarkedFitOccuMulti,missing-method}
 \alias{profile,unmarkedFit-method}

@@ -1,5 +1,5 @@
 occuMulti <- function(detformulas, stateformulas,  data, starts,
-                      method='BFGS', se=TRUE, engine=c("C","R"), ...){
+                      method='BFGS', se=TRUE, engine=c("C","R"), silent=FALSE, ...){
   
   #Format input data-----------------------------------------------------------
   #Check data object
@@ -16,7 +16,7 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
   detformulas <- lapply(detformulas,as.formula)
   
   #Get design matrices and indices
-  designMats <- getDesign(data, detformulas, stateformulas, warn=T)
+  designMats <- getDesign(data, detformulas, stateformulas, warn=!silent)
   #Don't think there is a better way...
   N <- designMats$N; S <- designMats$S; J <- designMats$J; M <- designMats$M
   nF <- designMats$nF; nP <- designMats$nP; nOP <- designMats$nOP

@@ -84,9 +84,65 @@ setMethod("parboot", "unmarkedFit",
 })
 
 
+setMethod("parboot", "unmarkedFitOccuMulti",
+    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ...)
+{
 
+  dots <- list(...)
 
+  SSE <- function(object){
+    r <- do.call(rbind, residuals(object))
+    return(c(SSE = sum(r^2, na.rm=T)))
+  }
 
+  statistic <- match.fun(statistic)
+  call <- object@call
+
+  ests <- as.numeric(coef(object))
+  t0 <- statistic(object, ...)
+  lt0 <- length(t0)
+
+  simdata <- object@data
+  if (!is.null(seed)) set.seed(seed)
+  simList <- simulate(object, nsim=nsim)
+
+  coresToUse <- detectCores() - 1
+  no_par <- coresToUse < 2 || nsim < 100 || !parallel
+  
+  if(no_par){
+
+    t.star <- matrix(NA, nsim, lt0)
+    for (i in 1:nsim){
+      simdata@ylist <- simList[[i]]
+      fit <- update(object, data=simdata, starts=ests, se=F, silent=T)
+      t.star[i,] <- statistic(fit, ...)
+    }
+
+  } else {
+    cl <- makeCluster(coresToUse)
+    on.exit(stopCluster(cl))
+    varList <- c("simList", "object", "simdata", "ests", "statistic", "dots")
+    
+    clusterExport(cl, varList, envir = environment())
+    clusterEvalQ(cl, library(unmarked))
+    clusterEvalQ(cl, list2env(dots))
+    t.star.parallel <- parLapply(cl, 1:nsim, function(i) {
+      simdata@ylist <- simList[[i]]
+      fit <- update(object, data = simdata, starts = ests, se = F, silent=T)
+      statistic(fit, ...)
+    })
+    t.star <- matrix(unlist(t.star.parallel), nrow=length(t.star.parallel),
+                     byrow=T)
+  }
+  if(!is.null(names(t0))){
+    colnames(t.star) <- names(t0)
+  } else {
+    colnames(t.star) <- paste("t*", 1:lt0, sep="")
+  }
+  
+  new("parboot", call = call, t0 = t0, t.star = t.star)
+
+})
 
 setMethod("show", "parboot", function(object)
 {

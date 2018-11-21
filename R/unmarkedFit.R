@@ -1317,7 +1317,6 @@ setMethod("predict", "unmarkedFitOccuMulti",
 
   dm <- getDesign(newdata,object@detformulas,object@stateformulas,na.rm=F)
   params <- coef(object)
-  ses <- SE(object)
 
   low_bound <- (1-level)/2
   up_bound <- level + (1-level)/2
@@ -1340,6 +1339,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
     
     if(se.fit){
       cat('Bootstrapping confidence intervals with',nsims,'samples\n')
+      ses <- SE(object)
       samp <- array(NA,c(dim(psi_est),nsims))
       for (i in 1:nsims){
         samp[,,i] <- calc_psi(stats::rnorm(length(params),params,ses))
@@ -2078,9 +2078,13 @@ setMethod("update", "unmarkedFitOccuMulti",
         stop("need an object with call slot")
     if(!missing(detformulas)){
       call[["detformulas"]] <- detformulas
+    } else {
+      call[["detformulas"]] <- object@detformulas
     }
     if(!missing(stateformulas)){
       call[["stateformulas"]] <- stateformulas
+    } else {
+      call[["stateformulas"]] <- object@stateformulas
     }
     extras <- match.call(call=sys.call(-1),
                          expand.dots = FALSE)$...
