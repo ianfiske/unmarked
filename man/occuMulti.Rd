@@ -56,8 +56,11 @@ J <- 5
 occ_covs <- as.data.frame(matrix(rnorm(N * 10),ncol=10))
 names(occ_covs) <- paste('par',1:10,sep='')
 
-det_covs <- as.data.frame(matrix(rnorm(N*J*3),ncol=3))
-names(det_covs) <- paste('par',1:3,sep='')
+det_covs <- list()
+for (i in 1:nspecies){
+  det_covs[[i]] <- matrix(rnorm(N*J),nrow=N)
+}
+names(det_covs) <- paste('par',1:nspecies,sep='')
 
 #True vals
 beta <- c(0.5,0.2,0.4,0.5,-0.1,-0.3,0.2,0.1,-1,0.1)

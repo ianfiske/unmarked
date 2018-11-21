@@ -211,6 +211,18 @@ unmarkedFrameOccuMulti <- function(y, siteCovs = NULL, obsCovs = NULL,
     if(is.null(names(ylist)))
        names(ylist) <- paste('sp',1:length(ylist),sep='')
 
+    if(class(obsCovs) == "list") {
+      obsVars <- names(obsCovs)
+      for(i in seq(length(obsVars))) {
+        if(!(any(class(obsCovs[[i]]) %in% c("matrix", "data.frame"))))
+            stop("At least one element of obsCovs is not a matrix or data frame.")
+        if(ncol(obsCovs[[i]]) != J | nrow(obsCovs[[i]]) != nrow(y))
+            stop("At least one matrix in obsCovs has incorrect number of dimensions.")
+      }
+      if(is.null(obsNum)) obsNum <- ncol(obsCovs[[1]]) #??
+      obsCovs <- data.frame(lapply(obsCovs, function(x) as.vector(t(x))))
+    }
+
     #f design matrix guide
     S <- length(ylist)
     z <- expand.grid(rep(list(1:0),S))[,S:1]
