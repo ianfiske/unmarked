@@ -1319,7 +1319,10 @@ setMethod("predict", "unmarkedFitOccuMulti",
   }
 
   dm <- getDesign(newdata,object@detformulas,object@stateformulas,na.rm=F)
-  params <- coef(object)
+  
+  #Recreate params
+  params <- rep(0, length(dm$fixed0))
+  params[!dm$fixed0] <- coef(object)
 
   low_bound <- (1-level)/2
   up_bound <- level + (1-level)/2
@@ -1426,7 +1429,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
       est <- plogis(dmDet[[i]] %*% param_sub)
       
       if(se.fit){
-        cov_sub <- vcov(object)[inds,inds]
+        cov_sub <- vcov(object)[inds-sum(dm$fixed0),inds-sum(dm$fixed0)]
         se_est <- lower <- upper <- numeric(N)
         for (j in 1:N){
           x <- dmDet[[i]][j]

@@ -468,6 +468,19 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
     function(umf, detformulas, stateformulas, na.rm=TRUE, warn=FALSE)
 {
 
+  #Format formulas
+  #Workaround for parameters fixed at 0
+  f_fixed0 <- rep(FALSE, length(stateformulas))
+  for (i in seq_along(stateformulas)){
+    if(stateformulas[i] %in% c("~0","0")){
+      f_fixed0[i] <- TRUE
+      stateformulas[i] <- "~1"
+    }
+  }
+
+  stateformulas <- lapply(stateformulas,as.formula)
+  detformulas <- lapply(detformulas,as.formula)
+
   #Generate some indices
   S <- length(umf@ylist) # of species
   z <- expand.grid(rep(list(1:0),S))[,S:1] # z matrix
@@ -516,6 +529,13 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   #Combined
   paramNames <- c(occParams,detParams)
   nP <- length(paramNames)
+
+  fixed0 <- rep(FALSE,nP)
+  for (i in seq_along(f_fixed0)){
+    if(f_fixed0[i]){
+      fixed0[fStart[i]:fStop[i]] <- TRUE
+    }
+  }
  
   #Re-format ylist
   index <- 1
@@ -561,8 +581,8 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   Iy0 <- do.call(cbind, lapply(umf@ylist, 
                                function(x) as.numeric(rowSums(x, na.rm=T)==0)))
 
-  mget(c("N","S","J","M","nF","fStart","fStop","dmF","dmOcc","dmDet","dStart",
-         "dStop","y","yStart","yStop","Iy0","z","nOP","nP","paramNames"))
+  mget(c("N","S","J","M","nF","fStart","fStop","fixed0","dmF","dmOcc","dmDet",
+         "dStart","dStop","y","yStart","yStop","Iy0","z","nOP","nP","paramNames"))
 })
 
 

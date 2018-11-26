@@ -10,13 +10,19 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
   engine <- match.arg(engine, c("C", "R"))
 
   #Formula format
-  if(!(is.list(stateformulas)&is.list(detformulas)))
+  if(missing(detformulas)){
+    if(!silent){
+      warning("No detection formulas specified; set to intercept-only")
+    }
+    detformulas <- as.list(rep('~1',length(data@ylist)))
+  }
+  if(!(is.list(stateformulas)&is.list(detformulas))){
     stop("Formulas must be provided as lists")
-  stateformulas <- lapply(stateformulas,as.formula)
-  detformulas <- lapply(detformulas,as.formula)
+  }
   
   #Get design matrices and indices
   designMats <- getDesign(data, detformulas, stateformulas, warn=!silent)
+
   #Don't think there is a better way...
   N <- designMats$N; S <- designMats$S; J <- designMats$J; M <- designMats$M
   nF <- designMats$nF; nP <- designMats$nP; nOP <- designMats$nOP
@@ -25,13 +31,18 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
   yStart <- designMats$yStart; yStop <- designMats$yStop
   dmF <- designMats$dmF; dmOcc <- designMats$dmOcc; dmDet <- designMats$dmDet
   y <- designMats$y; z <- designMats$z; Iy0 <- designMats$Iy0
-  paramNames <- designMats$paramNames
-
+  paramNames <- designMats$paramNames; fixed0 <- designMats$fixed0
   #----------------------------------------------------------------------------
 
   #Likelihood function in R----------------------------------------------------
   nll_R <- function(params){
-    
+
+    #Expand params
+    params_actual <- rep(NA, length(fixed0))
+    params_actual[fixed0] <- 0
+    params_actual[!fixed0] <- params
+    params <- params_actual
+
     #psi
     f <- matrix(NA,nrow=N,ncol=nF)
     for (i in 1:nF){
@@ -67,7 +78,7 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
   nll_C <- function(params) {
     .Call("nll_occuMulti",
           fStart-1, fStop-1, dmF, dmOcc, params, dmDet, dStart-1, dStop-1,
-          y, yStart-1, yStop-1, Iy0, as.matrix(z),
+          y, yStart-1, yStop-1, Iy0, as.matrix(z), fixed0,
           PACKAGE = "unmarked")
   }
   #----------------------------------------------------------------------------
@@ -79,7 +90,7 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
     nll <- nll_C
   }
 
-  if(missing(starts)) starts <- rep(0, nP)
+  if(missing(starts)) starts <- rep(0, sum(!fixed0))
   fm <- optim(starts, nll, method = method, hessian = se, ...)
 
   if(se) {
@@ -92,8 +103,10 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
   #----------------------------------------------------------------------------
 
   #Format output---------------------------------------------------------------
+  nP <- sum(!fixed0)
+  nOP <- sum(!fixed0[1:nOP])
   ests <- fm$par
-  names(ests) <- paramNames
+  names(ests) <- paramNames[!fixed0]
 
   state <- unmarkedEstimate(name = "Occupancy", short.name = "psi",
                             estimates = ests[1:nOP],

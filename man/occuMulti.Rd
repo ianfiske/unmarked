@@ -29,13 +29,54 @@
 See \code{\link{unmarkedFrame}} and \code{\link{unmarkedFrameOccuMulti}} for a
 description of how to supply data to the \code{data} argument.
 
-\code{occuMulti} fits the multispecies occupancy model based on Rota et al. (2016).
+\code{occuMulti} fits the multispecies occupancy model from Rota et al. (2016),
+for two or more interacting species.
+The model generalizes the standard single-species occupancy model from
+MacKenzie et al. (2002).
+The latent occupancy state at site \eqn{i} for a set of \eqn{s} potentially
+interacting species is a vector \eqn{\mathbf{Z}_i}{Z_i} of length \eqn{s}
+containing a sequence of the values 0 or 1. For example, when \eqn{s = 2}, 
+the possible states are \eqn{[11]}, \eqn{[10]}, \eqn{[01]}, or \eqn{[00]}, 
+corresponding to both species present, only species 1 or species 2 present, 
+or both species absent, respectively. The latent state modeled as a 
+multivariate Bernoulli random variable:
+
+\deqn{\mathbf{Z}_i \sim \textrm{MVB}(\boldsymbol{\psi}_i)}{Z_i ~ MVB(psi_i)}
+
+where \eqn{\boldsymbol{\psi}_i}{\psi_i} is a vector of length \eqn{2^s} containing the probability of each possible combination of 0s and 1s, such that 
+\eqn{\sum\boldsymbol{\psi}_i = 1}{sum(psi_i) = 1}.
+
+For \eqn{s = 2}, the corresponding natural parameters \eqn{f} are
+
+\deqn{f_1 = \log\left(\frac{\psi_{10}}{\psi_{00}}\right)}{f_1 = log(psi_10/psi_00)}
+\deqn{f_2 = \log\left(\frac{\psi_{01}}{\psi_{00}}\right)}{f_2 = log(psi_01/psi_00)}
+\deqn{f_{12} = \log\left(\frac{\psi_{11}\psi_{00}}{\psi_{10}\psi_{01}}\right)}{f_12 = log((psi_11 * psi_00)/(psi_10 * psi_01))}
+
+The natural parameters can then be modeled as linear functions of covariates.
+Covariates for each \eqn{f} must be specified with the \code{stateformulas} argument, 
+which takes a list of individual formulas of length equal to the number of 
+natural parameters (which in turn depends on the number of species in the model).
+
+The observation process is similar to the standard single-species occupancy
+model, except that the observations \eqn{\mathbf{y}_{ij}}{y_ij} at site \eqn{i} 
+on occasion \eqn{j} are vectors of length \eqn{s} and there are independent
+values of detection probability \eqn{p} for each species \eqn{s}:
+
+\deqn{\mathbf{y}_{ij}|\mathbf{Z}_i \sim MVB(\mathbf{Z}_i p_{sij})}{y_ij | Z_i ~ Bernoulli(Z_i  * p_sij)}
+
+Independent detection models (potentially containing different covariates) 
+must be provided for each species with the \code{detformulas} argument, 
+which takes a list of individual formulas equal to the number of species \eqn{s}.
 
 }
 
 \value{unmarkedFitOccuMulti object describing the model fit.}
 
 \references{
+MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
+  J. Andrew Royle, and C. A. Langtimm. 2002. Estimating Site Occupancy Rates
+  When Detection Probabilities Are Less Than One. Ecology 83: 2248-2255.
+
 Rota, C.T., et al. 2016. A multi-species occupancy model for two or more
   interacting species. Methods in Ecology and Evolution 7: 1164-1173.
 }
@@ -101,18 +142,17 @@ for (i in 1:nspecies){
 y[[1]][1,5] <- y[[2]][1,5] <- y[[3]][1,5] <- NA
 names(y) <- c('coyote','tiger','bear')
 
-##############
-
+#Create the unmarked data object
 data = unmarkedFrameOccuMulti(y=y,siteCovs=occ_covs,obsCovs=det_covs)
 
-#Summary
+#Summary of data object
 summary(data)
 plot(data)
 
 # Look at f parameter design matrix
 data@fDesign
 
-# Formulas
+# Formulas for state and detection processes
 
 # Length should match number/order of columns in fDesign
 occFormulas <- list('~par1','~par2','~par3','~1','~1','~1','~1')
@@ -164,6 +204,10 @@ coef(fl)
 #Model selection
 modSel(fl)
 
+#Fit model while forcing some natural parameters to be 0
+#For example: fit model with no species interactions
+occFormulas <- list('~par1','~par2','~par2+par3','0','0','0','0')
+fit3 <- occuMulti(detFormulas,occFormulas,data,se=T)
 }
 
 }

@@ -5,7 +5,7 @@ using namespace arma;
 
 SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR, 
     SEXP betaR, SEXP dmDetR, SEXP dStartR, SEXP dStopR, SEXP yR, SEXP yStartR, 
-    SEXP yStopR, SEXP Iy0r, SEXP zR ){
+    SEXP yStopR, SEXP Iy0r, SEXP zR, SEXP fixed0r){
   
   //Inputs
   IntegerVector fStart(fStartR);
@@ -13,8 +13,21 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
   mat dmF = as<mat>(dmFr);
   List dmOcc(dmOccR);
   int nF = dmOcc.size();
-  colvec beta = as<colvec>(betaR);
-  
+  colvec beta_tmp = as<colvec>(betaR);
+  LogicalVector fixed0(fixed0r);
+  int nP = fixed0.size();
+  colvec beta(nP);
+
+  int index = 0;
+  for(int i = 0; i < nP; i++){
+    if(fixed0(i)){
+      beta(i) = 0;
+    } else {
+      beta(i) = beta_tmp(index);
+      index += 1;
+    }
+  }
+ 
   List dmDet(dmDetR);
   IntegerVector dStart(dStartR);
   IntegerVector dStop(dStopR);
