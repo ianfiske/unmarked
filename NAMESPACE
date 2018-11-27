@@ -14,7 +14,7 @@ importFrom(grDevices, devAskNewPage)
 importFrom("raster","stack")
 importFrom("raster", "raster", "extent", "extent<-", "getValues") ## MM
 
-import(lattice, methods, parallel, Rcpp, reshape2)
+import(lattice, methods, parallel, Rcpp, reshape2, Matrix)
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,

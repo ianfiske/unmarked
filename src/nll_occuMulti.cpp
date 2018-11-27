@@ -10,24 +10,15 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
   //Inputs
   IntegerVector fStart(fStartR);
   IntegerVector fStop(fStopR);
-  mat dmF = as<mat>(dmFr);
+  //mat dmF = as<mat>(dmFr);
+  sp_mat dmF = as<sp_mat>(dmFr); //sparse matrix, already transposed
+  //int nF = dmF.n_cols; //if not transposed
+  int nF = dmF.n_rows; //if already transposed
   List dmOcc(dmOccR);
-  int nF = dmOcc.size();
-  colvec beta_tmp = as<colvec>(betaR);
-  LogicalVector fixed0(fixed0r);
-  int nP = fixed0.size();
-  colvec beta(nP);
 
-  int index = 0;
-  for(int i = 0; i < nP; i++){
-    if(fixed0(i)){
-      beta(i) = 0;
-    } else {
-      beta(i) = beta_tmp(index);
-      index += 1;
-    }
-  }
- 
+  colvec beta = as<colvec>(betaR);
+  LogicalVector fixed0(fixed0r);
+  
   List dmDet(dmDetR);
   IntegerVector dStart(dStartR);
   IntegerVector dStop(dStopR);
@@ -43,13 +34,20 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
   mat z = as<mat>(zR);
   
   //psi calculation
+  int index = 0;
   mat f(N, nF);
   for(int i = 0; i < nF; i++){
-    mat X = as<mat>(dmOcc[i]);
-    f.col(i) = X * beta.subvec(fStart[i], fStop[i]);
+    if(fixed0(i)){
+      f.col(i) = zeros(N);
+    } else {
+      mat X = as<mat>(dmOcc[index]);
+      f.col(i) = X * beta.subvec(fStart[index], fStop[index]);
+      index += 1;
+    }
   }
 
-  mat psi = exp( f * dmF.t() );
+  //mat psi = exp( f * dmF.t() );
+  mat psi = exp( f * dmF ); //transposed dmF passed from R
   for(int i = 0; i < psi.n_rows; i++){
     psi.row(i) = psi.row(i) / sum( psi.row(i) );
   }

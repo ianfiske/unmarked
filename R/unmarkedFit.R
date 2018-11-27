@@ -85,8 +85,8 @@ setClass("unmarkedFitOccuFP",
 
 setClass("unmarkedFitOccuMulti",
          representation(
-            detformulas = "list",
-            stateformulas = "list"),
+            detformulas = "character",
+            stateformulas = "character"),
          contains = "unmarkedFit")
 
 setClass("unmarkedFitMPois",
@@ -1320,22 +1320,25 @@ setMethod("predict", "unmarkedFitOccuMulti",
 
   dm <- getDesign(newdata,object@detformulas,object@stateformulas,na.rm=F)
   
-  #Recreate params
-  params <- rep(0, length(dm$fixed0))
-  params[!dm$fixed0] <- coef(object)
-
+  params <- coef(object)
   low_bound <- (1-level)/2
   up_bound <- level + (1-level)/2
   
   if(type=="state"){
     N <- nrow(newdata@siteCovs); nF <- dm$nF; dmOcc <- dm$dmOcc; dmF <- dm$dmF
-    fStart <- dm$fStart; fStop <- dm$fStop
+    fStart <- dm$fStart; fStop <- dm$fStop; fixed0 <- dm$fixed0
     
     calc_psi <- function(params){
 
       f <- matrix(NA,nrow=N,ncol=nF)
+      index <- 1
       for (i in 1:nF){
-        f[,i] <- dmOcc[[i]] %*% params[fStart[i]:fStop[i]]
+        if(fixed0[i]){
+          f[,i] <- 0
+        } else {
+          f[,i] <- dmOcc[[index]] %*% params[fStart[index]:fStop[index]]
+          index <- index + 1
+        }
       }
       psi <- exp(f %*% t(dmF))
       psi/rowSums(psi)

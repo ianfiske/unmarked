@@ -8,8 +8,9 @@
     se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
 
 \arguments{
-    \item{detformulas}{List of formulas for the detection models, one per species.}
-    \item{stateformulas}{List of formulas for the natural parameters.}
+    \item{detformulas}{Character vector of formulas for the detection models, one per species.}
+    \item{stateformulas}{Character vector of formulas for the natural parameters. 
+      To fix a natural parameter at 0, specify the corresponding formula as \code{"0"} or \code{"~0"}.}
     \item{data}{An \code{\link{unmarkedFrameOccuMulti}} object}
     \item{starts}{Vector of parameter starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
@@ -54,7 +55,7 @@ For \eqn{s = 2}, the corresponding natural parameters \eqn{f} are
 
 The natural parameters can then be modeled as linear functions of covariates.
 Covariates for each \eqn{f} must be specified with the \code{stateformulas} argument, 
-which takes a list of individual formulas of length equal to the number of 
+which takes a character vector of individual formulas of length equal to the number of 
 natural parameters (which in turn depends on the number of species in the model).
 
 The observation process is similar to the standard single-species occupancy
@@ -66,7 +67,8 @@ values of detection probability \eqn{p} for each species \eqn{s}:
 
 Independent detection models (potentially containing different covariates) 
 must be provided for each species with the \code{detformulas} argument, 
-which takes a list of individual formulas equal to the number of species \eqn{s}.
+which takes a character vector of individual formulas with length equal to 
+the number of species \eqn{s}.
 
 }
 
@@ -155,10 +157,10 @@ data@fDesign
 # Formulas for state and detection processes
 
 # Length should match number/order of columns in fDesign
-occFormulas <- list('~par1','~par2','~par3','~1','~1','~1','~1')
+occFormulas <- c('~par1','~par2','~par3','~1','~1','~1','~1')
 
 #Length should match number/order of species in data@ylist
-detFormulas <- list('~1','~1','~1')
+detFormulas <- c('~1','~1','~1')
 
 fit <- occuMulti(detFormulas,occFormulas,data,se=T)
 
@@ -194,7 +196,7 @@ ranef(fit, species='coyote')
 bt <- parboot(fit,nsim=30)
 
 #update model
-occFormulas <- list('~par1','~par2','~par2+par3','~1','~1','~1','~1')
+occFormulas <- c('~par1','~par2','~par2+par3','~1','~1','~1','~1')
 fit2 <- update(fit,stateformulas=occFormulas)
 
 #List of fitted models
@@ -206,7 +208,7 @@ modSel(fl)
 
 #Fit model while forcing some natural parameters to be 0
 #For example: fit model with no species interactions
-occFormulas <- list('~par1','~par2','~par2+par3','0','0','0','0')
+occFormulas <- c('~par1','~par2','~par2+par3','0','0','0','0')
 fit3 <- occuMulti(detFormulas,occFormulas,data,se=T)
 }
 

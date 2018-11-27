@@ -470,13 +470,8 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 
   #Format formulas
   #Workaround for parameters fixed at 0
-  f_fixed0 <- rep(FALSE, length(stateformulas))
-  for (i in seq_along(stateformulas)){
-    if(stateformulas[i] %in% c("~0","0")){
-      f_fixed0[i] <- TRUE
-      stateformulas[i] <- "~1"
-    }
-  }
+  fixed0 <- stateformulas %in% c("~0","0")
+  stateformulas[fixed0] <- "~1"
 
   stateformulas <- lapply(stateformulas,as.formula)
   detformulas <- lapply(detformulas,as.formula)
@@ -487,6 +482,7 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   colnames(z) <- names(umf@ylist)
   M <- nrow(z) # of possible z states
   dmF <- model.matrix(as.formula(paste0("~.^",S,"-1")),z) # f design matrix
+  dmF <- Matrix::Matrix(dmF, sparse=TRUE) # convert to sparse matrix
   nF <- ncol(dmF) # of f parameters
   J <- ncol(umf@ylist[[1]]) # max # of samples at a site
   N <- nrow(umf@ylist[[1]]) # of sites
@@ -500,9 +496,11 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   #Design matrices + parameter counts
   #For f/occupancy
   fInd <- c()
-  dmOcc <- lapply(seq_along(stateformulas),function(i){
-                    out <- model.matrix(stateformulas[[i]],umf@siteCovs)
-                    colnames(out) <- paste('[',colnames(dmF)[i],'] ',
+  sf_no0 <- stateformulas[!fixed0]
+  var_names <- colnames(dmF)[!fixed0] 
+  dmOcc <- lapply(seq_along(sf_no0),function(i){
+                    out <- model.matrix(sf_no0[[i]],umf@siteCovs)
+                    colnames(out) <- paste('[',var_names[i],'] ',
                                            colnames(out), sep='')
                     fInd <<- c(fInd,rep(i,ncol(out)))
                     out
@@ -530,13 +528,6 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   paramNames <- c(occParams,detParams)
   nP <- length(paramNames)
 
-  fixed0 <- rep(FALSE,nP)
-  for (i in seq_along(f_fixed0)){
-    if(f_fixed0[i]){
-      fixed0[fStart[i]:fStop[i]] <- TRUE
-    }
-  }
- 
   #Re-format ylist
   index <- 1
   ylong <- lapply(umf@ylist, function(x) {
