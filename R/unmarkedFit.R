@@ -1324,9 +1324,11 @@ setMethod("predict", "unmarkedFitOccuMulti",
   low_bound <- (1-level)/2
   up_bound <- level + (1-level)/2
   
+
   if(type=="state"){
-    N <- nrow(newdata@siteCovs); nF <- dm$nF; dmOcc <- dm$dmOcc; dmF <- dm$dmF
+    N <- nrow(newdata@siteCovs); nF <- dm$nF; dmOcc <- dm$dmOcc;
     fStart <- dm$fStart; fStop <- dm$fStop; fixed0 <- dm$fixed0
+    t_dmF <- t(dm$dmF)
     
     calc_psi <- function(params){
 
@@ -1340,8 +1342,8 @@ setMethod("predict", "unmarkedFitOccuMulti",
           index <- index + 1
         }
       }
-      psi <- exp(f %*% t(dmF))
-      psi/rowSums(psi)
+      psi <- exp(f %*% t_dmF)
+      as.matrix(psi/rowSums(psi))
     }
 
     psi_est <- calc_psi(params)
