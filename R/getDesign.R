@@ -465,7 +465,7 @@ setMethod("handleNA", "unmarkedMultFrame",
 # occuMulti
 
 setMethod("getDesign", "unmarkedFrameOccuMulti",
-    function(umf, detformulas, stateformulas, na.rm=TRUE, warn=FALSE)
+    function(umf, detformulas, stateformulas, maxOrder, na.rm=TRUE, warn=FALSE)
 {
 
   #Format formulas
@@ -478,12 +478,21 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 
   #Generate some indices
   S <- length(umf@ylist) # of species
+  if(missing(maxOrder)){
+    maxOrder <- S
+  }
   z <- expand.grid(rep(list(1:0),S))[,S:1] # z matrix
   colnames(z) <- names(umf@ylist)
   M <- nrow(z) # of possible z states
-  dmF <- model.matrix(as.formula(paste0("~.^",S,"-1")),z) # f design matrix
-  dmF <- Matrix::Matrix(dmF, sparse=TRUE) # convert to sparse matrix
+  
+  # f design matrix
+  if(maxOrder == 1){
+    dmF <- as.matrix(z)
+  } else {
+    dmF <- model.matrix(as.formula(paste0("~.^",maxOrder,"-1")),z)
+  }
   nF <- ncol(dmF) # of f parameters
+  
   J <- ncol(umf@ylist[[1]]) # max # of samples at a site
   N <- nrow(umf@ylist[[1]]) # of sites
 

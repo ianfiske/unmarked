@@ -4,7 +4,7 @@
 
 \title{Fit the Rota et al. (2016) Multi-species Occupancy Model}
 
-\usage{occuMulti(detformulas, stateformulas, data, starts, method="BFGS",
+\usage{occuMulti(detformulas, stateformulas, data, maxOrder, starts, method="BFGS",
     se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
 
 \arguments{
@@ -12,6 +12,9 @@
     \item{stateformulas}{Character vector of formulas for the natural parameters. 
       To fix a natural parameter at 0, specify the corresponding formula as \code{"0"} or \code{"~0"}.}
     \item{data}{An \code{\link{unmarkedFrameOccuMulti}} object}
+    \item{maxOrder}{Optional; specify maximum interaction order. Defaults to 
+      number of species (all possible interactions). Reducing this value may
+      speed up optimization if you aren't interested in higher-order interactions.}
     \item{starts}{Vector of parameter starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{Logical specifying whether or not to compute standard
@@ -63,7 +66,7 @@ model, except that the observations \eqn{\mathbf{y}_{ij}}{y_ij} at site \eqn{i}
 on occasion \eqn{j} are vectors of length \eqn{s} and there are independent
 values of detection probability \eqn{p} for each species \eqn{s}:
 
-\deqn{\mathbf{y}_{ij}|\mathbf{Z}_i \sim MVB(\mathbf{Z}_i p_{sij})}{y_ij | Z_i ~ Bernoulli(Z_i  * p_sij)}
+\deqn{\mathbf{y}_{ij}|\mathbf{Z}_i \sim \textrm{MVB}(\mathbf{Z}_i p_{sij})}{y_ij | Z_i ~ Bernoulli(Z_i  * p_sij)}
 
 Independent detection models (potentially containing different covariates) 
 must be provided for each species with the \code{detformulas} argument, 
@@ -91,7 +94,7 @@ Rota, C.T., et al. 2016. A multi-species occupancy model for two or more
 \examples{
 \dontrun{
 
-#Simulate 3 species `data
+#Simulate 3 species data
 N <- 1000
 nspecies <- 3
 J <- 5

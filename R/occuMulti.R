@@ -1,4 +1,4 @@
-occuMulti <- function(detformulas, stateformulas,  data, starts,
+occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
                       method='BFGS', se=TRUE, engine=c("C","R"), silent=FALSE, ...){
   
   #Format input data-----------------------------------------------------------
@@ -18,7 +18,7 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
   }
 
   #Get design matrices and indices
-  designMats <- getDesign(data, detformulas, stateformulas, warn=!silent)
+  designMats <- getDesign(data, detformulas, stateformulas, maxOrder, warn=!silent)
 
   #Don't think there is a better way...
   N <- designMats$N; S <- designMats$S; J <- designMats$J; M <- designMats$M
@@ -30,6 +30,7 @@ occuMulti <- function(detformulas, stateformulas,  data, starts,
   y <- designMats$y; z <- designMats$z; Iy0 <- designMats$Iy0
   paramNames <- designMats$paramNames; fixed0 <- designMats$fixed0
 
+  dmF <- Matrix::Matrix(dmF, sparse=TRUE) # convert to sparse matrix
   #Only transpose once
   t_dmF <- t(dmF)
   #----------------------------------------------------------------------------

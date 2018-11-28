@@ -10,10 +10,14 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
   //Inputs
   IntegerVector fStart(fStartR);
   IntegerVector fStop(fStopR);
-  //mat dmF = as<mat>(dmFr);
-  sp_mat dmF = as<sp_mat>(dmFr); //sparse matrix, already transposed
-  //int nF = dmF.n_cols; //if not transposed
-  int nF = dmF.n_rows; //if already transposed
+  
+  //if Matrix is a dependency
+  sp_mat dmF = as<sp_mat>(dmFr); //already transposed
+  
+  //if Matrix not a dependency
+  //sp_mat dmF( as<mat>(dmFr) );
+  
+  int nF = dmF.n_rows;
   List dmOcc(dmOccR);
 
   colvec beta = as<colvec>(betaR);
@@ -46,8 +50,7 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
     }
   }
 
-  //mat psi = exp( f * dmF.t() );
-  mat psi = exp( f * dmF ); //transposed dmF passed from R
+  mat psi = exp( f * dmF ); 
   for(int i = 0; i < psi.n_rows; i++){
     psi.row(i) = psi.row(i) / sum( psi.row(i) );
   }
