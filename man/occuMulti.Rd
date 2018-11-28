@@ -213,6 +213,11 @@ modSel(fl)
 #For example: fit model with no species interactions
 occFormulas <- c('~par1','~par2','~par2+par3','0','0','0','0')
 fit3 <- occuMulti(detFormulas,occFormulas,data,se=T)
+
+#Alternatively, you can force all interaction parameters above a certain
+#order to be zero with maxOrder. This will be faster.
+occFormulas <- c('~par1','~par2','~par2+par3')
+fit4 <- occuMulti(detFormulas,occFormulas,data,maxOrder=1,se=T)
 }
 
 }
