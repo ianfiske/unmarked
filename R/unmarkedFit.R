@@ -1296,6 +1296,10 @@ setMethod("predict", "unmarkedFitOccuMulti",
   {
 
   type <- match.arg(type, c("state", "det"))
+
+  if(is.null(hessian(object))){
+    se.fit = FALSE
+  }
   
   species <- name_to_ind(species, names(object@data@ylist))
   cond <- name_to_ind(cond, names(object@data@ylist))
@@ -1326,7 +1330,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
   
 
   if(type=="state"){
-    N <- nrow(newdata@siteCovs); nF <- dm$nF; dmOcc <- dm$dmOcc;
+    N <- nrow(dm$dmOcc[[1]]); nF <- dm$nF; dmOcc <- dm$dmOcc;
     fStart <- dm$fStart; fStop <- dm$fStop; fixed0 <- dm$fixed0
     t_dmF <- t(dm$dmF)
     
@@ -3240,6 +3244,7 @@ setMethod("simulate", "unmarkedFitOccuMulti",
     function(object, nsim = 1, seed = NULL, na.rm = TRUE)
 {
     data <- object@data
+    ynames <- names(object@data@ylist)
     dm <- getDesign(object@data, object@detformulas, object@stateformulas)
     psi <- predict(object, "state",se.fit=F)$Predicted
     p <- getP(object)
@@ -3264,6 +3269,7 @@ setMethod("simulate", "unmarkedFitOccuMulti",
           }
         }
       }
+      names(y) <- ynames
       simList[[s]] <- y
     }
     simList

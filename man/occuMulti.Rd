@@ -92,7 +92,6 @@ Rota, C.T., et al. 2016. A multi-species occupancy model for two or more
 
 
 \examples{
-\dontrun{
 
 #Simulate 3 species data
 N <- 1000
@@ -122,7 +121,7 @@ z <- expand.grid(rep(list(1:0),nspecies))[,nspecies:1]
 colnames(z) <- paste('sp',1:nspecies,sep='')
 dm <- model.matrix(as.formula(paste0("~.^",nspecies,"-1")),z)
 
-psi <- exp(f %*% t(dm))
+psi <- exp(f \%*\% t(dm))
 psi <- psi/rowSums(psi)
 
 #True state
@@ -144,7 +143,6 @@ for (i in 1:nspecies){
     }
   }
 }
-y[[1]][1,5] <- y[[2]][1,5] <- y[[3]][1,5] <- NA
 names(y) <- c('coyote','tiger','bear')
 
 #Create the unmarked data object
@@ -165,7 +163,7 @@ occFormulas <- c('~par1','~par2','~par3','~1','~1','~1','~1')
 #Length should match number/order of species in data@ylist
 detFormulas <- c('~1','~1','~1')
 
-fit <- occuMulti(detFormulas,occFormulas,data,se=T)
+fit <- occuMulti(detFormulas,occFormulas,data)
 
 #Look at output
 fit
@@ -212,14 +210,12 @@ modSel(fl)
 #Fit model while forcing some natural parameters to be 0
 #For example: fit model with no species interactions
 occFormulas <- c('~par1','~par2','~par2+par3','0','0','0','0')
-fit3 <- occuMulti(detFormulas,occFormulas,data,se=T)
+fit3 <- occuMulti(detFormulas,occFormulas,data)
 
 #Alternatively, you can force all interaction parameters above a certain
 #order to be zero with maxOrder. This will be faster.
 occFormulas <- c('~par1','~par2','~par2+par3')
-fit4 <- occuMulti(detFormulas,occFormulas,data,maxOrder=1,se=T)
-}
-
+fit4 <- occuMulti(detFormulas,occFormulas,data,maxOrder=1)
 }
 
 \keyword{models}

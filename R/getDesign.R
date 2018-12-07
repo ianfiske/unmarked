@@ -504,11 +504,17 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
  
   #Design matrices + parameter counts
   #For f/occupancy
+
+  if(is.null(siteCovs(umf))) {
+    site_covs <- data.frame(placeHolder = rep(1, N))
+  } else {
+    site_covs <- siteCovs(umf)
+  }
   fInd <- c()
   sf_no0 <- stateformulas[!fixed0]
   var_names <- colnames(dmF)[!fixed0] 
   dmOcc <- lapply(seq_along(sf_no0),function(i){
-                    out <- model.matrix(sf_no0[[i]],umf@siteCovs)
+                    out <- model.matrix(sf_no0[[i]],site_covs)
                     colnames(out) <- paste('[',var_names[i],'] ',
                                            colnames(out), sep='')
                     fInd <<- c(fInd,rep(i,ncol(out)))
@@ -520,9 +526,14 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   nOP <- length(occParams)
   
   #For detection
+  if(is.null(obsCovs(umf))) {
+    obs_covs <- data.frame(placeHolder = rep(1, J*N))
+  } else {
+    obs_covs <- obsCovs(umf)
+  }
   dInd <- c()
   dmDet <- lapply(seq_along(detformulas),function(i){
-                    out <- model.matrix(detformulas[[i]],umf@obsCovs)
+                    out <- model.matrix(detformulas[[i]],obs_covs)
                     colnames(out) <- paste('[',names(umf@ylist)[i],'] ',
                                            colnames(out),sep='')
                     dInd <<- c(dInd,rep(i,ncol(out)))
