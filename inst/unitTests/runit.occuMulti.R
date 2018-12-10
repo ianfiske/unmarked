@@ -6,6 +6,8 @@ test.occuMulti.fit.simple.1 <- function() {
   fm <- occuMulti(detformulas=rep("~1",2),
                   stateformulas=rep("~1",3), data = umf, se=FALSE)
   
+  #Probably should not be calling predict here b/c unit test
+  #but complicated to get actual occupancy prob otherwise
   occ <- predict(fm,'state')$Predicted[1,1]
   checkEqualsNumeric(occ,1, tolerance = 1e-4)
 
@@ -33,7 +35,7 @@ test.occuMulti.fit.simple.0 <- function() {
 
 }
 
-test.occu.fit.covs <- function() {
+test.occuMulti.fit.covs <- function() {
 
   y <- list(matrix(rep(0:1,10),5,2),
             matrix(rep(0:1,10),5,2))
@@ -52,58 +54,96 @@ test.occu.fit.covs <- function() {
   detformulas <- c('~par1','~par2')
 
   fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
- ## 
+ 
   occ <- fm['state']
   det <- fm['det']
 
-  checkException(occ <- coef(backTransform(occ)))
+  checkEqualsNumeric(coef(occ), c(5.36630,0.79876,5.45492,-0.868451,9.21242,1.14561), 
+                     tolerance = 1e-4)
+  checkEqualsNumeric(coef(det), c(-0.27586,-0.81837,-0.09537,0.42334), tolerance = 1e-4)
 
-  checkEqualsNumeric(coef(occ), c(8.590737, 2.472220), tolerance = 1e-4)
-  checkEqualsNumeric(coef(det), c(0.44457, -0.14706, 0.44103), tolerance = 1e-4)
+  fit <- fitted(fm)
+  checkEqualsNumeric(length(fit),2)
+  checkEqualsNumeric(sapply(fit,function(x) x[1,1]),c(0.14954,0.30801), tol = 1e-4)
 
-  occ.lc <- linearComb(fm, type = 'state', c(1, 0.5))
-  det.lc <- linearComb(fm, type = 'det', c(1, 0.3, -0.3))
-    
-  checkEqualsNumeric(coef(occ.lc), 9.826848, tol = 1e-4)
-  checkEqualsNumeric(coef(det.lc), 0.2681477, tol = 1e-4)
-
-  checkEqualsNumeric(coef(backTransform(occ.lc)), 1, tol = 1e-4)
-  checkEqualsNumeric(coef(backTransform(det.lc)), 0.5666381, tol = 1e-4)
-
-  checkException(backTransform(fm, type = "state"))
-  checkException(backTransform(fm, type = "det"))
-
-  fitted <- fitted(fm)
-  checkEqualsNumeric(fitted, structure(c(0.5738, 0.5014, 0.4318, 0.38581, 0.50171, 0.53764, 
-0.46563, 0.40283, 0.39986, 0.79928), .Dim = c(5L, 2L)), tol = 1e-5)
+  res <- residuals(fm)
+  checkEqualsNumeric(length(res),2)
+  checkEqualsNumeric(sapply(res,function(x) x[1,1]),c(-0.14954,-0.30801), tol= 1e-4)
 
 }
 
-test.occu.fit.covs.0 <- function() {
+test.occuMulti.fit.NA <- function() {
+  
+  y <- list(matrix(rep(0:1,10),5,2),
+            matrix(rep(0:1,10),5,2))
+  
+  set.seed(456)
+  N <- dim(y[[1]])[1]
+  J <- dim(y[[1]])[2]
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('par',1:3,sep='')
+  
+  det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
+  names(det_covs) <- paste('par',1:2,sep='')
 
-  y <- matrix(rep(0,10),5,2)
-  siteCovs <- data.frame(x = c(0,2,3,4,1))
-  obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
-  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
-  checkException(fm <- occu(~ o1 + o2 ~ x, data = umf))
+  stateformulas <- c('~par1','~par2','~par3')
+  detformulas <- c('~par1','~par2')
+
+  yna <- y
+  yna[[1]][1,1] <- NA
+  umf <- unmarkedFrameOccuMulti(y = yna, siteCovs = occ_covs, obsCovs = det_covs)
+  
+  options(warn=2)
+  checkException(occuMulti(detformulas, stateformulas, data=umf, se=FALSE))
+  
+  options(warn=1)
+  fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
+
+  checkEqualsNumeric(coef(fm)[c(1,7)], c(6.63207,0.35323), tol= 1e-4)
+
+  fit <- fitted(fm)
+  checkTrue(is.na(fit[[1]][1,1]))
+
+  res <- residuals(fm)
+  checkTrue(is.na(res[[1]][1,1]))
+  
+  yna[[1]][1,] <- NA
+  umf <- unmarkedFrameOccuMulti(y = yna, siteCovs = occ_covs, obsCovs = det_covs)
+  checkException(occuMulti(detformulas, stateformulas, data=umf, se=FALSE))
 
 }
 
-test.occu.fit.NA <- function() {
+test.occuMulti.fit.fixed0 <- function(){
 
-  y <- matrix(rep(0:1,10),5,2)
-  siteCovs <- data.frame(x = c(0,2,3,4,1))
-  siteCovs[3,1] <- NA
-  obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
-  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
-  fm <- occu(~ o1 + o2 ~ x, data = umf)
-  checkEquals(fm@sitesRemoved, 3)
-  checkEqualsNumeric(coef(fm), c(8.70123, 4.58255, 0.66243, -0.22862, 0.58192), tol = 1e-5)
+  y <- list(matrix(rep(0:1,10),5,2),
+            matrix(rep(0:1,10),5,2))
+  
+  set.seed(123)
+  N <- dim(y[[1]])[1]
+  J <- dim(y[[1]])[2]
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('par',1:3,sep='')
+  
+  det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
+  names(det_covs) <- paste('par',1:2,sep='')
 
-  obsCovs[10,2] <- NA
-  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
-  fm <- occu(~ o1 + o2 ~ x, data = umf)
-  checkEquals(fm@sitesRemoved, 3)
-  checkEqualsNumeric(coef(fm), c(8.91289, 1.89291, -1.42471, 0.67011, -8.44608), tol = 1e-5)
+  stateformulas <- c('~par1','~par2','0')
+  detformulas <- c('~par1','~par2')
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
+  
+  occ <- fm['state']
+  checkEqualsNumeric(length(coef(occ)),4)
+  checkEqualsNumeric(coef(occ),c(12.26043,0.61183,12.41110,0.18764),tol=1e-4)
+
+
+  stateformulas <- c('~par1','~par2')
+  fm2 <- occuMulti(detformulas, stateformulas, data = umf, maxOrder=1,se=FALSE)
+  
+  occ <- fm2['state']
+  checkEqualsNumeric(length(coef(occ)),4)
+  checkEqualsNumeric(coef(occ),c(12.26043,0.61183,12.41110,0.18764),tol=1e-4)
 
 }
