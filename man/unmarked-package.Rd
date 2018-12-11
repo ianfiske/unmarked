@@ -34,6 +34,9 @@ Nichols 2003).
 false negatives and false positive detections (e.g., Royle and Link
 [2006] and Miller et al. [2011]).
 
+\code{\link{occuMulti}} fits multi-species occupancy model of Rota et
+al. [2016].
+
 \code{\link{colext}} fits the mutli-season occupancy model of
 MacKenzie et al. (2003).
 
@@ -216,6 +219,9 @@ Miller, D.A., J.D. Nichols, B.T. McClintock, E.H.C. Grant, L.L. Bailey,
   and L.A. Weir. 2011. Improving occupancy estimation when two types of
   observational error occur: non-detection and species
   misidentification. \emph{Ecology} 92:1422-1428.
+
+Rota, C.T., et al. 2016. A multi-species occupancy model for two or more
+  interacting species. Methods in Ecology and Evolution 7: 1164-1173.
 
 Royle, J. A. 2004a. N-Mixture models for estimating population size from
   spatially replicated counts. \emph{Biometrics} 60:108--105.
