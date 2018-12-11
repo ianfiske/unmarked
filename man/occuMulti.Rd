@@ -167,6 +167,9 @@ fit <- occuMulti(detFormulas,occFormulas,data)
 
 #Look at output
 fit
+
+
+\dontrun{
 plot(fit)
 
 #Compare with known values
@@ -216,6 +219,8 @@ fit3 <- occuMulti(detFormulas,occFormulas,data)
 #order to be zero with maxOrder. This will be faster.
 occFormulas <- c('~par1','~par2','~par2+par3')
 fit4 <- occuMulti(detFormulas,occFormulas,data,maxOrder=1)
+}
+
 }
 
 \keyword{models}
