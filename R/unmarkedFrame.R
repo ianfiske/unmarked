@@ -334,7 +334,7 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
           piFun <- "doublePiFun"
           })
     } else {
-cat("this is a test message",fill=TRUE)
+       ### 2/4/2019 ... cat("this is a test message",fill=TRUE)
        type <- "userDefined"
         # ncol(obsToY) should be ncol(y) (numPrimary*J)
         if(missing(obsToY))
@@ -748,11 +748,11 @@ setMethod("summary", "unmarkedFrameOccuMulti", function(object,...) {
     mean.obs <- sapply(object@ylist,function(x) mean(rowSums(!is.na(x))))
     cat("Mean number of observations per site:\n")
     invisible(sapply(1:length(mean.obs), function(x)
-        cat(paste(names(mean.obs)[x],': ',mean.obs[x],'  ',sep='')))); cat("\n")   
+        cat(paste(names(mean.obs)[x],': ',mean.obs[x],'  ',sep='')))); cat("\n")
     s.one <- sapply(object@ylist,function(x) sum(rowSums(x,na.rm=T)>0))
     cat("Sites with at least one detection:\n")
     invisible(sapply(1:length(s.one), function(x)
-        cat(paste(names(s.one)[x],': ',s.one[x],'  ',sep='')))); cat("\n")   
+        cat(paste(names(s.one)[x],': ',s.one[x],'  ',sep='')))); cat("\n")
     cat("Tabulation of y observations:\n")
     for (i in 1:length(object@ylist)){
       cat(paste(names(object@ylist)[i],':',sep=''))
@@ -814,7 +814,7 @@ setMethod("plot", c(x="unmarkedFrameOccuMulti", y="missing"),
             at=(0:ym)+0.5))
     levelplot(value ~ variable*site | species, y2,
         scales=list(relation="free", x=list(labels=1:J)),
-        colorkey=colorkey, strip=T, xlab=xlab, ylab=ylab, 
+        colorkey=colorkey, strip=T, xlab=xlab, ylab=ylab,
         labels=names(x@ylist), ...)
 })
 
@@ -944,10 +944,10 @@ setMethod("[", c("unmarkedFrame","list", "missing", "missing"),
 setMethod("[", c("unmarkedFrameOccuMulti", "numeric", "missing", "missing"),
     function(x, i)
 {
-    if(length(i) == 0) return(x) 
+    if(length(i) == 0) return(x)
     M <- numSites(x)
 
-    ylist <- lapply(x@ylist,function(x) x[i,,drop=F])                     
+    ylist <- lapply(x@ylist,function(x) x[i,,drop=F])
     siteCovs <- siteCovs(x)
     obsCovs <- obsCovs(x)
     if (!is.null(siteCovs)) {
@@ -979,7 +979,7 @@ setMethod("[", c("unmarkedFrameOccuMulti", "missing", "numeric", "missing"),
     y.remove <- t(obs.remove) %*% obsToY > 0
     ylist <- lapply(x@ylist, function(z) z[,!y.remove, drop=F])
     obsCovs <- obsCovs[!rep(obs.remove, numSites(x)),, drop=FALSE]
-    
+
     x@obsCovs <- obsCovs
     x@y <- ylist[[1]]
     x@ylist <- ylist
