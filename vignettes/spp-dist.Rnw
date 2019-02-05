@@ -7,11 +7,12 @@ options(continue=" ")
 \usepackage[OT1]{fontenc}
 \usepackage{Sweave}
 \usepackage[authoryear,round]{natbib}
-\usepackage{fullpage}
+%\usepackage{fullpage}
+\usepackage[vmargin=1in,hmargin=1in]{geometry}
 \usepackage{verbatim}
 \usepackage{color}
 
-\usepackage[a4paper, hmargin={2cm,2cm}, vmargin={2cm,2cm}]{geometry}
+%\usepackage[a4paper, hmargin={2cm,2cm}, vmargin={2cm,2cm}]{geometry}
 
 
 \bibliographystyle{ecology}

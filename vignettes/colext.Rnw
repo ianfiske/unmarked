@@ -11,6 +11,7 @@ options(continue=" ")
 \usepackage{Sweave}
 %\usepackage{natbib}
 \usepackage{fullpage}
+\usepackage[vmargin=1in,hmargin=1in]{geometry}
 %\bibliographystyle{plain}
 
 \SweaveOpts{keep.source=TRUE}
