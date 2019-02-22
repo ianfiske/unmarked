@@ -194,3 +194,37 @@ test.parboot.occu <- function() {
                 )
 
 }
+
+test.parboot.distsamp <- function() {
+
+  data(issj)
+  jayumf <- unmarkedFrameDS(y=as.matrix(issj[,1:3]),
+  siteCovs=data.frame(scale(issj[,c("elevation","forest","chaparral")])),
+  dist.breaks=c(0,100,200,300), unitsIn="m", survey="point")
+
+  hn <- distsamp(~1 ~1, jayumf)
+  neg <- distsamp(~1 ~1, jayumf,keyfun="exp")
+
+  fitstats <- function(fm) {
+    observed <- getY(fm@data)
+    expected <- fitted(fm)
+    resids <- residuals(fm)
+    sse <- sum(resids^2)
+    chisq <- sum((observed - expected)^2 / expected)
+    out <- c(SSE=sse, Chisq=chisq)
+    return(out)
+  }
+
+  set.seed(123)
+  pb_hn <- parboot(hn, fitstats, nsim=2)
+  checkEqualsNumeric(pb_hn@t0, c(435.8911, 2580.4320), tol=1e-4)
+  checkEqualsNumeric(pb_hn@t.star, matrix(c(162.7815,156.1777,
+                                            878.5063,931.6237),nrow=2),
+                     tol=1e-4)
+
+  pb_neg <- parboot(neg, fitstats, nsim=2)
+  checkEqualsNumeric(pb_neg@t0, c(458.8042, 6007.6463), tol=1e-4)
+  checkEqualsNumeric(pb_neg@t.star, matrix(c(164.8892,144.9085,
+                                            938.8101,880.0353),nrow=2),
+                     tol=1e-4)
+}
