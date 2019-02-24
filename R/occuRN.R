@@ -2,11 +2,12 @@
 # Fit the Occupancy model of Royle and Nichols
 
 occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
-    se = TRUE, ...)
+    se = TRUE, engine=c("C","R"), ...)
 {
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
+    engine <- match.arg(engine, c("C", "R"))
     designMats <- getDesign(data, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
     X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
@@ -15,7 +16,7 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
     if (is.null(V.offset))
         V.offset <- rep(0, nrow(V))
 
-  y <- truncateToBinary(data@y)
+  y <- truncateToBinary(y)
 
   J <- ncol(y)
   M <- nrow(y)
@@ -33,7 +34,7 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
   navec <- is.na(y.ji)
   n <- 0:K
 
-  nll <- function(parms, f = "Poisson")
+  nll_R <- function(parms, f = "Poisson")
   {
 
     ## compute individual level detection probabilities
@@ -63,6 +64,23 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
     like.i <- rowSums(cp.in * lambda.in)
 
     -sum(log(like.i))
+  }
+
+
+  nll_C <- function(params) {
+      .Call("nll_occuRN",
+          params,
+          X, X.offset, V, V.offset, K, 
+          yC, navecC, nP,nOP,
+          PACKAGE = "unmarked")
+  }
+
+  if(engine=="R"){
+    nll <- nll_R
+  }else{
+    yC <- as.numeric(t(y))
+    navecC <- is.na(yC)
+    nll <- nll_C
   }
 
 	if(missing(starts)) starts <- rep(0, nP)
