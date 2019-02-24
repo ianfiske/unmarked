@@ -153,3 +153,15 @@ test.nonparboot.colext <- function() {
 
 
 }
+
+test.nonparboot.noObsCovs <- function() {
+
+    data(frogs)
+    #No obs covs
+    pferUMF <- unmarkedFrameOccu(pfer.bin)
+    set.seed(123)
+    fm <- occu(~ 1 ~ 1, pferUMF)
+    npb <- nonparboot(fm,B=4)
+    checkEqualsNumeric(SE(npb), c(29.4412950, 0.1633507), tol=1e-5)
+
+}
