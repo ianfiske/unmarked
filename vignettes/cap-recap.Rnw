@@ -374,9 +374,9 @@ continuous covariate effect on $p$.
 
 
 <<>>=
-M0 <- multinomPois(~1 ~1, umf.cr1)
-Mt <- multinomPois(~interval-1 ~1, umf.cr1)
-Mx <- multinomPois(~time.1 ~1, umf.cr1)
+M0 <- multinomPois(~1 ~1, umf.cr1, engine="R")
+Mt <- multinomPois(~interval-1 ~1, umf.cr1, engine="R")
+Mx <- multinomPois(~time.1 ~1, umf.cr1, engine="R")
 @
 
 The first two models can be fit in other software programs. What is
@@ -386,7 +386,7 @@ treats abundance as
 a function of the percent cover of woody vegetation.
 
 <<>>=
-(M0.woody <- multinomPois(~1 ~woody, umf.cr1))
+(M0.woody <- multinomPois(~1 ~woody, umf.cr1, engine="R"))
 @
 
 
@@ -482,13 +482,13 @@ umf.cr1Mb <- unmarkedFrameMPois(y=alfl.H1,
     siteCovs=alfl.covs[,c("woody", "struct", "time.1")],
     obsCovs=list(behavior=behavior),
     obsToY=o2y, piFun="crPiFun.Mb")
-M0 <- multinomPois(~1 ~1, umf.cr1Mb)
+M0 <- multinomPois(~1 ~1, umf.cr1Mb, engine="R")
 @
 
 \newpage
 
 <<>>=
-(Mb <- multinomPois(~behavior-1 ~1, umf.cr1Mb))
+(Mb <- multinomPois(~behavior-1 ~1, umf.cr1Mb, engine="R"))
 @
 AIC gives us no reason to favor model $M_b$ over model $M_0$. This is
 perhaps not too surprising given that the alder

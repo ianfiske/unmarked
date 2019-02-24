@@ -5,7 +5,7 @@
 \title{Multinomial-Poisson Mixtures Model}
 
 \usage{multinomPois(formula, data, starts, method = "BFGS",
-   se = TRUE, ...)}
+   se = TRUE, engine=c("C","R"), ...)}
 
 \description{Fit the multinomial-Poisson mixture model to data collected
     using
@@ -42,6 +42,8 @@ Royle, J. A., & Dorazio, R. M. (2006). Hierarchical Models of Animal Abundance a
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{logical specifying whether or not to compute standard
       errors.}
+    \item{engine}{Either "C" to use fast C++ code or "R" to use native R
+      code during the optimization.}
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
 }
