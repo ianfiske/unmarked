@@ -12,28 +12,35 @@ test.gmultmix.fit <- function()
     
     umf <- unmarkedFrameGMM(y = y, siteCovs = siteCovs, obsCovs = obsCovs, 
         yearlySiteCovs = yrSiteCovs, type="removal", numPrimary=2)
-    fm <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23)
-    checkEquals(fm@sitesRemoved, 3)
-    checkEqualsNumeric(coef(fm), 
-        c(2.50638554, 0.06226627, 0.21787839, 6.46029769, -1.51885928, 
-            -0.03409375, 0.43424295), tol = 1e-5)
+    fm_R <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23, engine="R")
+    fm_C <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23, engine="C")
+    
+    checkEquals(fm_R@sitesRemoved, 3)
+    coef_truth <- c(2.50638554, 0.06226627, 0.21787839, 6.46029769, -1.51885928, 
+            -0.03409375, 0.43424295) 
+    checkEqualsNumeric(coef(fm_R), coef_truth, tol = 1e-5) 
+    checkEqualsNumeric(coef(fm_C), coef_truth, tol = 1e-5) 
 
     obsCovs[10,2] <- NA
     umf <- unmarkedFrameGMM(y = y, siteCovs = siteCovs, obsCovs = obsCovs, 
         yearlySiteCovs = yrSiteCovs, type="removal", numPrimary=2)
-    fm <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23)
-    checkEquals(fm@sitesRemoved, 3)
-    checkEqualsNumeric(coef(fm), 
-        c(2.50638554, 0.06226627, 0.21787839, 6.46029769, -1.51885928, 
-            -0.03409375, 0.43424295), tol = 1e-5)
+    fm_R <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23, engine="R")
+    fm_C <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23, engine="C")
+    
+    checkEquals(fm_R@sitesRemoved, 3)
+    checkEqualsNumeric(coef(fm_R), coef_truth, tol = 1e-5) 
+    checkEqualsNumeric(coef(fm_C), coef_truth, tol = 1e-5)
             
     yrSiteCovs[2, 1] <- NA
     umf <- unmarkedFrameGMM(y = y, siteCovs = siteCovs, obsCovs = obsCovs, 
         yearlySiteCovs = yrSiteCovs, type="removal", numPrimary=2)
-    fm <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23)
-    checkEqualsNumeric(coef(fm), 
-        c(1.17280104, 0.37694710, 2.38249795, 2.87354955, -0.83875134, 
-            -0.08446507, 1.88056826), tol = 1e-5)
+    fm_R <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23, engine="R")
+    fm_C <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23, engine="C")
+
+    coef_truth <- c(1.17280104, 0.37694710, 2.38249795, 2.87354955, -0.83875134, 
+            -0.08446507, 1.88056826)
+    checkEqualsNumeric(coef(fm_R), coef_truth, tol = 1e-5)
+    checkEqualsNumeric(coef(fm_C), coef_truth, tol = 1e-5)
 
 
 }
