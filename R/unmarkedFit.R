@@ -3025,7 +3025,7 @@ setMethod("simulate", "unmarkedFitPCO",
     if(is.null(Xiota.offset)) Xiota.offset <- rep(0, M*(T-1))
 
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda') + Xlam.offset))
-    if(dynamics != "notrend")
+    if(dynamics != "notrend" & !is.null(coef(object, 'gamma')))
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma') + Xgam.offset),
                         M, T-1, byrow=TRUE)
     else
