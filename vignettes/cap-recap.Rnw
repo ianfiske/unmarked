@@ -721,7 +721,7 @@ function takes 3 formulas for abundance covariates, availability
 covariates, and detection covariates in that order.
 
 <<>>=
-(fm1 <- gmultmix(~woody, ~1, ~time+date, umf.cr))
+(fm1 <- gmultmix(~woody, ~1, ~time+date, umf.cr, engine="R"))
 @
 
 Results from this model are similar to those obtained using the subset
