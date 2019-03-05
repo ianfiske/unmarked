@@ -1161,6 +1161,11 @@ setAs("unmarkedFrame", "data.frame", function(from)
 {
     obsCovs <- obsCovs(from)
     siteCovs <- siteCovs(from)
+    if(inherits(from, 'unmarkedMultFrame')) {
+      yearlySiteCovs <- yearlySiteCovs(from)
+    } else {
+      yearlySiteCovs <- NULL
+    }
     y <- getY(from)
     colnames(y) <- paste("y",1:ncol(y),sep=".")
     if(is.null(obsToY(from))) {
@@ -1175,7 +1180,13 @@ setAs("unmarkedFrame", "data.frame", function(from)
         obsCovs <- data.frame(lapply(obsCovs,
             function(x) matrix(x, nrow(y), obsNum,byrow=T)))
         }
-    df <- data.frame(y, siteCovs, obsCovs)
+    if(is.null(yearlySiteCovs)) {
+        yearlySiteCovs <- matrix(0,nrow(y),0)
+    } else {
+        yearlySiteCovs <- data.frame(lapply(yearlySiteCovs,
+            function(x) matrix(x, nrow(y), length(x)/nrow(y), byrow=T)))
+        }
+    df <- data.frame(y, siteCovs, yearlySiteCovs, obsCovs)
     df
 })
 
