@@ -61,3 +61,44 @@ test.obsToY <- function() {
     oc.na %*% o2y
 
     }
+
+
+test.umf.yearlySiteCovs <- function() {
+
+  n <- 50   # number of sites
+  T <- 4    # number of primary periods
+  J <- 3    # number of secondary periods
+     
+  site <- 1:50
+  years <- data.frame(matrix(rep(2010:2013, each=n), n, T))
+  years <- data.frame(lapply(years, as.factor))
+  dummy <- matrix(rep(c('a','b','c','d'),n),nrow=n,byrow=T)
+  occasions <- data.frame(matrix(rep(1:(J*T), each=n), n, J*T))   
+  y <- matrix(0:1, n, J*T)
+     
+  umf <- unmarkedMultFrame(y=y,
+        siteCovs = data.frame(site=site),
+        obsCovs=list(occasion=occasions),
+        yearlySiteCovs=list(year=years,dummy=dummy),
+        numPrimary=T)
+
+  as_df <- as(umf,'data.frame')
+
+  checkEqualsNumeric(dim(as_df),c(50,33))
+  checkTrue(all(names(as_df)[13:22] == c('site','year.1','year.2','year.3',
+                                     'year.4','dummy.1','dummy.2','dummy.3',
+                                     'dummy.4','occasion.1')))
+  checkTrue(all(as_df$year.1==2010))
+  checkTrue(all(as_df$dummy.1=='a'))
+
+
+  umf2 <- unmarkedMultFrame(y=y,
+        siteCovs = data.frame(site=site),
+        obsCovs=list(occasion=occasions),
+        numPrimary=T)
+
+  as_df2 <- as(umf2,'data.frame')
+
+  checkEqualsNumeric(dim(as_df2),c(50,25))
+
+}
