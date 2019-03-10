@@ -26,12 +26,21 @@ vec doublePiFun( vec p ){
   return(pi);
 }
 
+vec depDoublePiFun( vec p ){
+  //p must have 2 columns
+  vec pi(2);
+  pi(0) = p(0);
+  pi(1) = p(1) * (1 - p(0));
+  return(pi);
+}
 
 vec piFun( vec p , std::string pi_fun ){
   if(pi_fun == "removalPiFun"){
     return(removalPiFun(p));
   } else if(pi_fun == "doublePiFun"){
     return(doublePiFun(p));
+  } else if(pi_fun == "depDoublePiFun"){
+    return(depDoublePiFun(p));
   }
 }
 
