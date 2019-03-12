@@ -135,11 +135,11 @@ SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
 
     vec g(K);
     for (int i=0; i<K; i++){
+      g(i) = exp(sum(A.row(i)));
       if(!fin(m,i)){
         f(i) = 0;
         g(i) = 0;
       }
-      g(i) = exp(sum(A.row(i)));
     }
 
     ll(m) = log(sum(f % g));
