@@ -55,8 +55,8 @@ multinomPois <- function(formula, data, starts, method = "BFGS",
       yC <- as.numeric(t(y))
       navecC <- is.na(yC)
       nll <- nll_C
-      if(!piFun%in%c('doublePiFun','removalPiFun')){
-        warning("C engine only supports double and removal pi functions. Falling back to R engine.")
+      if(!piFun%in%c('doublePiFun','removalPiFun','depDoublePiFun')){
+        warning("Custom pi functions are not supported by C engine. Using R engine instead.")
         nll <- nll_R
       }
     }

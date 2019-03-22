@@ -267,7 +267,11 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
                 #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
                 obsToY <- matrix(1, 2, 3)
                 piFun <- "doublePiFun"
-                })
+                },  
+            depDouble = {
+              obsToY <- matrix(1, 2, 2)
+              piFun <- "depDoublePiFun"
+              })
     } else {
         if(missing(obsToY))
             stop("obsToY is required for multinomial-Poisson data with no specified type.")
