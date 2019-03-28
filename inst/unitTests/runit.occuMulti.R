@@ -88,7 +88,14 @@ test.occuMulti.fit.NA <- function() {
 
   stateformulas <- c('~par1','~par2','~par3')
   detformulas <- c('~par1','~par2')
-
+  
+  #Check error thrown when missing site covariates
+  occ_covsNA <- occ_covs
+  occ_covsNA[1,1] <- NA
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covsNA, obsCovs = det_covs)
+  checkException(occuMulti(detformulas, stateformulas, data=umf, se=FALSE))
+  
+  #Check for warning when missing detection
   yna <- y
   yna[[1]][1,1] <- NA
   umf <- unmarkedFrameOccuMulti(y = yna, siteCovs = occ_covs, obsCovs = det_covs)
@@ -97,8 +104,9 @@ test.occuMulti.fit.NA <- function() {
   checkException(occuMulti(detformulas, stateformulas, data=umf, se=FALSE))
   
   options(warn=1)
+  
+  #Check correct answer given when missing detection
   fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
-
   checkEqualsNumeric(coef(fm)[c(1,7)], c(6.63207,0.35323), tol= 1e-4)
 
   fit <- fitted(fm)
@@ -107,10 +115,18 @@ test.occuMulti.fit.NA <- function() {
   res <- residuals(fm)
   checkTrue(is.na(res[[1]][1,1]))
   
+  #Check error thrown when all detections are missing
   yna[[1]][1,] <- NA
   umf <- unmarkedFrameOccuMulti(y = yna, siteCovs = occ_covs, obsCovs = det_covs)
   checkException(occuMulti(detformulas, stateformulas, data=umf, se=FALSE))
 
+  #Check warning when missing covariate value on detection
+  det_covsNA <- det_covs
+  det_covsNA[1,1] <- NA
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covsNA)
+  options(warn=2)
+  checkException(occuMulti(detformulas,stateformulas,data=umf, se=FALSE))
+  options(warn=1)
 }
 
 test.occuMulti.fit.fixed0 <- function(){
