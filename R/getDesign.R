@@ -578,7 +578,8 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   sf_no0 <- stateformulas[!fixed0]
   var_names <- colnames(dmF)[!fixed0] 
   dmOcc <- lapply(seq_along(sf_no0),function(i){
-                    out <- model.matrix(sf_no0[[i]],site_covs)
+                    out <- model.matrix(sf_no0[[i]],
+                            model.frame(~.,site_covs,na.action=stats::na.pass))
                     colnames(out) <- paste('[',var_names[i],'] ',
                                            colnames(out), sep='')
                     fInd <<- c(fInd,rep(i,ncol(out)))
@@ -592,7 +593,8 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   #For detection
   dInd <- c()
   dmDet <- lapply(seq_along(detformulas),function(i){
-                    out <- model.matrix(detformulas[[i]],obs_covs)
+                    out <- model.matrix(detformulas[[i]],
+                            model.frame(~.,obs_covs,na.action=stats::na.pass))
                     colnames(out) <- paste('[',names(umf@ylist)[i],'] ',
                                            colnames(out),sep='')
                     dInd <<- c(dInd,rep(i,ncol(out)))
