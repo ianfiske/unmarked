@@ -163,3 +163,74 @@ test.occuMulti.fit.fixed0 <- function(){
   checkEqualsNumeric(coef(occ),c(12.26043,0.61183,12.41110,0.18764),tol=1e-4)
 
 }
+
+test.occuMulti.predict <- function(){
+ 
+  set.seed(123)
+  y <- list(matrix(rbinom(40,1,0.2),20,2),
+            matrix(rbinom(40,1,0.3),20,2))
+  
+  N <- dim(y[[1]])[1]
+  J <- dim(y[[1]])[2]
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('par',1:3,sep='')
+  
+  det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
+  names(det_covs) <- paste('par',1:2,sep='')
+
+  stateformulas <- c('~par1','~par2','0')
+  detformulas <- c('~par1','~par2')
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+
+  prState <- predict(fm, type='state')
+  checkEqualsNumeric(sapply(prState,function(x) x[1,1]),
+                     c(0.30807707,0.23924385,0.02382635,0.85377734),tol=1e-4)
+  prDet <- predict(fm, type='det')
+  checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
+                     c(0.190485,0.0945992,0.00507,0.37589566), tol=1e-4)
+ 
+  stateformulas <- c('~1','~1','0')
+  detformulas <- c('~1','~par2')
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+
+  prState <- predict(fm, type='state')
+  checkEqualsNumeric(sapply(prState,function(x) x[1,1]),
+                     c(0.475928,0.26550,0.012861,0.826837),tol=1e-4)
+  prDet <- predict(fm, type='det')
+  checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
+                     c(0.20494,0.17175,-0.13168,0.541579), tol=1e-4)
+}
+
+test.occuMulti.predict.NA <- function(){
+ 
+  set.seed(123)
+  y <- list(matrix(rbinom(40,1,0.2),20,2),
+            matrix(rbinom(40,1,0.3),20,2))
+  
+  N <- dim(y[[1]])[1]
+  J <- dim(y[[1]])[2]
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('par',1:3,sep='')
+  
+  det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
+  names(det_covs) <- paste('par',1:2,sep='')
+  det_covs[1,1] <- NA
+
+  stateformulas <- c('~par1','~par2','0')
+  detformulas <- c('~par1','~par2')
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+
+  prDet <- predict(fm, type='det')
+  checkTrue(all(is.na(prDet$sp1[1,])))
+  checkEqualsNumeric(as.numeric(prDet$sp1[2,]),
+                     c(0.49781,0.243148,0.021250,0.974375), tol=1e-4)
+}
