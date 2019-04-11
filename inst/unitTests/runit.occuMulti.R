@@ -233,4 +233,19 @@ test.occuMulti.predict.NA <- function(){
   checkTrue(all(is.na(prDet$sp1[1,])))
   checkEqualsNumeric(as.numeric(prDet$sp1[2,]),
                      c(0.49781,0.243148,0.021250,0.974375), tol=1e-4)
+
+  #Check that you can predict with NAs in siteCovs
+  newdata <- siteCovs(umf)
+  newdata[1,1] <- NA
+  prOcc <- predict(fm, type='state', newdata=newdata)
+  checkTrue(all(is.na(prOcc$Predicted[1,])))
+  checkTrue(all(!is.na(sapply(prOcc,`[`,2,1))))
+  prOcc_sp <- predict(fm, type='state', species=1, newdata=newdata)
+  checkTrue(all(is.na(prOcc_sp[1,])))
+  checkTrue(all(!is.na(prOcc_sp[2,])))
+  checkEqualsNumeric(prOcc_sp$Predicted[2],0.4731427, tol=1e-4)
+  prOcc_cond <- predict(fm, type='state', species=1, cond=2, newdata=newdata)
+  checkTrue(all(is.na(prOcc_cond[1,])))
+  checkTrue(all(!is.na(prOcc_cond[2,])))
+  checkEqualsNumeric(prOcc_sp$Predicted[2],0.4731427, tol=1e-4)
 }
