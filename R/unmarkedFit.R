@@ -1392,9 +1392,9 @@ setMethod("predict", "unmarkedFitOccuMulti",
       }
 
       if(se.fit){
-        boot_se <- apply(samp,1,sd)
-        boot_low <- apply(samp,1,quantile,low_bound)
-        boot_up <- apply(samp,1,quantile,up_bound)
+        boot_se <- apply(samp,1,sd, na.rm=T)
+        boot_low <- apply(samp,1,quantile,low_bound, na.rm=T)
+        boot_up <- apply(samp,1,quantile,up_bound, na.rm=T)
       } else{
         boot_se <- boot_low <- boot_up <- NA
       }
@@ -1407,9 +1407,9 @@ setMethod("predict", "unmarkedFitOccuMulti",
       codes <- apply(dm$z,1,function(x) paste(x,collapse=""))
       colnames(psi_est)  <- paste('psi[',codes,']',sep='')
       if(se.fit){
-        boot_se <- apply(samp,c(1,2),sd)
-        boot_low <- apply(samp,c(1,2),quantile,low_bound)
-        boot_up <- apply(samp,c(1,2),quantile,up_bound)
+        boot_se <- apply(samp,c(1,2),sd, na.rm=T)
+        boot_low <- apply(samp,c(1,2),quantile,low_bound, na.rm=T)
+        boot_up <- apply(samp,c(1,2),quantile,up_bound, na.rm=T)
         colnames(boot_se) <- colnames(boot_low) <- colnames(boot_up) <-
           colnames(psi_est)
       } else {
@@ -1441,7 +1441,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
         cov_sub <- vcov(object)[inds-sum(dm$fixed0),inds-sum(dm$fixed0)]
         se_est <- lower <- upper <- numeric(N)
         for (j in 1:N){
-          x <- dmDet[[i]][j]
+          x <- dmDet[[i]][j,]
           xb <- stats::dlogis(t(x) %*% param_sub)
           v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
           se_est[j] <- sqrt(v)
