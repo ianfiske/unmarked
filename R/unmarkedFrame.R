@@ -408,6 +408,11 @@ unmarkedFrameGDS <- function(y, siteCovs, numPrimary,
             stop("tlength cannot be specified with point transect data")
         tlength <- rep(1, nrow(y))
         }
+    if(identical(survey, "line")) {
+      if(length(tlength) != nrow(y)) {
+        stop("tlength should be a vector with length(tlength)==nrow(y)")
+      }
+    }
 
     umf@yearlySiteCovs <- yearlySiteCovs
     umf <- as(umf, "unmarkedFrameGDS")

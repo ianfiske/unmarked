@@ -27,6 +27,11 @@ test.gdistsamp.covs <- function() {
     }
     y <- matrix(y, nrow=R) # convert array to matrix
 
+    #Check that error thrown when length(tlength)!=nrow(y)
+    checkException(unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
+                            dist.breaks=breaks,
+                            tlength=rep(transect.length, (R-1)), numPrimary=T))
+
     # Organize data
     umf <- unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
                             dist.breaks=breaks,
