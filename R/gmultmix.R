@@ -144,8 +144,8 @@ if(engine=="R"){
   kmytC[which(is.na(kmyt))] <- 0
   nll <- nll_C
 
-  if(!piFun%in%c('doublePiFun','removalPiFun')){
-    warning("C engine only supports double and removal pi functions. Falling back to R engine.")
+  if(!piFun%in%c('doublePiFun','removalPiFun','depDoublePiFun')){
+    warning("Custom pi functions are not supported by C engine. Using R engine instead.")
     nll <- nll_R
   }
 

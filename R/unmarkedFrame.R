@@ -267,7 +267,11 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
                 #obsToY <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3)
                 obsToY <- matrix(1, 2, 3)
                 piFun <- "doublePiFun"
-                })
+                },  
+            depDouble = {
+              obsToY <- matrix(1, 2, 2)
+              piFun <- "depDoublePiFun"
+              })
     } else {
         if(missing(obsToY))
             stop("obsToY is required for multinomial-Poisson data with no specified type.")
@@ -319,8 +323,8 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 {
     J <- ncol(y) / numPrimary
     if(!missing(type)) {
-      if(!type %in% c("removal", "double"))
-        stop("if specifying type, it should either be 'removal' or 'double'")
+      if(!type %in% c("removal", "double", "depDouble"))
+        stop("if specifying type, it should either be 'removal', 'double', or 'depDouble'")
       switch(type,
         removal = {
           obsToY <- diag(J)
@@ -332,6 +336,11 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
           obsToY <- matrix(1, 2, 3)
           obsToY <- kronecker(diag(numPrimary), obsToY)
           piFun <- "doublePiFun"
+          },
+        depDouble = {
+          obsToY <- matrix(1, 2, 2) 
+          obsToY <- kronecker(diag(numPrimary), obsToY) 
+          piFun <- "depDoublePiFun"
           })
     } else {
        ### 2/4/2019 ... cat("this is a test message",fill=TRUE)

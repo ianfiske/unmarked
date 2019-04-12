@@ -21,8 +21,9 @@
     \item{obsCovs}{Either a named list of RxJ \code{\link{data.frame}}s or 
         a \code{data.frame} with RxJ rows and one column per covariate. 
         For the latter format, the covariates should be in site-major order.}
-    \item{type}{Either "removal" or "double" for removal sampling or double 
-        observer sampling. If this argument not specified, the user must
+    \item{type}{Either "removal" for removal sampling, "double" for standard 
+        double observer sampling, or "depDouble" for dependent double observer 
+        sampling. If this argument not specified, the user must
         provide an \code{obsToY} matrix. See details.}
     \item{obsToY}{A matrix describing the relationship between \code{obsCovs} 
         and \code{y}. This is necessary because under some sampling designs 
@@ -31,11 +32,11 @@
         there are 3 observations (seen only by observer A, detected only by 
         observer B, and detected by both), but each observation-level covariate
         can only have 2 columns, one for each observer. This matrix is created 
-        automatically if \code{type} is either "removal" or "double". } 
+        automatically if \code{type} is specified. } 
     \item{mapInfo}{Currently ignored}
     \item{piFun}{Function used to compute the multinomial cell probabilities 
         from a matrix of detection probabilities. This is created automatically
-        if \code{type} is either "removal" or "double".}}
+        if \code{type} is specified.}}
 
 \details{
     unmarkedFrameMPois is the S4 class that holds data to be passed 

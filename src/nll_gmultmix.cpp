@@ -1,38 +1,11 @@
 #include "nll_gmultmix.h"
+#include "pifun.h"
 
 using namespace Rcpp;
 using namespace arma;
 
 mat inv_logit( mat inp ){
   return(1 / (1 + exp(-1 * inp)));
-}
-
-vec removalPiFun ( vec p ){
-  int J = p.size();
-  vec pi(J);
-  pi(0) = p(0);
-  for(int j=1; j<J; j++){
-    pi(j) = pi(j-1) / p(j-1) * (1-p(j-1)) * p(j);
-  }
-  return(pi);
-}
-
-vec doublePiFun( vec p ){
-  //p must have 2 columns
-  vec pi(3);
-  pi(0) = p(0) * (1 - p(1));
-  pi(1) = p(1) * (1 - p(0));
-  pi(2) = p(0) * p(1);
-  return(pi);
-}
-
-
-vec piFun( vec p , std::string pi_fun ){
-  if(pi_fun == "removalPiFun"){
-    return(removalPiFun(p));
-  } else if(pi_fun == "doublePiFun"){
-    return(doublePiFun(p));
-  }
 }
 
 
@@ -126,11 +99,11 @@ SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
 
     vec g(K);
     for (int i=0; i<K; i++){
+      g(i) = exp(sum(A.row(i)));
       if(!fin(m,i)){
         f(i) = 0;
         g(i) = 0;
       }
-      g(i) = exp(sum(A.row(i)));
     }
 
     ll(m) = log(sum(f % g));
