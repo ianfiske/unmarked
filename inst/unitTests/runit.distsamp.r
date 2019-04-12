@@ -1,6 +1,11 @@
 test.distsamp.covs <- function() {
     y <- matrix(rep(4:1, 10), 5, 2, byrow=TRUE)
     siteCovs <- data.frame(x = c(0, 2, 3, 4, 1))
+    #Check error thrown when length(tlength!=nrow(y))
+    checkException(unmarkedFrameDS(y = y, siteCovs = siteCovs,
+        dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, (5-1)),
+        unitsIn="km"))
+
     umf <- unmarkedFrameDS(y = y, siteCovs = siteCovs,
         dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, 5),
         unitsIn="km")
