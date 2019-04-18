@@ -8,7 +8,7 @@ mat invlogit(const mat& inp ){
 }
 
 vec p_halfnorm(const double& sigma, const std::string& survey, 
-               const NumericVector& db, const vec& w, const vec& a){
+               const NumericVector& db, const vec& w, const rowvec& a){
   
   int J = db.size() - 1;
   vec p(J);
@@ -16,24 +16,27 @@ vec p_halfnorm(const double& sigma, const std::string& survey,
   if(survey == "line"){
     double f0 = 2 * R::dnorm(0.0, 0.0, sigma, 0);
     IntegerVector idx1 = Range(1,db.size()-1);
-    vec p1 = Rcpp::dnorm(db[idx1], 0.0, sigma);
+    NumericVector db_sub1 = db[idx1];
+    vec p1 = Rcpp::pnorm(db_sub1, 0.0, sigma);
     IntegerVector idx2 = Range(0,db.size()-2);
-    vec p2 = Rcpp::dnorm(db[idx2], 0.0, sigma);
+    NumericVector db_sub2 = db[idx2];
+    vec p2 = Rcpp::pnorm(db_sub2, 0.0, sigma);
     vec int_ = 2 * (p1 - p2);
     p = int_ / f0 / w;
+
   } else if(survey == "point"){
     for (int j; j<J; j++){
       double s2 = pow(sigma,2);
       double p1 = 1 - exp(-pow(db[j+1],2) / (2 * s2));
-      double p2 = 1 - exp(-pow(db[j],2) / (2 * s2)) 
-      double int_ = s2 * p1 - s2 * p2
-      p(j) = int_ * 2 * M_PI / a(j)
+      double p2 = 1 - exp(-pow(db[j],2) / (2 * s2)); 
+      double int_ = s2 * p1 - s2 * p2;
+      p(j) = int_ * 2 * M_PI / a(j);
     }
   }
   return(p);
 }
 
-SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_,
+SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
     SEXP Xlam_, SEXP Xlam_offset_, SEXP A_, SEXP Xphi_, SEXP Xphi_offset_, 
     SEXP Xdet_, SEXP Xdet_offset_, SEXP db_, SEXP a_, SEXP u_, SEXP w_,
     SEXP k_, SEXP lfac_k_, SEXP lfac_kmyt_, SEXP kmyt_, 
@@ -44,20 +47,22 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_,
   vec beta = as<vec>(beta_);
   std::string mixture = as<std::string>(mixture_);
   std::string keyfun = as<std::string>(keyfun_);
+  std::string survey = as<std::string>(survey_);
 
   mat Xlam = as<mat>(Xlam_);
   vec Xlam_offset = as<vec>(Xlam_offset_);
-  vec A = as<vec>(A_)
+  vec A = as<vec>(A_);
   mat Xphi = as<mat>(Xphi_);
   vec Xphi_offset = as<vec>(Xphi_offset_);
   
   mat Xdet = as<mat>(Xdet_);
   vec Xdet_offset = as<vec>(Xdet_offset_);
   
-  vec db = as<vec> db_;
-  vec w = as<vec> w_;
-  mat a = as<mat> a_;
-  mat u = as<mat> u_;
+  NumericVector db(db_);
+  vec w = as<vec>(w_);
+  mat a = as<mat>(a_);
+  mat ut = as<mat>(u_);
+  mat u = ut.t();
 
   IntegerVector k(k_);
   vec lfac_k = as<vec>(lfac_k_);
@@ -77,7 +82,7 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_,
 
   int M = Xlam.n_rows;
   vec lambda = exp( Xlam * beta.subvec(0, (nLP - 1) ) + Xlam_offset ) % A;
-  
+
   int T = Xphi.n_rows / M;
   vec phi = ones(M*T);
   if(T > 1){
@@ -92,7 +97,6 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_,
   int K = k.size();
   int t_ind = 0;
   int y_ind = 0;
-  int p_ind = 0;
   vec ll(M);
   for (int m=0; m<M; m++){
     vec f(K);
@@ -104,8 +108,7 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_,
 
     mat mn = zeros(K,T);
     for(int t=0; t<T; t++){
-      int y_stop = y_ind + R - 1;
-      int p_stop = p_ind + J - 1;
+      int y_stop = y_ind + J - 1;
       vec na_sub = naflag.subvec(y_ind, y_stop); 
 
       if( ! all(na_sub) ){
@@ -114,15 +117,16 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_,
         vec p2 = y.subvec(y_ind, y_stop);
         
         //calculate p here
-        vec p = ones(J); //uniform case
-
-        if (keyfun == "halfnorm"){
+        vec p(J);
+        if(keyfun == "uniform"){
+          p = ones(J); 
+        } else if (keyfun == "halfnorm"){
           //detParam is sigma
-          vec p = p_halfnorm(detParam(t_ind), survey, db, w, a.row(m));
+          p = p_halfnorm(detParam(t_ind), survey, db, w, a.row(m));
         }
         //other keyfuns
 
-        vec p3 = p % u.row(m) * phi(t_ind);
+        vec p3 = p % u.col(m) * phi(t_ind);
         //the following line causes a segfault only in R CMD check,
         //when kmyt contains NA values
         vec p4 = kmyt.subcube(span(m),span(t),span());
@@ -134,13 +138,12 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_,
         }
 
         double p5 = 1 - sum(p3);
-      
+
         mn.col(t) = lfac_k - p1 + sum(p2 % log(p3)) + p4 * log(p5);
       }
 
       t_ind += 1;
-      y_ind += R;
-      p_ind += J;
+      y_ind += J;
     }
 
     vec g(K);

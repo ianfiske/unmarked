@@ -4,11 +4,12 @@ gdistsamp <- function(lambdaformula, phiformula, pformula, data,
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
     mixture=c('P', 'NB'), K,
     starts, method = "BFGS", se = TRUE, rel.tol=1e-4,
-    ...)
+    engine=c("R","C"), ...)
 {
 if(!is(data, "unmarkedFrameGDS"))
     stop("Data is not of class unmarkedFrameGDS.")
 
+engine <- match.arg(engine, c("R", "C"))
 keyfun <- match.arg(keyfun)
 if(!keyfun %in% c("halfnorm", "exp", "hazard", "uniform"))
     stop("keyfun must be 'halfnorm', 'exp', 'hazard', or 'uniform'")
@@ -382,6 +383,31 @@ uniform = {
     }
 })
 
+if(engine =="C" & keyfun %in% c('halfnorm','uniform')){
+  long_format <- function(x){
+    out <- matrix(aperm(x,c(1,3,2)),nrow=nrow(x),ncol=dim(x)[2]*dim(x)[3])
+    as.vector(t(out))
+  }
+  y_long <- long_format(y)
+  naflag_long <- long_format(naflag)
+  kmytC <- kmyt
+  kmytC[which(is.na(kmyt))] <- 0
+  if(output!='Density'){
+    A <- rep(1, M)
+  }
+
+  nll <- function(params) {
+    .Call("nll_gdistsamp",
+          params,mixture,keyfun,survey,
+          Xlam, Xlam.offset, A, Xphi, Xphi.offset, Xdet, Xdet.offset, 
+          db, a, u, w,
+          k,lfac.k, lfac.kmyt,kmytC,
+          y_long, naflag_long, fin,
+          nP,nLP,nPP,nDP,nSP,nOP,
+          PACKAGE = "unmarked")
+}
+}
+#return(nll(starts))
 fm <- optim(starts, nll, method = method, hessian = se, ...)
 opt <- fm
 if(se) {
