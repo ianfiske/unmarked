@@ -194,7 +194,8 @@ halfnorm = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp)
+                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
 
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
@@ -263,7 +264,8 @@ exp = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp)
+                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])]) 
+                if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
@@ -331,7 +333,8 @@ hazard = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp)
+                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
@@ -369,7 +372,8 @@ uniform = {
                 if(all(naflag[i,t,]))
                     next
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp)
+                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
@@ -392,7 +396,7 @@ if(engine =="C" & keyfun %in% c('halfnorm','uniform')){
   naflag_long <- long_format(naflag)
   kmytC <- kmyt
   kmytC[which(is.na(kmyt))] <- 0
-  if(output!='Density'){
+  if(output!='density'){
     A <- rep(1, M)
   }
 

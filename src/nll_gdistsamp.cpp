@@ -92,10 +92,9 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
   int R = y.size() / M;
   int J = R / T;
   
-  vec detParam(M*T);
+  vec det_param(M*T);
   if(keyfun != "uniform"){
-    detParam = exp( Xdet * beta.subvec((nLP+nPP),(nLP+nPP+nDP-1)) 
-                        + Xdet_offset);
+    det_param = exp( Xdet * beta.subvec((nLP+nPP),(nLP+nPP+nDP-1)) + Xdet_offset);
   }
   
   int K = k.size();
@@ -126,7 +125,7 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
           p = ones(J); 
         } else if (keyfun == "halfnorm"){
           //detParam is sigma
-          p = p_halfnorm(detParam(t_ind), survey, db, w, a.row(m));
+          p = p_halfnorm(det_param(t_ind), survey, db, w, a.row(m));
         }
         //other keyfuns
 
