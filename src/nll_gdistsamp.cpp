@@ -92,7 +92,11 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
   int R = y.size() / M;
   int J = R / T;
   
-  vec detParam = exp( Xdet * beta.subvec((nLP+nPP),(nLP+nPP+nDP-1)) + Xdet_offset);
+  vec detParam(M*T);
+  if(keyfun != "uniform"){
+    detParam = exp( Xdet * beta.subvec((nLP+nPP),(nLP+nPP+nDP-1)) 
+                        + Xdet_offset);
+  }
   
   int K = k.size();
   int t_ind = 0;
