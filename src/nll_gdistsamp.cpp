@@ -77,6 +77,51 @@ vec p_exp(const double& rate, const std::string& survey, const vec& db,
   return(p);
 }
 
+vec p_hazard(const double& shape, const double& scale, const std::string& survey, 
+          const vec& db, const vec& w, const rowvec& a, double& rel_tol){
+
+  int J = db.size() - 1;
+  vec p(J);
+
+  //Integration settings
+  double *ex;
+  ex = (double *) R_alloc(2, sizeof(double)); //parameters
+  ex[0] = shape;
+  ex[1] = scale;
+  double epsabs = rel_tol;
+  int limit = 100;
+  int lenw = 400;
+  int last = 0;
+  int iwork[100];
+  double work[400];
+  double int_ = 0.0; //integration result
+  double abserr = 0.0;
+  int neval = 0;
+  int ier=0;
+
+  if(survey == "line"){
+    for(int j=0; j<J; j++){
+      double lower = db(j);
+      double upper = db(j+1);
+	    Rdqags(gxhaz, ex, &lower, &upper, &epsabs, &rel_tol, &int_,
+		    &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
+		    work);
+      p(j) = int_ / w(j);
+    }
+
+  } else if(survey == "point"){
+    for(int j=0; j<J; j++){
+      double lower = db(j);
+      double upper = db(j+1);
+	    Rdqags(grhaz, ex, &lower, &upper, &epsabs, &rel_tol, &int_,
+		    &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
+		    work);
+      p(j) = int_ * 2 * M_PI / a(j);
+    }
+  }
+  return(p);
+}
+
 SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
     SEXP Xlam_, SEXP Xlam_offset_, SEXP A_, SEXP Xphi_, SEXP Xphi_offset_, 
     SEXP Xdet_, SEXP Xdet_offset_, SEXP db_, SEXP a_, SEXP u_, SEXP w_,
@@ -170,15 +215,20 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
         vec p1 = lfac_kmyt.subcube(span(m),span(t),span());
         vec p2 = y.subvec(y_ind, y_stop);
         
-        //calculate p here
+        //calculate p
         vec p(J);
         if(keyfun == "uniform"){
           p = ones(J); 
         } else if (keyfun == "halfnorm"){
-          //detParam is sigma
+          //det_param is sigma
           p = p_halfnorm(det_param(t_ind), survey, db, w, a.row(m));
         } else if (keyfun == "exp"){
+          //det_param is rate
           p = p_exp(det_param(t_ind), survey, db, w, a.row(m), rel_tol);
+        } else if (keyfun == "hazard"){
+          //det_param is shape
+          double scale = exp(beta(nLP+nPP+nDP));
+          p = p_hazard(det_param(t_ind), scale, survey, db, w, a.row(m), rel_tol);
         }
         //other keyfuns
 

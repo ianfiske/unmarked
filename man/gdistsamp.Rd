@@ -12,7 +12,7 @@ to be modeled using the negative binomial distribution.
 gdistsamp(lambdaformula, phiformula, pformula, data, keyfun =
 c("halfnorm", "exp", "hazard", "uniform"), output = c("abund",
 "density"), unitsOut = c("ha", "kmsq"), mixture = c("P", "NB"), K,
-starts, method = "BFGS", se = TRUE, engine=c("R","C"), rel.tol=1e-4, ...)
+starts, method = "BFGS", se = TRUE, engine=c("C","R"), rel.tol=1e-4, ...)
 }
 \arguments{
   \item{lambdaformula}{

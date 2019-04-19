@@ -3,13 +3,13 @@ gdistsamp <- function(lambdaformula, phiformula, pformula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
     mixture=c('P', 'NB'), K,
-    starts, method = "BFGS", se = TRUE, engine=c("R","C"),
+    starts, method = "BFGS", se = TRUE, engine=c("C","R"),
     rel.tol=1e-4, ...)
 {
 if(!is(data, "unmarkedFrameGDS"))
     stop("Data is not of class unmarkedFrameGDS.")
 
-engine <- match.arg(engine, c("R", "C"))
+engine <- match.arg(engine, c("C", "R"))
 keyfun <- match.arg(keyfun)
 if(!keyfun %in% c("halfnorm", "exp", "hazard", "uniform"))
     stop("keyfun must be 'halfnorm', 'exp', 'hazard', or 'uniform'")
@@ -387,7 +387,7 @@ uniform = {
     }
 })
 
-if(engine =="C" & keyfun %in% c('halfnorm','uniform','exp')){
+if(engine =="C"){
   long_format <- function(x){
     out <- matrix(aperm(x,c(1,3,2)),nrow=nrow(x),ncol=dim(x)[2]*dim(x)[3])
     as.vector(t(out))
