@@ -3,8 +3,8 @@ gdistsamp <- function(lambdaformula, phiformula, pformula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
     mixture=c('P', 'NB'), K,
-    starts, method = "BFGS", se = TRUE, rel.tol=1e-4,
-    engine=c("R","C"), ...)
+    starts, method = "BFGS", se = TRUE, engine=c("R","C"),
+    rel.tol=1e-4, ...)
 {
 if(!is(data, "unmarkedFrameGDS"))
     stop("Data is not of class unmarkedFrameGDS.")
@@ -147,7 +147,7 @@ halfnorm = {
         starts[nLP+nPP+1] <- log(max(db))
         }
 
-    nll <- function(pars) {
+    nll_R <- function(pars) {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
@@ -216,7 +216,7 @@ exp = {
         starts[nLP+nPP+1] <- log(max(db))
         }
 
-    nll <- function(pars) {
+    nll_R <- function(pars) {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
@@ -283,7 +283,7 @@ hazard = {
     if(missing(starts)) {
         starts <- rep(0, nP)
         }
-    nll <- function(pars) {
+    nll_R <- function(pars) {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
@@ -351,7 +351,7 @@ uniform = {
     if(missing(starts)) {
         starts <- rep(0, nP)
         }
-    nll <- function(pars) {
+    nll_R <- function(pars) {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
@@ -387,7 +387,7 @@ uniform = {
     }
 })
 
-if(engine =="C" & keyfun %in% c('halfnorm','uniform')){
+if(engine =="C" & keyfun %in% c('halfnorm','uniform','exp')){
   long_format <- function(x){
     out <- matrix(aperm(x,c(1,3,2)),nrow=nrow(x),ncol=dim(x)[2]*dim(x)[3])
     as.vector(t(out))
@@ -407,9 +407,11 @@ if(engine =="C" & keyfun %in% c('halfnorm','uniform')){
           db, a, u, w,
           k,lfac.k, lfac.kmyt,kmytC,
           y_long, naflag_long, fin,
-          nP,nLP,nPP,nDP,nSP,nOP,
+          nP,nLP,nPP,nDP,nSP,nOP,rel.tol,
           PACKAGE = "unmarked")
-}
+  }
+} else {
+  nll <- nll_R
 }
 #return(nll(starts))
 fm <- optim(starts, nll, method = method, hessian = se, ...)

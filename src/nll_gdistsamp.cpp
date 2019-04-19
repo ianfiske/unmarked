@@ -8,28 +8,69 @@ mat invlogit(const mat& inp ){
 }
 
 vec p_halfnorm(const double& sigma, const std::string& survey, 
-               const NumericVector& db, const vec& w, const rowvec& a){
+               const vec& db, const vec& w, const rowvec& a){
   
   int J = db.size() - 1;
   vec p(J);
 
   if(survey == "line"){
     double f0 = 2 * R::dnorm(0.0, 0.0, sigma, 0);
-    IntegerVector idx1 = Range(1,db.size()-1);
-    NumericVector db_sub1 = db[idx1];
-    vec p1 = Rcpp::pnorm(db_sub1, 0.0, sigma);
-    IntegerVector idx2 = Range(0,db.size()-2);
-    NumericVector db_sub2 = db[idx2];
-    vec p2 = Rcpp::pnorm(db_sub2, 0.0, sigma);
+    int L = db.size();
+    vec p1(L-1);
+    vec p2(L-1);
+    for(int l=1; l<L; l++){
+      p1(l-1) = R::pnorm(db(l), 0.0, sigma, 1, 0);
+      p2(l-1) = R::pnorm(db(l-1), 0.0, sigma, 1, 0);
+    }
     vec int_ = 2 * (p1 - p2);
     p = int_ / f0 / w;
 
   } else if(survey == "point"){
     for (int j; j<J; j++){
       double s2 = pow(sigma,2);
-      double p1 = 1 - exp(-pow(db[j+1],2) / (2 * s2));
-      double p2 = 1 - exp(-pow(db[j],2) / (2 * s2)); 
+      double p1 = 1 - exp(-pow(db(j+1),2) / (2 * s2));
+      double p2 = 1 - exp(-pow(db(j),2) / (2 * s2)); 
       double int_ = s2 * p1 - s2 * p2;
+      p(j) = int_ * 2 * M_PI / a(j);
+    }
+  }
+  return(p);
+}
+
+vec p_exp(const double& rate, const std::string& survey, const vec& db, 
+          const vec& w, const rowvec& a, double& rel_tol){
+
+  int J = db.size() - 1;
+  vec p(J);
+
+  if(survey == "line"){
+    for(int j=0; j<J; j++){
+      double int_ = rate*(1 - exp(-db(j+1)/rate)) - rate*(1-exp(-db(j)/rate));
+      p(j) = int_ / w(j);
+    }
+
+  } else if(survey == "point"){
+    //Integration settings
+    double *ex;
+    ex = (double *) R_alloc(2, sizeof(double)); //parameters
+    ex[0] = rate;
+    ex[1] = 0.0;
+    double epsabs = rel_tol;
+    int limit = 100;
+    int lenw = 400;
+    int last = 0;
+    int iwork[100];
+    double work[400];
+    double int_ = 0.0; //integration result
+    double abserr = 0.0;
+    int neval = 0;
+    int ier=0;
+    for(int j=0; j<J; j++){
+      double lower = db(j);
+      double upper = db(j+1);
+	    Rdqags(grexp, ex, &lower, &upper, &epsabs, &rel_tol, &int_,
+		    &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
+		    work);
       p(j) = int_ * 2 * M_PI / a(j);
     }
   }
@@ -41,7 +82,8 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
     SEXP Xdet_, SEXP Xdet_offset_, SEXP db_, SEXP a_, SEXP u_, SEXP w_,
     SEXP k_, SEXP lfac_k_, SEXP lfac_kmyt_, SEXP kmyt_, 
     SEXP y_, SEXP naflag_, SEXP fin_, 
-    SEXP nP_, SEXP nLP_, SEXP nPP_, SEXP nDP_, SEXP nSP_, SEXP nOP_){
+    SEXP nP_, SEXP nLP_, SEXP nPP_, SEXP nDP_, SEXP nSP_, SEXP nOP_,
+    SEXP rel_tol_){
 
   //Inputs
   vec beta = as<vec>(beta_);
@@ -58,13 +100,14 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
   mat Xdet = as<mat>(Xdet_);
   vec Xdet_offset = as<vec>(Xdet_offset_);
   
-  NumericVector db(db_);
+  vec db = as<vec>(db_);
   vec w = as<vec>(w_);
   mat a = as<mat>(a_);
   mat ut = as<mat>(u_);
   mat u = ut.t();
 
-  IntegerVector k(k_);
+  //IntegerVector k(k_);
+  vec k = as<vec>(k_);
   vec lfac_k = as<vec>(lfac_k_);
   cube lfac_kmyt = as<cube>(lfac_kmyt_);
   cube kmyt = as<cube>(kmyt_);
@@ -79,6 +122,9 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
   int nDP = as<int>(nDP_);
   int nSP = as<int>(nSP_);
   int nOP = as<int>(nOP_);
+  
+  //Integration tol
+  double rel_tol = as<double>(rel_tol_);
 
   int M = Xlam.n_rows;
   vec lambda = exp( Xlam * beta.subvec(0, (nLP - 1) ) + Xlam_offset ) % A;
@@ -104,9 +150,14 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
   for (int m=0; m<M; m++){
     vec f(K);
     if(mixture == "P"){
-      f = dpois(k, lambda(m));
+      for(int l=0; l<K; l++){
+        f(l) = R::dpois(k(l), lambda(m), 0);
+      }
     } else if(mixture == "NB"){
-      f = dnbinom_mu(k, exp(beta(nP-1)), lambda(m));
+      double sz = exp(beta(nP-1));
+      for(int l=0; l<K; l++){
+        f(l) = R::dnbinom_mu(k(l), sz, lambda(m), 0);
+      }
     }
 
     mat mn = zeros(K,T);
@@ -126,6 +177,8 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
         } else if (keyfun == "halfnorm"){
           //detParam is sigma
           p = p_halfnorm(det_param(t_ind), survey, db, w, a.row(m));
+        } else if (keyfun == "exp"){
+          p = p_exp(det_param(t_ind), survey, db, w, a.row(m), rel_tol);
         }
         //other keyfuns
 
