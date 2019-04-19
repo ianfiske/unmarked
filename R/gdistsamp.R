@@ -3,12 +3,13 @@ gdistsamp <- function(lambdaformula, phiformula, pformula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
     mixture=c('P', 'NB'), K,
-    starts, method = "BFGS", se = TRUE, rel.tol=1e-4,
-    ...)
+    starts, method = "BFGS", se = TRUE, engine=c("C","R"),
+    rel.tol=1e-4, ...)
 {
 if(!is(data, "unmarkedFrameGDS"))
     stop("Data is not of class unmarkedFrameGDS.")
 
+engine <- match.arg(engine, c("C", "R"))
 keyfun <- match.arg(keyfun)
 if(!keyfun %in% c("halfnorm", "exp", "hazard", "uniform"))
     stop("keyfun must be 'halfnorm', 'exp', 'hazard', or 'uniform'")
@@ -146,7 +147,7 @@ halfnorm = {
         starts[nLP+nPP+1] <- log(max(db))
         }
 
-    nll <- function(pars) {
+    nll_R <- function(pars) {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
@@ -193,7 +194,8 @@ halfnorm = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp)
+                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
 
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
@@ -214,7 +216,7 @@ exp = {
         starts[nLP+nPP+1] <- log(max(db))
         }
 
-    nll <- function(pars) {
+    nll_R <- function(pars) {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
@@ -262,7 +264,8 @@ exp = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp)
+                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])]) 
+                if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
@@ -280,7 +283,7 @@ hazard = {
     if(missing(starts)) {
         starts <- rep(0, nP)
         }
-    nll <- function(pars) {
+    nll_R <- function(pars) {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
@@ -330,7 +333,8 @@ hazard = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp)
+                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
@@ -347,7 +351,7 @@ uniform = {
     if(missing(starts)) {
         starts <- rep(0, nP)
         }
-    nll <- function(pars) {
+    nll_R <- function(pars) {
         lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
         if(identical(output, "density"))
             lambda <- lambda * A
@@ -368,7 +372,8 @@ uniform = {
                 if(all(naflag[i,t,]))
                     next
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp)
+                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, !naflag[i,t,]] *
                     log(cp[which(!naflag[i,t,])])) +
@@ -382,6 +387,33 @@ uniform = {
     }
 })
 
+if(engine =="C"){
+  long_format <- function(x){
+    out <- matrix(aperm(x,c(1,3,2)),nrow=nrow(x),ncol=dim(x)[2]*dim(x)[3])
+    as.vector(t(out))
+  }
+  y_long <- long_format(y)
+  naflag_long <- long_format(naflag)
+  kmytC <- kmyt
+  kmytC[which(is.na(kmyt))] <- 0
+  if(output!='density'){
+    A <- rep(1, M)
+  }
+
+  nll <- function(params) {
+    .Call("nll_gdistsamp",
+          params,mixture,keyfun,survey,
+          Xlam, Xlam.offset, A, Xphi, Xphi.offset, Xdet, Xdet.offset, 
+          db, a, u, w,
+          k,lfac.k, lfac.kmyt,kmytC,
+          y_long, naflag_long, fin,
+          nP,nLP,nPP,nDP,nSP,nOP,rel.tol,
+          PACKAGE = "unmarked")
+  }
+} else {
+  nll <- nll_R
+}
+#return(nll(starts))
 fm <- optim(starts, nll, method = method, hessian = se, ...)
 opt <- fm
 if(se) {
