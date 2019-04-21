@@ -134,8 +134,8 @@ test.gdistsamp.halfnorm <- function(){
     fm_C <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", 
                       se=FALSE, engine="C")
 
-    checkEqualsNumeric(coef(fm_R),c(1.27748,0.53940,-1.31593,-0.10877,
-                                    3.45949,-0.13309),tol=1e-4)
+    checkEqualsNumeric(coef(fm_R),c(1.35065,0.52558,-1.39758,-0.10675,
+                                    3.46283,-0.136344),tol=1e-4)
     checkEqualsNumeric(coef(fm_R),coef(fm_C),tol=1e-4)
 
     #With an entire session missing

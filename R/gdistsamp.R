@@ -168,7 +168,7 @@ halfnorm = {
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
-                if(all(naflag[i,t,]))
+                if(any(naflag[i,t,]))
                     next
                 p <- rep(NA, J)
                 switch(survey,
@@ -194,12 +194,12 @@ halfnorm = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                cp[J+1] <- 1 - sum(cp)
                 if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
 
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
-                    sum(y[i, t, !naflag[i,t,]] *
-                    log(cp[which(!naflag[i,t,])])) +
+                    sum(y[i, t, ] *
+                    log(cp[1:J])) +
                     kmyt[i, t,] * log(cp[J+1])
             }
             g[i,] <- exp(rowSums(mn))
@@ -236,7 +236,7 @@ exp = {
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
-                if(all(naflag[i,t,]))
+                if(any(naflag[i,t,]))
                     next
                 p <- rep(NA, J)
                 switch(survey,
@@ -264,11 +264,11 @@ exp = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])]) 
+                cp[J+1] <- 1 - sum(cp) 
                 if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
-                    sum(y[i, t, !naflag[i,t,]] *
-                    log(cp[which(!naflag[i,t,])])) +
+                    sum(y[i, t, ] *
+                    log(cp[1:J])) +
                     kmyt[i, t,] * log(cp[J+1])
             }
             g[i,] <- exp(rowSums(mn))
@@ -306,7 +306,7 @@ hazard = {
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
-                if(all(naflag[i,t,]))
+                if(any(naflag[i,t,]))
                     next
                 p <- rep(NA, J)
                 switch(survey,
@@ -333,11 +333,11 @@ hazard = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                cp[J+1] <- 1 - sum(cp)
                 if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
-                    sum(y[i, t, !naflag[i,t,]] *
-                    log(cp[which(!naflag[i,t,])])) +
+                    sum(y[i, t, ] *
+                    log(cp[1:J])) +
                     kmyt[i, t,] * log(cp[J+1])
                 }
             g[i,] <- exp(rowSums(mn))
@@ -369,14 +369,14 @@ uniform = {
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
-                if(all(naflag[i,t,]))
+                if(any(naflag[i,t,]))
                     next
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp[which(!naflag[i,t,])])
+                cp[J+1] <- 1 - sum(cp)
                 if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
-                    sum(y[i, t, !naflag[i,t,]] *
-                    log(cp[which(!naflag[i,t,])])) +
+                    sum(y[i, t, ] *
+                    log(cp[1:J])) +
                     kmyt[i, t,] * log(cp[J+1])
             }
             g[i,] <- exp(rowSums(mn))

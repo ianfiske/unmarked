@@ -210,7 +210,7 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
       int y_stop = y_ind + J - 1;
       vec na_sub = naflag.subvec(y_ind, y_stop); 
 
-      if( ! all(na_sub) ){
+      if( ! any(na_sub) ){
 
         vec p1 = lfac_kmyt.subcube(span(m),span(t),span());
         vec p2 = y.subvec(y_ind, y_stop);
@@ -236,12 +236,6 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
         //the following line causes a segfault only in R CMD check,
         //when kmyt contains NA values
         vec p4 = kmyt.subcube(span(m),span(t),span());
-
-        if( any(na_sub)){
-          uvec ids = find(na_sub!=1);
-          p2 = p2.elem(ids);
-          p3 = p3.elem(ids);
-        }
 
         double p5 = 1 - sum(p3);
 
