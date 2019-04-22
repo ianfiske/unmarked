@@ -70,6 +70,10 @@ setClass("unmarkedFrameOccuFP",
            type = "numeric"),
          contains = "unmarkedFrame")
 
+#Multi-state occupancy
+setClass('unmarkedFrameOccuMS',
+         contains = "unmarkedMultFrame")
+
 setClass("unmarkedFrameOccuMulti",
     representation(ylist = "list", fDesign = "matrix"),
     contains = "unmarkedFrame",
@@ -314,6 +318,14 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 }
 
 
+# Construct a unmarkedFrameOccuMS object (multistate occupancy)
+unmarkedFrameOccuMS <- function(y, siteCovs = NULL, obsCovs = NULL,
+                                numPrimary = 1, yearlySiteCovs = NULL)
+{
+  umf <- unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
+  umf <- as(umf, "unmarkedFrameOccuMS")
+  umf
+}
 
 
 
