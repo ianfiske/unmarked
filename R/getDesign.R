@@ -670,7 +670,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     apply_func <- function(i){
       rep(i, ncol(dm_list[[i]]))
     }
-    ind_vec <- unlist(sapply(seq_along(dm_list), apply_func))
+    ind_vec <- unlist(lapply(seq_along(dm_list), apply_func))
     start_ind <- c(1,1+which(diff(ind_vec)!=0)) + offset
     stop_ind <- c(start_ind[2:length(start_ind)]-1,length(ind_vec)+offset)
 
@@ -707,7 +707,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
       y <- y[-removed.sites,]
       N <- nrow(y)
     }
-i
+
     #Det
     ylong <- as.vector(t(y))
     miss_det_cov <- which(apply(obs_covs,1,function(x) any(is.na(x))))

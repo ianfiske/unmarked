@@ -19,7 +19,7 @@ import(lattice, methods, parallel, Rcpp, reshape2, Matrix)
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
        colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
-       computeMPLElambda, pcount.spHDS)
+       occuMS, computeMPLElambda, pcount.spHDS)
 export(removalPiFun, doublePiFun)
 
 # S4 classes

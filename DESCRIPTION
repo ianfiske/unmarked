@@ -16,7 +16,7 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'occuMulti.R' 'pcount.R' 'gmultmix.R'
     'pcountOpen.R' 'gdistsamp.R' 'unmarkedFitList.R' 'unmarkedLinComb.R'
     'ranef.R' 'boot.R' 'occuFP.R' 'gpcount.R' 'occuPEN.R' 'pcount.spHDS.R'
-    'unmarkedCrossVal.R' 'piFun.R'
+    'occuMS.R' 'unmarkedCrossVal.R' 'piFun.R'
 LinkingTo: Rcpp, RcppArmadillo 
 SystemRequirements: GNU make
 URL: http://groups.google.com/group/unmarked,
