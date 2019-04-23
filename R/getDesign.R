@@ -685,8 +685,40 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   site_covs <- get_covs(siteCovs(umf))
   obs_covs <- get_covs(obsCovs(umf))
   y <- getY(umf)
+  
+  #Handle NAs
+  if(na.rm){
 
-  #handle NAs
+    #State
+    all_y_na <- which(apply(y,1,function(x) all(is.na(x))))
+    if(length(all_y_na)>0){
+      warning("Some sites removed because all y values were missing") 
+    }
+    miss_covs <- which(apply(site_covs,1,function(x) any(is.na(x))))
+    if(length(miss_covs)>0){
+      warning("Some sites removed because covariates were missing") 
+    }
+    removed.sites <- sort(unique(c(all_y_na,miss_covs)))
+    
+    if(length(removed.sites)>0){
+      ymap <- as.vector(t(matrix(rep(1:N,each=J),ncol=J,byrow=T)))
+      site_covs <- site_covs[-removed.sites,]
+      obs_covs <- obs_covs[!ymap%in%removed.sites,]
+      y <- y[-removed.sites,]
+      N <- nrow(y)
+    }
+i
+    #Det
+    ylong <- as.vector(t(y))
+    miss_det_cov <- which(apply(obs_covs,1,function(x) any(is.na(x))))
+    miss_y <- which(is.na(ylong))
+    new_na <- miss_det_cov[!miss_det_cov%in%miss_y]
+    if(length(new_na)>0){
+      warning('Some observations removed because covariates were missing')
+      ylong[new_na] <- NA
+      y <- matrix(ylong,nrow=N,ncol=J,byrow=T)
+    }
+  }
 
   dm_state <- get_dm(stateformulas, site_covs, 
                      paste0('psi[',1:length(stateformulas),']'))
@@ -698,7 +730,8 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
   param_names <- c(get_param_names(dm_state), get_param_names(dm_det))
 
-  mget(c("dm_state","state_ind","nSP","dm_det","det_ind","param_names"))
+  mget(c("y","dm_state","state_ind","nSP",
+         "dm_det","det_ind","param_names","removed.sites"))
 
 })
 
