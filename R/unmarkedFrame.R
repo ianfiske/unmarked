@@ -72,6 +72,8 @@ setClass("unmarkedFrameOccuFP",
 
 #Multi-state occupancy
 setClass('unmarkedFrameOccuMS',
+         representation(
+            numStates = "numeric"),
          contains = "unmarkedMultFrame")
 
 setClass("unmarkedFrameOccuMulti",
@@ -324,6 +326,7 @@ unmarkedFrameOccuMS <- function(y, siteCovs = NULL, obsCovs = NULL,
 {
   umf <- unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
   umf <- as(umf, "unmarkedFrameOccuMS")
+  umf@numStates <- max(y,na.rm=T) + 1
   umf
 }
 

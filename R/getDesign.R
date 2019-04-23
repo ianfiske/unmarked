@@ -613,7 +613,74 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
          "dStart","dStop","y","yStart","yStop","Iy0","z","nOP","nP","paramNames"))
 })
 
+## occuMS
 
+setMethod("getDesign", "unmarkedFrameOccuMS",
+    function(umf, stateformulas, detformulas, na.rm=TRUE) 
+{
+  
+  N <- numSites(umf)
+  S <- umf@numStates
+  J <- obsNum(umf)
+  npsi <- S-1 #Number of free psi values 
+  np <- S * (S-1) / 2 #Number of free p values 
+
+  if(length(stateformulas) != npsi){
+    stop(paste(npsi,'formulas are required in stateformulas vector'))
+  }
+  if(length(detformulas) != np){
+    stop(paste(np,'formulas are required in detformulas vector'))
+  }
+
+  #get placeholder for empty covs if necessary
+  get_covs <- function(covs){
+    if(is.null(covs)){
+      return(data.frame(placeHolder = rep(1, J*N)))
+    }
+    return(covs)
+  }
+
+  #Function to create list of design matrices from list of formulas
+  get_dm <- function(formulas, covs, name){
+
+    apply_func <- function(i){
+      out <- model.matrix(as.formula(formulas[i]), 
+                        model.frame(~., covs, na.action=stats::na.pass))
+      colnames(out) <- paste0('[',name, i,'] ', colnames(out))
+      out
+    }
+
+    out <- lapply(seq_along(formulas), apply_func)
+    names(out) <- paste0(name,seq_along(formulas))
+    out
+  }
+
+  #Get vector of parameter count indices from a design matrix list
+  get_param_inds <- function(dm_list){
+    apply_func <- function(i){
+      rep(i, ncol(dm_list[[i]]))
+    }
+    unlist(sapply(seq_along(dm_list), apply_func))
+  }
+
+  site_covs <- get_covs(siteCovs(umf))
+  obs_covs <- get_covs(obsCovs(umf))
+  y <- getY(umf)
+
+  #handle NAs
+
+  dm_state <- get_dm(stateformulas, site_covs, 'psi')
+  state_ind <- get_param_inds(dm_state) #generate ind matrix in function
+
+  dm_det <- get_dm(detformulas, obs_covs, 'p')
+  det_ind <- get_param_inds(dm_det)
+
+  param_names <- c(unlist(lapply(dm_state,colnames)),
+                  unlist(lapply(dm_det,colnames)))
+  
+  mget(c("dm_state","state_ind","dm_det","det_ind","param_names"))
+
+})
 
 
 # pcountOpen
