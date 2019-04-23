@@ -641,26 +641,45 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   }
 
   #Function to create list of design matrices from list of formulas
-  get_dm <- function(formulas, covs, name){
+  get_dm <- function(formulas, covs, namevec){
 
     apply_func <- function(i){
       out <- model.matrix(as.formula(formulas[i]), 
                         model.frame(~., covs, na.action=stats::na.pass))
-      colnames(out) <- paste0('[',name, i,'] ', colnames(out))
+      #improve these names
+      colnames(out) <- paste(namevec[i], colnames(out))
       out
     }
 
     out <- lapply(seq_along(formulas), apply_func)
-    names(out) <- paste0(name,seq_along(formulas))
+    names(out) <- namevec
     out
   }
 
+  #Generate informative names for p
+  get_p_names <- function(S){
+    inds <- matrix(NA,nrow=S,ncol=S)
+    inds <- lower.tri(inds,diag=T)
+    inds[,1] <- FALSE
+    inds <- which(inds,arr.ind=T) - 1
+    paste0('p[',inds[,2],inds[,1],']')
+  }
+
   #Get vector of parameter count indices from a design matrix list
-  get_param_inds <- function(dm_list){
+  get_param_inds <- function(dm_list, offset=0){
     apply_func <- function(i){
       rep(i, ncol(dm_list[[i]]))
     }
-    unlist(sapply(seq_along(dm_list), apply_func))
+    ind_vec <- unlist(sapply(seq_along(dm_list), apply_func))
+    start_ind <- c(1,1+which(diff(ind_vec)!=0)) + offset
+    stop_ind <- c(start_ind[2:length(start_ind)]-1,length(ind_vec)+offset)
+
+    cbind(start_ind, stop_ind)
+  }
+
+  #Get param names from dm_list
+  get_param_names <- function(dm_list){
+    unlist(lapply(dm_list,colnames))
   }
 
   site_covs <- get_covs(siteCovs(umf))
@@ -669,16 +688,17 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
   #handle NAs
 
-  dm_state <- get_dm(stateformulas, site_covs, 'psi')
+  dm_state <- get_dm(stateformulas, site_covs, 
+                     paste0('psi[',1:length(stateformulas),']'))
+  nSP <- length(get_param_names(dm_state))
   state_ind <- get_param_inds(dm_state) #generate ind matrix in function
 
-  dm_det <- get_dm(detformulas, obs_covs, 'p')
-  det_ind <- get_param_inds(dm_det)
+  dm_det <- get_dm(detformulas, obs_covs, get_p_names(S))
+  det_ind <- get_param_inds(dm_det, offset=nSP)
 
-  param_names <- c(unlist(lapply(dm_state,colnames)),
-                  unlist(lapply(dm_det,colnames)))
-  
-  mget(c("dm_state","state_ind","dm_det","det_ind","param_names"))
+  param_names <- c(get_param_names(dm_state), get_param_names(dm_det))
+
+  mget(c("dm_state","state_ind","nSP","dm_det","det_ind","param_names"))
 
 })
 
