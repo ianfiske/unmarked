@@ -92,7 +92,8 @@ setClass("unmarkedFitOccuMulti",
 setClass("unmarkedFitOccuMS",
          representation(
             detformulas = "character",
-            stateformulas = "character"),
+            stateformulas = "character",
+            parameterization = "character"),
          contains = "unmarkedFit")
 
 setClass("unmarkedFitMPois",
@@ -1877,6 +1878,11 @@ setMethod("fitted", "unmarkedFitOccuMulti", function(object)
   names(fitted_list) <- names(object@data@ylist)
   fitted_list
 
+})
+
+setMethod("fitted", "unmarkedFitOccuMS", function(object)
+{
+  stop("Not implemented for occuMS()")
 })
 
 setMethod("fitted", "unmarkedFitColExt", function(object, na.rm = FALSE)

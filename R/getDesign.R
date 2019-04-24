@@ -698,6 +698,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   y <- getY(umf)
   
   #Handle NAs
+  removed.sites <- NA
   if(na.rm){
 
     #State

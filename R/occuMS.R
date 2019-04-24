@@ -118,9 +118,8 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
   #----------------------------------------------------------------------------
   
   #Likelihood function in C++--------------------------------------------------
-  
+  naflag <- is.na(y)
   nll_C <- function(params){
-    naflag <- is.na(y)
     .Call("nll_occuMS",
           params, y, gd$dm_state, gd$dm_det, sind-1, dind-1, parameterization,
           S, J, N, naflag, guide-1,
@@ -188,6 +187,7 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
   
   umfit <- new("unmarkedFitOccuMS", fitType = "occuMS", call = match.call(),
                 detformulas = detformulas, stateformulas = stateformulas,
+                parameterization = parameterization,
                 formula = ~1, data = data,
                 sitesRemoved = gd$removed.sites,
                 estimates = estimateList, AIC = fmAIC, opt = fm,
