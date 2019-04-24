@@ -1,17 +1,18 @@
 occuMS <- function(detformulas, stateformulas, data, parameterization='multinomial',
-                   starts, method='BFGS', se=TRUE, engine=c("R"), silent=FALSE, ...){
+                   starts, method='BFGS', se=TRUE, engine=c("C","R"), 
+                   silent=FALSE, ...){
 
   #Format input data-----------------------------------------------------------
   #Check data object
   if(!class(data) == "unmarkedFrameOccuMS")
     stop("Data must be created with unmarkedFrameOccuMS()")
   
-  if(parameterization=='condbinom'&umf@numStates!=3){
+  if(parameterization=='condbinom'&data@numStates!=3){
     stop("Conditional binomial parameterization requires exactly 3 occupancy states")
   }
 
   #Check engine
-  engine <- match.arg(engine, c("R"))
+  engine <- match.arg(engine, c("C","R"))
 
   #Get design matrices and other info
   gd <- getDesign(data,stateformulas,detformulas,parameterization)
@@ -19,7 +20,7 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
   y <- gd$y
   N <- nrow(y)
   J <- ncol(y)
-  S <- umf@numStates
+  S <- data@numStates
   npsi <- S-1 #Number of free psi values 
   np <- S * (S-1) / 2 #Number of free p values
   sind <- gd$state_ind
@@ -115,9 +116,27 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
     -sum(log(lik))
   }
   #----------------------------------------------------------------------------
+  
+  #Likelihood function in C++--------------------------------------------------
+  
+  nll_C <- function(params){
+    naflag <- is.na(y)
+    .Call("nll_occuMS",
+          params, y, gd$dm_state, gd$dm_det, sind-1, dind-1, parameterization,
+          S, J, N, naflag, guide-1,
+          PACKAGE = "unmarked")
+  }
+  #----------------------------------------------------------------------------
 
   #Run optim()-----------------------------------------------------------------
   
+  nll <- nll_C
+  #Choose function
+  if(engine=="R"){
+    nll <- nll_R
+  }
+
+
   #Try to start params as close to 0 as possible, but negative enough that
   #we don't get initial psi/p <= 0 (resulting in loglik=Inf)
   get_inits <- function(){
@@ -137,7 +156,7 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
   
   #suppress log(lik) = NaN warnings
   fm <- suppressWarnings(
-          optim(starts, nll_R, method=method, hessian = se, ...))
+          optim(starts, nll, method=method, hessian = se, ...))
   
   if(se) {
     tryCatch(covMat <- solve(fm$hessian),

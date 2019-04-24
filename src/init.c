@@ -18,6 +18,7 @@ extern SEXP nll_multinomPois( SEXP betaR, SEXP pi_funR, SEXP XlamR, SEXP Xlam_of
 extern SEXP nll_occu( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR );
 extern SEXP nll_occuPEN( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR, SEXP penaltyR );
 extern SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR, SEXP betaR, SEXP dmDetR, SEXP dStartR, SEXP dStopR, SEXP yR, SEXP yStartR, SEXP yStopR, SEXP Iy0r, SEXP zR, SEXP fixed0r);
+extern SEXP nll_occuMS( SEXP beta_, SEXP y_, SEXP dm_state_, SEXP dm_det_, SEXP sind_, SEXP dind_, SEXP prm_, SEXP S_, SEXP J_, SEXP N_, SEXP naflag_, SEXP guide_);
 extern SEXP nll_occuRN( SEXP betaR, SEXP XlamR, SEXP Xlam_offsetR, SEXP XdetR, SEXP Xdet_offsetR, SEXP KR, SEXP yR, SEXP navecR, SEXP nPr, SEXP nOPr );
 extern SEXP nll_pcount( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_lamR, SEXP beta_pR, SEXP log_alphaR, SEXP X_offsetR, SEXP V_offsetR, SEXP naMatR, SEXP lkR, SEXP mixtureR ) ;
 extern SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP Xiota_, SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, SEXP beta_p_, SEXP beta_iota_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP Xiota_offset_, SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP M_, SEXP J_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_) ;
@@ -33,6 +34,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"nll_occu",        (DL_FUNC) &nll_occu,        10},
     {"nll_occuPEN",     (DL_FUNC) &nll_occuPEN,     11},
     {"nll_occuMulti",   (DL_FUNC) &nll_occuMulti,   14},
+    {"nll_occuMS",      (DL_FUNC) &nll_occuMS,      12},
     {"nll_occuRN",      (DL_FUNC) &nll_occuRN,      10},
     {"nll_pcount",      (DL_FUNC) &nll_pcount,      11},
     {"nll_pcountOpen",  (DL_FUNC) &nll_pcountOpen,  35},
