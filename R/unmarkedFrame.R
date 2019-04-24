@@ -327,6 +327,9 @@ unmarkedFrameOccuMS <- function(y, siteCovs = NULL, obsCovs = NULL,
   umf <- unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
   umf <- as(umf, "unmarkedFrameOccuMS")
   umf@numStates <- max(y,na.rm=T) + 1
+  if(umf@numStates<3){
+    stop("<3 occupancy states detected. Use occu() or colext() instead.")
+  }
   umf
 }
 

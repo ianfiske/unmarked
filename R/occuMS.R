@@ -36,9 +36,9 @@ occuMS <- function(detformulas, stateformulas, data, starts,
 
     out <- rep(1,S)
     for (j in 1:J){
+      if(is.na(y[j])) next
       sdp <- matrix(0,nrow=S,ncol=S)
       sdp[guide] <- probs[j,]
-      #sdp[guide] <- probs #constant across time
       sdp[,1] <- 1 - rowSums(sdp)
       for (s in 1:S){
         out[s] <- out[s] * sdp[s,y[j]+1]
@@ -77,7 +77,7 @@ occuMS <- function(detformulas, stateformulas, data, starts,
   #Run optim()-----------------------------------------------------------------
   
   #Try to start params as close to 0 as possible, but negative enough that
-  #we don't get initial probabilities = 0 (resulting in loglik=Inf)
+  #we don't get initial probabilities <= 0 (resulting in loglik=Inf)
   get_inits <- function(){
     out <- rep(0,nP)
     #which params are intercepts?
