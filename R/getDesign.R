@@ -616,7 +616,7 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 ## occuMS
 
 setMethod("getDesign", "unmarkedFrameOccuMS",
-    function(umf, stateformulas, detformulas, na.rm=TRUE) 
+    function(umf, stateformulas, detformulas, prm, na.rm=TRUE) 
 {
   
   N <- numSites(umf)
@@ -657,12 +657,23 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   }
 
   #Generate informative names for p
-  get_p_names <- function(S){
+  get_p_names <- function(S, prm){
+    if(prm=='condbinom'){
+      return(c('p[1]','p[2]','delta'))
+    }
     inds <- matrix(NA,nrow=S,ncol=S)
     inds <- lower.tri(inds,diag=T)
     inds[,1] <- FALSE
     inds <- which(inds,arr.ind=T) - 1
     paste0('p[',inds[,2],inds[,1],']')
+  }
+
+  #Informative names for psi
+  get_psi_names <- function(np, prm){
+    if(prm=='condbinom'){
+      return(c('psi','R'))
+    }
+    paste0('psi[',1:np,']')
   }
 
   #Get vector of parameter count indices from a design matrix list
@@ -721,11 +732,11 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   }
 
   dm_state <- get_dm(stateformulas, site_covs, 
-                     paste0('psi[',1:length(stateformulas),']'))
+                     get_psi_names(length(stateformulas),prm)) 
   nSP <- length(get_param_names(dm_state))
   state_ind <- get_param_inds(dm_state) #generate ind matrix in function
 
-  dm_det <- get_dm(detformulas, obs_covs, get_p_names(S))
+  dm_det <- get_dm(detformulas, obs_covs, get_p_names(S,prm))
   det_ind <- get_param_inds(dm_det, offset=nSP)
 
   param_names <- c(get_param_names(dm_state), get_param_names(dm_det))

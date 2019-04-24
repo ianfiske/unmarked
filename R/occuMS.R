@@ -1,16 +1,20 @@
-occuMS <- function(detformulas, stateformulas, data, starts,
-                   method='BFGS', se=TRUE, engine=c("R"), silent=FALSE, ...){
+occuMS <- function(detformulas, stateformulas, data, parameterization='multinomial',
+                   starts, method='BFGS', se=TRUE, engine=c("R"), silent=FALSE, ...){
 
   #Format input data-----------------------------------------------------------
   #Check data object
   if(!class(data) == "unmarkedFrameOccuMS")
     stop("Data must be created with unmarkedFrameOccuMS()")
- 
+  
+  if(parameterization=='condbinom'&umf@numStates!=3){
+    stop("Conditional binomial parameterization requires exactly 3 occupancy states")
+  }
+
   #Check engine
   engine <- match.arg(engine, c("R"))
 
   #Get design matrices and other info
-  gd <- getDesign(data,stateformulas,detformulas)
+  gd <- getDesign(data,stateformulas,detformulas,parameterization)
 
   y <- gd$y
   N <- nrow(y)
@@ -31,15 +35,26 @@ occuMS <- function(detformulas, stateformulas, data, starts,
   #----------------------------------------------------------------------------
 
   #Likelihood function in R----------------------------------------------------
+  
+  #Build parameter from design matrix and beta
+  get_param <- function(dm_list, params, ind){
+    m <- length(dm_list)
+    l <- nrow(dm_list[[1]])
+    out <- matrix(NA, nrow=l, ncol=m)
+    for (i in 1:m){
+      out[,i] <- plogis(dm_list[[i]] %*% params[ind[i,1]:ind[i,2]])
+    }
+    out
+  }
+
   #calc p(y) | p
   get_ph <- function(y, probs){
 
     out <- rep(1,S)
     for (j in 1:J){
       if(is.na(y[j])) next
-      sdp <- matrix(0,nrow=S,ncol=S)
-      sdp[guide] <- probs[j,]
-      sdp[,1] <- 1 - rowSums(sdp)
+
+      sdp <- get_sdp(probs[j,])
       for (s in 1:S){
         out[s] <- out[s] * sdp[s,y[j]+1]
       }
@@ -47,21 +62,48 @@ occuMS <- function(detformulas, stateformulas, data, starts,
     out
   }
 
+  get_psi <- function(rp, prm){
+    if(prm=='multinomial'){
+      # [ 1 - psi_1:psi_m, psi_1:psi_m ]
+      return( cbind(1-apply(rp,1,sum,na.rm=T),rp) )
+    } else if(prm=='condbinom'){
+      # [ 1-psi, psi * (1-R), psi * R ]
+      return( cbind( 1-rp[,1], rp[,1]*(1-rp[,2]), rp[,1]*rp[,2] ) )
+    }
+  }
+
+  get_sdp_mult <- function(probs){
+    sdp <- matrix(0,nrow=S,ncol=S)
+    sdp[guide] <- probs
+    sdp[,1] <- 1 - rowSums(sdp)
+    sdp
+  }
+
+  get_sdp_condbin <- function(probs){
+    #probs order is p_1, p_2, delta
+    sdp <- matrix(0,nrow=S,ncol=S)
+    sdp[1,1] <- c(1)
+    sdp[2,1:2] <- c( 1-probs[1], probs[1])
+    sdp[3,] <- c( 1-probs[2], probs[2]*(1-probs[3]), probs[2]*probs[3])
+    sdp
+  }
+  
+  #Set correct function to get sdp (why did I call this sdp?)
+  #To save repeated conditional checks for correct function
+  get_sdp <- get_sdp_mult
+  if(parameterization == 'condbinom'){
+    get_sdp <- get_sdp_condbin
+  }
+
   nll_R <- function(params){
     
     #Get psi values
-    psi <- matrix(NA,nrow=N,ncol=S)
-    for(i in 1:npsi){
-      psi[,(i+1)] <- plogis(gd$dm_state[[i]] %*% params[sind[i,1]:sind[i,2]])
-    }
-    psi[,1] <- 1-apply(psi,1,sum,na.rm=T)
+    raw_psi <- get_param(gd$dm_state, params, sind) 
+    psi <- get_psi(raw_psi, parameterization)
 
     #Get p values
-    p <- matrix(NA,nrow=N*J,ncol=np)
-    for(i in 1:np){
-      p[,i] <- plogis(gd$dm_det[[i]] %*% params[dind[i,1]:dind[i,2]])
-    }
-  
+    p <- get_param(gd$dm_det, params, dind)
+
     lik <- rep(NA,N)
     pstart <- 1
     for (n in 1:N){
@@ -77,21 +119,23 @@ occuMS <- function(detformulas, stateformulas, data, starts,
   #Run optim()-----------------------------------------------------------------
   
   #Try to start params as close to 0 as possible, but negative enough that
-  #we don't get initial probabilities <= 0 (resulting in loglik=Inf)
+  #we don't get initial psi/p <= 0 (resulting in loglik=Inf)
   get_inits <- function(){
     out <- rep(0,nP)
     #which params are intercepts?
     ints <- c(sind[,1],dind[,1])
     
-    #Calculate reasonable guess for something that will work
+    #Reasonable guess: init each p at 1/(# of total free p + 2)
     fp <- S * (S-1) / 2 #Number of free p values
     val <- qlogis(1/(fp+2))
 
     out[ints] <- val
     out
   }
+
   if(missing(starts)) starts <- get_inits()
   
+  #suppress log(lik) = NaN warnings
   fm <- suppressWarnings(
           optim(starts, nll_R, method=method, hessian = se, ...))
   
