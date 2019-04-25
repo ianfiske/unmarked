@@ -1477,7 +1477,8 @@ setMethod("predict", "unmarkedFitOccuMS",
               #appendData = FALSE,
               se.fit=TRUE, level=0.95, ...)
 {
-
+  
+  #Process input---------------------------------------------------------------
   if(! type %in% c("state", "det")){
     stop("type must be 'det' or 'state'")
   }
@@ -1494,15 +1495,39 @@ setMethod("predict", "unmarkedFitOccuMS",
     stop("newdata must be a data frame or an unmarkedFrameOccuMS object")
   }
 
-  get_pred <- function(dm_list, ind){
+  if (class(newdata) == 'data.frame') {
+    temp <- object@data
+    if(type=="state"){
+      temp@siteCovs <- newdata
+    } else {
+      temp@obsCovs <- newdata
+    }
+    newdata <- temp
+  }
+
+  S <- object@data@numStates
+  gd <- getDesign(newdata,object@stateformulas,object@detformulas,
+                  object@parameterization, na.rm=F)
+
+  #Index guide used to organize p values
+  guide <- matrix(NA,nrow=S,ncol=S)
+  guide <- lower.tri(guide,diag=T)
+  guide[,1] <- FALSE
+  guide <- which(guide,arr.ind=T) 
+  #----------------------------------------------------------------------------
+  
+  #Utility functions-----------------------------------------------------------
+  #Get matrix of linear predictor values
+  get_lp <- function(dm_list, ind){
     L <- length(dm_list)
     out <- matrix(NA,nrow(dm_list[[1]]),L)
     for (i in 1:L){
-      out[,i] <- plogis(dm_list[[i]] %*% coef(object)[ind[i,1]:ind[i,2]])
+      out[,i] <- dm_list[[i]] %*% coef(object)[ind[i,1]:ind[i,2]]
     }
     out
   }
-
+  
+  #Get SE via delta method (for conditional binomial)
   get_se <- function(dm_list, ind){
     L <- length(dm_list)
     M <- nrow(dm_list[[1]])
@@ -1524,18 +1549,27 @@ setMethod("predict", "unmarkedFitOccuMS",
     out
   }
 
-  if (class(newdata) == 'data.frame') {
-    temp <- object@data
-    if(type=="state"){
-      temp@siteCovs <- newdata
+  #Calculate row-wise multinomial logit prob
+  #should implement this in C++
+  get_mlogit <- function(lp_mat){
+    if(type == 'state'){
+      out <- cbind(1,exp(lp_mat))
+      out <- out/rowSums(out)
+      out <- out[,-1]
     } else {
-      temp@obsCovs <- newdata
+      R <- nrow(lp_mat)
+      out <- matrix(NA,R,ncol(lp_mat))
+      for (i in 1:R){
+        sdp <- matrix(0,nrow=S,ncol=S)
+        sdp[guide] <- exp(lp_mat[i,])
+        sdp[,1] <- 1
+        sdp <- sdp/rowSums(sdp)
+        out[i,] <- sdp[guide]
+      }
     }
-    newdata <- temp
+    out
   }
-
-  gd <- getDesign(newdata,object@stateformulas,object@detformulas,
-                  object@parameterization, na.rm=F)
+  #----------------------------------------------------------------------------
 
   if(type=="state"){
     dm_list <- gd$dm_state
@@ -1552,11 +1586,19 @@ setMethod("predict", "unmarkedFitOccuMS",
   
   out <- vector("list", P)
   names(out) <- names(dm_list)
+  
+  if(object@parameterization == 'condbinom'){
+    pred <- plogis(get_lp(dm_list, ind))
+    se <- get_se(dm_list, ind) #delta method
+    upr <- pred + z * se
+    lwr <- pred - z * se
 
-  pred <- get_pred(dm_list, ind)
-  se <- get_se(dm_list, ind)
-  upr <- pred + z * se
-  lwr <- pred - z * se
+  } else if (object@parameterization == "multinomial"){
+    if(se.fit) warning("SE calculation not implemented for multinomial")
+    lp <- get_lp(dm_list, ind)
+    pred <- get_mlogit(lp)
+    se <- lwr <- upr <- matrix(NA,nrow=nrow(lp),ncol=ncol(lp))
+  }
   
   for (i in 1:P){
     out[[i]] <- data.frame(Predicted=pred[,i], SE=se[,i],
@@ -2416,6 +2458,11 @@ setMethod("residuals", "unmarkedFitOccuMulti", function(object, ...) {
   res_list
 })
 
+setMethod("residuals", "unmarkedFitOccuMS", function(object)
+{
+  stop("Not implemented for occuMS()")
+})
+
 setMethod("plot", c(x = "unmarkedFit", y = "missing"), function(x, y, ...)
 {
     r <- residuals(x)
@@ -2609,6 +2656,14 @@ setMethod("getP", "unmarkedFitOccuMulti", function(object)
   }
   names(out) <- names(ylist)
   out
+})
+
+setMethod("getP", "unmarkedFitOccuMS", function(object)
+{
+  J <- ncol(object@data@y)
+  N <- nrow(object@data@y)
+  pred <- predict(object, 'det', se.fit=F)
+  lapply(pred, function(x) matrix(x$Predicted, nrow=N, ncol=J, byrow=T))
 })
 
 setMethod("getFP", "unmarkedFitOccuFP", function(object, na.rm = TRUE)
@@ -3380,6 +3435,78 @@ setMethod("simulate", "unmarkedFitOccuMulti",
       simList[[s]] <- y
     }
     simList
+})
+
+
+setMethod("simulate", "unmarkedFitOccuMS",
+    function(object, nsim = 1, seed = NULL, na.rm=TRUE)
+{
+
+  S <- object@data@numStates
+  N <- numSites(object@data)
+  J <- obsNum(object@data)
+  
+  prm <- object@parameterization
+  psi_raw <- predict(object, "state", se.fit=F)
+  psi_raw <- sapply(psi_raw, function(x) x$Predicted)
+  p <- getP(object)
+
+  guide <- matrix(NA,nrow=S,ncol=S)
+  guide <- lower.tri(guide,diag=T)
+  guide[,1] <- FALSE
+  guide <- which(guide,arr.ind=T) 
+  
+  out <- vector("list",nsim)
+  for (i in 1:nsim){
+
+  #State process
+  if(prm == "multinomial"){
+    psi <- cbind(1-apply(psi_raw,1,sum),psi_raw)
+  } else if (prm == "condbinom"){
+    psi <- matrix(NA, nrow=N, ncol=S) 
+    psi[,1] <- 1-psi_raw[,1]
+    psi[,2] <- (1-psi_raw[,2])*psi_raw[,1]
+    psi[,3] <- psi_raw[,1]*psi_raw[,2]
+  }
+
+  z <- rep(NA,N)
+  for (n in 1:N){
+    z[n] <- sample(0:2, 1, replace=T, prob=psi[n,])
+  }
+
+  #Detection process
+  y <- matrix(0, nrow=N, ncol=J)
+  for (n in 1:N){
+    if (z[n] == 0) next
+    for (j in 1:J){
+
+      if(prm == "multinomial"){
+        
+        probs_raw <- sapply(p, function(x) x[n,j])
+        
+        sdp <- matrix(0, nrow=S, ncol=S)
+        sdp[guide] <- probs_raw
+        sdp[,1] <- 1 - rowSums(sdp)
+        
+        probs <- sdp[z[n]+1,]
+
+      } else if (prm == "condbinom"){
+        p11 <- p[[1]][n,j]
+        p12 <- p[[2]][n,j]
+        p22 <- p[[3]][n,j]
+        probs <- switch(z[n]+1,
+                        c(1,0,0),
+                        c(1-p11,p11,0),
+                        c(1-p12,p12*(1-p22),p12*p22))
+      }
+      y[n,j] <- sample(0:2, 1, replace=T, probs)
+    }
+  }
+  
+  out[[i]] <- y
+  }
+
+  out
 })
 
 

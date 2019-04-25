@@ -13,30 +13,39 @@ mat get_param(const List& dm_list, const vec& beta, const mat& ind){
 
   for(int i=0; i < m; i++){
     mat X = as<mat>(dm_list[i]);
-    vec linpred = X * beta.subvec(ind(i,0), ind(i,1));
-    out.col(i) = 1 / ( 1 + exp(-linpred));
+    out.col(i) = X * beta.subvec(ind(i,0), ind(i,1));
   }
   
   return(out);
 }
 
+rowvec multinom_logit(const rowvec& lp){
+  int sz = lp.size() + 1;
+  rowvec exp_lp = exp(lp);
+  double row_sum = sum(exp_lp) + 1;
+  rowvec out(sz);
+  out(0) = 1 / row_sum;
+  for(int i=1; i<sz; i++){
+    out(i) = exp_lp(i-1) / row_sum;
+  }
+  return(out);
+}
+
 //calculate final psi depending on parameterization
-mat get_psi(const mat& psi_raw, const std::string& prm){
-  int R = psi_raw.n_rows;
+mat get_psi(const mat& lp, const std::string& prm){
+  int R = lp.n_rows;
   
   if(prm == "multinomial"){
     //[ 1 - psi_1:psi_m, psi_1:psi_m ]
-    colvec col1(R);
-    for(int i=0; i<R; i++){
-      rowvec tmp = psi_raw.row(i);
-      col1(i) = 1 - sum(tmp);
+    mat out(R, lp.n_cols + 1);
+    for (int i=0; i<R; i++){
+     out.row(i) = multinom_logit(lp.row(i)); 
     }
-
-    mat out = join_rows(col1, psi_raw);
     return(out);
 
   } else if(prm == "condbinom"){
     //[ 1-psi, psi * (1-R), psi * R ]
+    mat psi_raw = 1 / ( 1 + exp(-lp));
     mat out(R,3);
     for(int i=0; i<R; i++){
       out(i,0) = 1 - psi_raw(i,0);
@@ -47,22 +56,27 @@ mat get_psi(const mat& psi_raw, const std::string& prm){
   }
 }
 
-mat get_sdp(int S, const rowvec& probs, const mat& guide, 
+mat get_sdp(int S, const rowvec& lp, const mat& guide, 
     const std::string& prm){
 
   mat out = zeros(S,S);
 
   if(prm == "multinomial"){
-    for (int i=0; i<probs.size(); i++){
-      out( guide(i,0), guide(i,1) ) = probs(i);
+    for (int i=0; i<lp.size(); i++){
+      out( guide(i,0), guide(i,1) ) = exp(lp(i));
     }
     for (int s=0; s<S; s++){
-      out(s,0) = 1 - sum(out.row(s));
+      out(s,0) = 1;
+      double row_sum = sum(out.row(s));
+      for (int j=0; j<S; j++){
+        out(s,j) = out(s,j) / row_sum;
+      }
     }
     return(out);
 
   } else if(prm == "condbinom"){
     //input probs order is p_1, p_2, delta
+    rowvec probs = 1 / ( 1 + exp(-lp));
     out(0,0) = 1;
     out(1,0) = 1 - probs(0);
     out(1,1) = probs(0);

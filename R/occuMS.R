@@ -43,7 +43,7 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
     l <- nrow(dm_list[[1]])
     out <- matrix(NA, nrow=l, ncol=m)
     for (i in 1:m){
-      out[,i] <- plogis(dm_list[[i]] %*% params[ind[i,1]:ind[i,2]])
+      out[,i] <- dm_list[[i]] %*% params[ind[i,1]:ind[i,2]]
     }
     out
   }
@@ -66,22 +66,29 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
   get_psi <- function(rp, prm){
     if(prm=='multinomial'){
       # [ 1 - psi_1:psi_m, psi_1:psi_m ]
-      return( cbind(1-apply(rp,1,sum,na.rm=T),rp) )
+      #Multinomial logit link
+      rp <- cbind(1,exp(rp))
+      return(rp/rowSums(rp))
+
     } else if(prm=='condbinom'){
       # [ 1-psi, psi * (1-R), psi * R ]
+      rp <- plogis(rp)
       return( cbind( 1-rp[,1], rp[,1]*(1-rp[,2]), rp[,1]*rp[,2] ) )
     }
   }
 
   get_sdp_mult <- function(probs){
     sdp <- matrix(0,nrow=S,ncol=S)
-    sdp[guide] <- probs
-    sdp[,1] <- 1 - rowSums(sdp)
+    #Multinomial logit
+    sdp[guide] <- exp(probs)
+    sdp[,1] <- 1
+    sdp <- sdp/rowSums(sdp)
     sdp
   }
 
   get_sdp_condbin <- function(probs){
     #probs order is p_1, p_2, delta
+    probs <- plogis(probs)
     sdp <- matrix(0,nrow=S,ncol=S)
     sdp[1,1] <- c(1)
     sdp[2,1:2] <- c( 1-probs[1], probs[1])
@@ -135,24 +142,8 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
     nll <- nll_R
   }
 
+  if(missing(starts)) starts <- rep(0, nP)
 
-  #Try to start params as close to 0 as possible, but negative enough that
-  #we don't get initial psi/p <= 0 (resulting in loglik=Inf)
-  get_inits <- function(){
-    out <- rep(0,nP)
-    #which params are intercepts?
-    ints <- c(sind[,1],dind[,1])
-    
-    #Reasonable guess: init each p at 1/(# of total free p + 2)
-    fp <- S * (S-1) / 2 #Number of free p values
-    val <- qlogis(1/(fp+2))
-
-    out[ints] <- val
-    out
-  }
-
-  if(missing(starts)) starts <- get_inits()
-  
   #suppress log(lik) = NaN warnings
   fm <- suppressWarnings(
           optim(starts, nll, method=method, hessian = se, ...))
