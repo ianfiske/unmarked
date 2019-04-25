@@ -1471,6 +1471,101 @@ setMethod("predict", "unmarkedFitOccuMulti",
 })
 
 
+setMethod("predict", "unmarkedFitOccuMS",
+     function(object, type, newdata,
+              #backTransform = TRUE, na.rm = TRUE,
+              #appendData = FALSE,
+              se.fit=TRUE, level=0.95, ...)
+{
+
+  if(! type %in% c("state", "det")){
+    stop("type must be 'det' or 'state'")
+  }
+
+  if(is.null(hessian(object))){
+    se.fit = FALSE
+  }
+
+  if(missing(newdata)){
+    newdata <- object@data
+  }
+
+  if(! class(newdata) %in% c('unmarkedFrameOccuMS','data.frame')){
+    stop("newdata must be a data frame or an unmarkedFrameOccuMS object")
+  }
+
+  get_pred <- function(dm_list, ind){
+    L <- length(dm_list)
+    out <- matrix(NA,nrow(dm_list[[1]]),L)
+    for (i in 1:L){
+      out[,i] <- plogis(dm_list[[i]] %*% coef(object)[ind[i,1]:ind[i,2]])
+    }
+    out
+  }
+
+  get_se <- function(dm_list, ind){
+    L <- length(dm_list)
+    M <- nrow(dm_list[[1]])
+    out <- matrix(NA,M,L)
+    if(!se.fit) return(out)
+
+    for (i in 1:L){
+      inds <- ind[i,1]:ind[i,2]
+      param_sub <- coef(object)[inds]
+      cov_sub <- vcov(object)[inds,inds]
+      
+      for (m in 1:M){
+        x <- dm_list[[i]][m,]
+        xb <- stats::dlogis(t(x) %*% param_sub) #??? transform
+        v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
+        out[m,i] <- sqrt(v)
+      }
+    }
+    out
+  }
+
+  if (class(newdata) == 'data.frame') {
+    temp <- object@data
+    if(type=="state"){
+      temp@siteCovs <- newdata
+    } else {
+      temp@obsCovs <- newdata
+    }
+    newdata <- temp
+  }
+
+  gd <- getDesign(newdata,object@stateformulas,object@detformulas,
+                  object@parameterization, na.rm=F)
+
+  if(type=="state"){
+    dm_list <- gd$dm_state
+    ind <- gd$state_ind
+  } else {
+    dm_list <- gd$dm_det
+    ind <- gd$det_ind
+  }
+
+  P <- length(dm_list)
+
+  low_bound <- (1-level)/2
+  z <- qnorm(low_bound,lower.tail=F)
+  
+  out <- vector("list", P)
+  names(out) <- names(dm_list)
+
+  pred <- get_pred(dm_list, ind)
+  se <- get_se(dm_list, ind)
+  upr <- pred + z * se
+  lwr <- pred - z * se
+  
+  for (i in 1:P){
+    out[[i]] <- data.frame(Predicted=pred[,i], SE=se[,i],
+                           lower=lwr[,i], upper=upr[,i])
+  }
+
+  out
+})
+
 # ---------------------- coef, vcov, and SE ------------------------------
 
 
