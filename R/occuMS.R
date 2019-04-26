@@ -143,10 +143,7 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
   }
 
   if(missing(starts)) starts <- rep(0, nP)
-
-  #suppress log(lik) = NaN warnings
-  fm <- suppressWarnings(
-          optim(starts, nll, method=method, hessian = se, ...))
+  fm <- optim(starts, nll, method=method, hessian = se, ...)
   
   if(se) {
     tryCatch(covMat <- solve(fm$hessian),

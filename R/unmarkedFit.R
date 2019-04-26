@@ -1550,8 +1550,8 @@ setMethod("predict", "unmarkedFitOccuMS",
   }
 
   #Calculate row-wise multinomial logit prob
-  #should implement this in C++
-  get_mlogit <- function(lp_mat){
+  #implemented in C++ below as it is quite slow
+  get_mlogit_R <- function(lp_mat){
     if(type == 'state'){
       out <- cbind(1,exp(lp_mat))
       out <- out/rowSums(out)
@@ -1569,6 +1569,12 @@ setMethod("predict", "unmarkedFitOccuMS",
     }
     out
   }
+
+  get_mlogit <- function(lp_mat){
+    .Call("get_mlogit",
+         lp_mat, type, S, guide-1) 
+  }
+
   #----------------------------------------------------------------------------
 
   if(type=="state"){
