@@ -324,6 +324,9 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 unmarkedFrameOccuMS <- function(y, siteCovs = NULL, obsCovs = NULL,
                                 numPrimary = 1, yearlySiteCovs = NULL)
 {
+  if(!is.null(yearlySiteCovs)){
+    warning("occuMS currently only fits single-season models; yearlySiteCovs are ignored")
+  }
   umf <- unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
   umf <- as(umf, "unmarkedFrameOccuMS")
   umf@numStates <- max(y,na.rm=T) + 1

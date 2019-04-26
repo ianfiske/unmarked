@@ -36,6 +36,7 @@
 \alias{siteCovs<-}
 \alias{unmarkedFrameOccu-class}
 \alias{unmarkedFrameOccuMulti-class}
+\alias{unmarkedFrameOccuMS-class}
 \alias{unmarkedFrameMPois-class}
 \alias{unmarkedFramePCount-class}
 \alias{unmarkedFrameDS-class}

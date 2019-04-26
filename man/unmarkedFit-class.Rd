@@ -23,6 +23,7 @@
 \alias{residuals,unmarkedFitOccuFP-method}
 \alias{residuals,unmarkedFitOccuRN-method}
 \alias{residuals,unmarkedFitOccuMulti-method}
+\alias{residuals,unmarkedFitOccuMS-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
 \alias{update,unmarkedFitPCO-method}
@@ -40,6 +41,7 @@
 \alias{unmarkedFitPCO-class}
 \alias{unmarkedFitGMM-class}
 \alias{unmarkedFitOccuMulti-class}
+\alias{unmarkedFitOccuMS-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}
