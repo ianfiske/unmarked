@@ -2275,6 +2275,39 @@ setMethod("update", "unmarkedFitOccuMulti",
     else call
 })
 
+setMethod("update", "unmarkedFitOccuMS",
+    function(object, detformulas, stateformulas, ..., evaluate = TRUE)
+{
+
+    call <- object@call
+    if (is.null(call))
+        stop("need an object with call slot")
+    if(!missing(detformulas)){
+      call[["detformulas"]] <- detformulas
+    } else {
+      call[["detformulas"]] <- object@detformulas
+    }
+    if(!missing(stateformulas)){
+      call[["stateformulas"]] <- stateformulas
+    } else {
+      call[["stateformulas"]] <- object@stateformulas
+    }
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
+    if (length(extras) > 0) {
+        existing <- !is.na(match(names(extras), names(call)))
+        for (a in names(extras)[existing])
+            call[[a]] <- extras[[a]]
+        if (any(!existing)) {
+            call <- c(as.list(call), extras[!existing])
+            call <- as.call(call)
+            }
+        }
+    if (evaluate)
+        eval(call, parent.frame(2))
+    else call
+})
+
 setMethod("update", "unmarkedFitColExt",
     function(object, formula., ..., evaluate = TRUE)
 {
