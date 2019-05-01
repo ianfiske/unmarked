@@ -23,7 +23,6 @@
 \alias{residuals,unmarkedFitOccuFP-method}
 \alias{residuals,unmarkedFitOccuRN-method}
 \alias{residuals,unmarkedFitOccuMulti-method}
-\alias{residuals,unmarkedFitOccuMS-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
 \alias{update,unmarkedFitPCO-method}

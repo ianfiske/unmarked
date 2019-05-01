@@ -2023,9 +2023,44 @@ setMethod("fitted", "unmarkedFitOccuMulti", function(object)
 
 })
 
-setMethod("fitted", "unmarkedFitOccuMS", function(object)
+setMethod("fitted", "unmarkedFitOccuMS", function(object, na.rm = FALSE)
 {
-  stop("Not implemented for occuMS()")
+  data <- object@data
+  J <- obsNum(data)
+  N <- numSites(data)
+  S <- data@numStates
+
+  guide <- matrix(NA,nrow=S,ncol=S)
+  guide <- lower.tri(guide,diag=T)
+  guide[,1] <- FALSE
+  guide <- which(guide,arr.ind=T) 
+
+  #Get predictions
+  pr <- predict(object, 'state', se.fit=F)
+  pr <- sapply(pr,function(x) x$Predicted)
+  pr <- pr[rep(1:nrow(pr),each=J),]
+
+  pr_det <- predict(object, 'det', se.fit=F)
+  pr_det <- sapply(pr_det,function(x) x$Predicted)
+  
+  fitvals <- rep(NA, nrow(pr_det))
+  if(object@parameterization == 'multinomial'){
+    pr <- cbind(1-rowSums(pr),pr)
+    
+    for (i in 1:nrow(pr_det)){
+      occ <- pr[i,]
+      sdp <- matrix(0,nrow=S,ncol=S)
+      sdp[guide] <- pr_det[i,]
+      sdp[,1] <- 1 - rowSums(sdp)
+      fitvals[i] <- occ %*% sdp %*% 0:(S-1)
+    }
+   
+  } else if(object@parameterization == 'condbinom'){
+    stop('Conditional binomial parameterization not supported yet')
+  }
+  fit_out <- matrix(fitvals,N,J,byrow=T)
+
+  fit_out
 })
 
 setMethod("fitted", "unmarkedFitColExt", function(object, na.rm = FALSE)
@@ -2495,11 +2530,6 @@ setMethod("residuals", "unmarkedFitOccuMulti", function(object, ...) {
   }
   names(res_list) <- names(ylist)
   res_list
-})
-
-setMethod("residuals", "unmarkedFitOccuMS", function(object)
-{
-  stop("Not implemented for occuMS()")
 })
 
 setMethod("plot", c(x = "unmarkedFit", y = "missing"), function(x, y, ...)
