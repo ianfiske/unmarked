@@ -3011,6 +3011,7 @@ setMethod("simulate", "unmarkedFitPCO",
 {
     mix <- object@mixture
     dynamics <- object@dynamics
+    umf <- object@data
     #To partially handle old saved model objects
     fix <- tryCatch(object@fix, error=function(e) "none")
     immigration <- tryCatch(object@immigration, error=function(e) FALSE)

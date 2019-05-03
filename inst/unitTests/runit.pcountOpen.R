@@ -380,7 +380,7 @@ test.pcountOpen.dynamics <- function()
 }
 
 
-test.pcountOpen.fixGamma <- function() {
+test.pcountOpen.fix <- function() {
 
      set.seed(3)
      M <- 50
@@ -407,7 +407,14 @@ test.pcountOpen.fixGamma <- function() {
      
      m2 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, fix='gamma')
      m2_sim <- simulate(m2)
-     checkEqualsNumeric(m2_sim[[1]][1,],c(8,6,3,6,8))
+     checkEqualsNumeric(m2_sim[[1]][1,],c(4,4,6,5,3))
+     m2_fit <- fitted(m2)
+     checkEqualsNumeric(m2_fit[1,1],3.448029,tol=1e-4)
 
+     m3 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, fix='omega')
+     m3_sim <- simulate(m3)
+     checkEqualsNumeric(m3_sim[[1]][1,],c(2,1,3,5,4))
+     m3_fit <- fitted(m3)
+     checkEqualsNumeric(m3_fit[1,1], 2.481839, tol=1e-4)
 }
 
