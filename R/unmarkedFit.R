@@ -1475,7 +1475,7 @@ setMethod("predict", "unmarkedFitOccuMS",
      function(object, type, newdata,
               #backTransform = TRUE, na.rm = TRUE,
               #appendData = FALSE,
-              se.fit=TRUE, level=0.95, ...)
+              se.fit=TRUE, level=0.95, nsims=100, ...)
 {
   
   #Process input---------------------------------------------------------------
@@ -1518,11 +1518,11 @@ setMethod("predict", "unmarkedFitOccuMS",
   
   #Utility functions-----------------------------------------------------------
   #Get matrix of linear predictor values
-  get_lp <- function(dm_list, ind){
+  get_lp <- function(params, dm_list, ind){
     L <- length(dm_list)
     out <- matrix(NA,nrow(dm_list[[1]]),L)
     for (i in 1:L){
-      out[,i] <- dm_list[[i]] %*% coef(object)[ind[i,1]:ind[i,2]]
+      out[,i] <- dm_list[[i]] %*% params[ind[i,1]:ind[i,2]]
     }
     out
   }
@@ -1594,16 +1594,42 @@ setMethod("predict", "unmarkedFitOccuMS",
   names(out) <- names(dm_list)
   
   if(object@parameterization == 'condbinom'){
-    pred <- plogis(get_lp(dm_list, ind))
+    pred <- plogis(get_lp(coef(object), dm_list, ind))
     se <- get_se(dm_list, ind) #delta method
     upr <- pred + z * se
     lwr <- pred - z * se
 
   } else if (object@parameterization == "multinomial"){
-    if(se.fit) warning("SE calculation not implemented for multinomial")
-    lp <- get_lp(dm_list, ind)
+    lp <- get_lp(coef(object), dm_list, ind)
     pred <- get_mlogit(lp)
-    se <- lwr <- upr <- matrix(NA,nrow=nrow(lp),ncol=ncol(lp))
+  
+    M <- nrow(pred)
+    upr <- lwr <- se <- matrix(NA,M,P)
+    
+    if(se.fit){ 
+      cat('Bootstrapping confidence intervals with',nsims,'samples\n')
+      
+      sig <- vcov(object)
+      param_mean <- coef(object)
+      rparam <- mvrnorm(nsims, param_mean, sig)
+      
+      get_pr <- function(i){
+        lp <- get_lp(rparam[i,], dm_list, ind)
+        get_mlogit(lp)
+      }
+      samp <- sapply(1:nsims, get_pr, simplify='array')
+      
+      for (i in 1:M){
+        for (j in 1:P){
+          dat <- samp[i,j,]
+          se[i,j] <- sd(dat, na.rm=TRUE)
+          quants <- quantile(dat, c(low_bound, (1-low_bound)),na.rm=TRUE)
+          lwr[i,j] <- quants[1]
+          upr[i,j] <- quants[2]
+        }
+      }
+
+    }
   }
   
   for (i in 1:P){

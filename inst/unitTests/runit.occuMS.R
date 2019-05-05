@@ -81,28 +81,32 @@ test.occuMS.multinom.fit <- function(){
                                     -0.554553495521214, 0.510982412286882, 
                                     -1.61783147496373, -1.50645934199995))
   #check state predict
-  pr <- predict(fit_C, "state", se.fit=F)
+  pr <- predict(fit_C, "state")
   checkEqualsNumeric(length(pr),2)
   checkEqualsNumeric(sapply(pr,function(x) x[1,1]),c(0.22922,0.34897),tol=1e-4)
   checkEquals(names(pr),c('psi[1]','psi[2]'))
   
+  #Check bootstrapped error for predict
+  checkEqualsNumeric(as.numeric(pr[[1]][1,]), 
+                     c(0.2292279,0.1122459,0.07926078,0.5321636), tol=1e-4)
+
   #det
-  pr <- predict(fit_C, "det", se.fit=F)
+  pr <- predict(fit_C, "det")
   checkEqualsNumeric(length(pr),3)
   checkEqualsNumeric(sapply(pr,function(x) x[1,1]),
                      c(0.285455,0.13966,0.156119),tol=1e-4)
   checkEquals(names(pr),c('p[11]','p[12]','p[22]'))
 
+  checkEqualsNumeric(as.numeric(pr[[1]][1,]), 
+                     c(0.285455,0.069013,0.168485,0.4447024), tol=1e-4)
+
   #with new data (some missing)
   newdata <- data.frame(V1=rnorm(5),V2=rnorm(5))
   newdata[1,1] <- NA
-  pr <- predict(fit_C,"det",newdata=newdata,se.fit=F)
+  pr <- predict(fit_C,"det",newdata=newdata)
   checkTrue(is.na(pr[[1]][1,1]))
-  checkEqualsNumeric(pr[[1]][2,1],0.2072319,tol=1e-4)
-
-  options(warn=2)
-  checkException(predict(fit_C,"state"))
-  options(warn=1)
+  checkEqualsNumeric(as.numeric(pr[[1]][2,]),
+                     c(0.343157,0.0703713,0.222039,0.488455),tol=1e-4)
 
   #check getP
   ps <- getP(fit_C)
@@ -120,6 +124,12 @@ test.occuMS.multinom.fit <- function(){
   checkTrue(all(unlist(sim)%in%c(0:2)))
   checkEqualsNumeric(mean(fit_C@data@y),0.268)
   checkEqualsNumeric(sapply(sim,mean),c(0.244,0.280,0.288))
+
+  #check fitted
+  set.seed(123)
+  fitvals <- fitted(fit_C)
+  checkEqualsNumeric(dim(fitvals),c(N,J))
+  checkEqualsNumeric(fitvals[1,1],0.2231388,tol=1e-4)
 }
 
 

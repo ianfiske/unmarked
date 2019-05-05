@@ -13,6 +13,7 @@ importFrom(plyr, ldply, alply, ddply)
 importFrom(grDevices, devAskNewPage)
 importFrom("raster","stack")
 importFrom("raster", "raster", "extent", "extent<-", "getValues") ## MM
+importFrom("MASS", "mvrnorm")
 
 import(lattice, methods, parallel, Rcpp, reshape2, Matrix)
 
