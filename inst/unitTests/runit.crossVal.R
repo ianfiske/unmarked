@@ -18,12 +18,12 @@ test.crossVal.occu <- function() {
     checkEqualsNumeric(nrow(kfold@stats),10)
 
     checkEqualsNumeric(as.numeric(kfold@stats[1,]), 
-                       c(0.289997,0.1984301), tolerance=1e-4)
+                       c(0.3213177,0.2159953), tolerance=1e-4)
 
     holdout <- crossVal(fm, method='holdout', holdoutPct=0.25)
 
     checkEqualsNumeric(as.numeric(holdout@stats[1,]), 
-                       c(0.3313081,0.2210848), tolerance=1e-4)
+                       c(0.3695291,0.2414929), tolerance=1e-4)
 
     leave <- crossVal(fm, method='leaveoneout')
     
@@ -64,6 +64,6 @@ test.crossVal.multinomPois <- function(){
 
     mout <- crossVal(fm1, method='kfold')
     checkEqualsNumeric(as.numeric(mout@stats[1,]),
-                       c(0.5007878,0.3587654), tolerance=1e-4)
+                       c(0.5521100,0.3335076), tolerance=1e-4)
 
 }
