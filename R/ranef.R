@@ -92,6 +92,73 @@ setMethod("ranef", "unmarkedFitOccu",
 })
 
 
+setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
+{
+  
+  N <- numSites(object@data)
+  S <- object@data@numStates
+
+  psi <- predict(object, "state", se.fit=F)
+  psi <- sapply(psi, function(x) x$Predicted)
+  z <- 0:(S-1)
+
+  p_all <- getP(object)
+  y <- getY(getData(object))
+
+  post <- array(0, c(N,S,1))
+  colnames(post) <- z
+
+  if(object@parameterization == "multinomial"){
+
+    psi <- cbind(1-rowSums(psi), psi)
+
+    guide <- matrix(NA,nrow=S,ncol=S)
+    guide <- lower.tri(guide,diag=T)
+    guide[,1] <- FALSE
+    guide <- which(guide,arr.ind=T)
+    for (i in 1:N){
+      f <- psi[i,]
+      g <- rep(1, S)
+      p_raw <- sapply(p_all, function(x) x[i,])
+      for (j in 1:nrow(p_raw)){
+        sdp <- matrix(0, nrow=S, ncol=S)
+        sdp[guide] <- p_raw[j,]
+        sdp[,1] <- 1 - rowSums(sdp)
+        for (s in 1:S){
+          g[s] <- g[s] * sdp[s, (y[i,j]+1)] 
+        }
+      }
+      fudge <- f*g
+      post[i,,1] <- fudge / sum(fudge)
+    }
+
+  } else if(object@parameterization == "condbinom"){
+
+    psi <- cbind(1-psi[,1], psi[,1]*(1-psi[,2]), psi[,1]*psi[,2])
+
+    for (i in 1:N){
+      f <- psi[i,]
+      g <- rep(1, S)
+      p_raw <- sapply(p_all, function(x) x[i,])
+      for (j in 1:nrow(p_raw)){
+        probs <- p_raw[j,]
+        sdp <- matrix(0, nrow=S, ncol=S)
+        sdp[1,1] <- 1
+        sdp[2,1:2] <- c(1-probs[1], probs[1])
+        sdp[3,] <- c(1-probs[2], probs[2]*(1-probs[3]), probs[2]*probs[3])
+        for (s in 1:S){
+          g[s] <- g[s] * sdp[s, (y[i,j]+1)] 
+        }
+      }
+      fudge <- f*g
+      post[i,,1] <- fudge / sum(fudge)
+    }
+  }
+
+  new("unmarkedRanef", post=post)
+
+})
+
 setMethod("ranef", "unmarkedFitOccuFP", function(object, na.rm = FALSE)
 {
   cat("ranef is not implemented for occuFP at this time")

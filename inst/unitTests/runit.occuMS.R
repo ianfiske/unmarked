@@ -1,4 +1,5 @@
 test.unmarkedFrameOccuMS <- function() {
+  set.seed(123)
   N <- 100; J <- 3; S <- 3
   psi <- c(0.5,0.3,0.2)
 
@@ -24,7 +25,13 @@ test.unmarkedFrameOccuMS <- function() {
 
   umf <- unmarkedFrameOccuMS(y=y,siteCovs=site_covs,obsCovs=obs_covs)
 
+  checkEquals(class(umf)[1], "unmarkedFrameOccuMS")
   checkEqualsNumeric(umf@numStates,3)
+ 
+  umf_sub1 <- umf[1:20,]
+  checkEqualsNumeric(numSites(umf_sub1),20)
+  checkEquals(class(umf_sub1)[1], "unmarkedFrameOccuMS")
+
   y[y>1] <- 1
   checkException(unmarkedFrameOccuMS(y=y,siteCovs=site_covs,obsCovs=obs_covs))
 }

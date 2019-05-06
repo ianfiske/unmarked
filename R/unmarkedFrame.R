@@ -1089,7 +1089,15 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 })
 
 
-
+setMethod("[", c("unmarkedFrameOccuMS", "numeric", "missing", "missing"),
+    function(x, i, j)
+{
+  multf <- callNextMethod(x, i, j)
+  unmarkedFrameOccuMS(y=getY(multf), siteCovs=siteCovs(multf),
+                      yearlySiteCovs=yearlySiteCovs(multf),
+                      obsCovs=obsCovs(multf),
+                      numPrimary=x@numPrimary)
+})
 
 setMethod("[", c("unmarkedFrameGMM", "numeric", "missing", "missing"),
 		function(x, i, j)
