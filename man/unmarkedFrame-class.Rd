@@ -53,6 +53,7 @@
 \alias{summary,unmarkedMultFrame-method}
 \alias{summary,unmarkedFrameOccuMulti-method}
 \alias{[,unmarkedFrameOccuMulti,missing,numeric,missing-method}
+\alias{[,unmarkedFrameOccuMS,numeric,missing,missing-method}
 \alias{[,unmarkedFrameOccuMulti,numeric,missing,missing-method}
 
 \title{Class "unmarkedFrame" }
