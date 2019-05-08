@@ -48,7 +48,8 @@ setClass("unmarkedFitPCO",
         representation(
             formlist = "list",
             dynamics = "character",
-            immigration = "logical"),
+            immigration = "logical",
+            fix = "character"),
         contains = "unmarkedFitPCount")
 
 
@@ -1900,6 +1901,8 @@ setMethod("fitted", "unmarkedFitPCO",
 {
     dynamics <- object@dynamics
     mixture <- object@mixture
+    #To partially handle old saved model objects
+    fix <- tryCatch(object@fix, error=function(e) "none")
     immigration <- tryCatch(object@immigration, error=function(e) FALSE)
     data <- getData(object)
     D <- getDesign(data, object@formula, na.rm = na.rm)
@@ -1925,7 +1928,9 @@ setMethod("fitted", "unmarkedFitPCO",
         psi <- plogis(coef(object, type="psi"))
         lambda <- (1-psi)*lambda
     }
-    if(!identical(dynamics, "trend")) {
+    if (fix == 'omega'){
+      omega <- matrix(1, M, T-1)
+    } else if(!identical(dynamics, "trend")) {
         if(identical(dynamics, "ricker") || identical(dynamics, "gompertz"))
             omega <- matrix(exp(Xom %*% coef(object, 'omega') + Xom.offset),
                         M, T-1, byrow=TRUE)
@@ -1933,10 +1938,12 @@ setMethod("fitted", "unmarkedFitPCO",
             omega <- matrix(plogis(Xom %*% coef(object, 'omega') + Xom.offset),
                         M, T-1, byrow=TRUE)
     }
-    if(!identical(dynamics, "notrend"))
+    if(fix == "gamma"){
+        gamma <- matrix(0, M, T-1)
+    } else if(!identical(dynamics, "notrend")){
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma') + Xgam.offset),
                         M, T-1, byrow=TRUE)
-    else {
+    } else {
         if(identical(dynamics, "notrend"))
             gamma <- (1-omega)*lambda
         }
@@ -3262,6 +3269,8 @@ setMethod("simulate", "unmarkedFitPCO",
     mix <- object@mixture
     dynamics <- object@dynamics
     umf <- object@data
+    #To partially handle old saved model objects
+    fix <- tryCatch(object@fix, error=function(e) "none")
     immigration <- tryCatch(object@immigration, error=function(e) FALSE)
     D <- getDesign(umf, object@formula, na.rm = na.rm)
     Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp; Xiota <- D$Xiota
@@ -3282,12 +3291,17 @@ setMethod("simulate", "unmarkedFitPCO",
     if(is.null(Xiota.offset)) Xiota.offset <- rep(0, M*(T-1))
 
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda') + Xlam.offset))
-    if(dynamics != "notrend" & !is.null(coef(object, 'gamma')))
+    if(fix == "gamma"){
+        gamma <- matrix(0, M, T-1)
+    } else if(dynamics != "notrend"){
         gamma <- matrix(exp(Xgam %*% coef(object, 'gamma') + Xgam.offset),
                         M, T-1, byrow=TRUE)
-    else
+    } else {
         gamma <- matrix(NA, M, T-1)
-    if(dynamics == "trend")
+    }
+    if (fix == "omega")
+        omega <- matrix(1, M, T-1)
+    else if(dynamics == "trend")
         omega <- matrix(-999, M, T-1) # placeholder
     else if(identical(dynamics, "ricker"))
         omega <- matrix(exp(Xom %*% coef(object, 'omega') + Xom.offset),
