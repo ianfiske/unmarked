@@ -26,7 +26,7 @@ vec p_halfnorm(const double& sigma, const std::string& survey,
     p = int_ / f0 / w;
 
   } else if(survey == "point"){
-    for (int j; j<J; j++){
+    for (int j=0; j<J; j++){
       double s2 = pow(sigma,2);
       double p1 = 1 - exp(-pow(db(j+1),2) / (2 * s2));
       double p2 = 1 - exp(-pow(db(j),2) / (2 * s2)); 
@@ -50,27 +50,9 @@ vec p_exp(const double& rate, const std::string& survey, const vec& db,
     }
 
   } else if(survey == "point"){
-    //Integration settings
-    double *ex;
-    ex = (double *) R_alloc(2, sizeof(double)); //parameters
-    ex[0] = rate;
-    ex[1] = 0.0;
-    double epsabs = rel_tol;
-    int limit = 100;
-    int lenw = 400;
-    int last = 0;
-    int iwork[100];
-    double work[400];
-    double int_ = 0.0; //integration result
-    double abserr = 0.0;
-    int neval = 0;
-    int ier=0;
+    DetExp f(rate, 1);
     for(int j=0; j<J; j++){
-      double lower = db(j);
-      double upper = db(j+1);
-	    Rdqags(grexp, ex, &lower, &upper, &epsabs, &rel_tol, &int_,
-		    &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
-		    work);
+      double int_ = trap_rule(f, db(j), db(j+1));
       p(j) = int_ * 2 * M_PI / a(j);
     }
   }
@@ -83,39 +65,17 @@ vec p_hazard(const double& shape, const double& scale, const std::string& survey
   int J = db.size() - 1;
   vec p(J);
 
-  //Integration settings
-  double *ex;
-  ex = (double *) R_alloc(2, sizeof(double)); //parameters
-  ex[0] = shape;
-  ex[1] = scale;
-  double epsabs = rel_tol;
-  int limit = 100;
-  int lenw = 400;
-  int last = 0;
-  int iwork[100];
-  double work[400];
-  double int_ = 0.0; //integration result
-  double abserr = 0.0;
-  int neval = 0;
-  int ier=0;
-
   if(survey == "line"){
+    DetHaz f(shape, scale, 0);
     for(int j=0; j<J; j++){
-      double lower = db(j);
-      double upper = db(j+1);
-	    Rdqags(gxhaz, ex, &lower, &upper, &epsabs, &rel_tol, &int_,
-		    &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
-		    work);
+      double int_ = trap_rule(f, db(j), db(j+1));
       p(j) = int_ / w(j);
     }
 
   } else if(survey == "point"){
+    DetHaz f(shape, scale, 1);
     for(int j=0; j<J; j++){
-      double lower = db(j);
-      double upper = db(j+1);
-	    Rdqags(grhaz, ex, &lower, &upper, &epsabs, &rel_tol, &int_,
-		    &abserr, &neval, &ier, &limit, &lenw, &last, iwork,
-		    work);
+      double int_ = trap_rule(f, db(j), db(j+1));
       p(j) = int_ * 2 * M_PI / a(j);
     }
   }
@@ -255,7 +215,7 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
       }
     }
 
-    ll(m) = log(sum(f % g));
+    ll(m) = log(sum(f % g) + DOUBLE_XMIN);
   }
 
   return(wrap(-sum(ll)));

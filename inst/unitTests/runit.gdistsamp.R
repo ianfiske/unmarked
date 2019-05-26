@@ -395,5 +395,5 @@ test.gdistsamp.hazard <- function(){
 
     checkEqualsNumeric(coef(fm_R),c(0.70099,-0.23473,1.38888,
                                     1.40786,0.44896),tol=1e-4)
-    checkEqualsNumeric(coef(fm_R),coef(fm_C),tol=1e-4)
+    checkEqualsNumeric(coef(fm_R),coef(fm_C),tol=1e-3)
 }
