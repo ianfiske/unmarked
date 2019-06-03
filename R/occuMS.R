@@ -1,4 +1,5 @@
-occuMS <- function(detformulas, stateformulas, data, parameterization='multinomial',
+occuMS <- function(detformulas, psiformulas, tpmformulas=NULL, data, 
+                   parameterization=c('multinomial','condbinom'),
                    starts, method='BFGS', se=TRUE, engine=c("C","R"), 
                    silent=FALSE, ...){
 
@@ -7,25 +8,30 @@ occuMS <- function(detformulas, stateformulas, data, parameterization='multinomi
   if(!class(data) == "unmarkedFrameOccuMS")
     stop("Data must be created with unmarkedFrameOccuMS()")
   
+  #Check engine
+  engine <- match.arg(engine, c("C","R"))
+  
+  #Check parameterization
+  parameterization <- match.arg(parameterization, c('multinomial','condbinom')) 
   if(parameterization=='condbinom'&data@numStates!=3){
     stop("Conditional binomial parameterization requires exactly 3 occupancy states")
   }
 
-  #Check engine
-  engine <- match.arg(engine, c("C","R"))
-
   #Get design matrices and other info
-  gd <- getDesign(data,stateformulas,detformulas,parameterization)
+  gd <- getDesign(data,psiformulas,tpmformulas,detformulas,parameterization)
 
   y <- gd$y
   N <- nrow(y)
-  J <- ncol(y)
+  R <- ncol(y)
+  J <- R / data@numPrimary
   S <- data@numStates
   npsi <- S-1 #Number of free psi values 
   np <- S * (S-1) / 2 #Number of free p values
   sind <- gd$state_ind
   dind <- gd$det_ind
+  tind <- gd$tind
   nSP <- gd$nSP
+  NTP <- gd$nTP
   nP <- length(gd$param_names)
 
   #Index guide used to organize p values

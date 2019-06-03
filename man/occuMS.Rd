@@ -4,7 +4,8 @@
 
 \title{Fit Single-Season Multi-State Occupancy Models}
 
-\usage{occuMS(detformulas, stateformulas, data, parameterization="multinomial",
+\usage{occuMS(detformulas, stateformulas, data, 
+    parameterization=c("multinomial","condbinom"),
     starts, method="BFGS", se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
 
 \arguments{

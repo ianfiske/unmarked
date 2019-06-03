@@ -616,26 +616,38 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 ## occuMS
 
 setMethod("getDesign", "unmarkedFrameOccuMS",
-    function(umf, stateformulas, detformulas, prm, na.rm=TRUE) 
+    function(umf, psiformulas, tpmformulas, detformulas, prm, na.rm=TRUE) 
 {
   
   N <- numSites(umf)
   S <- umf@numStates
-  J <- obsNum(umf)
+  P <- umf@numPrimary
+  R <- obsNum(umf)
+  J <- R / P
   npsi <- S-1 #Number of free psi values 
   np <- S * (S-1) / 2 #Number of free p values 
 
-  if(length(stateformulas) != npsi){
+  if(length(psiformulas) != npsi){
     stop(paste(npsi,'formulas are required in stateformulas vector'))
   }
+  
+  if(is.null(tpmformulas)){
+    if(prm == 'condbinom') {
+      tpmformulas <- rep('~1',6)
+    } else {
+      tpmformulas <- rep('~1',S^2-S)
+    }
+  }
+  #TODO: CHECK FOR tpmformulas length
+
   if(length(detformulas) != np){
     stop(paste(np,'formulas are required in detformulas vector'))
   }
 
   #get placeholder for empty covs if necessary
-  get_covs <- function(covs){
+  get_covs <- function(covs, length){
     if(is.null(covs)){
-      return(data.frame(placeHolder = rep(1, J*N)))
+      return(data.frame(placeHolder = rep(1, length)))
     }
     return(covs)
   }
@@ -668,6 +680,10 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     paste0('p[',inds[,2],inds[,1],']')
   }
 
+  get_tpm_names <- function(np, prm){
+    paste0('phi',1:np) #placeholder
+  }
+
   #Informative names for psi
   get_psi_names <- function(np, prm){
     if(prm=='condbinom'){
@@ -693,8 +709,16 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     unlist(lapply(dm_list,colnames))
   }
 
-  site_covs <- get_covs(siteCovs(umf))
-  obs_covs <- get_covs(obsCovs(umf))
+  site_covs <- get_covs(siteCovs(umf), N)
+
+  y_site_covs <- get_covs(yearlySiteCovs(umf), N*P)
+  
+  ## in order to drop factor levels that only appear in last year,
+  ## replace last year with NAs and use drop=TRUE
+  y_site_covs[seq(P,N*P,by=P),] <- NA
+  y_site_covs <- as.data.frame(lapply(y_site_covs, function(x) x[,drop = TRUE]))
+  
+  obs_covs <- get_covs(obsCovs(umf), N*R)
   y <- getY(umf)
   
   #Handle NAs
@@ -713,7 +737,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     removed.sites <- sort(unique(c(all_y_na,miss_covs)))
     
     if(length(removed.sites)>0){
-      ymap <- as.vector(t(matrix(rep(1:N,each=J),ncol=J,byrow=T)))
+      ymap <- as.vector(t(matrix(rep(1:N,each=R),ncol=R,byrow=T)))
       site_covs <- site_covs[-removed.sites,]
       obs_covs <- obs_covs[!ymap%in%removed.sites,]
       y <- y[-removed.sites,]
@@ -728,7 +752,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     if(length(new_na)>0){
       warning('Some observations removed because covariates were missing')
       ylong[new_na] <- NA
-      y <- matrix(ylong,nrow=N,ncol=J,byrow=T)
+      y <- matrix(ylong,nrow=N,ncol=R,byrow=T)
     }
   }
 
@@ -736,13 +760,24 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
                      get_psi_names(length(stateformulas),prm)) 
   nSP <- length(get_param_names(dm_state))
   state_ind <- get_param_inds(dm_state) #generate ind matrix in function
+  
+  nTP <- 0; dm_tpm <- list(); tpm_ind <- c()
+  if(P>1){
+    dm_tpm <- get_dm(tpmformulas, y_site_covs,
+                   get_tpm_names(length(tpmformulas),prm))
+    nTP <- length(get_param_names(dm_tpm))
+    tpm_ind <- get_param_inds(dm_tpm, offset=nSP)
+  }
 
   dm_det <- get_dm(detformulas, obs_covs, get_p_names(S,prm))
-  det_ind <- get_param_inds(dm_det, offset=nSP)
+  det_ind <- get_param_inds(dm_det, offset=(nSP+nTP))
 
-  param_names <- c(get_param_names(dm_state), get_param_names(dm_det))
+  param_names <- c(get_param_names(dm_state), 
+                   get_param_names(dm_tpm),
+                   get_param_names(dm_det))
 
   mget(c("y","dm_state","state_ind","nSP",
+         "dm_tpm","tpm_ind","nTP",
          "dm_det","det_ind","param_names","removed.sites"))
 
 })
