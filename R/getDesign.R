@@ -503,16 +503,23 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
     stop(paste(S,"formulas are required in detformulas list"))
 
   if(is.null(siteCovs(umf))) {
-    site_covs <- data.frame(placeHolder = rep(1, N))
+    site_covs <- data.frame(placeHolderSite = rep(1, N))
   } else {
     site_covs <- siteCovs(umf)
   }
 
   if(is.null(obsCovs(umf))) {
-    obs_covs <- data.frame(placeHolder = rep(1, J*N))
+    obs_covs <- data.frame(placeHolderObs = rep(1, J*N))
   } else {
     obs_covs <- obsCovs(umf)
   }
+
+  # Record future column names for obsCovs
+  col_names <- c(colnames(obs_covs), colnames(site_covs))
+
+  # add site covariates at observation-level
+  obs_covs <- cbind(obs_covs, site_covs[rep(1:N, each = J),])
+  colnames(obs_covs) <- col_names
   
   #Re-format ylist
   index <- 1

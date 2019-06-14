@@ -99,19 +99,19 @@ nspecies <- 3
 J <- 5
 
 occ_covs <- as.data.frame(matrix(rnorm(N * 10),ncol=10))
-names(occ_covs) <- paste('par',1:10,sep='')
+names(occ_covs) <- paste('occ_cov',1:10,sep='')
 
 det_covs <- list()
 for (i in 1:nspecies){
   det_covs[[i]] <- matrix(rnorm(N*J),nrow=N)
 }
-names(det_covs) <- paste('par',1:nspecies,sep='')
+names(det_covs) <- paste('det_cov',1:nspecies,sep='')
 
 #True vals
 beta <- c(0.5,0.2,0.4,0.5,-0.1,-0.3,0.2,0.1,-1,0.1)
-f1 <- beta[1] + beta[2]*occ_covs$par1
-f2 <- beta[3] + beta[4]*occ_covs$par2
-f3 <- beta[5] + beta[6]*occ_covs$par3
+f1 <- beta[1] + beta[2]*occ_covs$occ_cov1
+f2 <- beta[3] + beta[4]*occ_covs$occ_cov2
+f3 <- beta[5] + beta[6]*occ_covs$occ_cov3
 f4 <- beta[7]
 f5 <- beta[8]
 f6 <- beta[9]
@@ -158,7 +158,7 @@ data@fDesign
 # Formulas for state and detection processes
 
 # Length should match number/order of columns in fDesign
-occFormulas <- c('~par1','~par2','~par3','~1','~1','~1','~1')
+occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov3','~1','~1','~1','~1')
 
 #Length should match number/order of species in data@ylist
 detFormulas <- c('~1','~1','~1')
@@ -200,7 +200,7 @@ ranef(fit, species='coyote')
 bt <- parboot(fit,nsim=30)
 
 #update model
-occFormulas <- c('~par1','~par2','~par2+par3','~1','~1','~1','~1')
+occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov2+occ_cov3','~1','~1','~1','~1')
 fit2 <- update(fit,stateformulas=occFormulas)
 
 #List of fitted models
@@ -212,12 +212,12 @@ modSel(fl)
 
 #Fit model while forcing some natural parameters to be 0
 #For example: fit model with no species interactions
-occFormulas <- c('~par1','~par2','~par2+par3','0','0','0','0')
+occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov2+occ_cov3','0','0','0','0')
 fit3 <- occuMulti(detFormulas,occFormulas,data)
 
 #Alternatively, you can force all interaction parameters above a certain
 #order to be zero with maxOrder. This will be faster.
-occFormulas <- c('~par1','~par2','~par2+par3')
+occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov2+occ_cov3')
 fit4 <- occuMulti(detFormulas,occFormulas,data,maxOrder=1)
 }
 
