@@ -1,4 +1,4 @@
-occuMS <- function(detformulas, psiformulas, tpmformulas=NULL, data, 
+occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data, 
                    parameterization=c('multinomial','condbinom'),
                    starts, method='BFGS', se=TRUE, engine=c("C","R"), 
                    silent=FALSE, ...){
@@ -18,20 +18,22 @@ occuMS <- function(detformulas, psiformulas, tpmformulas=NULL, data,
   }
 
   #Get design matrices and other info
-  gd <- getDesign(data,psiformulas,tpmformulas,detformulas,parameterization)
+  gd <- getDesign(data,psiformulas,phiformulas,detformulas,parameterization)
 
   y <- gd$y
   N <- nrow(y)
   R <- ncol(y)
-  J <- R / data@numPrimary
+  T <- data@numPrimary
+  J <- R / T
   S <- data@numStates
-  npsi <- S-1 #Number of free psi values 
+  npsi <- S-1 #Number of free psi values
+  nphi <- S^2 - S #Number of free phi values 
   np <- S * (S-1) / 2 #Number of free p values
   sind <- gd$state_ind
   dind <- gd$det_ind
-  tind <- gd$tind
+  pind <- gd$phi_ind
   nSP <- gd$nSP
-  NTP <- gd$nTP
+  NPP <- gd$nPP
   nP <- length(gd$param_names)
 
   #Index guide used to organize p values
@@ -83,6 +85,18 @@ occuMS <- function(detformulas, psiformulas, tpmformulas=NULL, data,
     }
   }
 
+  get_phi_mult <- function(rp){
+    rp <- matrix(rp, nrow=S)
+    rp <- cbind(1,exp(rp))
+    rp/rowSums(rp)
+  }
+
+  get_phi_condbin <- function(rp){
+    rp <- matrix(rp, nrow=S)
+    rp <- plogis(rp)
+    cbind(1-rp[,1], rp[,1]*(1-rp[,2]), rp[,1]*rp[,2])
+  }
+
   get_sdp_mult <- function(probs){
     sdp <- matrix(0,nrow=S,ncol=S)
     #Multinomial logit
@@ -105,8 +119,10 @@ occuMS <- function(detformulas, psiformulas, tpmformulas=NULL, data,
   #Set correct function to get sdp (why did I call this sdp?)
   #To save repeated conditional checks for correct function
   get_sdp <- get_sdp_mult
+  get_phi <- get_phi_mult
   if(parameterization == 'condbinom'){
     get_sdp <- get_sdp_condbin
+    get_phi <- get_phi_condbin
   }
 
   nll_R <- function(params){
@@ -115,16 +131,37 @@ occuMS <- function(detformulas, psiformulas, tpmformulas=NULL, data,
     raw_psi <- get_param(gd$dm_state, params, sind) 
     psi <- get_psi(raw_psi, parameterization)
 
+    if(T>1){
+      raw_phi <- get_param(gd$dm_phi, params, pind)
+    }
+
     #Get p values
     p <- get_param(gd$dm_det, params, dind)
 
     lik <- rep(NA,N)
     pstart <- 1
+    phistart <- 1
     for (n in 1:N){
+      
+      phi_prod <- diag(S) 
+      if(T>1){
+        for (t in 1:(T-1)){
+          pend <- pstart+J-1
+          phiend <- phistart+nphi-1 #correct?
+          D_ph <- diag(get_ph(y[n,], p[pstart:pend,]))
+          phi_t <- get_phi(raw_phi[phistart:phiend])
+          phi_prod <- phi_prod %*% ( D_ph %*% phi_t )
+          
+          phistart <- phistart + 1
+          pstart <- pstart + J
+        }
+      } 
+
       pend <- pstart+J-1
-      ph <- get_ph(y[n,], p[pstart:pend,])
-      lik[n] <- psi[n,] %*% ph
+      ph_T <- get_ph(y[n,], p[pstart:pend,])
       pstart <- pstart + J
+          
+      lik[n] <- psi[n,] %*% phi_prod %*% ph_T
     }
     -sum(log(lik))
   }

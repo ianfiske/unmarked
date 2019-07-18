@@ -74,7 +74,7 @@ setClass("unmarkedFrameOccuFP",
 setClass('unmarkedFrameOccuMS',
          representation(
             numStates = "numeric",
-            tpmformulas = "matrix"),
+            phiformulas = "matrix"),
          contains = "unmarkedMultFrame")
 
 setClass("unmarkedFrameOccuMulti",
@@ -334,10 +334,10 @@ unmarkedFrameOccuMS <- function(y, siteCovs = NULL, obsCovs = NULL,
   if(umf@numStates<3){
     stop("<3 occupancy states detected. Use occu() or colext() instead.")
   }
-  umf@tpmformulas <- matrix('~1', nrow = umf@numStates, ncol = umf@numStates)
-  umf@tpmformulas[,1] <- NA
-  rownames(umf@tpmformulas) <- paste0(0:(umf@numStates-1),'_[t]')
-  colnames(umf@tpmformulas) <- paste0(0:(umf@numStates-1),'_[t+1]')
+  umf@phiformulas <- matrix('~1', nrow = umf@numStates, ncol = umf@numStates)
+  umf@phiformulas[,1] <- NA
+  rownames(umf@phiformulas) <- paste0(0:(umf@numStates-1),'_[t]')
+  colnames(umf@phiformulas) <- paste0(0:(umf@numStates-1),'_[t+1]')
   
   umf
 }

@@ -616,14 +616,14 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 ## occuMS
 
 setMethod("getDesign", "unmarkedFrameOccuMS",
-    function(umf, psiformulas, tpmformulas, detformulas, prm, na.rm=TRUE) 
+    function(umf, psiformulas, phiformulas, detformulas, prm, na.rm=TRUE) 
 {
   
   N <- numSites(umf)
   S <- umf@numStates
-  P <- umf@numPrimary
+  T <- umf@numPrimary
   R <- obsNum(umf)
-  J <- R / P
+  J <- R / T
   npsi <- S-1 #Number of free psi values 
   np <- S * (S-1) / 2 #Number of free p values 
 
@@ -631,14 +631,14 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     stop(paste(npsi,'formulas are required in stateformulas vector'))
   }
   
-  if(is.null(tpmformulas)){
+  if(is.null(phiformulas)){
     if(prm == 'condbinom') {
-      tpmformulas <- rep('~1',6)
+      phiformulas <- rep('~1',6)
     } else {
-      tpmformulas <- rep('~1',S^2-S)
+      phiformulas <- rep('~1',S^2-S)
     }
   }
-  #TODO: CHECK FOR tpmformulas length
+  #TODO: CHECK FOR phiformulas length
 
   if(length(detformulas) != np){
     stop(paste(np,'formulas are required in detformulas vector'))
@@ -680,7 +680,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     paste0('p[',inds[,2],inds[,1],']')
   }
 
-  get_tpm_names <- function(np, prm){
+  get_phi_names <- function(np, prm){
     paste0('phi',1:np) #placeholder
   }
 
@@ -711,11 +711,11 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
   site_covs <- get_covs(siteCovs(umf), N)
 
-  y_site_covs <- get_covs(yearlySiteCovs(umf), N*P)
+  y_site_covs <- get_covs(yearlySiteCovs(umf), N*T)
   
   ## in order to drop factor levels that only appear in last year,
   ## replace last year with NAs and use drop=TRUE
-  y_site_covs[seq(P,N*P,by=P),] <- NA
+  y_site_covs[seq(T,N*T,by=T),] <- NA
   y_site_covs <- as.data.frame(lapply(y_site_covs, function(x) x[,drop = TRUE]))
   
   obs_covs <- get_covs(obsCovs(umf), N*R)
@@ -761,23 +761,23 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   nSP <- length(get_param_names(dm_state))
   state_ind <- get_param_inds(dm_state) #generate ind matrix in function
   
-  nTP <- 0; dm_tpm <- list(); tpm_ind <- c()
-  if(P>1){
-    dm_tpm <- get_dm(tpmformulas, y_site_covs,
-                   get_tpm_names(length(tpmformulas),prm))
-    nTP <- length(get_param_names(dm_tpm))
-    tpm_ind <- get_param_inds(dm_tpm, offset=nSP)
+  nPP <- 0; dm_phi <- list(); phi_ind <- c()
+  if(T>1){
+    dm_phi <- get_dm(phiformulas, y_site_covs,
+                   get_phi_names(length(phiformulas),prm))
+    nPP <- length(get_param_names(dm_phi))
+    phi_ind <- get_param_inds(dm_phi, offset=nSP)
   }
 
   dm_det <- get_dm(detformulas, obs_covs, get_p_names(S,prm))
-  det_ind <- get_param_inds(dm_det, offset=(nSP+nTP))
+  det_ind <- get_param_inds(dm_det, offset=(nSP+nPP))
 
   param_names <- c(get_param_names(dm_state), 
-                   get_param_names(dm_tpm),
+                   get_param_names(dm_phi),
                    get_param_names(dm_det))
 
   mget(c("y","dm_state","state_ind","nSP",
-         "dm_tpm","tpm_ind","nTP",
+         "dm_phi","phi_ind","nPP",
          "dm_det","det_ind","param_names","removed.sites"))
 
 })
