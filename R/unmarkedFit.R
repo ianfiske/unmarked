@@ -1393,14 +1393,15 @@ setMethod("predict", "unmarkedFitOccuMulti",
 
       } else {
         num_inds <- which(object@data@fDesign[,sel_col] == 1)
-        est <- rowSums(psi_est[,num_inds])
+        est <- rowSums(psi_est[,num_inds,drop=F])
         if(se.fit){
-          samp <- samp[,num_inds,]
+          samp <- samp[,num_inds,,drop=F]
           samp <- apply(samp, 3, rowSums)
         }
       }
 
       if(se.fit){
+        if(!is.matrix(samp)) samp <- matrix(samp, nrow=1)
         boot_se <- apply(samp,1,sd, na.rm=T)
         boot_low <- apply(samp,1,quantile,low_bound, na.rm=T)
         boot_up <- apply(samp,1,quantile,up_bound, na.rm=T)

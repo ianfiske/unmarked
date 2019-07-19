@@ -105,19 +105,19 @@ test.occuMulti <- function() {
   J <- 5
 
   occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
-  names(occ_covs) <- paste('par',1:3,sep='')
+  names(occ_covs) <- paste('occ_cov',1:3,sep='')
 
   det_covs <- list()
   for (i in 1:nspecies){
     det_covs[[i]] <- matrix(rnorm(N*J),nrow=N)
   }
-  names(det_covs) <- paste('par',1:nspecies,sep='')
+  names(det_covs) <- paste('det_cov',1:nspecies,sep='')
 
   #True vals
   beta <- c(0.5,0.2,0.4,0.5,-0.1,-0.3,0.2,0.1,-1,0.1)
-  f1 <- beta[1] + beta[2]*occ_covs$par1
-  f2 <- beta[3] + beta[4]*occ_covs$par2
-  f3 <- beta[5] + beta[6]*occ_covs$par3
+  f1 <- beta[1] + beta[2]*occ_covs$occ_cov1
+  f2 <- beta[3] + beta[4]*occ_covs$occ_cov2
+  f3 <- beta[5] + beta[6]*occ_covs$occ_cov3
   f <- cbind(f1,f2,f3)
   z <- expand.grid(rep(list(1:0),nspecies))[,nspecies:1]
   colnames(z) <- paste('sp',1:nspecies,sep='')
@@ -150,7 +150,7 @@ test.occuMulti <- function() {
   #Create the unmarked data object
   data = unmarkedFrameOccuMulti(y=y,siteCovs=occ_covs,obsCovs=det_covs)
 
-  occFormulas <- c('~par1','~par2','~par3')
+  occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov3')
   detFormulas <- c('~1','~1')
 
   fit <- occuMulti(detFormulas,occFormulas,data)
@@ -177,7 +177,7 @@ test.occuMulti <- function() {
                      c(0.61805,0.33330,0.018220,0.99552),tol=1e-4)
 
   #check newdata
-  newdata <- data.frame(par1=rnorm(1),par2=rnorm(1),par3=rnorm(1))
+  newdata <- data.frame(occ_cov1=rnorm(1),occ_cov2=rnorm(1),occ_cov3=rnorm(1))
   pr_new <- predict(fit,'state',newdata=newdata)
   checkEqualsNumeric(sapply(pr_new,function(x) x[1,1]),
                      c(0.307815,0.31958,0.00423,0.96391),
