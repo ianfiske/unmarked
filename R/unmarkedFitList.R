@@ -10,7 +10,8 @@ setClass("unmarkedFitList",
             if(class(fit) == 'unmarkedFitOccuMulti'){
               getDesign(umf,fit@detformulas,fit@stateformulas)$y 
             } else if(class(fit) == "unmarkedFitOccuMS"){
-              getDesign(umf1, fl[[1]]@stateformulas, fl[[1]]@detformulas,
+              getDesign(umf1, fl[[1]]@psiformulas, fl[[1]]@phiformulas,
+                        fl[[1]]@detformulas,
                           fl[[1]]@parameterization)$y
             } else {
               D <- getDesign(umf, f)
@@ -22,7 +23,8 @@ setClass("unmarkedFitList",
         if(class(fl[[1]]) == 'unmarkedFitOccuMulti'){
           y1 <- getDesign(umf1, fl[[1]]@detformulas, fl[[1]]@stateformulas)$y
         } else if (class(fl[[1]]) == 'unmarkedFitOccuMS'){
-          y1 <- getDesign(umf1, fl[[1]]@stateformulas, fl[[1]]@detformulas,
+          y1 <- getDesign(umf1, fl[[1]]@psiformulas, fl[[1]]@phiformulas,
+                          fl[[1]]@detformulas,
                           fl[[1]]@parameterization)$y
         } else {
           y1 <- getDesign(umf1, form1)$y

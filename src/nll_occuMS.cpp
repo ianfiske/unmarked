@@ -151,7 +151,6 @@ SEXP nll_occuMS( SEXP beta_, SEXP y_,
   const List dm_det(dm_det_);
 
   const mat sind = as<mat>(sind_);
-  const mat pind = as<mat>(pind_);
   const mat dind = as<mat>(dind_);
   const mat guide = as<mat>(guide_);
 
@@ -170,7 +169,12 @@ SEXP nll_occuMS( SEXP beta_, SEXP y_,
   const mat psi = get_psi(raw_psi, prm);
   
   //Get phi values
-  const mat raw_phi = get_param(dm_phi, beta, pind);
+  mat raw_phi;
+  mat pind;
+  if(T>1){
+    pind = as<mat>(pind_);
+    raw_phi = get_param(dm_phi, beta, pind);
+  }
 
   //Get p values
   const mat p = get_param(dm_det, beta, dind);
@@ -187,7 +191,6 @@ SEXP nll_occuMS( SEXP beta_, SEXP y_,
     rowvec nasub = naflag.row(n);
     ystart = 0;
     mat phi_prod = eye(S,S);
-    mat phi_prod_t(S,S);
     
     if(T>1){
       for(int t=0; t<(T-1); t++){

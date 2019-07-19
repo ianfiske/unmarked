@@ -1481,8 +1481,8 @@ setMethod("predict", "unmarkedFitOccuMS",
 {
   
   #Process input---------------------------------------------------------------
-  if(! type %in% c("state", "det")){
-    stop("type must be 'det' or 'state'")
+  if(! type %in% c("psi", "det")){
+    stop("type must be 'psi' or 'det'")
   }
 
   if(is.null(hessian(object))){
@@ -1508,7 +1508,8 @@ setMethod("predict", "unmarkedFitOccuMS",
   }
 
   S <- object@data@numStates
-  gd <- getDesign(newdata,object@stateformulas,object@detformulas,
+  gd <- getDesign(newdata,object@psiformulas,object@phiformulas,
+                  object@detformulas,
                   object@parameterization, na.rm=F)
 
   #Index guide used to organize p values
@@ -2345,7 +2346,7 @@ setMethod("update", "unmarkedFitOccuMulti",
 })
 
 setMethod("update", "unmarkedFitOccuMS",
-    function(object, detformulas, stateformulas, ..., evaluate = TRUE)
+    function(object, detformulas, psiformulas, phiformulas, ..., evaluate = TRUE)
 {
 
     call <- object@call
@@ -2356,10 +2357,15 @@ setMethod("update", "unmarkedFitOccuMS",
     } else {
       call[["detformulas"]] <- object@detformulas
     }
-    if(!missing(stateformulas)){
-      call[["stateformulas"]] <- stateformulas
+    if(!missing(psiformulas)){
+      call[["psiformulas"]] <- psiformulas
     } else {
-      call[["stateformulas"]] <- object@stateformulas
+      call[["psiformulas"]] <- object@psiformulas
+    }
+    if(!missing(phiformulas)){
+      call[["phiformulas"]] <- phiformulas
+    } else {
+      call[["phiformulas"]] <- object@phiformulas
     }
     extras <- match.call(call=sys.call(-1),
                          expand.dots = FALSE)$...
