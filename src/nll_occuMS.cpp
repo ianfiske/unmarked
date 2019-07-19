@@ -78,11 +78,12 @@ mat get_phi(int S, const rowvec& lp, const std::string& prm){
     return(out);
   
   } else if(prm == "condbinom"){
-    colvec phi = 1 / ( 1 + exp( -lp.subvec(0,2) ));
-    colvec R = 1 / ( 1 + exp( -lp.subvec(3,5) ));
-    out.col(0) = 1 - phi;
-    out.col(1) = phi * (1 - R);
-    out.col(2) = phi * R;
+    rowvec lp_logit = 1 / ( 1 + exp(-lp));
+    for(int i=0; i<S; i++){
+      out(i,0) = 1 - lp_logit(i);
+      out(i,1) = lp_logit(i) * (1 - lp_logit(i+3));
+      out(i,2) = lp_logit(i) * lp_logit(i+3);
+    }
     return(out);
   }
 }

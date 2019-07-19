@@ -725,7 +725,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   y_site_covs[seq(T,N*T,by=T),] <- NA
   y_site_covs <- as.data.frame(lapply(y_site_covs, function(x) x[,drop = TRUE]))
   #Actually just remove last year
-  y_site_covs <- y_site_covs[-seq(T,N*T,by=T),]
+  y_site_covs <- y_site_covs[-seq(T,N*T,by=T),,drop=FALSE]
   
   obs_covs <- get_covs(obsCovs(umf), N*R)
   y <- getY(umf)
