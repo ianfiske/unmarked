@@ -74,7 +74,7 @@ setClass("unmarkedFrameOccuFP",
 setClass('unmarkedFrameOccuMS',
          representation(
             numStates = "numeric",
-            phiformulas = "matrix"),
+            phiOrder = "list"),
          contains = "unmarkedMultFrame")
 
 setClass("unmarkedFrameOccuMulti",
@@ -325,19 +325,27 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 unmarkedFrameOccuMS <- function(y, siteCovs = NULL, obsCovs = NULL,
                                 numPrimary = 1, yearlySiteCovs = NULL)
 {
-  if(!is.null(yearlySiteCovs)){
-    warning("occuMS currently only fits single-season models; yearlySiteCovs are ignored")
-  }
+
   umf <- unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
   umf <- as(umf, "unmarkedFrameOccuMS")
   umf@numStates <- max(y,na.rm=T) + 1
   if(umf@numStates<3){
     stop("<3 occupancy states detected. Use occu() or colext() instead.")
   }
-  umf@phiformulas <- matrix('~1', nrow = umf@numStates, ncol = umf@numStates)
-  umf@phiformulas[,1] <- NA
-  rownames(umf@phiformulas) <- paste0(0:(umf@numStates-1),'_[t]')
-  colnames(umf@phiformulas) <- paste0(0:(umf@numStates-1),'_[t+1]')
+  
+  #Create guide for phi formula order
+  S <- umf@numStates
+  
+  #Multinomial
+  vals <- paste0('phi[',rep(0:(S-1),each=S),'->',rep(0:(S-1),S),']')
+  vals <- matrix(vals,nrow=S)
+  diag(vals) <- NA
+  phi_mult <- c(na.omit(as.vector(vals)))
+
+  #Cond binom
+  phi_cb <- c(paste0('phi[',1:S,']'),paste0('R[',1:S,']'))
+  
+  umf@phiOrder <- list(multinomial=phi_mult,cond_binom=phi_cb)
   
   umf
 }

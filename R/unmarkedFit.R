@@ -93,7 +93,8 @@ setClass("unmarkedFitOccuMulti",
 setClass("unmarkedFitOccuMS",
          representation(
             detformulas = "character",
-            stateformulas = "character",
+            psiformulas = "character",
+            phiformulas = "character",
             parameterization = "character"),
          contains = "unmarkedFit")
 

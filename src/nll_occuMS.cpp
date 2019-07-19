@@ -56,6 +56,37 @@ mat get_psi(const mat& lp, const std::string& prm){
   }
 }
 
+//calculate phi matrix for a site-year depending on parameterization
+mat get_phi(int S, const rowvec& lp, const std::string& prm){
+  
+  mat out(S,S);
+  
+  if(prm == "multinomial"){
+    int index = 0;
+    for (int i=0; i<S; i++){ //row
+      rowvec lp_row(S);
+      for (int j=0; j<S; j++){ //col
+        if(i == j){
+          lp_row(j) = 1;
+        } else {
+          lp_row(j) = exp(lp(index));
+          index += 1;
+        }
+      }
+      out.row(i) = lp_row / sum(lp_row);
+    }
+    return(out);
+  
+  } else if(prm == "condbinom"){
+    colvec phi = 1 / ( 1 + exp( -lp.subvec(0,2) ));
+    colvec R = 1 / ( 1 + exp( -lp.subvec(3,5) ));
+    out.col(0) = 1 - phi;
+    out.col(1) = phi * (1 - R);
+    out.col(2) = phi * R;
+    return(out);
+  }
+}
+
 mat get_sdp(int S, const rowvec& lp, const mat& guide, 
     const std::string& prm){
 
@@ -105,17 +136,21 @@ vec get_ph(const int S, const rowvec& y, const mat& probs,
   return(out);
 }
 
-SEXP nll_occuMS( SEXP beta_, SEXP y_, SEXP dm_state_, SEXP dm_det_, 
-    SEXP sind_, SEXP dind_, SEXP prm_, SEXP S_, SEXP J_, SEXP N_,
+SEXP nll_occuMS( SEXP beta_, SEXP y_, 
+    SEXP dm_state_, SEXP dm_phi_, SEXP dm_det_, 
+    SEXP sind_, SEXP pind_, SEXP dind_, SEXP prm_, 
+    SEXP S_, SEXP T_, SEXP J_, SEXP N_,
     SEXP naflag_, SEXP guide_){
 
   //Inputs
   const vec beta = as<vec>(beta_);
   const mat y = as<mat>(y_);
   const List dm_state(dm_state_);
+  const List dm_phi(dm_phi_);
   const List dm_det(dm_det_);
 
   const mat sind = as<mat>(sind_);
+  const mat pind = as<mat>(pind_);
   const mat dind = as<mat>(dind_);
   const mat guide = as<mat>(guide_);
 
@@ -125,28 +160,62 @@ SEXP nll_occuMS( SEXP beta_, SEXP y_, SEXP dm_state_, SEXP dm_det_,
   
   int N = as<int>(N_);
   int S = as<int>(S_);
+  int T = as<int>(T_);
   int J = as<int>(J_);
 
 
   //Get psi values
   const mat raw_psi = get_param(dm_state, beta, sind);
   const mat psi = get_psi(raw_psi, prm);
+  
+  //Get phi values
+  const mat raw_phi = get_param(dm_phi, beta, pind);
 
   //Get p values
   const mat p = get_param(dm_det, beta, dind);
 
   vec lik = zeros(N);
   int pstart = 0;
+  int phi_index = 0;
   int pend;
+  int ystart;
+  int yend;
 
   for(int n=0; n<N; n++){
-    pend = pstart + J - 1;
     rowvec ysub = y.row(n);
     rowvec nasub = naflag.row(n);
-    mat psub = p.rows(span(pstart, pend));
-    vec ph = get_ph(S, ysub, psub, nasub, guide, prm);
-    lik(n) = dot(psi.row(n), ph);
+    ystart = 0;
+    mat phi_prod = eye(S,S);
+    mat phi_prod_t(S,S);
+    
+    if(T>1){
+      for(int t=0; t<(T-1); t++){
+        pend = pstart + J - 1;
+        yend = ystart + J - 1;
+
+        vec ph_t = get_ph(S, ysub.subvec(ystart,yend),
+            p.rows(span(pstart, pend)),
+            nasub.subvec(ystart,yend), guide, prm);
+        mat D_ph = diagmat(ph_t);
+        mat phi_t = get_phi(S, raw_phi.row(phi_index), prm);
+        phi_prod = phi_prod * (D_ph * phi_t);
+        pstart += J;
+        ystart += J;
+        phi_index += 1;
+      }
+    }
+    
+    pend = pstart + J - 1;
+    yend = ystart + J - 1;
+
+    vec ph_T = get_ph(S, ysub.subvec(ystart,yend),
+        p.rows(span(pstart, pend)),
+        nasub.subvec(ystart,yend), guide, prm);
     pstart += J;
+    
+    rowvec psi_phi = psi.row(n) * phi_prod;
+    lik(n) = dot(psi_phi, ph_T);
+
   }
 
   return(wrap(-sum(log(lik))));

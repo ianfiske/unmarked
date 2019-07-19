@@ -679,9 +679,16 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     inds <- which(inds,arr.ind=T) - 1
     paste0('p[',inds[,2],inds[,1],']')
   }
-
+  
+  #Informative names for phi
   get_phi_names <- function(np, prm){
-    paste0('phi',1:np) #placeholder
+    if(prm=='condbinom'){
+      return(c(paste0('phi[',0:(S-1),']'),paste0('R[',0:(S-1),']')))
+    }
+    vals <- paste0('phi[',rep(0:(S-1),each=S),rep(0:(S-1),S),']')
+    vals <- matrix(vals,nrow=S)
+    diag(vals) <- NA
+    c(na.omit(as.vector(vals)))
   }
 
   #Informative names for psi
@@ -717,6 +724,8 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   ## replace last year with NAs and use drop=TRUE
   y_site_covs[seq(T,N*T,by=T),] <- NA
   y_site_covs <- as.data.frame(lapply(y_site_covs, function(x) x[,drop = TRUE]))
+  #Actually just remove last year
+  y_site_covs <- y_site_covs[-seq(T,N*T,by=T),]
   
   obs_covs <- get_covs(obsCovs(umf), N*R)
   y <- getY(umf)

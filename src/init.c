@@ -18,7 +18,7 @@ extern SEXP nll_multinomPois( SEXP betaR, SEXP pi_funR, SEXP XlamR, SEXP Xlam_of
 extern SEXP nll_occu( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR );
 extern SEXP nll_occuPEN( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR, SEXP penaltyR );
 extern SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR, SEXP betaR, SEXP dmDetR, SEXP dStartR, SEXP dStopR, SEXP yR, SEXP yStartR, SEXP yStopR, SEXP Iy0r, SEXP zR, SEXP fixed0r);
-extern SEXP nll_occuMS( SEXP beta_, SEXP y_, SEXP dm_state_, SEXP dm_det_, SEXP sind_, SEXP dind_, SEXP prm_, SEXP S_, SEXP J_, SEXP N_, SEXP naflag_, SEXP guide_);
+extern SEXP nll_occuMS( SEXP beta_, SEXP y_, SEXP dm_state_, SEXP dm_phi_, SEXP dm_det_, SEXP sind_, SEXP pind_, SEXP dind_, SEXP prm_, SEXP S_, SEXP T_, SEXP J_, SEXP N_, SEXP naflag_, SEXP guide_);
 extern SEXP get_mlogit(SEXP lp_mat_, SEXP type_, SEXP S_, SEXP guide_);
 extern SEXP nll_occuRN( SEXP betaR, SEXP XlamR, SEXP Xlam_offsetR, SEXP XdetR, SEXP Xdet_offsetR, SEXP KR, SEXP yR, SEXP navecR, SEXP nPr, SEXP nOPr );
 extern SEXP nll_pcount( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_lamR, SEXP beta_pR, SEXP log_alphaR, SEXP X_offsetR, SEXP V_offsetR, SEXP naMatR, SEXP lkR, SEXP mixtureR ) ;
@@ -35,7 +35,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"nll_occu",        (DL_FUNC) &nll_occu,        10},
     {"nll_occuPEN",     (DL_FUNC) &nll_occuPEN,     11},
     {"nll_occuMulti",   (DL_FUNC) &nll_occuMulti,   14},
-    {"nll_occuMS",      (DL_FUNC) &nll_occuMS,      12},
+    {"nll_occuMS",      (DL_FUNC) &nll_occuMS,      15},
     {"get_mlogit",      (DL_FUNC) &get_mlogit,       4},
     {"nll_occuRN",      (DL_FUNC) &nll_occuRN,      10},
     {"nll_pcount",      (DL_FUNC) &nll_pcount,      11},

@@ -33,7 +33,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
   dind <- gd$det_ind
   pind <- gd$phi_ind
   nSP <- gd$nSP
-  NPP <- gd$nPP
+  nPP <- gd$nPP
   nP <- length(gd$param_names)
 
   #Index guide used to organize p values
@@ -86,9 +86,12 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
   }
 
   get_phi_mult <- function(rp){
-    rp <- matrix(rp, nrow=S)
-    rp <- cbind(1,exp(rp))
-    rp/rowSums(rp)
+    #Formulas are on the non-diagonal elements of phi matrix
+    #so that you can put covariates on the elements that represent state change
+    out <- diag(S)
+    out[outer(1:S, 1:S, function(i,j) i!=j)] <- exp(rp)
+    out <- t(out)
+    out/rowSums(out)
   }
 
   get_phi_condbin <- function(rp){
@@ -140,25 +143,26 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
 
     lik <- rep(NA,N)
     pstart <- 1
-    phistart <- 1
+    phi_index <- 1
     for (n in 1:N){
-      
+      ystart <- 1
       phi_prod <- diag(S) 
       if(T>1){
         for (t in 1:(T-1)){
           pend <- pstart+J-1
-          phiend <- phistart+nphi-1 #correct?
-          D_ph <- diag(get_ph(y[n,], p[pstart:pend,]))
-          phi_t <- get_phi(raw_phi[phistart:phiend])
+          yend <- ystart+J-1
+          D_ph <- diag(get_ph(y[n,ystart:yend], p[pstart:pend,]))
+          phi_t <- get_phi(raw_phi[phi_index,])
           phi_prod <- phi_prod %*% ( D_ph %*% phi_t )
-          
-          phistart <- phistart + 1
           pstart <- pstart + J
+          ystart <- ystart + J
+          phi_index <- phi_index + 1
         }
       } 
 
       pend <- pstart+J-1
-      ph_T <- get_ph(y[n,], p[pstart:pend,])
+      yend <- ystart+J-1
+      ph_T <- get_ph(y[n,ystart:yend], p[pstart:pend,])
       pstart <- pstart + J
           
       lik[n] <- psi[n,] %*% phi_prod %*% ph_T
@@ -171,8 +175,9 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
   naflag <- is.na(y)
   nll_C <- function(params){
     .Call("nll_occuMS",
-          params, y, gd$dm_state, gd$dm_det, sind-1, dind-1, parameterization,
-          S, J, N, naflag, guide-1,
+          params, y, gd$dm_state, gd$dm_phi, gd$dm_det,
+          sind-1, pind-1, dind-1, parameterization,
+          S, T, J, N, naflag, guide-1,
           PACKAGE = "unmarked")
   }
   #----------------------------------------------------------------------------
@@ -201,23 +206,45 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
   ests <- fm$par
   names(ests) <- gd$param_names
 
-  state <- unmarkedEstimate(name = "Occupancy", short.name = "psi",
+  state_name <- 'Occupancy'
+  if(T>1) state_name <- 'Initial Occupancy'
+
+  state <- unmarkedEstimate(name = state_name, short.name = "psi",
                             estimates = ests[1:nSP],
                             covMat = as.matrix(covMat[1:nSP,1:nSP]),
                             invlink = "logistic",
                             invlinkGrad = "logistic.grad")
 
   det <- unmarkedEstimate(name = "Detection", short.name = "p",
-                          estimates = ests[(nSP + 1) : nP],
-                          covMat = as.matrix(covMat[(nSP + 1) : nP,
-                                                      (nSP + 1) : nP]),
+                          estimates = ests[(nSP + nPP + 1) : nP],
+                          covMat = as.matrix(covMat[(nSP + nPP + 1) : nP,
+                                                      (nSP + nPP + 1) : nP]),
                           invlink = "logistic",
                           invlinkGrad = "logistic.grad")
+  
+  if(T>1){
+    transition <- unmarkedEstimate(name='Transition Probabilities', short.name='phi',
+                                  estimates = ests[(nSP+1):(nSP+nPP)],
+                                  covMat = as.matrix(covMat[(nSP+1):(nSP+nPP),
+                                                     (nSP+1):(nSP+nPP)]),
+                                   invlink='logistic',
+                                   invlinkGrad='logistic.grad')
 
-  estimateList <- unmarkedEstimateList(list(state=state, det=det))
+    estimateList <- unmarkedEstimateList(list(state=state, 
+                                              transition=transition,
+                                              det=det))
+  } else {
+    
+    estimateList <- unmarkedEstimateList(list(state=state, det=det))
+    phiformulas <- NA_character_
+  }
+
+
+
   
   umfit <- new("unmarkedFitOccuMS", fitType = "occuMS", call = match.call(),
-                detformulas = detformulas, stateformulas = stateformulas,
+                detformulas = detformulas, psiformulas = psiformulas,
+                phiformulas = phiformulas,
                 parameterization = parameterization,
                 formula = ~1, data = data,
                 sitesRemoved = gd$removed.sites,
