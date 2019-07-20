@@ -1482,8 +1482,8 @@ setMethod("predict", "unmarkedFitOccuMS",
 {
   
   #Process input---------------------------------------------------------------
-  if(! type %in% c("psi", "det")){
-    stop("type must be 'psi' or 'det'")
+  if(! type %in% c("psi","phi", "det")){
+    stop("type must be 'psi', 'phi', or 'det'")
   }
 
   if(is.null(hessian(object))){
@@ -1500,8 +1500,10 @@ setMethod("predict", "unmarkedFitOccuMS",
 
   if (class(newdata) == 'data.frame') {
     temp <- object@data
-    if(type=="state"){
+    if(type=="psi"){
       temp@siteCovs <- newdata
+    } else if(type=="phi") {
+      temp@yearlySiteCovs <- newdata
     } else {
       temp@obsCovs <- newdata
     }
@@ -1556,10 +1558,21 @@ setMethod("predict", "unmarkedFitOccuMS",
   #Calculate row-wise multinomial logit prob
   #implemented in C++ below as it is quite slow
   get_mlogit_R <- function(lp_mat){
-    if(type == 'state'){
+    if(type == 'psi'){
       out <- cbind(1,exp(lp_mat))
       out <- out/rowSums(out)
       out <- out[,-1]
+    } else if(type == 'phi'){ #doesn't work 
+      np <- nrow(lp_mat)
+      out <- matrix(NA,np,ncol(lp_mat)) 
+      ins <- outer(1:S, 1:S, function(i,j) i!=j)
+      for (i in 1:np){
+        phimat <- diag(S)
+        phimat[ins] <- exp(lp_mat[i,])
+        phimat <- t(phimat)
+        phimat <- phimat/rowSums(phimat)
+        out[i,] <- phimat[ins]
+      }
     } else {
       R <- nrow(lp_mat)
       out <- matrix(NA,R,ncol(lp_mat))
@@ -1581,9 +1594,12 @@ setMethod("predict", "unmarkedFitOccuMS",
 
   #----------------------------------------------------------------------------
 
-  if(type=="state"){
+  if(type=="psi"){
     dm_list <- gd$dm_state
     ind <- gd$state_ind
+  } else if(type=="phi"){
+    dm_list <- gd$dm_phi
+    ind <- gd$phi_ind
   } else {
     dm_list <- gd$dm_det
     ind <- gd$det_ind

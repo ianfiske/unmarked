@@ -13,7 +13,7 @@ SEXP get_mlogit(SEXP lp_mat_, SEXP type_, SEXP S_, SEXP guide_){
   int R = lp_mat.n_rows;
   int C = lp_mat.n_cols;
 
-  if(type == "state"){
+  if(type == "psi"){
 
     mat out = exp(lp_mat);
     for(int r=0; r<R; r++){
@@ -24,6 +24,20 @@ SEXP get_mlogit(SEXP lp_mat_, SEXP type_, SEXP S_, SEXP guide_){
     }
     return(wrap(out));
 
+  } else if(type == "phi"){
+
+    mat out(R,C);
+
+    for(int r=0; r<R; r++){
+      int ix = 0;
+      rowvec p_row = exp(lp_mat.row(r));
+      for(int s=0; s<S; s++){
+        rowvec sub = p_row.subvec(ix,(ix+S-2));
+        out(r,span(ix,(ix+S-2))) = sub / (sum(sub)+1);
+        ix += (S-1);
+      }
+    }
+    return(wrap(out));
   } else if(type == "det"){
     
     mat out(R,C);
