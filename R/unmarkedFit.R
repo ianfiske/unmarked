@@ -2088,7 +2088,7 @@ setMethod("fitted", "unmarkedFitOccuMS", function(object, na.rm = FALSE)
   guide <- which(guide,arr.ind=T) 
 
   #Get predictions
-  pr <- predict(object, 'state', se.fit=F)
+  pr <- predict(object, 'psi', se.fit=F)
   pr <- sapply(pr,function(x) x$Predicted)
   pr <- pr[rep(1:nrow(pr),each=J),]
 
@@ -3577,10 +3577,11 @@ setMethod("simulate", "unmarkedFitOccuMS",
 
   S <- object@data@numStates
   N <- numSites(object@data)
-  J <- obsNum(object@data)
-  
+  T <- object@data@numPrimary
+  J <- obsNum(object@data) / T
+
   prm <- object@parameterization
-  psi_raw <- predict(object, "state", se.fit=F)
+  psi_raw <- predict(object, "psi", se.fit=F)
   psi_raw <- sapply(psi_raw, function(x) x$Predicted)
   p <- getP(object)
 
@@ -3590,6 +3591,7 @@ setMethod("simulate", "unmarkedFitOccuMS",
   guide <- which(guide,arr.ind=T) 
   
   out <- vector("list",nsim)
+  
   for (i in 1:nsim){
 
   #State process
@@ -3602,37 +3604,75 @@ setMethod("simulate", "unmarkedFitOccuMS",
     psi[,3] <- psi_raw[,1]*psi_raw[,2]
   }
 
-  z <- rep(NA,N)
+  z <- matrix(NA, nrow=N, ncol=T)
+  
+  #initial occupancy
   for (n in 1:N){
-    z[n] <- sample(0:2, 1, replace=T, prob=psi[n,])
+    z[n,1] <- sample(0:(S-1), 1, prob=psi[n,])
+  }
+  
+  #transitions if T>1----------------------------------------------------------
+  get_phimat <- function(prob_vec){
+    if(prm=="multinomial"){
+      out <- matrix(NA, nrow=S, ncol=S)
+      out[outer(1:S, 1:S, function(i,j) i!=j)] <- prob_vec
+      out <- t(out)
+      diag(out) <- 1 - rowSums(out,na.rm=T)
+      return(out)
+    } else if(prm == "condbinom"){
+      out <- matrix(prob_vec, nrow=S)
+      return(cbind(1-out[,1], out[,1]*(1-out[,2]), out[,1]*out[,2]))
+    }
   }
 
-  #Detection process
-  y <- matrix(0, nrow=N, ncol=J)
-  for (n in 1:N){
-    if (z[n] == 0) next
-    for (j in 1:J){
-
-      if(prm == "multinomial"){
-        
-        probs_raw <- sapply(p, function(x) x[n,j])
-        
-        sdp <- matrix(0, nrow=S, ncol=S)
-        sdp[guide] <- probs_raw
-        sdp[,1] <- 1 - rowSums(sdp)
-        
-        probs <- sdp[z[n]+1,]
-
-      } else if (prm == "condbinom"){
-        p11 <- p[[1]][n,j]
-        p12 <- p[[2]][n,j]
-        p22 <- p[[3]][n,j]
-        probs <- switch(z[n]+1,
-                        c(1,0,0),
-                        c(1-p11,p11,0),
-                        c(1-p12,p12*(1-p22),p12*p22))
+  if(T>1){
+    phi_raw <- predict(object, "phi", se.fit=F)
+    phi_raw <- sapply(phi_raw, function(x) x$Predicted)
+    phi_index <- 1
+    for (n in 1:N){
+      for (t in 2:T){
+        phimat <- get_phimat(phi_raw[phi_index,])
+        phi_t <- phimat[(z[n,(t-1)]+1),]
+        z[n,t] <- sample(0:(S-1), 1, prob=phi_t)
+        phi_index <- phi_index+1
       }
-      y[n,j] <- sample(0:2, 1, replace=T, probs)
+    }
+  }
+  #----------------------------------------------------------------------------
+
+  #Detection process
+  y <- matrix(0, nrow=N, ncol=J*T)
+  for (n in 1:N){
+    yindex <- 1
+    for (t in 1:T){
+      if (z[n,t] == 0) {
+        yindex <- yindex + J
+        next
+      }
+      for (j in 1:J){
+
+        if(prm == "multinomial"){
+          probs_raw <- sapply(p, function(x) x[n,yindex])
+        
+          sdp <- matrix(0, nrow=S, ncol=S)
+          sdp[guide] <- probs_raw
+          sdp[,1] <- 1 - rowSums(sdp)
+        
+          probs <- sdp[z[n,t]+1,]
+
+        } else if (prm == "condbinom"){
+          p11 <- p[[1]][n,yindex]
+          p12 <- p[[2]][n,yindex]
+          p22 <- p[[3]][n,yindex]
+          probs <- switch(z[n,t]+1,
+                          c(1,0,0),
+                          c(1-p11,p11,0),
+                          c(1-p12,p12*(1-p22),p12*p22))
+        }
+
+        y[n,yindex] <- sample(0:(S-1), 1, prob=probs)
+        yindex <- yindex + 1
+      }
     }
   }
   
