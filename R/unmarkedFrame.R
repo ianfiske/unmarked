@@ -343,7 +343,7 @@ unmarkedFrameOccuMS <- function(y, siteCovs = NULL, obsCovs = NULL,
   phi_mult <- c(na.omit(as.vector(vals)))
 
   #Cond binom
-  phi_cb <- c(paste0('phi[',1:S,']'),paste0('R[',1:S,']'))
+  phi_cb <- c(paste0('phi[',0:(S-1),']'),paste0('R[',0:(S-1),']'))
   
   umf@phiOrder <- list(multinomial=phi_mult,cond_binom=phi_cb)
   

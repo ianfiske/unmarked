@@ -12,18 +12,26 @@
     of \code{\link{occuMS}}}
 
 \arguments{
-    \item{y}{An MxJ matrix of multi-state occupancy data for a species, 
-        where M is the number of sites and J is the maximum number of sampling 
-        periods per site. Values in \code{y} should be integers ranging from
+    \item{y}{An MxR matrix of multi-state occupancy data for a species, 
+        where M is the number of sites and R is the maximum number of 
+        observations per site (across all primary and secondary periods, if 
+        you have multi-season data). Values in \code{y} should be integers ranging from
         0 (non-detection) to the number of total states - 1. For example, if you
         have 3 occupancy states, \code{y} should contain only values 0, 1, or 2.}
     \item{siteCovs}{A \code{\link{data.frame}} of covariates that vary at the 
         site level. This should have M rows and one column per covariate}
     \item{obsCovs}{Either a named list of \code{\link{data.frame}}s of 
         covariates that vary within sites, or a \code{\link{data.frame}} with 
-        RxJ rows in site-major order.}
-    \item{numPrimary}{Ignored as only single-season models are currently possible.}
-    \item{yearlySiteCovs}{Ignored as only single-season models are currently possible.}
+        MxR rows in the ordered by site-observation (if single-season) or 
+        site-primary period-observation (if multi-season).}
+    \item{numPrimary}{Number of primary time periods (e.g. seasons) for the 
+        dynamic or multi-season version of the model. There should be
+        an equal number of secondary periods in each primary period.}
+    \item{yearlySiteCovs}{A data frame with one column per covariate that varies 
+        among sites and primary periods (e.g. years). It should have MxT rows
+        where M is the number of sites and T the number of primary periods,
+        ordered by site-primary period. These covariates only used for dynamic 
+        (multi-season) models.}
   
 }
 
