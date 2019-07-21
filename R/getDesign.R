@@ -741,25 +741,6 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   removed.sites <- NA
   if(na.rm){
 
-    #State
-    all_y_na <- which(apply(y,1,function(x) all(is.na(x))))
-    if(length(all_y_na)>0){
-      warning("Some sites removed because all y values were missing") 
-    }
-    miss_covs <- which(apply(site_covs,1,function(x) any(is.na(x))))
-    if(length(miss_covs)>0){
-      warning("Some sites removed because covariates were missing") 
-    }
-    removed.sites <- sort(unique(c(all_y_na,miss_covs)))
-    
-    if(length(removed.sites)>0){
-      ymap <- as.vector(t(matrix(rep(1:N,each=R),ncol=R,byrow=T)))
-      site_covs <- site_covs[-removed.sites,]
-      obs_covs <- obs_covs[!ymap%in%removed.sites,]
-      y <- y[-removed.sites,]
-      N <- nrow(y)
-    }
-
     #Det
     ylong <- as.vector(t(y))
     miss_det_cov <- which(apply(obs_covs,1,function(x) any(is.na(x))))
@@ -770,6 +751,46 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
       ylong[new_na] <- NA
       y <- matrix(ylong,nrow=N,ncol=R,byrow=T)
     }
+
+    #State
+    check_site_na <- function(yrow){
+      if(T==1) return(all(is.na(yrow)))
+      y_mat <- matrix(yrow, nrow=J)
+      pp_na <- apply(y_mat,2,function(x) all(is.na(x)))
+      if(any(pp_na)){
+        return(TRUE)
+      }
+      return(FALSE)
+    }
+
+    all_y_na <- which(apply(y,1, check_site_na ))
+    if(length(all_y_na)>0){
+      warning("Some sites removed because all y values in a primary period were missing") 
+    }
+    miss_covs <- which(apply(site_covs,1,function(x) any(is.na(x))))
+    if(length(miss_covs)>0){
+      warning("Some sites removed because site covariates were missing") 
+    }
+    removed.sites <- sort(unique(c(all_y_na,miss_covs)))
+    
+    if(T>1){
+      if(any(is.na(y_site_covs))){
+        stop("Some sites are missing yearly site covs")
+      }
+    }
+
+    if(length(removed.sites)>0){
+      ymap <- as.vector(t(matrix(rep(1:N,each=R),ncol=R,byrow=T)))
+      site_covs <- site_covs[-removed.sites,]
+      obs_covs <- obs_covs[!ymap%in%removed.sites,]
+      if(T>1){  
+        ysc_map <- as.vector(t(matrix(rep(1:N,each=(T-1)),ncol=(T-1),byrow=T)))
+        y_site_covs <- y_site_covs[!ysc_map%in%removed.sites,]
+      }
+      y <- y[-removed.sites,]
+      N <- nrow(y)
+    }
+
   }
 
   dm_state <- get_dm(stateformulas, site_covs, 

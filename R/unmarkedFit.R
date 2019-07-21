@@ -2078,9 +2078,14 @@ setMethod("fitted", "unmarkedFitOccuMulti", function(object)
 setMethod("fitted", "unmarkedFitOccuMS", function(object, na.rm = FALSE)
 {
   data <- object@data
-  J <- obsNum(data)
+  T <- data@numPrimary
+  J <- obsNum(data) / T
   N <- numSites(data)
   S <- data@numStates
+
+  if(T>1){
+    stop('Not implemented for dynamic models')
+  }
 
   guide <- matrix(NA,nrow=S,ncol=S)
   guide <- lower.tri(guide,diag=T)

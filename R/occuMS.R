@@ -208,12 +208,19 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
 
   state_name <- 'Occupancy'
   if(T>1) state_name <- 'Initial Occupancy'
+  
+  invlink <- 'multinomial'
+  invlinkGrad <- 'multinomial'
+  if(parameterization == 'condbinom'){
+    invlink <- 'logistic'
+    invlinkGrad <- 'logistic.grad'
+  }
 
   state <- unmarkedEstimate(name = state_name, short.name = "psi",
                             estimates = ests[1:nSP],
                             covMat = as.matrix(covMat[1:nSP,1:nSP]),
-                            invlink = "logistic",
-                            invlinkGrad = "logistic.grad")
+                            invlink = invlink,
+                            invlinkGrad = invlinkGrad)
 
   det <- unmarkedEstimate(name = "Detection", short.name = "p",
                           estimates = ests[(nSP + nPP + 1) : nP],
@@ -227,8 +234,8 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
                                   estimates = ests[(nSP+1):(nSP+nPP)],
                                   covMat = as.matrix(covMat[(nSP+1):(nSP+nPP),
                                                      (nSP+1):(nSP+nPP)]),
-                                   invlink='logistic',
-                                   invlinkGrad='logistic.grad')
+                                   invlink=invlink,
+                                   invlinkGrad=invlinkGrad)
 
     estimateList <- unmarkedEstimateList(list(state=state, 
                                               transition=transition,
@@ -238,10 +245,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
     estimateList <- unmarkedEstimateList(list(state=state, det=det))
     phiformulas <- NA_character_
   }
-
-
-
-  
+ 
   umfit <- new("unmarkedFitOccuMS", fitType = "occuMS", call = match.call(),
                 detformulas = detformulas, psiformulas = psiformulas,
                 phiformulas = phiformulas,
