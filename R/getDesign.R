@@ -631,11 +631,12 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   T <- umf@numPrimary
   R <- obsNum(umf)
   J <- R / T
-  npsi <- S-1 #Number of free psi values 
+  npsi <- S-1 #Number of free psi values
+  nphi <- S^2 - S #Number of free phi values 
   np <- S * (S-1) / 2 #Number of free p values 
 
   if(length(psiformulas) != npsi){
-    stop(paste(npsi,'formulas are required in stateformulas vector'))
+    stop(paste(npsi,'formulas are required in psiformulas vector'))
   }
   
   if(is.null(phiformulas)){
@@ -644,8 +645,11 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     } else {
       phiformulas <- rep('~1',S^2-S)
     }
+  } else if(T>1){
+    if(length(phiformulas)!=nphi){
+      stop(paste(nphi,'formulas are required in phiformulas vector. See data@phiOrder for help'))
+    }
   }
-  #TODO: CHECK FOR phiformulas length
 
   if(length(detformulas) != np){
     stop(paste(np,'formulas are required in detformulas vector'))
@@ -793,8 +797,8 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
   }
 
-  dm_state <- get_dm(stateformulas, site_covs, 
-                     get_psi_names(length(stateformulas),prm)) 
+  dm_state <- get_dm(psiformulas, site_covs, 
+                     get_psi_names(length(psiformulas),prm)) 
   nSP <- length(get_param_names(dm_state))
   state_ind <- get_param_inds(dm_state) #generate ind matrix in function
   

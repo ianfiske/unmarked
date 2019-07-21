@@ -260,13 +260,13 @@ test.occuMS.na <- function(){
   
   umf <- unmarkedFrameOccuMS(y=y,siteCovs=site_covs,obsCovs=obs_covs)
   fit <- occuMS(rep('~1',3),rep('~1',2),data=umf,se=F)
-  checkEqualsNumeric(fit@AIC,56.83459,tol=1e-4)
+  checkEqualsNumeric(fit@AIC,53.19191,tol=1e-4)
 
   yna <- y
   yna[1,1] <- NA
   umf <- unmarkedFrameOccuMS(y=yna,siteCovs=site_covs,obsCovs=obs_covs)
   fit <- occuMS(rep('~1',3),rep('~1',2),data=umf,se=F)
-  checkEqualsNumeric(fit@AIC,56.69994,tol=1e-4)
+  checkEqualsNumeric(fit@AIC,53.06711,tol=1e-4)
 
   yna <- y
   yna[1,] <- NA
@@ -279,7 +279,7 @@ test.occuMS.na <- function(){
   options(warn=1)
   
   fit <- occuMS(rep('~1',3),rep('~1',2),data=umf,se=F)
-  checkEqualsNumeric(fit@AIC,40.85738,tol=1e-4)
+  checkEqualsNumeric(fit@AIC,49.91398,tol=1e-4)
   checkEqualsNumeric(fit@sitesRemoved,c(1,5))
 
   oc_na <- obs_covs
@@ -291,7 +291,7 @@ test.occuMS.na <- function(){
   options(warn=1)
 
   fit <- occuMS(rep('~1',3),rep('~1',2),data=umf,se=F)
-  checkEqualsNumeric(fit@AIC,56.69994,tol=1e-4)
+  checkEqualsNumeric(fit@AIC,53.06711,tol=1e-4)
 }
 
 
