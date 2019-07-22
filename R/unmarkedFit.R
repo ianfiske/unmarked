@@ -90,6 +90,14 @@ setClass("unmarkedFitOccuMulti",
             stateformulas = "character"),
          contains = "unmarkedFit")
 
+setClass("unmarkedFitOccuMS",
+         representation(
+            detformulas = "character",
+            psiformulas = "character",
+            phiformulas = "character",
+            parameterization = "character"),
+         contains = "unmarkedFit")
+
 setClass("unmarkedFitMPois",
     contains = "unmarkedFit")
 
@@ -1466,6 +1474,192 @@ setMethod("predict", "unmarkedFitOccuMulti",
 })
 
 
+setMethod("predict", "unmarkedFitOccuMS",
+     function(object, type, newdata,
+              #backTransform = TRUE, na.rm = TRUE,
+              #appendData = FALSE,
+              se.fit=TRUE, level=0.95, nsims=100, ...)
+{
+  
+  #Process input---------------------------------------------------------------
+  if(! type %in% c("psi","phi", "det")){
+    stop("type must be 'psi', 'phi', or 'det'")
+  }
+
+  if(is.null(hessian(object))){
+    se.fit = FALSE
+  }
+
+  if(missing(newdata)){
+    newdata <- object@data
+  }
+
+  if(! class(newdata) %in% c('unmarkedFrameOccuMS','data.frame')){
+    stop("newdata must be a data frame or an unmarkedFrameOccuMS object")
+  }
+
+  if (class(newdata) == 'data.frame') {
+    temp <- object@data
+    if(type=="psi"){
+      temp@siteCovs <- newdata
+    } else if(type=="phi") {
+      temp@yearlySiteCovs <- newdata
+    } else {
+      temp@obsCovs <- newdata
+    }
+    newdata <- temp
+  }
+
+  S <- object@data@numStates
+  gd <- getDesign(newdata,object@psiformulas,object@phiformulas,
+                  object@detformulas,
+                  object@parameterization, na.rm=F)
+
+  #Index guide used to organize p values
+  guide <- matrix(NA,nrow=S,ncol=S)
+  guide <- lower.tri(guide,diag=T)
+  guide[,1] <- FALSE
+  guide <- which(guide,arr.ind=T) 
+  #----------------------------------------------------------------------------
+  
+  #Utility functions-----------------------------------------------------------
+  #Get matrix of linear predictor values
+  get_lp <- function(params, dm_list, ind){
+    L <- length(dm_list)
+    out <- matrix(NA,nrow(dm_list[[1]]),L)
+    for (i in 1:L){
+      out[,i] <- dm_list[[i]] %*% params[ind[i,1]:ind[i,2]]
+    }
+    out
+  }
+  
+  #Get SE via delta method (for conditional binomial)
+  get_se <- function(dm_list, ind){
+    L <- length(dm_list)
+    M <- nrow(dm_list[[1]])
+    out <- matrix(NA,M,L)
+    if(!se.fit) return(out)
+
+    for (i in 1:L){
+      inds <- ind[i,1]:ind[i,2]
+      param_sub <- coef(object)[inds]
+      cov_sub <- vcov(object)[inds,inds]
+      
+      for (m in 1:M){
+        x <- dm_list[[i]][m,]
+        xb <- stats::dlogis(t(x) %*% param_sub) #??? transform
+        v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
+        out[m,i] <- sqrt(v)
+      }
+    }
+    out
+  }
+
+  #Calculate row-wise multinomial logit prob
+  #implemented in C++ below as it is quite slow
+  get_mlogit_R <- function(lp_mat){
+    if(type == 'psi'){
+      out <- cbind(1,exp(lp_mat))
+      out <- out/rowSums(out)
+      out <- out[,-1]
+    } else if(type == 'phi'){ #doesn't work 
+      np <- nrow(lp_mat)
+      out <- matrix(NA,np,ncol(lp_mat)) 
+      ins <- outer(1:S, 1:S, function(i,j) i!=j)
+      for (i in 1:np){
+        phimat <- diag(S)
+        phimat[ins] <- exp(lp_mat[i,])
+        phimat <- t(phimat)
+        phimat <- phimat/rowSums(phimat)
+        out[i,] <- phimat[ins]
+      }
+    } else {
+      R <- nrow(lp_mat)
+      out <- matrix(NA,R,ncol(lp_mat))
+      for (i in 1:R){
+        sdp <- matrix(0,nrow=S,ncol=S)
+        sdp[guide] <- exp(lp_mat[i,])
+        sdp[,1] <- 1
+        sdp <- sdp/rowSums(sdp)
+        out[i,] <- sdp[guide]
+      }
+    }
+    out
+  }
+
+  get_mlogit <- function(lp_mat){
+    .Call("get_mlogit",
+         lp_mat, type, S, guide-1) 
+  }
+
+  #----------------------------------------------------------------------------
+
+  if(type=="psi"){
+    dm_list <- gd$dm_state
+    ind <- gd$state_ind
+  } else if(type=="phi"){
+    dm_list <- gd$dm_phi
+    ind <- gd$phi_ind
+  } else {
+    dm_list <- gd$dm_det
+    ind <- gd$det_ind
+  }
+
+  P <- length(dm_list)
+
+  low_bound <- (1-level)/2
+  z <- qnorm(low_bound,lower.tail=F)
+  
+  out <- vector("list", P)
+  names(out) <- names(dm_list)
+  
+  if(object@parameterization == 'condbinom'){
+    pred <- plogis(get_lp(coef(object), dm_list, ind))
+    se <- get_se(dm_list, ind) #delta method
+    upr <- pred + z * se
+    lwr <- pred - z * se
+
+  } else if (object@parameterization == "multinomial"){
+    lp <- get_lp(coef(object), dm_list, ind)
+    pred <- get_mlogit(lp)
+  
+    M <- nrow(pred)
+    upr <- lwr <- se <- matrix(NA,M,P)
+    
+    if(se.fit){ 
+      cat('Bootstrapping confidence intervals with',nsims,'samples\n')
+      
+      sig <- vcov(object)
+      param_mean <- coef(object)
+      rparam <- mvrnorm(nsims, param_mean, sig)
+      
+      get_pr <- function(i){
+        lp <- get_lp(rparam[i,], dm_list, ind)
+        get_mlogit(lp)
+      }
+      samp <- sapply(1:nsims, get_pr, simplify='array')
+      
+      for (i in 1:M){
+        for (j in 1:P){
+          dat <- samp[i,j,]
+          se[i,j] <- sd(dat, na.rm=TRUE)
+          quants <- quantile(dat, c(low_bound, (1-low_bound)),na.rm=TRUE)
+          lwr[i,j] <- quants[1]
+          upr[i,j] <- quants[2]
+        }
+      }
+
+    }
+  }
+  
+  for (i in 1:P){
+    out[[i]] <- data.frame(Predicted=pred[,i], SE=se[,i],
+                           lower=lwr[,i], upper=upr[,i])
+  }
+
+  out
+})
+
 # ---------------------- coef, vcov, and SE ------------------------------
 
 
@@ -1881,6 +2075,51 @@ setMethod("fitted", "unmarkedFitOccuMulti", function(object)
 
 })
 
+setMethod("fitted", "unmarkedFitOccuMS", function(object, na.rm = FALSE)
+{
+  data <- object@data
+  T <- data@numPrimary
+  J <- obsNum(data) / T
+  N <- numSites(data)
+  S <- data@numStates
+
+  if(T>1){
+    stop('Not implemented for dynamic models')
+  }
+
+  guide <- matrix(NA,nrow=S,ncol=S)
+  guide <- lower.tri(guide,diag=T)
+  guide[,1] <- FALSE
+  guide <- which(guide,arr.ind=T) 
+
+  #Get predictions
+  pr <- predict(object, 'psi', se.fit=F)
+  pr <- sapply(pr,function(x) x$Predicted)
+  pr <- pr[rep(1:nrow(pr),each=J),]
+
+  pr_det <- predict(object, 'det', se.fit=F)
+  pr_det <- sapply(pr_det,function(x) x$Predicted)
+  
+  fitvals <- rep(NA, nrow(pr_det))
+  if(object@parameterization == 'multinomial'){
+    pr <- cbind(1-rowSums(pr),pr)
+    
+    for (i in 1:nrow(pr_det)){
+      occ <- pr[i,]
+      sdp <- matrix(0,nrow=S,ncol=S)
+      sdp[guide] <- pr_det[i,]
+      sdp[,1] <- 1 - rowSums(sdp)
+      fitvals[i] <- occ %*% sdp %*% 0:(S-1)
+    }
+   
+  } else if(object@parameterization == 'condbinom'){
+    stop('Conditional binomial parameterization not supported yet')
+  }
+  fit_out <- matrix(fitvals,N,J,byrow=T)
+
+  fit_out
+})
+
 setMethod("fitted", "unmarkedFitColExt", function(object, na.rm = FALSE)
 {
     data <- object@data
@@ -2111,6 +2350,44 @@ setMethod("update", "unmarkedFitOccuMulti",
       call[["stateformulas"]] <- stateformulas
     } else {
       call[["stateformulas"]] <- object@stateformulas
+    }
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
+    if (length(extras) > 0) {
+        existing <- !is.na(match(names(extras), names(call)))
+        for (a in names(extras)[existing])
+            call[[a]] <- extras[[a]]
+        if (any(!existing)) {
+            call <- c(as.list(call), extras[!existing])
+            call <- as.call(call)
+            }
+        }
+    if (evaluate)
+        eval(call, parent.frame(2))
+    else call
+})
+
+setMethod("update", "unmarkedFitOccuMS",
+    function(object, detformulas, psiformulas, phiformulas, ..., evaluate = TRUE)
+{
+
+    call <- object@call
+    if (is.null(call))
+        stop("need an object with call slot")
+    if(!missing(detformulas)){
+      call[["detformulas"]] <- detformulas
+    } else {
+      call[["detformulas"]] <- object@detformulas
+    }
+    if(!missing(psiformulas)){
+      call[["psiformulas"]] <- psiformulas
+    } else {
+      call[["psiformulas"]] <- object@psiformulas
+    }
+    if(!missing(phiformulas)){
+      call[["phiformulas"]] <- phiformulas
+    } else {
+      call[["phiformulas"]] <- object@phiformulas
     }
     extras <- match.call(call=sys.call(-1),
                          expand.dots = FALSE)$...
@@ -2510,6 +2787,14 @@ setMethod("getP", "unmarkedFitOccuMulti", function(object)
   }
   names(out) <- names(ylist)
   out
+})
+
+setMethod("getP", "unmarkedFitOccuMS", function(object)
+{
+  J <- ncol(object@data@y)
+  N <- nrow(object@data@y)
+  pred <- predict(object, 'det', se.fit=F)
+  lapply(pred, function(x) matrix(x$Predicted, nrow=N, ncol=J, byrow=T))
 })
 
 setMethod("getFP", "unmarkedFitOccuFP", function(object, na.rm = TRUE)
@@ -3288,6 +3573,118 @@ setMethod("simulate", "unmarkedFitOccuMulti",
       simList[[s]] <- y
     }
     simList
+})
+
+
+setMethod("simulate", "unmarkedFitOccuMS",
+    function(object, nsim = 1, seed = NULL, na.rm=TRUE)
+{
+
+  S <- object@data@numStates
+  N <- numSites(object@data)
+  T <- object@data@numPrimary
+  J <- obsNum(object@data) / T
+
+  prm <- object@parameterization
+  psi_raw <- predict(object, "psi", se.fit=F)
+  psi_raw <- sapply(psi_raw, function(x) x$Predicted)
+  p <- getP(object)
+
+  guide <- matrix(NA,nrow=S,ncol=S)
+  guide <- lower.tri(guide,diag=T)
+  guide[,1] <- FALSE
+  guide <- which(guide,arr.ind=T) 
+  
+  out <- vector("list",nsim)
+  
+  for (i in 1:nsim){
+
+  #State process
+  if(prm == "multinomial"){
+    psi <- cbind(1-apply(psi_raw,1,sum),psi_raw)
+  } else if (prm == "condbinom"){
+    psi <- matrix(NA, nrow=N, ncol=S) 
+    psi[,1] <- 1-psi_raw[,1]
+    psi[,2] <- (1-psi_raw[,2])*psi_raw[,1]
+    psi[,3] <- psi_raw[,1]*psi_raw[,2]
+  }
+
+  z <- matrix(NA, nrow=N, ncol=T)
+  
+  #initial occupancy
+  for (n in 1:N){
+    z[n,1] <- sample(0:(S-1), 1, prob=psi[n,])
+  }
+  
+  #transitions if T>1----------------------------------------------------------
+  get_phimat <- function(prob_vec){
+    if(prm=="multinomial"){
+      out <- matrix(NA, nrow=S, ncol=S)
+      out[outer(1:S, 1:S, function(i,j) i!=j)] <- prob_vec
+      out <- t(out)
+      diag(out) <- 1 - rowSums(out,na.rm=T)
+      return(out)
+    } else if(prm == "condbinom"){
+      out <- matrix(prob_vec, nrow=S)
+      return(cbind(1-out[,1], out[,1]*(1-out[,2]), out[,1]*out[,2]))
+    }
+  }
+
+  if(T>1){
+    phi_raw <- predict(object, "phi", se.fit=F)
+    phi_raw <- sapply(phi_raw, function(x) x$Predicted)
+    phi_index <- 1
+    for (n in 1:N){
+      for (t in 2:T){
+        phimat <- get_phimat(phi_raw[phi_index,])
+        phi_t <- phimat[(z[n,(t-1)]+1),]
+        z[n,t] <- sample(0:(S-1), 1, prob=phi_t)
+        phi_index <- phi_index+1
+      }
+    }
+  }
+  #----------------------------------------------------------------------------
+
+  #Detection process
+  y <- matrix(0, nrow=N, ncol=J*T)
+  for (n in 1:N){
+    yindex <- 1
+    for (t in 1:T){
+      if (z[n,t] == 0) {
+        yindex <- yindex + J
+        next
+      }
+      for (j in 1:J){
+
+        if(prm == "multinomial"){
+          probs_raw <- sapply(p, function(x) x[n,yindex])
+        
+          sdp <- matrix(0, nrow=S, ncol=S)
+          sdp[guide] <- probs_raw
+          sdp[,1] <- 1 - rowSums(sdp)
+        
+          probs <- sdp[z[n,t]+1,]
+
+        } else if (prm == "condbinom"){
+          p11 <- p[[1]][n,yindex]
+          p12 <- p[[2]][n,yindex]
+          p22 <- p[[3]][n,yindex]
+          probs <- switch(z[n,t]+1,
+                          c(1,0,0),
+                          c(1-p11,p11,0),
+                          c(1-p12,p12*(1-p22),p12*p22))
+        }
+
+        y[n,yindex] <- sample(0:(S-1), 1, prob=probs)
+        yindex <- yindex + 1
+      }
+    }
+  }
+  
+  out[[i]] <- y
+  }
+
+  out
 })
 
 

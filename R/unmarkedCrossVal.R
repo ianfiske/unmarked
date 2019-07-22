@@ -146,6 +146,8 @@ setClass("unmarkedCrossValList",
 setMethod("crossVal", "unmarkedFitList",
           function(object, method=c("kfold","holdout","leaveoneout"), 
                    folds=10, holdoutPct=0.25){
+    
+    method <- match.arg(method, c('kfold','holdout','leaveoneout'))
 
     stats <- lapply(object@fits, crossVal, method, folds, holdoutPct)
 

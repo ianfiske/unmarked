@@ -28,6 +28,7 @@
 \alias{update,unmarkedFitPCO-method}
 \alias{update,unmarkedFitGMM-method}
 \alias{update,unmarkedFitOccuMulti-method}
+\alias{update,unmarkedFitOccuMS-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
@@ -40,6 +41,7 @@
 \alias{unmarkedFitPCO-class}
 \alias{unmarkedFitGMM-class}
 \alias{unmarkedFitOccuMulti-class}
+\alias{unmarkedFitOccuMS-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}

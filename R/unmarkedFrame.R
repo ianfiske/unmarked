@@ -70,6 +70,13 @@ setClass("unmarkedFrameOccuFP",
            type = "numeric"),
          contains = "unmarkedFrame")
 
+#Multi-state occupancy
+setClass('unmarkedFrameOccuMS',
+         representation(
+            numStates = "numeric",
+            phiOrder = "list"),
+         contains = "unmarkedMultFrame")
+
 setClass("unmarkedFrameOccuMulti",
     representation(ylist = "list", fDesign = "matrix"),
     contains = "unmarkedFrame",
@@ -314,6 +321,34 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
 }
 
 
+# Construct a unmarkedFrameOccuMS object (multistate occupancy)
+unmarkedFrameOccuMS <- function(y, siteCovs = NULL, obsCovs = NULL,
+                                numPrimary = 1, yearlySiteCovs = NULL)
+{
+
+  umf <- unmarkedMultFrame(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs)
+  umf <- as(umf, "unmarkedFrameOccuMS")
+  umf@numStates <- max(y,na.rm=T) + 1
+  if(umf@numStates<3){
+    stop("<3 occupancy states detected. Use occu() or colext() instead.")
+  }
+  
+  #Create guide for phi formula order
+  S <- umf@numStates
+  
+  #Multinomial
+  vals <- paste0('phi[',rep(0:(S-1),each=S),'->',rep(0:(S-1),S),']')
+  vals <- matrix(vals,nrow=S)
+  diag(vals) <- NA
+  phi_mult <- c(na.omit(as.vector(vals)))
+
+  #Cond binom
+  phi_cb <- c(paste0('phi[',0:(S-1),']'),paste0('R[',0:(S-1),']'))
+  
+  umf@phiOrder <- list(multinomial=phi_mult,cond_binom=phi_cb)
+  
+  umf
+}
 
 
 
@@ -1068,7 +1103,15 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
 })
 
 
-
+setMethod("[", c("unmarkedFrameOccuMS", "numeric", "missing", "missing"),
+    function(x, i, j)
+{
+  multf <- callNextMethod(x, i, j)
+  unmarkedFrameOccuMS(y=getY(multf), siteCovs=siteCovs(multf),
+                      yearlySiteCovs=yearlySiteCovs(multf),
+                      obsCovs=obsCovs(multf),
+                      numPrimary=x@numPrimary)
+})
 
 setMethod("[", c("unmarkedFrameGMM", "numeric", "missing", "missing"),
 		function(x, i, j)
