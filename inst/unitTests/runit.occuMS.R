@@ -294,4 +294,243 @@ test.occuMS.na <- function(){
   checkEqualsNumeric(fit@AIC,53.06711,tol=1e-4)
 }
 
+test.occuMS.dynamic.multinomial <- function(){
 
+set.seed(123)
+N <- 100 #Number of sites
+T <- 2 #Number of primary periods
+J <- 3 #Number of secondary periods
+S <- 3 #Number of occupancy states (0,1,2)
+
+#Generate covariates
+site_covs <- as.data.frame(matrix(rnorm(N*2),ncol=2))
+yearly_site_covs <- as.data.frame(matrix(rnorm(N*T*2),ncol=2))
+obs_covs <- as.data.frame(matrix(rnorm(N*J*T*2),ncol=2))
+
+#True parameter values
+b <- c(
+  #Occupancy parameters
+  a1=-0.5, b1=1, a2=-0.6, b2=-0.7,
+  #Transition prob (phi) parameters
+  phi01=0.7, phi01_cov=-0.5, phi02=-0.5, phi10=1.2, 
+  phi12=0.3, phi12_cov=1.1, phi20=-0.3, phi21=1.4, phi21_cov=0,
+  #Detection prob parameters
+  p11=-0.4, p11_cov=0, p12=-1.09, p22=-0.84
+)
+
+#Generate occupancy probs (multinomial parameterization)
+lp <- matrix(1, ncol=S, nrow=N)
+lp[,2] <- exp(b[1]+b[2]*site_covs[,1])
+lp[,3] <- exp(b[3]+b[4]*site_covs[,2])
+psi <- lp/rowSums(lp)
+
+#True occupancy state matrix
+z <- matrix(NA, nrow=N, ncol=T)
+
+#Initial occupancy
+for (n in 1:N){
+  z[n,1] <- sample(0:(S-1), 1, prob=psi[n,])
+}
+
+#Raw phi probs
+phi_raw <- matrix(NA, nrow=N*T, ncol=S^2-S)
+phi_raw[,1] <- exp(b[5]+b[6]*yearly_site_covs[,1]) #p[0->1]
+phi_raw[,2] <- exp(b[7]) #p[0->2]
+phi_raw[,3] <- exp(b[8]) #p[1->0]
+phi_raw[,4] <- exp(b[9]+b[10]*yearly_site_covs[,2]) #p[1->2]
+phi_raw[,5] <- exp(b[11]) #p[2->0]
+phi_raw[,6] <- exp(b[12]+b[13]*yearly_site_covs[,1])
+
+#Generate states in times 2..T
+px <- 1
+for (n in 1:N){
+  for (t in 2:T){
+    phi_mat <- matrix(c(1, phi_raw[px,1], phi_raw[px,2],  # phi|z=0
+                        phi_raw[px,3], 1, phi_raw[px,4],  # phi|z=1
+                        phi_raw[px,5], phi_raw[px,6], 1), # phi|z=2
+                      nrow=S, byrow=T)
+    phi_mat <- phi_mat/rowSums(phi_mat)
+    z[n, t] <- sample(0:(S-1), 1, prob=phi_mat[z[n,(t-1)]+1,])
+    px <- px + 1
+    if(t==T) px <- px + 1 #skip last datapoint for each site
+  }
+}
+
+#Raw p probs
+p_mat <- matrix(c(1, 0, 0, #p|z=0
+                  1, exp(b[14]), 0, #p|z=1
+                  1, exp(b[16]), exp(b[17])), #p|z=2 
+                nrow=S, byrow=T)
+p_mat <- p_mat/rowSums(p_mat)
+
+#Simulate observation data
+y <- matrix(0, nrow=N, ncol=J*T)
+for (n in 1:N){
+  yx <- 1
+  for (t in 1:T){
+    if(z[n,t]==0){
+      yx <- yx + J
+      next
+    }
+    for (j in 1:J){
+      y[n, yx] <- sample(0:(S-1), 1, prob=p_mat[z[n,t]+1,])
+      yx <- yx+1
+    }
+  }
+}
+
+umf <- unmarkedFrameOccuMS(y=y, siteCovs=site_covs,
+                           obsCovs=obs_covs,
+                           yearlySiteCovs=yearly_site_covs,
+                           numPrimary=T)
+
+psiformulas <- c('~V1','~V2') #on psi[1] and psi[2]
+phiformulas <- c('~V1','~1','~1','~V2','~1','~V1')
+detformulas <- c('~V1','~1','~1') #on p[1|1], p[1|2], p[2|2]
+
+fitC <- occuMS(detformulas=detformulas, psiformulas=psiformulas,
+              phiformulas=phiformulas, data=umf)
+
+fitR <- occuMS(detformulas=detformulas, psiformulas=psiformulas,
+              phiformulas=phiformulas, data=umf,engine="R")
+
+checkEqualsNumeric(fitC@AIC,799.1723,tol=1e-4)
+checkEqualsNumeric(fitC@AIC,fitR@AIC,tol=1e-4)
+checkEqualsNumeric(length(coef(fitC)),17)
+
+phiformulas_new <- rep('~1',6)
+fit_new <- update(fitC,phiformulas=phiformulas_new)
+checkEqualsNumeric(fit_new@AIC,800.8553,tol=1e-4)
+checkEqualsNumeric(length(coef(fit_new)),14)
+
+set.seed(123)
+fit_sim <- simulate(fitC,nsim=2)
+checkEqualsNumeric(fit_sim[[1]][2,],c(0,2,1,0,0,2))
+
+pr_phi <- predict(fitC,'phi')
+pr_phi <- sapply(pr_phi, function(x) x$Predicted[1])
+checkEqualsNumeric(pr_phi,
+                   c(0.055117,0.57195,0.931102,0.02733675,
+                     0.2192255,0.1819882),tol=1e-4)
+
+umf_new <- umf
+umf_new@y[1,1:3] <- NA
+
+options(warn=2)
+checkException(
+  occuMS(detformulas=detformulas, psiformulas=psiformulas,
+              phiformulas=phiformulas, data=umf_new)
+)
+options(warn=1)
+
+umf_miss <- umf
+umf_miss@yearlySiteCovs[1,1] <- NA
+checkException(
+  occuMS(detformulas=detformulas, psiformulas=psiformulas,
+              phiformulas=phiformulas, data=umf_miss)
+)
+
+}
+
+test.occuMS.dynamic.condbinom <- function(){
+
+set.seed(123)
+N <- 100
+J <- 3
+S <- 3
+T <- 2
+
+site_covs <- matrix(rnorm(N*2),ncol=2)
+obs_covs <- matrix(rnorm(N*J*T*2),ncol=2)
+yearly_site_covs <- matrix(rnorm(N*T*2),ncol=2)
+
+a1 <- -0.5; b1 <- 1; a2 <- -0.6; b2 <- -0.7
+phi0 <- 0.7; phi1 <- -0.5; phi2 <- 1.2
+R0 <- 0.3; R1 <- -0.3; R2 <- 0.5
+p11 <- 0.4; p12 <- 0.6; p22 <- 0.8
+
+psi_mat <- matrix(NA,ncol=S,nrow=N)
+for (n in 1:N){
+  psi_mat[n,2] <- plogis(a1+b1*site_covs[n,1])
+  psi_mat[n,3] <- plogis(a2+b2*site_covs[n,2])
+}
+
+psi_bin <- matrix(NA,nrow=nrow(psi_mat),ncol=ncol(psi_mat))
+psi_bin[,1] <- 1-psi_mat[,2]
+psi_bin[,2] <- (1-psi_mat[,3])*psi_mat[,2]
+psi_bin[,3] <- psi_mat[,2]*psi_mat[,3]
+
+z <- rep(NA,N)
+for (n in 1:N){
+  z[n] <- sample(0:2, 1, replace=T, prob=psi_bin[n,])
+}
+
+y_cb <- matrix(0,nrow=N,ncol=J*T)
+z_new <- rep(NA,N)
+for (n in 1:N){
+
+  phi <- matrix(NA,nrow=S,ncol=S)
+  phi[1,] <- c(1-plogis(phi0),plogis(phi0)*(1-plogis(R0)),plogis(phi0)*plogis(R0))
+  phi[2,] <- c(1-plogis(phi1),plogis(phi1)*(1-plogis(R1)),plogis(phi1)*plogis(R1))
+  phi[3,] <- c(1-plogis(phi2),plogis(phi2)*(1-plogis(R2)),plogis(phi2)*plogis(R2))
+  
+
+  #p11 = p1; p12 = p2; p22 = delta
+  probs <- switch(z[n]+1,
+                  c(1,0,0),
+                  c(1-p11,p11,0),
+                  c(1-p12,p12*(1-p22),p12*p22))
+  
+  if(z[n]>0){
+    y_cb[n,1:J] <- sample(0:2, J, replace=T, probs)
+  }
+
+  for (i in 2:T){
+    phi_t <- switch(z[n]+1,
+                    phi[1,],phi[2,],phi[3,])
+    z_new[n] <- sample(0:2, 1, prob=phi_t)
+    if(z_new[n]>0){
+      probs <- switch(z_new[n]+1,
+                      c(1,0,0),
+                      c(1-p11,p11,0),
+                      c(1-p12,p12*(1-p22),p12*p22))
+      y_cb[n,((T-1)*J+1):(T*J)] <- sample(0:2, J, replace=T, probs)
+    }
+  }
+
+}
+
+umf <- unmarkedFrameOccuMS(y=y_cb,siteCovs=as.data.frame(site_covs),
+                           obsCovs=as.data.frame(obs_covs),
+                           #yearlySiteCovs=as.data.frame(yearly_site_covs),
+                           numPrimary=2)
+
+stateformulas <- c('~V1','~V2')
+detformulas <- c('~V1','~1','~1')
+phiformulas<- rep('~1',6)
+
+fit_cbC <- occuMS(detformulas=detformulas, psiformulas=stateformulas, 
+              phiformulas=phiformulas,
+              parameterization='condbinom',
+              data=umf, se=T,engine="C")
+
+checkEqualsNumeric(length(coef(fit_cbC)),14)
+checkEqualsNumeric(fit_cbC@AIC,820.0645,tol=1e-4)
+
+fit_cbR <- occuMS(detformulas=detformulas, psiformulas=stateformulas, 
+              phiformulas=phiformulas,
+              parameterization='condbinom',
+              data=umf, se=T,engine="R")
+checkEqualsNumeric(fit_cbC@AIC,fit_cbR@AIC,tol=1e-4)
+
+set.seed(123)
+fit_sim <- simulate(fit_cbC,nsim=2)
+checkEqualsNumeric(fit_sim[[1]][1,],c(0,0,0,2,1,0))
+
+pr_phi <- predict(fit_cbC,'phi')
+pr_phi <- sapply(pr_phi, function(x) x$Predicted[1])
+checkEqualsNumeric(pr_phi,
+                   c(0.72966,0.54682,0.728597,0.3856194,
+                     0.999950,0.5841778),tol=1e-4)
+
+}
