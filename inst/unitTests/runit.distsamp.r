@@ -124,7 +124,7 @@ test.distsamp.point.keyfuns <- function()
     checkEqualsNumeric(coef(fm.halfnorm),
                        coef(update(fm.halfnorm, engine="R")))
     checkEqualsNumeric(coef(fm.exp),
-                       coef(update(fm.exp, engine="R")))
+                       coef(update(fm.exp, engine="R")),tol=1e-5)
     checkEqualsNumeric(coef(fm.halfnorm),
                        coef(update(fm.halfnorm, engine="R")))
     checkEqualsNumeric(coef(fm.halfnorm),
@@ -152,5 +152,5 @@ test.distsamp.getP <- function() {
   checkEqualsNumeric(getP(unif)[1,], c(0.1111111, 0.3333333, 0.5555556), 
                      tol=1e-5)
   checkEqualsNumeric(getP(haz)[1,], c(0.04946332, 0.02826854, 0.01589744), 
-                     tol=1e-5)
+                     tol=1e-3)
 }
