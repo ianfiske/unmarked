@@ -120,6 +120,12 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
         fitList <- object@fits
         ese <- lapply(fitList, predict, type = type, newdata = newdata,
             backTransform = backTransform, level=level)
+
+        if(class(newdata) == "RasterStack"){
+          if(!require(raster)) stop("raster package is required")
+          ese <- lapply(ese, as.matrix)
+        }
+
         E <- sapply(ese, function(x) x[,"Predicted"])
         SE <- sapply(ese, function(x) x[,"SE"])
         lower <- sapply(ese, function(x) x[,"lower"])
@@ -133,6 +139,24 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
         out <- data.frame(Predicted = parav, SE = seav)
         out$lower <- as.numeric(lower %*% wts)
         out$upper <- as.numeric(upper %*% wts)
+
+        if(class(newdata) == "RasterStack"){
+          E.mat <- matrix(out[,1], dim(newdata)[1], dim(newdata)[2], byrow=TRUE)
+          E.raster <- raster::raster(E.mat)
+          raster::extent(E.raster) <- raster::extent(newdata)
+          out.rasters <- list(E.raster)
+          for(i in 2:ncol(out)) {
+            i.mat <- matrix(out[,i], dim(newdata)[1], dim(newdata)[2], byrow=TRUE)
+            i.raster <- raster::raster(i.mat)
+            raster::extent(i.raster) <- raster::extent(newdata)
+            out.rasters[[i]] <- i.raster
+          }
+          out.stack <- stack(out.rasters)
+          names(out.stack) <- colnames(out)
+          raster::crs(out.stack) <- raster::crs(newdata)
+          return(out.stack)
+        }
+
         if(appendData) {
             if(missing(newdata))
                 newdata <- getData(object@fits[[1]])
