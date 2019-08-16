@@ -230,7 +230,8 @@ detformulas <- c('~V1','~1','~1')
 stateformulas <- c('~V1','~V2')
 
 #Fit model
-fit <- occuMS(detformulas, stateformulas, umf, parameterization="multinomial")
+fit <- occuMS(detformulas, stateformulas, data=umf,
+              parameterization="multinomial")
 
 #Look at results
 fit
@@ -238,13 +239,14 @@ fit
 cbind(truth=truth,estimate=coef(fit))
 
 #Generate predicted values
-lapply(predict(fit,type='state'),head)
+lapply(predict(fit,type='psi'),head)
 lapply(predict(fit,type='det'),head)
 
 #Fit a null model
 detformulas <- rep('~1',3)
 stateformulas <- rep('~1',2)
-fit_null <- occuMS(detformulas, stateformulas, umf, parameterization="multinomial")
+fit_null <- occuMS(detformulas, stateformulas, data=umf,
+                   parameterization="multinomial")
 
 #Compare fits
 modSel(fitList(fit,fit_null))
@@ -304,7 +306,8 @@ detformulas <- c('~V1','~1','~1')
 stateformulas <- c('~V1','~V2')
 
 #Fit model
-fit_cb <- occuMS(detformulas, stateformulas, umf2, parameterization='condbinom')
+fit_cb <- occuMS(detformulas, stateformulas, data=umf2,
+                 parameterization='condbinom')
 
 #Look at results
 fit_cb
@@ -312,7 +315,7 @@ fit_cb
 cbind(truth=truth_cb,estimate=coef(fit_cb))
 
 #Generate predicted values
-lapply(predict(fit_cb,type='state'),head)
+lapply(predict(fit_cb,type='psi'),head)
 lapply(predict(fit_cb,type='det'),head)
 
 
