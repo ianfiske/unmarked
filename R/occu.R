@@ -1,12 +1,15 @@
 
 #  Fit the occupancy model of MacKenzie et al (2002).
 
-occu <- function(formula, data, knownOcc = numeric(0), starts,
-                 method = "BFGS", se = TRUE, engine = c("C", "R"), ...) {
+occu <- function(formula, data, knownOcc = numeric(0), 
+                 linkPsi = c("logit", "cloglog"), starts, method = "BFGS", 
+                 se = TRUE, engine = c("C", "R"), ...) {
+    
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
     engine <- match.arg(engine, c("C", "R"))
+    linkPsi <- match.arg(linkPsi, c("logit","cloglog"))
 
     designMats <- getDesign(data, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
@@ -44,6 +47,15 @@ occu <- function(formula, data, knownOcc = numeric(0), starts,
 
     ## need to add offsets !!!!!!!!!!!!!!
     ## and fix bug causing crash when NAs are in V
+    
+    linkFunc <- plogis
+    invlink <- "logistic"
+    linkGrad <- "logistic.grad"
+    if(linkPsi == "cloglog"){
+      linkFunc <- cloglog
+      invlink <- "cloglog"
+      linkGrad <- "cloglog.grad"
+    }
 
     if(identical(engine, "C")) {
         nll <- function(params) {
@@ -51,12 +63,12 @@ occu <- function(formula, data, knownOcc = numeric(0), starts,
             beta.p <- params[(nOP+1):nP]
             .Call("nll_occu",
                   yvec, X, V, beta.psi, beta.p, nd, knownOccLog, navec,
-                  X.offset, V.offset,
+                  X.offset, V.offset, linkPsi,
                   PACKAGE = "unmarked")
         }
     } else {
         nll <- function(params) {
-            psi <- plogis(X %*% params[1 : nOP] + X.offset)
+            psi <- linkFunc(X %*% params[1 : nOP] + X.offset)
             psi[knownOccLog] <- 1
             pvec <- plogis(V %*% params[(nOP + 1) : nP] + V.offset)
             cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
@@ -83,8 +95,8 @@ occu <- function(formula, data, knownOcc = numeric(0), starts,
     state <- unmarkedEstimate(name = "Occupancy", short.name = "psi",
                               estimates = ests[1:nOP],
                               covMat = as.matrix(covMat[1:nOP,1:nOP]),
-                              invlink = "logistic",
-                              invlinkGrad = "logistic.grad")
+                              invlink = invlink,
+                              invlinkGrad = linkGrad)
 
     det <- unmarkedEstimate(name = "Detection", short.name = "p",
                             estimates = ests[(nOP + 1) : nP],

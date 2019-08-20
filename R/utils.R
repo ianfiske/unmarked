@@ -62,6 +62,15 @@ identLink <- function(x) x
 
 identLinkGrad <- function(x) 1
 
+#Complimentary log log link
+cloglog <- function(x){
+  1-exp(-exp(x))
+}
+
+cloglog.grad <- function(x){
+  exp(-exp(x))
+}
+
 ## use logarithms to vectorize row-wise products
 ## this speeds things up a LOT (vs. apply(x,1,prod))
 rowProds <- function(x, na.rm = FALSE)
