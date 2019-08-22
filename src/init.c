@@ -15,7 +15,7 @@ extern SEXP nll_gmultmix( SEXP betaR, SEXP mixtureR, SEXP pi_funR, SEXP XlamR, S
 extern SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_, SEXP Xlam_, SEXP Xlam_offset_, SEXP A_, SEXP Xphi_, SEXP Xphi_offset_, SEXP Xdet_, SEXP Xdet_offset_, SEXP db_, SEXP a_, SEXP u_, SEXP w_, SEXP k_, SEXP lfac_k_, SEXP lfac_kmyt_, SEXP kmyt_, SEXP y_, SEXP naflag_, SEXP fin_, SEXP nP_, SEXP nLP_, SEXP nPP_, SEXP nDP_, SEXP nSP_, SEXP nOP_, SEXP rel_tol_) ;
 extern SEXP nll_gpcount( SEXP y_, SEXP Xlam_, SEXP Xphi_, SEXP Xp_, SEXP beta_lam_, SEXP beta_phi_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xphi_offset_, SEXP Xp_offset_, SEXP M_, SEXP mixture_, SEXP numPrimary_ ) ;
 extern SEXP nll_multinomPois( SEXP betaR, SEXP pi_funR, SEXP XlamR, SEXP Xlam_offsetR, SEXP XdetR, SEXP Xdet_offsetR, SEXP yR, SEXP navecR, SEXP nPr, SEXP nAPr ) ;
-extern SEXP nll_occu( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR );
+extern SEXP nll_occu( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR, SEXP link_psiR);
 extern SEXP nll_occuPEN( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR, SEXP penaltyR );
 extern SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR, SEXP betaR, SEXP dmDetR, SEXP dStartR, SEXP dStopR, SEXP yR, SEXP yStartR, SEXP yStopR, SEXP Iy0r, SEXP zR, SEXP fixed0r);
 extern SEXP nll_occuMS( SEXP beta_, SEXP y_, SEXP dm_state_, SEXP dm_phi_, SEXP dm_det_, SEXP sind_, SEXP pind_, SEXP dind_, SEXP prm_, SEXP S_, SEXP T_, SEXP J_, SEXP N_, SEXP naflag_, SEXP guide_);
@@ -32,7 +32,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"nll_gdistsamp",   (DL_FUNC) &nll_gdistsamp,   29},
     {"nll_gpcount",     (DL_FUNC) &nll_gpcount,     14},
     {"nll_multinomPois",(DL_FUNC) &nll_multinomPois,10},
-    {"nll_occu",        (DL_FUNC) &nll_occu,        10},
+    {"nll_occu",        (DL_FUNC) &nll_occu,        11},
     {"nll_occuPEN",     (DL_FUNC) &nll_occuPEN,     11},
     {"nll_occuMulti",   (DL_FUNC) &nll_occuMulti,   14},
     {"nll_occuMS",      (DL_FUNC) &nll_occuMS,      15},

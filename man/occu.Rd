@@ -4,8 +4,8 @@
 
 \title{Fit the MacKenzie et al. (2002) Occupancy Model}
 
-\usage{occu(formula, data, knownOcc=numeric(0), starts, method="BFGS",
-    se=TRUE, engine=c("C", "R"), ...)}
+\usage{occu(formula, data, knownOcc=numeric(0), linkPsi=c("logit", "cloglog"),
+            starts, method="BFGS", se=TRUE, engine=c("C", "R"), ...)}
 
 \arguments{
     \item{formula}{Double right-hand side formula describing covariates of
@@ -14,6 +14,10 @@
     \item{knownOcc}{Vector of sites that are known to be occupied. These
     should be supplied as row numbers of the y matrix, eg, c(3,8) if
     sites 3 and 8 were known to be occupied a priori.}
+    \item{linkPsi}{Link function for the occupancy model. Options are  
+      \code{"logit"} for the standard occupancy model or \code{"cloglog"} 
+      for the complimentary log-log link, which relates occupancy
+      to site-level abundance. See details.}
     \item{starts}{Vector of parameter starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{Logical specifying whether or not to compute standard
@@ -42,15 +46,29 @@ The observation process is modeled as
 
 \deqn{y_{ij}|z_i \sim Bernoulli(z_i p_{ij})}{y_ij | z_i ~ Bernoulli(z_i  * p_ij)}
 
-Covariates of \eqn{\psi_i}{psi_i} and \eqn{p_{ij}}{p_ij} are modeled
+By default, covariates of \eqn{\psi_i}{psi_i} and \eqn{p_{ij}}{p_ij} are modeled
 using the logit link according to the \code{formula} argument.  The formula is a double right-hand sided formula
 like \code{~ detform ~ occform} where \code{detform} is a formula for the detection process and \code{occform} is a
 formula for the partially observed occupancy state.  See \link{formula} for details on constructing model formulae
-in \R.}
+in \R.
+
+When \code{linkPsi = "cloglog"}, the complimentary log-log link 
+function is used for \eqn{psi} instead of the logit link. The cloglog link
+relates occupancy probability to the intensity parameter of an underlying
+Poisson process (Kery and Royle 2016). Thus, if abundance at a site is 
+can be modeled as \eqn{N_i ~ Poisson(\lambda_i)}, where 
+\eqn{log(\lambda_i) = \alpha + \beta*x}, then presence/absence data at the 
+site can be modeled as \eqn{Z_i ~ Binomial(\psi_i)} where 
+\eqn{cloglog(\psi_i) = \alpha + \beta*x}. 
+
+}
 
 \value{unmarkedFitOccu object describing the model fit.}
 
 \references{
+
+Kery, Marc, and J. Andrew Royle. 2016. \emph{Applied Hierarchical Modeling in
+  Ecology}, Volume 1. Academic Press. 
 
 MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
   J. Andrew Royle, and C. A. Langtimm. 2002. Estimating Site Occupancy Rates
