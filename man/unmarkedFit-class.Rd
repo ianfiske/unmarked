@@ -42,6 +42,7 @@
 \alias{unmarkedFitGMM-class}
 \alias{unmarkedFitOccuMulti-class}
 \alias{unmarkedFitOccuMS-class}
+\alias{unmarkedFitOccuTTD-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}

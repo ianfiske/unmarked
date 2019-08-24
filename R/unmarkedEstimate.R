@@ -126,7 +126,8 @@ setMethod("summary", signature(object = "unmarkedEstimate"),
     invlink <- object@invlink
     link <- switch(invlink,
                    exp = "log",
-                   logistic = "logit")
+                   logistic = "logit",
+                   cloglog = "clogog")
     cat(object@name, " (", link, "-scale)", ":\n", sep="")
     outDF <- data.frame(Estimate = ests, SE = SEs, z = Z, "P(>|z|)" = p,
                         check.names = FALSE)

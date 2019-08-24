@@ -98,6 +98,14 @@ setClass("unmarkedFitOccuMS",
             parameterization = "character"),
          contains = "unmarkedFit")
 
+setClass("unmarkedFitOccuTTD",
+    representation(
+        psiformula = "formula",
+        gamformula = "formula",
+        epsformula = "formula",
+        detformula = "formula"),
+    contains = "unmarkedFit")
+
 setClass("unmarkedFitMPois",
     contains = "unmarkedFit")
 
