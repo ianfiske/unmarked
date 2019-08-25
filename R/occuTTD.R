@@ -53,8 +53,8 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
   occParms <- colnames(W); nOP <- ncol(W)
   psi_inds <- 1:nOP
   
-  gamParms <- NULL; nGP <- 0
-  epsParms <- NULL; nEP <- 0
+  gamParms <- NULL; nGP <- 0; col_inds <- c(0,0)
+  epsParms <- NULL; nEP <- 0; ext_inds <- c(0,0)
   if(T>1){
     gamParms <- colnames(X.gam); nGP <- ncol(X.gam)
     epsParms <- colnames(X.eps); nEP <- ncol(X.eps)
@@ -127,10 +127,16 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
   }
 
   nll_C <- function(params){
-    return(0)
+    .Call("nll_occuTTD",
+          params, yvec, delta, W, V, X.gam, X.eps,
+          range(psi_inds)-1, range(det_inds)-1,
+          range(col_inds)-1, range(ext_inds)-1,
+          linkPsi, ttdDist, N, R, T, J, naflag,
+          PACKAGE = "unmarked")
   }
-
-  nll <- nll_R
+  
+  nll <- nll_C
+  if(engine == "R") nll <- nll_R
   
   #Run optim()-----------------------------------------------------------------
   if(!missing(starts) && length(starts) != nP)
