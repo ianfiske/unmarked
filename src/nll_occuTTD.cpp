@@ -23,8 +23,8 @@ using namespace arma;
 
   mat get_phi(rowvec phi_raw){
     mat out(2,2);
-    out.row(0) = phi_raw.subvec(1,2);
-    out.row(1) = phi_raw.subvec(3,4);
+    out.row(0) = phi_raw.subvec(0,1);
+    out.row(1) = phi_raw.subvec(2,3);
     return(out);
   }
 

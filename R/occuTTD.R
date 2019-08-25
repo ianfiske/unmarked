@@ -45,7 +45,9 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
   #Reformat data for likelihood
   yvec <- as.numeric(t(y))
   naflag <- as.numeric(is.na(yvec))
-  ymax <- as.numeric(t(data@surveyLength))
+  surveyLength <- data@surveyLength
+  if(length(removed>0)) surveyLength <- surveyLength[-removed,]
+  ymax <- as.numeric(t(surveyLength))
   delta <- as.numeric(yvec<ymax)
    
   #Organize parameters---------------------------------------------------------
@@ -56,6 +58,11 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
   gamParms <- NULL; nGP <- 0; col_inds <- c(0,0)
   epsParms <- NULL; nEP <- 0; ext_inds <- c(0,0)
   if(T>1){
+
+    #Remove final year from col/ext design matrices
+    X.gam <- as.matrix(X.gam[-seq(T,N*T,by=T),,drop=FALSE])
+    X.eps <- as.matrix(X.eps[-seq(T,N*T,by=T),,drop=FALSE])
+
     gamParms <- colnames(X.gam); nGP <- ncol(X.gam)
     epsParms <- colnames(X.eps); nEP <- ncol(X.eps)
     col_inds <- (nOP+1):(nOP+nGP)
@@ -163,11 +170,11 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
                           invlink = invlink,
                           invlinkGrad = linkGrad)
   
-  det <- unmarkedEstimate(name = "Detection", short.name = "p",
+  det <- unmarkedEstimate(name = "Detection", short.name = "lam",
                           estimates = ests[det_inds],
                           covMat = as.matrix(covMat[det_inds,det_inds]),
-                          invlink = "logistic",
-                          invlinkGrad = "logistic.grad")
+                          invlink = "exp",
+                          invlinkGrad = "exp")
 
   if(T>1){
     col <- unmarkedEstimate(name = "Colonization", short.name = "col",
