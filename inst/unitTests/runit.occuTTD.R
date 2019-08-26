@@ -152,6 +152,25 @@ test.occuTTD.singleseason <- function(){
 
   checkEqualsNumeric(coef(fitR), coef(fitC), tol=1e-6)
   
+  #Check predict
+  checkEqualsNumeric(as.numeric(predict(fitC, 'psi')[4,]), 
+                     c(0.9203, 0.06757,0.381416,0.9999), tol=1e-4)
+  checkEqualsNumeric(as.numeric(predict(fitC, 'det')[1,]),
+                     c(29.8237, 3.1514,24.2447,36.6866), tol=1e-4)
+  checkEqualsNumeric(as.numeric(predict(fitC, 'det', censor=T)[1,]),
+                     c(10, NA, NA, NA))
+  checkException(predict(fitC, 'col'))
+
+  #Check getP
+  gp <- getP(fitC)
+  checkEqualsNumeric(dim(gp), c(500,2))
+  checkEqualsNumeric(gp[1,], c(29.8237, 23.34352),tol=1e-4)
+
+  #Check fitted
+  checkException(fitted(fitC))
+  #Check residuals
+  checkException(residuals(fitC))
+
   #Check site is retained when only one observation is missing
   ttd_na <- ttd; ttd_na[1,1] <- NA
   umf_na <- unmarkedFrameOccuTTD(y=ttd_na, Tmax, siteCovs=scovs,

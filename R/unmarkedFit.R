@@ -1668,6 +1668,61 @@ setMethod("predict", "unmarkedFitOccuMS",
   out
 })
 
+
+setMethod("predict", "unmarkedFitOccuTTD",
+  function(object, type, newdata, backTransform = TRUE, 
+           na.rm = TRUE, appendData = FALSE, 
+           level=0.95, censor = FALSE, ...){
+
+  if(missing(newdata) || is.null(newdata)){
+    no_newdata <- TRUE
+    newdata <- getData(object)
+  } else {
+    no_newdata <- FALSE
+  }
+  
+  cls <- class(newdata)[1]
+  allow <- c("unmarkedFrameOccuTTD", "data.frame", "RasterStack")
+  if(!cls %in% allow){
+    stop(paste("newdata should be class:",paste(allow, collapse=", ")))
+  }
+
+  #Check type
+  allow_types <- names(object@estimates@estimates)
+  if(!type %in% allow_types){
+    stop(paste("type must be one of",paste(allow_types, collapse=", ")))
+  }
+
+  #Allow passthrough to colext predict method
+  new_obj <- object
+  class(new_obj)[1] <- "unmarkedFitColExt"
+  if(cls == "unmarkedFrameOccuTTD"){
+    class(newdata)[1] <- "unmarkedMultFrame"
+  }
+
+  out <- predict(new_obj, type=type, newdata=newdata, 
+                 backTransform=backTransform, na.rm=na.rm, 
+                 appendData=appendData, level=level, ...)
+  
+  if(type == "det" & censor & no_newdata) {
+    tmax <- getData(object)@surveyLength
+    
+    if(na.rm){
+      rem <- object@sitesRemoved
+      if(length(rem)>0) tmax <- tmax[-rem, ]
+    }
+
+    tmax <- as.numeric(t(tmax)) 
+    censored <- out$Predicted >= tmax
+    out$Predicted <- ifelse(censored, tmax, out$Predicted)
+    out$SE <- ifelse(censored, NA, out$SE)
+    out$lower <- ifelse(censored, NA, out$lower)
+    out$upper <- ifelse(censored, NA, out$upper)
+  }
+
+  out
+})
+
 # ---------------------- coef, vcov, and SE ------------------------------
 
 
@@ -2231,6 +2286,10 @@ setMethod("fitted", "unmarkedFitGMM",
 })
 
 
+setMethod("fitted", "unmarkedFitOccuTTD", function(object, na.rm = FALSE)
+{
+  stop("Not implemented for occuTTD at this time", call.=FALSE)
+})
 
 
 ## # Identical to method for unmarkedFitGMM. Need to fix class structure
@@ -2803,6 +2862,21 @@ setMethod("getP", "unmarkedFitOccuMS", function(object)
   N <- nrow(object@data@y)
   pred <- predict(object, 'det', se.fit=F)
   lapply(pred, function(x) matrix(x$Predicted, nrow=N, ncol=J, byrow=T))
+})
+
+setMethod("getP", "unmarkedFitOccuTTD", function(object, na.rm = TRUE, 
+                                                 censor=FALSE)
+{
+  J <- ncol(object@data@y)
+  N <- nrow(object@data@y)
+  
+  if(na.rm){
+    rem <- object@sitesRemoved
+    N <- N - length(rem)
+  }
+
+  pred <- predict(object, type='det', na.rm=na.rm, censor=censor)$Predicted
+  matrix(pred, nrow=N, ncol=J, byrow=T)
 })
 
 setMethod("getFP", "unmarkedFitOccuFP", function(object, na.rm = TRUE)

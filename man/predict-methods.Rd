@@ -6,6 +6,7 @@
 \alias{predict,unmarkedFitOccuFP-method}
 \alias{predict,unmarkedFitOccuMulti-method}
 \alias{predict,unmarkedFitOccuMS-method}
+\alias{predict,unmarkedFitOccuTTD-method}
 \alias{predict,unmarkedFitPCount-method}
 \alias{predict,unmarkedFitColExt-method}
 \alias{predict,unmarkedFitGMM-method}
