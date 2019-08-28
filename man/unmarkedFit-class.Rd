@@ -23,12 +23,14 @@
 \alias{residuals,unmarkedFitOccuFP-method}
 \alias{residuals,unmarkedFitOccuRN-method}
 \alias{residuals,unmarkedFitOccuMulti-method}
+\alias{residuals,unmarkedFitOccuTTD-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
 \alias{update,unmarkedFitPCO-method}
 \alias{update,unmarkedFitGMM-method}
 \alias{update,unmarkedFitOccuMulti-method}
 \alias{update,unmarkedFitOccuMS-method}
+\alias{update,unmarkedFitOccuTTD-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}

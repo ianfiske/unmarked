@@ -34,7 +34,7 @@ SEXP nll_occuTTD( SEXP beta_, SEXP y_, SEXP delta_,
     SEXP W_, SEXP V_, SEXP Xgam_, SEXP Xeps_, 
     SEXP pind_, SEXP dind_, SEXP cind_, SEXP eind_, 
     SEXP lpsi_, SEXP tdist_,
-    SEXP N_, SEXP R_, SEXP T_, SEXP J_,
+    SEXP N_, SEXP T_, SEXP J_,
     SEXP naflag_){
 
   //Inputs
@@ -50,7 +50,6 @@ SEXP nll_occuTTD( SEXP beta_, SEXP y_, SEXP delta_,
   const std::string tdist = as<std::string>(tdist_);
 
   int N = as<int>(N_);
-  int R = as<int>(R_);
   int T = as<int>(T_);
   int J = as<int>(J_);
   int ys = y.size();
@@ -71,12 +70,11 @@ SEXP nll_occuTTD( SEXP beta_, SEXP y_, SEXP delta_,
   const mat psi = join_rows(1-raw_psi, raw_psi);
 
   //Get lambda values
-  const vec lam = 1 / exp(V * beta.subvec(dind(0), dind(1)));
-  double k = 1;
-
+  const vec lam = exp(V * beta.subvec(dind(0), dind(1)));
+  
   vec e_lamt(ys); 
   if(tdist == "weibull"){
-    k = exp(beta(beta.size() - 1));
+    double k = exp(beta(beta.size() - 1));
     for(int i=0; i<ys; i++){
       e_lamt(i) = pow(k*lam(i)*pow(lam(i)*y(i),(k-1)),delta(i)) *
           exp(-1*pow(lam(i)*y(i),k));

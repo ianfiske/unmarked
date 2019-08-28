@@ -1672,7 +1672,7 @@ setMethod("predict", "unmarkedFitOccuMS",
 setMethod("predict", "unmarkedFitOccuTTD",
   function(object, type, newdata, backTransform = TRUE, 
            na.rm = TRUE, appendData = FALSE, 
-           level=0.95, censor = FALSE, ...){
+           level=0.95, ...){
 
   if(missing(newdata) || is.null(newdata)){
     no_newdata <- TRUE
@@ -1700,27 +1700,10 @@ setMethod("predict", "unmarkedFitOccuTTD",
     class(newdata)[1] <- "unmarkedMultFrame"
   }
 
-  out <- predict(new_obj, type=type, newdata=newdata, 
+  predict(new_obj, type=type, newdata=newdata, 
                  backTransform=backTransform, na.rm=na.rm, 
                  appendData=appendData, level=level, ...)
   
-  if(type == "det" & censor & no_newdata) {
-    tmax <- getData(object)@surveyLength
-    
-    if(na.rm){
-      rem <- object@sitesRemoved
-      if(length(rem)>0) tmax <- tmax[-rem, ]
-    }
-
-    tmax <- as.numeric(t(tmax)) 
-    censored <- out$Predicted >= tmax
-    out$Predicted <- ifelse(censored, tmax, out$Predicted)
-    out$SE <- ifelse(censored, NA, out$SE)
-    out$lower <- ifelse(censored, NA, out$lower)
-    out$upper <- ifelse(censored, NA, out$upper)
-  }
-
-  out
 })
 
 # ---------------------- coef, vcov, and SE ------------------------------
@@ -2288,7 +2271,56 @@ setMethod("fitted", "unmarkedFitGMM",
 
 setMethod("fitted", "unmarkedFitOccuTTD", function(object, na.rm = FALSE)
 {
-  stop("Not implemented for occuTTD at this time", call.=FALSE)
+
+  N <- nrow(object@data@y)
+  T <- object@data@numPrimary
+  J <- ncol(object@data@y)/T
+
+  #Get predicted values
+  psi <- predict(object, 'psi', na.rm=FALSE)$Predicted
+  psi <- cbind(1-psi, psi)  
+  est_p <- getP(object)
+  est_p <- as.numeric(t(est_p))
+  est_p <- cbind(1-est_p, est_p)
+  
+  if(T>1){
+    p_col <- predict(object, 'col', na.rm=FALSE)$Predicted
+    p_ext <- predict(object, 'ext', na.rm=FALSE)$Predicted
+    rem_seq <- seq(T, length(p_col), T)
+    p_col <- p_col[-rem_seq]
+    p_ext <- p_ext[-rem_seq]
+    phi <- cbind(1-p_col, p_col, p_ext, 1-p_ext)
+  }
+  
+  ## first compute latent probs
+  state <- array(NA, c(2, T, N))
+  state[1:2,1,] <- t(psi)
+  
+  if(T>1){
+    phi_ind <- 1
+    for(n in 1:N) {
+      for(t in 2:T) {
+        phi_mat <- matrix(phi[phi_ind,], nrow=2, byrow=TRUE)
+        state[,t,n] <- phi_mat %*% state[,t-1,n]
+        phi_ind <- phi_ind + 1
+      }
+    }
+  }
+
+  ## then compute obs probs
+  obs <- array(NA, c(J, T, N))
+  p_ind <- 1
+  for(n in 1:N) {
+    for(t in 1:T) {
+      for(j in 1:J) {
+        pmat <- matrix(c(1,0, est_p[p_ind,]), nrow=2, byrow=TRUE)
+        obs[j,t,n] <- (state[,t,n] %*% pmat)[2] #prob y=1 
+        p_ind <- p_ind + 1
+      }
+    }
+  }
+  
+  matrix(obs, N, J*T, byrow=TRUE)
 })
 
 
@@ -2456,6 +2488,43 @@ setMethod("update", "unmarkedFitOccuMS",
     } else {
       call[["phiformulas"]] <- object@phiformulas
     }
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
+    if (length(extras) > 0) {
+        existing <- !is.na(match(names(extras), names(call)))
+        for (a in names(extras)[existing])
+            call[[a]] <- extras[[a]]
+        if (any(!existing)) {
+            call <- c(as.list(call), extras[!existing])
+            call <- as.call(call)
+            }
+        }
+    if (evaluate)
+        eval(call, parent.frame(2))
+    else call
+})
+
+setMethod("update", "unmarkedFitOccuTTD",
+    function(object, psiformula, gammaformula, epsilonformula,detformula, 
+             ..., evaluate = TRUE)
+{
+
+    call <- object@call
+    if (is.null(call))
+        stop("need an object with call slot")
+    if(!missing(psiformula)){
+      call[["psiformula"]] <- psiformula
+    } 
+    if(!missing(gammaformula)){
+      call[["gammaformula"]] <- gammaformula
+    } 
+    if(!missing(epsilonformula)){
+      call[["epsilonformula"]] <- epsilonformula
+    } 
+    if(!missing(detformula)){
+      call[["detformula"]] <- detformula
+    } 
+    
     extras <- match.call(call=sys.call(-1),
                          expand.dots = FALSE)$...
     if (length(extras) > 0) {
@@ -2661,6 +2730,14 @@ setMethod("residuals", "unmarkedFitOccuMulti", function(object, ...) {
   res_list
 })
 
+setMethod("residuals", "unmarkedFitOccuTTD", function(object, ...) {
+  tmax <- object@data@surveyLength
+  yraw <- object@data@y
+  y <- ifelse(yraw<tmax,1,0)
+  e <- fitted(object)
+  y - e
+})
+
 setMethod("plot", c(x = "unmarkedFit", y = "missing"), function(x, y, ...)
 {
     r <- residuals(x)
@@ -2864,19 +2941,24 @@ setMethod("getP", "unmarkedFitOccuMS", function(object)
   lapply(pred, function(x) matrix(x$Predicted, nrow=N, ncol=J, byrow=T))
 })
 
-setMethod("getP", "unmarkedFitOccuTTD", function(object, na.rm = TRUE, 
-                                                 censor=FALSE)
+setMethod("getP", "unmarkedFitOccuTTD", function(object)
 {
-  J <- ncol(object@data@y)
-  N <- nrow(object@data@y)
   
-  if(na.rm){
-    rem <- object@sitesRemoved
-    N <- N - length(rem)
+  N <- nrow(object@data@y)  
+  lam <- predict(object, 'det', na.rm=FALSE)$Predicted
+  tmax <- as.numeric(t(object@data@surveyLength))
+  tdist <- ifelse("shape" %in% names(object@estimates), "weibull", "exp")
+  
+  not_na <- !is.na(lam)
+  est_p <- rep(NA, length(lam))
+  if(tdist == "weibull"){
+    k <- exp(coef(object)['k(k)'])
+    est_p[not_na] <- stats::pweibull(tmax[not_na], k, 1/lam[not_na])
+  } else {
+    est_p[not_na] <- stats::pexp(tmax[not_na], lam[not_na])
   }
-
-  pred <- predict(object, type='det', na.rm=na.rm, censor=censor)$Predicted
-  matrix(pred, nrow=N, ncol=J, byrow=T)
+  
+  matrix(est_p, nrow=N, byrow=TRUE) 
 })
 
 setMethod("getFP", "unmarkedFitOccuFP", function(object, na.rm = TRUE)
@@ -3769,6 +3851,71 @@ setMethod("simulate", "unmarkedFitOccuMS",
   out
 })
 
+
+setMethod("simulate", "unmarkedFitOccuTTD", 
+          function(object,  nsim = 1, seed = NULL, na.rm = FALSE)
+{
+
+  N <- nrow(object@data@y)
+  T <- object@data@numPrimary
+  J <- ncol(object@data@y)/T
+  tdist <- ifelse("shape" %in% names(object@estimates), "weibull", "exp")
+
+  #Get predicted values
+  psi <- predict(object, 'psi', na.rm=FALSE)$Predicted
+  lam <- predict(object, 'det', na.rm=FALSE)$Predicted
+  tmax <- object@data@surveyLength
+  not_na <- which(!is.na(lam))
+  
+  simlist <- list()
+  for(s in 1:nsim){
+    ttd <- rep(NA, length(lam))
+    if(tdist == "weibull"){
+      k <- exp(coef(object)['k(k)'])
+      ttd[not_na] <- stats::rweibull(length(not_na),k,1/lam[not_na]) 
+    } else {
+      ttd[not_na] <- stats::rexp(length(not_na), lam[not_na])
+    }
+    #Truncate
+    ttd <- matrix(ttd, nrow=N, byrow=T)
+    ttd[which(ttd>tmax)] <- tmax[which(ttd>tmax)] 
+  
+    if(T>1){
+      p_col <- predict(object, 'col', na.rm=FALSE)$Predicted
+      p_col <- matrix(p_col, N, T, byrow=TRUE)
+      p_ext <- predict(object, 'ext', na.rm=FALSE)$Predicted
+      p_ext <- matrix(p_ext, N, T, byrow=TRUE)
+    }
+
+    #Latent state
+    z <- matrix(NA, N, T)
+    z[,1] <- rbinom(N, 1, psi)
+
+    if(T>1){
+      for (t in 1:(T-1)){
+        z_ext <- rbinom(N, 1, 1-p_ext[,t])
+        z_col <- rbinom(N, 1, p_col[,t])
+        z[,t+1] <- ifelse(z[,t], z_ext, z_col)                               
+      }
+    }
+  
+    #Detection process
+    yout <- matrix(NA, N, J*T)
+    d_ind <- 1
+    for (t in 1:T){
+      for (j in 1:J){
+        yout[,d_ind] <- ifelse(z[,t], ttd[,d_ind], tmax[,d_ind]) 
+        d_ind <- d_ind + 1
+      }
+    }
+
+    #Add NAs
+    nas <- which(is.na(object@data@y))
+    yout[nas] <- NA
+    simlist[[s]] <- yout
+  }
+  simlist
+})
 
 setMethod("simulate", "unmarkedFitColExt",
     function(object, nsim = 1, seed = NULL, na.rm = TRUE)

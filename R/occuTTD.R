@@ -81,7 +81,7 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
     #Get occupancy and detection parameters 
     psi <- linkFunc(W %*% params[psi_inds])
     psi <- cbind(1-psi, psi)
-    lam <- 1/exp(V %*% params[det_inds])
+    lam <- exp(V %*% params[det_inds])
     
     #Simplified version of Garrard et al. 2013 eqn 5
     #Extended to Weibull
@@ -138,7 +138,7 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
           params, yvec, delta, W, V, X.gam, X.eps,
           range(psi_inds)-1, range(det_inds)-1,
           range(col_inds)-1, range(ext_inds)-1,
-          linkPsi, ttdDist, N, R, T, J, naflag,
+          linkPsi, ttdDist, N, T, J, naflag,
           PACKAGE = "unmarked")
   }
   

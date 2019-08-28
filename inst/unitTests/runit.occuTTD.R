@@ -81,9 +81,9 @@ test.occuTTD.singleseason <- function(){
 
   #Simulate detection
   Tmax <- 10
-  beta_lam <- c(1.6, -0.2, 0.7)
+  beta_lam <- c(-2, -0.2, 0.7)
   rate <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam)
-  ttd <- rexp(N, 1/rate)
+  ttd <- rexp(N, rate)
   ttd[z==0] <- Tmax
   ttd[ttd>Tmax] <- Tmax
 
@@ -97,8 +97,8 @@ test.occuTTD.singleseason <- function(){
                   data=umf, linkPsi='cloglog', ttdDist='exp',engine="C")
 
   checkEqualsNumeric(coef(fitR), coef(fitC))
-  checkEqualsNumeric(coef(fitC), c(-0.5619,0.8624,-0.7457,1.4808,
-                                   0.0211,0.4841), tol=1e-4)
+  checkEqualsNumeric(coef(fitC), c(-0.6271,0.8157,-0.5982,-2.0588,
+                                   -0.4042,1.2328), tol=1e-4)
   checkEqualsNumeric(coef(fitC), c(beta_N, beta_lam), tol=0.3)
 
   #Check weibull
@@ -111,8 +111,8 @@ test.occuTTD.singleseason <- function(){
                   engine="C")
 
   checkEqualsNumeric(coef(fitR), coef(fitC))
-  checkEqualsNumeric(coef(fitC), c(-0.6636,0.8476,-0.7021,1.2973,
-                                   0.04483,0.5944,0.0979), tol=1e-4)
+  checkEqualsNumeric(coef(fitC), c(-0.6846,0.7807,-0.5662,-1.9600,
+                                   -0.3779,1.1474,0.06856), tol=1e-4)
 
   #Check missing value handling
   ttd_na <- ttd; ttd_na[1] <- NA
@@ -127,19 +127,23 @@ test.occuTTD.singleseason <- function(){
                   engine="C")
 
   checkEqualsNumeric(coef(fit_naR), coef(fit_naC))
-  checkEqualsNumeric(fit_naC@AIC, 1225.399, tol=1e-4)
+  checkEqualsNumeric(fit_naC@AIC, 1185.15, tol=1e-4)
   checkEqualsNumeric(fit_naC@sitesRemoved, 1)
+
+  set.seed(123)
+  p <- parboot(fitC)
+  checkEqualsNumeric(p@t.star[1,], 87.90704)
 
   #Two observers-----------------------------------
   set.seed(123)
   ocovs <- data.frame(obs=rep(c('A','B'),N))
   Tmax <- 10
-  rateB <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam - 0.5)
+  rateB <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam + 0.2)
   rate2 <- as.numeric(t(cbind(rate, rateB)))
-  ttd <- rexp(N*2, 1/rate2)
-  ttd[z==0] <- Tmax
+  ttd <- rexp(N*2, rate2)
   ttd[ttd>Tmax] <- Tmax
   ttd <- matrix(ttd, nrow=N, byrow=T)
+  ttd[z==0,] <- Tmax
 
   umf <- unmarkedFrameOccuTTD(y=ttd, surveyLength=Tmax, 
                               siteCovs=scovs, obsCovs=ocovs)
@@ -150,26 +154,28 @@ test.occuTTD.singleseason <- function(){
   fitC <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind+obs,
                   data=umf, linkPsi='cloglog', ttdDist='exp',engine="C")
 
-  checkEqualsNumeric(coef(fitR), coef(fitC), tol=1e-6)
+  checkEqualsNumeric(coef(fitR), coef(fitC))
   
   #Check predict
   checkEqualsNumeric(as.numeric(predict(fitC, 'psi')[4,]), 
-                     c(0.9203, 0.06757,0.381416,0.9999), tol=1e-4)
+                     c(0.7562,0.0407,0.6385,0.8588), tol=1e-4)
   checkEqualsNumeric(as.numeric(predict(fitC, 'det')[1,]),
-                     c(29.8237, 3.1514,24.2447,36.6866), tol=1e-4)
-  checkEqualsNumeric(as.numeric(predict(fitC, 'det', censor=T)[1,]),
-                     c(10, NA, NA, NA))
+                     c(0.16059,0.02349,0.12056,0.2139), tol=1e-4)
   checkException(predict(fitC, 'col'))
 
   #Check getP
   gp <- getP(fitC)
   checkEqualsNumeric(dim(gp), c(500,2))
-  checkEqualsNumeric(gp[1,], c(29.8237, 23.34352),tol=1e-4)
+  checkEqualsNumeric(gp[1,], c(0.79929,0.8679),tol=1e-4)
 
   #Check fitted
-  checkException(fitted(fitC))
+  ft <- fitted(fitC)
+  checkEqualsNumeric(dim(ft),c(500,2))
+  checkEqualsNumeric(ft[1,], c(0.17963,0.19505), tol=1e-4)
   #Check residuals
-  checkException(residuals(fitC))
+  r <- residuals(fitC)
+  checkEqualsNumeric(dim(r),c(500,2))
+  checkEqualsNumeric(r[1,], c(0.82036,0.80494), tol=1e-4)
 
   #Check site is retained when only one observation is missing
   ttd_na <- ttd; ttd_na[1,1] <- NA
@@ -209,9 +215,9 @@ test.occuTTD.singleseason <- function(){
 
   #Simulate detection
   Tmax <- 10
-  beta_lam <- c(1.6, -0.2, 0.7)
+  beta_lam <- c(-2, -0.2, 0.7)
   rate <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam)
-  ttd <- rexp(N, 1/rate)
+  ttd <- rexp(N, rate)
   ttd[z==0] <- Tmax
   ttd[ttd>Tmax] <- Tmax
 
@@ -224,8 +230,8 @@ test.occuTTD.singleseason <- function(){
                   data=umf, linkPsi='logit', ttdDist='exp',engine="C")
 
   checkEqualsNumeric(coef(fitR), coef(fitC))
-  checkEqualsNumeric(coef(fitC), c(-0.4646,0.4718,-0.8557,
-                                   2.1669,-0.2539,-0.5139), tol=1e-4)
+  checkEqualsNumeric(coef(fitC), c(-0.5102,0.67941,-0.88612,-2.1219,
+                                   -0.41504,1.3224), tol=1e-4)
 
 }
 
@@ -266,22 +272,20 @@ test.occuTTD.dynamic <- function(){
   #Simulate detection
   ocovs <- data.frame(obs=rep(c('A','B'),N*T))
   Tmax <- 10
-  beta_lam <- c(1.6, -0.2, 0.7)
+  beta_lam <- c(-2, -0.2, 0.7)
   rate <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam)
   rateB <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam - 0.5)
   #Across seasons
   rate2 <- as.numeric(t(cbind(rate, rateB, rate, rateB)))
-  ttd <- rexp(N*T*2, 1/rate2)
+  ttd <- rexp(N*T*2, rate2)
   ttd <- matrix(ttd, nrow=N, byrow=T)
   ttd[ttd>Tmax] <- Tmax
   ttd[z[,1]==0,1:2] <- Tmax
   ttd[z[,2]==0,3:4] <- Tmax
   
-
   umf <- unmarkedFrameOccuTTD(y = ttd, surveyLength = Tmax, 
                           siteCovs = scovs, obsCovs=ocovs,
                           yearlySiteCovs=ysc, numPrimary=2) 
-
 
   fit <- occuTTD(psiformula=~elev+forest,detformula=~elev+wind+obs,
                  gammaformula=~forest, epsilonformula=~elev, 
@@ -290,6 +294,18 @@ test.occuTTD.dynamic <- function(){
 
   truth <- c(beta_psi, c_b0, c_b1, e_b0, e_b1, beta_lam, -0.5)
   checkEqualsNumeric(coef(fit), truth, tol=0.1)
-  checkEqualsNumeric(fit@AIC, 45521.18,tol=1e-4)
+  checkEqualsNumeric(fit@AIC, 45037.74,tol=1e-4)
+  
+  umf_new <- umf[1:100,]
 
+  fit <- occuTTD(psiformula=~elev+forest,detformula=~elev+wind+obs,
+                 gammaformula=~forest, epsilonformula=~elev, 
+                 data=umf_new,se=T,
+                 linkPsi='logit',ttdDist='exp',engine="C")
+
+  s <- simulate(fit, nsim=2)
+  checkEqualsNumeric(length(s),2)
+  checkEqualsNumeric(dim(s[[1]]), c(100,4))
+  r <- residuals(fit)
+  checkEqualsNumeric(dim(r), c(100,4))
 }
