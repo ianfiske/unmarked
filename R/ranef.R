@@ -764,7 +764,70 @@ setMethod("ranef", "unmarkedFitPCO",
 })
 
 
+setMethod("ranef", "unmarkedFitOccuTTD",
+    function(object, ...)
+{
 
+  N <- nrow(object@data@y)
+  T <- object@data@numPrimary
+  J <- ncol(object@data@y)/T
+
+  #Get predicted values
+  psi <- predict(object, 'psi', na.rm=FALSE)$Predicted
+  psi <- cbind(1-psi, psi)  
+  p_est <- getP(object)
+
+  #Get y as binary
+  y <- object@data@y
+  tmax <- object@data@surveyLength
+  ybin <- as.numeric(y < tmax)
+  ybin <- matrix(ybin, nrow=nrow(y), ncol=ncol(y))
+  
+  if(T>1){
+    p_col <- predict(object, 'col', na.rm=FALSE)$Predicted
+    p_ext <- predict(object, 'ext', na.rm=FALSE)$Predicted
+    rem_seq <- seq(T, length(p_col), T)
+    p_col <- p_col[-rem_seq]
+    p_ext <- p_ext[-rem_seq]
+    phi <- cbind(1-p_col, p_col, p_ext, 1-p_ext)
+  }
+  
+  ## first compute latent probs
+  state <- array(NA, c(2, T, N))
+  state[1:2,1,] <- t(psi)
+  
+  if(T>1){
+    phi_ind <- 1
+    for(n in 1:N) {
+      for(t in 2:T) {
+        phi_mat <- matrix(phi[phi_ind,], nrow=2, byrow=TRUE)
+        state[,t,n] <- phi_mat %*% state[,t-1,n]
+        phi_ind <- phi_ind + 1
+      }
+    }
+  }
+
+  ## then compute obs probs
+  z <- 0:1
+  post <- array(NA_real_, c(N, 2, T))
+  colnames(post) <- z
+  p_ind <- 1
+  for(n in 1:N) {
+    for(t in 1:T) {
+      g <- rep(1,2)
+      for(j in 1:J) {
+        if(is.na(ybin[n, p_ind])|is.na(p_est[n,p_ind])) next
+        g <- g * stats::dbinom(ybin[n,p_ind],1, z*p_est[n,p_ind])
+      }
+      tmp <- state[,t,n] * g
+      post[n,,t] <- tmp/sum(tmp)
+    }
+  }
+ 
+  if(T==1) post <- post[,,1]
+
+  new("unmarkedRanef", post=post)
+})
 
 
 
