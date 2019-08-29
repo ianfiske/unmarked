@@ -124,13 +124,13 @@ scovs <- data.frame(elev=c(scale(runif(N, 0,100))),
                     wind=runif(N,0,1))
 
 beta_psi <- c(-0.69, 0.71, -0.5)
-psi <- plogis(cbind(1, scovs$elev, scovs$forest) %*% beta_psi)
+psi <- plogis(cbind(1, scovs$elev, scovs$forest) \%*\% beta_psi)
 z <- rbinom(N, 1, psi)
 
 #Simulate detection
 Tmax <- 10 #Same survey length for all observations
 beta_lam <- c(-2, -0.2, 0.7)
-rate <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam)
+rate <- exp(cbind(1, scovs$elev, scovs$wind) \%*\% beta_lam)
 ttd <- rexp(N, rate)
 ttd[z==0] <- Tmax #Censor at unoccupied sites
 ttd[ttd>Tmax] <- Tmax #Censor when ttd was greater than survey length
@@ -152,7 +152,7 @@ scovs <- data.frame(elev=c(scale(runif(N, 0,100))),
                     wind=runif(N,0,1))
 
 beta_psi <- c(-0.69, 0.71, -0.5)
-psi <- plogis(cbind(1, scovs$elev, scovs$forest) %*% beta_psi)
+psi <- plogis(cbind(1, scovs$elev, scovs$forest) \%*\% beta_psi)
 z <- matrix(NA, N, T)
 z[,1] <- rbinom(N, 1, psi)
 
@@ -180,9 +180,9 @@ for (i in 1:N){
 ocovs <- data.frame(obs=rep(c('A','B'),N*T))
 Tmax <- 10
 beta_lam <- c(-2, -0.2, 0.7)
-rate <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam)
+rate <- exp(cbind(1, scovs$elev, scovs$wind) \%*\% beta_lam)
 #Add second observer at each site
-rateB <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam - 0.5)
+rateB <- exp(cbind(1, scovs$elev, scovs$wind) \%*\% beta_lam - 0.5)
 #Across seasons
 rate2 <- as.numeric(t(cbind(rate, rateB, rate, rateB)))
 ttd <- rexp(N*T*2, rate2)
