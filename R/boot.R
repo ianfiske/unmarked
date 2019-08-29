@@ -510,7 +510,12 @@ setMethod("nonparboot", "unmarkedFitOccuPEN_CV",
 })
 
 
-
+setMethod("nonparboot", "unmarkedFitOccuTTD",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="site")
+})
 
 
 

@@ -14,6 +14,7 @@
 \alias{nonparboot,unmarkedFitGDS-method}
 \alias{nonparboot,unmarkedFitGMM-method}
 \alias{nonparboot,unmarkedFitPCO-method}
+\alias{nonparboot,unmarkedFitOccuTTD-method}
 \title{ Nonparametric bootstrapping in unmarked }
 \description{
 Call \code{nonparboot} on an unmarkedFit to obtain non-parametric

@@ -26,6 +26,7 @@
 \alias{obsToY<-}
 \alias{plot,unmarkedFrame,missing-method}
 \alias{plot,unmarkedFrameOccuMulti,missing-method}
+\alias{plot,unmarkedFrameOccuTTD,missing-method}
 \alias{powerAnalysis}
 \alias{powerAnalysis,formula,unmarkedFramePCount,numeric-method}
 \alias{projection,unmarkedFrame-method}
@@ -37,6 +38,7 @@
 \alias{unmarkedFrameOccu-class}
 \alias{unmarkedFrameOccuMulti-class}
 \alias{unmarkedFrameOccuMS-class}
+\alias{unmarkedFrameOccuTTD-class}
 \alias{unmarkedFrameMPois-class}
 \alias{unmarkedFramePCount-class}
 \alias{unmarkedFrameDS-class}
@@ -47,13 +49,17 @@
 \alias{unmarkedFrameGPC-class}
 \alias{show,unmarkedFrame-method}
 \alias{show,unmarkedFrameOccuMulti-method}
+\alias{show,unmarkedFrameOccuTTD-method}
 \alias{show,unmarkedMultFrame-method}
 \alias{summary,unmarkedFrame-method}
 \alias{summary,unmarkedFrameDS-method}
 \alias{summary,unmarkedMultFrame-method}
 \alias{summary,unmarkedFrameOccuMulti-method}
+\alias{summary,unmarkedFrameOccuTTD-method}
 \alias{[,unmarkedFrameOccuMulti,missing,numeric,missing-method}
+\alias{[,unmarkedFrameOccuTTD,missing,numeric,missing-method}
 \alias{[,unmarkedFrameOccuMS,numeric,missing,missing-method}
+\alias{[,unmarkedFrameOccuTTD,numeric,missing,missing-method}
 \alias{[,unmarkedFrameOccuMulti,numeric,missing,missing-method}
 
 \title{Class "unmarkedFrame" }
