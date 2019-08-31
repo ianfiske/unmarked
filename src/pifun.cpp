@@ -37,5 +37,7 @@ vec piFun( vec p , std::string pi_fun ){
     return(doublePiFun(p));
   } else if(pi_fun == "depDoublePiFun"){
     return(depDoublePiFun(p));
+  } else {
+    stop("Invalid pifun type");
   }
 }

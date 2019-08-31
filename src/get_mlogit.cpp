@@ -58,5 +58,7 @@ SEXP get_mlogit(SEXP lp_mat_, SEXP type_, SEXP S_, SEXP guide_){
       }
     }
     return(wrap(out));
+  } else {
+    stop("type must be 'psi','phi',or 'det'");
   }
 }

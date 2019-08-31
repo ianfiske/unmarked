@@ -51,7 +51,7 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
   }
 
   mat psi = exp( f * dmF ); 
-  for(int i = 0; i < psi.n_rows; i++){
+  for(unsigned int i = 0; i < psi.n_rows; i++){
     psi.row(i) = psi.row(i) / sum( psi.row(i) );
   }
 

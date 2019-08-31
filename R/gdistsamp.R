@@ -407,7 +407,7 @@ if(engine =="C"){
           db, a, u, w,
           k,lfac.k, lfac.kmyt,kmytC,
           y_long, naflag_long, fin,
-          nP,nLP,nPP,nDP,nSP,nOP,rel.tol,
+          nP,nLP,nPP,nDP,rel.tol,
           PACKAGE = "unmarked")
   }
 } else {
