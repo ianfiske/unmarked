@@ -1,9 +1,11 @@
 
-setGeneric("crossVal", function(object, method=c("kfold","holdout","leaveoneout"), 
-    folds=10, holdoutPct=0.25) standardGeneric("crossVal"))
+setGeneric("crossVal", function(object,  
+    method=c("Kfold","holdout","leaveOneOut"), folds=10, holdoutPct=0.25, 
+    statistic=RMSE_MAE, ...) standardGeneric("crossVal"))
 
 setClass("unmarkedCrossVal",
     representation(stats = "data.frame",
+                   summary = "data.frame",
                    method = "character",
                    folds = "numeric",
                    holdoutPct = "numeric"),
@@ -18,12 +20,13 @@ setClass("unmarkedCrossVal",
 
 #Constructor of crossVal objects
 setMethod("crossVal", "unmarkedFit", 
-          function(object, method=c("kfold","holdout","leaveoneout"), 
-                   folds=10, holdoutPct=0.25){
+          function(object, method=c("Kfold","holdout","leaveOneOut"), 
+                   folds=10, holdoutPct=0.25, 
+                   statistic=RMSE_MAE, parallel=FALSE, ...){
   
-  method <- match.arg(method, c('kfold','holdout','leaveoneout'))
+  method <- match.arg(method, c('Kfold','holdout','leaveOneOut'))
 
-  if(method=="kfold" & !is.integer(folds) & folds < 0){
+  if(method=="Kfold" & !is.integer(folds) & folds < 0){
     stop("folds must be a positive integer")
   }
   if(method=="holdout" & (holdoutPct>1 | holdoutPct<0)){
@@ -31,35 +34,44 @@ setMethod("crossVal", "unmarkedFit",
   }
 
   partitions <- switch(method,
-    kfold = partitionKfold(object, folds=folds),
+    Kfold = partitionKfold(object, folds=folds),
     holdout = partitionHoldout(object, holdoutPct=holdoutPct),
-    leaveoneout = partitionLeaveOneOut(object)
+    leaveOneOut = partitionLeaveOneOut(object)
   )
   
   n_reps <- length(partitions)
-  rmse <- mae <- numeric(n_reps)
-  for (i in 1:n_reps){
-    
-    newfit <- update(object, data=partitions[[i]]$trainData)
 
+  check_stat <- statistic(object, ...)
+  if(!is.numeric(check_stat)||is.null(names(check_stat))){
+    stop("Function provided to statistic argument must return a named numeric vector")
+  }
+
+  do_crossval <- function(i, object, partitions, statistic, ...){
+    newfit <- unmarked::update(object, data=partitions[[i]]$trainData)
     newfit@data <- partitions[[i]]$testData
     if(!is.null(attributes(newfit)$knownOcc)){
       newfit@knownOcc <- rep(FALSE,numSites(newfit@data))
     }
 
-    res <- residuals(newfit)
-    if(is.list(res)){
-      res <- unlist(res)
-    }
-
-    mae[i] <- mean(abs(res),na.rm=T)
-    rmse[i] <- sqrt(mean(res^2,na.rm=T))
-
+    statistic(newfit, ...)
   }
 
-  stats <- data.frame(rmse=rmse,mae=mae)
+  if(parallel){
+    cl <- parallel::makeCluster(detectCores()-1)
+    on.exit(parallel::stopCluster(cl))
+    stat_raw <- parallel::parLapply(cl, 1:n_reps, do_crossval, object, 
+                                     partitions, statistic, ...)
+  } else {
+    stat_raw <- lapply(1:n_reps, do_crossval, object, 
+                       partitions, statistic, ...)
+  }
+  
+  stats <- as.data.frame(do.call("rbind", stat_raw))
 
-  out <- new("unmarkedCrossVal", stats=stats, method=method,
+  summary <- data.frame(Estimate=sapply(stats, mean, na.rm=TRUE),
+                        SD=sapply(stats, sd, na.rm=TRUE))
+
+  out <- new("unmarkedCrossVal", stats=stats, summary=summary, method=method,
              folds=folds, holdoutPct=holdoutPct)
 
   out
@@ -117,42 +129,45 @@ setMethod("show", "unmarkedCrossVal", function(object)
 {
   st <- object@stats
 
-  if(object@method=='kfold'){
+  if(object@method=='Kfold'){
     cat(paste('Method: k-fold (',object@folds,' folds)\n\n',sep=''))
   } else if(object@method=='holdout'){
-    cat(paste('Method: holdout (',round(object@holdoutPct*100),'% in test set)\n\n',sep=''))
-  } else if(object@method=='leaveoneout'){
+    cat(paste('Method: holdout (',round(object@holdoutPct*100),
+              '% in test set)\n\n',sep=''))
+  } else if(object@method=='leaveOneOut'){
     cat('Method: leave-one-out\n\n')
   }
 
-  cat('Root Mean Square Error:\n')
-  print(data.frame(Estimate=mean(st$rmse),SD=sd(st$rmse)),row.names=FALSE,
-        digits=3)
-  cat('\n')
-  cat('Mean Absolute Error:\n')
-  print(data.frame(Estimate=mean(st$mae),SD=sd(st$mae)), row.names=FALSE,
-        digits=3)
-
+  for (i in 1:length(st)){
+    cat(paste0(names(st)[i],':\n'))
+    print(data.frame(object@summary[i,]), row.names=FALSE, digits=4)
+    if(i != length(st)) cat('\n')
+  }
 })
 
 setClass("unmarkedCrossValList",
     representation(stats_list="list",
                    method = "character",
                    folds="numeric",
-                   holdoutPct="numeric")
+                   holdoutPct="numeric",
+                   sort="character")
 )
 
 #CrossVal list constructor
 setMethod("crossVal", "unmarkedFitList",
-          function(object, method=c("kfold","holdout","leaveoneout"), 
-                   folds=10, holdoutPct=0.25){
+          function(object, method=c("Kfold","holdout","leaveOneOut"), 
+                   folds=10, holdoutPct=0.25, 
+                   statistic=RMSE_MAE, parallel=FALSE, 
+                   sort = c("none", "increasing", "decreasing"), ...){
     
-    method <- match.arg(method, c('kfold','holdout','leaveoneout'))
+    method <- match.arg(method, c('Kfold','holdout','leaveOneOut'))
+    sort <- match.arg(sort, c('none','increasing','decreasing'))
 
-    stats <- lapply(object@fits, crossVal, method, folds, holdoutPct)
+    stats <- lapply(object@fits, crossVal, method, folds, 
+                    holdoutPct, statistic, parallel, ...)
 
-    out <- new("unmarkedCrossValList", stats_list=stats, method=method, folds=folds,
-               holdoutPct=holdoutPct)
+    out <- new("unmarkedCrossValList", stats_list=stats, method=method, 
+               folds=folds, holdoutPct=holdoutPct, sort=sort)
 
 })
 
@@ -160,35 +175,46 @@ setMethod("crossVal", "unmarkedFitList",
 setMethod("show", "unmarkedCrossValList", function(object){
 
   sl <- object@stats_list
+  mod_names <- names(sl)
   nfits <- length(sl)
+  nstats <- length(sl[[1]]@stats)
+  stat_names <- names(sl[[1]]@stats)
 
-  if(object@method=='kfold'){
+  if(object@method=='Kfold'){
     cat(paste('Method: k-fold (',object@folds,' folds)\n\n',sep=''))
   } else if(object@method=='holdout'){
     cat(paste('Method: holdout (',round(object@holdoutPct*100),'% in test set)\n\n',sep=''))
-  } else if(object@method=='leaveoneout'){
+  } else if(object@method=='leaveOneOut'){
     cat('Method: leave-one-out\n\n')
   }
 
-  rmse_means <- rmse_sds <- numeric(nfits)
-  mae_means <- mae_sds <- numeric(nfits)
-  mod_names <- names(sl)
-  for (i in 1:nfits){
-    rmse_means[i] <- mean(sl[[i]]@stats$rmse)
-    rmse_sds[i] <- sd(sl[[i]]@stats$rmse)
-    mae_means[i] <- mean(sl[[i]]@stats$mae)
-    mae_sds[i] <- sd(sl[[i]]@stats$mae)
+  for (i in 1:nstats){
+    cat(paste0(stat_names[i],':\n'))
+
+    stat_sum = lapply(sl, function(x) x@summary[i,])
+    stat_sum = do.call("rbind", stat_sum)
+
+    sort_ind <- switch(object@sort,
+                       none = 1:nrow(stat_sum),
+                       increasing = order(stat_sum$Estimate),
+                       decreasing = order(stat_sum$Estimate, decreasing=TRUE))
+    stat_sum <- stat_sum[sort_ind, ]
+    
+    print(stat_sum, digits=4)
+    if(i != nstats) cat('\n')
   }
-  out_rmse <- data.frame(Estimate=rmse_means,SD=rmse_sds,
-                         row.names=mod_names)
-  out_mae <- data.frame(Estimate=mae_means,SD=mae_sds,
-                        row.names=mod_names)
-
-
-  cat('Root Mean Square Error:\n')
-  print(out_rmse[order(out_rmse$Estimate),],digits=3)
-  cat('\n')
-  cat('Mean Absolute Error:\n')
-  print(out_mae[order(out_mae$Estimate),],digits=3)
-
 })
+
+#Function to calculate RMSE and MAE
+#Default function for statistic argument
+#Returns a named list
+RMSE_MAE <- function(object){
+  
+  res <- residuals(object)
+  if(is.list(res)) res <- unlist(res)
+
+  mae <- mean(abs(res), na.rm=T)
+  rmse <- sqrt(mean(res^2, na.rm=T))
+
+  c(`Root mean square error`=rmse, `Mean absolute error`=mae)
+}
