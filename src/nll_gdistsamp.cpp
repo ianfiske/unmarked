@@ -87,8 +87,7 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
     SEXP Xdet_, SEXP Xdet_offset_, SEXP db_, SEXP a_, SEXP u_, SEXP w_,
     SEXP k_, SEXP lfac_k_, SEXP lfac_kmyt_, SEXP kmyt_, 
     SEXP y_, SEXP naflag_, SEXP fin_, 
-    SEXP nP_, SEXP nLP_, SEXP nPP_, SEXP nDP_, SEXP nSP_, SEXP nOP_,
-    SEXP rel_tol_){
+    SEXP nP_, SEXP nLP_, SEXP nPP_, SEXP nDP_, SEXP rel_tol_){
 
   //Inputs
   vec beta = as<vec>(beta_);
@@ -125,8 +124,6 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
   int nLP = as<int>(nLP_);
   int nPP = as<int>(nPP_);
   int nDP = as<int>(nDP_);
-  int nSP = as<int>(nSP_);
-  int nOP = as<int>(nOP_);
   
   //Integration tol
   double rel_tol = as<double>(rel_tol_);
@@ -189,6 +186,8 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
           //det_param is shape
           double scale = exp(beta(nLP+nPP+nDP));
           p = p_hazard(det_param(t_ind), scale, survey, db, w, a.row(m), rel_tol);
+        } else{
+          stop("invalid keyfun");
         }
         //other keyfuns
 

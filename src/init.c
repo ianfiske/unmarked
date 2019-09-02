@@ -12,7 +12,7 @@ extern SEXP getDetVecs(SEXP y_arr, SEXP mp_arr, SEXP J_i, SEXP tin, SEXP K_) ;
 extern SEXP getSingleDetVec(SEXP y_, SEXP mp_, SEXP K_);
 extern SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_, SEXP w_, SEXP db_, SEXP keyfun_, SEXP survey_, SEXP reltol_ );
 extern SEXP nll_gmultmix( SEXP betaR, SEXP mixtureR, SEXP pi_funR, SEXP XlamR, SEXP Xlam_offsetR, SEXP XphiR, SEXP Xphi_offsetR, SEXP XdetR, SEXP Xdet_offsetR, SEXP kR, SEXP lfac_kR, SEXP lfac_kmytR, SEXP kmytR, SEXP yR, SEXP naflagR, SEXP finR, SEXP nPr, SEXP nLPr, SEXP nPPr, SEXP nDPr ) ;
-extern SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_, SEXP Xlam_, SEXP Xlam_offset_, SEXP A_, SEXP Xphi_, SEXP Xphi_offset_, SEXP Xdet_, SEXP Xdet_offset_, SEXP db_, SEXP a_, SEXP u_, SEXP w_, SEXP k_, SEXP lfac_k_, SEXP lfac_kmyt_, SEXP kmyt_, SEXP y_, SEXP naflag_, SEXP fin_, SEXP nP_, SEXP nLP_, SEXP nPP_, SEXP nDP_, SEXP nSP_, SEXP nOP_, SEXP rel_tol_) ;
+extern SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_, SEXP Xlam_, SEXP Xlam_offset_, SEXP A_, SEXP Xphi_, SEXP Xphi_offset_, SEXP Xdet_, SEXP Xdet_offset_, SEXP db_, SEXP a_, SEXP u_, SEXP w_, SEXP k_, SEXP lfac_k_, SEXP lfac_kmyt_, SEXP kmyt_, SEXP y_, SEXP naflag_, SEXP fin_, SEXP nP_, SEXP nLP_, SEXP nPP_, SEXP nDP_, SEXP rel_tol_) ;
 extern SEXP nll_gpcount( SEXP y_, SEXP Xlam_, SEXP Xphi_, SEXP Xp_, SEXP beta_lam_, SEXP beta_phi_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xphi_offset_, SEXP Xp_offset_, SEXP M_, SEXP mixture_, SEXP numPrimary_ ) ;
 extern SEXP nll_multinomPois( SEXP betaR, SEXP pi_funR, SEXP XlamR, SEXP Xlam_offsetR, SEXP XdetR, SEXP Xdet_offsetR, SEXP yR, SEXP navecR, SEXP nPr, SEXP nAPr ) ;
 extern SEXP nll_occu( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP ndR, SEXP knownOccR, SEXP navecR, SEXP X_offsetR, SEXP V_offsetR, SEXP link_psiR);
@@ -30,7 +30,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"getSingleDetVec", (DL_FUNC) &getSingleDetVec,  3},
     {"nll_distsamp",    (DL_FUNC) &nll_distsamp,    11},
     {"nll_gmultmix",    (DL_FUNC) &nll_gmultmix,    20},
-    {"nll_gdistsamp",   (DL_FUNC) &nll_gdistsamp,   29},
+    {"nll_gdistsamp",   (DL_FUNC) &nll_gdistsamp,   27},
     {"nll_gpcount",     (DL_FUNC) &nll_gpcount,     14},
     {"nll_multinomPois",(DL_FUNC) &nll_multinomPois,10},
     {"nll_occu",        (DL_FUNC) &nll_occu,        11},

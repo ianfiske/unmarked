@@ -53,6 +53,8 @@ mat get_psi(const mat& lp, const std::string& prm){
       out(i,2) = psi_raw(i,0) * psi_raw(i,1);
     }
     return(out);
+  } else {
+    stop("Invalid parameterization for get_psi");
   }
 }
 
@@ -85,6 +87,8 @@ mat get_phi(int S, const rowvec& lp, const std::string& prm){
       out(i,2) = lp_logit(i) * lp_logit(i+3);
     }
     return(out);
+  } else {
+    stop("Invalid parameterization passed to get_phi");
   }
 }
 
@@ -93,8 +97,8 @@ mat get_sdp(int S, const rowvec& lp, const mat& guide,
 
   mat out = zeros(S,S);
 
-  if(prm == "multinomial"){
-    for (int i=0; i<lp.size(); i++){
+  if(prm == "multinomial"){  
+    for (unsigned int i=0; i<lp.size(); i++){
       out( guide(i,0), guide(i,1) ) = exp(lp(i));
     }
     for (int s=0; s<S; s++){
@@ -116,6 +120,8 @@ mat get_sdp(int S, const rowvec& lp, const mat& guide,
     out(2,1) = probs(1) * (1 - probs(2));
     out(2,2) = probs(1) * probs(2);
     return(out);
+  } else{
+    stop("Invalid parameterization passed to get_sdp");
   }
 }
 

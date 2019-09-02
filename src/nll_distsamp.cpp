@@ -14,8 +14,6 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
   std::string keyfun = Rcpp::as<std::string>(keyfun_);
   std::string survey = Rcpp::as<std::string>(survey_);
 
-  bool verbose=false;
-
   int R = y.nrow();   //y.n_rows;
   int J = y.ncol();   // y.n_cols;
 
