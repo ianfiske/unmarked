@@ -93,6 +93,7 @@ Rota, C.T., et al. 2016. A multi-species occupancy model for two or more
 
 \examples{
 
+\dontrun{
 #Simulate 3 species data
 N <- 1000
 nspecies <- 3
@@ -168,8 +169,6 @@ fit <- occuMulti(detFormulas,occFormulas,data)
 #Look at output
 fit
 
-
-\dontrun{
 plot(fit)
 
 #Compare with known values

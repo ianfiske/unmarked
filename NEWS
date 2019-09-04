@@ -2,6 +2,18 @@ All changes can be found here:
 https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
+Version 0.12-4
+
+  o New 'occuMS' function added for fitting multi-state occupancy models (single-season and dynamic)
+  o New 'occuTTD' function for fitting continuous time-to-detection occupancy models (single season and dynamic). Thanks to Jonathan Cohen for help with this
+  o New 'crossVal' function for doing cross-validation on fitted unmarked models and fitLists
+  o New 'vif' function for calculating variance inflation factors for fitted unmarked models
+  o Add ability to use complimentary-log-log link function in occu
+  o Add built-in dependent double observer pi function
+  o New C++ engines for gmultmix, gdistsamp, multinomPois, occuRN
+  o Approximate integrals in C++ engines with trapezoidal rule function instead of using Rdqags
+  o Misc minor bugfixes
+
 
 Version 0.12-3
 

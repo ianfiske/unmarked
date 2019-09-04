@@ -60,6 +60,7 @@
 
 \examples{
 
+\dontrun{
 #Get data
 data(frogs)
 pferUMF <- unmarkedFrameOccu(pfer.bin)
@@ -85,4 +86,5 @@ fl <- fitList(fm2,fm)
 #Cross-validation for all fits in fitList using holdout method
 (cvlist <- crossVal(fl, method='holdout'))
 
+}
 }
