@@ -1,5 +1,6 @@
-occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
-                      method='BFGS', se=TRUE, engine=c("C","R"), silent=FALSE, ...){
+occuMulti <- function(detformulas, stateformulas,  data, maxOrder, 
+                      penalty=0, starts, method='BFGS', se=TRUE, 
+                      engine=c("C","R"), silent=FALSE, ...){
   
   #Format input data-----------------------------------------------------------
   #Check data object
@@ -16,6 +17,9 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
     }
     detformulas <- rep('~1',length(data@ylist))
   }
+
+  #Check penalty
+  if(penalty < 0) stop("Penalty term must be >= 0")
 
   #Get design matrices and indices
   designMats <- getDesign(data, detformulas, stateformulas, maxOrder, warn=!silent)
@@ -70,8 +74,10 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
       prdProbY[i,] <- apply(prbSeq,1,prod)
     }
     
+    #Penalty term (defaults to 0)
+    pen <- penalty * 0.5 * sum(params^2)
     #neg log likelihood
-    -sum(log(rowSums(psi*prdProbY)))
+    -1 * (sum(log(rowSums(psi*prdProbY))) - pen)
   }
   #----------------------------------------------------------------------------
 
@@ -79,7 +85,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
   nll_C <- function(params) {
     .Call("nll_occuMulti",
           fStart-1, fStop-1, t_dmF, dmOcc, params, dmDet, dStart-1, dStop-1,
-          y, yStart-1, yStop-1, Iy0, as.matrix(z), fixed0,
+          y, yStart-1, yStop-1, Iy0, as.matrix(z), fixed0, penalty,
           PACKAGE = "unmarked")
   }
   #----------------------------------------------------------------------------

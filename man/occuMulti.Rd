@@ -4,8 +4,8 @@
 
 \title{Fit the Rota et al. (2016) Multi-species Occupancy Model}
 
-\usage{occuMulti(detformulas, stateformulas, data, maxOrder, starts, method="BFGS",
-    se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
+\usage{occuMulti(detformulas, stateformulas, data, maxOrder, penalty=0, 
+       starts, method="BFGS", se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
 
 \arguments{
     \item{detformulas}{Character vector of formulas for the detection models, one per species.}
@@ -15,6 +15,8 @@
     \item{maxOrder}{Optional; specify maximum interaction order. Defaults to 
       number of species (all possible interactions). Reducing this value may
       speed up optimization if you aren't interested in higher-order interactions.}
+    \item{penalty}{Penalty term for likelihood. The total penalty is calculated
+      as \code{penalty * 0.5 * sum(paramvals^2)}. Defaults to 0 (no penalty).}
     \item{starts}{Vector of parameter starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{Logical specifying whether or not to compute standard
