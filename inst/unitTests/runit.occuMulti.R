@@ -14,7 +14,11 @@ test.occuMulti.fit.simple.1 <- function() {
   detlist <- predict(fm,'det')
   det <- sapply(detlist,function(x) x[1,1])
   checkEqualsNumeric(det, rep(1,length(detlist)), tolerance= 1e-4)
-
+  
+  #Check fitList
+  fl <- fitList(fm, fm)
+  checkEquals(class(fl)[1],"unmarkedFitList")
+  checkEqualsNumeric(length(fl@fits), 2)
 }
 
 test.occuMulti.fit.simple.0 <- function() {
