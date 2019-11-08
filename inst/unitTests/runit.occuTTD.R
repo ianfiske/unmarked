@@ -96,7 +96,7 @@ test.occuTTD.singleseason <- function(){
   fitC <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind,
                   data=umf, linkPsi='cloglog', ttdDist='exp',engine="C")
 
-  checkEqualsNumeric(coef(fitR), coef(fitC))
+  checkEqualsNumeric(coef(fitR), coef(fitC), tol=1e-5)
   checkEqualsNumeric(coef(fitC), c(-0.6271,0.8157,-0.5982,-2.0588,
                                    -0.4042,1.2328), tol=1e-4)
   checkEqualsNumeric(coef(fitC), c(beta_N, beta_lam), tol=0.3)
@@ -126,7 +126,7 @@ test.occuTTD.singleseason <- function(){
                   data=umf_na, linkPsi='cloglog', ttdDist='weibull',
                   engine="C")
 
-  checkEqualsNumeric(coef(fit_naR), coef(fit_naC))
+  checkEqualsNumeric(coef(fit_naR), coef(fit_naC), tol=1e-5)
   checkEqualsNumeric(fit_naC@AIC, 1185.15, tol=1e-4)
   checkEqualsNumeric(fit_naC@sitesRemoved, 1)
 
@@ -190,7 +190,7 @@ test.occuTTD.singleseason <- function(){
                   data=umf_na, linkPsi='cloglog', ttdDist='weibull',
                   engine="C")
 
-  checkEqualsNumeric(coef(fit_naR), coef(fit_naC))
+  checkEqualsNumeric(coef(fit_naR), coef(fit_naC), tol=1e-5)
   checkEqualsNumeric(fit_naC@sitesRemoved, numeric(0))
   
   #Check site is removed when both obs are NA
