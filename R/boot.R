@@ -15,7 +15,7 @@ setClass("parboot",
 
 
 setMethod("parboot", "unmarkedFit",
-    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ...)
+    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ncores, ...)
 {
     dots <- list(...)
     statistic <- match.fun(statistic)
@@ -38,25 +38,29 @@ setMethod("parboot", "unmarkedFit",
     simdata <- umf
     if (!is.null(seed)) set.seed(seed)
     simList <- simulate(object, nsim = nsim, na.rm = FALSE)
-    coresToUse <- detectCores() - 1
-
-    if (coresToUse < 2 || nsim < 100 || parallel == FALSE) {
-	  for(i in 1:nsim) {
-		y.sim <- simList[[i]]
-		is.na(y.sim) <- is.na(y)
-		simdata@y <- y.sim
-		fit <- update(object, data=simdata, starts=ests, se=FALSE)
-		t.star[i,] <- statistic(fit, ...)
-		  if(!missing(report)) {
-            if (nsim > report && i %in% seq(report, nsim, by=report))
-                cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=","), fill=TRUE)
-#            flush.console()
-          }
-		  out <- new("parboot", call=call, t0 = t0, t.star = t.star)
+    availcores <- detectCores()
+    if(missing(ncores)) ncores <- availcores - 1
+    if(ncores > availcores) ncores <- availcores
+    
+    no_par <- ncores < 2 || nsim < 100 || !parallel
+    
+    if (no_par) {
+      for(i in 1:nsim) {
+        y.sim <- simList[[i]]
+        is.na(y.sim) <- is.na(y)
+        simdata@y <- y.sim
+        fit <- update(object, data=simdata, starts=ests, se=FALSE)
+        t.star[i,] <- statistic(fit, ...)
+        if(!missing(report)) {
+          if (nsim > report && i %in% seq(report, nsim, by=report))
+            cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=","), fill=TRUE)
+          #            flush.console()
         }
-	  } else {
-	  if (!missing(report)) cat("Running in parallel.  Bootstrapped statistics not reported.\n")
-      cl <- makeCluster(coresToUse)
+        out <- new("parboot", call=call, t0 = t0, t.star = t.star)
+      }
+    } else {
+      if (!missing(report)) message("Running in parallel on ", ncores, " cores. Bootstrapped statistics not reported.")
+      cl <- makeCluster(ncores)
       on.exit(stopCluster(cl))
       varList <- c("simList", "y", "object", "simdata", "ests", "statistic", "dots")
       # If call formula is an object, include it too
@@ -78,14 +82,14 @@ setMethod("parboot", "unmarkedFit",
       t.star <- matrix(unlist(t.star.parallel), nrow = length(t.star.parallel), byrow = TRUE)
       colnames(t.star) <- names(t.star.parallel[[1]])
       out <- new("parboot", call = call, t0 = t0, t.star = t.star)
-	  }
+    }
 		
     return(out)
 })
 
 
 setMethod("parboot", "unmarkedFitOccuMulti",
-    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ...)
+    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ncores, ...)
 {
 
   dots <- list(...)
@@ -106,20 +110,20 @@ setMethod("parboot", "unmarkedFitOccuMulti",
   if (!is.null(seed)) set.seed(seed)
   simList <- simulate(object, nsim=nsim)
 
-  coresToUse <- detectCores() - 1
-  no_par <- coresToUse < 2 || nsim < 100 || !parallel
+  if(missing(ncores)) ncores <- availcores - 1
+  if(ncores > availcores) ncores <- availcores
+  no_par <- ncores < 2 || nsim < 100 || !parallel
   
   if(no_par){
-
     t.star <- matrix(NA, nsim, lt0)
     for (i in 1:nsim){
       simdata@ylist <- simList[[i]]
       fit <- update(object, data=simdata, starts=ests, se=F, silent=T)
       t.star[i,] <- statistic(fit, ...)
     }
-
   } else {
-    cl <- makeCluster(coresToUse)
+    if (!missing(report)) message("Running in parallel on ", ncores, " cores. Bootstrapped statistics not reported.")
+    cl <- makeCluster(ncores)
     on.exit(stopCluster(cl))
     varList <- c("simList", "object", "simdata", "ests", "statistic", "dots")
     
