@@ -193,6 +193,10 @@ test.parboot.occu <- function() {
                                                                                     c("SSE", "Chisq", "freemanTukey")))
                 )
 
+  #Check parallel
+  gof2 <- parboot(fm1, fitstats, nsim = 100, seed = 6546, parallel=TRUE)
+  checkTrue(all(gof@t.star==gof2@t.star))
+
 }
 
 test.parboot.distsamp <- function() {
@@ -227,4 +231,34 @@ test.parboot.distsamp <- function() {
   checkEqualsNumeric(pb_neg@t.star, matrix(c(164.8892,144.9085,
                                             938.8101,880.0353),nrow=2),
                      tol=1e-4)
+}
+
+test.parboot.occuMulti <- function(){
+
+  set.seed(123)
+  y <- list(matrix(rbinom(40,1,0.2),20,2),
+            matrix(rbinom(40,1,0.3),20,2))
+
+  N <- dim(y[[1]])[1]
+  J <- dim(y[[1]])[2]
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('occ_cov',1:3,sep='')
+
+  det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
+  names(det_covs) <- paste('det_cov',1:2,sep='')
+
+  stateformulas <- c('~occ_cov1','~occ_cov2','0')
+  detformulas <- c('~det_cov1','~det_cov2')
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+
+  set.seed(456)
+  pb <- parboot(fm, nsim=10)
+  set.seed(456)
+  pb2 <- parboot(fm, nsim=10, parallel=TRUE)
+
+  checkEqualsNumeric(pb@t.star[1:3], c(12.61437, 12.14443, 15.88755),tol=1e-6)
+  checkTrue(all(pb@t.star == pb2@t.star))
 }
