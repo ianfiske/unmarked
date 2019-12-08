@@ -5,7 +5,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
 
   #Format input data-----------------------------------------------------------
   #Check data object
-  if(!class(data) == "unmarkedFrameOccuMS")
+  if(!inherits(data, "unmarkedFrameOccuMS"))
     stop("Data must be created with unmarkedFrameOccuMS()")
   
   #Check engine
