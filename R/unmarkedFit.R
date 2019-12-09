@@ -3366,7 +3366,20 @@ setMethod("getP", "unmarkedFitGPC",
     return(p)
 })
 
-
+#Y extractors for unmarkedFit objects
+setMethod("getY", "unmarkedFit", function(object) object@data@y)
+setMethod("getY", "unmarkedFitOccu", function(object) {
+            truncateToBinary(object@data@y)
+})
+setMethod("getY", "unmarkedFitOccuRN", function(object) {
+            truncateToBinary(object@data@y)
+})
+setMethod("getY", "unmarkedFitColExt", function(object) {
+            truncateToBinary(object@data@y)
+})
+setMethod("getY", "unmarkedFitOccuMulti", function(object) {
+            object@data@ylist
+})
 
 
 

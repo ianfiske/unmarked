@@ -57,6 +57,11 @@
 \alias{logLik,unmarkedFit-method}
 \alias{LRT}
 \alias{LRT,unmarkedFit,unmarkedFit-method}
+\alias{getY,unmarkedFit-method}
+\alias{getY,unmarkedFitOccu-method}
+\alias{getY,unmarkedFitColExt-method}
+\alias{getY,unmarkedFitOccuRN-method}
+\alias{getY,unmarkedFitOccuMulti-method}
 
 \title{Class "unmarkedFit" }
 \description{Contains fitted model information which can be manipulated or 
