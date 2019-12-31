@@ -2,6 +2,11 @@ All changes can be found here:
 https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
+Version 0.13-1
+
+  o Fixes for compatibility with R 4.0
+
+
 Version 0.13-0
 
   o New 'occuMS' function added for fitting multi-state occupancy models (single-season and dynamic)
