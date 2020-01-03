@@ -2,6 +2,12 @@ All changes can be found here:
 https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
+Version 0.13-1.9000
+
+  o New 'makePiFun' function factories added to generate piFuns with required defaults
+
+  o 'plot' method for parboot now only "ask"s for new page when screen device is in use; restores former "ask" setting on exit.
+
 Version 0.13-1
 
   o Fixes for compatibility with R 4.0

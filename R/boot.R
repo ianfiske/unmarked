@@ -117,7 +117,7 @@ setMethod("show", "parboot", function(object)
     cat("\nt_B quantiles:\n")
     print(t(apply(t.star, 2, quantile,
         probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
-    cat("\nt0 = Original statistic compuated from data\n")
+    cat("\nt0 = Original statistic computed from data\n")
     cat("t_B = Vector of bootstrap samples\n\n")
 })
 
@@ -130,6 +130,10 @@ setMethod("plot", signature(x="parboot", y="missing"),
 {
     t.star <- x@t.star
     t0 <- x@t0
+    if(length(t0) > 1) {
+      oldask <- devAskNewPage(ask = dev.interactive(orNone = TRUE))
+      on.exit(devAskNewPage(oldask))
+    }
     for(i in 1:length(t0)) {
         if(missing(xlab))
             xlab <- colnames(t.star)[i]
@@ -140,9 +144,7 @@ setMethod("plot", signature(x="parboot", y="missing"),
             xl <- xlim
         hist(t.star[,i], xlab=xlab, xlim = xl, main = main, ...)
         abline(v=t0[i], lty=2)
-        devAskNewPage(ask = TRUE)
-        }
-    devAskNewPage(ask = FALSE)
+    }
 })
 
 

@@ -13,13 +13,16 @@
   covariates. General treatment of these models can be found in
   MacKenzie et al. (2006) and Royle and Dorazio (2008). The primary
   reference for the package is Fiske and Chandler (2011).}
+% Maybe add Kery & Royle (2016) for the more recent additions.
 
-\details{\tabular{ll}{
-Package: \tab unmarked\cr
-Type: \tab Package\cr
-Version: \tab 0.12-0\cr
-License: \tab GPL (>= 3)\cr
-}
+\details{
+% Not useful information and not updated; Mike suggests taking it out.
+%\tabular{ll}{
+%Package: \tab unmarked\cr
+%Type: \tab Package\cr
+%Version: \tab 0.12-0\cr  %% doh!
+%License: \tab GPL (>= 3)\cr
+%}
 
 \strong{Overview of Model-fitting Functions:}
 
