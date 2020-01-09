@@ -1,8 +1,8 @@
 
-occuRN_TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
-                       #ttdDist=c("exp", "weibull"),
+occuRN.TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
+                       ttdDist=c("exp", "weibull"),
                        starts, method = "BFGS",
-                       se = TRUE, engine = c("R"), ...) {
+                       se = TRUE, engine = c("C","R"), ...) {
 
   #Check arguments-------------------------------------------------------------
   if(!is(data, "unmarkedFrameOccuTTD")){
@@ -10,7 +10,7 @@ occuRN_TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   }
 
   engine <- match.arg(engine, c("C", "R"))
-  #ttdDist <- match.arg(ttdDist, c("exp","weibull"))
+  ttdDist <- match.arg(ttdDist, c("exp","weibull"))
 
   formula <- list(lambdaformula, ~1, ~1, detformula)
   formula <- as.formula(paste(unlist(formula),collapse=" "))
@@ -43,7 +43,7 @@ occuRN_TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   det_inds <- (nAP+1):(nAP+nDP)
 
   parms <- c(abunParms, detParms)
-  #if(ttdDist == "weibull") parms <- c(parms, "k")
+  if(ttdDist == "weibull") parms <- c(parms, "k")
   nP <- length(parms)
 
   #Likelihood functions--------------------------------------------------------
@@ -58,19 +58,24 @@ occuRN_TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
 
     #Simplified version of Garrard et al. 2013 eqn 5
     #Extended to Weibull
-    #This does not seem to work in examples
-    #if(ttdDist=='weibull'){
-    #  shape <- exp(params[nP])
+    if(ttdDist=='weibull'){
+      shape <- exp(params[nP])
 
-    #  e_lamt <- sapply(0:K, function(k){
-    #    lam <- k*lamP
-    #    ( shape*lam*(lam*yvec)^(shape-1) )^delta * exp(-1*(lam*yvec)^shape)
-    #  })
-    #
-    #} else {
-    #Exponential
-    e_lamt <- sapply(0:K, function(k) (lamP*k)^delta * exp(-lamP*k*yvec))
-    #}
+      e_lamt <- sapply(0:K, function(k){
+        lam <- k*lamP
+        ( shape*lam*(lam*yvec)^(shape-1) )^delta * exp(-1*(lam*yvec)^shape)
+      })
+
+    } else {
+      #Exponential
+      e_lamt <- sapply(0:K, function(k) (lamP*k)^delta * exp(-lamP*k*yvec))
+    }
+
+    get_Py <- function(e_lamt, delta){
+      sum_delt <- as.numeric(sum(delta, na.rm=T)>0)
+
+      out <- rep(NA, length=K+1)
+    }
 
     #Begin likelihood calculation
     lik <- rep(NA,N)
@@ -80,7 +85,8 @@ occuRN_TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
 
       yend <- ystart+J-1
       pT <- rep(NA,length=K+1)
-      for (k in 0:K){
+      pT[1] <- 1 - max(delta[ystart:yend], na.rm=T)
+      for (k in 1:K){
         elamt_sub <- e_lamt[ystart:yend, k+1]
         pT[k+1] <- prod(elamt_sub[!is.na(elamt_sub)])
       }
@@ -92,11 +98,10 @@ occuRN_TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   }
 
   nll_C <- function(params){
-    .Call("nll_occuTTD",
-          params, yvec, delta, W, V, X.gam, X.eps,
-          range(psi_inds)-1, range(det_inds)-1,
-          range(col_inds)-1, range(ext_inds)-1,
-          linkPsi, ttdDist, N, T, J, naflag,
+    .Call("nll_occuRN_TTD",
+          params, yvec, delta, W, V,
+          range(abun_inds)-1, range(det_inds)-1,
+          ttdDist, N, J, K, naflag,
           PACKAGE = "unmarked")
   }
 
@@ -138,14 +143,14 @@ occuRN_TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   estimateList <- unmarkedEstimateList(list(abun = abun, det=det))
 
   #Add Weibull shape parameter if necessary
-  #if(ttdDist=="weibull"){
-  #  estimateList@estimates$shape <- unmarkedEstimate(name = "Weibull shape",
-  #                                                   short.name = "k", estimates = ests[nP],
-  #                                                   covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
-  #                                                   invlinkGrad = "exp")
-  #}
+  if(ttdDist=="weibull"){
+    estimateList@estimates$shape <- unmarkedEstimate(name = "Weibull shape",
+                                                     short.name = "k", estimates = ests[nP],
+                                                     covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
+                                                    invlinkGrad = "exp")
+  }
 
-  umfit <- new("unmarkedFitOccuRN_TTD", fitType = "occuRN_TTD",
+  umfit <- new("unmarkedFitOccuRN.TTD", fitType = "occuRN.TTD",
                call = match.call(),
                formula = formula,
                lambdaformula = lambdaformula,

@@ -106,7 +106,7 @@ setClass("unmarkedFitOccuTTD",
         detformula = "formula"),
     contains = "unmarkedFit")
 
-setClass("unmarkedFitOccuRN_TTD",
+setClass("unmarkedFitOccuRN.TTD",
          representation(
            lambdaformula = "formula",
            detformula = "formula"),
@@ -1712,7 +1712,7 @@ setMethod("predict", "unmarkedFitOccuTTD",
 
 })
 
-setMethod("predict", "unmarkedFitOccuRN_TTD",
+setMethod("predict", "unmarkedFitOccuRN.TTD",
   function(object, type, newdata, backTransform = TRUE,
            na.rm = TRUE, appendData = FALSE,
            level=0.95, ...){

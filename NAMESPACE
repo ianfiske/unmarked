@@ -20,7 +20,7 @@ import(lattice, methods, parallel, Rcpp, reshape2, Matrix)
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
        colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
-       occuMS, computeMPLElambda, pcount.spHDS, occuTTD, occuRN_TTD)
+       occuMS, computeMPLElambda, pcount.spHDS, occuTTD, occuRN.TTD)
 export(removalPiFun, doublePiFun)
 export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 
