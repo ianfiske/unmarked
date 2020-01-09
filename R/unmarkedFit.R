@@ -1712,6 +1712,46 @@ setMethod("predict", "unmarkedFitOccuTTD",
 
 })
 
+setMethod("predict", "unmarkedFitOccuRN_TTD",
+  function(object, type, newdata, backTransform = TRUE,
+           na.rm = TRUE, appendData = FALSE,
+           level=0.95, ...){
+
+  if(missing(newdata) || is.null(newdata)){
+    no_newdata <- TRUE
+    newdata <- getData(object)
+  } else {
+    no_newdata <- FALSE
+  }
+
+  cls <- class(newdata)[1]
+  allow <- c("unmarkedFrameOccuTTD", "data.frame", "RasterStack")
+  if(!cls %in% allow){
+    stop(paste("newdata should be class:",paste(allow, collapse=", ")))
+  }
+
+  #Check type
+  allow_types <- names(object@estimates@estimates)
+  if(!type %in% allow_types){
+    stop(paste("type must be one of",paste(allow_types, collapse=", ")))
+  }
+
+  #Allow passthrough to colext predict method
+  new_obj <- object
+  class(new_obj)[1] <- "unmarkedFitColExt"
+  if(type == "abun") type <- 'psi'
+  names(new_obj@estimates@estimates)[1] <- 'psi'
+  if(cls == "unmarkedFrameOccuTTD"){
+    class(newdata)[1] <- "unmarkedMultFrame"
+  }
+
+  predict(new_obj, type=type, newdata=newdata,
+                 backTransform=backTransform, na.rm=na.rm,
+                 appendData=appendData, level=level, ...)
+
+})
+
+
 # ---------------------- coef, vcov, and SE ------------------------------
 
 
