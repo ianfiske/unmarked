@@ -267,7 +267,7 @@ setMethod("names", "unmarkedFit",
      } else {
           obsCovs <- obsCovs(origdata)
      }
-     obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R),])
+     obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R), , drop = FALSE])
 
      if(inherits(newdata, "unmarkedFrame"))
          class(newdata) <- "unmarkedFrame"
@@ -293,15 +293,17 @@ setMethod("names", "unmarkedFit",
      data.frame = {
          switch(type,
              state = {
+                  xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels) # https://stackoverflow.com/a/44008147/2461552
                  mf <- model.frame(stateformula, sitedata)
                  X.terms <- terms(mf)
-                 X <- model.matrix(X.terms, newdata)
+                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
                  offset <- model.offset(model.frame(X.terms, newdata))
                  },
              det = {
+                  xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
                  mf <- model.frame(detformula, obsdata)
                  X.terms <- terms(mf)
-                 X <- model.matrix(X.terms, newdata)
+                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
                  offset <- model.offset(model.frame(X.terms, newdata))
                  })
              },
@@ -555,7 +557,7 @@ setMethod("predict", "unmarkedFitPCount",
     } else {
          obsCovs <- obsCovs(origdata)
     }
-    obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R),])
+    obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R), , drop = FALSE])
 
     if(inherits(newdata, "unmarkedFrame"))
         class(newdata) <- "unmarkedFrame"
@@ -581,15 +583,17 @@ setMethod("predict", "unmarkedFitPCount",
     data.frame = {
         switch(type,
                state = {
+                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(stateformula, sitedata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                },
                det = {
+                    xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(detformula, obsdata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                })
             },
@@ -744,7 +748,7 @@ setMethod("predict", "unmarkedFitOccuFP",
             } else {
                  obsCovs <- obsCovs(origdata)
             }
-            obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R),])
+            obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R), , drop = FALSE])
 
             if(inherits(newdata, "unmarkedFrameOccuFP"))
               class(newdata) <- "unmarkedFrameOccuFP"
@@ -777,27 +781,31 @@ setMethod("predict", "unmarkedFitOccuFP",
                    data.frame = {
                      switch(type,
                             state = {
+                                 xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
                                  mf <- model.frame(stateformula, sitedata)
                                  X.terms <- terms(mf)
-                                 X <- model.matrix(X.terms, newdata)
+                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
                                  offset <- model.offset(model.frame(X.terms, newdata))
                             },
                             det = {
+                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
                                  mf <- model.frame(detformula, obsdata)
                                  X.terms <- terms(mf)
-                                 X <- model.matrix(X.terms, newdata)
+                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
                                  offset <- model.offset(model.frame(X.terms, newdata))
                             },
                             fp = {
+                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
                                  mf <- model.frame(FPformula, obsdata)
                                  X.terms <- terms(mf)
-                                 X <- model.matrix(X.terms, newdata)
+                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
                                  offset <- model.offset(model.frame(X.terms, newdata))
                             },
                             b = {
+                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
                                  mf <- model.frame(Bformula, obsdata)
                                  X.terms <- terms(mf)
-                                 X <- model.matrix(X.terms, newdata)
+                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
                                  offset <- model.offset(model.frame(X.terms, newdata))
                             })
                    })
@@ -896,27 +904,31 @@ setMethod("predict", "unmarkedFitColExt",
 
         switch(type,
             psi = {
+                xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
                 mf <- model.frame(psiformula, sitedata)
                 X.terms <- terms(mf)
-                X <- model.matrix(X.terms, newdata)
+                X <- model.matrix(X.terms, newdata, xlev = xlevs)
                 #offset <- model.offset(mf)
                 },
             col = {
+                xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
                 mf <- model.frame(gamformula, yearlydata)
                 X.terms <- terms(mf)
-                X <- model.matrix(X.terms, newdata)
+                X <- model.matrix(X.terms, newdata, xlev = xlevs)
                 #offset <- model.offset(mf)
                 },
             ext = {
+                xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
                 mf <- model.frame(epsformula, yearlydata)
                 X.terms <- terms(mf)
-                X <- model.matrix(X.terms, newdata)
+                X <- model.matrix(X.terms, newdata, xlev = xlevs)
                 #offset <- model.offset(mf)
                 },
             det = {
+                xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
                 mf <- model.frame(detformula, obsdata)
                 X.terms <- terms(mf)
-                X <- model.matrix(X.terms, newdata)
+                X <- model.matrix(X.terms, newdata, xlev = xlevs)
                 #offset <- model.offset(mf)
                 })
             },
@@ -1113,33 +1125,38 @@ setMethod("predict", "unmarkedFitPCO",
 
             switch(type,
                 lambda = {
+                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(lambdaformula, sitedata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 gamma = {
+                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(gammaformula, yearlydata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 omega = {
+                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(omegaformula, yearlydata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 iota = {
+                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(iotaformula, yearlydata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 det = {
+                    xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(pformula, obsdata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                 })
             },
@@ -1325,21 +1342,24 @@ setMethod("predict", "unmarkedFitGMM",
         data.frame = {
             switch(type,
                 lambda = {
+                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(lambdaformula, sitedata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                     },
                 phi = {
+                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
                     mf <- model.frame(phiformula, yearlydata)
                     X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
                     offset <- model.offset(model.frame(X.terms, newdata))
                     },
                 det = {   # Note, this is p not pi
+                  xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
                   mf <- model.frame(pformula, obsdata)
                   X.terms <- terms(mf)
-                  X <- model.matrix(X.terms, newdata)
+                  X <- model.matrix(X.terms, newdata, xlev = xlevs)
                   offset <- model.offset(model.frame(X.terms, newdata))
                 })
         },
