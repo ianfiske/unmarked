@@ -253,11 +253,22 @@ setMethod("names", "unmarkedFit",
      formula <- object@formula
      detformula <- as.formula(formula[[2]])
      stateformula <- as.formula(paste("~", formula[3], sep=""))
+
      origdata <- getData(object)
      M <- numSites(origdata)
      R <- obsNum(origdata)
-     sitedata <- siteCovs(origdata)
-     obsdata <- cbind(obsCovs(origdata), sitedata[rep(1:M, each = R),])
+     if(is.null(siteCovs(origdata))) {
+          sitedata <- data.frame(site = rep(1, M))
+     } else {
+          sitedata <- siteCovs(origdata)
+     }
+     if(is.null(obsCovs(origdata))) {
+          obsCovs <- data.frame(obs = rep(1, M*R))
+     } else {
+          obsCovs <- obsCovs(origdata)
+     }
+     obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R),])
+
      if(inherits(newdata, "unmarkedFrame"))
          class(newdata) <- "unmarkedFrame"
      cls <- class(newdata)[1]
@@ -282,12 +293,14 @@ setMethod("names", "unmarkedFit",
      data.frame = {
          switch(type,
              state = {
-                 X.terms <- terms(model.frame(stateformula, sitedata))
+                 mf <- model.frame(stateformula, sitedata)
+                 X.terms <- terms(mf)
                  X <- model.matrix(X.terms, newdata)
                  offset <- model.offset(model.frame(X.terms, newdata))
                  },
              det = {
-                 X.terms <- terms(model.frame(detformula, obsdata))
+                 mf <- model.frame(detformula, obsdata)
+                 X.terms <- terms(mf)
                  X <- model.matrix(X.terms, newdata)
                  offset <- model.offset(model.frame(X.terms, newdata))
                  })
@@ -528,11 +541,22 @@ setMethod("predict", "unmarkedFitPCount",
     formula <- object@formula
     detformula <- as.formula(formula[[2]])
     stateformula <- as.formula(paste("~", formula[3], sep=""))
+
     origdata <- getData(object)
     M <- numSites(origdata)
     R <- obsNum(origdata)
-    sitedata <- siteCovs(origdata)
-    obsdata <- cbind(obsCovs(origdata), sitedata[rep(1:M, each = R),])
+    if(is.null(siteCovs(origdata))) {
+         sitedata <- data.frame(site = rep(1, M))
+    } else {
+         sitedata <- siteCovs(origdata)
+    }
+    if(is.null(obsCovs(origdata))) {
+         obsCovs <- data.frame(obs = rep(1, M*R))
+    } else {
+         obsCovs <- obsCovs(origdata)
+    }
+    obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R),])
+
     if(inherits(newdata, "unmarkedFrame"))
         class(newdata) <- "unmarkedFrame"
     cls <- class(newdata)[1]
@@ -557,12 +581,14 @@ setMethod("predict", "unmarkedFitPCount",
     data.frame = {
         switch(type,
                state = {
-                    X.terms <- terms(model.frame(stateformula, sitedata))
+                    mf <- model.frame(stateformula, sitedata)
+                    X.terms <- terms(mf)
                     X <- model.matrix(X.terms, newdata)
                     offset <- model.offset(model.frame(X.terms, newdata))
                },
                det = {
-                    X.terms <- terms(model.frame(detformula, obsdata))
+                    mf <- model.frame(detformula, obsdata)
+                    X.terms <- terms(mf)
                     X <- model.matrix(X.terms, newdata)
                     offset <- model.offset(model.frame(X.terms, newdata))
                })
@@ -704,11 +730,22 @@ setMethod("predict", "unmarkedFitOccuFP",
             stateformula <- object@stateformula
             FPformula <- object@FPformula
             Bformula <- object@Bformula
+
             origdata <- getData(object)
             M <- numSites(origdata)
             R <- obsNum(origdata)
-            sitedata <- siteCovs(origdata)
-            obsdata <- cbind(obsCovs(origdata), sitedata[rep(1:M, each = R),])
+            if(is.null(siteCovs(origdata))) {
+                 sitedata <- data.frame(site = rep(1, M))
+            } else {
+                 sitedata <- siteCovs(origdata)
+            }
+            if(is.null(obsCovs(origdata))) {
+                 obsCovs <- data.frame(obs = rep(1, M*R))
+            } else {
+                 obsCovs <- obsCovs(origdata)
+            }
+            obsdata <- cbind(obsCovs, sitedata[rep(1:M, each = R),])
+
             if(inherits(newdata, "unmarkedFrameOccuFP"))
               class(newdata) <- "unmarkedFrameOccuFP"
             cls <- class(newdata)[1]
@@ -740,22 +777,26 @@ setMethod("predict", "unmarkedFitOccuFP",
                    data.frame = {
                      switch(type,
                             state = {
-                                 X.terms <- terms(model.frame(stateformula, sitedata))
+                                 mf <- model.frame(stateformula, sitedata)
+                                 X.terms <- terms(mf)
                                  X <- model.matrix(X.terms, newdata)
                                  offset <- model.offset(model.frame(X.terms, newdata))
                             },
                             det = {
-                                 X.terms <- terms(model.frame(detformula, obsdata))
+                                 mf <- model.frame(detformula, obsdata)
+                                 X.terms <- terms(mf)
                                  X <- model.matrix(X.terms, newdata)
                                  offset <- model.offset(model.frame(X.terms, newdata))
                             },
                             fp = {
-                                 X.terms <- terms(model.frame(FPformula, obsdata))
+                                 mf <- model.frame(FPformula, obsdata)
+                                 X.terms <- terms(mf)
                                  X <- model.matrix(X.terms, newdata)
                                  offset <- model.offset(model.frame(X.terms, newdata))
                             },
                             b = {
-                                 X.terms <- terms(model.frame(Bformula, obsdata))
+                                 mf <- model.frame(Bformula, obsdata)
+                                 X.terms <- terms(mf)
                                  X <- model.matrix(X.terms, newdata)
                                  offset <- model.offset(model.frame(X.terms, newdata))
                             })
@@ -832,31 +873,49 @@ setMethod("predict", "unmarkedFitColExt",
         origdata <- getData(object)
         M <- numSites(origdata)
         R <- obsNum(origdata)
-        nY <- origdata@numPrimary
-        J <- R / nY
+        T <- origdata@numPrimary
+        J <- R / T
 
-        sitedata <- siteCovs(origdata)
-        yearlydata <- cbind(yearlySiteCovs(origdata), sitedata[rep(1:M, each = nY),,drop=FALSE])
-        obsdata <- cbind(obsCovs(origdata), yearlydata[rep(1:(M*nY), each = J),])
+        if(is.null(siteCovs(origdata))) {
+             sitedata <- data.frame(site = rep(1, M))
+        } else {
+             sitedata <- siteCovs(origdata)
+        }
+        if(is.null(yearlySiteCovs(origdata))) {
+             yearlySiteCovs <- data.frame(year = rep(1, M*T))
+        } else {
+             yearlySiteCovs <- yearlySiteCovs(origdata)
+        }
+        yearlydata <- cbind(yearlySiteCovs, sitedata[rep(1:M, each = T), , drop = FALSE])
+        if(is.null(obsCovs(origdata))) {
+             obsCovs <- data.frame(obs = rep(1, M*R))
+        } else {
+             obsCovs <- obsCovs(origdata)
+        }
+        obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
 
         switch(type,
             psi = {
-                X.terms <- terms(model.frame(psiformula, sitedata))
+                mf <- model.frame(psiformula, sitedata)
+                X.terms <- terms(mf)
                 X <- model.matrix(X.terms, newdata)
                 #offset <- model.offset(mf)
                 },
             col = {
-                X.terms <- terms(model.frame(gamformula, yeardata))
+                mf <- model.frame(gamformula, yearlydata)
+                X.terms <- terms(mf)
                 X <- model.matrix(X.terms, newdata)
                 #offset <- model.offset(mf)
                 },
             ext = {
-                X.terms <- terms(model.frame(epsformula, yeardata))
+                mf <- model.frame(epsformula, yearlydata)
+                X.terms <- terms(mf)
                 X <- model.matrix(X.terms, newdata)
                 #offset <- model.offset(mf)
                 },
             det = {
-                X.terms <- terms(model.frame(detformula, obsdata))
+                mf <- model.frame(detformula, obsdata)
+                X.terms <- terms(mf)
                 X <- model.matrix(X.terms, newdata)
                 #offset <- model.offset(mf)
                 })
@@ -1027,31 +1086,61 @@ setMethod("predict", "unmarkedFitPCO",
             omegaformula <- formlist$omegaformula
             pformula <- formlist$pformula
             iotaformula <- formlist$iotaformula
+
+            origdata <- getData(object)
+            M <- numSites(origdata)
+            R <- obsNum(origdata)
+            T <- origdata@numPrimary
+            J <- R / T
+
+            if(is.null(siteCovs(origdata))) {
+                 sitedata <- data.frame(site = rep(1, M))
+            } else {
+                 sitedata <- siteCovs(origdata)
+            }
+            if(is.null(yearlySiteCovs(origdata))) {
+                 yearlySiteCovs <- data.frame(year = rep(1, M*T))
+            } else {
+                 yearlySiteCovs <- yearlySiteCovs(origdata)
+            }
+            yearlydata <- cbind(yearlySiteCovs, sitedata[rep(1:M, each = T), , drop = FALSE])
+            if(is.null(obsCovs(origdata))) {
+                 obsCovs <- data.frame(obs = rep(1, M*R))
+            } else {
+                 obsCovs <- obsCovs(origdata)
+            }
+            obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
+
             switch(type,
                 lambda = {
-                    mf <- model.frame(lambdaformula, newdata)
-                    X <- model.matrix(lambdaformula, mf)
-                    offset <- model.offset(mf)
+                    mf <- model.frame(lambdaformula, sitedata)
+                    X.terms <- terms(mf)
+                    X <- model.matrix(X.terms, newdata)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 gamma = {
-                    mf <- model.frame(gammaformula, newdata)
-                    X <- model.matrix(gammaformula, mf)
-                    offset <- model.offset(mf)
+                    mf <- model.frame(gammaformula, yearlydata)
+                    X.terms <- terms(mf)
+                    X <- model.matrix(X.terms, newdata)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 omega = {
-                    mf <- model.frame(omegaformula, newdata)
-                    X <- model.matrix(omegaformula, mf)
-                    offset <- model.offset(mf)
+                    mf <- model.frame(omegaformula, yearlydata)
+                    X.terms <- terms(mf)
+                    X <- model.matrix(X.terms, newdata)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 iota = {
-                    mf <- model.frame(iotaformula, newdata)
-                    X <- model.matrix(iotaformula, mf)
-                    offset <- model.offset(mf)
+                    mf <- model.frame(iotaformula, yearlydata)
+                    X.terms <- terms(mf)
+                    X <- model.matrix(X.terms, newdata)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 det = {
-                    mf <- model.frame(pformula, newdata)
-                    X <- model.matrix(pformula, mf)
-                    offset <- model.offset(mf)
+                    mf <- model.frame(pformula, obsdata)
+                    X.terms <- terms(mf)
+                    X <- model.matrix(X.terms, newdata)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 })
             },
         RasterStack = {
@@ -1183,6 +1272,30 @@ setMethod("predict", "unmarkedFitGMM",
     pformula <- formlist$pformula
     formula <- object@formula
 
+    origdata <- getData(object)
+    M <- numSites(origdata)
+    R <- obsNum(origdata)
+    T <- origdata@numPrimary
+    J <- R/T
+
+    if(is.null(siteCovs(origdata))) {
+         sitedata <- data.frame(site = rep(1, M))
+    } else {
+         sitedata <- siteCovs(origdata)
+    }
+    if(is.null(yearlySiteCovs(origdata))) {
+         yearlySiteCovs <- data.frame(year = rep(1, M*T))
+    } else {
+         yearlySiteCovs <- yearlySiteCovs(origdata)
+    }
+    yearlydata <- cbind(yearlySiteCovs, sitedata[rep(1:M, each = T), , drop = FALSE])
+    if(is.null(obsCovs(origdata))) {
+         obsCovs <- data.frame(obs = rep(1, M*R))
+    } else {
+         obsCovs <- obsCovs(origdata)
+    }
+    obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
+
     if(inherits(newdata, "unmarkedFrame"))
       cls <- "unmarkedFrame"
     else
@@ -1212,19 +1325,22 @@ setMethod("predict", "unmarkedFitGMM",
         data.frame = {
             switch(type,
                 lambda = {
-                    mf <- model.frame(lambdaformula, newdata)
-                    X <- model.matrix(lambdaformula, mf)
-                    offset <- model.offset(mf)
+                    mf <- model.frame(lambdaformula, sitedata)
+                    X.terms <- terms(mf)
+                    X <- model.matrix(X.terms, newdata)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                     },
                 phi = {
-                    mf <- model.frame(phiformula, newdata)
-                    X <- model.matrix(phiformula, mf)
-                    offset <- model.offset(mf)
+                    mf <- model.frame(phiformula, yearlydata)
+                    X.terms <- terms(mf)
+                    X <- model.matrix(X.terms, newdata)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                     },
                 det = {   # Note, this is p not pi
-                  mf <- model.frame(pformula, newdata)
-                  X <- model.matrix(pformula, mf)
-                  offset <- model.offset(mf)
+                  mf <- model.frame(pformula, obsdata)
+                  X.terms <- terms(mf)
+                  X <- model.matrix(X.terms, newdata)
+                  offset <- model.offset(model.frame(X.terms, newdata))
                 })
         },
         RasterStack = {
