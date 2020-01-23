@@ -85,7 +85,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
   nll_C <- function(params) {
     .Call("nll_occuMulti",
           fStart-1, fStop-1, t_dmF, dmOcc, params, dmDet, dStart-1, dStop-1,
-          y, yStart-1, yStop-1, Iy0, as.matrix(z), fixed0, penalty,
+          y, yStart-1, yStop-1, Iy0, as.matrix(z), fixed0, penalty, 0,
           PACKAGE = "unmarked")
   }
   #----------------------------------------------------------------------------
@@ -136,4 +136,27 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
                 negLogLike = fm$value, nllFun = nll_R)
 
   umfit
+}
+
+
+occuMultiLogLik <- function(fit, data){
+  
+  if(!inherits(fit, "unmarkedFitOccuMulti"))
+    stop("Fit must be created with occuMulti()")
+  if(!inherits(data, "unmarkedFrameOccuMulti"))
+    stop("Data must be created with unmarkedFrameOccuMulti()")
+ 
+  dm <- getDesign(data, detformulas, stateformulas, maxOrder, warn=!silent)
+  
+  dmF <- Matrix::Matrix(dmF, sparse=TRUE)
+  t_dmF <- t(dmF)
+  
+  .Call("nll_occuMulti",
+          dm$fStart-1, dm$fStop-1, t_dmF, 
+          dm$dmOcc, coef(fit), dm$dmDet, dm$dStart-1, dm$dStop-1, dm$y, 
+          dm$yStart-1, dm$yStop-1, dm$Iy0, as.matrix(dm$z), dm$fixed0, 0,
+          #return site likelihoods
+          1,
+          PACKAGE = "unmarked")
+
 }
