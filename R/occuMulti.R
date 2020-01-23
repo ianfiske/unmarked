@@ -145,18 +145,24 @@ occuMultiLogLik <- function(fit, data){
     stop("Fit must be created with occuMulti()")
   if(!inherits(data, "unmarkedFrameOccuMulti"))
     stop("Data must be created with unmarkedFrameOccuMulti()")
- 
-  dm <- getDesign(data, detformulas, stateformulas, maxOrder, warn=!silent)
+
+  maxOrder <- fit@call$maxOrder
+  if(is.null(maxOrder)) maxOrder <- length(fit@data@ylist)
+
+  dm <- getDesign(data, fit@detformulas, fit@stateformulas, 
+                  maxOrder=maxOrder, warn=FALSE)
   
-  dmF <- Matrix::Matrix(dmF, sparse=TRUE)
+  dmF <- Matrix::Matrix(dm$dmF, sparse=TRUE)
   t_dmF <- t(dmF)
   
-  .Call("nll_occuMulti",
+  out <- .Call("nll_occuMulti",
           dm$fStart-1, dm$fStop-1, t_dmF, 
           dm$dmOcc, coef(fit), dm$dmDet, dm$dStart-1, dm$dStop-1, dm$y, 
           dm$yStart-1, dm$yStop-1, dm$Iy0, as.matrix(dm$z), dm$fixed0, 0,
           #return site likelihoods
           1,
           PACKAGE = "unmarked")
+
+  as.vector(out)
 
 }
