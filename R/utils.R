@@ -683,15 +683,18 @@ sight2perpdist <- function(sightdist, sightangle)
     sightdist * sin(sightangle * pi / 180)
 }
 
+#Sum of squared errors method
+setGeneric("SSE", function(fit, ...) standardGeneric("SSE"))
 
-
-SSE <- function(fit)
-{
+setMethod("SSE", "unmarkedFit", function(fit, ...){
     sse <- sum(residuals(fit)^2, na.rm=TRUE)
     return(c(SSE=sse))
-}
+})
 
-
+setMethod("SSE", "unmarkedFitOccuMulti", function(fit, ...){
+    r <- do.call(rbind, residuals(fit))
+    return(c(SSE = sum(r^2, na.rm=T)))
+})
 
 # For pcountOpen. Calculate time intervals acknowledging gaps due to NAs
 # The first column indicates is time since first primary period + 1

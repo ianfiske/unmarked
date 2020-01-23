@@ -1,36 +1,33 @@
+#Get y (corrected for missing values) based on data and formulas
+#Approach for some fit functions is different, so this is now a method
+setGeneric("fl_getY", function(fit, ...) standardGeneric("fl_getY"))
+
+setMethod("fl_getY", "unmarkedFit", function(fit, ...){
+  getDesign(getData(fit), fit@formula)$y
+})
+
+setMethod("fl_getY", "unmarkedFitOccuMulti", function(fit, ...){
+  getDesign(getData(fit), fit@detformulas, fit@stateformulas)$y
+})
+
+setMethod("fl_getY", "unmarkedFitOccuMS", function(fit, ...){
+  getDesign(getData(fit), fit@psiformulas, fit@phiformulas,
+            fit@detformulas, fit@parameterization)$y
+})
+
+setMethod("fl_getY", "unmarkedFitOccuFP", function(fit, ...){
+  getDesign(getData(fit), fit@detformula, fit@FPformula,
+            fit@Bformula, fit@stateformula)$y
+})
 
 setClass("unmarkedFitList",
     representation(fits = "list"),
     validity = function(object) {
         fl <- object@fits
-        testY <- function(fit) {
-            f <- fit@formula
-            umf <- getData(fit)
-            #hack to support occuMulti
-            if(class(fit) == 'unmarkedFitOccuMulti'){
-              getDesign(umf,fit@detformulas,fit@stateformulas)$y 
-            } else if(class(fit) == "unmarkedFitOccuMS"){
-              getDesign(umf1, fl[[1]]@psiformulas, fl[[1]]@phiformulas,
-                        fl[[1]]@detformulas,
-                          fl[[1]]@parameterization)$y
-            } else {
-              D <- getDesign(umf, f)
-              D$y
-            }
-        }
         umf1 <- getData(fl[[1]])
-        form1 <- fl[[1]]@formula
-        if(class(fl[[1]]) == 'unmarkedFitOccuMulti'){
-          y1 <- getDesign(umf1, fl[[1]]@detformulas, fl[[1]]@stateformulas)$y
-        } else if (class(fl[[1]]) == 'unmarkedFitOccuMS'){
-          y1 <- getDesign(umf1, fl[[1]]@psiformulas, fl[[1]]@phiformulas,
-                          fl[[1]]@detformulas,
-                          fl[[1]]@parameterization)$y
-        } else {
-          y1 <- getDesign(umf1, form1)$y
-        }
+        y1 <- fl_getY(fl[[1]])
         dataTest <- sapply(fl, function(x) isTRUE(all.equal(umf1, getData(x))))
-        yTest <- sapply(fl, function(x) isTRUE(all.equal(y1, testY(x))))
+        yTest <- sapply(fl, function(x) isTRUE(all.equal(y1, fl_getY(x))))
         if(!all(dataTest)) {
             stop("Data are not the same among models. Make sure you use the same unmarkedFrame object for all models.")
             }

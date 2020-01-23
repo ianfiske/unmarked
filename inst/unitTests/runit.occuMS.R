@@ -137,6 +137,11 @@ test.occuMS.multinom.fit <- function(){
   fitvals <- fitted(fit_C)
   checkEqualsNumeric(dim(fitvals),c(N,J))
   checkEqualsNumeric(fitvals[1,1],0.2231388,tol=1e-4)
+
+  #Check fitList
+  fl <- fitList(fit_C, fit_C)
+  checkEquals(class(fl)[1],"unmarkedFitList")
+  checkEqualsNumeric(length(fl@fits), 2)
 }
 
 

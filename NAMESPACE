@@ -10,7 +10,7 @@ importFrom(stats, confint, fitted, coef, vcov, predict, update, profile,
 importFrom(graphics, plot, hist, abline)
 importFrom(utils, head, read.csv)
 importFrom(plyr, ldply, alply, ddply)
-importFrom(grDevices, devAskNewPage)
+importFrom(grDevices, devAskNewPage, dev.interactive)
 importFrom("raster","stack")
 importFrom("raster", "raster", "extent", "extent<-", "getValues") ## MM
 importFrom("MASS", "mvrnorm")
@@ -22,6 +22,7 @@ export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
        colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
        occuMS, computeMPLElambda, pcount.spHDS, occuTTD)
 export(removalPiFun, doublePiFun)
+export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 
 # S4 classes
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,

@@ -4,7 +4,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
   
   #Format input data-----------------------------------------------------------
   #Check data object
-  if(!class(data) == "unmarkedFrameOccuMulti")
+  if(!inherits(data, "unmarkedFrameOccuMulti"))
     stop("Data must be created with unmarkedFrameOccuMulti()")
  
   #Check engine

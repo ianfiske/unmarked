@@ -13,19 +13,32 @@ setClass("parboot",
                         t0 = "numeric",
                         t.star = "matrix"))
 
+setGeneric("replaceY", function(object, newY, replNA = TRUE, ...){
+           standardGeneric("replaceY")})
+setMethod("replaceY", "unmarkedFrame", function(object, newY, replNA=TRUE, ...){
+    if(replNA) is.na(newY) <- is.na(object@y)
+    object@y <- newY
+    object
+})
+setMethod("replaceY", "unmarkedFrameOccuMulti",
+          function(object, newY, replNA=TRUE, ...){
+      if(replNA){
+        newY <- mapply(function(x, y){ is.na(x) <- is.na(y); x},
+                       newY , object@ylist, SIMPLIFY=FALSE)
+      }
+      object@ylist <- newY
+      object
+})
 
 setMethod("parboot", "unmarkedFit",
-    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ...)
+    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ncores, ...)
 {
     dots <- list(...)
     statistic <- match.fun(statistic)
     call <- match.call(call = sys.call(-1))
     formula <- object@formula
     umf <- getData(object)
-    y <- getY(umf)
-    if(class(object) %in% c("unmarkedFitOccu", "unmarkedFitOccuRN",
-        "unmarkedFitColExt"))
-            y <- truncateToBinary(y)
+    y <- getY(object)
     ests <- as.numeric(coef(object))
     t0 <- statistic(object, ...)
     lt0 <- length(t0)
@@ -38,111 +51,49 @@ setMethod("parboot", "unmarkedFit",
     simdata <- umf
     if (!is.null(seed)) set.seed(seed)
     simList <- simulate(object, nsim = nsim, na.rm = FALSE)
-    coresToUse <- detectCores() - 1
-
-    if (coresToUse < 2 || nsim < 100 || parallel == FALSE) {
-	  for(i in 1:nsim) {
-		y.sim <- simList[[i]]
-		is.na(y.sim) <- is.na(y)
-		simdata@y <- y.sim
-		fit <- update(object, data=simdata, starts=ests, se=FALSE)
-		t.star[i,] <- statistic(fit, ...)
-		  if(!missing(report)) {
-            if (nsim > report && i %in% seq(report, nsim, by=report))
-                cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=","), fill=TRUE)
-#            flush.console()
-          }
-		  out <- new("parboot", call=call, t0 = t0, t.star = t.star)
+    availcores <- detectCores()
+    if(missing(ncores)) ncores <- availcores - 1
+    if(ncores > availcores) ncores <- availcores
+    
+    no_par <- ncores < 2 || nsim < 100 || !parallel
+    
+    if (no_par) {
+      for(i in 1:nsim) {
+        simdata <- replaceY(simdata, simList[[i]])
+        fit <- update(object, data=simdata, starts=ests, se=FALSE)
+        t.star[i,] <- statistic(fit, ...)
+        if(!missing(report)) {
+          if (nsim > report && i %in% seq(report, nsim, by=report))
+            cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=","), fill=TRUE)
         }
-	  } else {
-	  if (!missing(report)) cat("Running in parallel.  Bootstrapped statistics not reported.\n")
-      cl <- makeCluster(coresToUse)
+        out <- new("parboot", call=call, t0 = t0, t.star = t.star)
+      }
+    } else {
+      if (!missing(report)) message("Running in parallel on ", ncores, " cores. Bootstrapped statistics not reported.")
+      cl <- makeCluster(ncores)
       on.exit(stopCluster(cl))
       varList <- c("simList", "y", "object", "simdata", "ests", "statistic", "dots")
       # If call formula is an object, include it too
       fm.nms <- all.names(object@call)
       if (!any(grepl("~", fm.nms))) varList <- c(varList, fm.nms[2])
       ## Hack to get piFun for unmarkedFitGMM and unmarkedFitMPois
-      if (class(object) == "unmarkedFitGMM" | class(object) == "unmarkedFitMPois") 
-        varList <- c(varList, umf@piFun)
+      if(.hasSlot(umf, "piFun")) varList <- c(varList, umf@piFun)
       clusterExport(cl, varList, envir = environment())
       clusterEvalQ(cl, library(unmarked))
       clusterEvalQ(cl, list2env(dots))
       t.star.parallel <- parLapply(cl, 1:nsim, function(i) {
-        y.sim <- simList[[i]]
-        is.na(y.sim) <- is.na(y)
-        simdata@y <- y.sim
+        simdata <- replaceY(simdata, simList[[i]])
         fit <- update(object, data = simdata, starts = ests, se = FALSE)
         t.star <- statistic(fit, ...)
       })
       t.star <- matrix(unlist(t.star.parallel), nrow = length(t.star.parallel), byrow = TRUE)
       colnames(t.star) <- names(t.star.parallel[[1]])
       out <- new("parboot", call = call, t0 = t0, t.star = t.star)
-	  }
+    }
 		
     return(out)
 })
 
-
-setMethod("parboot", "unmarkedFitOccuMulti",
-    function(object, statistic=SSE, nsim=10, report, seed = NULL, parallel = TRUE, ...)
-{
-
-  dots <- list(...)
-
-  SSE <- function(object){
-    r <- do.call(rbind, residuals(object))
-    return(c(SSE = sum(r^2, na.rm=T)))
-  }
-
-  statistic <- match.fun(statistic)
-  call <- object@call
-
-  ests <- as.numeric(coef(object))
-  t0 <- statistic(object, ...)
-  lt0 <- length(t0)
-
-  simdata <- object@data
-  if (!is.null(seed)) set.seed(seed)
-  simList <- simulate(object, nsim=nsim)
-
-  coresToUse <- detectCores() - 1
-  no_par <- coresToUse < 2 || nsim < 100 || !parallel
-  
-  if(no_par){
-
-    t.star <- matrix(NA, nsim, lt0)
-    for (i in 1:nsim){
-      simdata@ylist <- simList[[i]]
-      fit <- update(object, data=simdata, starts=ests, se=F, silent=T)
-      t.star[i,] <- statistic(fit, ...)
-    }
-
-  } else {
-    cl <- makeCluster(coresToUse)
-    on.exit(stopCluster(cl))
-    varList <- c("simList", "object", "simdata", "ests", "statistic", "dots")
-    
-    clusterExport(cl, varList, envir = environment())
-    clusterEvalQ(cl, library(unmarked))
-    clusterEvalQ(cl, list2env(dots))
-    t.star.parallel <- parLapply(cl, 1:nsim, function(i) {
-      simdata@ylist <- simList[[i]]
-      fit <- update(object, data = simdata, starts = ests, se = F, silent=T)
-      statistic(fit, ...)
-    })
-    t.star <- matrix(unlist(t.star.parallel), nrow=length(t.star.parallel),
-                     byrow=T)
-  }
-  if(!is.null(names(t0))){
-    colnames(t.star) <- names(t0)
-  } else {
-    colnames(t.star) <- paste("t*", 1:lt0, sep="")
-  }
-  
-  new("parboot", call = call, t0 = t0, t.star = t.star)
-
-})
 
 setMethod("show", "parboot", function(object)
 {
@@ -166,7 +117,7 @@ setMethod("show", "parboot", function(object)
     cat("\nt_B quantiles:\n")
     print(t(apply(t.star, 2, quantile,
         probs=c(0, 2.5, 25, 50, 75, 97.5, 100) / 100)), digits=2)
-    cat("\nt0 = Original statistic compuated from data\n")
+    cat("\nt0 = Original statistic computed from data\n")
     cat("t_B = Vector of bootstrap samples\n\n")
 })
 
@@ -179,6 +130,10 @@ setMethod("plot", signature(x="parboot", y="missing"),
 {
     t.star <- x@t.star
     t0 <- x@t0
+    if(length(t0) > 1) {
+      oldask <- devAskNewPage(ask = dev.interactive(orNone = TRUE))
+      on.exit(devAskNewPage(oldask))
+    }
     for(i in 1:length(t0)) {
         if(missing(xlab))
             xlab <- colnames(t.star)[i]
@@ -189,9 +144,7 @@ setMethod("plot", signature(x="parboot", y="missing"),
             xl <- xlim
         hist(t.star[,i], xlab=xlab, xlim = xl, main = main, ...)
         abline(v=t0[i], lty=2)
-        devAskNewPage(ask = TRUE)
-        }
-    devAskNewPage(ask = FALSE)
+    }
 })
 
 

@@ -388,7 +388,7 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
 
     phi <- matrix(phi, nSites, byrow=TRUE)
 
-    if(identical(class(object)[1], "unmarkedFitGDS")) {
+    if(inherits(object, "unmarkedFitGDS")) {
         if(identical(object@output, "density")) {
             survey <- object@data@survey
             tlength <- object@data@tlength
