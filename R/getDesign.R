@@ -623,7 +623,8 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 ## occuMS
 
 setMethod("getDesign", "unmarkedFrameOccuMS",
-    function(umf, psiformulas, phiformulas, detformulas, prm, na.rm=TRUE) 
+    function(umf, psiformulas, phiformulas, detformulas, prm, na.rm=TRUE,
+             return_frames=FALSE, old_fit=NULL) 
 {
   
   N <- numSites(umf)
@@ -664,11 +665,20 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   }
 
   #Function to create list of design matrices from list of formulas
-  get_dm <- function(formulas, covs, namevec){
+  get_dm <- function(formulas, covs, namevec, old_covs=NULL){
+    
+    ref_covs <- covs
+    if(!is.null(old_covs)) ref_covs <- old_covs
+
+    fac_col <- ref_covs[, sapply(ref_covs, is.factor), drop=FALSE]
+    xlevs_all <- lapply(fac_col, levels)
 
     apply_func <- function(i){
+      mf <- model.frame(as.formula(formulas[i]), ref_covs)
+      xlevs <- xlevs_all[names(xlevs_all) %in% names(mf)]
       out <- model.matrix(as.formula(formulas[i]), 
-                        model.frame(~., covs, na.action=stats::na.pass))
+              model.frame(stats::terms(mf), covs, 
+                          na.action=stats::na.pass, xlev=xlevs))
       #improve these names
       colnames(out) <- paste(namevec[i], colnames(out))
       out
@@ -797,20 +807,34 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
   }
 
+  if(return_frames){ 
+    return(list(site_covs=site_covs, y_site_covs=y_site_covs, obs_covs=obs_covs))
+  }
+
+  old_sc <- old_ysc <- old_oc <- NULL
+  if(!is.null(old_fit)){
+    old_frames <- getDesign(old_fit@data, old_fit@psiformulas, 
+                            old_fit@phiformulas, old_fit@detformulas,
+                            old_fit@parameterization, return_frames=TRUE)
+    old_sc <- old_frames$site_covs
+    old_ysc <- old_frames$y_site_covs
+    old_oc <- old_frames$obs_covs
+  }
+
   dm_state <- get_dm(psiformulas, site_covs, 
-                     get_psi_names(length(psiformulas),prm)) 
+                     get_psi_names(length(psiformulas),prm), old_sc) 
   nSP <- length(get_param_names(dm_state))
   state_ind <- get_param_inds(dm_state) #generate ind matrix in function
   
   nPP <- 0; dm_phi <- list(); phi_ind <- c()
   if(T>1){
     dm_phi <- get_dm(phiformulas, y_site_covs,
-                   get_phi_names(length(phiformulas),prm))
+                   get_phi_names(length(phiformulas),prm), old_ysc)
     nPP <- length(get_param_names(dm_phi))
     phi_ind <- get_param_inds(dm_phi, offset=nSP)
   }
 
-  dm_det <- get_dm(detformulas, obs_covs, get_p_names(S,prm))
+  dm_det <- get_dm(detformulas, obs_covs, get_p_names(S,prm), old_oc)
   det_ind <- get_param_inds(dm_det, offset=(nSP+nPP))
 
   param_names <- c(get_param_names(dm_state), 

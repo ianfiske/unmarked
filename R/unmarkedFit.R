@@ -1682,7 +1682,7 @@ setMethod("predict", "unmarkedFitOccuMS",
   S <- object@data@numStates
   gd <- getDesign(newdata,object@psiformulas,object@phiformulas,
                   object@detformulas,
-                  object@parameterization, na.rm=F)
+                  object@parameterization, na.rm=F, old_fit=object)
 
   #Index guide used to organize p values
   guide <- matrix(NA,nrow=S,ncol=S)

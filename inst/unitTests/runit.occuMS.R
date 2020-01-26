@@ -539,3 +539,90 @@ checkEqualsNumeric(pr_phi,
                      0.999950,0.5841778),tol=1e-4)
 
 }
+
+test.occuMS.predit.complexFormulas <- function(){
+  
+  #Simulate data
+  set.seed(123)
+  N <- 50; J <- 5; S <- 3
+  site_covs <- matrix(rnorm(N*2, mean=2),ncol=2)
+  obs_covs <- matrix(rnorm(N*J*2),ncol=2)
+  a1 <- -0.5; b1 <- 1; a2 <- -0.6; b2 <- -0.7
+  p11 <- -0.4; p12 <- -1.09; p22 <- -0.84
+  truth <- c(a1,b1,a2,b2,p11,0,p12,p22)
+
+  lp <- matrix(NA,ncol=S,nrow=N)
+  for (n in 1:N){
+    lp[n,2] <- exp(a1+b1*site_covs[n,1])
+    lp[n,3] <- exp(a2+b2*site_covs[n,2])
+    lp[n,1] <- 1  
+  }
+  psi_mat <- lp/rowSums(lp)
+
+  z <- rep(NA,N)
+  for (n in 1:N){
+    z[n] <- sample(0:2, 1, replace=T, prob=psi_mat[n,])
+  }
+
+  probs_raw <- matrix(c(1,0,0,1,exp(p11),0,1,exp(p12),exp(p22)),nrow=3,byrow=T)
+  probs_raw <- probs_raw/rowSums(probs_raw)
+  
+  y <- matrix(0,nrow=N,ncol=J)
+  for (n in 1:N){
+
+  probs <- switch(z[n]+1,
+                  probs_raw[1,],
+                  probs_raw[2,],
+                  probs_raw[3,])
+  if(z[n]>0){
+    y[n,] <- sample(0:2, J, replace=T, probs)
+  }
+  }
+
+  umf <- unmarkedFrameOccuMS(y=y,siteCovs=as.data.frame(site_covs),
+                           obsCovs=as.data.frame(obs_covs))
+
+  stateformulas <- c('~scale(V1)','~V2')
+  detformulas <- c('~V1','~1','~1')
+  fit_C <- occuMS(detformulas, stateformulas, data=umf, engine="C")
+
+  #Check with newdata; contents of newdata should not
+  #effect resulting predictions (scale should be based on
+  #original data)
+  nd <- siteCovs(umf)[1:5,]
+  pr_nd <- predict(fit_C, type='psi', newdata=nd, se=F)$Predicted
+  nd <- siteCovs(umf)[1:2,]
+  pr_nd2 <- predict(fit_C, type='psi', newdata=nd, se=F)$Predicted
+  nd <- siteCovs(umf)[c(1,1),]
+  pr_nd3 <- predict(fit_C, type='psi', newdata=nd, se=F)$Predicted
+
+  checkEqualsNumeric(pr_nd[1:2,], pr_nd2)
+  checkEqualsNumeric(pr_nd[c(1,1),], pr_nd3)
+  
+  #Check for factor level handling
+  site_covs2 <- as.data.frame(site_covs)
+  site_covs2$occ_fac <- factor(sample(c('a','b','c'),N,replace=T),
+                              levels=c('b','a','c'))
+
+  umf <- unmarkedFrameOccuMS(y=y,siteCovs=site_covs2,
+                           obsCovs=as.data.frame(obs_covs))
+  stateformulas <- c('~occ_fac','~1')
+  fm <- occuMS(detformulas, stateformulas, data = umf)
+
+  nd <- siteCovs(umf)[1:2,]
+  pr_nd <- predict(fm, type='psi', newdata=nd, se=F)$Predicted
+
+  nd2 <- data.frame(occ_fac=factor(c('a','b'),levels=c('b','a','c')))
+  pr_nd2 <- predict(fm, type='psi', newdata=nd2, se=F)$Predicted
+
+  checkEqualsNumeric(pr_nd, pr_nd2[c(2,1),])
+
+  nd3 <- data.frame(occ_fac=c('a','b'))
+  pr_nd3 <- predict(fm, type='psi', newdata=nd3, se=F)$Predicted
+
+  checkEqualsNumeric(pr_nd, pr_nd3[c(2,1),])
+
+  nd4 <- data.frame(occ_fac=c('a','d'))
+  checkException(predict(fm, type='psi', newdata=nd4, se=F))
+
+}
