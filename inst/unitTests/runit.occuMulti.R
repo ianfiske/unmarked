@@ -271,3 +271,64 @@ test.occuMulti.predict.NA <- function(){
   checkTrue(all(!is.na(prOcc_cond[2,])))
   checkEqualsNumeric(prOcc_sp$Predicted[2],0.4731427, tol=1e-4)
 }
+
+
+test.occuMulti.predict.complexFormulas <- function(){
+
+  #Check scale(), etc
+  set.seed(123)
+  y <- list(matrix(rbinom(40,1,0.2),20,2),
+            matrix(rbinom(40,1,0.3),20,2))
+
+  N <- dim(y[[1]])[1]
+  J <- dim(y[[1]])[2]
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3, mean=2),ncol=3))
+  names(occ_covs) <- paste('occ_cov',1:3,sep='')
+
+  det_covs <- as.data.frame(matrix(rnorm(N*J*2, mean=3),ncol=2))
+  names(det_covs) <- paste('det_cov',1:2,sep='')
+
+  stateformulas <- c('~scale(occ_cov1)','~1','0')
+  detformulas <- c('~scale(det_cov1)','~1')
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+
+  #Check with newdata; contents of newdata should not
+  #effect resulting predictions (scale should be based on
+  #original data)
+  nd <- siteCovs(umf)[1:5,]
+  pr_nd <- predict(fm, type='state', newdata=nd, se=F)$Predicted
+  nd <- siteCovs(umf)[1:2,]
+  pr_nd2 <- predict(fm, type='state', newdata=nd, se=F)$Predicted
+  nd <- siteCovs(umf)[c(1,1),]
+  pr_nd3 <- predict(fm, type='state', newdata=nd, se=F)$Predicted
+
+  checkEqualsNumeric(pr_nd[1:2,], pr_nd2)
+  checkEqualsNumeric(pr_nd[c(1,1),], pr_nd3)
+
+  #Check for factor level handling
+  occ_covs$occ_fac <- factor(sample(c('a','b','c'),N,replace=T))
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+  stateformulas <- c('~occ_fac','~1','~1')
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+
+  nd <- siteCovs(umf)[1:2,]
+  pr_nd <- predict(fm, type='state', newdata=nd, se=F)$Predicted
+
+  nd2 <- data.frame(occ_fac=factor(c('a','b'),levels=c('a','b','c')))
+  pr_nd2 <- predict(fm, type='state', newdata=nd2, se=F)$Predicted
+
+  checkEqualsNumeric(pr_nd, pr_nd2[c(2,1),])
+
+  nd3 <- data.frame(occ_fac=c('a','b'))
+  pr_nd3 <- predict(fm, type='state', newdata=nd3, se=F)$Predicted
+
+  checkEqualsNumeric(pr_nd, pr_nd3[c(2,1),])
+
+  nd4 <- data.frame(occ_fac=factor(c('a','d'),levels=c('a','d')))
+  checkException(predict(fm, type='state', newdata=nd4, se=F))
+
+}

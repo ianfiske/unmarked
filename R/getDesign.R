@@ -465,7 +465,8 @@ setMethod("handleNA", "unmarkedMultFrame",
 # occuMulti
 
 setMethod("getDesign", "unmarkedFrameOccuMulti",
-    function(umf, detformulas, stateformulas, maxOrder, na.rm=TRUE, warn=FALSE)
+    function(umf, detformulas, stateformulas, maxOrder, na.rm=TRUE, warn=FALSE,
+            return_frames=FALSE, old_fit=NULL)
 {
 
   #Format formulas
@@ -568,6 +569,9 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 
   }
 
+  #Return only the formatted covariate frames for use with model.frames()
+  if(return_frames) return(list(obs_covs=obs_covs, site_covs=site_covs))
+
   #Start-stop indices for sites
   yStart <- c(1,1+which(diff(ylong$site)!=0))
   yStop <- c(yStart[2:length(yStart)]-1,nrow(ylong)) 
@@ -581,12 +585,28 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   #Design matrices + parameter counts
   #For f/occupancy
 
+  #Get reference covariate frames if necessary (for prediction)
+  site_ref <- site_covs
+  obs_ref <- obs_covs
+  if(!is.null(old_fit)){
+    mo <- old_fit@call$maxOrder
+    if(is.null(mo)) mo <- length(old_fit@data@ylist)
+    dfs <- getDesign(old_fit@data, old_fit@detformulas, old_fit@stateformulas,
+                           maxOrder=mo, return_frames=TRUE)
+    site_ref <- dfs$site_covs
+    obs_ref <- dfs$obs_covs
+  }
+
   fInd <- c()
   sf_no0 <- stateformulas[!fixed0]
   var_names <- colnames(dmF)[!fixed0] 
   dmOcc <- lapply(seq_along(sf_no0),function(i){
+                    fac_col <- site_ref[, sapply(site_ref, is.factor), drop=FALSE]
+                    mf <- model.frame(sf_no0[[i]], site_ref)
+                    xlevs <- lapply(fac_col, levels)
+                    xlevs <- xlevs[names(xlevs) %in% names(mf)]
                     out <- model.matrix(sf_no0[[i]],
-                            model.frame(~.,site_covs,na.action=stats::na.pass))
+                                        model.frame(stats::terms(mf), site_covs, na.action=stats::na.pass, xlev=xlevs))
                     colnames(out) <- paste('[',var_names[i],'] ',
                                            colnames(out), sep='')
                     fInd <<- c(fInd,rep(i,ncol(out)))
@@ -600,8 +620,12 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   #For detection
   dInd <- c()
   dmDet <- lapply(seq_along(detformulas),function(i){
+                    fac_col <- obs_ref[, sapply(obs_ref, is.factor), drop=FALSE]
+                    mf <- model.frame(detformulas[[i]], obs_ref)
+                    xlevs <- lapply(fac_col, levels)
+                    xlevs <- xlevs[names(xlevs) %in% names(mf)]
                     out <- model.matrix(detformulas[[i]],
-                            model.frame(~.,obs_covs,na.action=stats::na.pass))
+                                        model.frame(stats::terms(mf), obs_covs, na.action=stats::na.pass, xlev=xlevs))
                     colnames(out) <- paste('[',names(umf@ylist)[i],'] ',
                                            colnames(out),sep='')
                     dInd <<- c(dInd,rep(i,ncol(out)))
