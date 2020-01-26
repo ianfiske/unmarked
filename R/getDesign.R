@@ -602,12 +602,11 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   var_names <- colnames(dmF)[!fixed0] 
   dmOcc <- lapply(seq_along(sf_no0),function(i){
                     fac_col <- site_ref[, sapply(site_ref, is.factor), drop=FALSE]
+                    mf <- model.frame(sf_no0[[i]], site_ref)
                     xlevs <- lapply(fac_col, levels)
-                    mf <- model.frame(sf_no0[[i]], site_ref, 
-                                      na.action=stats::na.pass)
-                    out <- model.matrix(terms(mf), 
-                                        model.frame(~., site_covs, na.action=stats::na.pass),
-                                        xlev=xlevs)
+                    xlevs <- xlevs[names(xlevs) %in% names(mf)]
+                    out <- model.matrix(sf_no0[[i]],
+                                        model.frame(stats::terms(mf), site_covs, na.action=stats::na.pass, xlev=xlevs))
                     colnames(out) <- paste('[',var_names[i],'] ',
                                            colnames(out), sep='')
                     fInd <<- c(fInd,rep(i,ncol(out)))
@@ -622,12 +621,11 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   dInd <- c()
   dmDet <- lapply(seq_along(detformulas),function(i){
                     fac_col <- obs_ref[, sapply(obs_ref, is.factor), drop=FALSE]
+                    mf <- model.frame(detformulas[[i]], obs_ref)
                     xlevs <- lapply(fac_col, levels)
-                    mf <- model.frame(detformulas[[i]], obs_ref, 
-                                      na.action=stats::na.pass)
-                    out <- model.matrix(terms(mf), 
-                                        model.frame(~., obs_covs, na.action=stats::na.pass),
-                                        xlev=xlevs)
+                    xlevs <- xlevs[names(xlevs) %in% names(mf)]
+                    out <- model.matrix(detformulas[[i]],
+                                        model.frame(stats::terms(mf), obs_covs, na.action=stats::na.pass, xlev=xlevs))
                     colnames(out) <- paste('[',names(umf@ylist)[i],'] ',
                                            colnames(out),sep='')
                     dInd <<- c(dInd,rep(i,ncol(out)))
