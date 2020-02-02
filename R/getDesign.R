@@ -531,8 +531,11 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
                    x
           })
   ylong <- as.data.frame(do.call(rbind,ylong))
-  ylong <- melt(ylong,id.vars=c("site","species"),variable.name='sample')
-  ylong <- dcast(ylong, site + sample ~ species)
+  ylong <- reshape(ylong, idvar=c("site", "species"), varying=list(1:J),
+                   v.names="value", direction="long")
+  ylong <- reshape(ylong, idvar=c("site","time"), v.names="value",
+                    timevar="species", direction="wide")
+  ylong <- ylong[order(ylong$site, ylong$time), ]
 
   #Remove missing values
   if(na.rm){
