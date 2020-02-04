@@ -716,3 +716,16 @@ name_to_ind <- function(x,name_list){
 
   out * absent_adjust 
 }
+
+#Inverts Hessian. Returns blank matrix with a warning on a failure.
+invertHessian <- function(optimOut, nparam, SE){
+  
+  blankMat <- matrix(NA, nparam, nparam)
+  if(!SE) return(blankMat)
+
+  tryCatch(solve(optimOut$hessian),
+    error=function(e){
+      warning("Hessian is singular. Try providing starting values or using fewer covariates.", call.=FALSE)
+      return(blankMat)
+  })
+}

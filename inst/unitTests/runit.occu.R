@@ -88,7 +88,14 @@ test.occu.fit.covs.0 <- function() {
   siteCovs <- data.frame(x = c(0,2,3,4,1))
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  options(warn=2)
   checkException(fm <- occu(~ o1 + o2 ~ x, data = umf))
+  options(warn=0)
+  fm <- occu(~ o1 + o2 ~ x, data = umf)
+  detMat <- fm@estimates@estimates$det@covMat
+  stMat <- fm@estimates@estimates$state@covMat
+  checkEqualsNumeric(detMat, matrix(rep(NA,9),nrow=3))
+  checkEqualsNumeric(stMat, matrix(rep(NA,4),nrow=2))
 
 }
 
