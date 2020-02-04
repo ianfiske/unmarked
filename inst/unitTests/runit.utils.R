@@ -201,3 +201,34 @@ test.formatMult <- function() {
                                        0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0,
                                        0, 0, 0, 0, 1), .Dim = c(6L, 6L))))
 }
+
+test.invertHessian <- function(){
+
+  a <- 4; b <- 7; c <- 2; d <- 6
+  mat <- matrix(c(a,b,c,d), nrow=2, byrow=T)
+  mat_det <- a*d-b*c
+  inv_mat <- 1/mat_det * matrix(c(d, -b, -c, a), nrow=2, byrow=T)
+  
+  fake_opt <- list(hessian=mat)
+
+  #Successful inversion
+  checkEqualsNumeric(unmarked:::invertHessian(fake_opt, nrow(mat), TRUE), 
+                     inv_mat)
+
+  #When se=F
+  checkEqualsNumeric(unmarked:::invertHessian(fake_opt, nrow(mat), FALSE),
+                     matrix(rep(NA,4), nrow=2))
+
+  #When matrix is not invertible
+  bad_opt <- list(hessian=matrix(c(1, -2, -3, 6), nrow=2, byrow=T))
+  checkException(solve(bad_opt$hessian))
+ 
+  #Should generate warning
+  options(warn=2)
+  checkException(unmarked:::invertHessian(bad_opt, nrow(bad_opt$hessian), TRUE))
+  options(warn=0)
+
+  #Should result in matrix of NAs 
+  checkEqualsNumeric(unmarked:::invertHessian(bad_opt, nrow(bad_opt$hessian), FALSE),
+                     matrix(rep(NA,4), nrow=2))
+}
