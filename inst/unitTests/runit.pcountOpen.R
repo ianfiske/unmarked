@@ -378,3 +378,43 @@ test.pcountOpen.dynamics <- function()
                        tolerance=1e-5)
 
 }
+
+
+test.pcountOpen.fix <- function() {
+
+     set.seed(3)
+     M <- 50
+     T <- 5
+     lambda <- 4
+     gamma <- 1.5
+     omega <- 0.8
+     p <- 0.7
+     y <- N <- matrix(NA, M, T)
+     S <- G <- matrix(NA, M, T-1)
+     N[,1] <- rpois(M, lambda)
+     for(t in 1:(T-1)) {
+             S[,t] <- rbinom(M, N[,t], omega)
+             G[,t] <- rpois(M, gamma)
+             N[,t+1] <- S[,t] + G[,t]
+             }
+     y[] <- rbinom(M*T, N, p)
+     
+     umf <- unmarkedFramePCO(y = y, numPrimary=T)
+
+     m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20)
+     m1_sim <- simulate(m1)
+     checkEqualsNumeric(m1_sim[[1]][1,],c(3,4,4,2,2))
+     
+     m2 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, fix='gamma')
+     m2_sim <- simulate(m2)
+     checkEqualsNumeric(m2_sim[[1]][1,],c(4,4,6,5,3))
+     m2_fit <- fitted(m2)
+     checkEqualsNumeric(m2_fit[1,1],3.448029,tol=1e-4)
+
+     m3 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, fix='omega')
+     m3_sim <- simulate(m3)
+     checkEqualsNumeric(m3_sim[[1]][1,],c(2,1,3,5,4))
+     m3_fit <- fitted(m3)
+     checkEqualsNumeric(m3_fit[1,1], 2.481839, tol=1e-4)
+}
+

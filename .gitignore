@@ -13,4 +13,4 @@ NAMESPACE~
 *.pdf
 auto/
 *.bbl
-
+symbols.rds

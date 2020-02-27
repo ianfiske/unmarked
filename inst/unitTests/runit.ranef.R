@@ -473,3 +473,66 @@ test.ranef.pco <- function() {
     checkEqualsNumeric(bup(re2, "mode")[1,], c(8, 5, 3, 1, 1))
 
 }
+
+test.ranef.occuMulti <- function(){
+
+  set.seed(123)
+  N <- 10
+  nspecies <- 2
+  J <- 5
+
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('occ_cov',1:3,sep='')
+
+  det_covs <- list()
+  for (i in 1:nspecies){
+    det_covs[[i]] <- matrix(rnorm(N*J),nrow=N)
+  }
+  names(det_covs) <- paste('det_cov',1:nspecies,sep='')
+
+  #True vals
+  beta <- c(0.5,0.2,0.4,0.5,-0.1,-0.3,0.2,0.1,-1,0.1)
+  f1 <- beta[1] + beta[2]*occ_covs$occ_cov1
+  f2 <- beta[3] + beta[4]*occ_covs$occ_cov2
+  f3 <- beta[5] + beta[6]*occ_covs$occ_cov3
+  f <- cbind(f1,f2,f3)
+  z <- expand.grid(rep(list(1:0),nspecies))[,nspecies:1]
+  colnames(z) <- paste('sp',1:nspecies,sep='')
+  dm <- model.matrix(as.formula(paste0("~.^",nspecies,"-1")),z)
+
+  psi <- exp(f %*% t(dm))
+  psi <- psi/rowSums(psi)
+
+  #True state
+  ztruth <- matrix(NA,nrow=N,ncol=nspecies)
+  for (i in 1:N){
+    ztruth[i,] <- as.matrix(z[sample(4,1,prob=psi[i,]),])
+  }
+
+  p_true <- c(0.6,0.7)
+
+  # fake y data
+  y <- list()
+
+  for (i in 1:nspecies){
+    y[[i]] <- matrix(NA,N,J)
+    for (j in 1:N){
+      for (k in 1:J){
+        y[[i]][j,k] <- rbinom(1,1,ztruth[j,i]*p_true[i])
+      }
+    }
+  }
+  names(y) <- c('coyote','tiger')
+
+  #Create the unmarked data object
+  data = unmarkedFrameOccuMulti(y=y,siteCovs=occ_covs,obsCovs=det_covs)
+
+  occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov3')
+  detFormulas <- c('~1','~1')
+
+  fit <- occuMulti(detFormulas,occFormulas,data)
+
+  re <- ranef(fit,species=1)
+  ar <- as(re, "array")
+  checkEqualsNumeric(colSums(ar),c(3.94470,6.055303),tol=1e-4)
+}

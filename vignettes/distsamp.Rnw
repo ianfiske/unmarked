@@ -7,7 +7,8 @@ options(continue=" ")
 \usepackage[OT1]{fontenc}
 \usepackage{Sweave}
 \usepackage{natbib}
-\usepackage{fullpage}
+%\usepackage{fullpage}
+\usepackage[vmargin=1in,hmargin=1in]{geometry}
 \bibliographystyle{ecology}
 
 \DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}

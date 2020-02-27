@@ -2,11 +2,12 @@
 # Fit the Occupancy model of Royle and Nichols
 
 occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
-    se = TRUE, ...)
+    se = TRUE, engine=c("C","R"), ...)
 {
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
+    engine <- match.arg(engine, c("C", "R"))
     designMats <- getDesign(data, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
     X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
@@ -15,7 +16,7 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
     if (is.null(V.offset))
         V.offset <- rep(0, nrow(V))
 
-  y <- truncateToBinary(data@y)
+  y <- truncateToBinary(y)
 
   J <- ncol(y)
   M <- nrow(y)
@@ -33,7 +34,7 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
   navec <- is.na(y.ji)
   n <- 0:K
 
-  nll <- function(parms, f = "Poisson")
+  nll_R <- function(parms, f = "Poisson")
   {
 
     ## compute individual level detection probabilities
@@ -65,15 +66,26 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
     -sum(log(like.i))
   }
 
+
+  nll_C <- function(params) {
+      .Call("nll_occuRN",
+          params,
+          X, X.offset, V, V.offset, K, 
+          yC, navecC, nP,nOP,
+          PACKAGE = "unmarked")
+  }
+
+  if(engine=="R"){
+    nll <- nll_R
+  }else{
+    yC <- as.numeric(t(y))
+    navecC <- is.na(yC)
+    nll <- nll_C
+  }
+
 	if(missing(starts)) starts <- rep(0, nP)
   fm <- optim(starts, nll, method = method, hessian = se, ...)
-	opt <- fm
-	if(se) {
-            tryCatch(covMat <- solve(fm$hessian),
-                     error=function(x) stop(simpleError("Hessian is singular.  Try providing starting values or using fewer covariates.")))
-	} else {
-            covMat <- matrix(NA, nP, nP)
-	}
+  covMat <- invertHessian(fm, nP, se)
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP # + 2 * nP * (nP + 1) / (M - nP - 1)
   names(ests) <- c(occParms, detParms)
@@ -95,7 +107,7 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
   umfit <- new("unmarkedFitOccuRN", fitType = "occuRN",
       call = match.call(), formula = formula, data = data,
       sitesRemoved = designMats$removed.sites, estimates = estimateList,
-      AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll)
+      AIC = fmAIC, opt = fm, negLogLike = fm$value, nllFun = nll)
 
   return(umfit)
 }

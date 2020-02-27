@@ -23,10 +23,10 @@ test.nonparboot.occu <- function() {
     fm2 <- nonparboot(fm2, B=2)
 
     checkEqualsNumeric(vcov(fm2, method="nonparboot"), matrix(c(
-          0.11708106,  0.07895147, -0.2668053, -0.3152901,
-          0.07895147,  0.05323947, -0.1799153, -0.2126101,
-         -0.26680534, -0.17991529,  0.6079984,  0.7184859,
-         -0.31529012, -0.21261011,  0.7184859,  0.8490516), 4, byrow=TRUE),
+          0.07921827, -0.04160450, -0.10779357, -0.03159398,
+         -0.04160450,  0.02185019,  0.05661192,  0.01659278,
+         -0.10779357,  0.05661192,  0.14667645,  0.04299043,
+         -0.03159398,  0.01659278,  0.04299043,  0.01260037), 4, byrow=TRUE),
           tolerance=1e-5)
 
 }
@@ -130,10 +130,10 @@ test.nonparboot.colext <- function() {
 
     checkEqualsNumeric(vcov(m1, method="nonparboot"),
                        matrix(c(
-  1.5313035, -0.4177529,  0.8101477,  0.4844295,
- -0.4177529,  0.1139666, -0.2210153, -0.1321566,
-  0.8101477, -0.2210153,  0.4286148,  0.2562911,
-  0.4844295, -0.1321566,  0.2562911,  0.1532498), 4, byrow=TRUE),
+         0.06233947, 0.02616514, 0.06325770, 0.06703464,
+         0.02616514, 0.01098204, 0.02655053, 0.02813579,
+         0.06325770, 0.02655053, 0.06418945, 0.06802203,
+         0.06703464, 0.02813579, 0.06802203, 0.07208344), 4, byrow=TRUE),
                        tolerance=1e-6)
 
     m1.1 <- colext(~sc, ~ysc, ~1, ~oc, umf1)
@@ -151,5 +151,17 @@ test.nonparboot.colext <- function() {
     m2 <- nonparboot(m2, B=2)
 
 
+
+}
+
+test.nonparboot.noObsCovs <- function() {
+
+    data(frogs)
+    #No obs covs
+    pferUMF <- unmarkedFrameOccu(pfer.bin)
+    set.seed(123)
+    fm <- occu(~ 1 ~ 1, pferUMF)
+    npb <- nonparboot(fm,B=4)
+    checkEqualsNumeric(SE(npb), c(29.4412950, 0.1633507), tol=1e-5)
 
 }

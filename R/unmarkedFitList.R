@@ -1,19 +1,33 @@
+#Get y (corrected for missing values) based on data and formulas
+#Approach for some fit functions is different, so this is now a method
+setGeneric("fl_getY", function(fit, ...) standardGeneric("fl_getY"))
+
+setMethod("fl_getY", "unmarkedFit", function(fit, ...){
+  getDesign(getData(fit), fit@formula)$y
+})
+
+setMethod("fl_getY", "unmarkedFitOccuMulti", function(fit, ...){
+  getDesign(getData(fit), fit@detformulas, fit@stateformulas)$y
+})
+
+setMethod("fl_getY", "unmarkedFitOccuMS", function(fit, ...){
+  getDesign(getData(fit), fit@psiformulas, fit@phiformulas,
+            fit@detformulas, fit@parameterization)$y
+})
+
+setMethod("fl_getY", "unmarkedFitOccuFP", function(fit, ...){
+  getDesign(getData(fit), fit@detformula, fit@FPformula,
+            fit@Bformula, fit@stateformula)$y
+})
 
 setClass("unmarkedFitList",
     representation(fits = "list"),
     validity = function(object) {
         fl <- object@fits
-        testY <- function(fit) {
-            f <- fit@formula
-            umf <- getData(fit)
-            D <- getDesign(umf, f)
-            D$y
-            }
         umf1 <- getData(fl[[1]])
-        form1 <- fl[[1]]@formula
-        y1 <- getDesign(umf1, form1)$y
+        y1 <- fl_getY(fl[[1]])
         dataTest <- sapply(fl, function(x) isTRUE(all.equal(umf1, getData(x))))
-        yTest <- sapply(fl, function(x) isTRUE(all.equal(y1, testY(x))))
+        yTest <- sapply(fl, function(x) isTRUE(all.equal(y1, fl_getY(x))))
         if(!all(dataTest)) {
             stop("Data are not the same among models. Make sure you use the same unmarkedFrame object for all models.")
             }
@@ -103,6 +117,12 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
         fitList <- object@fits
         ese <- lapply(fitList, predict, type = type, newdata = newdata,
             backTransform = backTransform, level=level)
+
+        if(class(newdata) == "RasterStack"){
+          if(!require(raster)) stop("raster package is required")
+          ese <- lapply(ese, as.matrix)
+        }
+
         E <- sapply(ese, function(x) x[,"Predicted"])
         SE <- sapply(ese, function(x) x[,"SE"])
         lower <- sapply(ese, function(x) x[,"lower"])
@@ -116,6 +136,24 @@ setMethod("predict", "unmarkedFitList", function(object, type, newdata=NULL,
         out <- data.frame(Predicted = parav, SE = seav)
         out$lower <- as.numeric(lower %*% wts)
         out$upper <- as.numeric(upper %*% wts)
+
+        if(class(newdata) == "RasterStack"){
+          E.mat <- matrix(out[,1], dim(newdata)[1], dim(newdata)[2], byrow=TRUE)
+          E.raster <- raster::raster(E.mat)
+          raster::extent(E.raster) <- raster::extent(newdata)
+          out.rasters <- list(E.raster)
+          for(i in 2:ncol(out)) {
+            i.mat <- matrix(out[,i], dim(newdata)[1], dim(newdata)[2], byrow=TRUE)
+            i.raster <- raster::raster(i.mat)
+            raster::extent(i.raster) <- raster::extent(newdata)
+            out.rasters[[i]] <- i.raster
+          }
+          out.stack <- stack(out.rasters)
+          names(out.stack) <- colnames(out)
+          raster::crs(out.stack) <- raster::crs(newdata)
+          return(out.stack)
+        }
+
         if(appendData) {
             if(missing(newdata))
                 newdata <- getData(object@fits[[1]])

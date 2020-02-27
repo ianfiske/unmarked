@@ -21,7 +21,7 @@ computeMPLElambda = function(formula, data, knownOcc = numeric(0), starts, metho
 
   LRparams = glm.fit(x=X,y=apply(y,1,max),family=binomial(),intercept=F,start=starts[1:nOP])
   naiveOcc = mean(LRparams$fitted.values)
-  occuOutMLE = occu(formula,data,knownOcc, starts,
+  occuOutMLE = occu(formula,data,knownOcc = knownOcc, starts = starts,
                  method = "BFGS", engine = c("C", "R"), se = TRUE)
   meanDet = mean((1+exp(-occuOutMLE[2]@estimates%*%t(V)))^-1)
   MPLElambda = sqrt(sum(diag(occuOutMLE[2]@covMat)))*(1-(1-meanDet)^(dim(y)[2]))*(1-naiveOcc) # what if there are different numbers of visits to different sites?
@@ -78,7 +78,7 @@ occuPEN_CV <- function(formula, data, knownOcc = numeric(0), starts,
           beta.p <- params[(nOP+1):nP]
           .Call("nll_occu",
                   yvec, X, V, beta.psi, beta.p, nd, knownOccLog, navec,
-                  X.offset, V.offset,
+                  X.offset, V.offset, "logit",
                   PACKAGE = "unmarked")
       }
   } else {

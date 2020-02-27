@@ -1,10 +1,13 @@
 
 # data will need to be an unmarkedMultFrame
 gmultmix <- function(lambdaformula, phiformula, pformula, data,
-    mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE, ...)
+    mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE, 
+    engine=c("C","R"), ...)
 {
 if(!is(data, "unmarkedFrameGMM"))
     stop("Data is not of class unmarkedFrameGMM.")
+
+engine <- match.arg(engine, c("C", "R"))
 
 mixture <- match.arg(mixture)
 
@@ -76,7 +79,7 @@ for(i in 1:M) {
         }
     }
 
-nll <- function(pars) {
+nll_R <- function(pars) {
     lambda <- exp(Xlam %*% pars[1:nLP] + Xlam.offset)
     if(T==1)
         phi <- 1
@@ -118,17 +121,39 @@ nll <- function(pars) {
     -sum(log(ll))
     }
 
+nll_C <- function(params) {
+  .Call("nll_gmultmix",
+        params,mixture, piFun,
+        Xlam, Xlam.offset, Xphi, Xphi.offset, Xdet, Xdet.offset,  
+        k,lfac.k, lfac.kmyt,kmytC,
+        y_long, naflag_long, fin,
+        nP,nLP,nPP,nDP,
+        PACKAGE = "unmarked")
+}
+
+if(engine=="R"){
+  nll <- nll_R
+} else {
+  long_format <- function(x){
+    out <- matrix(aperm(x,c(1,3,2)),nrow=nrow(x),ncol=dim(x)[2]*dim(x)[3])
+    as.vector(t(out))
+  }
+  y_long <- long_format(y)
+  naflag_long <- long_format(naflag)
+  kmytC <- kmyt
+  kmytC[which(is.na(kmyt))] <- 0
+  nll <- nll_C
+
+  if(!piFun%in%c('doublePiFun','removalPiFun','depDoublePiFun')){
+    warning("Custom pi functions are not supported by C engine. Using R engine instead.")
+    nll <- nll_R
+  }
+
+}
+
 if(missing(starts)) starts <- rep(0, nP)
 fm <- optim(starts, nll, method = method, hessian = se, ...)
-opt <- fm
-if(se) {
-    covMat <- tryCatch(solve(fm$hessian), error=function(x)
-        simpleError("Hessian is singular. Try using fewer covariates."))
-    if(identical(class(covMat)[1], "simpleError")) {
-        warning(covMat$message)
-        covMat <- matrix(NA, nP, nP)
-        }
-    } else covMat <- matrix(NA, nP, nP)
+covMat <- invertHessian(fm, nP, se)
 ests <- fm$par
 fmAIC <- 2 * fm$value + 2 * nP
 
@@ -170,7 +195,7 @@ if(identical(mixture,"NB"))
 umfit <- new("unmarkedFitGMM", fitType = "gmn",
     call = match.call(), formula = form, formlist = formlist,
     data = data, estimates = estimateList, sitesRemoved = D$removed.sites,
-    AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll,
+    AIC = fmAIC, opt = fm, negLogLike = fm$value, nllFun = nll,
     mixture=mixture, K=K)
 
 return(umfit)

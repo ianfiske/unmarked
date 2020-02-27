@@ -10,7 +10,7 @@ probability.
 }
 \usage{
 gmultmix(lambdaformula, phiformula, pformula, data,
-mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE, ...)
+mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE, engine=c("C","R"), ...)
 }
 \arguments{
     \item{lambdaformula}{Righthand side (RHS) formula describing abundance
@@ -24,6 +24,8 @@ mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE, ...)
     \item{starts}{Starting values}
     \item{method}{Optimization method used by \code{\link{optim}}}
     \item{se}{Logical. Should standard errors be calculated?}
+    \item{engine}{Either "C" to use fast C++ code or "R" to use native R
+      code during the optimization.}
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
     }

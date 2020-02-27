@@ -56,9 +56,9 @@ the survey design used that resulted in multinomial outcomes. For
 unmarkedFrameGMM and constant-interval removal sampling, you can set
 type="removal" and ignore
 the arguments obsToY and piFun. Similarly, for double-observer sampling,
-setting type="double" will automatically create an appropiate obsToY matrix and
-\code{\link{piFuns}}. For all other situations, the type argument of
-unmarkedFrameGMM should be
+setting type="double" or type="depDouble" will automatically create an appropiate 
+obsToY matrix and \code{\link{piFuns}}. For all other situations, the type 
+argument of unmarkedFrameGMM should be
 ignored and the obsToY and piFun arguments must be specified. piFun must be a
 function that converts an MxJ matrix of detection probabilities into an MxJ
 matrix of multinomial cell probabilities. obsToY is a matrix describing how
@@ -85,9 +85,10 @@ unmarkedMultFrame using the
         multiseason model).}
     \item{yearlySiteCovs}{Data frame containing covariates at the
         site-year level.}
-    \item{type}{Either "removal" or "double" for constant-interval removal
-        sampling or double observer sampling. This should be not be specified
-        for other types of survey designs.}
+    \item{type}{Set to "removal" for constant-interval removal
+        sampling, "double" for standard double observer sampling, or 
+        "depDouble" for dependent double observer sampling. 
+        This should be not be specified for other types of survey designs.}
     \item{obsToY}{A matrix specifying relationship between observation-level
         covariates and response matrix}
     \item{piFun}{A function converting an MxJ matrix of detection probabilities

@@ -97,5 +97,90 @@ test.pcountOpen <- function() {
 
 }
 
+test.occuMulti <- function() {
 
+  set.seed(123)
+  N <- 10
+  nspecies <- 2
+  J <- 5
+
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('occ_cov',1:3,sep='')
+
+  det_covs <- list()
+  for (i in 1:nspecies){
+    det_covs[[i]] <- matrix(rnorm(N*J),nrow=N)
+  }
+  names(det_covs) <- paste('det_cov',1:nspecies,sep='')
+
+  #True vals
+  beta <- c(0.5,0.2,0.4,0.5,-0.1,-0.3,0.2,0.1,-1,0.1)
+  f1 <- beta[1] + beta[2]*occ_covs$occ_cov1
+  f2 <- beta[3] + beta[4]*occ_covs$occ_cov2
+  f3 <- beta[5] + beta[6]*occ_covs$occ_cov3
+  f <- cbind(f1,f2,f3)
+  z <- expand.grid(rep(list(1:0),nspecies))[,nspecies:1]
+  colnames(z) <- paste('sp',1:nspecies,sep='')
+  dm <- model.matrix(as.formula(paste0("~.^",nspecies,"-1")),z)
+
+  psi <- exp(f %*% t(dm))
+  psi <- psi/rowSums(psi)
+
+  #True state
+  ztruth <- matrix(NA,nrow=N,ncol=nspecies)
+  for (i in 1:N){
+    ztruth[i,] <- as.matrix(z[sample(4,1,prob=psi[i,]),])
+  }
+
+  p_true <- c(0.6,0.7)
+
+  # fake y data
+  y <- list()
+
+  for (i in 1:nspecies){
+    y[[i]] <- matrix(NA,N,J)
+    for (j in 1:N){
+      for (k in 1:J){
+        y[[i]][j,k] <- rbinom(1,1,ztruth[j,i]*p_true[i])
+      }
+    }
+  }
+  names(y) <- c('coyote','tiger')
+
+  #Create the unmarked data object
+  data = unmarkedFrameOccuMulti(y=y,siteCovs=occ_covs,obsCovs=det_covs)
+
+  occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov3')
+  detFormulas <- c('~1','~1')
+
+  fit <- occuMulti(detFormulas,occFormulas,data)
+
+  pr_state <- predict(fit,'state')
+  checkEqualsNumeric(pr_state$Predicted[1,],
+                     c(0.34936,0.18146,0.21590,0.25327),
+                     tol=1e-4)
+  checkEqualsNumeric(pr_state$SE[1,],
+                     c(0.34502,0.16429,0.18929,0.21948),
+                     tol=1e-4)
+  pr_det <- predict(fit,'det')
+  checkEqualsNumeric(length(pr_det),nspecies)
+  checkEqualsNumeric(sapply(pr_det,function(x) x[1,1]),c(0.59429,0.64731),tol=1e-4) 
+
+  #marginal occupancy
+  pr_marg <- predict(fit,'state',species=2)
+  checkEqualsNumeric(as.numeric(pr_marg[1,1:4]),
+                     c(0.56527,0.29438,0.05898,0.99419),tol=1e-4)
+
+  #conditional occupancy
+  pr_cond <- predict(fit,'state',species=1,cond=2)
+  checkEqualsNumeric(as.numeric(pr_cond[1,1:4]),
+                     c(0.61805,0.33330,0.018220,0.99552),tol=1e-4)
+
+  #check newdata
+  newdata <- data.frame(occ_cov1=rnorm(1),occ_cov2=rnorm(1),occ_cov3=rnorm(1))
+  pr_new <- predict(fit,'state',newdata=newdata)
+  checkEqualsNumeric(sapply(pr_new,function(x) x[1,1]),
+                     c(0.307815,0.31958,0.00423,0.96391),
+                     tol=1e-4)
+}
 

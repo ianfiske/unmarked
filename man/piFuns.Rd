@@ -8,27 +8,26 @@ removalPiFun(p)
 doublePiFun(p)
 }
 
-\description{Compute the cell probabilities used in the multinomial-Poisson 
-	models \link{multinomPois} and \link{gmultmix}.}
+\description{Compute the cell probabilities used in the multinomial-Poisson models \link{multinomPois} and \link{gmultmix}. These functions use piFuns \emph{internally} to calculate multinomial likelihoods from the occasion-wise detection probabilities. The only reason to call them directly is to check their behaviour.
+}
 
 \arguments{\item{p}{
 matrix of detection probabilities at each site for each observation}
 }
 
-\details{These two functions are provided as examples of 
-possible functions to calculate multinomial cell probabilities. Users may 
-write their own functions for specific sampling designs (see the example).
+\details{These two functions are provided as examples of possible functions to calculate multinomial cell probabilities. Users may write their own functions for specific sampling designs (see the example).
 }
 
 \value{
-For removalPiFun, a matrix of cell probabilties for each site and sampling period.
+For removalPiFun, a matrix of cell probabilities for each site and sampling period.
 
-For doublePiFun, a matrix of cell probabilities for each site and observer
-combination. Column one is probability observer 1 but not observer 2 
-detects the object, column two is probability that observer 2 but not 
-observer 1 detects the object, and column 3 is probability of both 
-detecting.
+For doublePiFun, a matrix of cell probabilities for each site and observer combination. Column one is probability observer 1 but not observer 2 detects the object, column two is probability that observer 2 but not observer 1 detects the object, and column 3 is probability of both detecting.
 }
+
+\seealso{
+\link{makePiFuns} for factory functions to create customised piFuns.
+}
+
 \examples{
 
 (pRem <- matrix(0.5, nrow=3, ncol=3))	# Capture probabilities
@@ -53,8 +52,8 @@ instRemPiFun <- function(p) {
 		pi[,i] <- pi[, i - 1]/p[, i - 1] * (1 - p[, i - 1]) * p[, i]
 		}
 	return(pi)
-	} 
-	
+	}
+
 instRemPiFun(pRem)
 
 # Associated obsToY matrix required by unmarkedFrameMPois
@@ -62,4 +61,4 @@ o2y <- diag(3) # if y has 3 columns
 o2y[upper.tri(o2y)] <- 1
 o2y
 
-}		
+}

@@ -12,7 +12,7 @@ to be modeled using the negative binomial distribution.
 gdistsamp(lambdaformula, phiformula, pformula, data, keyfun =
 c("halfnorm", "exp", "hazard", "uniform"), output = c("abund",
 "density"), unitsOut = c("ha", "kmsq"), mixture = c("P", "NB"), K,
-starts, method = "BFGS", se = TRUE, rel.tol=1e-4, ...)
+starts, method = "BFGS", se = TRUE, engine=c("C","R"), rel.tol=1e-4, ...)
 }
 \arguments{
   \item{lambdaformula}{
@@ -53,6 +53,10 @@ starts, method = "BFGS", se = TRUE, rel.tol=1e-4, ...)
 }
   \item{se}{
       logical specifying whether or not to compute standard errors.
+}
+  \item{engine}{
+      Either "C" to use fast C++ code or "R" to use native R code during the 
+      optimization.
 }
 \item{rel.tol}{relative accuracy for the integration of the detection function.
     See \link{integrate}. You might try adjusting this if you get an error

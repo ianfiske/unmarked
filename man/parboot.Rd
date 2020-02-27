@@ -16,6 +16,8 @@
   \item{parallel}{logical (default = \code{TRUE}) indicating whether to compute 
     bootstrap on multiple cores, if present.  If \code{TRUE}, suppresses reporting
     of bootstrapped statistics.  Defaults to serial calculation when \code{nsim} < 100.}
+  \item{ncores}{integer (default = one less than number of available cores) number of cores to
+    use when bootstrapping in parallel.} 
   \item{...}{Additional arguments to be passed to statistic}}
 \details{This function simulates datasets based upon a fitted model,
   refits the model, and evaluates a user-specified fit-statistic for each

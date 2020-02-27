@@ -163,7 +163,6 @@ if(missing(starts))
 #browser()
 fm <- optim(starts, nll, method=method, hessian=se, ...)
 
-opt <- fm
 ests <- fm$par
 if(identical(mixture,"NB"))
     nbParm <- "alpha"
@@ -172,14 +171,7 @@ else if(identical(mixture, "ZIP"))
 else
     nbParm <- character(0)
 names(ests) <- c(lamParms, gamParms, omParms, detParms, iotaParms, nbParm)
-if(se) {
-	covMat <- tryCatch(solve(fm$hessian), error=function(x)
-		simpleError("Hessian is not invertible. Try using fewer covariates or providing starting values."))
-	if(class(covMat)[1] == "simpleError") {
-		print(covMat$message)
-		covMat <- matrix(NA, nP, nP)
-		}
-    } else covMat <- matrix(NA, nP, nP)
+covMat <- invertHessian(fm, nP, se)
 
 fmAIC <- 2*fm$value + 2*nP
 
@@ -253,8 +245,8 @@ if(identical(mixture, "ZIP")) {
 umfit <- new("unmarkedFitPCO", fitType = "pcountOpen",
     call = match.call(), formula = formula, formlist = formlist, data = data,
     sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC,
-    opt = opt, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
-    dynamics = dynamics, immigration = immigration)
+    opt = fm, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
+    dynamics = dynamics, immigration = immigration, fix = fix)
 return(umfit)
 }
 

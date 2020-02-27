@@ -11,6 +11,7 @@ options(continue=" ")
 \usepackage{Sweave}
 %\usepackage{natbib}
 \usepackage{fullpage}
+\usepackage[vmargin=1in,hmargin=1in]{geometry}
 %\bibliographystyle{plain}
 
 \SweaveOpts{keep.source=TRUE}
@@ -70,11 +71,11 @@ options(continue=" ")
 
 \noindent Marc K\'{e}ry and Richard Chandler\\
 
-\noindent Swiss Ornithological Institute and USGS Patuxent Wildlife Research Center \\
+\noindent Swiss Ornithological Institute and University of Georgia \\
 
 \vspace{1 cm}
 \begin{center}
- \textbf{29 March 2012}
+ \textbf{16 August 2016}
 \end{center}
 
 % \today
@@ -892,7 +893,7 @@ turnover <- function(fm) {
     for(t in 2:T) {
         psi.hat[t] <- psi.hat[t-1]*phi.hat[t-1] +
             (1-psi.hat[t-1])*gamma.hat[t-1]
-        tau.hat[t-1] <- gamma.hat[t-1]*(1-psi.hat[t-1]) / psi.hat[t-1]
+        tau.hat[t-1] <- gamma.hat[t-1]*(1-psi.hat[t-1]) / psi.hat[t]
         }
     return(tau.hat)
     }
@@ -922,16 +923,16 @@ estimates using the parametric bootstrap.
 > turnCI
 \end{Sinput}
 \begin{Soutput}
-          tau     lower     upper
-t*1 0.1457961 0.2920256 0.5515986
-t*2 0.1460339 0.1110656 0.1639632
-t*3 0.2648988 0.2635840 0.3215506
-t*4 0.1840518 0.2560206 0.6640515
-t*5 0.4353955 0.1600642 0.9629842
-t*6 0.4353175 0.3364786 0.6813287
-t*7 0.4233780 0.4337405 0.6141042
-t*8 0.3566357 0.3185164 0.3319792
-t*9 0.1340253 0.1030345 0.1956252
+          tau      lower     upper
+t*1 0.1532645 0.09613841 0.1060208
+t*2 0.1911530 0.14770601 0.1694802
+t*3 0.2537292 0.18514773 0.2469985
+t*4 0.2604356 0.18947604 0.2029920
+t*5 0.3989303 0.49754613 0.5671067
+t*6 0.3758690 0.28901007 0.3022026
+t*7 0.3537473 0.39050385 0.4278534
+t*8 0.3174983 0.25300357 0.3222170
+t*9 0.1704449 0.14896392 0.1815896
 \end{Soutput}
 \end{Schunk}
 

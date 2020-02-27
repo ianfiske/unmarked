@@ -28,7 +28,7 @@ Federal Statistical Office.
 
 x and y are the coordinates of the center of each 1km2 pixel.
 
-The coordinate reference system is CH1903/LV03 (EPSG number: 21781).
+The coordinate reference system intentionally not specified. 
 
 These data can only be used for non-profit projects. Otherwise, written
 permission must be obtained from the Swiss Federal Statistical Office

@@ -12,7 +12,7 @@
     \item{y}{An RxJ matrix of the repeated count data, where R is the number 
         of sites, J is the maximum number of sampling periods per site.}
     \item{siteCovs}{A \code{\link{data.frame}} of covariates that vary at the 
-        site level. This should have M rows and one column per covariate}
+        site level. This should have R rows and one column per covariate}
     \item{obsCovs}{Either a named list of \code{\link{data.frame}}s of 
         covariates that vary within sites, or a \code{\link{data.frame}} with 
         RxJ rows in site-major order.}

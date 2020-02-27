@@ -92,13 +92,106 @@ setMethod("ranef", "unmarkedFitOccu",
 })
 
 
+setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
+{
+  
+  N <- numSites(object@data)
+  S <- object@data@numStates
+
+  psi <- predict(object, "state", se.fit=F)
+  psi <- sapply(psi, function(x) x$Predicted)
+  z <- 0:(S-1)
+
+  p_all <- getP(object)
+  y <- getY(getData(object))
+
+  post <- array(0, c(N,S,1))
+  colnames(post) <- z
+
+  if(object@parameterization == "multinomial"){
+
+    psi <- cbind(1-rowSums(psi), psi)
+
+    guide <- matrix(NA,nrow=S,ncol=S)
+    guide <- lower.tri(guide,diag=T)
+    guide[,1] <- FALSE
+    guide <- which(guide,arr.ind=T)
+    for (i in 1:N){
+      f <- psi[i,]
+      g <- rep(1, S)
+      p_raw <- sapply(p_all, function(x) x[i,])
+      for (j in 1:nrow(p_raw)){
+        sdp <- matrix(0, nrow=S, ncol=S)
+        sdp[guide] <- p_raw[j,]
+        sdp[,1] <- 1 - rowSums(sdp)
+        for (s in 1:S){
+          g[s] <- g[s] * sdp[s, (y[i,j]+1)] 
+        }
+      }
+      fudge <- f*g
+      post[i,,1] <- fudge / sum(fudge)
+    }
+
+  } else if(object@parameterization == "condbinom"){
+
+    psi <- cbind(1-psi[,1], psi[,1]*(1-psi[,2]), psi[,1]*psi[,2])
+
+    for (i in 1:N){
+      f <- psi[i,]
+      g <- rep(1, S)
+      p_raw <- sapply(p_all, function(x) x[i,])
+      for (j in 1:nrow(p_raw)){
+        probs <- p_raw[j,]
+        sdp <- matrix(0, nrow=S, ncol=S)
+        sdp[1,1] <- 1
+        sdp[2,1:2] <- c(1-probs[1], probs[1])
+        sdp[3,] <- c(1-probs[2], probs[2]*(1-probs[3]), probs[2]*probs[3])
+        for (s in 1:S){
+          g[s] <- g[s] * sdp[s, (y[i,j]+1)] 
+        }
+      }
+      fudge <- f*g
+      post[i,,1] <- fudge / sum(fudge)
+    }
+  }
+
+  new("unmarkedRanef", post=post)
+
+})
+
 setMethod("ranef", "unmarkedFitOccuFP", function(object, na.rm = FALSE)
 {
   cat("ranef is not implemented for occuFP at this time")
 })
 
 
+setMethod("ranef", "unmarkedFitOccuMulti", function(object, species, na.rm = FALSE)
+{
+    if(missing(species)){
+      stop("Must specify species name or index in arguments (e.g. species = 1)")
+    }
+    species <- name_to_ind(species, names(object@data@ylist))
 
+    psi <- predict(object, type="state", se.fit=F, species=species)$Predicted
+    R <- length(psi)
+    p <- getP(object)[[species]]
+    z <- 0:1
+    y <- object@data@ylist[[species]]
+    post <- array(0, c(R,2,1))
+    colnames(post) <- z
+    for(i in 1:R) {
+        f <- dbinom(z, 1, psi[i])
+        g <- rep(1, 2)
+        for(j in 1:ncol(y)) {
+            if(is.na(y[i,j]) | is.na(p[i,j]))
+                next
+            g <- g * dbinom(y[i,j], 1, z*p[i,j])
+        }
+        fudge <- f*g
+        post[i,,1] <- fudge / sum(fudge)
+    }
+    new("unmarkedRanef", post=post)
+})
 
 
 
@@ -295,7 +388,7 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
 
     phi <- matrix(phi, nSites, byrow=TRUE)
 
-    if(identical(class(object)[1], "unmarkedFitGDS")) {
+    if(inherits(object, "unmarkedFitGDS")) {
         if(identical(object@output, "density")) {
             survey <- object@data@survey
             tlength <- object@data@tlength
@@ -671,7 +764,70 @@ setMethod("ranef", "unmarkedFitPCO",
 })
 
 
+setMethod("ranef", "unmarkedFitOccuTTD",
+    function(object, ...)
+{
 
+  N <- nrow(object@data@y)
+  T <- object@data@numPrimary
+  J <- ncol(object@data@y)/T
+
+  #Get predicted values
+  psi <- predict(object, 'psi', na.rm=FALSE)$Predicted
+  psi <- cbind(1-psi, psi)  
+  p_est <- getP(object)
+
+  #Get y as binary
+  y <- object@data@y
+  tmax <- object@data@surveyLength
+  ybin <- as.numeric(y < tmax)
+  ybin <- matrix(ybin, nrow=nrow(y), ncol=ncol(y))
+  
+  if(T>1){
+    p_col <- predict(object, 'col', na.rm=FALSE)$Predicted
+    p_ext <- predict(object, 'ext', na.rm=FALSE)$Predicted
+    rem_seq <- seq(T, length(p_col), T)
+    p_col <- p_col[-rem_seq]
+    p_ext <- p_ext[-rem_seq]
+    phi <- cbind(1-p_col, p_col, p_ext, 1-p_ext)
+  }
+  
+  ## first compute latent probs
+  state <- array(NA, c(2, T, N))
+  state[1:2,1,] <- t(psi)
+  
+  if(T>1){
+    phi_ind <- 1
+    for(n in 1:N) {
+      for(t in 2:T) {
+        phi_mat <- matrix(phi[phi_ind,], nrow=2, byrow=TRUE)
+        state[,t,n] <- phi_mat %*% state[,t-1,n]
+        phi_ind <- phi_ind + 1
+      }
+    }
+  }
+
+  ## then compute obs probs
+  z <- 0:1
+  post <- array(NA_real_, c(N, 2, T))
+  colnames(post) <- z
+  p_ind <- 1
+  for(n in 1:N) {
+    for(t in 1:T) {
+      g <- rep(1,2)
+      for(j in 1:J) {
+        if(is.na(ybin[n, p_ind])|is.na(p_est[n,p_ind])) next
+        g <- g * stats::dbinom(ybin[n,p_ind],1, z*p_est[n,p_ind])
+      }
+      tmp <- state[,t,n] * g
+      post[n,,t] <- tmp/sum(tmp)
+    }
+  }
+ 
+  if(T==1) post <- post[,,1]
+
+  new("unmarkedRanef", post=post)
+})
 
 
 

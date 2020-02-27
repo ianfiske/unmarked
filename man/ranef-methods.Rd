@@ -5,6 +5,8 @@
 \alias{ranef,unmarkedFitOccu-method}
 \alias{ranef,unmarkedFitOccuFP-method}
 \alias{ranef,unmarkedFitOccuRN-method}
+\alias{ranef,unmarkedFitOccuMulti-method}
+\alias{ranef,unmarkedFitOccuMS-method}
 \alias{ranef,unmarkedFitPCount-method}
 \alias{ranef,unmarkedFitMPois-method}
 \alias{ranef,unmarkedFitDS-method}
@@ -14,6 +16,7 @@
 \alias{ranef,unmarkedFitGMMorGDS-method}
 \alias{ranef,unmarkedFitColExt-method}
 \alias{ranef,unmarkedFitPCO-method}
+\alias{ranef,unmarkedFitOccuTTD-method}
 \title{ Methods for Function \code{ranef} in Package \pkg{unmarked} }
 \description{
 Estimate posterior distributions of the random variables (latent

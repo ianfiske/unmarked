@@ -1,6 +1,11 @@
 test.distsamp.covs <- function() {
     y <- matrix(rep(4:1, 10), 5, 2, byrow=TRUE)
     siteCovs <- data.frame(x = c(0, 2, 3, 4, 1))
+    #Check error thrown when length(tlength!=nrow(y))
+    checkException(unmarkedFrameDS(y = y, siteCovs = siteCovs,
+        dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, (5-1)),
+        unitsIn="km"))
+
     umf <- unmarkedFrameDS(y = y, siteCovs = siteCovs,
         dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, 5),
         unitsIn="km")
@@ -119,7 +124,7 @@ test.distsamp.point.keyfuns <- function()
     checkEqualsNumeric(coef(fm.halfnorm),
                        coef(update(fm.halfnorm, engine="R")))
     checkEqualsNumeric(coef(fm.exp),
-                       coef(update(fm.exp, engine="R")))
+                       coef(update(fm.exp, engine="R")),tol=1e-5)
     checkEqualsNumeric(coef(fm.halfnorm),
                        coef(update(fm.halfnorm, engine="R")))
     checkEqualsNumeric(coef(fm.halfnorm),
@@ -127,4 +132,25 @@ test.distsamp.point.keyfuns <- function()
 
 }
 
+test.distsamp.getP <- function() {
 
+  data(issj)
+  jayumf <- unmarkedFrameDS(y=as.matrix(
+  issj[,1:3]),
+  siteCovs=data.frame(scale(issj[,c("elevation","forest","chaparral")])),
+  dist.breaks=c(0,100,200,300), unitsIn="m", survey="point")
+
+  hn <- distsamp(~1 ~1, jayumf)
+  neg <- distsamp(~1 ~1, jayumf,keyfun="exp")
+  unif <- distsamp(~1 ~1, jayumf, keyfun="unif")
+  haz <- distsamp(~1 ~1, jayumf, keyfun="hazard")
+
+  checkEqualsNumeric(getP(hn)[1,], c(0.08634098, 0.09873522, 0.02369782), 
+                     tol=1e-5) 
+  checkEqualsNumeric(getP(neg)[1,], c(0.1111111, 0.3333333, 0.5555556), 
+                     tol=1e-5)
+  checkEqualsNumeric(getP(unif)[1,], c(0.1111111, 0.3333333, 0.5555556), 
+                     tol=1e-5)
+  checkEqualsNumeric(getP(haz)[1,], c(0.04946332, 0.02826854, 0.01589744), 
+                     tol=1e-3)
+}

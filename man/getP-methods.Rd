@@ -4,6 +4,9 @@
 \alias{getP-methods}
 \alias{getP,unmarkedFit-method}
 \alias{getP,unmarkedFitOccuFP-method}
+\alias{getP,unmarkedFitOccuMulti-method}
+\alias{getP,unmarkedFitOccuMS-method}
+\alias{getP,unmarkedFitOccuTTD-method}
 \alias{getP,unmarkedFitDS-method}
 \alias{getP,unmarkedFitMPois-method}
 \alias{getP,unmarkedFitColExt-method}

@@ -1,37 +1,40 @@
 # Methods needed from other packages
 importFrom(stats, confint, fitted, coef, vcov, predict, update, profile,
-    simulate, residuals, logLik, as.formula, binomial, cov, dbinom,
+           simulate, residuals, logLik, as.formula, binomial, cov, dbinom,
            dmultinom, dnbinom, dnorm, dpois, formula,
            glm.fit, integrate, median, model.frame,
-           model.matrix, model.offset, optim, pchisq, plogis,
+           model.matrix, model.offset, na.omit, optim, pchisq, plogis,
            pnorm, qchisq, qnorm, quantile, rbinom,
-           rmultinom, rnbinom, rpois, runif, sd, uniroot,
+           reshape, rmultinom, rnbinom, rpois, runif, sd, uniroot,
            update.formula)
 importFrom(graphics, plot, hist, abline)
 importFrom(utils, head, read.csv)
-importFrom(reshape, melt, cast, recast)
 importFrom(plyr, ldply, alply, ddply)
-importFrom(grDevices, devAskNewPage)
+importFrom(grDevices, devAskNewPage, dev.interactive)
 importFrom("raster","stack")
-import(lattice, methods, parallel, Rcpp)
+importFrom("raster", "raster", "extent", "extent<-", "getValues") ## MM
+importFrom("MASS", "mvrnorm")
+
+import(lattice, methods, parallel, Rcpp, Matrix)
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
-       colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, 
-       computeMPLElambda,distsampOpen)
+       colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
+       occuMS, computeMPLElambda, pcount.spHDS, occuTTD, distsampOpen)
 export(removalPiFun, doublePiFun)
+export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 
 # S4 classes
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
               unmarkedFitPCount, unmarkedFitMPois, unmarkedFitPCO,
-              unmarkedFitDSO, 
+              unmarkedFrameDSO, unmarkedFitDSO,
+              unmarkedFitOccuMulti,
               unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
               unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
               unmarkedFrameGMM, unmarkedFrameGDS, unmarkedFramePCO,
-              unmarkedFrameGPC, 
-              unmarkedFrameDSO, 
-              unmarkedEstimate, unmarkedFitList,
-              unmarkedModSel, unmarkedRanef)
+              unmarkedFrameGPC, unmarkedEstimate, unmarkedFitList,
+              unmarkedModSel, unmarkedRanef, unmarkedFrameOccuMulti,
+              unmarkedFrameOccuMS, unmarkedCrossVal)
 
 # Methods
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
@@ -41,19 +44,20 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
               projection, residuals, sampleSize, SE, show, simulate, siteCovs,
               "siteCovs<-", summary, update, vcov, yearlySiteCovs,
               "yearlySiteCovs<-", "[", smoothed, projected, nonparboot, logLik,
-              LRT, ranef, bup)
+              LRT, ranef, bup, crossVal)
 
 # Constructors
 export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
     unmarkedFrameOccu, unmarkedFrameOccuFP, unmarkedFramePCount, unmarkedFrameMPois,
     unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
-    unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC, unmarkedFrameDSO)
+    unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC, unmarkedFrameOccuMulti,
+    unmarkedFrameOccuMS, unmarkedFrameOccuTTD, unmarkedFrameDSO)
 
 # Formatting
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
 
 # Misc
 export(imputeMissing, gxhn, gxexp, gxhaz, dxhn, dxexp, dxhaz, drhn, drexp,
-    drhaz, grhn, grexp, grhaz, sight2perpdist, lambda2psi, SSE)
+    drhaz, grhn, grexp, grhaz, sight2perpdist, lambda2psi, SSE, vif)
 
-useDynLib(unmarked)
+useDynLib("unmarked", .registration=TRUE)

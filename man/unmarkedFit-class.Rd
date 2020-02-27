@@ -14,16 +14,23 @@
 \alias{nllFun}
 \alias{nllFun,unmarkedFit-method}
 \alias{parboot,unmarkedFit-method}
+\alias{parboot,unmarkedFitOccuMulti-method}
 \alias{plot,unmarkedFit,missing-method}
+\alias{plot,unmarkedFitOccuMulti,missing-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{residuals,unmarkedFitOccu-method}
 \alias{residuals,unmarkedFitOccuFP-method}
 \alias{residuals,unmarkedFitOccuRN-method}
+\alias{residuals,unmarkedFitOccuMulti-method}
+\alias{residuals,unmarkedFitOccuTTD-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
 \alias{update,unmarkedFitPCO-method}
 \alias{update,unmarkedFitGMM-method}
+\alias{update,unmarkedFitOccuMulti-method}
+\alias{update,unmarkedFitOccuMS-method}
+\alias{update,unmarkedFitOccuTTD-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
@@ -35,6 +42,9 @@
 \alias{unmarkedFitMPois-class}
 \alias{unmarkedFitPCO-class}
 \alias{unmarkedFitGMM-class}
+\alias{unmarkedFitOccuMulti-class}
+\alias{unmarkedFitOccuMS-class}
+\alias{unmarkedFitOccuTTD-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}
@@ -47,6 +57,11 @@
 \alias{logLik,unmarkedFit-method}
 \alias{LRT}
 \alias{LRT,unmarkedFit,unmarkedFit-method}
+\alias{getY,unmarkedFit-method}
+\alias{getY,unmarkedFitOccu-method}
+\alias{getY,unmarkedFitColExt-method}
+\alias{getY,unmarkedFitOccuRN-method}
+\alias{getY,unmarkedFitOccuMulti-method}
 
 \title{Class "unmarkedFit" }
 \description{Contains fitted model information which can be manipulated or 
