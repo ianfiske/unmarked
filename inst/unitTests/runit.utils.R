@@ -1,5 +1,6 @@
 test.formatLong <- function() {
-  df <- read.csv(system.file("csv","frog2001pcru.csv", package = "unmarked"))
+  df <- read.csv(system.file("csv","frog2001pcru.csv", package = "unmarked"),
+                 stringsAsFactors=TRUE)
   umf <- formatLong(df, type = "unmarkedFrameOccu")
   ## Add some assertions...
 
@@ -66,11 +67,11 @@ test.formatLong <- function() {
       -2,0,0,
       -3,1,0,
       0,0,0), nrow=R, ncol=J, byrow=TRUE),
-    x4 = matrix(c(
+    x4 = matrix(factor(c(
       'a','b','c',
       'd','b','a',
       'a','a','c',
-      'a','b','a'), nrow=R, ncol=J, byrow=TRUE))
+      'a','b','a')), nrow=R, ncol=J, byrow=TRUE))
   umf <- unmarkedFramePCount(y=y, siteCovs=site.covs,
                              obsCovs=obs.covs)          # organize data
   # Corresponding long data.frame
@@ -96,7 +97,7 @@ test.formatLong <- function() {
     0, 0, 0, 0, 0), nrow=4, ncol=5, byrow=TRUE)
 
   # Site-specific covariates
-  sc1 <- data.frame(x1 = 1:4, x2 = c('A','A','B','B'))
+  sc1 <- data.frame(x1 = 1:4, x2 = factor(c('A','A','B','B')))
 
   # Observation-specific covariates
   oc1 <- list(
@@ -118,7 +119,7 @@ test.formatLong <- function() {
                      obsnum = 1:5,
                      y = as.vector(t(y1)),
                      x1 = rep(1:4, each = 5),
-                     x2 = rep(c('A','A','B','B'), each = 5),
+                     x2 = factor(rep(c('A','A','B','B'), each = 5)),
                      x3 = 1:5,
                      x4 = letters[1:5])
   umf2 <- formatLong(test, type = "unmarkedFramePCO", numPrimary = 5,
