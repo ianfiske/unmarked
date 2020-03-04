@@ -1,4 +1,4 @@
-#include "tranProbs.h"
+#include "tranprobs.h"
 
 
 using namespace Rcpp ;

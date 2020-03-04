@@ -211,6 +211,25 @@ for(i in 1:nrow(I)) {
     Ip[[i]] <- as.integer(I[i,2]-Z)
 }
 
+#Some k-related indices to avoid repeated calculations in likelihood
+lfac.k <- lgamma(k+1)
+kmyt <- array(0, c(M, T, lk))
+lfac.kmyt <- array(0, c(M, T, lk))
+fin <- array(NA, c(M, T, lk))
+naflag <- array(NA, c(M, T, J))
+for(i in 1:M) {
+  for(t in 1:T) {
+    fin[i,t,] <- k - yt[i,t] >= 0
+    naflag[i,t,] <- is.na(y[i,,t])
+    if(!all(naflag[i,t,])) {
+      kmyt[i,t,] <- k - yt[i,t]
+      lfac.kmyt[i, t, ] <- lgamma(kmyt[i, t, ] + 1)
+      #lfac.kmyt[i, t, fin[i,t,]] <- lgamma(kmyt[i, t, fin[i,t,]] + 1)
+    }
+  }
+}
+fin <- fin*1 #convert to numeric
+
 nll <- function(parms) {
     beta.lam <- parms[1:nAP]
     beta.gam <- parms[(nAP+1):(nAP+nGP)]
@@ -228,19 +247,24 @@ nll <- function(parms) {
         log.alpha <- 1
         scale<- -1*exp(parms[nP])
     }
+    yperm <- aperm(y, c(1,3,2)) #easier orientation to use in c++
+    lgy1 <- lgamma(yperm + 1)
 
 
     .Call("nll_distsampOpen",
-          ym, yt,
+          yperm, yt,
           Xlam, Xgam, Xom, Xsig, Xiota,
           beta.lam, beta.gam, beta.om, beta.sig, beta.iota, log.alpha,
           Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset, Xiota.offset,
-          ytna, yna,
+          ytna, yna, #yna not needed
           lk, mixture, first, last, M, J, T,
           delta, dynamics, survey, fix, go.dims, immigration,
           I, I1, Ib, Ip,
           scale,
-          a, u, db, nintervals, keyfun,
+          a, 
+          t(u), #easier to use transpose
+          w, db, keyfun, lfac.k, lfac.kmyt, kmyt, lgy1, fin,
+
           PACKAGE = "unmarked")
 }
 

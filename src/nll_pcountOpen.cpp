@@ -1,5 +1,5 @@
 #include "nll_pcountOpen.h"
-#include "tranProbs.h"
+#include "tranprobs.h"
 #include "distr.h"
 
 
