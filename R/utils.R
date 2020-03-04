@@ -236,7 +236,8 @@ formatLong <- function(dfin, species = NULL, type, ...) {
         u
       }
     })
-    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
+    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)],
+                              stringsAsFactors=TRUE)
     if(nrow(siteCovs) == 0) siteCovs <- NULL
 
     ## remove sitecovs from obsvars
@@ -398,7 +399,8 @@ formatMult <- function(df.in)
             u
         }
     })
-    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
+    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)],
+                              stringsAsFactors=TRUE)
     if(nrow(siteCovs) == 0) siteCovs <- NULL
 
     ## only check non-sitecovs
@@ -425,8 +427,8 @@ formatMult <- function(df.in)
             u
         }
     })
-    yearlySiteCovs <- as.data.frame(yearlySiteCovs[!sapply(yearlySiteCovs,
-                                                           is.null)])
+    yearlySiteCovs <- as.data.frame(yearlySiteCovs[!sapply(yearlySiteCovs,is.null)],
+                                    stringsAsFactors=TRUE)
     if(nrow(yearlySiteCovs) == 0) yearlySiteCovs <- NULL
 
     # Extract siteCovs and yearlySiteCovs from obsvars
