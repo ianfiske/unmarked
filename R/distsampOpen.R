@@ -1,14 +1,13 @@
 
 
 
-distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula,    data,
-    keyfun=c("halfnorm", "exp", "hazard", "uniform"),
+distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula,
+    data, keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
-                         mixture=c("P", "NB", "ZIP"), K,
+    mixture=c("P", "NB", "ZIP"), K,
     dynamics=c("constant", "autoreg", "notrend", "trend"),
-    fix=c("none", "gamma", "omega"),
-    iotaformula = ~1,
-    starts, method="BFGS", se=TRUE, immigration=FALSE, nintervals=10, ...)
+    fix=c("none", "gamma", "omega"), iotaformula = ~1,
+    starts, method="BFGS", se=TRUE, immigration=FALSE, ...)
 {
   
   #Check data source
@@ -84,6 +83,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
 
   first <- apply(!ytna, 1, function(x) min(which(x)))
   last  <- apply(!ytna, 1, function(x) max(which(x)))
+  first1 <- which(first==1)[1]
   
   #K stuff
   if(missing(K)) {
@@ -96,15 +96,15 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
   lk <- length(k)
   #Some k-related indices to avoid repeated calculations in likelihood
   lfac.k <- lgamma(k+1)
-  kmyt <- array(0, c(M, T, lk))
+  kmyt <- array(0, c(lk, T, M))
   lfac.kmyt <- array(0, c(M, T, lk))
   fin <- array(NA, c(M, T, lk)) #Indicator if given k is possible given y
   for(i in 1:M) {
     for(t in 1:T) {
       fin[i,t,] <- k - yt[i,t] >= 0
       if(sum(ytna[i,t])==0) {
-        kmyt[i,t,] <- k - yt[i,t]
-        lfac.kmyt[i, t, ] <- lgamma(kmyt[i, t, ] + 1)
+        kmyt[,t,i] <- k - yt[i,t]
+        lfac.kmyt[i,t, ] <- lgamma(kmyt[,t,i] + 1)
       }
     }
   }
@@ -205,18 +205,18 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
   paramNames <- c(lamParms, gamParms, omParms, detParms, 
                  iotaParms, scaleParm, nbParm)
 
-# Create indices (should be written in C++), all possible combinatinos of survivors and recruits, finding all unique likelihood transitions
-I <- cbind(rep(k, times=lk),
-           rep(k, each=lk))
-I1 <- I[I[,1] <= I[,2],]
-Ib <- Ip <- list()
-for(i in 1:nrow(I)) {
-    Z <- 0:min(I[i,])
-    Ib[[i]] <- which((I1[,1] %in% Z) & (I1[,2]==I[i,1])) - 1
-    Ip[[i]] <- as.integer(I[i,2]-Z)
-}
+  #Create indices, all possible combinations of survivors and recruits,
+  #finding all unique likelihood transitions
+  I <- cbind(rep(k, times=lk), rep(k, each=lk))
+  I1 <- I[I[,1] <= I[,2],]
 
-
+  #Ib <- Ip <- list()
+  #for(i in 1:nrow(I)) {
+  #    Z <- 0:min(I[i,])
+  #    Ib[[i]] <- which((I1[,1] %in% Z) & (I1[,2]==I[i,1])) - 1
+  #    Ip[[i]] <- as.integer(I[i,2]-Z)
+  #}
+  lik_trans <- .Call("get_lik_trans", I, I1, PACKAGE="unmarked")
 
   beta_ind <- matrix(NA, 7, 2)
   beta_ind[1,] <- c(1, nAP) #Abundance
@@ -239,11 +239,11 @@ for(i in 1:nrow(I)) {
           parms, beta_ind - 1,
           Xlam.offset, Xgam.offset, Xom.offset, Xsig.offset, Xiota.offset,
           ytna,
-          lk, mixture, first, last, M, T,
+          lk, mixture, first - 1, last - 1, first1 - 1, M, T,
           delta, dynamics, survey, fix, go.dims, immigration,
-          I, I1, Ib, Ip,
+          I, I1, lik_trans$Ib, lik_trans$Ip,
           a, u, w, db, 
-          keyfun, lfac.k, lfac.kmyt, kmyt, fin,
+          keyfun, lfac.k, kmyt, lfac.kmyt, fin,
           PACKAGE = "unmarked")
   }
 

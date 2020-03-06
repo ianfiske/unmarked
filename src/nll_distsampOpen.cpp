@@ -3,96 +3,35 @@
 using namespace Rcpp;
 using namespace arma;
 
-SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, 
-    SEXP Xsig_, SEXP Xiota_, 
-    //SEXP beta_lam_, SEXP beta_gam_, SEXP beta_om_, 
-    //SEXP beta_sig_, SEXP beta_iota_, SEXP log_alpha_,
+SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
+    SEXP Xsig_, SEXP Xiota_,
     SEXP beta_, SEXP beta_ind_,
-    SEXP Xlam_offset_, 
-    SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_, 
-    SEXP ytna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, 
-    SEXP M_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP survey_, 
-    SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_, 
-    SEXP Ip_, 
-    //SEXP scale_, 
+    SEXP Xlam_offset_,
+    SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xsig_offset_, SEXP Xiota_offset_,
+    SEXP ytna_, SEXP lk_, SEXP mixture_, SEXP first_, SEXP last_, SEXP first1_,
+    SEXP M_, SEXP T_, SEXP delta_, SEXP dynamics_, SEXP survey_,
+    SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_,
+    SEXP Ip_,
     SEXP a_, SEXP u_, SEXP w_, SEXP db_, SEXP keyfun_,
-    SEXP lfac_k_, SEXP lfac_kmyt_, SEXP kmyt_, SEXP fin_ ) {
+    SEXP lfac_k_, SEXP kmyt_, SEXP lfac_kmyt_, SEXP fin_ ) {
   
   //Indices
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
   int M = as<int>(M_);
   int T = as<int>(T_);
-  cube y = as<cube>(y_);
+  ucube y = as<ucube>(y_);
   imat yt = as<imat>(yt_);
   Rcpp::IntegerVector first(first_);
   Rcpp::IntegerVector last(last_);
+  int first1 = as<int>(first1_);
   arma::imat ytna = as<arma::imat>(ytna_); // y[i,,t] are all NA
   arma::imat delta = as<arma::imat>(delta_);
+ 
   vec lfac_k = as<vec>(lfac_k_);
   cube lfac_kmyt = as<cube>(lfac_kmyt_);
   cube kmyt = as<cube>(kmyt_);
-  cube fin = as<cube>(fin_);
- 
-  //Covariate matrices
-  mat Xlam = as<mat>(Xlam_);
-  mat Xgam = as<mat>(Xgam_);
-  mat Xom = as<mat>(Xom_);
-  mat Xsig = as<mat>(Xsig_);
-  mat Xiota = as<mat>(Xiota_);
-
-  //Model types
-  std::string keyfun = as<std::string>(keyfun_);
-  std::string mixture = as<std::string>(mixture_);
-  std::string dynamics = as<std::string>(dynamics_);
-  std::string fix = as<std::string>(fix_);
-  std::string go_dims = as<std::string>(go_dims_);
-  bool immigration = as<bool>(immigration_);
-  std::string survey = as<std::string>(survey_);
-
-  //Parameter vectors
-  vec beta = as<vec>(beta_);
-  umat bi = as<umat>(beta_ind_);
-  vec beta_lam = beta.subvec(bi(0,0), bi(0,1));
-  vec beta_gam = beta.subvec(bi(1,0), bi(1,1));
-  vec beta_om = beta.subvec(bi(2,0), bi(2,1));
-  
-  vec beta_sig;
-  if(keyfun != "uniform"){
-    beta_sig = beta.subvec(bi(3,0), bi(3,1));
-  }
-
-  vec beta_iota;
-  if(immigration){
-    beta_iota = beta.subvec(bi(4,0), bi(4,1));
-  }
-
-  double scale;
-  if(keyfun == "hazard"){
-    scale = exp(beta(bi(5,0)));
-  }
-
-  //Get 2nd abundance dist parameter set up if necessary
-  //double log_alpha = as<double>(log_alpha_);
-  //double alpha=0.0, psi=0.0;
-  double alpha, psi;
-  if(mixture=="NB"){
-    //alpha = exp(log_alpha);
-    alpha = exp(beta(bi(6,0)));
-  } else if(mixture=="ZIP"){
-    //psi = 1.0/(1.0+exp(-log_alpha));
-    psi = 1.0 / (1.0 + exp(-1 * beta(bi(6,0))));
-  }
- 
-  colvec Xlam_offset = as<colvec>(Xlam_offset_);
-  colvec Xgam_offset = as<colvec>(Xgam_offset_);
-  colvec Xom_offset = as<colvec>(Xom_offset_);
-  colvec Xsig_offset = as<colvec>(Xsig_offset_);
-  colvec Xiota_offset = as<colvec>(Xiota_offset_);  
-  
-
-  //Other settings
-
+  icube fin = as<icube>(fin_);
   imat I = as<arma::imat>(I_);
   imat I1 = as<arma::imat>(I1_);
   List Ib(Ib_);
@@ -105,12 +44,48 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   mat u = as<mat>(u_);
   vec w = as<vec>(w_); 
   vec db = as<vec>(db_);
+   
+  //Covariate matrices
+  mat Xlam = as<mat>(Xlam_);
+  mat Xgam = as<mat>(Xgam_);
+  mat Xom = as<mat>(Xom_);
+  mat Xsig = as<mat>(Xsig_);
+  mat Xiota = as<mat>(Xiota_);
 
-  //Linear predictors
+  //Offsets
+  colvec Xlam_offset = as<colvec>(Xlam_offset_);
+  colvec Xgam_offset = as<colvec>(Xgam_offset_);
+  colvec Xom_offset = as<colvec>(Xom_offset_);
+  colvec Xsig_offset = as<colvec>(Xsig_offset_);
+  colvec Xiota_offset = as<colvec>(Xiota_offset_);  
+
+  //Model types
+  std::string keyfun = as<std::string>(keyfun_);
+  std::string mixture = as<std::string>(mixture_);
+  std::string dynamics = as<std::string>(dynamics_);
+  std::string fix = as<std::string>(fix_);
+  std::string go_dims = as<std::string>(go_dims_);
+  bool immigration = as<bool>(immigration_);
+  std::string survey = as<std::string>(survey_);
+
+  //Parameters
+  vec beta = as<vec>(beta_);
+  umat bi = as<umat>(beta_ind_);
+ 
   //Lambda
-  colvec lam = exp(Xlam*beta_lam + Xlam_offset);
+  vec beta_lam = beta.subvec(bi(0,0), bi(0,1));
+  vec lam = exp(Xlam*beta_lam + Xlam_offset);
+
+  //Get 2nd abundance dist parameter set up if necessary
+  double alpha, psi;
+  if(mixture=="NB"){
+    alpha = exp(beta(bi(6,0)));
+  } else if(mixture=="ZIP"){
+    psi = 1.0 / (1.0 + exp(-1 * beta(bi(6,0))));
+  }
   
   //Omega
+  vec beta_om = beta.subvec(bi(2,0), bi(2,1));
   mat omv = ones<colvec>(M*(T-1));
   if((fix != "omega") && (dynamics != "trend")) {
     if((dynamics == "ricker")  || (dynamics == "gompertz")){
@@ -122,8 +97,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   }
   omv.reshape(T-1, M);
   mat om = trans(omv);
-  
+
   //Gamma
+  vec beta_gam = beta.subvec(bi(1,0), bi(1,1));
   mat gam = zeros(M, T-1);
   if(dynamics == "notrend") {
     mat lamMat = repmat(lam, 1, T-1);
@@ -133,30 +109,36 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     gamv.reshape(T-1, M);
     gam = trans(gamv);
   }
-
+  
   //Sigma (detection param)
   mat sig(M, T);
   if(keyfun != "uniform"){
+    vec beta_sig = beta.subvec(bi(3,0), bi(3,1));
     mat sigv = exp(Xsig*beta_sig + Xsig_offset);
     sigv.reshape(T, M);
     sig = trans(sigv);
   }
-
- //Immigration
-  mat iotav = zeros<colvec>(M*(T-1));
-  if(immigration) {
-    iotav = exp(Xiota*beta_iota + Xiota_offset);
+  
+  //Scale if necessary for hazard
+  double scale;
+  if(keyfun == "hazard"){
+    scale = exp(beta(bi(5,0)));
   }
-  iotav.reshape(T-1, M);
-  mat iota = trans(iotav);
+
+  //Immigration
+  mat iota(M,T);
+  if(immigration){
+    vec beta_iota = beta.subvec(bi(4,0), bi(4,1));
+    vec iotav = exp(Xiota*beta_iota + Xiota_offset);
+    iotav.reshape(T-1, M);
+    iota = trans(iotav);
+  }
 
   // initialize
   double ll=0.0;
-
   double ll_i=0.0;
   int first_i=0;
   int last_i=0;
-  int first1=0;
   colvec g_star = ones(lk);
   mat g3 = zeros(lk, lk);
   mat g3_d = zeros(lk, lk);
@@ -165,14 +147,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   colvec g1 = zeros(lk);
   colvec g1_star = zeros(lk);
   cube g3_t = zeros(lk,lk,T-1);
-
-  // shouldn't be done in likelihood
-  for(int i=0; i<M; i++) {
-    if(first[i]==1) {
-      first1=i; // site with no missing values at t=1
-      break;
-    }
-  }
+  mat ky_slice(lk, T);
 
   // compute g3 if there are no covariates of omega/gamma
   if(go_dims == "scalar") {
@@ -206,49 +181,42 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 	      tp5(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
     }
   }
-
+  
   // loop over sites
   for(int i=0; i<M; i++) {
     ll_i=0.0;
-    first_i = first[i]-1; // remember 0=1st location in C++
-    last_i = last[i]-1;
+    first_i = first[i];
+    last_i = last[i];
+    
+    ky_slice = kmyt.slice(i); //using subcube causes segfaults
     
     //Calculate g_star
     g_star.ones();
     if(last_i > first_i) {
       // loop over time periods in reverse order, up to second occasion
       for(int t=last_i; t>first_i; t--) {	      
+        g1_t.zeros();
         //Skip site i time t if all NA
         if(ytna(i,t)==1) {
 	        continue;
 	      }
 
         //Detection
-        vec ysub = y.subcube(span(i), span(t), span());
+        uvec ysub = y.subcube(span(i), span(t), span());
         vec cp = distprob(keyfun, sig(i,t), scale, survey, 
                           db, w, a.row(i)) % u.col(i);
         double ycp = sum(ysub % log(cp));
         vec lkmyt_sub = lfac_kmyt.subcube(span(i), span(t), span());
-             
-
-        //vec p1 = y.subcube(span(i), span(t), span());
-        //vec cp = distprob(keyfun, sig(i,t), scale, survey, 
-                          //db, w, a.row(i));
-        //vec p2 = cp % u.col(i);
-        //vec p3 = lgy1(span(i), span(t), span());
-        //vec p5 = lfac_kmyt.subcube(span(i), span(t), span());
-
-        //double p2m3 = sum(p1 % log(p2));
         
         if(keyfun == "uniform"){
-          g1_t.zeros();
+          //g1_t.zeros();
           unsigned kint = sum(ysub);
           g1_t(kint) = exp(lfac_k(kint) - lkmyt_sub(kint) + ycp);
 
         } else {
 
-          vec fin_sub = fin.subcube(span(i), span(t), span());
-          vec kmyt_sub = kmyt.subcube(span(i), span(t), span());
+          ivec fin_sub = fin.subcube(span(i), span(t), span());
+          vec kmyt_sub = ky_slice.col(t);
           double cpJ = 1 - sum(cp);
 
           g1_t = lfac_k - lkmyt_sub + ycp + log(cpJ) * kmyt_sub;
@@ -296,32 +264,19 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     int delta_i0 = delta(i,0);
     g1.zeros();
 
-
-    vec ysub = y.subcube(span(i), span(first_i), span());
+    uvec ysub = y.subcube(span(i), span(first_i), span());
     vec cp = distprob(keyfun, sig(i,first_i), scale, survey, 
                           db, w, a.row(i)) % u.col(i);
     double ycp = sum(ysub % log(cp));
     vec lkmyt_sub = lfac_kmyt.subcube(span(i), span(first_i), span());
 
-    //vec p1 = y.subcube(span(i), span(first_i), span());
-    //vec cp = distprob(keyfun, sig(i,first_i), exp(scale), survey, 
-                          //db, w, a.row(i));
-    //vec p2 = cp % u.col(i);
-    //vec p3 = lgy1(span(i), span(first_i), span());
-    //double p2m3 = sum(p1 % log(p2) - p3);
-
-    //double p2m3 = sum(p1 % log(p2));
-
-    //vec p5 = lfac_kmyt.subcube(span(i), span(first_i), span());
-    
     if(keyfun == "uniform"){
-      g1.zeros();
       unsigned kint = sum(ysub);
       g1(kint) = exp(lfac_k(kint) - lkmyt_sub(kint) + ycp);
 
     } else {
-      vec fin_sub = fin.subcube(span(i), span(first_i), span());
-      vec kmyt_sub = kmyt.subcube(span(i), span(first_i), span());
+      ivec fin_sub = fin.subcube(span(i), span(first_i), span());
+      vec kmyt_sub = ky_slice.col(first_i);
       double cpJ = 1 - sum(cp);
 
       g1 = lfac_k - lkmyt_sub + ycp + log(cpJ) * kmyt_sub;
