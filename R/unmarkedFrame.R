@@ -454,8 +454,8 @@ unmarkedFrameDSO <- function(y, siteCovs, numPrimary,
 
     M <- nrow(y)
     T <- numPrimary
-# copied from unmarkedFramePCO
-if(missing(primaryPeriod))
+  # copied from unmarkedFramePCO
+    if(missing(primaryPeriod))
         primaryPeriod <- matrix(1:T, M, T, byrow=TRUE)
     if(nrow(primaryPeriod) != M | ncol(primaryPeriod) != T)
         stop("Dimensions of primaryPeriod matrix should be MxT")
@@ -469,7 +469,7 @@ if(missing(primaryPeriod))
         }
 
     #######well fuck, not sure why this needs to be this way:
-    obsToY = diag(J*T)
+    #obsToY = diag(J*T)
     ### This is from unmarkedFramePCO
 
     umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)

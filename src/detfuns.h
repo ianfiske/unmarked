@@ -10,7 +10,7 @@ class IntFunc {
   public:
     IntFunc() {}
     
-    virtual double operator()(const double& x) const {
+    virtual double operator()() const {
       return(0);
     }
 };

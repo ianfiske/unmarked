@@ -212,7 +212,9 @@ if(type=="line"){
 }
     for(i in 1:M) {
     N[i,1] <- rpois(1, lambda)
+
     y[i,1:J,1] <- rmultinom(1, N[i,1], cp)[1:J]
+
     for(t in 1:(T-1)) {
         S[i,t] <- rbinom(1, N[i,t], omega)
         G[i,t] <- rpois(1, gamma)
@@ -234,36 +236,57 @@ sigma <- 20
 T <- 20
  
 # half-normal examples  
-y.sim7 <- sim7(lambda, gamma, omega, sigma=50, M=200, T=T,type="line", keyfun="halfnorm")$y
+y.sim7 <- sim7(lambda, gamma, omega, sigma=15, M=200, T=T,type="line", keyfun="halfnorm")$y
 umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
     dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200))
-fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=120,keyfun="half",
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,keyfun="halfnorm",
                  starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
-                 se=FALSE, nintervals=5)
+                 #starts=c(0,0,0,2.21),
+                 se=TRUE)
+
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,keyfun="halfnorm",
+                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma), 0),
+                 mixture="NB",
+                 se=TRUE)
+
+y.sim7 <- sim7(lambda, gamma, omega, sigma=10, M=50, T=T,type="line", keyfun="halfnorm")$y
+umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
+    dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200))
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,keyfun="halfnorm",
+                 #starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
+                 starts=c(0,0,0,2.204),
+                 se=TRUE)
 # exponential example 
 y.sim7 <- sim7(lambda, gamma, omega, sigma=25, M=200, T=T,type="line", keyfun="exp")$y
 umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
     dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200))
 
-fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=120,keyfun="exp",
-                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
-                 se=FALSE, nintervals=8)
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,keyfun="exp",
+                 #starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
+                 starts=c(0,0,0,2),
+                   se=TRUE)
 
 # uniform example 
 y.sim7 <- sim7(lambda, gamma, omega, sigma=NULL, M=200, T=T,type="line", keyfun="uniform", scale=1)$y
 umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
     dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200))
-fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=120,keyfun="uniform",
-                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
-                 se=FALSE, nintervals=8)
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,
+                   starts=rep(0,3),
+                   keyfun="uniform", se=TRUE)
+
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,
+                   starts=rep(0,4),
+                   mixture="NB",
+                   keyfun="uniform", se=TRUE)
 
 # hazard example
 y.sim7 <- sim7(lambda, gamma, omega, sigma=20, scale = 1, M=200, T=T,type="line", keyfun="hazard")$y
 umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
     dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200))
-fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=120,keyfun="hazard",
-                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma), -1),
-                 se=FALSE, nintervals=8)
+fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,keyfun="hazard",
+                 #starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma), -1),
+                 starts=c(0,0,0,0,-1),
+                 se=TRUE)
 
 
 

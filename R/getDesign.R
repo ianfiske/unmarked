@@ -1077,20 +1077,6 @@ setMethod("getDesign", "unmarkedFrameDSO",
     if(!is.null(Xlam.offset))
         Xlam.offset[is.na(Xlam.offset)] <- 0
 
-    if(is.null(obsCovs(umf)))
-        obsCovs <- data.frame(placeHolder = rep(1, M*J*T))
-    else
-        obsCovs <- obsCovs(umf)
-
-    colNames <- c(colnames(obsCovs), colnames(yearlySiteCovs))
-
-    # Add yearlySiteCovs, which contains siteCovs
-    obsCovs <- cbind(obsCovs, yearlySiteCovs[rep(1:(M*T), each = J),])
-    colnames(obsCovs) <- colNames
-
-    if(!("obsNum" %in% names(obsCovs)))
-        obsCovs <- cbind(obsCovs, obsNum = as.factor(rep(1:(J*T), M)))
-
     # Ignore last year of data
     transCovs <- yearlySiteCovs[-seq(T, M*T, by=T),,drop=FALSE]
     for(i in 1:ncol(transCovs))
@@ -1102,16 +1088,20 @@ setMethod("getDesign", "unmarkedFrameDSO",
     Xiota.offset <- as.vector(model.offset(Xiota.mf))
     if(!is.null(Xiota.offset))
         Xiota.offset[is.na(Xiota.offset)] <- 0
-    Xp.mf <- model.frame(pformula, obsCovs, na.action = NULL)
+    
+    #Detection uses yearlySiteCovs
+    Xp.mf <- model.frame(pformula, yearlySiteCovs, na.action = NULL)
     Xp <- model.matrix(pformula, Xp.mf)
     Xp.offset <- as.vector(model.offset(Xp.mf))
     if(!is.null(Xp.offset))
         Xp.offset[is.na(Xp.offset)] <- 0
+    
     Xgam.mf <- model.frame(gamformula, transCovs, na.action = NULL)
     Xgam <- model.matrix(gamformula, Xgam.mf)
     Xgam.offset <- as.vector(model.offset(Xgam.mf))
     if(!is.null(Xgam.offset))
         Xgam.offset[is.na(Xgam.offset)] <- 0
+    
     Xom.mf <- model.frame(omformula, transCovs, na.action = NULL)
     Xom <- model.matrix(omformula, Xom.mf)
     Xom.offset <- as.vector(model.offset(Xom.mf))
@@ -1150,24 +1140,29 @@ setMethod("getDesign", "unmarkedFrameDSO",
         if(all(go.dims.vec == "rowvec"))
             go.dims <- "rowvec"
         else if(all(go.dims.vec == "colvec"))
-            go.dims <- "matrix" ##"colvec"  ## NOTE: Temporary fix to the problem reported with time-only-varying covariates
+          ## NOTE: Temporary fix to the problem reported with 
+          ## time-only-varying covariates
+            go.dims <- "matrix" ##"colvec"  
         else
             go.dims <- "matrix"
     }
-
-    if(na.rm)
-        out <- handleNA(umf, Xlam, Xgam, Xom, Xp, Xiota,
-            Xlam.offset, Xgam.offset, Xom.offset, Xp.offset, Xiota.offset,
-            delta)
-    else {   # delta needs to be formatted first
-        ya <- array(y, c(M, J, T))
-        yna <- apply(is.na(ya), c(1,3), all)
-        delta <- formatDelta(delta, yna)
-        out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, Xiota=Xiota,
-                    Xlam.offset=Xlam.offset, Xgam.offset=Xgam.offset,
-                    Xom.offset=Xom.offset, Xp.offset=Xp.offset,
-                    Xiota.offset=Xiota.offset,
-                    delta=delta, removed.sites=integer(0))
+    
+    #Needs to be added, forced to skip for now
+    na.rm <- FALSE
+    if(na.rm){
+      out <- handleNA(umf, Xlam, Xgam, Xom, Xp, Xiota,
+                      Xlam.offset, Xgam.offset, Xom.offset, Xp.offset, 
+                      Xiota.offset, delta)
+    } else {   
+      # delta needs to be formatted first
+      ya <- array(y, c(M, J, T))
+      yna <- apply(is.na(ya), c(1,3), all)
+      delta <- formatDelta(delta, yna)
+      out <- list(y=y, Xlam=Xlam, Xgam=Xgam, Xom=Xom, Xp=Xp, Xiota=Xiota,
+                  Xlam.offset=Xlam.offset, Xgam.offset=Xgam.offset,
+                  Xom.offset=Xom.offset, Xp.offset=Xp.offset,
+                  Xiota.offset=Xiota.offset,
+                  delta=delta, removed.sites=integer(0))
     }
 
     return(list(y = out$y, Xlam = out$Xlam, Xgam = out$Xgam,
@@ -1315,24 +1310,35 @@ setMethod("handleNA", "unmarkedFrameDSO",
 
 	M <- numSites(umf)
 	T <- umf@numPrimary
+  R <- obsNum(umf)
 	y <- getY(umf)
-	J <- ncol(y) / T
+	#J <- ncol(y) / T
 
-	Xlam.long <- Xlam[rep(1:M, each = J*T),]
+	#Xlam.long <- Xlam[rep(1:M, each = J*T),]
+	Xlam.long <- Xlam[rep(1:M, each = T),]
 	Xlam.long.na <- is.na(Xlam.long)
+  
+  Xp.long.na <- apply(Xp, 2, function(x) {
+    x.mat <- matrix(x, M, R, byrow = TRUE)
+    x.mat <- is.na(x.mat)
+    x.mat <- x.mat %*% obsToY
+    x.long <- as.vector(t(x.mat))
+    x.long > 0
+    })
+  Xp.long.na <- apply(Xdet.long.na, 1, any)
+
+	#long.na <- function(x) {
+  #          x.mat <- matrix(x, M, R, byrow = TRUE)
+  #          x.mat <- is.na(x.mat)
+  #          x.mat <- x.mat %*% obsToY
+  #          x.long <- as.vector(t(x.mat))
+  #          x.long > 0
+  #      }
+
+  o2y2 <- diag(T)
+  o2y2 <- o2y2[-T, -T]
 
 	long.na <- function(x) {
-            x.mat <- matrix(x, M, J*T, byrow = TRUE)
-            x.mat <- is.na(x.mat)
-            x.mat <- x.mat %*% obsToY
-            x.long <- as.vector(t(x.mat))
-            x.long > 0
-        }
-
-        o2y2 <- diag(T)
-        o2y2 <- o2y2[-T, -T]
-
-	long.na2 <- function(x) {
             x.mat <- matrix(x, M, T-1, byrow = TRUE)
             x.mat <- is.na(x.mat)
             x.mat <- x.mat %*% o2y2
@@ -1340,19 +1346,19 @@ setMethod("handleNA", "unmarkedFrameDSO",
             x.long > 0
         }
 
-	Xp.long.na <- apply(Xp, 2, long.na)
-	Xp.long.na <- apply(Xp.long.na, 1, any)
+	#Xp.long.na <- apply(Xp, 2, long.na)
+	#Xp.long.na <- apply(Xp.long.na, 1, any)
 
-        Xgam.long.na <- apply(Xgam, 2, long.na2)
+  Xgam.long.na <- apply(Xgam, 2, long.na)
 	Xgam.long.na <- apply(Xgam.long.na, 1, any)
-	Xom.long.na <- apply(Xom, 2, long.na2)
+	Xom.long.na <- apply(Xom, 2, long.na)
 	Xom.long.na <- apply(Xom.long.na, 1, any)
 
 	y.long <- as.vector(t(y))
 	y.long.na <- is.na(y.long)
 
-#  delta.long <- as.vector(t(delta))
-#	delta.long.na <- is.na(delta.long)
+  #  delta.long <- as.vector(t(delta))
+  #	delta.long.na <- is.na(delta.long)
 
 	covs.na <- apply(cbind(Xlam.long.na, Xp.long.na), 1, any)
 	covs.na2 <- apply(cbind(Xgam.long.na, Xom.long.na), 1, any)
