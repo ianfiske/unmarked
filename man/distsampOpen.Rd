@@ -235,13 +235,14 @@ omega <- 0.5
 sigma <- 20
 T <- 20
  
-# half-normal examples  
+# half-normal examples 
+#NEED TO ADD WARNING ABOUT TLENGTH!!!!!
 y.sim7 <- sim7(lambda, gamma, omega, sigma=15, M=200, T=T,type="line", keyfun="halfnorm")$y
 umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
     dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200))
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,keyfun="halfnorm",
-                 starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
-                 #starts=c(0,0,0,2.21),
+                 #starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma)),
+                 starts=c(0,0,0,2.21),
                  se=TRUE)
 
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,keyfun="halfnorm",
@@ -285,7 +286,7 @@ umf7b <- unmarkedFrameDSO(y = y.sim7, numPrimary=T,
     dist.breaks = c(0, 25, 50, 75, 100), survey="line", unitsIn="m",tlength=rep(1, 200))
 fm <- distsampOpen(~1, ~1, ~1, ~1, data = umf7b, K=50,keyfun="hazard",
                  #starts=c(log(c(lambda, gamma)),plogis(omega), log(sigma), -1),
-                 starts=c(0,0,0,0,-1),
+                 starts=c(0,0,0,0,0),
                  se=TRUE)
 
 

@@ -10,8 +10,8 @@ class IntFunc {
   public:
     IntFunc() {}
     
-    virtual double operator()() const {
-      return(0);
+    virtual double operator()(const double& x) const {
+      return(x);
     }
 };
 

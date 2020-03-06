@@ -72,7 +72,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     scale = exp(beta(bi(5,0)));
   }
 
-
   //Get 2nd abundance dist parameter set up if necessary
   //double log_alpha = as<double>(log_alpha_);
   //double alpha=0.0, psi=0.0;
@@ -85,11 +84,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     psi = 1.0 / (1.0 + exp(-1 * beta(bi(6,0))));
   }
  
-  //colvec beta_lam = as<colvec>(beta_lam_);
-  //colvec beta_gam = as<colvec>(beta_gam_);
-  //colvec beta_om = as<colvec>(beta_om_);
-  //colvec beta_sig = as<colvec>(beta_sig_);
-  //colvec beta_iota = as<colvec>(beta_iota_);
   colvec Xlam_offset = as<colvec>(Xlam_offset_);
   colvec Xgam_offset = as<colvec>(Xgam_offset_);
   colvec Xom_offset = as<colvec>(Xom_offset_);
@@ -99,8 +93,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 
   //Other settings
 
-  
-  //KFK thinks this should be refactored
   imat I = as<arma::imat>(I_);
   imat I1 = as<arma::imat>(I1_);
   List Ib(Ib_);
@@ -109,8 +101,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   int nrI1 = I1.n_rows;
 
   //Distance sampling info
-  //double scale = as<double>(scale_);
-
   mat a = as<mat>(a_);
   mat u = as<mat>(u_);
   vec w = as<vec>(w_); 
@@ -159,14 +149,6 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   }
   iotav.reshape(T-1, M);
   mat iota = trans(iotav);
-
-  // format matrices as cubes (shouldn't be done in likelihood)
-  //cube y(M,J,T);
-  //icube yna(M,J,T);
-  //for(int q=0; q<(M*J*T); q++) {
-  //  y(q) = ym(q);
-  //  yna(q) = ynam(q);
-  //}
 
   // initialize
   double ll=0.0;
@@ -242,28 +224,34 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 	      }
 
         //Detection
-             
-        vec p1 = y.subcube(span(i), span(t), span());
+        vec ysub = y.subcube(span(i), span(t), span());
         vec cp = distprob(keyfun, sig(i,t), scale, survey, 
-                          db, w, a.row(i));
-        vec p2 = cp % u.col(i);
-        //vec p3 = lgy1(span(i), span(t), span());
-        vec p5 = lfac_kmyt.subcube(span(i), span(t), span());
+                          db, w, a.row(i)) % u.col(i);
+        double ycp = sum(ysub % log(cp));
+        vec lkmyt_sub = lfac_kmyt.subcube(span(i), span(t), span());
+             
 
-        double p2m3 = sum(p1 % log(p2));
+        //vec p1 = y.subcube(span(i), span(t), span());
+        //vec cp = distprob(keyfun, sig(i,t), scale, survey, 
+                          //db, w, a.row(i));
+        //vec p2 = cp % u.col(i);
+        //vec p3 = lgy1(span(i), span(t), span());
+        //vec p5 = lfac_kmyt.subcube(span(i), span(t), span());
+
+        //double p2m3 = sum(p1 % log(p2));
         
         if(keyfun == "uniform"){
           g1_t.zeros();
-          unsigned kint = sum(p1);
-          g1_t(kint) = exp(lfac_k(kint) - p5(kint) + p2m3);
+          unsigned kint = sum(ysub);
+          g1_t(kint) = exp(lfac_k(kint) - lkmyt_sub(kint) + ycp);
 
         } else {
 
           vec fin_sub = fin.subcube(span(i), span(t), span());
-          vec p4 = kmyt.subcube(span(i), span(t), span());
-          double cpJ = 1 - sum(p2);
+          vec kmyt_sub = kmyt.subcube(span(i), span(t), span());
+          double cpJ = 1 - sum(cp);
 
-          g1_t = lfac_k - p5 + p2m3 + log(cpJ) * p4;
+          g1_t = lfac_k - lkmyt_sub + ycp + log(cpJ) * kmyt_sub;
           g1_t = exp(g1_t);
           g1_t = g1_t % fin_sub; //set to 0 when K impossible
         }
@@ -308,28 +296,35 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     int delta_i0 = delta(i,0);
     g1.zeros();
 
-    vec p1 = y.subcube(span(i), span(first_i), span());
-    vec cp = distprob(keyfun, sig(i,first_i), exp(scale), survey, 
-                          db, w, a.row(i));
-    vec p2 = cp % u.col(i);
+
+    vec ysub = y.subcube(span(i), span(first_i), span());
+    vec cp = distprob(keyfun, sig(i,first_i), scale, survey, 
+                          db, w, a.row(i)) % u.col(i);
+    double ycp = sum(ysub % log(cp));
+    vec lkmyt_sub = lfac_kmyt.subcube(span(i), span(first_i), span());
+
+    //vec p1 = y.subcube(span(i), span(first_i), span());
+    //vec cp = distprob(keyfun, sig(i,first_i), exp(scale), survey, 
+                          //db, w, a.row(i));
+    //vec p2 = cp % u.col(i);
     //vec p3 = lgy1(span(i), span(first_i), span());
     //double p2m3 = sum(p1 % log(p2) - p3);
 
-    double p2m3 = sum(p1 % log(p2));
+    //double p2m3 = sum(p1 % log(p2));
 
-    vec p5 = lfac_kmyt.subcube(span(i), span(first_i), span());
+    //vec p5 = lfac_kmyt.subcube(span(i), span(first_i), span());
     
     if(keyfun == "uniform"){
       g1.zeros();
-      unsigned kint = sum(p1);
-      g1(kint) = exp(lfac_k(kint) - p5(kint) + p2m3);
+      unsigned kint = sum(ysub);
+      g1(kint) = exp(lfac_k(kint) - lkmyt_sub(kint) + ycp);
 
     } else {
       vec fin_sub = fin.subcube(span(i), span(first_i), span());
-      vec p4 = kmyt.subcube(span(i), span(first_i), span());
-      double cpJ = 1 - sum(p2);
+      vec kmyt_sub = kmyt.subcube(span(i), span(first_i), span());
+      double cpJ = 1 - sum(cp);
 
-      g1 = lfac_k - p5 + p2m3 + log(cpJ) * p4;
+      g1 = lfac_k - lkmyt_sub + ycp + log(cpJ) * kmyt_sub;
       g1 = exp(g1);
       g1 = g1 % fin_sub; //set to 0 when K impossible
     }
