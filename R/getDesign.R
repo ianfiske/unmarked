@@ -1312,7 +1312,7 @@ setMethod("handleNA", "unmarkedFrameDSO",
 	T <- umf@numPrimary
   R <- obsNum(umf)
 	y <- getY(umf)
-	#J <- ncol(y) / T
+	J <- ncol(y) / T
 
 	#Xlam.long <- Xlam[rep(1:M, each = J*T),]
 	Xlam.long <- Xlam[rep(1:M, each = T),]
@@ -1325,7 +1325,7 @@ setMethod("handleNA", "unmarkedFrameDSO",
     x.long <- as.vector(t(x.mat))
     x.long > 0
     })
-  Xp.long.na <- apply(Xdet.long.na, 1, any)
+  #Xp.long.na <- apply(Xdet.long.na, 1, any)
 
 	#long.na <- function(x) {
   #          x.mat <- matrix(x, M, R, byrow = TRUE)

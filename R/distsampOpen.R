@@ -1,13 +1,10 @@
-
-
-
-distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula,
+distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     data, keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
     mixture=c("P", "NB", "ZIP"), K,
     dynamics=c("constant", "autoreg", "notrend", "trend"),
-    fix=c("none", "gamma", "omega"), iotaformula = ~1,
-    starts, method="BFGS", se=TRUE, immigration=FALSE, ...)
+    fix=c("none", "gamma", "omega"), immigration=FALSE, iotaformula = ~1,
+    starts, method="BFGS", se=TRUE, ...)
 {
   
   #Check data source
@@ -36,16 +33,16 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
   fix <- match.arg(fix)
 
   formlist <- mget(c("lambdaformula", "gammaformula", "omegaformula",
-                   "sigmaformula", "iotaformula"))
+                   "pformula", "iotaformula"))
   formula <- as.formula(paste(unlist(formlist), collapse=" "))
   
-  D <- unmarked:::getDesign(data, formula)
+  D <- getDesign(data, formula)
   y <- D$y
 
   Xlam <- D$Xlam
   Xgam <- D$Xgam
   Xom <- D$Xom
-  Xsig <- D$Xp # Wrong length. Need new getDesign Function
+  Xsig <- D$Xp
   Xiota<- D$Xiota
 
   delta <- D$delta; go.dims <- D$go.dims
@@ -54,13 +51,10 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
   T <- data@numPrimary
   J <- ncol(getY(data)) / T
 
-  # FIXME: temporary fix until new getDesign is ready
-  #Xsig <- Xsig[1:(M*T),,drop=FALSE]
-
   Xlam.offset <- D$Xlam.offset
   Xgam.offset <- D$Xgam.offset
   Xom.offset <- D$Xom.offset
-  Xsig.offset <- D$Xp.offset   # Wrong length #should be OK now?
+  Xsig.offset <- D$Xp.offset
   Xiota.offset<- D$Xiota.offset
   
   #Should be in getDesign?
@@ -125,7 +119,8 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
       u[i,] <- a[i,] / sum(a[i,])
     }
   }
-
+  
+  #Need to adjust likelihood for this 
   switch(survey,
     line = A <- rowSums(a) * 2,
     point = A <- rowSums(a))
@@ -259,7 +254,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
   lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
                     estimates = ests[1:nAP], covMat = as.matrix(covMat[1:nAP,1:nAP]),
                     invlink = "exp", invlinkGrad = "exp")
-  estimateList <- unmarked:::unmarkedEstimateList(list(lambda=lamEstimates))
+  estimateList <- unmarkedEstimateList(list(lambda=lamEstimates))
 
   gamName <- switch(dynamics, constant = "gamConst", autoreg = "gamAR",
                               notrend = "", trend = "gamTrend")
@@ -319,12 +314,3 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, sigmaformula
 
   return(umfit)
 }
-
-
-
-
-
-
-
-
-

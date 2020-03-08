@@ -443,8 +443,9 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 
 
 # This function constructs an unmarkedMultFrame object.
-unmarkedFrameDSO <- function(y, siteCovs, numPrimary,
-	yearlySiteCovs, dist.breaks, survey, unitsIn, tlength, primaryPeriod)
+unmarkedFrameDSO <- function(y, siteCovs=NULL, yearlySiteCovs=NULL, numPrimary, 
+                             primaryPeriod, dist.breaks, tlength, survey, 
+                             unitsIn)
 {
     J <- ncol(y) / numPrimary
     obsToY <- matrix(1, 1, J)
@@ -475,8 +476,6 @@ unmarkedFrameDSO <- function(y, siteCovs, numPrimary,
     umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
-    if(missing(yearlySiteCovs))
-        yearlySiteCovs <- NULL
     if(class(yearlySiteCovs) == "list") {
         yearlySiteVars <- names(yearlySiteCovs)
         for(i in seq(length(yearlySiteVars))) {
@@ -495,13 +494,19 @@ unmarkedFrameDSO <- function(y, siteCovs, numPrimary,
         tlength <- rep(1, nrow(y))
         }
 
+    if(identical(survey, "line")) {
+      if(length(tlength) != nrow(y)) {
+        stop("tlength should be a vector with length(tlength)==nrow(y)")
+      }
+    }
+
     umf@yearlySiteCovs <- yearlySiteCovs
     umf <- as(umf, "unmarkedFrameDSO")
     umf@dist.breaks <- dist.breaks
     umf@survey <- survey
     umf@unitsIn <- unitsIn
     umf@tlength <- tlength
-umf@primaryPeriod <- primaryPeriod
+    umf@primaryPeriod <- primaryPeriod
     umf
 }
 
