@@ -1286,38 +1286,11 @@ setMethod("predict", "unmarkedFitPCO",
 })
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# andy just copied this over from PCO
-# NOTE: I DID NO EDITS TO THIS FUNCTION AT ALL , HOW CAN IT POSSIBLY WORK?
-
 setMethod("predict", "unmarkedFitDSO",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
         appendData = FALSE, level=0.95, ...)
 {
-    if(type %in% c("psi", "alpha"))
+    if(type %in% c("psi", "alpha", "scale"))
         stop(type, " is scalar, so use backTransform instead")
     if(missing(newdata) || is.null(newdata))
         newdata <- getData(object)
@@ -1373,31 +1346,60 @@ setMethod("predict", "unmarkedFitDSO",
             omegaformula <- formlist$omegaformula
             pformula <- formlist$pformula
             iotaformula <- formlist$iotaformula
+
+            origdata <- getData(object)
+            M <- numSites(origdata)
+            R <- obsNum(origdata)
+            T <- origdata@numPrimary
+            J <- R / T
+
+            if(is.null(siteCovs(origdata))) {
+                 sitedata <- data.frame(site = rep(1, M))
+            } else {
+                 sitedata <- siteCovs(origdata)
+            }
+            if(is.null(yearlySiteCovs(origdata))) {
+                 yearlySiteCovs <- data.frame(year = rep(1, M*T))
+            } else {
+                 yearlySiteCovs <- yearlySiteCovs(origdata)
+            }
+            yearlydata <- cbind(yearlySiteCovs, sitedata[rep(1:M, each = T), , drop = FALSE])
+
             switch(type,
                 lambda = {
-                    mf <- model.frame(lambdaformula, newdata)
-                    X <- model.matrix(lambdaformula, mf)
-                    offset <- model.offset(mf)
+                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
+                    mf <- model.frame(lambdaformula, sitedata)
+                    X.terms <- stats::terms(mf)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 gamma = {
-                    mf <- model.frame(gammaformula, newdata)
-                    X <- model.matrix(gammaformula, mf)
-                    offset <- model.offset(mf)
+                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
+                    mf <- model.frame(gammaformula, yearlydata)
+                    X.terms <- stats::terms(mf)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 omega = {
-                    mf <- model.frame(omegaformula, newdata)
-                    X <- model.matrix(omegaformula, mf)
-                    offset <- model.offset(mf)
+                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
+                    mf <- model.frame(omegaformula, yearlydata)
+                    X.terms <- stats::terms(mf)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 iota = {
-                    mf <- model.frame(iotaformula, newdata)
-                    X <- model.matrix(iotaformula, mf)
-                    offset <- model.offset(mf)
+                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
+                    mf <- model.frame(iotaformula, yearlydata)
+                    X.terms <- stats::terms(mf)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 },
                 det = {
-                    mf <- model.frame(pformula, newdata)
-                    X <- model.matrix(pformula, mf)
-                    offset <- model.offset(mf)
+                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
+                    mf <- model.frame(pformula, yearlydata)
+                    X.terms <- stats::terms(mf)
+                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
+                    offset <- model.offset(model.frame(X.terms, newdata))
                 })
             },
         RasterStack = {

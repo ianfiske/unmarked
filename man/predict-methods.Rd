@@ -12,6 +12,7 @@
 \alias{predict,unmarkedFitGMM-method}
 \alias{predict,unmarkedFitGDS-method}
 \alias{predict,unmarkedFitPCO-method}
+\alias{predict,unmarkedFitDSO-method}
 \alias{predict,unmarkedFitList-method}
 \title{ Methods for Function predict in Package `unmarked' }
 \description{
