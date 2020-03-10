@@ -1356,6 +1356,32 @@ setMethod("[", c("unmarkedFrameOccuTTD", "numeric", "missing", "missing"),
 })
 
 
+setMethod("[", c("unmarkedFrameDSO", "numeric", "missing", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    sur <- x@survey
+    pp <- x@primaryPeriod[i,,drop=FALSE]
+    if(sur=="line")
+        unmarkedFrameDSO(y=getY(multf), siteCovs=siteCovs(multf),
+                         yearlySiteCovs=yearlySiteCovs(multf),
+                         numPrimary=x@numPrimary,
+                         dist.breaks=x@dist.breaks,
+                         tlength=x@tlength[i],
+                         survey=sur,
+                         unitsIn=x@unitsIn,
+                         primaryPeriod=pp)
+    else if(sur=="point")
+        unmarkedFrameDSO(y=getY(multf), siteCovs=siteCovs(multf),
+                         yearlySiteCovs=yearlySiteCovs(multf),
+                         numPrimary=x@numPrimary,
+                         dist.breaks=x@dist.breaks,
+                         survey=sur,
+                         unitsIn=x@unitsIn,
+                         primaryPeriod=pp)
+})
+
+
 setMethod("[", c("unmarkedFrameOccuTTD", "missing", "numeric", "missing"),
 		function(x, i, j)
 {   

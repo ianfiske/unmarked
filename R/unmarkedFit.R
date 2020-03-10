@@ -61,6 +61,8 @@ setClass("unmarkedFitDSO",
             mixture="character"),
         contains = "unmarkedFitDS")
 
+setClassUnion("unmarkedFitPCOorDSO",
+              c("unmarkedFitPCO", "unmarkedFitDSO"))
 
 setClass("unmarkedFitOccu",
     representation(knownOcc = "logical"),
@@ -3123,10 +3125,7 @@ setMethod("update", "unmarkedFitGMM",
 })
 
 
-
-
-
-setMethod("update", "unmarkedFitPCO",
+setMethod("update", "unmarkedFitPCOorDSO",
     function(object, lambdaformula., gammaformula., omegaformula.,
         pformula., iotaformula., ..., evaluate = TRUE) {
     call <- object@call
@@ -4021,10 +4020,8 @@ setMethod("simulate", "unmarkedFitPCount",
 })
 
 
-
-
-setMethod("simulate", "unmarkedFitPCO",
-    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+#Simulate open-population abundance
+simOpenN <- function(object, na.rm)
 {
     mix <- object@mixture
     dynamics <- object@dynamics
@@ -4079,13 +4076,10 @@ setMethod("simulate", "unmarkedFitPCO",
         iota <- matrix(0, M, T-1)
     if(identical(mix, "ZIP"))
         psi <- plogis(coef(object, type="psi"))
-    p <- getP(object, na.rm = na.rm)
+
     N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
-    simList <- list()
-    for(s in 1:nsim) {
-        y.sim <- matrix(NA, M, J*T)
-        for(i in 1:M) {
+    for(i in 1:M) {
             switch(mix,
                    P = N[i, 1] <- rpois(1, lambda),
                    NB = N[i, 1] <- rnbinom(1, size =
@@ -4155,14 +4149,73 @@ setMethod("simulate", "unmarkedFitPCO",
                 }
             }
         }
-        y.na <- is.na(y)
+    N
+}
+
+setMethod("simulate", "unmarkedFitPCO",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+
+    umf <- object@data
+    M <- numSites(umf)
+    T <- umf@numPrimary
+    J <- ncol(getY(umf)) / T
+    D <- getDesign(umf, object@formula, na.rm = na.rm)
+    y <- D$y
+    y.na <- is.na(y)
+    p <- getP(object, na.rm = na.rm)
+    simList <- list()
+    for(s in 1:nsim) {
+        y.sim <- matrix(NA, M, J*T)  
+        N <- simOpenN(object, na.rm)
         N <- N[,rep(1:T, each=J)]
         y.sim[!y.na] <- rbinom(sum(!y.na), N[!y.na], p[!y.na])
         simList[[s]] <- y.sim
-        }
+    }
     return(simList)
 })
 
+
+setMethod("simulate", "unmarkedFitDSO",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+
+    umf <- object@data
+    D <- getDesign(umf, object@formula, na.rm = na.rm)
+    y <- D$y
+    y.na <- is.na(y)
+    M <- numSites(umf)
+    T <- umf@numPrimary
+    J <- ncol(getY(umf)) / T
+    simList <- list()
+    p <- getP(object, na.rm = na.rm)
+    p <- array(p, c(M,J,T))
+    cp <- array(NA, c(M,J+1,T))
+    for (i in 1:M){
+      for (t in 1:T){
+        cp[i, 1:J, t] <- p[i,,t]
+        cp[i, J+1, t] <- 1 - sum(p[i,,t], na.rm=TRUE)
+      }
+    }
+
+    for(s in 1:nsim) {
+        y.sim <- matrix(NA, M, J*T)  
+        N <- simOpenN(object, na.rm)
+        
+        for(i in 1:M) {
+            yst <- 1
+            for(t in 1:T) {
+                yend <- yst + J - 1
+                y.it <- as.integer(rmultinom(1, N[i,t], prob=cp[i,,t]))
+                y.sim[i,yst:yend] <- y.it[1:J]
+                yst <- yst + J
+            }
+        }
+        y.sim[y.na] <- NA
+        simList[[s]] <- y.sim
+    }
+    return(simList)
+})
 
 
 setMethod("simulate", "unmarkedFitMPois",

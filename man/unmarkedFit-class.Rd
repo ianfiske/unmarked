@@ -26,7 +26,7 @@
 \alias{residuals,unmarkedFitOccuTTD-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
-\alias{update,unmarkedFitPCO-method}
+\alias{update,unmarkedFitPCOorDSO-method}
 \alias{update,unmarkedFitGMM-method}
 \alias{update,unmarkedFitOccuMulti-method}
 \alias{update,unmarkedFitOccuMS-method}

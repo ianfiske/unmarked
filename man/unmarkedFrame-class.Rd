@@ -62,6 +62,7 @@
 \alias{[,unmarkedFrameOccuMS,numeric,missing,missing-method}
 \alias{[,unmarkedFrameOccuTTD,numeric,missing,missing-method}
 \alias{[,unmarkedFrameOccuMulti,numeric,missing,missing-method}
+\alias{[,unmarkedFrameDSO,numeric,missing,missing-method}
 
 \title{Class "unmarkedFrame" }
 \description{Methods for manipulating, summarizing and viewing
