@@ -3752,140 +3752,40 @@ setMethod("getP", "unmarkedFitGDS",
 })
 
 
-
-#
-#
-# not sure about this DSO I just copied from GDS ... probably needs something!
-#
-#
-#
-# Should this return p or pi. Right now it's pi without phi.
 setMethod("getP", "unmarkedFitDSO",
     function(object, na.rm = TRUE)
 {
-    formula <- object@formula
-    detformula <- as.formula(formula[[2]])
-    umf <- object@data
-    designMats <- getDesign(umf, formula, na.rm = na.rm)
-    y <- designMats$y
-    Xdet <- designMats$Xp   # Note "Xp" here not Xdet -- differs by function
-    M <- nrow(y)
+    umf <- getData(object)
+    y <- getY(umf)
+    M <- numSites(umf)
     T <- umf@numPrimary
     J <- ncol(y) / T
-    ## copied from distsampOpen.R because getDesign isn't written yet
-    Xdet<- Xdet[1:(M*T),,drop=FALSE]
-    Xdet.offset <- designMats$Xdet.offset
-   # andy edited this line.....  Jan 7 2016.... not sure if this is general
-    if (is.null(Xdet.offset)){
-     #   Xdet.offset <- rep(0, nrow(Xdet))
-         Xdet.offset <- rep(0, length(Xdet))
+
+    sig <- matrix(NA, M, T)
+    if(object@keyfun != "uniform"){
+      sig <- predict(object, type="det")$Predicted
+      sig <- matrix(sig, M, T, byrow=TRUE)
     }
-    ppars <- coef(object, type = "det")
+    
+    scale <- 0.0
+    if(object@keyfun == "hazard"){
+      scale <- backTransform(object, type="scale")@estimate
+    }
+
     db <- umf@dist.breaks
     w <- diff(db)
-    survey <- umf@survey
-    key <- object@keyfun
-    tlength <- umf@tlength
-
-    u <- a <- matrix(NA, M, J)
-    switch(survey,
-    line = {
-        for(i in 1:M) {
-            a[i,] <- tlength[i] * w
-            u[i,] <- a[i,] / sum(a[i,])
-            }
-        },
-    point = {
-        for(i in 1:M) {
-            a[i, 1] <- pi*db[2]^2
-            for(j in 2:J)
-                a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
-            u[i,] <- a[i,] / sum(a[i,])
-            }
-        })
-
-
+    ua <- getUA(umf)
+    u <- ua$u; a <- ua$a
+    
     cp <- array(NA, c(M, J, T))
-    switch(key,
-        halfnorm = {
-            sigma <- exp(Xdet %*% ppars + Xdet.offset)
-            sigma <- matrix(sigma, M, T, byrow=TRUE)
-            for(i in 1:M) {
-                for(t in 1:T) {
-                    switch(survey,
-                    line = {
-                        f.0 <- 2 * dnorm(0, 0, sd=sigma[i, t])
-                        int <- 2 * (pnorm(db[-1], 0, sd=sigma[i, t]) -
-                            pnorm(db[-(J+1)], 0, sd=sigma[i, t]))
-                        cp[i,,t] <- int / f.0 / w
-                        },
-                    point = {
-                        for(j in 1:J) {
-                            cp[i, j, t] <- integrate(grhn, db[j], db[j+1],
-                                sigma=sigma[i, t], rel.tol=1e-4)$value *
-                                2 * pi / a[i, j]
-                            }
-                        })
-                    cp[i,,t] <- cp[i,,t] * u[i,]
-                    }
-                }
-            },
-        exp = {
-            rate <- exp(Xdet %*% ppars + Xdet.offset)
-            rate <- matrix(rate, M, T, byrow=TRUE)
-            for(i in 1:M) {
-                for(t in 1:T) {
-                switch(survey,
-                line = {
-                    for(j in 1:J) {
-                        cp[i, j, t] <- integrate(gxexp, db[j], db[j+1],
-                            rate=rate[i,t], rel.tol=1e-4)$value / w[j]
-                        }},
-                point = {
-                    for(j in 1:J) {
-                        cp[i, j, t] <- integrate(grexp, db[j], db[j+1],
-                            rate=rate[i,t], rel.tol=1e-4)$value *
-                            2 * pi * a[i, j]
-                        }
-                    })
-                cp[i,,t] <- cp[i,,t] * u[i,]
-                }}
-            },
-        hazard = {
-            shape <- exp(Xdet %*% ppars + Xdet.offset)
-            shape <- matrix(shape, M, T, byrow=TRUE)
-            scale <- exp(coef(object, type="scale"))
-            for(i in 1:M) {
-                for(t in 1:T) {
-                switch(survey,
-                line = {
-                    for(j in 1:J) {
-                        cp[i, j, t] <- integrate(gxhaz, db[j], db[j+1],
-                            shape=shape[i,t], scale=scale,
-                            rel.tol=1e-4)$value / w[j]
-                        }},
-                point = {
-                    for(j in 1:J) {
-                        cp[i, j, t] <- integrate(grhaz, db[j], db[j+1],
-                            shape = shape[i,t], scale=scale,
-                            rel.tol=1e-4)$value * 2 * pi / a[i, j]
-                    }})
-                cp[i,,t] <- cp[i,,t] * u[i,]
-                }}
-            },
-	uniform = {
-#            browser()
-            cp[] <- u
-        })
-    cp <- matrix(cp, nrow=M)
-    return(cp)
+    for (i in 1:M){
+      for (t in 1:T){
+        cp[i,,t] <- getDistCP(object@keyfun, sig[i,t], scale, umf@survey,
+                              db, w, a[i,], u[i,])
+      }
+    }
+    matrix(cp, nrow=M)
 })
-
-
-
-
-
-
 
 
 setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)

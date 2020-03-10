@@ -13,7 +13,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     SEXP fix_, SEXP go_dims_, SEXP immigration_, SEXP I_, SEXP I1_, SEXP Ib_,
     SEXP Ip_,
     SEXP a_, SEXP u_, SEXP w_, SEXP db_, SEXP keyfun_,
-    SEXP lfac_k_, SEXP kmyt_, SEXP lfac_kmyt_, SEXP fin_ ) {
+    SEXP lfac_k_, SEXP kmyt_, SEXP lfac_kmyt_, SEXP fin_, SEXP A_ ) {
   
   //Indices
   int lk = as<int>(lk_);
@@ -44,6 +44,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   mat u = as<mat>(u_);
   vec w = as<vec>(w_); 
   vec db = as<vec>(db_);
+  vec A = as<vec>(A_);
    
   //Covariate matrices
   mat Xlam = as<mat>(Xlam_);
@@ -74,7 +75,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
  
   //Lambda
   vec beta_lam = beta.subvec(bi(0,0), bi(0,1));
-  vec lam = exp(Xlam*beta_lam + Xlam_offset);
+  vec lam = exp(Xlam*beta_lam + Xlam_offset) % A;
 
   //Get 2nd abundance dist parameter set up if necessary
   double alpha, psi;

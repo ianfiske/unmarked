@@ -104,23 +104,9 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   }
 
   #Transect areas / proportions
-  a<- u<- matrix(NA, M, J)
-
-  if(survey=="point"){
-    for(i in 1:M) {
-      a[i, 1] <- pi*db[2]^2
-      for(j in 2:J)
-        a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
-        u[i,] <- a[i,] / sum(a[i,])
-    }
-  } else if(survey=="line"){
-    for(i in 1:M) {
-      a[i,] <- tlength[i] * w
-      u[i,] <- a[i,] / sum(a[i,])
-    }
-  }
+  ua <- getUA(data) #in utils.R
+  u <- ua$u; a <- ua$a
   
-  #Need to adjust likelihood for this 
   switch(survey,
     line = A <- rowSums(a) * 2,
     point = A <- rowSums(a))
@@ -130,6 +116,9 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   switch(unitsOut,
     ha = A <- A * 100,
     kmsq = A <- A)
+  if(output=='abund'){
+    A <- rep(1, M)
+  }
 
   lamParms <- colnames(Xlam)
   gamParms <- colnames(Xgam)
@@ -204,13 +193,6 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   #finding all unique likelihood transitions
   I <- cbind(rep(k, times=lk), rep(k, each=lk))
   I1 <- I[I[,1] <= I[,2],]
-
-  #Ib <- Ip <- list()
-  #for(i in 1:nrow(I)) {
-  #    Z <- 0:min(I[i,])
-  #    Ib[[i]] <- which((I1[,1] %in% Z) & (I1[,2]==I[i,1])) - 1
-  #    Ip[[i]] <- as.integer(I[i,2]-Z)
-  #}
   lik_trans <- .Call("get_lik_trans", I, I1, PACKAGE="unmarked")
 
   beta_ind <- matrix(NA, 7, 2)
@@ -238,7 +220,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
           delta, dynamics, survey, fix, go.dims, immigration,
           I, I1, lik_trans$Ib, lik_trans$Ip,
           a, u, w, db, 
-          keyfun, lfac.k, kmyt, lfac.kmyt, fin,
+          keyfun, lfac.k, kmyt, lfac.kmyt, fin, A,
           PACKAGE = "unmarked")
   }
 
@@ -291,6 +273,14 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
       covMat = as.matrix(covMat[(nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP),
                                 (nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP)]),
       invlink = "exp", invlinkGrad = "exp")
+  }
+  
+  if(identical(keyfun, "hazard")) {
+    estimateList@estimates$scale <- unmarkedEstimate(name = "Hazard-rate(scale)",
+        short.name = "scale", estimates = ests[nAP+nGP+nOP+nDP+nIP+1],
+        covMat = as.matrix(covMat[nAP+nGP+nOP+nDP+nIP+1,
+                                  nAP+nGP+nOP+nDP+nIP+1]), 
+        invlink = "exp", invlinkGrad = "exp")
   }
 
   if(identical(mixture, "NB")) {
