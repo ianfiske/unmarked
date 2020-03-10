@@ -107,6 +107,13 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   ua <- getUA(data) #in utils.R
   u <- ua$u; a <- ua$a
   
+  #TODO: check how this affects gamma/omega
+  #for now limit to abundance
+  if(output == "density"){
+    warning("Setting output = 'abund', 'density' not supported yet")
+    output <- "abund"
+  }
+
   switch(survey,
     line = A <- rowSums(a) * 2,
     point = A <- rowSums(a))
