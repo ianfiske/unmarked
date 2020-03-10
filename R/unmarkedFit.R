@@ -2471,9 +2471,9 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
     return(fitted)
 })
 
-
-setMethod("fitted", "unmarkedFitPCO",
-    function(object, K, na.rm = FALSE)
+#Get fitted N from Dail-Madsen type models
+#This part is the same across different detection models
+fittedOpenN <- function(object, K, na.rm=FALSE)
 {
     dynamics <- object@dynamics
     mixture <- object@mixture
@@ -2482,9 +2482,9 @@ setMethod("fitted", "unmarkedFitPCO",
     immigration <- tryCatch(object@immigration, error=function(e) FALSE)
     data <- getData(object)
     D <- getDesign(data, object@formula, na.rm = na.rm)
-    Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp; Xiota <- D$Xiota
+    Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xiota <- D$Xiota
     Xlam.offset <- D$Xlam.offset; Xgam.offset <- D$Xgam.offset
-    Xom.offset <- D$Xom.offset; Xp.offset <- D$Xp.offset
+    Xom.offset <- D$Xom.offset
     Xiota.offset <- D$Xiota.offset
     delta <- D$delta #FIXME this isn't returned propertly when na.rm=F
 
@@ -2496,7 +2496,6 @@ setMethod("fitted", "unmarkedFitPCO",
     if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
     if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
     if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
-    if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
     if(is.null(Xiota.offset)) Xiota.offset <- rep(0, M*(T-1))
 
     lambda <- exp(Xlam %*% coef(object, 'lambda') + Xlam.offset)
@@ -2528,7 +2527,7 @@ setMethod("fitted", "unmarkedFitPCO",
                         M, T-1, byrow=TRUE)
     else
         iota <- matrix(0, M, T-1)
-    p <- getP(object, na.rm = na.rm) # Should return MxJT
+
     N <- matrix(NA, M, T)
     for(i in 1:M) {
         N[i, 1] <- lambda[i]
@@ -2583,10 +2582,25 @@ setMethod("fitted", "unmarkedFitPCO",
             }
         }
     N <- N[,rep(1:T, each=J)]
-    fitted <- N * p
-    return(fitted)
+
+}
+
+setMethod("fitted", "unmarkedFitPCO",
+    function(object, K, na.rm = FALSE)
+{    
+    N <- fittedOpenN(object, K, na.rm)
+    p <- getP(object, na.rm)
+    N * p
 })
 
+
+setMethod("fitted", "unmarkedFitDSO",
+    function(object, K, na.rm = FALSE)
+{
+    N <- fittedOpenN(object, K, na.rm)
+    p <- getP(object, na.rm)
+    N * p
+})
 
 
 setMethod("fitted", "unmarkedFitOccuRN", function(object, K, na.rm = FALSE)

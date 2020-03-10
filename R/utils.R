@@ -816,7 +816,7 @@ pHazard <- function(shape, scale, survey, db, w, a){
       for(j in 1:J) {
         cp[j] <- integrate(grhaz, db[j], db[j+1],
                            shape = shape, scale=scale,
-                           rel.tol=1e-4)$value * 2 * pi / a[i, j]
+                           rel.tol=1e-4)$value * 2 * pi / a[j]
       }
     })
     cp
