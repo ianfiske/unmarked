@@ -156,7 +156,7 @@ exponential (\code{"exp"}), hazard (\code{"hazard"}), and uniform
   they must be supplied.
 
   If the time gap between primary periods is not constant, an M by T
-  matrix of integers should be supplied to \code{\link{unmarkedFramePCO}}
+  matrix of integers should be supplied to \code{\link{unmarkedFrameDSO}}
   using the \code{primaryPeriod} argument.
 
   Secondary sampling periods are optional, but can greatly improve the

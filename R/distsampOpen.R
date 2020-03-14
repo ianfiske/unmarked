@@ -64,13 +64,6 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   Xsig.offset <- D$Xp.offset
   Xiota.offset<- D$Xiota.offset
   
-  #Should be in getDesign?
-  #if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
-  #if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
-  #if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
-  #if(is.null(Xsig.offset)) Xsig.offset <- rep(0, M*T)
-  #if(is.null(Xiota.offset)) Xiota.offset<- rep(0, M*(T-1))
-
   y <- array(y, c(M, J, T))
   yt <- apply(y, c(1,3), function(x) {
     if(all(is.na(x)))
@@ -118,13 +111,6 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     a <- ua$a[-D$removed.sites,]
   }
   
-  #TODO: check how this affects gamma/omega
-  #for now limit to abundance
-  if(output == "density"){
-    warning("Setting output = 'abund', 'density' not supported yet")
-    output <- "abund"
-  }
-
   switch(survey,
     line = A <- rowSums(a) * 2,
     point = A <- rowSums(a))

@@ -78,7 +78,8 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   vec lam = exp(Xlam*beta_lam + Xlam_offset) % A;
 
   //Get 2nd abundance dist parameter set up if necessary
-  double alpha, psi;
+  double alpha = 0.0;
+  double psi = 0.0;
   if(mixture=="NB"){
     alpha = exp(beta(bi(6,0)));
   } else if(mixture=="ZIP"){
@@ -121,7 +122,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   }
   
   //Scale if necessary for hazard
-  double scale;
+  double scale = 0.0;
   if(keyfun == "hazard"){
     scale = exp(beta(bi(5,0)));
   }

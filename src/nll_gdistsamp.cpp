@@ -51,8 +51,8 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
   int nPP = as<int>(nPP_);
   int nDP = as<int>(nDP_);
   
-  //Integration tol
-  double rel_tol = as<double>(rel_tol_);
+  //Integration tol currently unused
+  //double rel_tol = as<double>(rel_tol_);
 
   int M = Xlam.n_rows;
   vec lambda = exp( Xlam * beta.subvec(0, (nLP - 1) ) + Xlam_offset ) % A;
