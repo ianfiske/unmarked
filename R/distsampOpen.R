@@ -2,7 +2,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     data, keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
     mixture=c("P", "NB", "ZIP"), K,
-    dynamics=c("constant", "autoreg", "notrend", "trend"),
+    dynamics=c("constant", "autoreg", "notrend", "trend", "ricker", "gompertz"),
     fix=c("none", "gamma", "omega"), immigration=FALSE, iotaformula = ~1,
     starts, method="BFGS", se=TRUE, ...)
 {
@@ -15,6 +15,13 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   keyfun <- match.arg(keyfun)
   if(!keyfun %in% c("halfnorm", "exp", "hazard", "uniform"))
     stop("keyfun must be 'halfnorm', 'exp', 'hazard', or 'uniform'")
+  if(keyfun == "uniform"){
+    if(!missing(pformula)){
+      warning("pformula is ignored when using a uniform key function")
+    }
+    pformula <- ~1
+  }
+  
   output <- match.arg(output)
   unitsOut <- match.arg(unitsOut)
   
@@ -58,11 +65,11 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   Xiota.offset<- D$Xiota.offset
   
   #Should be in getDesign?
-  if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
-  if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
-  if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
-  if(is.null(Xsig.offset)) Xsig.offset <- rep(0, M*T)
-  if(is.null(Xiota.offset)) Xiota.offset<- rep(0, M*(T-1))
+  #if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
+  #if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
+  #if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
+  #if(is.null(Xsig.offset)) Xsig.offset <- rep(0, M*T)
+  #if(is.null(Xiota.offset)) Xiota.offset<- rep(0, M*(T-1))
 
   y <- array(y, c(M, J, T))
   yt <- apply(y, c(1,3), function(x) {
@@ -104,8 +111,12 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   }
 
   #Transect areas / proportions
-  ua <- getUA(data) #in utils.R
+  ua <- getUA(data) #in utils.R  
   u <- ua$u; a <- ua$a
+  if(length(D$removed.sites)>0){
+    u <- ua$u[-D$removed.sites,]
+    a <- ua$a[-D$removed.sites,]
+  }
   
   #TODO: check how this affects gamma/omega
   #for now limit to abundance
@@ -146,17 +157,16 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   if(identical(fix, "gamma")) {
     if(!identical(dynamics, "constant"))
         stop("dynamics must be constant when fixing gamma or omega")
-    if(nGP > 1)
+    if(nGP > 1){
         stop("gamma covariates not allowed when fix==gamma")
-    else {
+    }else {
         nGP <- 0
         gamParms <- character(0)
     }
-  }
-  else if(identical(dynamics, "notrend")) {
-    if(nGP > 1)
+  } else if(identical(dynamics, "notrend")) {
+    if(nGP > 1){
         stop("gamma covariates not allowed when dyamics==notrend")
-    else {
+    } else {
         nGP <- 0
         gamParms <- character(0)
     }
@@ -231,8 +241,12 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
           PACKAGE = "unmarked")
   }
 
-  if(missing(starts))
+  if(missing(starts)){
     starts <- rep(0, nP)
+    #Need a semi-realistic value for sigma intercept
+    if(keyfun != "uniform")
+      starts[beta_ind[4,1]] <- log(mean(w))
+  }
   
   fm <- optim(starts, nll, method=method, hessian=se, ...)
   ests <- fm$par
@@ -246,22 +260,38 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   estimateList <- unmarkedEstimateList(list(lambda=lamEstimates))
 
   gamName <- switch(dynamics, constant = "gamConst", autoreg = "gamAR",
-                              notrend = "", trend = "gamTrend")
+                              notrend = "", trend = "gamTrend", 
+                              ricker="gamRicker", gompertz = "gamGomp")
   if(!(identical(fix, "gamma") | identical(dynamics, "notrend"))){
-    estimateList@estimates$gamma <- unmarkedEstimate(name = "Recruitment",
-        short.name = gamName, estimates = ests[(nAP+1) : (nAP+nGP)],
-        covMat = as.matrix(covMat[(nAP+1) :
+    estimateList@estimates$gamma <- unmarkedEstimate(name =
+        ifelse(identical(dynamics, "constant") | identical(dynamics, "autoreg"),
+        "Recruitment", "Growth Rate"), short.name = gamName,
+        estimates = ests[(nAP+1) : (nAP+nGP)], covMat = as.matrix(covMat[(nAP+1) :
                            (nAP+nGP), (nAP+1) : (nAP+nGP)]),
         invlink = "exp", invlinkGrad = "exp")
   }
 
-  if(!(identical(fix, "omega") | identical(dynamics, "trend"))){
-    estimateList@estimates$omega <- unmarkedEstimate(
-        name="Apparent Survival",
-        short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+  if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
+    if(identical(dynamics, "constant") | identical(dynamics, "autoreg") | 
+       identical(dynamics, "notrend")){
+        estimateList@estimates$omega <- unmarkedEstimate( name="Apparent Survival",
+          short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+          covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
+                                    (nAP+nGP+1) : (nAP+nGP+nOP)]),
+          invlink = "logistic", invlinkGrad = "logistic.grad")
+    } else if(identical(dynamics, "ricker")){
+        estimateList@estimates$omega <- unmarkedEstimate(name="Carrying Capacity",
+          short.name = "omCarCap", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
+          covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
+                            (nAP+nGP+1) : (nAP+nGP+nOP)]),
+          invlink = "exp", invlinkGrad = "exp")
+    } else{
+      estimateList@estimates$omega <- unmarkedEstimate(name="Carrying Capacity",
+        short.name = "omCarCap", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
         covMat = as.matrix(covMat[(nAP+nGP+1) : (nAP+nGP+nOP),
-            (nAP+nGP+1) : (nAP+nGP+nOP)]),
-        invlink = "logistic", invlinkGrad = "logistic.grad")
+                                  (nAP+nGP+1) : (nAP+nGP+nOP)]),
+        invlink = "exp", invlinkGrad = "exp")
+    }
   }
 
   if(keyfun != "uniform"){

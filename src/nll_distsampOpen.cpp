@@ -86,9 +86,9 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   }
   
   //Omega
-  vec beta_om = beta.subvec(bi(2,0), bi(2,1));
   mat omv = ones<colvec>(M*(T-1));
   if((fix != "omega") && (dynamics != "trend")) {
+    vec beta_om = beta.subvec(bi(2,0), bi(2,1));
     if((dynamics == "ricker")  || (dynamics == "gompertz")){
         omv = exp(Xom*beta_om + Xom_offset);
     } else if((dynamics == "constant")  || (dynamics == "autoreg") || 
@@ -100,12 +100,12 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   mat om = trans(omv);
 
   //Gamma
-  vec beta_gam = beta.subvec(bi(1,0), bi(1,1));
   mat gam = zeros(M, T-1);
   if(dynamics == "notrend") {
     mat lamMat = repmat(lam, 1, T-1);
     gam = (1-om) % lamMat;
   } else if (fix != "gamma") {
+    vec beta_gam = beta.subvec(bi(1,0), bi(1,1));
     mat gamv = exp(Xgam*beta_gam + Xgam_offset);
     gamv.reshape(T-1, M);
     gam = trans(gamv);
@@ -127,7 +127,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   }
 
   //Immigration
-  mat iota(M,T);
+  mat iota = zeros(M,T);
   if(immigration){
     vec beta_iota = beta.subvec(bi(4,0), bi(4,1));
     vec iotav = exp(Xiota*beta_iota + Xiota_offset);
@@ -311,7 +311,7 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     //Combine g1, g2, gstar
     if(delta_i0==1) {
       vec g12star = g1 % g2 % g_star; 
-      ll_i += log(sum(g12star));     
+      ll_i += sum(g12star);     
     }
     else if(delta_i0>1) {
       g3_d = g3;
@@ -320,10 +320,10 @@ SEXP nll_distsampOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
       }
       g_star = g3_d * g1_star;
       vec g2star = g2 % g_star;
-      ll_i += log(sum(g2star));     
+      ll_i += sum(g2star);     
     }
 
-    ll += ll_i;
+    ll += log(ll_i + DOUBLE_XMIN);
 
   }
 

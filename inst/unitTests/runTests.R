@@ -67,6 +67,7 @@ if(require("RUnit", quietly = TRUE)) {
         }
 
         ## Print results
+        printTextProtocol(tests)
         output.txt  <- file.path( output, sprintf("%s-unitTests.txt", pkg))
         output.html <- file.path( output, sprintf("%s-unitTests.html", pkg))
 
@@ -94,5 +95,5 @@ if(require("RUnit", quietly = TRUE)) {
 
 
 
-tests <- runTestSuite(testSuite)
-printTextProtocol(tests)
+#tests <- runTestSuite(testSuite)
+#printTextProtocol(tests)

@@ -14,7 +14,7 @@ distsampOpen(lambdaformula, gammaformula, omegaformula, pformula,
     data, keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
     mixture=c("P", "NB", "ZIP"), K,
-    dynamics=c("constant", "autoreg", "notrend", "trend"),
+    dynamics=c("constant", "autoreg", "notrend", "trend", "ricker", "gompertz"),
     fix=c("none", "gamma", "omega"), immigration=FALSE, iotaformula = ~1,
     starts, method="BFGS", se=TRUE, ...)
 }
@@ -161,6 +161,11 @@ exponential (\code{"exp"}), hazard (\code{"hazard"}), and uniform
 
   Secondary sampling periods are optional, but can greatly improve the
   precision of the estimates.
+
+  Optimization may fail if the initial value of the intercept for the 
+  detection parameter (sigma) is too small or large relative to transect width.
+  By default, this parameter is initialized at log(average band width).
+  You may have to adjust this starting value.
 }
 
 \section{Warning}{This function can be extremely slow, especially if
@@ -219,9 +224,7 @@ exponential (\code{"exp"}), hazard (\code{"hazard"}), and uniform
   umf <- unmarkedFrameDSO(y = y, siteCovs=sc, numPrimary=T, dist.breaks=db, 
                           survey="line", unitsIn="m", tlength=rep(1, M))
 
-  (fit <- distsampOpen(~x1, ~1, ~1, ~1, data = umf, K=50, keyfun="halfnorm",
-                      starts=c(0,0,0,0,3), #Sensitive to sigma start value!!
-                      se=TRUE))
+  (fit <- distsampOpen(~x1, ~1, ~1, ~1, data = umf, K=50, keyfun="halfnorm"))
   
   #Compare to truth
   cf <- coef(fit)

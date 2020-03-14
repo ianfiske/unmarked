@@ -452,10 +452,9 @@ unmarkedFrameDSO <- function(y, siteCovs=NULL, yearlySiteCovs=NULL, numPrimary,
     obsToY <- kronecker(diag(numPrimary), obsToY)
     if(missing(siteCovs))
         siteCovs <- NULL
-
     M <- nrow(y)
     T <- numPrimary
-  # copied from unmarkedFramePCO
+
     if(missing(primaryPeriod))
         primaryPeriod <- matrix(1:T, M, T, byrow=TRUE)
     if(nrow(primaryPeriod) != M | ncol(primaryPeriod) != T)
@@ -476,10 +475,10 @@ unmarkedFrameDSO <- function(y, siteCovs=NULL, yearlySiteCovs=NULL, numPrimary,
     umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)
     umf <- as(umf, "unmarkedMultFrame")
     umf@numPrimary <- numPrimary
-    if(class(yearlySiteCovs) == "list") {
+    if(inherits(yearlySiteCovs, "list")) {
         yearlySiteVars <- names(yearlySiteCovs)
         for(i in seq(length(yearlySiteVars))) {
-            if(!(class(yearlySiteCovs[[i]]) %in% c("matrix","data.frame")))
+            if(!inherits(yearlySiteCovs[[i]], c("matrix","data.frame")))
                 stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
             if(ncol(yearlySiteCovs[[i]]) != numPrimary |
                 nrow(yearlySiteCovs[[i]]) != nrow(y))
