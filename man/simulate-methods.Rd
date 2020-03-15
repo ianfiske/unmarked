@@ -15,6 +15,7 @@
 \alias{simulate,unmarkedFitGMM-method}
 \alias{simulate,unmarkedFitGDS-method}
 \alias{simulate,unmarkedFitGPC-method}
+\alias{simulate,unmarkedFitDSO-method}
 \title{Methods for Function simulate in Package `unmarked'}
 \description{
 Simulate data from a fitted model.

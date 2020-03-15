@@ -1,8 +1,12 @@
 #include "nll_pcountOpen.h"
 #include "distr.h"
 
+
 using namespace Rcpp ;
 
+//void tp1(arma::mat& g3, int nrI, int nrI1, Rcpp::IntegerVector N, arma::imat I, arma::imat I1, Rcpp::List Ib, Rcpp::List Ip, double gam, double om);
+//void tp2(arma::mat& g3, int lk, double gam, double om, double imm);
+//void tp3(arma::mat& g3, int lk, double gam, double imm);
 
 
 
@@ -48,6 +52,10 @@ void tp3(arma::mat& g3, int lk, double gam, double imm) {
     }
 }
 
+
+
+
+
 // Ricker + immigration model
 void tp4(arma::mat& g3, int lk, double gam, double om, double imm) {
     for(int n1=0; n1<lk; n1++) {
@@ -61,10 +69,11 @@ void tp4(arma::mat& g3, int lk, double gam, double om, double imm) {
 void tp5(arma::mat& g3, int lk, double gam, double om, double imm) {
     for(int n1=0; n1<lk; n1++) {
 	   for(int n2=0; n2<lk; n2++) {
-	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(n1 + 1)/log(om + 1))) + imm, false);
+	     g3.at(n1, n2) = Rf_dpois(n2, n1*exp(gam * (1 - log(double (n1) + 1)/log(om + 1))) + imm, false);
 	   }
     }
 }
+
 
 
 
@@ -118,7 +127,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
   if((fix != "omega") && (dynamics != "trend")) {
     if((dynamics == "ricker")  || (dynamics == "gompertz"))
         omv = exp(Xom*beta_om + Xom_offset);
-    else if((dynamics == "constant")  || (dynamics == "autoreg"))
+    else if((dynamics == "constant")  || (dynamics == "autoreg") || (dynamics == "notrend"))
         omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
   }
   omv.reshape(T-1, M);
@@ -238,14 +247,14 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
 	    tp1(g3, nrI, nrI1, N, I, I1, Ib, Ip, gam(i,t-1), om(i,t-1));
 	  }
 	  else if(dynamics=="autoreg") {
-	    tp2(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
+	    tp2(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	  }
 	  else if(dynamics=="trend")
-	    tp3(g3, lk, gam(i,t-1), iota(first1,t-1));
+	    tp3(g3, lk, gam(i,t-1), iota(i,t-1));
 	  else if(dynamics=="ricker")
-	    tp4(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
+	    tp4(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	  else if(dynamics=="gompertz")
-	    tp5(g3, lk, gam(i,t-1), om(i,t-1), iota(first1,t-1));
+	    tp5(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	} else if(go_dims == "rowvec") {
 	  g3 = g3_t.slice(t-1);
 	}

@@ -731,3 +731,110 @@ invertHessian <- function(optimOut, nparam, SE){
       return(blankMat)
   })
 }
+
+#Get u and a from distance sampling data 
+getUA <- function(umf){
+  
+  M <- numSites(umf)
+  J <- ncol(getY(umf)) / umf@numPrimary
+  db <- umf@dist.breaks
+  w <- diff(db)
+
+  u <- a <- matrix(NA, M, J)
+    switch(umf@survey,
+    line = {
+        for(i in 1:M) {
+            a[i,] <- umf@tlength[i] * w
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        },
+    point = {
+        for(i in 1:M) {
+            a[i, 1] <- pi*db[2]^2
+            for(j in 2:J)
+                a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        })
+  list(a=a, u=u)
+
+}
+
+pHalfnorm <- function(sigma, survey, db, w, a){
+  J <- length(w)
+  cp <- rep(NA, J)
+  switch(survey,
+    line = {
+      f.0 <- 2 * dnorm(0, 0, sd=sigma)
+      int <- 2 * (pnorm(db[-1], 0, sd=sigma) - pnorm(db[-(J+1)], 0, sd=sigma))
+      cp[1:J] <- int / f.0 / w
+    },
+    point = {
+      for(j in 1:J) {
+        cp[j] <- integrate(grhn, db[j], db[j+1],
+                           sigma=sigma, rel.tol=1e-4)$value *
+                           2 * pi / a[j]
+      }
+    }
+  )
+  cp
+}
+
+pExp <- function(rate, survey, db, w, a){
+  J <- length(w)
+  cp <- rep(NA, J)
+  switch(survey,
+    line = {
+      for(j in 1:J) {
+        cp[j] <- integrate(gxexp, db[j], db[j+1],
+                           rate=rate, rel.tol=1e-4)$value / w[j]
+      }
+    },
+    point = {
+      for(j in 1:J) {
+        cp[j] <- integrate(grexp, db[j], db[j+1],
+                            rate=rate, rel.tol=1e-4)$value *
+                            2 * pi * a[j]
+      }
+    }
+  )
+  cp
+}
+
+pHazard <- function(shape, scale, survey, db, w, a){
+  J <- length(w)
+  cp <- rep(NA, J)
+  switch(survey,
+    line = {
+      for(j in 1:J) {
+        cp[j] <- integrate(gxhaz, db[j], db[j+1],
+                           shape=shape, scale=scale,
+                           rel.tol=1e-4)$value / w[j]
+      }
+    },
+    point = {
+      for(j in 1:J) {
+        cp[j] <- integrate(grhaz, db[j], db[j+1],
+                           shape = shape, scale=scale,
+                           rel.tol=1e-4)$value * 2 * pi / a[j]
+      }
+    })
+    cp
+}
+
+getDistCP <- function(keyfun, param1, param2, survey, db, w, a, u){
+  switch(keyfun,
+    halfnorm = {
+      cp <- pHalfnorm(param1, survey, db, w, a)
+    },
+    exp = {
+      cp <- pExp(param1, survey, db, w, a)
+    },
+    hazard = {
+      cp <- pHazard(param1, param2, survey, db, w, a)
+    },
+    uniform = {
+      cp <- rep(1, length(u))
+    })
+    cp * u
+}

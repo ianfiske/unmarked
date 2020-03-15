@@ -20,13 +20,14 @@ import(lattice, methods, parallel, Rcpp, Matrix)
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
        colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
-       occuMS, computeMPLElambda, pcount.spHDS, occuTTD)
+       occuMS, computeMPLElambda, pcount.spHDS, occuTTD, distsampOpen)
 export(removalPiFun, doublePiFun)
 export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 
 # S4 classes
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
               unmarkedFitPCount, unmarkedFitMPois, unmarkedFitPCO,
+              unmarkedFrameDSO, unmarkedFitDSO,
               unmarkedFitOccuMulti,
               unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
               unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
@@ -50,7 +51,7 @@ export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
     unmarkedFrameOccu, unmarkedFrameOccuFP, unmarkedFramePCount, unmarkedFrameMPois,
     unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
     unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC, unmarkedFrameOccuMulti,
-    unmarkedFrameOccuMS, unmarkedFrameOccuTTD)
+    unmarkedFrameOccuMS, unmarkedFrameOccuTTD, unmarkedFrameDSO)
 
 # Formatting
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)

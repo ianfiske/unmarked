@@ -128,7 +128,6 @@ setClass("unmarkedFramePCO",
          representation(primaryPeriod = "matrix"),
          contains = "unmarkedMultFrame")
 
-
 setClass("unmarkedFrameGMM",
     representation(
         piFun = "character",
@@ -146,6 +145,10 @@ setClass("unmarkedFrameGDS",
 setClass("unmarkedFrameGPC",
     contains = "unmarkedFrameG3")
 
+## Andy 12/27/2015
+setClass("unmarkedFrameDSO",
+         representation(primaryPeriod = "matrix"),
+         contains = "unmarkedFrameGDS")
 
 
 # ------------------------------- CONSTRUCTORS ---------------------------
@@ -440,7 +443,83 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
 
 
 # This function constructs an unmarkedMultFrame object.
-unmarkedFrameGDS <- function(y, siteCovs, numPrimary,
+unmarkedFrameDSO <- function(y, siteCovs=NULL, yearlySiteCovs=NULL, numPrimary, 
+                             primaryPeriod, dist.breaks, tlength, survey, 
+                             unitsIn)
+{
+    J <- ncol(y) / numPrimary
+    obsToY <- matrix(1, 1, J)
+    obsToY <- kronecker(diag(numPrimary), obsToY)
+    if(missing(siteCovs))
+        siteCovs <- NULL
+    M <- nrow(y)
+    T <- numPrimary
+
+    if(missing(primaryPeriod))
+        primaryPeriod <- matrix(1:T, M, T, byrow=TRUE)
+    if(nrow(primaryPeriod) != M | ncol(primaryPeriod) != T)
+        stop("Dimensions of primaryPeriod matrix should be MxT")
+    if(any(primaryPeriod < 0, na.rm=TRUE))
+        stop("Negative primaryPeriod values are not allowed.")
+    if(any(is.na(primaryPeriod)))
+        stop("Missing values are not allowed in primaryPeriod.")
+    if(!identical(typeof(primaryPeriod), "integer")) {
+        mode(primaryPeriod) <- "integer"
+        warning("primaryPeriod values have been converted to integers")
+        }
+
+    #######well fuck, not sure why this needs to be this way:
+    #obsToY = diag(J*T)
+    ### This is from unmarkedFramePCO
+
+    umf <- unmarkedFrame(y = y, siteCovs = siteCovs, obsToY = obsToY)
+    umf <- as(umf, "unmarkedMultFrame")
+    umf@numPrimary <- numPrimary
+    if(inherits(yearlySiteCovs, "list")) {
+        yearlySiteVars <- names(yearlySiteCovs)
+        for(i in seq(length(yearlySiteVars))) {
+            if(!inherits(yearlySiteCovs[[i]], c("matrix","data.frame")))
+                stop("At least one element of yearlySiteCovs is not a matrix or data frame.")
+            if(ncol(yearlySiteCovs[[i]]) != numPrimary |
+                nrow(yearlySiteCovs[[i]]) != nrow(y))
+                    stop("At least one matrix in yearlySiteCovs has incorrect number of dimensions.")
+            }
+        yearlySiteCovs <- data.frame(lapply(yearlySiteCovs, function(x)
+            as.vector(t(x))))
+        }
+    if(identical(survey, "point")) {
+        if(!missing(tlength))
+            stop("tlength cannot be specified with point transect data")
+        tlength <- rep(1, nrow(y))
+        }
+
+    if(identical(survey, "line")) {
+      if(length(tlength) != nrow(y)) {
+        stop("tlength should be a vector with length(tlength)==nrow(y)")
+      }
+    }
+
+    umf@yearlySiteCovs <- yearlySiteCovs
+    umf <- as(umf, "unmarkedFrameDSO")
+    umf@dist.breaks <- dist.breaks
+    umf@survey <- survey
+    umf@unitsIn <- unitsIn
+    umf@tlength <- tlength
+    umf@primaryPeriod <- primaryPeriod
+    umf
+}
+
+
+
+
+
+
+
+
+
+
+
+unmarkedFrameGDS<- function(y, siteCovs, numPrimary,
 	yearlySiteCovs, dist.breaks, survey, unitsIn, tlength)
 {
     J <- ncol(y) / numPrimary
@@ -475,6 +554,40 @@ unmarkedFrameGDS <- function(y, siteCovs, numPrimary,
     umf@tlength <- tlength
     umf
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -543,6 +656,7 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
                                    numPrimary, nrow(y))
     umf <- as(umf, "unmarkedFramePCO")
     umf@primaryPeriod <- primaryPeriod
+    # There is no obsToY function
     return(umf)
 }
 
@@ -1238,6 +1352,32 @@ setMethod("[", c("unmarkedFrameOccuTTD", "numeric", "missing", "missing"),
                      obsCovs=obsCovs(multf),
                      numPrimary=x@numPrimary,
                      surveyLength=x@surveyLength[i,,drop=FALSE])
+})
+
+
+setMethod("[", c("unmarkedFrameDSO", "numeric", "missing", "missing"),
+		function(x, i, j)
+{
+    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
+    sur <- x@survey
+    pp <- x@primaryPeriod[i,,drop=FALSE]
+    if(sur=="line")
+        unmarkedFrameDSO(y=getY(multf), siteCovs=siteCovs(multf),
+                         yearlySiteCovs=yearlySiteCovs(multf),
+                         numPrimary=x@numPrimary,
+                         dist.breaks=x@dist.breaks,
+                         tlength=x@tlength[i],
+                         survey=sur,
+                         unitsIn=x@unitsIn,
+                         primaryPeriod=pp)
+    else if(sur=="point")
+        unmarkedFrameDSO(y=getY(multf), siteCovs=siteCovs(multf),
+                         yearlySiteCovs=yearlySiteCovs(multf),
+                         numPrimary=x@numPrimary,
+                         dist.breaks=x@dist.breaks,
+                         survey=sur,
+                         unitsIn=x@unitsIn,
+                         primaryPeriod=pp)
 })
 
 
