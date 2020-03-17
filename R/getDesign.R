@@ -875,7 +875,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 })
 
 # pcountOpen
-setMethod("getDesign", "unmarkedFramePCO",
+setMethod("getDesign", "unmarkedFramePCOorMMO",
     function(umf, formula, na.rm = TRUE)
 {
     aschar1 <- as.character(formula)
@@ -1170,7 +1170,7 @@ setMethod("getDesign", "unmarkedFrameDSO",
 
 
 
-setMethod("handleNA", "unmarkedFramePCO",
+setMethod("handleNA", "unmarkedFramePCOorMMO",
     function(umf, Xlam, Xgam, Xom, Xp, Xiota, Xlam.offset, Xgam.offset,
              Xom.offset, Xp.offset, Xiota.offset, delta)
 {

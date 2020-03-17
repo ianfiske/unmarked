@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 0.13-2.9000
-Date: 2020-03-14
+Version: 0.13-2.9001
+Date: 2020-03-16
 Type: Package
 Title: Models for Data from Unmarked Animals
 Author: Ian Fiske, Richard Chandler, David Miller, Andy Royle, Marc Kery, Jeff Hostetler, Rebecca Hutchinson, Adam Smith, Ken Kellner 
@@ -17,7 +17,7 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'pcountOpen.R' 'gdistsamp.R' 'unmarkedFitList.R' 'unmarkedLinComb.R'
     'ranef.R' 'boot.R' 'occuFP.R' 'gpcount.R' 'occuPEN.R' 'pcount.spHDS.R'
     'occuMS.R' 'occuTTD.R' 'unmarkedCrossVal.R' 'piFun.R' 'vif.R' 'makePiFun.R'
-    'distsampOpen.R'
+    'distsampOpen.R' 'multmixOpen.R'
 LinkingTo: Rcpp, RcppArmadillo 
 SystemRequirements: GNU make
 URL: http://groups.google.com/group/unmarked,

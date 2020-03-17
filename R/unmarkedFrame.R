@@ -145,6 +145,16 @@ setClass("unmarkedFrameGDS",
 setClass("unmarkedFrameGPC",
     contains = "unmarkedFrameG3")
 
+
+setClass("unmarkedFrameMMO",
+         representation(primaryPeriod = "matrix"),
+         contains = "unmarkedFrameGMM")
+
+
+setClassUnion("unmarkedFramePCOorMMO",
+              c("unmarkedFramePCO", "unmarkedFrameMMO"))
+
+
 ## Andy 12/27/2015
 setClass("unmarkedFrameDSO",
          representation(primaryPeriod = "matrix"),
@@ -661,7 +671,47 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
 }
 
 
+unmarkedFrameMMO <- function(y, siteCovs = NULL, obsCovs = NULL,
+    yearlySiteCovs = NULL, numPrimary, type, obsToY, piFun, primaryPeriod)
+{
+  
+    M <- nrow(y)
+    T <- numPrimary
+    J <- ncol(y) / T
 
+    if(missing(primaryPeriod))
+        primaryPeriod <- matrix(1:T, M, T, byrow=TRUE)
+    if(nrow(primaryPeriod) != M | ncol(primaryPeriod) != T)
+        stop("Dimensions of primaryPeriod matrix should be MxT")
+    if(any(primaryPeriod < 0, na.rm=TRUE))
+        stop("Negative primaryPeriod values are not allowed.")
+    if(any(is.na(primaryPeriod)))
+        stop("Missing values are not allowed in primaryPeriod.")
+    if(!identical(typeof(primaryPeriod), "integer")) {
+        mode(primaryPeriod) <- "integer"
+        warning("primaryPeriod values have been converted to integers")
+        }
+    
+    ya <- array(y, c(M, J, T))
+    yt.na <- apply(!is.na(ya), c(1,3), any)
+    yt.na <- which(!yt.na)
+    d.na <- which(is.na(primaryPeriod))
+    if(!all(d.na %in% yt.na))
+        stop("primaryPeriod values must be supplied for all non-missing values of y")
+    increasing <- function(x) {
+        x <- x[!is.na(x)]
+        all(order(x) == 1:length(x))
+        }
+    if(!all(apply(primaryPeriod, 1, increasing)))
+        stop("primaryPeriod values must increase over time for each site")
+    
+    umf <- unmarkedFrameGMM(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs,
+                            type, obsToY, piFun)
+    umf <- as(umf, "unmarkedFrameMMO")
+    umf@primaryPeriod <- primaryPeriod
+
+    umf
+}
 
 
 
