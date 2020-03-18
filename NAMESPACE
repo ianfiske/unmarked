@@ -29,6 +29,7 @@ export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
               unmarkedFitPCount, unmarkedFitMPois, unmarkedFitPCO,
               unmarkedFrameDSO, unmarkedFitDSO,
+              unmarkedFrameMMO, unmarkedFitMMO,
               unmarkedFitOccuMulti,
               unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
               unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,

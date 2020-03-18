@@ -44,7 +44,18 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   first <- apply(!ytna, 1, function(x) min(which(x)))
   last  <- apply(!ytna, 1, function(x) max(which(x)))
   first1 <- which(first==1)[1]
-  
+
+  Xlam.offset <- D$Xlam.offset
+  Xgam.offset <- D$Xgam.offset
+  Xom.offset <- D$Xom.offset
+  Xp.offset <- D$Xp.offset
+  Xiota.offset <- D$Xiota.offset
+  if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
+  if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
+  if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
+  if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
+  if(is.null(Xiota.offset)) Xiota.offset <- rep(0, M*(T-1))
+
   #K stuff
   if(missing(K)) {
     K <- max(y, na.rm=T) + 20
@@ -58,7 +69,6 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   lfac.k <- lgamma(k+1)
   kmyt <- array(0, c(lk, T, M))
   lfac.kmyt <- array(0, c(M, T, lk))
-  #TODO: NEED NA INDICATOR HERE
   fin <- array(NA, c(M, T, lk)) #Indicator if given k is possible given y
   for(i in 1:M) {
     for(t in 1:T) {
@@ -119,7 +129,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     }
   }
 
-  nP <- nAP + nGP + nOP + nDP + (mixture!="P")
+  nP <- nAP + nGP + nOP + nDP + nIP + (mixture!="P")
   if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
   
@@ -148,7 +158,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
 
   #Adjustments to objects to facilitate use in c++
   fin <- fin*1 #convert to numeric
-  yperm <- aperm(D$y, c(1,3,2))
+  yperm <- aperm(y, c(1,3,2))
   yna <- is.na(yperm)*1 
 
   nll <- function(parms) {
@@ -156,12 +166,12 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
           yperm, yt,
           D$Xlam, D$Xgam, D$Xom, D$Xp, D$Xiota,
           parms, beta_ind - 1,
-          D$Xlam.offset, D$Xgam.offset, D$Xom.offset, D$Xp.offset, D$Xiota.offset,
+          Xlam.offset, Xgam.offset, Xom.offset, Xp.offset, Xiota.offset,
           ytna, yna,
           lk, mixture, first - 1, last - 1, first1 - 1, M, T, J,
           D$delta, dynamics, fix, D$go.dims, immigration,
           I, I1, lik_trans$Ib, lik_trans$Ip,
-          D$piFun, lfac.k, kmyt, lfac.kmyt, fin,
+          piFun, lfac.k, kmyt, lfac.kmyt, fin,
           PACKAGE = "unmarked")
   }
 
@@ -248,7 +258,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
       call = match.call(), formula = formula, formlist = formlist, data = data,
       sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC,
       opt = fm, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
-      dynamics = dynamics, immigration=immigration, piFun=piFun)
+      dynamics = dynamics, immigration=immigration)
 
   return(umfit)
 }

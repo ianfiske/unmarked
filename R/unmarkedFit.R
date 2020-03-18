@@ -64,6 +64,8 @@ setClass("unmarkedFitDSO",
 setClassUnion("unmarkedFitPCOorDSO",
               c("unmarkedFitPCO", "unmarkedFitDSO"))
 
+setClass("unmarkedFitMMO", contains = "unmarkedFitPCO")
+
 setClass("unmarkedFitOccu",
     representation(knownOcc = "logical"),
     contains = "unmarkedFit")
