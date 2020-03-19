@@ -46,6 +46,7 @@
 \alias{unmarkedFitOccuMS-class}
 \alias{unmarkedFitOccuTTD-class}
 \alias{unmarkedFitDSO-class}
+\alias{unmarkedFitMMO-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}

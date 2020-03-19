@@ -875,7 +875,8 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 })
 
 # pcountOpen
-setMethod("getDesign", "unmarkedFramePCOorMMO",
+#setMethod("getDesign", "unmarkedFramePCOorMMO",
+setMethod("getDesign", "unmarkedFramePCO",
     function(umf, formula, na.rm = TRUE)
 {
     aschar1 <- as.character(formula)
@@ -1018,6 +1019,14 @@ setMethod("getDesign", "unmarkedFramePCOorMMO",
                 removed.sites = out$removed.sites, go.dims = go.dims))
 })
 
+#Need to do this hacky approach because class union of PCO and MMO doesn't work
+#for reasons I don't understand
+setMethod("getDesign", "unmarkedFrameMMO",
+    function(umf, formula, na.rm=TRUE)
+{
+  class(umf)[1] <- "unmarkedFramePCO"
+  getDesign(umf, formula, na.rm)
+})
 
 # need a getDesign for distsampOpen.... not sure how to set this up
 # pcountOpenDS
@@ -1170,7 +1179,8 @@ setMethod("getDesign", "unmarkedFrameDSO",
 
 
 
-setMethod("handleNA", "unmarkedFramePCOorMMO",
+#setMethod("handleNA", "unmarkedFramePCOorMMO",
+setMethod("handleNA", "unmarkedFramePCO",
     function(umf, Xlam, Xgam, Xom, Xp, Xiota, Xlam.offset, Xgam.offset,
              Xom.offset, Xp.offset, Xiota.offset, delta)
 {

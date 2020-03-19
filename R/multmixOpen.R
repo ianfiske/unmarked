@@ -258,7 +258,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
       call = match.call(), formula = formula, formlist = formlist, data = data,
       sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC,
       opt = fm, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
-      dynamics = dynamics, immigration=immigration)
+      dynamics = dynamics, fix = fix, immigration=immigration)
 
   return(umfit)
 }

@@ -150,11 +150,6 @@ setClass("unmarkedFrameMMO",
          representation(primaryPeriod = "matrix"),
          contains = "unmarkedFrameGMM")
 
-
-setClassUnion("unmarkedFramePCOorMMO",
-              c("unmarkedFramePCO", "unmarkedFrameMMO"))
-
-
 ## Andy 12/27/2015
 setClass("unmarkedFrameDSO",
          representation(primaryPeriod = "matrix"),
@@ -672,7 +667,7 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
 
 
 unmarkedFrameMMO <- function(y, siteCovs = NULL, obsCovs = NULL,
-    yearlySiteCovs = NULL, numPrimary, type, obsToY, piFun, primaryPeriod)
+    yearlySiteCovs = NULL, numPrimary, type, primaryPeriod)
 {
   
     M <- nrow(y)
@@ -706,7 +701,7 @@ unmarkedFrameMMO <- function(y, siteCovs = NULL, obsCovs = NULL,
         stop("primaryPeriod values must increase over time for each site")
     
     umf <- unmarkedFrameGMM(y, siteCovs, obsCovs, numPrimary, yearlySiteCovs,
-                            type, obsToY, piFun)
+                            type)
     umf <- as(umf, "unmarkedFrameMMO")
     umf@primaryPeriod <- primaryPeriod
 
