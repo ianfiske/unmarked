@@ -65,6 +65,8 @@ setClass("unmarkedFitDSO",
 setClassUnion("unmarkedFitPCOorDSO",
               c("unmarkedFitPCO", "unmarkedFitDSO"))
 
+setClass("unmarkedFitMMO", contains = "unmarkedFitPCO")
+
 setClass("unmarkedFitOccu",
     representation(knownOcc = "logical"),
     contains = "unmarkedFit")
@@ -3824,6 +3826,31 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
 })
 
 
+setMethod("getP", "unmarkedFitMMO", function(object, na.rm = TRUE)
+{
+
+  umf <- object@data
+
+  D <- getDesign(umf, object@formula, na.rm=na.rm)
+  beta <- coef(object, type='det')
+  off <- D$Xp.offset
+  if(is.null(off)) off <- rep(0, nrow(D$Xp))
+  plong <- plogis(D$Xp %*% beta + off)
+
+  M <- nrow(D$y)
+  T <- umf@numPrimary
+  J <- ncol(getY(umf)) / T
+
+  pmat <- aperm(array(plong, c(J,T,M)), c(3,1,2))
+  
+  pout <- array(NA, c(M,J,T))
+  for (t in 1:T){
+    pout[,,t] <- do.call(umf@piFun, list(p=pmat[,,t]))
+  }
+  matrix(aperm(pout,c(2,3,1)), M, J*T, byrow=TRUE)
+
+})
+
 
 setMethod("getP", "unmarkedFitPCO", function(object, na.rm = TRUE)
 {
@@ -4177,45 +4204,57 @@ setMethod("simulate", "unmarkedFitPCO",
 })
 
 
+#Function used by both unmarkedFitDSO and MMO
+multinomOpenSim <- function(object, nsim, seed, na.rm){
+
+  umf <- object@data
+  D <- getDesign(umf, object@formula, na.rm = na.rm)
+  y <- D$y
+  y.na <- is.na(y)
+  M <- numSites(umf)
+  T <- umf@numPrimary
+  J <- ncol(getY(umf)) / T
+  simList <- list()
+  p <- getP(object, na.rm = na.rm)
+  p <- array(p, c(M,J,T))
+  cp <- array(NA, c(M,J+1,T))
+  for (i in 1:M){
+    for (t in 1:T){
+      cp[i, 1:J, t] <- p[i,,t]
+      cp[i, J+1, t] <- 1 - sum(p[i,,t], na.rm=TRUE)
+    }
+  }
+
+  for(s in 1:nsim) {
+    y.sim <- matrix(NA, M, J*T)  
+    N <- simOpenN(object, na.rm)
+        
+    for(i in 1:M) {
+      yst <- 1
+        for(t in 1:T) {
+          yend <- yst + J - 1
+          y.it <- as.integer(rmultinom(1, N[i,t], prob=cp[i,,t]))
+          y.sim[i,yst:yend] <- y.it[1:J]
+          yst <- yst + J
+        }
+    }
+    y.sim[y.na] <- NA
+    simList[[s]] <- y.sim
+  }
+  return(simList)
+}
+
 setMethod("simulate", "unmarkedFitDSO",
     function(object, nsim = 1, seed = NULL, na.rm = TRUE)
 {
+  multinomOpenSim(object, nsim, seed, na.rm)
+})
 
-    umf <- object@data
-    D <- getDesign(umf, object@formula, na.rm = na.rm)
-    y <- D$y
-    y.na <- is.na(y)
-    M <- numSites(umf)
-    T <- umf@numPrimary
-    J <- ncol(getY(umf)) / T
-    simList <- list()
-    p <- getP(object, na.rm = na.rm)
-    p <- array(p, c(M,J,T))
-    cp <- array(NA, c(M,J+1,T))
-    for (i in 1:M){
-      for (t in 1:T){
-        cp[i, 1:J, t] <- p[i,,t]
-        cp[i, J+1, t] <- 1 - sum(p[i,,t], na.rm=TRUE)
-      }
-    }
 
-    for(s in 1:nsim) {
-        y.sim <- matrix(NA, M, J*T)  
-        N <- simOpenN(object, na.rm)
-        
-        for(i in 1:M) {
-            yst <- 1
-            for(t in 1:T) {
-                yend <- yst + J - 1
-                y.it <- as.integer(rmultinom(1, N[i,t], prob=cp[i,,t]))
-                y.sim[i,yst:yend] <- y.it[1:J]
-                yst <- yst + J
-            }
-        }
-        y.sim[y.na] <- NA
-        simList[[s]] <- y.sim
-    }
-    return(simList)
+setMethod("simulate", "unmarkedFitMMO",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+  multinomOpenSim(object, nsim, seed, na.rm)
 })
 
 

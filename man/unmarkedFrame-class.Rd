@@ -48,6 +48,7 @@
 \alias{unmarkedFrameGDS-class}
 \alias{unmarkedFrameGPC-class}
 \alias{unmarkedFrameDSO-class}
+\alias{unmarkedFrameMMO-class}
 \alias{show,unmarkedFrame-method}
 \alias{show,unmarkedFrameOccuMulti-method}
 \alias{show,unmarkedFrameOccuTTD-method}

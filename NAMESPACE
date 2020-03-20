@@ -20,7 +20,8 @@ import(lattice, methods, parallel, Rcpp, Matrix)
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
        colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
-       occuMS, computeMPLElambda, pcount.spHDS, occuTTD, distsampOpen)
+       occuMS, computeMPLElambda, pcount.spHDS, occuTTD, distsampOpen,
+       multmixOpen)
 export(removalPiFun, doublePiFun)
 export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 
@@ -28,6 +29,7 @@ export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
               unmarkedFitPCount, unmarkedFitMPois, unmarkedFitPCO,
               unmarkedFrameDSO, unmarkedFitDSO,
+              unmarkedFrameMMO, unmarkedFitMMO,
               unmarkedFitOccuMulti,
               unmarkedFrame, unmarkedFrameOccu, unmarkedFramePCount,
               unmarkedFrameMPois, unmarkedFrameDS, unmarkedMultFrame,
@@ -51,7 +53,8 @@ export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
     unmarkedFrameOccu, unmarkedFrameOccuFP, unmarkedFramePCount, unmarkedFrameMPois,
     unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
     unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC, unmarkedFrameOccuMulti,
-    unmarkedFrameOccuMS, unmarkedFrameOccuTTD, unmarkedFrameDSO)
+    unmarkedFrameOccuMS, unmarkedFrameOccuTTD, unmarkedFrameDSO, 
+    unmarkedFrameMMO)
 
 # Formatting
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
