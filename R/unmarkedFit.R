@@ -3825,6 +3825,31 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
 })
 
 
+setMethod("getP", "unmarkedFitMMO", function(object, na.rm = TRUE)
+{
+
+  umf <- object@data
+
+  D <- getDesign(umf, object@formula, na.rm=na.rm)
+  beta <- coef(object, type='det')
+  off <- D$Xp.offset
+  if(is.null(off)) off <- rep(0, nrow(D$Xp))
+  plong <- plogis(D$Xp %*% beta + off)
+
+  M <- nrow(D$y)
+  T <- umf@numPrimary
+  J <- ncol(getY(umf)) / T
+
+  pmat <- aperm(array(plong, c(J,T,M)), c(3,1,2))
+  
+  pout <- array(NA, c(M,J,T))
+  for (t in 1:T){
+    pout[,,t] <- do.call(umf@piFun, list(p=pmat[,,t]))
+  }
+  matrix(aperm(pout,c(2,3,1)), M, J*T, byrow=TRUE)
+
+})
+
 
 setMethod("getP", "unmarkedFitPCO", function(object, na.rm = TRUE)
 {

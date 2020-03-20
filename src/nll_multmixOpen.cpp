@@ -75,9 +75,9 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   double alpha = 0.0;
   double psi = 0.0;
   if(mixture=="NB"){
-    alpha = exp(beta(bi(6,0)));
+    alpha = exp(beta(bi(5,0)));
   } else if(mixture=="ZIP"){
-    psi = 1.0 / (1.0 + exp(-1 * beta(bi(6,0))));
+    psi = 1.0 / (1.0 + exp(-1 * beta(bi(5,0))));
   }
   
   //Omega

@@ -1191,12 +1191,13 @@ setMethod("handleNA", "unmarkedFramePCO",
 	T <- umf@numPrimary
 	y <- getY(umf)
 	J <- ncol(y) / T
+  R <- obsNum(umf)
 
 	Xlam.long <- Xlam[rep(1:M, each = J*T),]
 	Xlam.long.na <- is.na(Xlam.long)
 
 	long.na <- function(x) {
-            x.mat <- matrix(x, M, J*T, byrow = TRUE)
+            x.mat <- matrix(x, M, R, byrow = TRUE)
             x.mat <- is.na(x.mat)
             x.mat <- x.mat %*% obsToY
             x.long <- as.vector(t(x.mat))
