@@ -57,6 +57,7 @@ setClass("unmarkedFitDSO",
             formlist = "list",
             dynamics = "character",
             immigration = "logical",
+            fix = "character",
             K="numeric",
             mixture="character"),
         contains = "unmarkedFitDS")

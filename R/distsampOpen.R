@@ -176,7 +176,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     }
   }
 
-  nP <- nAP + nGP + nOP + nDP + (mixture!="P") + (keyfun == "hazard")
+  nP <- nAP + nGP + nOP + nDP + nIP + (mixture!="P") + (keyfun == "hazard")
   if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
   
@@ -323,7 +323,8 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
       call = match.call(), formula = formula, formlist = formlist, data = data,
       sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC,
       opt = fm, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
-      dynamics = dynamics, immigration=immigration, keyfun=keyfun, unitsOut=unitsOut)
+      dynamics = dynamics, fix = fix, immigration=immigration, keyfun=keyfun, 
+      unitsOut=unitsOut)
 
   return(umfit)
 }
