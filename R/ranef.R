@@ -830,9 +830,9 @@ setMethod("ranef", "unmarkedFitOccuTTD",
 })
 
 
-setMethod("ranef", "unmarkedFitDSO",
-    function(object, ...)
-{
+#Common function for DSO and MMO
+postMultinomOpen <- function(object){
+
     dyn <- object@dynamics
     formlist <- object@formlist
     formula <- as.formula(paste(unlist(formlist), collapse=" "))
@@ -974,6 +974,23 @@ setMethod("ranef", "unmarkedFitDSO",
             post[i,,t] <- g / sum(g)
         }
     }
+    post
+
+}
+
+
+setMethod("ranef", "unmarkedFitDSO",
+    function(object, ...)
+{
+    post <- postMultinomOpen(object)
+    new("unmarkedRanef", post=post)
+})
+
+
+setMethod("ranef", "unmarkedFitMMO",
+    function(object, ...)
+{
+    post <- postMultinomOpen(object)
     new("unmarkedRanef", post=post)
 })
 

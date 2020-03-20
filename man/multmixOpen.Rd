@@ -221,16 +221,15 @@ that unlike the related functions \code{\link{multinomPois}} and
   #Predict
   head(predict(fit, type='lambda'))
 
-  #\dontrun{
+  \dontrun{
   #Check fit with parametric bootstrap
-  #need to adjust simulate()
-  #pb <- parboot(fit, nsims=15)
-  #plot(pb)
+  pb <- parboot(fit, nsims=15)
+  plot(pb)
 
   # Empirical Bayes estimates of abundance for each site / year
-  #re <- ranef(fit)
-  #plot(re, layout=c(10,5), xlim=c(-1, 10))
-  #}
+  re <- ranef(fit)
+  plot(re, layout=c(10,5), xlim=c(-1, 10))
+  }
 
 }
 
