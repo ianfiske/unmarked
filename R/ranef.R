@@ -1132,12 +1132,53 @@ setMethod("plot", c("unmarkedRanef", "missing"), function(x, y, ...)
     }
 })
 
+setClass("posteriorSamples",
+         representation(numSites="integer",
+                        numPrimary="integer",
+                        nsims="integer",
+                        samples="integer")
+         )
+
+setMethod("posteriorSamples", "unmarkedRanef", function(object, nsims)
+{
+
+  N <- dim(object@post)[1]
+  K <- dim(object@post)[2]
+  T <- dim(object@post)[3]
+
+  out <- array(NA, c(N, T, nsims))
+
+  for (n in 1:N){
+    for (t in 1:T){
+        out[n, t, ] <- sample(0:(K-1), nsims, replace=TRUE,
+                              prob=object@post[n,,t])
+    }
+  }
+  new("posteriorSamples", numSites=N, numPrimary=T, nsims=nsims,
+      numPrimary=drop(out))
+
+})
+
+setMethod("posteriorSamples", "unmarkedFit", function(object, nsims)
+{
+  ran <- ranef(object)
+  posteriorSamples(ran, nsims)
+})
+
+setMethod("show", "posteriorSamples", function(object)
+{
+
+  tdim <- character(0)
+  if(object@numPrimary>1){
+    tdim <- paste0("x ", object@numPrimary, " primary periods")
+  }
+  cat("Posterior samples from unmarked model")
+  cat(paste("\n"object@numSites, "sites", tdim, "x", object@nsims, "sims"))
+  cat("\nShowing first 5 sites. To see n sites, use print(object, n)")
+  
 
 
-
-
-
-
+}
 
 
 
