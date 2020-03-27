@@ -149,6 +149,30 @@ post.df <- as(re, "data.frame")
 head(post.df)
 post.arr <- as(re, "array")
 
+#Generate posterior predictive distribution for a function
+#of random variables using predict()
+
+#First, create a function that operates on a MxT matrix where
+#M = nsites and T = n primary periods (1 in this case)
+#Our function will generate mean abundance for sites 1-10 and sites 11-20
+myfunc <- function(x){ #x is 20 x 1
+  
+  #Mean of first 10 sites
+  group1 <- mean(x[1:10,1])
+  #Mean of sites 11-20
+  group2 <- mean(x[11:20,1])
+
+  return(c(group1, group2))
+
+}
+
+#Get mean, SE, and 95% confidence interval for the two derived parameters
+#Using 100 draws from posterior predictive distribution
+(predict(re, func=myfunc, nsims=100))
+
+#Alternatively, you can return the posterior predictive distribution
+#and run operations on it separately
+(ppd <- posteriorSamples(re, nsims=100))
 
 }
 \keyword{methods}
