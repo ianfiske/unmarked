@@ -4233,7 +4233,8 @@ multinomOpenSim <- function(object, nsim, seed, na.rm){
       yst <- 1
         for(t in 1:T) {
           yend <- yst + J - 1
-          y.it <- as.integer(rmultinom(1, N[i,t], prob=cp[i,,t]))
+          #rmultinom2 in utils.R
+          y.it <- as.integer(rmultinom2(1, N[i,t], prob=cp[i,,t]))
           y.sim[i,yst:yend] <- y.it[1:J]
           yst <- yst + J
         }
@@ -4357,7 +4358,7 @@ setMethod("simulate", "unmarkedFitOccuFP",
               P[,1] <- Z*rbinom(M * J, 1, prob = (1-p)) + (1-Z)*rbinom(M * J, 1, prob = (1-fp))
               P[,2] <- (1-P[,1])*(1-Z) + (1-P[,1])*rbinom(M * J, 1, prob = (1-b))*Z
               P[,3] <- 1 - P[,1]-P[,2]
-              yvec <- sapply(1:(M*J),function(x) which(as.logical(rmultinom(1,1,P[x,])))-1)
+              yvec <- sapply(1:(M*J),function(x) which(as.logical(rmultinom2(1,1,P[x,])))-1)
               simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
             }
             return(simList)
@@ -4744,7 +4745,7 @@ setMethod("simulate", "unmarkedFitGMM",
                 pi.it <- cp.arr[i,t,]
                 na.it <- is.na(pi.it)
                 pi.it[na.it] <- 0
-                y.sim[i,,t] <- drop(rmultinom(1, N[i,t], pi.it))[1:J]
+                y.sim[i,,t] <- drop(rmultinom2(1, N[i,t], pi.it))[1:J]
                 y.sim[i,na.it[1:J],t] <- NA
             }
         }
@@ -4885,7 +4886,7 @@ setMethod("simulate", "unmarkedFitGDS",
     for(s in 1:nsim) {
         for(i in 1:M) {
             switch(mixture,
-                P = Ns <- rpois(1, lambda[1]),
+                P = Ns <- rpois(1, lambda[i]),
                 NB = {
                     alpha <- exp(coef(object, type="alpha"))
                     Ns <- rnbinom(1, mu=lambda[i], size=alpha)
@@ -4894,7 +4895,7 @@ setMethod("simulate", "unmarkedFitGDS",
                 N <- rbinom(1, Ns, phi[i,t])
                 cp.it <- cpa[i,,t]
                 cp.it[J+1] <- 1-sum(cp.it)
-                y.it <- as.integer(rmultinom(1, N, prob=cp.it))
+                y.it <- as.integer(rmultinom2(1, N, prob=cp.it))
                 ysim[i,,t] <- y.it[1:J]
                 }
             }
