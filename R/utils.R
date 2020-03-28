@@ -838,3 +838,14 @@ getDistCP <- function(keyfun, param1, param2, survey, db, w, a, u){
     })
     cp * u
 }
+
+
+#Modified rmultinom for handling NAs
+rmultinom2 <- function(n, size, prob){
+  if(is.na(size)){
+    return(matrix(NA, length(prob), length(n)))
+  }
+  stats::rmultinom(n=n, size=size, prob=prob)
+
+}
+
