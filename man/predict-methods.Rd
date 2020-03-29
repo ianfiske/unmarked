@@ -45,12 +45,16 @@ with dimensions M x T, where M is the number of sites and T is the number of
 primary periods (T=1 for single-season models). The output of this function should 
 be a vector or matrix containing the derived parameters of interest. 
 
-The output of predict is the mean value of each derived parameter, in 
-column-major order, along with the standard error and 95\% confidence interval.
-See \code{\link{ranef}} for an example.
-
 You may also manually set the number of draws from the posterior predictive
 distribution with argument \code{nsims}; the default is 100.
+
+The output of \code{predict} will be a vector or array with one more dimension
+than the output of the function supplied \code{func}, corresponding to the number
+of draws requested \code{nsims}. For example, if \code{func}
+outputs a scalar, the output of \code{predict} will be a vector with length
+equal to \code{nsims}. If \code{func} outputs a 3x2 matrix, the output of
+\code{predict} will be an array with dimensions 3x2x\code{nsims}.
+See \code{\link{ranef}} for an example.
 
 Alternatively, you can use the \code{\link{posteriorSamples}} function on the
 \code{ranef} output object to obtain the full posterior predictive distribution. 

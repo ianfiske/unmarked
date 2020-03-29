@@ -565,14 +565,14 @@ test.ranef.predict <- function(){
   checkEqualsNumeric(dim(ps@samples), c(9,1,10))
 
   myfunc <- function(x){
-    c(mean(x[1:4]), mean(x[5:9]))
+    c(gr1=mean(x[1:4]), gr2=mean(x[5:9]))
   }
 
   pr <- predict(re, fun=myfunc, nsim=10)
-  checkEqualsNumeric(nrow(pr), 2)
-  checkEqualsNumeric(as.numeric(pr[1,]), c(5.275,0.7115,4.1125,6.1937),
-                     tol=1e-4)
-
+  checkEqualsNumeric(dim(pr), c(2,10))
+  checkEquals(rownames(pr), c("gr1","gr2"))
+  checkEqualsNumeric(as.numeric(pr[1,1:3]), c(6.0,4.0,5.75))
+  
   #Dynamic model
   set.seed(7)
   M <- 10
@@ -611,9 +611,8 @@ test.ranef.predict <- function(){
   }
 
   pr <- predict(re1, fun=myfunc, nsim=10)
-  checkEqualsNumeric(nrow(pr), 2*T)
-  checkEqualsNumeric(as.numeric(pr[1,]), c(3.525,0.2189,3.2500,3.7500),
-                     tol=1e-4)
+  checkEqualsNumeric(dim(pr), c(2,5,10))
+  checkEqualsNumeric(pr[1,1:3,1], c(3.5,2.5,1.5))
 
 
 }
