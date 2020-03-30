@@ -11,11 +11,14 @@ importFrom(graphics, plot, hist, abline)
 importFrom(utils, head, read.csv)
 importFrom(plyr, ldply, alply, ddply)
 importFrom(grDevices, devAskNewPage, dev.interactive)
-importFrom("raster","stack")
-importFrom("raster", "raster", "extent", "extent<-", "getValues") ## MM
-importFrom("MASS", "mvrnorm")
-
-import(lattice, methods, parallel, Rcpp, Matrix)
+importFrom(raster, raster, stack, extent, "extent<-", getValues)
+importFrom(MASS, mvrnorm)
+importFrom(parallel, detectCores, makeCluster, stopCluster, clusterExport,
+           clusterEvalQ, parLapply)
+importFrom(methods, is, as, new, show, slot, .hasSlot, callGeneric, 
+           callNextMethod)
+importFrom(lattice, xyplot, levelplot)
+import(Rcpp)
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,

@@ -32,7 +32,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
 
   dmF <- Matrix::Matrix(dmF, sparse=TRUE) # convert to sparse matrix
   #Only transpose once
-  t_dmF <- t(dmF)
+  t_dmF <- Matrix::t(dmF)
   #----------------------------------------------------------------------------
 
   #Likelihood function in R----------------------------------------------------
