@@ -256,9 +256,21 @@ setMethod("names", "unmarkedFit",
 
 # ----------------------------- Prediction -----------------------------
 
+#Utility function to make model matrix and offset from newdata
+make_mod_matrix <- function(formula, data, newdata){
+  mf <- model.frame(formula, data)
+  X.terms <- stats::terms(mf)
+  fac_cols <- data[, sapply(data, is.factor), drop=FALSE]
+  xlevs <- lapply(fac_cols, levels)
+  xlevs <- xlevs[names(xlevs) %in% names(mf)]
+  X <- model.matrix(X.terms, newdata, xlev=xlevs)
+  nmf <- model.frame(X.terms, newdata)
+  offset <- model.offset(nmf)
+  list(X=X, offset=offset)
+}
 
 
- setMethod("predict", "unmarkedFit",
+setMethod("predict", "unmarkedFit",
      function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
          appendData = FALSE, level=0.95, ...)
  {
@@ -307,20 +319,18 @@ setMethod("names", "unmarkedFit",
      data.frame = {
          switch(type,
              state = {
-                  xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels) # https://stackoverflow.com/a/44008147/2461552
-                 mf <- model.frame(stateformula, sitedata)
-                 X.terms <- stats::terms(mf)
-                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                 offset <- model.offset(model.frame(X.terms, newdata))
-                 },
+               pred_data <- sitedata
+               pred_form <- stateformula
+              },
              det = {
-                  xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                 mf <- model.frame(detformula, obsdata)
-                 X.terms <- stats::terms(mf)
-                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                 offset <- model.offset(model.frame(X.terms, newdata))
-                 })
-             },
+               pred_data <- obsdata
+               pred_form <- detformula
+              }
+         )
+          mm <- make_mod_matrix(pred_form, pred_data, newdata)
+          X <- mm$X
+          offset <- mm$offset
+     },
      RasterStack = {
  #        browser()
          cd.names <- names(newdata)
@@ -597,19 +607,16 @@ setMethod("predict", "unmarkedFitPCount",
     data.frame = {
         switch(type,
                state = {
-                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(stateformula, sitedata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                 pred_data <- sitedata
+                 pred_form <- stateformula
                },
                det = {
-                    xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(detformula, obsdata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                 pred_data <- obsdata
+                 pred_form <- detformula
                })
+        mm <- make_mod_matrix(pred_form, pred_data, newdata)
+        X <- mm$X
+        offset <- mm$offset
             },
     RasterStack = {
         cd.names <- names(newdata)
@@ -795,33 +802,24 @@ setMethod("predict", "unmarkedFitOccuFP",
                    data.frame = {
                      switch(type,
                             state = {
-                                 xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                                 mf <- model.frame(stateformula, sitedata)
-                                 X.terms <- stats::terms(mf)
-                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                                 offset <- model.offset(model.frame(X.terms, newdata))
+                              pred_data <- sitedata
+                              pred_form <- stateformula
                             },
                             det = {
-                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                                 mf <- model.frame(detformula, obsdata)
-                                 X.terms <- stats::terms(mf)
-                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                                 offset <- model.offset(model.frame(X.terms, newdata))
+                              pred_data <- obsdata
+                              pred_form <- detformula
                             },
                             fp = {
-                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                                 mf <- model.frame(FPformula, obsdata)
-                                 X.terms <- stats::terms(mf)
-                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                                 offset <- model.offset(model.frame(X.terms, newdata))
+                              pred_data <- obsdata
+                              pred_form <- FPformula
                             },
                             b = {
-                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                                 mf <- model.frame(Bformula, obsdata)
-                                 X.terms <- stats::terms(mf)
-                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                                 offset <- model.offset(model.frame(X.terms, newdata))
+                              pred_data <- obsdata
+                              pred_form <- Bformula
                             })
+                     mm <- make_mod_matrix(pred_form, pred_data, newdata)
+                     X <- mm$X
+                     offset <- mm$offset
                    })
 
             out <- data.frame(matrix(NA, nrow(X), 4,
@@ -918,33 +916,22 @@ setMethod("predict", "unmarkedFitColExt",
 
         switch(type,
             psi = {
-                xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                mf <- model.frame(psiformula, sitedata)
-                X.terms <- stats::terms(mf)
-                X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                #offset <- model.offset(mf)
+              pred_data <- sitedata
+              pred_form <- psiformula
                 },
             col = {
-                xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                mf <- model.frame(gamformula, yearlydata)
-                X.terms <- stats::terms(mf)
-                X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                #offset <- model.offset(mf)
+              pred_data <- yearlydata
+              pred_form <- gamformula
                 },
             ext = {
-                xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                mf <- model.frame(epsformula, yearlydata)
-                X.terms <- stats::terms(mf)
-                X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                #offset <- model.offset(mf)
+              pred_data <- yearlydata
+              pred_form <- epsformula
                 },
             det = {
-                xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                mf <- model.frame(detformula, obsdata)
-                X.terms <- stats::terms(mf)
-                X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                #offset <- model.offset(mf)
-                })
+              pred_data <- obsdata
+              pred_form <- detformula
+        })
+        X <- make_mod_matrix(pred_form, pred_data, newdata)$X
             },
     RasterStack = {
         aschar1 <- as.character(formula)
@@ -1139,40 +1126,28 @@ setMethod("predict", "unmarkedFitPCO",
 
             switch(type,
                 lambda = {
-                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(lambdaformula, sitedata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- sitedata
+                  pred_form <- lambdaformula
                 },
                 gamma = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(gammaformula, yearlydata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- gammaformula
                 },
                 omega = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(omegaformula, yearlydata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_data <- omegaformula
                 },
                 iota = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(iotaformula, yearlydata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- iotaformula
                 },
                 det = {
-                    xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(pformula, obsdata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- obsdata
+                  pred_form <- pformula
                 })
+            mm <- make_mod_matrix(pred_form, pred_data, newdata)
+            X <- mm$X
+            offset <- X$offset
             },
         RasterStack = {
             lambdaformula <- formlist$lambdaformula
@@ -1372,40 +1347,28 @@ setMethod("predict", "unmarkedFitDSO",
 
             switch(type,
                 lambda = {
-                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(lambdaformula, sitedata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- sitedata
+                  pred_form <- lambdaformula
                 },
                 gamma = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(gammaformula, yearlydata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- gammaformula
                 },
                 omega = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(omegaformula, yearlydata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- omegaformula
                 },
                 iota = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(iotaformula, yearlydata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- iotaformula
                 },
                 det = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(pformula, yearlydata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- pformula
                 })
+            mm <- make_mod_matrix(pred_form, pred_data, newdata)
+            X <- mm$X
+            offset <- mm$offset
             },
         RasterStack = {
             lambdaformula <- formlist$lambdaformula
@@ -1629,26 +1592,20 @@ setMethod("predict", "unmarkedFitGMM",
         data.frame = {
             switch(type,
                 lambda = {
-                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(lambdaformula, sitedata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- sitedata
+                  pred_form <- lambdaformula
                     },
                 phi = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(phiformula, yearlydata)
-                    X.terms <- stats::terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- phiformula
                     },
                 det = {   # Note, this is p not pi
-                  xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                  mf <- model.frame(pformula, obsdata)
-                  X.terms <- stats::terms(mf)
-                  X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                  offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- obsdata
+                  pred_form <- pformula
                 })
+            mm <- make_mod_matrix(pred_form, pred_data, newdata)
+            X <- mm$X
+            offset <- mm$offset
         },
         RasterStack = {
             cd.names <- names(newdata)

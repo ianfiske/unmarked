@@ -243,6 +243,17 @@ test.occu.predict.complexFormulas <- function() {
   checkEqualsNumeric(as.matrix(pr3),as.matrix(pr4[2:1,]))
   checkException(predict(fm, 'state', newdata=data.frame(fac_cov=c('a','d'))))
 
+  #Check when original covs contain factor not used in formula
+  siteCovs$fac_cov2 <- factor(sample(c('a','b','c'), 5, replace=T),
+                             levels=c('b','a','c'))
+
+  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  fm <- occu(~ o1 + o2 ~ fac_cov, data = umf)
+  #Should error if any warnings appear
+  options(warn=2)
+  pr <- predict(fm, 'state', newdata=data.frame(fac_cov=c('a','b')))
+  options(warn=0)
+
 }
 
 ## Add some checks here.
