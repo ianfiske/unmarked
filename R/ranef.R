@@ -1132,14 +1132,31 @@ setMethod("plot", c("unmarkedRanef", "missing"), function(x, y, ...)
     }
 })
 
+setMethod("predict", "unmarkedRanef", function(object, func, nsims=100, ...)
+{
 
+  ps <- posteriorSamples(object, nsims=nsims)@samples
+  s1 <- func(ps[,,1])
+  nm <- names(s1)
+  row_nm <- rownames(s1)
+  col_nm <- colnames(s1)
 
+  if(is.vector(s1)){
+    out_dim <- c(length(s1), nsims)
+  } else{
+    out_dim <- c(dim(s1), nsims)
+  }
 
+  param <- apply(ps, 3, func)
 
+  out <- array(param, out_dim)
+  
+  if(is.vector(s1)){
+    rownames(out) <- nm
+  } else {
+    rownames(out) <- row_nm
+    colnames(out) <- col_nm
+  }
 
-
-
-
-
-
-
+  drop(out)
+})
