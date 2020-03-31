@@ -227,6 +227,13 @@ test.occuMulti.predict <- function(){
   prDet <- predict(fm, type='det')
   checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
                      c(0.20494,0.17175,-0.13168,0.541579), tol=1e-4)
+
+  #Check predicting co-occurrence
+  nd <- siteCovs(umf)[1:2,]
+  pr_all <- predict(fm, type='state', se=F)$Predicted[1:2,1]
+  pr_nd <- predict(fm, type='state', newdata=nd, species=c(1,2))$Predicted
+  checkEqualsNumeric(pr_nd,pr_all, tol=1e-4)
+
 }
 
 test.occuMulti.predict.NA <- function(){

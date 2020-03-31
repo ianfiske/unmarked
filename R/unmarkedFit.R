@@ -1789,7 +1789,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
       sel_col <- species
 
       if(!is.null(cond)){
-        if(sel_col %in% abs(cond)){
+        if(any(sel_col %in% abs(cond))){
           stop("Species can't be conditional on itself")
         }
         ftemp <- object@data@fDesign
@@ -1806,7 +1806,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
         }
 
       } else {
-        num_inds <- which(object@data@fDesign[,sel_col] == 1)
+        num_inds <- apply(object@data@fDesign[,sel_col,drop=FALSE] == 1,1,all)
         est <- rowSums(psi_est[,num_inds,drop=F])
         if(se.fit){
           samp <- samp[,num_inds,,drop=F]
