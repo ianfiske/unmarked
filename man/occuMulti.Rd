@@ -183,6 +183,9 @@ head(predict(fit,'state',species=2))
 head(predict(fit,'state',species='bear'))
 head(predict(fit,'det',species='coyote'))
 
+#probability of co-occurrence of two or more species
+head(predict(fit, 'state', species=c('coyote','tiger')))
+
 #conditional occupancy
 head(predict(fit,'state',species=2,cond=3)) #tiger | bear present
 head(predict(fit,'state',species='tiger',cond='bear')) #tiger | bear present
