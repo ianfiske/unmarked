@@ -18,7 +18,7 @@ importFrom(parallel, detectCores, makeCluster, stopCluster, clusterExport,
 importFrom(methods, is, as, new, show, slot, .hasSlot, callGeneric, 
            callNextMethod)
 importFrom(lattice, xyplot, levelplot)
-import(Rcpp)
+importFrom(Rcpp, evalCpp)
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
