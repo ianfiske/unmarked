@@ -4,14 +4,14 @@ Date: 2020-03-31
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(
-    person("Ian", "Fiske", role="aut"), 
     person("Richard", "Chandler", role="aut"), 
+    person("Ken", "Kellner", role="aut"),
+    person("Ian", "Fiske", role="aut"), 
     person("David", "Miller", role="aut"),
     person("Andy", "Royle", email="aroyle@usgs.gov", role=c("cre", "aut")),
     person("Jeff", "Hostetler", role="aut"),
     person("Rebecca", "Hutchinson", role="aut"),
     person("Adam", "Smith", role="aut"),
-    person("Ken", "Kellner", role="aut"),
     person("Marc", "Kery", role="ctb"),
     person("Mike", "Meredith", role="ctb"),
     person("Auriel", "Fournier", role="ctb"),
