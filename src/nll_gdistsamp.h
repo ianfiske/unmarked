@@ -2,7 +2,7 @@
 #define _unmarked_NLL_GDISTSAMP_H
 
 #include <RcppArmadillo.h>
-#include "detfuns.h"
+#include "distprob.h"
 
 RcppExport SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
     SEXP Xlam_, SEXP Xlam_offset_, SEXP A_, SEXP Xphi_, SEXP Xphi_offset_, 

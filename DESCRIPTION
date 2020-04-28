@@ -1,12 +1,26 @@
 Package: unmarked
-Version: 0.13-1.9000
-Date: 2020-01-01
+Version: 0.13-2.9005
+Date: 2020-03-31
 Type: Package
 Title: Models for Data from Unmarked Animals
-Author: Ian Fiske, Richard Chandler, David Miller, Andy Royle, Marc Kery, Jeff Hostetler, Rebecca Hutchinson, Adam Smith, Ken Kellner 
-Maintainer: Andy Royle <aroyle@usgs.gov>
-Depends: R (>= 2.12.0), methods, lattice, parallel, Rcpp (>= 0.8.0), reshape2
-Imports: graphics, stats, utils, plyr, raster, Matrix, MASS
+Authors@R: c(
+    person("Richard", "Chandler", role="aut"), 
+    person("Ken", "Kellner", role="aut"),
+    person("Ian", "Fiske", role="aut"), 
+    person("David", "Miller", role="aut"),
+    person("Andy", "Royle", email="aroyle@usgs.gov", role=c("cre", "aut")),
+    person("Jeff", "Hostetler", role="aut"),
+    person("Rebecca", "Hutchinson", role="aut"),
+    person("Adam", "Smith", role="aut"),
+    person("Marc", "Kery", role="ctb"),
+    person("Mike", "Meredith", role="ctb"),
+    person("Auriel", "Fournier", role="ctb"),
+    person("Ariel", "Muldoon", role="ctb"),
+    person("Chris", "Baker", role="ctb")
+    )
+Depends: R (>= 2.12.0), lattice
+Imports: graphics, stats, utils, methods, parallel, plyr, raster, Matrix, MASS,
+         Rcpp (>= 0.8.0)
 Description: Fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates.
 License: GPL (>=3)
 LazyLoad: yes
@@ -16,7 +30,8 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'multinomPois.R' 'occu.R' 'occuRN.R' 'occuMulti.R' 'pcount.R' 'gmultmix.R'
     'pcountOpen.R' 'gdistsamp.R' 'unmarkedFitList.R' 'unmarkedLinComb.R'
     'ranef.R' 'boot.R' 'occuFP.R' 'gpcount.R' 'occuPEN.R' 'pcount.spHDS.R'
-    'occuMS.R' 'occuTTD.R' 'unmarkedCrossVal.R' 'piFun.R' 'vif.R' 'makePiFun.R'
+    'occuMS.R' 'occuTTD.R' 'distsampOpen.R' 'multmixOpen.R' 
+    'unmarkedCrossVal.R' 'piFun.R' 'vif.R' 'makePiFun.R' 'posteriorSamples.R'
     'occuRN.TTD.R'
 LinkingTo: Rcpp, RcppArmadillo 
 SystemRequirements: GNU make
@@ -24,3 +39,4 @@ URL: http://groups.google.com/group/unmarked,
      https://sites.google.com/site/unmarkedinfo/home,
      http://github.com/ianfiske/unmarked,
      http://github.com/rbchan/unmarked
+BugReports: https://github.com/rbchan/unmarked/issues

@@ -91,7 +91,6 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
 
     if(missing(starts)) starts <- rep(0, nP)
     fm <- optim(starts, nll, method=method, hessian=se, ...)
-    opt <- fm
 
     ests <- fm$par
     nbParm <- switch(mixture,
@@ -99,12 +98,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
                      ZIP = "psi",
                      P = character(0))
     names(ests) <- c(lamParms, detParms, nbParm)
-    if(se) {
-        tryCatch(covMat <- solve(fm$hessian), error=function(x)
-                 stop(simpleError("Hessian is singular.  Try using fewer covariates.")))
-    } else {
-        covMat <- matrix(NA, nP, nP)
-    }
+    covMat <- invertHessian(fm, nP, se)
     fmAIC <- 2 * fm$value + 2 * nP
 
     stateName <- "Abundance"
@@ -141,7 +135,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
     umfit <- new("unmarkedFitPCount", fitType="pcount", call=match.call(),
                  formula = formula, data = data,
                  sitesRemoved = designMats$removed.sites,
-                 estimates = estimateList, AIC = fmAIC, opt = opt,
+                 estimates = estimateList, AIC = fmAIC, opt = fm,
                  negLogLike = fm$value,
                  nllFun = nll, K = K, mixture = mixture)
 

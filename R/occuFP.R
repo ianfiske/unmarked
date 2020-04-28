@@ -84,13 +84,7 @@ occuFP <- function(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula 
 
     if(missing(starts)) starts <- rep(0, nP)
     fm <- optim(starts, nll, method = method, hessian = se, ...)
-    opt <- fm
-    if(se) {
-        tryCatch(covMat <- solve(fm$hessian),
-                 error=function(x) stop(simpleError("Hessian is singular.  Try providing starting values or using fewer covariates.")))
-    } else {
-        covMat <- matrix(NA, nP, nP)
-    }
+    covMat <- invertHessian(fm, nP, se)
     ests <- fm$par
     fmAIC <- 2 * fm$value + 2 * nP #+ 2*nP*(nP + 1)/(M - nP - 1)
     names(ests) <- c(occParms, detParms,FPParms,BParms)
@@ -135,7 +129,7 @@ occuFP <- function(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula 
                  detformula = detformula,FPformula = FPformula,Bformula = Bformula,
                  stateformula = stateformula, formula = ~1, type = type, data = data,
                  sitesRemoved = designMats$removed.sites,
-                 estimates = estimateList, AIC = fmAIC, opt = opt,
+                 estimates = estimateList, AIC = fmAIC, opt = fm,
                  negLogLike = fm$value,
                  nllFun = nll)
 

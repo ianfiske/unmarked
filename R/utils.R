@@ -78,16 +78,6 @@ rowProds <- function(x, na.rm = FALSE)
   exp(rowSums(log(x), na.rm = na.rm))
 }
 
-# helper function to coerce an array of matrices to a list
-arrToList <- function(x){
-    nl <- list()
-    for(i in 1:dim(x)[3]) {
-        nl[[i]] <- x[,,i]
-    }
-    names(nl) <- dimnames(x)[[3]]
-    nl
-}
-
 ## compute estimated asymptotic variances of parameter estimates
 ## using the observed information matrix
 
@@ -188,7 +178,7 @@ formatLong <- function(dfin, species = NULL, type, ...) {
   ## copy dates to last column so that they are also a covdata var
   nc <- ncol(dfin)
   dfin[[nc+1]] <- dfin[[2]]
-  names(dfin)[nc+1] <- "Date"
+  names(dfin)[nc+1] <- "JulianDate"
 
   if(!is.null(species)) {
     dfin$y <- ifelse(dfin$species == species, dfin$y, 0)
@@ -208,46 +198,21 @@ formatLong <- function(dfin, species = NULL, type, ...) {
 #  dfin[,3] <- dfin[,length(dfin)]
 #  dfin <- dfin[,-length(dfin)]
     names(dfin)[3] <- "y"
-
     dfin <- dateToObs(dfin)
-    dfnm <- colnames(dfin)
-    nV <- length(dfnm) - 1  # last variable is obsNum
 
-    ### Identify variables that are not factors
-    # Include julian date/visit in search as it is added back in later
-    fac <- sapply(dfin[, 4:nV, drop = FALSE], is.factor)
-    nonfac <- names(dfin[, 4:nV, drop = FALSE])[!fac]
+    #Create wide version of y with matching matrix of indices
+    scol <- names(dfin)[1]
+    df_sub <- dfin[c(scol, "y", "obsNum")]
+    df_sub$yind <- 1:nrow(df_sub)
+    ywide <- reshape(df_sub, idvar=scol, timevar="obsNum", direction="wide")
 
-    expr <- substitute(acast(melt(dfin,
-                                  id.vars = c(dfnm[1],"obsNum"),
-                                  measure.vars = dfnm[3]),
-                             newvar ~ obsNum + variable),
-                       list(newvar=as.name(dfnm[1])))
-    y <- unname(eval(expr))
+    y <- unname(as.matrix(ywide[grep("^y\\.", names(ywide))]))
+    yind <- as.vector(t(as.matrix(ywide[grep("yind", names(ywide))])))
 
-    expr <- substitute(acast(melt(dfin,
-                                  id.vars = c(dfnm[1],"obsNum"),
-                                  measure.vars = dfnm[4:nV]),
-                             newvar ~ obsNum ~ variable),
-                       list(newvar=as.name(dfnm[1])))
-    obsvars <- eval(expr)
-    names(dimnames(obsvars)) <- list(dfnm[1], "obsNum", "variable")
-    which.date <- which(dimnames(obsvars)$variable == "Date")
-    dimnames(obsvars)$variable[which.date] <- "JulianDate"
-
-    obsvars.matlist <- arrToList(obsvars)
-    obsvars.veclist <- lapply(obsvars.matlist, function(x) as.vector(t(x)))
-
-    # Return any non-factors to the correct mode
-    if (length(nonfac) >= 1) {
-      classes <- sapply(dfin[, nonfac], class)
-      nonfac[which(nonfac == "Date")] <- "JulianDate"
-      for (i in seq_along(nonfac)) {
-        class(obsvars.veclist[[nonfac[i]]]) <- classes[i]
-      }
-    }
-
-    obsvars.df <- data.frame(obsvars.veclist)
+    #Reorder input data frame by y-index (=no factor issues)
+    #Also drop site/time/y/numObs cols
+    obsvars.df <- dfin[yind, -c(1:3, ncol(dfin)), drop=FALSE]
+    rownames(obsvars.df) <- NULL
 
     ## check for siteCovs
     obsNum <- ncol(y)
@@ -271,7 +236,8 @@ formatLong <- function(dfin, species = NULL, type, ...) {
         u
       }
     })
-    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
+    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)],
+                              stringsAsFactors=TRUE)
     if(nrow(siteCovs) == 0) siteCovs <- NULL
 
     ## remove sitecovs from obsvars
@@ -391,44 +357,25 @@ formatMult <- function(df.in)
         }
         df.obs <- rbind(df.obs,cbind(year = years[t],df.t))
     }
-    dfnm <- colnames(df.obs)
-    nV <- length(dfnm) - 1  # last variable is obsNum
 
-    ### Identify variables that are not factors
-    # Include julian date/visit in search as it is added back in later
-    fac <- sapply(df.obs[, c(3, 5:nV), drop = FALSE], is.factor)
-    nonfac <- names(df.obs[, c(3, 5:nV), drop = FALSE])[!fac]
+    names(df.obs)[4] <- "y"
+    scol <- names(df.obs)[2]
+    df_sub <- df.obs[c("year", scol, "y", "obsNum")]
+    df_sub$yind <- 1:nrow(df_sub)
 
-    # create y matrix using reshape
-    expr <- substitute(acast(melt(df.obs,
-                                  id.vars = c(dfnm[2],"year","obsNum"),
-                                  measure.vars = dfnm[4]),
-                             var1 ~ year + obsNum + variable),
-                       list(var1 = as.name(dfnm[2])))
-    y <- unname(eval(expr))
+    ywide <- reshape(df_sub, idvar=c(scol,"year"), timevar="obsNum",
+                     direction="wide")
+    ywide <- reshape(ywide, idvar=scol, timevar="year", direction="wide")
+    #Reshape goofs up the order
+    ywide <- ywide[order(ywide[,1]),]
 
-    # create obsdata with reshape
-    # include date (3rd col) and other measured vars
-    expr <- substitute(acast(melt(df.obs,
-                                  id.vars = c(dfnm[2],"year","obsNum"),
-                                  measure.vars = dfnm[c(3,5:nV)]),
-                             newvar ~ year + obsNum ~ variable),
-                       list(newvar=as.name(dfnm[2])))
-    obsvars <- eval(expr)
-    names(dimnames(obsvars)) <- list(dfnm[1], "obsNum", "variable")
+    y <- unname(as.matrix(ywide[grep("^y\\.", names(ywide))]))
+    yind <- as.vector(t(as.matrix(ywide[grep("yind", names(ywide))])))
 
-    obsvars.list <- arrToList(obsvars)
-
-    # Return any non-factors to the correct mode
-    if (length(nonfac) >= 1) {
-      classes <- apply(df.obs[, nonfac], 2, class)
-      for (i in 1:length(nonfac)) {
-        class(obsvars.list[[nonfac[i]]]) <- classes[i]
-      }
-    }
-
-    obsvars.list <- lapply(obsvars.list, function(x) as.vector(t(x)))
-    obsvars.df <- as.data.frame(obsvars.list)
+    #Reorder input data frame by y-index (=no factor issues)
+    #Also drop site/time/y/numObs cols
+    obsvars.df <- df.obs[yind, -c(1:2, 4, ncol(df.obs)), drop=FALSE]
+    rownames(obsvars.df) <- NULL
 
     ## check for siteCovs
     obsNum <- ncol(y)
@@ -452,7 +399,8 @@ formatMult <- function(df.in)
             u
         }
     })
-    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)])
+    siteCovs <- as.data.frame(siteCovs[!sapply(siteCovs, is.null)],
+                              stringsAsFactors=TRUE)
     if(nrow(siteCovs) == 0) siteCovs <- NULL
 
     ## only check non-sitecovs
@@ -479,8 +427,8 @@ formatMult <- function(df.in)
             u
         }
     })
-    yearlySiteCovs <- as.data.frame(yearlySiteCovs[!sapply(yearlySiteCovs,
-                                                           is.null)])
+    yearlySiteCovs <- as.data.frame(yearlySiteCovs[!sapply(yearlySiteCovs,is.null)],
+                                    stringsAsFactors=TRUE)
     if(nrow(yearlySiteCovs) == 0) yearlySiteCovs <- NULL
 
     # Extract siteCovs and yearlySiteCovs from obsvars
@@ -503,13 +451,14 @@ formatMult <- function(df.in)
 # to
 # site | spp1 | spp2 | ...
 
-sppLongToWide <- function(df.in)
-{
-    df.m <- melt(df.in, id = c("site", "spp"))
-    df.out <- dcast(df.m, site ~ spp, add.missing=T, fill = 0)
-    df.out <- df.out[order(df.out$site),]
-    df.out
-}
+#Not used anywhere
+#sppLongToWide <- function(df.in)
+#{
+#    df.m <- melt(df.in, id = c("site", "spp"))
+#    df.out <- dcast(df.m, site ~ spp, add.missing=T, fill = 0)
+#    df.out <- df.out[order(df.out$site),]
+#    df.out
+#}
 
 # get estimated psi from rn fit
 
@@ -769,3 +718,134 @@ name_to_ind <- function(x,name_list){
 
   out * absent_adjust 
 }
+
+#Inverts Hessian. Returns blank matrix with a warning on a failure.
+invertHessian <- function(optimOut, nparam, SE){
+  
+  blankMat <- matrix(NA, nparam, nparam)
+  if(!SE) return(blankMat)
+
+  tryCatch(solve(optimOut$hessian),
+    error=function(e){
+      warning("Hessian is singular. Try providing starting values or using fewer covariates.", call.=FALSE)
+      return(blankMat)
+  })
+}
+
+#Get u and a from distance sampling data 
+getUA <- function(umf){
+  
+  M <- numSites(umf)
+  J <- ncol(getY(umf)) / umf@numPrimary
+  db <- umf@dist.breaks
+  w <- diff(db)
+
+  u <- a <- matrix(NA, M, J)
+    switch(umf@survey,
+    line = {
+        for(i in 1:M) {
+            a[i,] <- umf@tlength[i] * w
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        },
+    point = {
+        for(i in 1:M) {
+            a[i, 1] <- pi*db[2]^2
+            for(j in 2:J)
+                a[i, j] <- pi*db[j+1]^2 - sum(a[i, 1:(j-1)])
+            u[i,] <- a[i,] / sum(a[i,])
+            }
+        })
+  list(a=a, u=u)
+
+}
+
+pHalfnorm <- function(sigma, survey, db, w, a){
+  J <- length(w)
+  cp <- rep(NA, J)
+  switch(survey,
+    line = {
+      f.0 <- 2 * dnorm(0, 0, sd=sigma)
+      int <- 2 * (pnorm(db[-1], 0, sd=sigma) - pnorm(db[-(J+1)], 0, sd=sigma))
+      cp[1:J] <- int / f.0 / w
+    },
+    point = {
+      for(j in 1:J) {
+        cp[j] <- integrate(grhn, db[j], db[j+1],
+                           sigma=sigma, rel.tol=1e-4)$value *
+                           2 * pi / a[j]
+      }
+    }
+  )
+  cp
+}
+
+pExp <- function(rate, survey, db, w, a){
+  J <- length(w)
+  cp <- rep(NA, J)
+  switch(survey,
+    line = {
+      for(j in 1:J) {
+        cp[j] <- integrate(gxexp, db[j], db[j+1],
+                           rate=rate, rel.tol=1e-4)$value / w[j]
+      }
+    },
+    point = {
+      for(j in 1:J) {
+        cp[j] <- integrate(grexp, db[j], db[j+1],
+                            rate=rate, rel.tol=1e-4)$value *
+                            2 * pi * a[j]
+      }
+    }
+  )
+  cp
+}
+
+pHazard <- function(shape, scale, survey, db, w, a){
+  J <- length(w)
+  cp <- rep(NA, J)
+  switch(survey,
+    line = {
+      for(j in 1:J) {
+        cp[j] <- integrate(gxhaz, db[j], db[j+1],
+                           shape=shape, scale=scale,
+                           rel.tol=1e-4)$value / w[j]
+      }
+    },
+    point = {
+      for(j in 1:J) {
+        cp[j] <- integrate(grhaz, db[j], db[j+1],
+                           shape = shape, scale=scale,
+                           rel.tol=1e-4)$value * 2 * pi / a[j]
+      }
+    })
+    cp
+}
+
+getDistCP <- function(keyfun, param1, param2, survey, db, w, a, u){
+  switch(keyfun,
+    halfnorm = {
+      cp <- pHalfnorm(param1, survey, db, w, a)
+    },
+    exp = {
+      cp <- pExp(param1, survey, db, w, a)
+    },
+    hazard = {
+      cp <- pHazard(param1, param2, survey, db, w, a)
+    },
+    uniform = {
+      cp <- rep(1, length(u))
+    })
+    cp * u
+}
+
+
+#Modified rmultinom for handling NAs
+rmultinom2 <- function(n, size, prob){
+  if(is.na(size)){
+    return(matrix(NA, length(prob), length(n)))
+  }
+  stats::rmultinom(n=n, size=size, prob=prob)
+
+}
+

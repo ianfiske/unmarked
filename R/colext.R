@@ -51,12 +51,7 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
     nP <- fm$nP; M <- fm$M; nDP <- fm$nDP; nGP <- fm$nGP
     nEP <- fm$nEP; nSP <- fm$nSP
 
-    if(se) {
-        tryCatch(covMat <- solve(opt$hessian),
-                 error=function(x) stop(simpleError("Hessian is singular.  Try providing starting values or using fewer covariates.")))
-    } else {
-        covMat <- matrix(NA, nP, nP)
-    }
+    covMat <- invertHessian(opt, nP, se) 
     ests <- opt$par
     names(ests) <- fm$mle$names
     fmAIC <- 2 * opt$value + 2 * nP # + 2*nP*(nP + 1)/(M - nP - 1)

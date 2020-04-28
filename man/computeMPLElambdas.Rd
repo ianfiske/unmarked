@@ -18,8 +18,6 @@ method="BFGS",engine=c("C", "R"))}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{engine}{Either "C" or "R" to use fast C++ code or native R
       code during the optimization.}
-    \item{\dots}{Additional arguments to optim, such as lower and upper
-      bounds}
   }
 
 \description{This function computes the weight for the MPLE penalty of Moreno & Lele (2010). }

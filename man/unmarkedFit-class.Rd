@@ -26,7 +26,7 @@
 \alias{residuals,unmarkedFitOccuTTD-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
-\alias{update,unmarkedFitPCO-method}
+\alias{update,unmarkedFitPCOorDSO-method}
 \alias{update,unmarkedFitGMM-method}
 \alias{update,unmarkedFitOccuMulti-method}
 \alias{update,unmarkedFitOccuMS-method}
@@ -46,6 +46,8 @@
 \alias{unmarkedFitOccuMS-class}
 \alias{unmarkedFitOccuTTD-class}
 \alias{unmarkedFitOccuRN.TTD-class}
+\alias{unmarkedFitDSO-class}
+\alias{unmarkedFitMMO-class}
 \alias{plot,profile,missing-method}
 \alias{show,unmarkedFit-method}
 \alias{summary,unmarkedFit-method}

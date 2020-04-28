@@ -415,17 +415,7 @@ if(engine =="C"){
 }
 #return(nll(starts))
 fm <- optim(starts, nll, method = method, hessian = se, ...)
-opt <- fm
-if(se) {
-  covMat <- tryCatch(solve(fm$hessian), error=function(x)
-        simpleError("Hessian is singular. Try using fewer covariates and supplying starting values."))
-    if(identical(class(covMat)[1], "simpleError")) {
-        warning(covMat$message)
-        covMat <- matrix(NA, nP, nP)
-        }
-    }
-else
-    covMat <- matrix(NA, nP, nP)
+covMat <- invertHessian(fm, nP, se)
 ests <- fm$par
 fmAIC <- 2 * fm$value + 2 * nP
 
@@ -468,7 +458,7 @@ if(identical(mixture, "NB"))
 umfit <- new("unmarkedFitGDS", fitType = "gdistsamp",
     call = match.call(), formula = form, formlist = formlist,
     data = data, estimates = estimateList, sitesRemoved = D$removed.sites,
-    AIC = fmAIC, opt = opt, negLogLike = fm$value, nllFun = nll,
+    AIC = fmAIC, opt = fm, negLogLike = fm$value, nllFun = nll,
     mixture=mixture, K=K, keyfun=keyfun, unitsOut=unitsOut, output=output)
 
 return(umfit)

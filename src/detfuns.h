@@ -11,7 +11,7 @@ class IntFunc {
     IntFunc() {}
     
     virtual double operator()(const double& x) const {
-      return(0);
+      return(x);
     }
 };
 

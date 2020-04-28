@@ -150,9 +150,11 @@ Dail, D. and L. Madsen (2011) Models for Estimating Abundance from
 Repeated Counts of an Open Metapopulation. \emph{Biometrics}. 67, pp
 577-587.
 
-Hostetler, J. A. and R. B. Chandler (in press) Improved State-space Models for
+Hostetler, J. A. and R. B. Chandler (2015) Improved State-space Models for
 Inference about Spatial and Temporal Variation in Abundance from Count Data.
-\emph{Ecology}.
+\emph{Ecology}
+96:1713-1723.
+
 }
 
 \author{Richard Chandler \email{rbchan@uga.edu} and Jeff Hostetler}
