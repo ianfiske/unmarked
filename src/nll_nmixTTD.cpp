@@ -1,9 +1,9 @@
-#include "nll_occuRN_TTD.h"
+#include "nll_nmixTTD.h"
 
 using namespace Rcpp;
 using namespace arma;
 
-SEXP nll_occuRN_TTD( SEXP beta_, SEXP y_, SEXP delta_,
+SEXP nll_nmixTTD( SEXP beta_, SEXP y_, SEXP delta_,
     SEXP W_, SEXP V_, SEXP pind_, SEXP dind_,
     SEXP tdist_, SEXP N_, SEXP J_, SEXP K_, SEXP naflag_){
 

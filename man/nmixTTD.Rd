@@ -1,8 +1,8 @@
-\name{occuRN.TTD}
-\alias{occuRN.TTD}
-\title{Fit Royle-Nichols Time-to-detection Models}
+\name{nmixTTD}
+\alias{nmixTTD}
+\title{Fit N-mixture Time-to-detection Models}
 
-\usage{occuRN.TTD(lambdaformula= ~1, detformula = ~ 1, data, K=25,
+\usage{nmixTTD(lambdaformula= ~1, detformula = ~ 1, data, K=25,
     ttdDist = c("exp", "weibull"), starts, method="BFGS", se=TRUE,
     engine = c("C", "R"), ...)}
 
@@ -26,9 +26,9 @@
   \item{\dots}{Additional arguments to optim, such as lower and upper bounds}
 }
 
-\description{Fit Royle-Nichols occupancy models with time-to-detection data.}
+\description{Fit N-mixture models with time-to-detection data.}
 
-\value{unmarkedFitOccuRN.TTD object describing model fit.}
+\value{unmarkedFitNmixTTD object describing model fit.}
 
 \details{
 
@@ -81,7 +81,7 @@ umf <- unmarkedFrameOccuTTD(y = ttd, surveyLength=5,
                             obsCovs = data.frame(covDet=as.vector(t(covDet))))
 
 #Fit model
-fit <- occuRN.TTD(~covDens, ~covDet, data=umf, K=max(N)+10)
+fit <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10)
 
 #Compare to truth
 cbind(coef(fit), c(log(mu.dens), beta1, log(mu.lambda), alpha1))

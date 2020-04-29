@@ -1,5 +1,5 @@
 
-occuRN.TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
+nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
                        ttdDist=c("exp", "weibull"),
                        starts, method = "BFGS",
                        se = TRUE, engine = c("C","R"), ...) {
@@ -98,7 +98,7 @@ occuRN.TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   }
 
   nll_C <- function(params){
-    .Call("nll_occuRN_TTD",
+    .Call("nll_nmixTTD",
           params, yvec, delta, W, V,
           range(abun_inds)-1, range(det_inds)-1,
           ttdDist, N, J, K, naflag,
@@ -150,7 +150,7 @@ occuRN.TTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
                                                     invlinkGrad = "exp")
   }
 
-  umfit <- new("unmarkedFitOccuRN.TTD", fitType = "occuRN.TTD",
+  umfit <- new("unmarkedFitNmixTTD", fitType = "nmixTTD",
                call = match.call(),
                formula = formula,
                lambdaformula = lambdaformula,
