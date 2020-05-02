@@ -20,7 +20,7 @@
         site level. This should have M rows and one column per covariate}
     \item{obsCovs}{Either a named list of \code{\link{data.frame}}s of 
         covariates that vary within sites, or a \code{\link{data.frame}} with 
-        RxJ rows in site-major order.}
+        MxJ rows in site-major order.}
     \item{maxOrder}{Optional; specify maximum interaction order. Defaults to 
         number of species (all possible interactions). Reducing this value may
         speed up creation of unmarked frame if you aren't interested in 
