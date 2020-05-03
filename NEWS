@@ -2,6 +2,14 @@ All changes can be found here:
 https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
+Version 1.0.0
+
+  o New functions 'distsampOpen' and 'multmixOpen' - open population versions of distsamp/gdistsamp and multinomPois/gmultmix
+  o Add 'predict' method for output from 'ranef', for generating posterior samples of the random effects and running a function on them
+  o Predict now correctly handles formulas containing functions and newdata with invalid factor levels
+  o Remove reshape2 dependency
+  o Bugfixes
+
 Version 0.13-1.9000
 
   o New 'makePiFun' function factories added to generate piFuns with required defaults
