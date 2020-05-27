@@ -125,6 +125,8 @@ setClass("unmarkedFitMPois",
 
 
 setClass("unmarkedFitOccuRN",
+    representation(
+      K = "numeric"),
     contains = "unmarkedFit")
 
 setClass("unmarkedFitMNmix",
