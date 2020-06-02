@@ -127,7 +127,7 @@ parmNames <- function(list.df) {
 csvToUMF <-
 function(filename, long=FALSE, type, species = NULL, ...)
 {
-  dfin <- read.csv(filename)
+  dfin <- read.csv(filename, stringsAsFactors=TRUE)
 
   if(long == TRUE) return(formatLong(dfin, species, type = type, ...))
   else return(formatWide(dfin, type = type, ...))
@@ -849,3 +849,25 @@ rmultinom2 <- function(n, size, prob){
 
 }
 
+#Functions to convert character columns to factors
+df_to_factor <- function(df, name="Input"){
+  if(is.null(df)) return(NULL)
+  stopifnot(inherits(df, "data.frame"))
+  char_cols <- sapply(df, is.character)
+  if(any(char_cols)){
+    warning(paste(name, "contains characters. Converting them to factors."), call.=FALSE)
+  }
+  to_change <- df[,char_cols, drop=FALSE]
+  df[,char_cols] <- lapply(to_change, as.factor)
+  df
+}
+
+umf_to_factor <- function(umf){
+  stopifnot(inherits(umf, "unmarkedFrame"))
+  umf@siteCovs <- df_to_factor(siteCovs(umf), "siteCovs")
+  umf@obsCovs <- df_to_factor(obsCovs(umf), "obsCovs")
+  if(methods::.hasSlot(umf, "yearlySiteCovs")){
+    umf@yearlySiteCovs <- df_to_factor(yearlySiteCovs(umf), "yearlySiteCovs") 
+  }
+  umf 
+}
