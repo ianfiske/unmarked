@@ -190,6 +190,7 @@ unmarkedFrame <- function(y, siteCovs = NULL, obsCovs = NULL, mapInfo,
 
     umf <- new("unmarkedFrame", y = y, obsCovs = obsCovs, siteCovs = siteCovs,
         mapInfo = mapInfo, obsToY = obsToY)
+    umf <- umf_to_factor(umf)
     return(umf)
 }
 
@@ -207,6 +208,7 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength,
                  siteCovs = siteCovs, dist.breaks = dist.breaks,
                  tlength = tlength, survey = survey, unitsIn = unitsIn,
                  obsToY = matrix(1, 1, ncol(y)))
+    umfds <- umf_to_factor(umfds)
     return(umfds)
 }
 
@@ -262,6 +264,7 @@ unmarkedFrameOccuMulti <- function(y, siteCovs = NULL, obsCovs = NULL,
   
   umfmo <- new("unmarkedFrameOccuMulti", y=y, ylist = ylist, fDesign=fDesign,
                obsCovs = obsCovs, siteCovs = siteCovs, obsToY = diag(J))
+  umfmo <- umf_to_factor(umfmo)
   return(umfmo)
 }
 
@@ -323,6 +326,7 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     umf@numPrimary <- numPrimary
     umf@yearlySiteCovs <- covsToDF(yearlySiteCovs, "yearlySiteCovs", 
                                    numPrimary, nrow(y))
+    umf <- umf_to_factor(umf)
     umf
 }
 
@@ -442,6 +446,7 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
     umf <- as(umf, "unmarkedFrameGMM")
     umf@piFun <- piFun
     umf@samplingMethod <- type
+    umf <- umf_to_factor(umf)
     umf
 }
 
@@ -511,6 +516,7 @@ unmarkedFrameDSO <- function(y, siteCovs=NULL, yearlySiteCovs=NULL, numPrimary,
     umf@unitsIn <- unitsIn
     umf@tlength <- tlength
     umf@primaryPeriod <- primaryPeriod
+    umf <- umf_to_factor(umf)
     umf
 }
 
@@ -557,6 +563,7 @@ unmarkedFrameGDS<- function(y, siteCovs, numPrimary,
     umf@survey <- survey
     umf@unitsIn <- unitsIn
     umf@tlength <- tlength
+    umf <- umf_to_factor(umf)
     umf
 }
 
@@ -615,6 +622,7 @@ unmarkedFrameGPC <- function(y, siteCovs=NULL, obsCovs=NULL, numPrimary,
     umf@yearlySiteCovs <- covsToDF(yearlySiteCovs, "yearlySiteCovs", 
                                    numPrimary, nrow(y))
     umf <- as(umf, "unmarkedFrameGPC")
+    umf <- umf_to_factor(umf)
     umf
 }
 
@@ -662,6 +670,7 @@ unmarkedFramePCO <- function(y, siteCovs = NULL, obsCovs = NULL,
     umf <- as(umf, "unmarkedFramePCO")
     umf@primaryPeriod <- primaryPeriod
     # There is no obsToY function
+    umf <- umf_to_factor(umf)
     return(umf)
 }
 

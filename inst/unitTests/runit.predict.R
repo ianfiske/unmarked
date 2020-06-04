@@ -95,6 +95,13 @@ test.pcountOpen <- function() {
     checkException(predict(fm3, type="psi"))
     checkEquals(E3.1[1,1], 2.472029, tol=1e-6)
 
+    #With newdata
+    siteCovs(umf1) <- data.frame(x=rnorm(10))
+    fm4 <- pcountOpen(~x, ~1, ~1, ~1, umf1, K=40, mixture="NB")
+    nd <- data.frame(x=1)
+    checkEqualsNumeric(predict(fm4, "lambda", newdata=nd)$Predicted, 
+                       2.427701, tol=1e-6)
+
 }
 
 test.occuMulti <- function() {

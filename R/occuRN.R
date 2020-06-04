@@ -70,7 +70,7 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
   nll_C <- function(params) {
       .Call("nll_occuRN",
           params,
-          X, X.offset, V, V.offset, K, 
+          X, X.offset, V, V.offset, K,
           yC, navecC, nP,nOP,
           PACKAGE = "unmarked")
   }
@@ -107,7 +107,7 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
   umfit <- new("unmarkedFitOccuRN", fitType = "occuRN",
       call = match.call(), formula = formula, data = data,
       sitesRemoved = designMats$removed.sites, estimates = estimateList,
-      AIC = fmAIC, opt = fm, negLogLike = fm$value, nllFun = nll)
+      AIC = fmAIC, opt = fm, negLogLike = fm$value, nllFun = nll, K = K)
 
   return(umfit)
 }

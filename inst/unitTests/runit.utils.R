@@ -233,3 +233,20 @@ test.invertHessian <- function(){
   checkEqualsNumeric(unmarked:::invertHessian(bad_opt, nrow(bad_opt$hessian), FALSE),
                      matrix(rep(NA,4), nrow=2))
 }
+
+test.csvToUMF <- function(){
+  
+  options(warn=2)
+  checkException(umf <- csvToUMF(system.file("csv","csv_factor_test.csv", 
+                                  package = "unmarked"), type="unmarkedFrameOccu"))
+  options(warn=0)
+
+  umf <- csvToUMF(system.file("csv","csv_factor_test.csv", 
+                  package = "unmarked"), type="unmarkedFrameOccu")
+
+  checkEquals(sapply(siteCovs(umf), class), c(elev="numeric", forest="factor"))
+  checkEquals(sapply(obsCovs(umf), class), c(wind="numeric", rain="factor"))
+  
+  df <- as(umf, "data.frame")
+  checkEqualsNumeric(dim(df), c(20,11)) 
+}

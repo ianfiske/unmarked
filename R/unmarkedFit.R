@@ -131,6 +131,8 @@ setClass("unmarkedFitMPois",
 
 
 setClass("unmarkedFitOccuRN",
+    representation(
+      K = "numeric"),
     contains = "unmarkedFit")
 
 setClass("unmarkedFitMNmix",
@@ -1153,7 +1155,7 @@ setMethod("predict", "unmarkedFitPCO",
                 })
             mm <- make_mod_matrix(pred_form, pred_data, newdata)
             X <- mm$X
-            offset <- X$offset
+            offset <- mm$offset
             },
         RasterStack = {
             lambdaformula <- formlist$lambdaformula

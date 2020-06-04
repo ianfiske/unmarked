@@ -764,6 +764,13 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     unlist(lapply(dm_list,colnames))
   }
 
+  #Get observations with NAs across design matrices
+  get_na_inds <- function(formulas, covs){
+    dm_list <- get_dm(formulas, covs, rep("", length(formulas)))
+    dm_mat <- Reduce(cbind, dm_list)
+    which(apply(dm_mat, 1, function(x) any(is.na(x))))
+  }
+
   site_covs <- get_covs(siteCovs(umf), N)
 
   y_site_covs <- get_covs(yearlySiteCovs(umf), N*T)
@@ -784,7 +791,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
     #Det
     ylong <- as.vector(t(y))
-    miss_det_cov <- which(apply(obs_covs,1,function(x) any(is.na(x))))
+    miss_det_cov <- get_na_inds(detformulas, obs_covs)
     miss_y <- which(is.na(ylong))
     new_na <- miss_det_cov[!miss_det_cov%in%miss_y]
     if(length(new_na)>0){
@@ -808,27 +815,28 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     if(length(all_y_na)>0){
       warning("Some sites removed because all y values in a primary period were missing") 
     }
-    miss_covs <- which(apply(site_covs,1,function(x) any(is.na(x))))
+    miss_covs <- get_na_inds(psiformulas, site_covs)
     if(length(miss_covs)>0){
       warning("Some sites removed because site covariates were missing") 
     }
     removed.sites <- sort(unique(c(all_y_na,miss_covs)))
     
     if(T>1){
-      if(any(is.na(y_site_covs))){
+      ysc_na <- get_na_inds(phiformulas, y_site_covs)
+      if(length(ysc_na) > 0){
         stop("Some sites are missing yearly site covs")
       }
     }
 
     if(length(removed.sites)>0){
       ymap <- as.vector(t(matrix(rep(1:N,each=R),ncol=R,byrow=T)))
-      site_covs <- site_covs[-removed.sites,]
-      obs_covs <- obs_covs[!ymap%in%removed.sites,]
+      site_covs <- site_covs[-removed.sites,,drop=FALSE]
+      obs_covs <- obs_covs[!ymap%in%removed.sites,,drop=FALSE]
       if(T>1){  
         ysc_map <- as.vector(t(matrix(rep(1:N,each=(T-1)),ncol=(T-1),byrow=T)))
-        y_site_covs <- y_site_covs[!ysc_map%in%removed.sites,]
+        y_site_covs <- y_site_covs[!ysc_map%in%removed.sites,,drop=FALSE]
       }
-      y <- y[-removed.sites,]
+      y <- y[-removed.sites,,drop=FALSE]
       N <- nrow(y)
     }
 

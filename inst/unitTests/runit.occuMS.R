@@ -283,20 +283,38 @@ test.occuMS.na <- function(){
   checkException(occuMS(rep('~1',3),rep('~1',2),data=umf,se=F))
   options(warn=1)
   
+  #Check that an NA in a variable not used in formulas doesn't drop
+  #entire record
   fit <- occuMS(rep('~1',3),rep('~1',2),data=umf,se=F)
-  checkEqualsNumeric(fit@AIC,49.91398,tol=1e-4)
-  checkEqualsNumeric(fit@sitesRemoved,c(1,5))
+  checkEqualsNumeric(fit@AIC,51.69428,tol=1e-4)
+  checkEqualsNumeric(fit@sitesRemoved, 1)
+  
+  #Now actually use variable with missing value
+  fit <- occuMS(rep('~1',3), c('~V1', '~1'), data=umf,se=F)
+  checkEqualsNumeric(fit@sitesRemoved, c(1,5))
 
   oc_na <- obs_covs
   oc_na[1,1] <- NA
   umf <- unmarkedFrameOccuMS(y=y,siteCovs=site_covs,obsCovs=oc_na)
 
+  #Variable with missing value not used
+  fit <- occuMS(rep('~1',3),rep('~1',2), data=umf,se=F)
+  checkEqualsNumeric(fit@AIC,53.19191,tol=1e-4)
+  
+  #Now actually used
   options(warn=2)
-  checkException(occuMS(rep('~1',3),rep('~1',2),umf,se=F))
+  checkException(occuMS(c('~V1',rep('~1',2)),rep('~1',2), data=umf,se=F))
   options(warn=1)
 
-  fit <- occuMS(rep('~1',3),rep('~1',2),data=umf,se=F)
-  checkEqualsNumeric(fit@AIC,53.06711,tol=1e-4)
+  fit <- occuMS(c('~V1',rep('~1',2)),rep('~1',2),data=umf,se=F)
+  checkEqualsNumeric(fit@AIC,55.03718,tol=1e-4)
+
+  #Check that fitting works when missing site cov and no obs covs
+  sc_na <- site_covs
+  sc_na[1,1] <- NA
+  umf <- unmarkedFrameOccuMS(y=y,siteCovs=sc_na)
+  fit <- occuMS(rep('~1',3),rep('~V1',2),data=umf,se=F)
+  checkEqualsNumeric(fit@sitesRemoved, 1)
 }
 
 test.occuMS.dynamic.multinomial <- function(){
