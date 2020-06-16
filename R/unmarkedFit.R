@@ -1137,7 +1137,7 @@ setMethod("predict", "unmarkedFitPCO",
                 },
                 omega = {
                   pred_data <- yearlydata
-                  pred_data <- omegaformula
+                  pred_form <- omegaformula
                 },
                 iota = {
                   pred_data <- yearlydata
