@@ -271,6 +271,13 @@ make_mod_matrix <- function(formula, data, newdata){
   list(X=X, offset=offset)
 }
 
+#Remove data in final year of yearlySiteCovs
+#then drop factor levels found only in that year
+droplevels_final_year <- function(dat, nsites, nprimary){
+  dat[seq(nprimary, nsites*nprimary, by=nprimary), ] <- NA
+  dat <- lapply(dat, function(x) x[,drop = TRUE])
+  as.data.frame(dat)
+}
 
 setMethod("predict", "unmarkedFit",
      function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
@@ -916,6 +923,8 @@ setMethod("predict", "unmarkedFitColExt",
         }
         obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
 
+        yearlydata <- droplevels_final_year(yearlydata, M, T)
+
         switch(type,
             psi = {
               pred_data <- sitedata
@@ -1125,6 +1134,8 @@ setMethod("predict", "unmarkedFitPCO",
                  obsCovs <- obsCovs(origdata)
             }
             obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
+
+            yearlydata <- droplevels_final_year(yearlydata, M, T)
 
             switch(type,
                 lambda = {
@@ -1346,6 +1357,7 @@ setMethod("predict", "unmarkedFitDSO",
                  yearlySiteCovs <- yearlySiteCovs(origdata)
             }
             yearlydata <- cbind(yearlySiteCovs, sitedata[rep(1:M, each = T), , drop = FALSE])
+            yearlydata <- droplevels_final_year(yearlydata, M, T)
 
             switch(type,
                 lambda = {
@@ -1564,6 +1576,8 @@ setMethod("predict", "unmarkedFitGMM",
          obsCovs <- obsCovs(origdata)
     }
     obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
+
+    yearlydata <- droplevels_final_year(yearlydata, M, T)
 
     if(inherits(newdata, "unmarkedFrame"))
       cls <- "unmarkedFrame"

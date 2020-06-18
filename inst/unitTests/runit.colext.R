@@ -73,3 +73,32 @@ test.colext <- function()
 
 
 }
+
+test.colext.predict <- function(){
+
+    nsites <- 6
+    nyr <- 4
+    nrep <- 2
+    y <- matrix(c(
+        1,0, 1,1, 0,0, 0,0,
+        1,1, 0,0, 0,0, 0,0,
+        0,0, 0,0, 0,0, 0,0,
+        0,0, 1,1, 0,0, 0,0,
+        1,1, 1,0, 0,1, 0,0,
+        0,0, 0,0, 0,0, 1,1), nrow=nsites, ncol=nyr*nrep, byrow=TRUE)
+  
+    ysc <- data.frame(year=rep(c("1","2","3","4"), 6))
+
+    umf1 <- unmarkedMultFrame(y=y, numPrimary=4, yearlySiteCovs=ysc)
+    fm1 <- colext(~1, ~year, ~1, ~year, umf1)
+
+    nd1 <- data.frame(year=c("1","2","3","4"))
+    checkException(predict(fm1, "col", nd1))
+
+    nd2 <- data.frame(year=c("1","2","3"))
+    pr_gam <- predict(fm1, "col", nd2)
+    checkTrue(inherits(pr_gam, "data.frame"))
+
+    pr_det <- predict(fm1, "det", nd1)
+    checkTrue(inherits(pr_det, "data.frame"))
+}
