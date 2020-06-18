@@ -1029,7 +1029,7 @@ setMethod("plot", c(x="unmarkedFrame", y="missing"),
     y$group <- as.factor(round(seq(1,panels,length=M)))
     y2 <- reshape(y, idvar=c("site", "group"), varying=list(1:ncol(getY(x))),
               v.names="value", direction="long")
-    y2$variable <- factor(paste("obs", y2$time))
+    y2$variable <- factor(paste("obs", y2$time), levels=colnames(y))
     if(missing(colorkey))
         colorkey <- list(at=0:(ym+1), labels=list(labels=as.character(0:ym),
             at=(0:ym)+0.5))
@@ -1052,7 +1052,7 @@ setMethod("plot", c(x="unmarkedFrameOccuMulti", y="missing"),
     y$species <- as.factor(rep(names(x@ylist),each=M))
     y2 <- reshape(y, idvar=c("site", "species"), varying=list(1:obsNum(x)),
               v.names="value", direction="long")
-    y2$variable <- factor(paste("obs", y2$time))
+    y2$variable <- factor(paste("obs", y2$time), levels=colnames(y))
     if(missing(colorkey))
         colorkey <- list(at=0:(ym+1), labels=list(labels=as.character(0:ym),
             at=(0:ym)+0.5))
