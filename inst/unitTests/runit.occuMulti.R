@@ -1,11 +1,11 @@
 test.occuMulti.fit.simple.1 <- function() {
-  
+
   y <- list(matrix(rep(1,10),5,2),
             matrix(rep(1,10),5,2))
   umf <- unmarkedFrameOccuMulti(y = y)
   fm <- occuMulti(detformulas=rep("~1",2),
                   stateformulas=rep("~1",3), data = umf, se=FALSE)
-  
+
   #Probably should not be calling predict here b/c unit test
   #but complicated to get actual occupancy prob otherwise
   occ <- predict(fm,'state')$Predicted[1,1]
@@ -14,7 +14,7 @@ test.occuMulti.fit.simple.1 <- function() {
   detlist <- predict(fm,'det')
   det <- sapply(detlist,function(x) x[1,1])
   checkEqualsNumeric(det, rep(1,length(detlist)), tolerance= 1e-4)
-  
+
   #Check fitList
   fl <- fitList(fm, fm)
   checkEquals(class(fl)[1],"unmarkedFitList")
@@ -28,7 +28,7 @@ test.occuMulti.fit.simple.0 <- function() {
   umf <- unmarkedFrameOccuMulti(y = y)
   fm <- occuMulti(detformulas=rep("~1",2),
                   stateformulas=rep("~1",3), data = umf, se=FALSE)
-  
+
   occ <- predict(fm,'state')$Predicted[1,1]
   checkEqualsNumeric(occ,0, tolerance = 1e-4)
 
@@ -43,13 +43,13 @@ test.occuMulti.fit.covs <- function() {
 
   y <- list(matrix(rep(0:1,10),5,2),
             matrix(rep(0:1,10),5,2))
-  
+
   set.seed(123)
   N <- dim(y[[1]])[1]
   J <- dim(y[[1]])[2]
   occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
   names(occ_covs) <- paste('occ_cov',1:3,sep='')
-  
+
   det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
   names(det_covs) <- paste('det_cov',1:2,sep='')
 
@@ -58,11 +58,11 @@ test.occuMulti.fit.covs <- function() {
   detformulas <- c('~det_cov1','~det_cov2')
 
   fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
- 
+
   occ <- fm['state']
   det <- fm['det']
 
-  checkEqualsNumeric(coef(occ), c(5.36630,0.79876,5.45492,-0.868451,9.21242,1.14561), 
+  checkEqualsNumeric(coef(occ), c(5.36630,0.79876,5.45492,-0.868451,9.21242,1.14561),
                      tolerance = 1e-4)
   checkEqualsNumeric(coef(det), c(-0.27586,-0.81837,-0.09537,0.42334), tolerance = 1e-4)
 
@@ -81,38 +81,38 @@ test.occuMulti.fit.covs <- function() {
 }
 
 test.occuMulti.fit.NA <- function() {
-  
+
   y <- list(matrix(rep(0:1,10),5,2),
             matrix(rep(0:1,10),5,2))
-  
+
   set.seed(456)
   N <- dim(y[[1]])[1]
   J <- dim(y[[1]])[2]
   occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
   names(occ_covs) <- paste('occ_cov',1:3,sep='')
-  
+
   det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
   names(det_covs) <- paste('det_cov',1:2,sep='')
 
   stateformulas <- c('~occ_cov1','~occ_cov2','~occ_cov3')
   detformulas <- c('~det_cov1','~det_cov2')
-  
+
   #Check error thrown when missing site covariates
   occ_covsNA <- occ_covs
   occ_covsNA[1,1] <- NA
   umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covsNA, obsCovs = det_covs)
   checkException(occuMulti(detformulas, stateformulas, data=umf, se=FALSE))
-  
+
   #Check for warning when missing detection
   yna <- y
   yna[[1]][1,1] <- NA
   umf <- unmarkedFrameOccuMulti(y = yna, siteCovs = occ_covs, obsCovs = det_covs)
-  
+
   options(warn=2)
   checkException(occuMulti(detformulas, stateformulas, data=umf, se=FALSE))
-  
+
   options(warn=1)
-  
+
   #Check correct answer given when missing detection
   fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
   checkEqualsNumeric(coef(fm)[c(1,7)], c(6.63207,0.35323), tol= 1e-4)
@@ -122,7 +122,7 @@ test.occuMulti.fit.NA <- function() {
 
   res <- residuals(fm)
   checkTrue(is.na(res[[1]][1,1]))
-  
+
   #Check error thrown when all detections are missing
   yna[[1]][1,] <- NA
   umf <- unmarkedFrameOccuMulti(y = yna, siteCovs = occ_covs, obsCovs = det_covs)
@@ -141,13 +141,13 @@ test.occuMulti.fit.fixed0 <- function(){
 
   y <- list(matrix(rep(0:1,10),5,2),
             matrix(rep(0:1,10),5,2))
-  
+
   set.seed(123)
   N <- dim(y[[1]])[1]
   J <- dim(y[[1]])[2]
   occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
   names(occ_covs) <- paste('occ_cov',1:3,sep='')
-  
+
   det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
   names(det_covs) <- paste('det_cov',1:2,sep='')
 
@@ -157,7 +157,7 @@ test.occuMulti.fit.fixed0 <- function(){
   umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
 
   fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
-  
+
   occ <- fm['state']
   checkEqualsNumeric(length(coef(occ)),4)
   checkEqualsNumeric(coef(occ),c(12.26043,0.61183,12.41110,0.18764),tol=1e-4)
@@ -165,7 +165,7 @@ test.occuMulti.fit.fixed0 <- function(){
 
   stateformulas <- c('~occ_cov1','~occ_cov2')
   fm2 <- occuMulti(detformulas, stateformulas, data = umf, maxOrder=1,se=FALSE)
-  
+
   occ <- fm2['state']
   checkEqualsNumeric(length(coef(occ)),4)
   checkEqualsNumeric(coef(occ),c(12.26043,0.61183,12.41110,0.18764),tol=1e-4)
@@ -173,16 +173,16 @@ test.occuMulti.fit.fixed0 <- function(){
 }
 
 test.occuMulti.predict <- function(){
- 
+
   set.seed(123)
   y <- list(matrix(rbinom(40,1,0.2),20,2),
             matrix(rbinom(40,1,0.3),20,2))
-  
+
   N <- dim(y[[1]])[1]
   J <- dim(y[[1]])[2]
   occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
   names(occ_covs) <- paste('occ_cov',1:3,sep='')
-  
+
   det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
   names(det_covs) <- paste('det_cov',1:2,sep='')
 
@@ -199,7 +199,7 @@ test.occuMulti.predict <- function(){
   prDet <- predict(fm, type='det')
   checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
                      c(0.190485,0.0945992,0.00507,0.37589566), tol=1e-4)
- 
+
   #Check with newdata
   nd <- siteCovs(umf)[1:2,]
   pr_nd <- predict(fm, type='state', newdata=nd)$Predicted
@@ -237,16 +237,16 @@ test.occuMulti.predict <- function(){
 }
 
 test.occuMulti.predict.NA <- function(){
- 
+
   set.seed(123)
   y <- list(matrix(rbinom(40,1,0.2),20,2),
             matrix(rbinom(40,1,0.3),20,2))
-  
+
   N <- dim(y[[1]])[1]
   J <- dim(y[[1]])[2]
   occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
   names(occ_covs) <- paste('occ_cov',1:3,sep='')
-  
+
   det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
   names(det_covs) <- paste('det_cov',1:2,sep='')
   det_covs[1,1] <- NA
@@ -338,4 +338,9 @@ test.occuMulti.predict.complexFormulas <- function(){
   nd4 <- data.frame(occ_fac=factor(c('a','d'),levels=c('a','d')))
   checkException(predict(fm, type='state', newdata=nd4, se=F))
 
+  #Check that predicting detection also works
+  nd5 <- data.frame(det_cov1 = rnorm(5))
+  pr_nd5 <- predict(fm, type='det', newdata=nd5)
+  checkEqualsNumeric(sapply(pr_nd5, nrow), c(5,5))
+  checkEqualsNumeric(pr_nd5$sp1$Predicted[1], 0.1680881)
 }
