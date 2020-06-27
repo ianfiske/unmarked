@@ -1577,8 +1577,6 @@ setMethod("predict", "unmarkedFitGMM",
     }
     obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
 
-    yearlydata <- droplevels_final_year(yearlydata, M, T)
-
     if(inherits(newdata, "unmarkedFrame"))
       cls <- "unmarkedFrame"
     else
@@ -2565,7 +2563,7 @@ fittedOpenN <- function(object, K, na.rm=FALSE)
 
 setMethod("fitted", "unmarkedFitPCO",
     function(object, K, na.rm = FALSE)
-{    
+{
     N <- fittedOpenN(object, K, na.rm)
     p <- getP(object, na.rm)
     N * p
@@ -3755,7 +3753,7 @@ setMethod("getP", "unmarkedFitDSO",
       sig <- predict(object, type="det")$Predicted
       sig <- matrix(sig, M, T, byrow=TRUE)
     }
-    
+
     scale <- 0.0
     if(object@keyfun == "hazard"){
       scale <- backTransform(object, type="scale")@estimate
@@ -3765,7 +3763,7 @@ setMethod("getP", "unmarkedFitDSO",
     w <- diff(db)
     ua <- getUA(umf)
     u <- ua$u; a <- ua$a
-    
+
     cp <- array(NA, c(M, J, T))
     for (i in 1:M){
       for (t in 1:T){
@@ -3815,7 +3813,7 @@ setMethod("getP", "unmarkedFitMMO", function(object, na.rm = TRUE)
   J <- ncol(getY(umf)) / T
 
   pmat <- aperm(array(plong, c(J,T,M)), c(3,1,2))
-  
+
   pout <- array(NA, c(M,J,T))
   for (t in 1:T){
     pout[,,t] <- do.call(umf@piFun, list(p=pmat[,,t]))
@@ -4167,7 +4165,7 @@ setMethod("simulate", "unmarkedFitPCO",
     p <- getP(object, na.rm = na.rm)
     simList <- list()
     for(s in 1:nsim) {
-        y.sim <- matrix(NA, M, J*T)  
+        y.sim <- matrix(NA, M, J*T)
         N <- simOpenN(object, na.rm)
         N <- N[,rep(1:T, each=J)]
         y.sim[!y.na] <- rbinom(sum(!y.na), N[!y.na], p[!y.na])
@@ -4199,9 +4197,9 @@ multinomOpenSim <- function(object, nsim, seed, na.rm){
   }
 
   for(s in 1:nsim) {
-    y.sim <- matrix(NA, M, J*T)  
+    y.sim <- matrix(NA, M, J*T)
     N <- simOpenN(object, na.rm)
-        
+
     for(i in 1:M) {
       yst <- 1
         for(t in 1:T) {
