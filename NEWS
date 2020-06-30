@@ -2,6 +2,11 @@ All changes can be found here:
 https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
+Version 1.0.1
+  o Fix LTO mismatches
+  o Automatically convert characters to factors in unmarkedFrames
+  o Many bugfixes, mainly related to predict()
+
 Version 1.0.0
 
   o New functions 'distsampOpen' and 'multmixOpen' - open population versions of distsamp/gdistsamp and multinomPois/gmultmix
