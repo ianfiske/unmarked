@@ -13,7 +13,7 @@ test.unmarkedFrameOccuMS <- function() {
                   c(0,0,0),
                   c(1-p11,p11,0),
                   c(1-p12-p22,p12,p22))
-  
+
     if(z[n]>0){
       y[n,] <- sample(0:2, J, replace=T, probs)
     }
@@ -27,7 +27,7 @@ test.unmarkedFrameOccuMS <- function() {
 
   checkEquals(class(umf)[1], "unmarkedFrameOccuMS")
   checkEqualsNumeric(umf@numStates,3)
- 
+
   umf_sub1 <- umf[1:20,]
   checkEqualsNumeric(numSites(umf_sub1),20)
   checkEquals(class(umf_sub1)[1], "unmarkedFrameOccuMS")
@@ -37,7 +37,7 @@ test.unmarkedFrameOccuMS <- function() {
 }
 
 test.occuMS.multinom.fit <- function(){
-  
+
   #Simulate data
   set.seed(123)
   N <- 50; J <- 5; S <- 3
@@ -51,7 +51,7 @@ test.occuMS.multinom.fit <- function(){
   for (n in 1:N){
     lp[n,2] <- exp(a1+b1*site_covs[n,1])
     lp[n,3] <- exp(a2+b2*site_covs[n,2])
-    lp[n,1] <- 1  
+    lp[n,1] <- 1
   }
   psi_mat <- lp/rowSums(lp)
 
@@ -62,7 +62,7 @@ test.occuMS.multinom.fit <- function(){
 
   probs_raw <- matrix(c(1,0,0,1,exp(p11),0,1,exp(p12),exp(p22)),nrow=3,byrow=T)
   probs_raw <- probs_raw/rowSums(probs_raw)
-  
+
   y <- matrix(0,nrow=N,ncol=J)
   for (n in 1:N){
 
@@ -83,18 +83,18 @@ test.occuMS.multinom.fit <- function(){
   fit_R <- occuMS(detformulas, stateformulas, data=umf, engine="R")
   fit_C <- occuMS(detformulas, stateformulas, data=umf, engine="C")
   checkEqualsNumeric(coef(fit_R),coef(fit_C))
-  checkEqualsNumeric(coef(fit_C), c(-0.229630097798681, 0.67830519052921, 
-                                    -0.0220063419144645,-0.661255952886156, 
-                                    -0.554553495521214, 0.510982412286882, 
+  checkEqualsNumeric(coef(fit_C), c(-0.229630097798681, 0.67830519052921,
+                                    -0.0220063419144645,-0.661255952886156,
+                                    -0.554553495521214, 0.510982412286882,
                                     -1.61783147496373, -1.50645934199995))
   #check state predict
   pr <- predict(fit_C, "psi")
   checkEqualsNumeric(length(pr),2)
   checkEqualsNumeric(sapply(pr,function(x) x[1,1]),c(0.22922,0.34897),tol=1e-4)
   checkEquals(names(pr),c('psi[1]','psi[2]'))
-  
+
   #Check bootstrapped error for predict
-  checkEqualsNumeric(as.numeric(pr[[1]][1,]), 
+  checkEqualsNumeric(as.numeric(pr[[1]][1,]),
                      c(0.2292279,0.1122459,0.07926078,0.5321636), tol=1e-4)
 
   #det
@@ -104,7 +104,7 @@ test.occuMS.multinom.fit <- function(){
                      c(0.285455,0.13966,0.156119),tol=1e-4)
   checkEquals(names(pr),c('p[11]','p[12]','p[22]'))
 
-  checkEqualsNumeric(as.numeric(pr[[1]][1,]), 
+  checkEqualsNumeric(as.numeric(pr[[1]][1,]),
                      c(0.285455,0.069013,0.168485,0.4447024), tol=1e-4)
 
   #with new data (some missing)
@@ -146,7 +146,7 @@ test.occuMS.multinom.fit <- function(){
 
 
 test.occuMS.condbinom.fit <- function(){
-  
+
   #Simulate data
   set.seed(123)
   N <- 50; J <- 5; S <- 3
@@ -183,7 +183,7 @@ test.occuMS.condbinom.fit <- function(){
                   c(1,0,0),
                   c(1-p11,p11,0),
                   c(1-p12,p12*(1-p22),p12*p22))
-  
+
     if(z[n]>0){
       y_cb[n,] <- sample(0:2, J, replace=T, probs)
     }
@@ -195,27 +195,27 @@ test.occuMS.condbinom.fit <- function(){
 
   stateformulas <- c('~V1','~V2')
   detformulas <- c('~V1','~1','~1')
-  fit_R <- occuMS(detformulas, stateformulas, data=umf, 
+  fit_R <- occuMS(detformulas, stateformulas, data=umf,
                   parameterization = "condbinom", engine="R")
-  fit_C <- occuMS(detformulas, stateformulas, data=umf, 
+  fit_C <- occuMS(detformulas, stateformulas, data=umf,
                   parameterization = "condbinom", engine="C")
   checkEqualsNumeric(coef(fit_R),coef(fit_C))
-  checkEqualsNumeric(coef(fit_C), c(-0.5162987961667, 0.274284662180707, 
+  checkEqualsNumeric(coef(fit_C), c(-0.5162987961667, 0.274284662180707,
                                     -0.272563632366871, -0.85606615784698,
-                                    -0.701816583657173, -0.104933853512668, 
+                                    -0.701816583657173, -0.104933853512668,
                                     -0.21453135304912, 1.35756285443909))
 
   #check state predict
   pr <- predict(fit_C, "psi")
   checkEqualsNumeric(length(pr),2)
-  checkEqualsNumeric(as.numeric(pr[[1]][1,]), 
+  checkEqualsNumeric(as.numeric(pr[[1]][1,]),
                      c(0.33849,0.08951,0.16304,0.51393), tol=1e-4)
   checkEquals(names(pr),c('psi','R'))
-  
+
   #det
   pr <- predict(fit_C, "det")
   checkEqualsNumeric(length(pr),3)
-  checkEqualsNumeric(as.numeric(pr[[1]][1,]), 
+  checkEqualsNumeric(as.numeric(pr[[1]][1,]),
                      c(0.34812,0.090899,0.169970,0.526288), tol=1e-4)
   checkEquals(names(pr),c('p[1]','p[2]','delta'))
 
@@ -238,7 +238,7 @@ test.occuMS.condbinom.fit <- function(){
 }
 
 test.occuMS.na <- function(){
-  
+
   set.seed(123)
   N <- 10; J <- 3; S <- 3
   psi <- c(0.5,0.3,0.2)
@@ -253,7 +253,7 @@ test.occuMS.na <- function(){
                   c(0,0,0),
                   c(1-p11,p11,0),
                   c(1-p12-p22,p12,p22))
-  
+
     if(z[n]>0){
       y[n,] <- sample(0:2, J, replace=T, probs)
     }
@@ -262,7 +262,7 @@ test.occuMS.na <- function(){
 
   site_covs <- as.data.frame(matrix(rnorm(N*2),ncol=2))
   obs_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
-  
+
   umf <- unmarkedFrameOccuMS(y=y,siteCovs=site_covs,obsCovs=obs_covs)
   fit <- occuMS(rep('~1',3),rep('~1',2),data=umf,se=F)
   checkEqualsNumeric(fit@AIC,53.19191,tol=1e-4)
@@ -278,17 +278,17 @@ test.occuMS.na <- function(){
   sc_na <- site_covs
   sc_na[5,1] <- NA
   umf <- unmarkedFrameOccuMS(y=yna,siteCovs=sc_na,obsCovs=obs_covs)
-  
+
   options(warn=2)
   checkException(occuMS(rep('~1',3),rep('~1',2),data=umf,se=F))
   options(warn=1)
-  
+
   #Check that an NA in a variable not used in formulas doesn't drop
   #entire record
   fit <- occuMS(rep('~1',3),rep('~1',2),data=umf,se=F)
   checkEqualsNumeric(fit@AIC,51.69428,tol=1e-4)
   checkEqualsNumeric(fit@sitesRemoved, 1)
-  
+
   #Now actually use variable with missing value
   fit <- occuMS(rep('~1',3), c('~V1', '~1'), data=umf,se=F)
   checkEqualsNumeric(fit@sitesRemoved, c(1,5))
@@ -300,7 +300,7 @@ test.occuMS.na <- function(){
   #Variable with missing value not used
   fit <- occuMS(rep('~1',3),rep('~1',2), data=umf,se=F)
   checkEqualsNumeric(fit@AIC,53.19191,tol=1e-4)
-  
+
   #Now actually used
   options(warn=2)
   checkException(occuMS(c('~V1',rep('~1',2)),rep('~1',2), data=umf,se=F))
@@ -335,7 +335,7 @@ b <- c(
   #Occupancy parameters
   a1=-0.5, b1=1, a2=-0.6, b2=-0.7,
   #Transition prob (phi) parameters
-  phi01=0.7, phi01_cov=-0.5, phi02=-0.5, phi10=1.2, 
+  phi01=0.7, phi01_cov=-0.5, phi02=-0.5, phi10=1.2,
   phi12=0.3, phi12_cov=1.1, phi20=-0.3, phi21=1.4, phi21_cov=0,
   #Detection prob parameters
   p11=-0.4, p11_cov=0, p12=-1.09, p22=-0.84
@@ -382,7 +382,7 @@ for (n in 1:N){
 #Raw p probs
 p_mat <- matrix(c(1, 0, 0, #p|z=0
                   1, exp(b[14]), 0, #p|z=1
-                  1, exp(b[16]), exp(b[17])), #p|z=2 
+                  1, exp(b[16]), exp(b[17])), #p|z=2
                 nrow=S, byrow=T)
 p_mat <- p_mat/rowSums(p_mat)
 
@@ -435,6 +435,14 @@ pr_phi <- sapply(pr_phi, function(x) x$Predicted[1])
 checkEqualsNumeric(pr_phi,
                    c(0.055117,0.57195,0.931102,0.02733675,
                      0.2192255,0.1819882),tol=1e-4)
+
+#Check predicting phi with newdata works
+nd <- data.frame(V1=c(1,2), V2=1)
+pr_nd <- predict(fitC, "phi", newdata=nd)
+checkEqualsNumeric(length(pr_nd), 6)
+checkEqualsNumeric(sapply(pr_nd, nrow), rep(2,6))
+#No differing covariates on either phi value so estimates should be the same
+checkEqualsNumeric(pr_nd[[3]][1,1], pr_nd[[3]][2,1])
 
 umf_new <- umf
 umf_new@y[1,1:3] <- NA
@@ -496,14 +504,14 @@ for (n in 1:N){
   phi[1,] <- c(1-plogis(phi0),plogis(phi0)*(1-plogis(R0)),plogis(phi0)*plogis(R0))
   phi[2,] <- c(1-plogis(phi1),plogis(phi1)*(1-plogis(R1)),plogis(phi1)*plogis(R1))
   phi[3,] <- c(1-plogis(phi2),plogis(phi2)*(1-plogis(R2)),plogis(phi2)*plogis(R2))
-  
+
 
   #p11 = p1; p12 = p2; p22 = delta
   probs <- switch(z[n]+1,
                   c(1,0,0),
                   c(1-p11,p11,0),
                   c(1-p12,p12*(1-p22),p12*p22))
-  
+
   if(z[n]>0){
     y_cb[n,1:J] <- sample(0:2, J, replace=T, probs)
   }
@@ -532,7 +540,7 @@ stateformulas <- c('~V1','~V2')
 detformulas <- c('~V1','~1','~1')
 phiformulas<- rep('~1',6)
 
-fit_cbC <- occuMS(detformulas=detformulas, psiformulas=stateformulas, 
+fit_cbC <- occuMS(detformulas=detformulas, psiformulas=stateformulas,
               phiformulas=phiformulas,
               parameterization='condbinom',
               data=umf, se=T,engine="C")
@@ -540,7 +548,7 @@ fit_cbC <- occuMS(detformulas=detformulas, psiformulas=stateformulas,
 checkEqualsNumeric(length(coef(fit_cbC)),14)
 checkEqualsNumeric(fit_cbC@AIC,820.0645,tol=1e-4)
 
-fit_cbR <- occuMS(detformulas=detformulas, psiformulas=stateformulas, 
+fit_cbR <- occuMS(detformulas=detformulas, psiformulas=stateformulas,
               phiformulas=phiformulas,
               parameterization='condbinom',
               data=umf, se=T,engine="R")
@@ -559,7 +567,7 @@ checkEqualsNumeric(pr_phi,
 }
 
 test.occuMS.predit.complexFormulas <- function(){
-  
+
   #Simulate data
   set.seed(123)
   N <- 50; J <- 5; S <- 3
@@ -573,7 +581,7 @@ test.occuMS.predit.complexFormulas <- function(){
   for (n in 1:N){
     lp[n,2] <- exp(a1+b1*site_covs[n,1])
     lp[n,3] <- exp(a2+b2*site_covs[n,2])
-    lp[n,1] <- 1  
+    lp[n,1] <- 1
   }
   psi_mat <- lp/rowSums(lp)
 
@@ -584,7 +592,7 @@ test.occuMS.predit.complexFormulas <- function(){
 
   probs_raw <- matrix(c(1,0,0,1,exp(p11),0,1,exp(p12),exp(p22)),nrow=3,byrow=T)
   probs_raw <- probs_raw/rowSums(probs_raw)
-  
+
   y <- matrix(0,nrow=N,ncol=J)
   for (n in 1:N){
 
@@ -616,7 +624,7 @@ test.occuMS.predit.complexFormulas <- function(){
 
   checkEqualsNumeric(pr_nd[1:2,], pr_nd2)
   checkEqualsNumeric(pr_nd[c(1,1),], pr_nd3)
-  
+
   #Check for factor level handling
   site_covs2 <- as.data.frame(site_covs)
   site_covs2$occ_fac <- factor(sample(c('a','b','c'),N,replace=T),

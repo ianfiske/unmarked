@@ -780,10 +780,13 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
   ## in order to drop factor levels that only appear in last year,
   ## replace last year with NAs and use drop=TRUE
-  y_site_covs[seq(T,N*T,by=T),] <- NA
-  y_site_covs <- as.data.frame(lapply(y_site_covs, function(x) x[,drop = TRUE]))
-  #Actually just remove last year
-  y_site_covs <- y_site_covs[-seq(T,N*T,by=T),,drop=FALSE]
+  ## this should only be done when not predicting
+  if(is.null(old_fit)){
+    y_site_covs[seq(T,N*T,by=T),] <- NA
+    y_site_covs <- as.data.frame(lapply(y_site_covs, function(x) x[,drop = TRUE]))
+    #Actually just remove last year
+    y_site_covs <- y_site_covs[-seq(T,N*T,by=T),,drop=FALSE]
+  }
 
   obs_covs <- get_covs(obsCovs(umf), N*R)
   y <- getY(umf)
