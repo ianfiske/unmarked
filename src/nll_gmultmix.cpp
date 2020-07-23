@@ -9,10 +9,10 @@ using namespace arma;
 //}
 
 
-SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR, 
-    SEXP XlamR, SEXP Xlam_offsetR, SEXP XphiR, SEXP Xphi_offsetR, SEXP XdetR, 
-    SEXP Xdet_offsetR, SEXP kR, SEXP lfac_kR, SEXP lfac_kmytR, SEXP kmytR, 
-    SEXP yR, SEXP naflagR, SEXP finR, SEXP nPr, SEXP nLPr, SEXP nPPr, SEXP nDPr){
+SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
+    SEXP XlamR, SEXP Xlam_offsetR, SEXP XphiR, SEXP Xphi_offsetR, SEXP XdetR,
+    SEXP Xdet_offsetR, SEXP kR, SEXP lfac_kR, SEXP lfac_kmytR, SEXP kmytR,
+    SEXP yR, SEXP naflagR, SEXP finR, SEXP nPr, SEXP nLPr, SEXP nPPr, SEXP nDPr, SEXP threadsR){
 
   //Inputs
   vec beta = as<vec>(betaR);
@@ -40,24 +40,26 @@ SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
   int nPP = as<int>(nPPr);
   int nDP = as<int>(nDPr);
 
+  int nthreads = as<int>(threadsR);
+  omp_set_num_threads(nthreads);
+
   int M = Xlam.n_rows;
   vec lambda = exp( Xlam * beta.subvec(0, (nLP - 1) ) + Xlam_offset );
-  
+
   int T = Xphi.n_rows / M;
   vec phi = ones(M*T);
   if(T > 1){
     phi = inv_logit( Xphi * beta.subvec(nLP, (nLP+nPP-1)) + Xphi_offset);
   }
-  
+
   int J = Xdet.n_rows / (M * T);
-  int R = y.size() / (M * T); 
+  int R = y.size() / (M * T);
   vec p = inv_logit( Xdet * beta.subvec((nLP+nPP),(nLP+nPP+nDP-1)) + Xdet_offset);
-  
+
   int K = k.size();
-  int t_ind = 0;
-  int y_ind = 0;
-  int p_ind = 0;
+
   vec ll(M);
+  #pragma omp parallel for if(nthreads > 1)
   for (int m=0; m<M; m++){
     vec f(K);
     if(mixture == "P"){
@@ -66,11 +68,15 @@ SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
       f = dnbinom_mu(k, exp(beta(nP-1)), lambda(m));
     }
 
+    int y_ind = m * T * R;
+    int p_ind = m * T * J;
+    int t_ind = m * T;
+
     mat A = zeros(K,T);
     for(int t=0; t<T; t++){
       int y_stop = y_ind + R - 1;
       int p_stop = p_ind + J - 1;
-      vec na_sub = naflag.subvec(y_ind, y_stop); 
+      vec na_sub = naflag.subvec(y_ind, y_stop);
 
       if( ! all(na_sub) ){
 
@@ -88,7 +94,7 @@ SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
         }
 
         double p5 = 1 - sum(p3);
-      
+
         A.col(t) = lfac_k - p1 + sum(p2 % log(p3)) + p4 * log(p5);
       }
 
