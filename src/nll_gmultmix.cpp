@@ -1,47 +1,20 @@
-#include "nll_gmultmix.h"
+#include <RcppArmadillo.h>
+#include <omp.h>
 #include "pifun.h"
+#include "utils.h"
 
 using namespace Rcpp;
 using namespace arma;
 
-//mat inv_logit( mat inp ){
-//  return(1 / (1 + exp(-1 * inp)));
-//}
+// [[Rcpp::export]]
+double nll_gmultmix(arma::vec beta, std::string mixture, std::string pi_fun,
+                    arma::mat Xlam, arma::vec Xlam_offset, arma::mat Xphi,
+                    arma::vec Xphi_offset, arma::mat Xdet, arma::vec Xdet_offset,
+                    Rcpp::IntegerVector k, arma::vec lfac_k, arma::cube lfac_kmyt,
+                    arma::cube kmyt, arma::vec y, arma::vec naflag, arma::mat fin,
+                    int nP, int nLP, int nPP, int nDP, int threads){
 
-
-SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
-    SEXP XlamR, SEXP Xlam_offsetR, SEXP XphiR, SEXP Xphi_offsetR, SEXP XdetR,
-    SEXP Xdet_offsetR, SEXP kR, SEXP lfac_kR, SEXP lfac_kmytR, SEXP kmytR,
-    SEXP yR, SEXP naflagR, SEXP finR, SEXP nPr, SEXP nLPr, SEXP nPPr, SEXP nDPr, SEXP threadsR){
-
-  //Inputs
-  vec beta = as<vec>(betaR);
-  std::string mixture = as<std::string>(mixtureR);
-  std::string pi_fun = as<std::string>(pi_funR);
-
-  mat Xlam = as<mat>(XlamR);
-  vec Xlam_offset = as<vec>(Xlam_offsetR);
-  mat Xphi = as<mat>(XphiR);
-  vec Xphi_offset = as<vec>(Xphi_offsetR);
-  mat Xdet = as<mat>(XdetR);
-  vec Xdet_offset = as<vec>(Xdet_offsetR);
-
-  IntegerVector k(kR);
-  vec lfac_k = as<vec>(lfac_kR);
-  cube lfac_kmyt = as<cube>(lfac_kmytR);
-  cube kmyt = as<cube>(kmytR);
-
-  vec y = as<vec>(yR);
-  vec naflag = as<vec>(naflagR);
-  mat fin = as<mat>(finR);
-
-  int nP = as<int>(nPr);
-  int nLP = as<int>(nLPr);
-  int nPP = as<int>(nPPr);
-  int nDP = as<int>(nDPr);
-
-  int nthreads = as<int>(threadsR);
-  omp_set_num_threads(nthreads);
+  omp_set_num_threads(threads);
 
   int M = Xlam.n_rows;
   vec lambda = exp( Xlam * beta.subvec(0, (nLP - 1) ) + Xlam_offset );
@@ -59,7 +32,7 @@ SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
   int K = k.size();
 
   vec ll(M);
-  #pragma omp parallel for if(nthreads > 1)
+  #pragma omp parallel for if(threads > 1)
   for (int m=0; m<M; m++){
     vec f(K);
     if(mixture == "P"){
@@ -115,6 +88,6 @@ SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR,
     ll(m) = log(sum(f % g));
   }
 
-  return(wrap(-sum(ll)));
+  return(-sum(ll));
 
 }

@@ -122,13 +122,9 @@ nll_R <- function(pars) {
     }
 
 nll_C <- function(params) {
-  .Call("nll_gmultmix",
-        params,mixture, piFun,
-        Xlam, Xlam.offset, Xphi, Xphi.offset, Xdet, Xdet.offset,
-        k,lfac.k, lfac.kmyt,kmytC,
-        y_long, naflag_long, fin,
-        nP,nLP,nPP,nDP,threads,
-        PACKAGE = "unmarked")
+  nll_gmultmix(params,mixture, piFun, Xlam, Xlam.offset, Xphi, Xphi.offset,
+               Xdet, Xdet.offset,k,lfac.k, lfac.kmyt,kmytC, y_long, naflag_long,
+               fin, nP,nLP,nPP,nDP,threads)
 }
 
 if(engine=="R"){
