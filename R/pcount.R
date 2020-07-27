@@ -3,7 +3,7 @@
 
 pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
                    method = "BFGS", se = TRUE,
-                   engine = c("C", "R"), ...)
+                   engine = c("C", "R"), threads = 1, ...)
 {
     mixture <- match.arg(mixture, c("P", "NB", "ZIP"))
     if(!is(data, "unmarkedFramePCount"))
@@ -42,7 +42,8 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
     k.ik <- rep(k, M)
     k.ijk <- rep(k, M*J)
 
-    nP <- nAP + nDP + (mixture != "P")
+    n_param <- c(nAP, nDP, ifelse(mixture != "P", 1, 0))
+    nP <- sum(n_param)
     if(!missing(starts) && length(starts) != nP)
         stop(paste("The number of starting values should be", nP))
 
@@ -76,16 +77,11 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
             -sum(log(dens.i))
         }
     } else {
+        Kmin <- apply(y, 1, function(x) max(x, na.rm=TRUE))
+        mixture_code <- switch(mixture, P = {1}, NB = {2}, ZIP = {3})
         nll <- function(parms) {
-            beta.lam <- parms[1:nAP]
-            beta.p <- parms[(nAP+1):(nAP+nDP)]
-            log.alpha <- 1
-            if(mixture %in% c("NB", "ZIP"))
-                log.alpha <- parms[nP]
-            .Call("nll_pcount",
-                  y, X, V, beta.lam, beta.p, log.alpha, X.offset, V.offset,
-                  NAmat, lk, mixture,
-                  PACKAGE = "unmarked")
+          nll_pcount(parms, n_param, y, X, V, X.offset, V.offset, K, Kmin,
+                     mixture_code, threads)
         }
     }
 

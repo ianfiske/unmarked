@@ -31,8 +31,9 @@ double nll_gmultmix(arma::vec beta, std::string mixture, std::string pi_fun,
 
   int K = k.size();
 
-  vec ll(M);
-  #pragma omp parallel for if(threads > 1)
+  //vec ll(M);
+  double loglik = 0.0;
+  #pragma omp parallel for reduction(+: loglik) if(threads > 1)
   for (int m=0; m<M; m++){
     vec f(K);
     if(mixture == "P"){
@@ -85,9 +86,9 @@ double nll_gmultmix(arma::vec beta, std::string mixture, std::string pi_fun,
       }
     }
 
-    ll(m) = log(sum(f % g));
+    loglik += log(sum(f % g));
   }
 
-  return(-sum(ll));
+  return(-loglik);
 
 }

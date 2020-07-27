@@ -1,59 +1,62 @@
-#include "nll_pcount.h"
+#include <RcppArmadillo.h>
 #include "distr.h"
+#include "utils.h"
 
-using namespace Rcpp ;
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 
-SEXP nll_pcount( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_lamR, SEXP beta_pR, SEXP log_alphaR, SEXP X_offsetR, SEXP V_offsetR, SEXP naMatR, SEXP lkR, SEXP mixtureR ) {
-  arma::imat y = as<arma::imat>(yR);
-  arma::mat X = as<arma::mat>(Xr);
-  arma::mat V = as<arma::mat>(Vr);
-  arma::colvec beta_lam = as<arma::colvec>(beta_lamR);
-  arma::colvec beta_p = as<arma::colvec>(beta_pR);
-  double log_alpha = as<double>(log_alphaR);
-  arma::colvec X_offset = as<arma::colvec>(X_offsetR);
-  arma::colvec V_offset = as<arma::colvec>(V_offsetR);
-  Rcpp::LogicalMatrix naMat(naMatR);
-  std::string mixture = as<std::string>(mixtureR);
-  double alpha = 0.0;
-  if(mixture=="NB")
-    alpha = exp(log_alpha);
-  else if(mixture=="ZIP")
-    alpha = 1.0/(1.0+exp(-log_alpha));
-  int lk = as<int>(lkR);
-  int R = y.n_rows;
-  int J = y.n_cols;
-  arma::colvec lam = exp(X*beta_lam + X_offset);
-  arma::colvec logit_p = V*beta_p + V_offset;
-  arma::mat pv = 1.0/(1.0+exp(-logit_p));
-  pv.reshape(J,R);
-  arma::mat p = trans(pv);
-  double L_i=0.0;
-  double ll=0.0;
-  arma::colvec f(lk);
-  f.zeros(); 
-  arma::colvec g(lk);
-  for(int i=0; i<R; i++) {
-    g.zeros();
-    L_i = 0.0;
-    for(int k=0; k<lk; k++) {
-      if(mixture=="P")
-	f(k) = Rf_dpois(k, lam(i), false);
-      else if(mixture=="NB")
-        f(k) = dnbinom_mu(k, alpha, lam(i), false);
-      else if(mixture=="ZIP")
-	f(k) = dzip(k, lam(i), alpha);
-      for(int j=0; j<J; j++) {
-	// if(k >= y(i,j))
-	if(!naMat(i,j))
-	  g(k) += Rf_dbinom(y(i,j), k, p(i,j), true);
-	// else
-	// g(k) = 0.0;
-      }
-      g(k) = exp(g(k));
-      L_i += f(k) * g(k);
+using namespace Rcpp;
+using namespace arma;
+
+double lp_site_pcount(const rowvec y, int mixture, double lam, double log_alpha,
+                      const vec p, int K, int Kmin){
+
+  //y must be arma::vec for this to work (not uvec/ivec)
+  uvec fin = find_finite(y);
+  if(fin.size() == 0) return 0.0;
+
+  double f, g, out = 0.0;
+  for (int k=Kmin; k<(K+1); k++){
+    f = N_density(mixture, k, lam, log_alpha);
+    g = 0.0;
+    for (unsigned j=0; j<fin.size(); j++){
+      g += Rf_dbinom(y(fin(j)), k, p(fin(j)), true);
     }
-    ll += log(L_i + DOUBLE_XMIN);
+    out += f * exp(g);
   }
-  return wrap(-ll);
+  return log(out + DOUBLE_XMIN);
+}
+
+
+// [[Rcpp::export]]
+double nll_pcount(const arma::vec beta, const arma::uvec n_param, const arma::mat y,
+                  const arma::mat X, const arma::mat V, const arma::vec X_offset,
+                  const arma::vec V_offset, int K, const arma::uvec Kmin,
+                  int mixture, int threads){
+
+  int M = y.n_rows;
+  int J = y.n_cols;
+
+  vec lam = exp(X*beta_sub(beta, n_param, 0) + X_offset);
+  vec p = inv_logit(V*beta_sub(beta, n_param, 1) + V_offset);
+  double log_alpha = beta_sub(beta, n_param, 2)(0);
+
+  #ifdef _OPENMP
+    omp_set_num_threads(threads);
+  #endif
+
+  double loglik = 0.0;
+
+  //This will compile but throw an unknown pragma warning if no openMP
+  #pragma omp parallel for reduction(+: loglik) if(threads > 1)
+  for (int i=0; i<M; i++){
+    int pstart = i * J;
+    int pstop = i * J + J - 1;
+    loglik += lp_site_pcount(y.row(i), mixture, lam(i), log_alpha,
+                             p.subvec(pstart, pstop), K, Kmin(i));
+  }
+
+  return -loglik;
 
 }

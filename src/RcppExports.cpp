@@ -37,3 +37,70 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// nll_pcount
+double nll_pcount(const arma::vec beta, const arma::uvec n_param, const arma::mat y, const arma::mat X, const arma::mat V, const arma::vec X_offset, const arma::vec V_offset, int K, const arma::uvec Kmin, int mixture, int threads);
+RcppExport SEXP _unmarked_nll_pcount(SEXP betaSEXP, SEXP n_paramSEXP, SEXP ySEXP, SEXP XSEXP, SEXP VSEXP, SEXP X_offsetSEXP, SEXP V_offsetSEXP, SEXP KSEXP, SEXP KminSEXP, SEXP mixtureSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec >::type n_param(n_paramSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type X_offset(X_offsetSEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type V_offset(V_offsetSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec >::type Kmin(KminSEXP);
+    Rcpp::traits::input_parameter< int >::type mixture(mixtureSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(nll_pcount(beta, n_param, y, X, V, X_offset, V_offset, K, Kmin, mixture, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+
+RcppExport SEXP get_lik_trans(SEXP, SEXP);
+RcppExport SEXP get_mlogit(SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP getDetVecs(SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP getSingleDetVec(SEXP, SEXP, SEXP);
+RcppExport SEXP nll_distsamp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_distsampOpen(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_gdistsamp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_gpcount(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_multinomPois(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_multmixOpen(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_occu(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_occuMS(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_occuMulti(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_occuPEN(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_occuRN(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_occuTTD(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_pcountOpen(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_unmarked_nll_gmultmix", (DL_FUNC) &_unmarked_nll_gmultmix, 21},
+    {"_unmarked_nll_pcount", (DL_FUNC) &_unmarked_nll_pcount, 11},
+    {"get_lik_trans",    (DL_FUNC) &get_lik_trans,     2},
+    {"get_mlogit",       (DL_FUNC) &get_mlogit,        4},
+    {"getDetVecs",       (DL_FUNC) &getDetVecs,        5},
+    {"getSingleDetVec",  (DL_FUNC) &getSingleDetVec,   3},
+    {"nll_distsamp",     (DL_FUNC) &nll_distsamp,     11},
+    {"nll_distsampOpen", (DL_FUNC) &nll_distsampOpen, 42},
+    {"nll_gdistsamp",    (DL_FUNC) &nll_gdistsamp,    27},
+    {"nll_gpcount",      (DL_FUNC) &nll_gpcount,      14},
+    {"nll_multinomPois", (DL_FUNC) &nll_multinomPois, 10},
+    {"nll_multmixOpen",  (DL_FUNC) &nll_multmixOpen,  38},
+    {"nll_occu",         (DL_FUNC) &nll_occu,         11},
+    {"nll_occuMS",       (DL_FUNC) &nll_occuMS,       15},
+    {"nll_occuMulti",    (DL_FUNC) &nll_occuMulti,    14},
+    {"nll_occuPEN",      (DL_FUNC) &nll_occuPEN,      11},
+    {"nll_occuRN",       (DL_FUNC) &nll_occuRN,       10},
+    {"nll_occuTTD",      (DL_FUNC) &nll_occuTTD,      17},
+    {"nll_pcountOpen",   (DL_FUNC) &nll_pcountOpen,   35},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_unmarked(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+}
