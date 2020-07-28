@@ -246,16 +246,7 @@ distsamp <- function(formula, data,
     fm <- optim(starts, nll, method=method, hessian=se, ...)
     opt <- fm
     ests <- fm$par
-    if(se) {
-        covMat <- tryCatch(solve(fm$hessian), error=function(x)
-        simpleError("Hessian is singular. Try using fewer covariates or providing starting values."))
-        if(class(covMat)[1] == "simpleError") {
-            print(covMat$message)
-            covMat <- matrix(NA, nP, nP)
-            }
-        }
-    else
-        covMat <- matrix(NA, nP, nP)
+    covMat <- invertHessian(fm, nP, se)
     estsAP <- ests[1:nAP]
     if(keyfun == "hazard") {
         estsDP <- ests[(nAP+1):(nP-1)]

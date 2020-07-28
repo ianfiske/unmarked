@@ -2,6 +2,7 @@
 #define _unmarked_NLL_GMULTMIX_H
 
 #include <RcppArmadillo.h>
+#include "utils.h"
 
 RcppExport SEXP nll_gmultmix( SEXP betaR, SEXP mixtureR, SEXP pi_funR, 
     SEXP XlamR, SEXP Xlam_offsetR, SEXP XphiR, SEXP Xphi_offsetR, SEXP XdetR, 

@@ -536,3 +536,83 @@ test.ranef.occuMulti <- function(){
   ar <- as(re, "array")
   checkEqualsNumeric(colSums(ar),c(3.94470,6.055303),tol=1e-4)
 }
+
+
+
+#--------------------- predict --------------------------------
+
+test.ranef.predict <- function(){
+
+  #Single-season model
+  set.seed(4564)
+  R <- 10
+  J <- 5
+  N <- rpois(R, 3)
+  y <- matrix(NA, R, J)
+  y[] <- rbinom(R*J, N, 0.5)
+  y[1,] <- NA
+  y[2,1] <- NA
+  K <- 15
+
+  umf <- unmarkedFramePCount(y=y)
+  fm <- pcount(~1 ~1, umf, K=K)
+
+  re <- ranef(fm)
+
+  ps <- posteriorSamples(re, nsim=10)
+  checkTrue(inherits(ps, "unmarkedPostSamples"))
+  #One is dropped bc of NA
+  checkEqualsNumeric(dim(ps@samples), c(9,1,10))
+
+  myfunc <- function(x){
+    c(gr1=mean(x[1:4]), gr2=mean(x[5:9]))
+  }
+
+  pr <- predict(re, fun=myfunc, nsim=10)
+  checkEqualsNumeric(dim(pr), c(2,10))
+  checkEquals(rownames(pr), c("gr1","gr2"))
+  checkEqualsNumeric(as.numeric(pr[1,1:3]), c(6.0,4.0,5.75))
+  
+  #Dynamic model
+  set.seed(7)
+  M <- 10
+  J <- 3
+  T <- 5
+  lambda <- 5
+  gamma <- 0.4
+  omega <- 0.6
+  p <- 0.5
+  N <- matrix(NA, M, T)
+  y <- array(NA, c(M, J, T))
+  S <- G <- matrix(NA, M, T-1)
+  N[,1] <- rpois(M, lambda)
+  y[,,1] <- rbinom(M*J, N[,1], p)
+  for(t in 1:(T-1)) {
+        S[,t] <- rbinom(M, N[,t], omega)
+        G[,t] <- rpois(M, gamma)
+        N[,t+1] <- S[,t] + G[,t]
+        y[,,t+1] <- rbinom(M*J, N[,t+1], p)
+  }
+
+  # Prepare data
+  umf <- unmarkedFramePCO(y = matrix(y, M), numPrimary=T)
+  summary(umf)
+
+  # Fit model and backtransform
+  m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20)
+  re1 <- ranef(m1)
+
+  ps <- posteriorSamples(re1, nsim=10)
+  checkEqualsNumeric(dim(ps@samples), c(10,5,10))
+  checkEqualsNumeric(ps@samples[1,,1],c(7,4,3,1,1))
+
+  myfunc <- function(x){
+    apply(x, 2, function(x) c(mean(x[1:4]), mean(x[5:9])))
+  }
+
+  pr <- predict(re1, fun=myfunc, nsim=10)
+  checkEqualsNumeric(dim(pr), c(2,5,10))
+  checkEqualsNumeric(pr[1,1:3,1], c(3.5,2.5,1.5))
+
+
+}

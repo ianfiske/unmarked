@@ -105,7 +105,8 @@ example,
 
 <<>>=
 library(unmarked)
-dists <- read.csv(system.file("csv", "distdata.csv", package="unmarked"))
+dists <- read.csv(system.file("csv", "distdata.csv", package="unmarked"),
+                  stringsAsFactors=TRUE)
 head(dists, 10)
 levels(dists$transect) <- c(levels(dists$transect), "g")
 levels(dists$transect)

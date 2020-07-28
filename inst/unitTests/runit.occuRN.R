@@ -55,3 +55,21 @@ test.occuRN.na <- function() {
     c(0.783066, -1.920232, 0.448369, -0.009701, 0.490085, 0.814767,
     0.837669, 1.097903, 0.842467, 0.916831, 0.976707, 0.740672), tol=1e-5)
 }
+
+#Test that parboot works
+test.occuRN.parboot <- function(){
+  
+  data(birds)
+  woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
+  fm <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")  
+  
+  chisq2 <- function(fm) {
+   observed <- getY(fm)
+   expected <- fitted(fm)
+   sum((observed - expected)^2/expected, na.rm=T)  
+  }
+  
+  set.seed(123)
+  pb <- parboot(fm, statistic=chisq2, nsim=2)
+  checkEqualsNumeric(as.numeric(pb@t.star), c(342.2285, 318.0965), tol=1e-5)
+}

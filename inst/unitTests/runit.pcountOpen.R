@@ -418,3 +418,44 @@ test.pcountOpen.fix <- function() {
      checkEqualsNumeric(m3_fit[1,1], 2.481839, tol=1e-4)
 }
 
+
+test.pcountOpen.predict <- function(){
+     set.seed(3)
+     M <- 20
+     T <- 3
+     lambda <- 4
+     gamma <- 1.5
+     omega <- 0.8
+     p <- 0.7
+     y <- N <- matrix(NA, M, T)
+     S <- G <- matrix(NA, M, T-1)
+     N[,1] <- rpois(M, lambda)
+     for(t in 1:(T-1)) {
+             S[,t] <- rbinom(M, N[,t], omega)
+             G[,t] <- rpois(M, gamma)
+             N[,t+1] <- S[,t] + G[,t]
+             }
+     y[] <- rbinom(M*T, N, p)
+     
+     sc <- data.frame(x1=rnorm(M), x2 = runif(M, 0, 1),
+                 x3=rnorm(M), x4=rnorm(M))
+
+     umf <- unmarkedFramePCO(y = y, numPrimary=T, siteCovs=sc)
+  
+     m1 <- pcountOpen(~x1, ~x2, ~x3, ~x4, umf, K=20)
+     
+     #Make sure predicting with newdata works
+     p1 <- predict(m1, type = "lambda", 
+            newdata = data.frame(x1 = rnorm(5), x2 = rnorm(5)))
+     p2 <- predict(m1, type = "gamma", 
+            newdata = data.frame(x1 = rnorm(5), x2 = rnorm(5)))
+     p3 <- predict(m1, type = "omega", 
+            newdata = data.frame(x3 = rnorm(5), x4 = rnorm(5)))
+     p4 <- predict(m1, type = "det", 
+            newdata = data.frame(x3 = rnorm(5), x4 = rnorm(5)))
+     
+     are_df <- sapply(list(p1,p2,p3,p4), function(x) inherits(x, "data.frame"))
+     checkTrue(all(are_df))
+
+}
+

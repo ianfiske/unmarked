@@ -47,6 +47,8 @@
 \alias{unmarkedFrameGMM-class}
 \alias{unmarkedFrameGDS-class}
 \alias{unmarkedFrameGPC-class}
+\alias{unmarkedFrameDSO-class}
+\alias{unmarkedFrameMMO-class}
 \alias{show,unmarkedFrame-method}
 \alias{show,unmarkedFrameOccuMulti-method}
 \alias{show,unmarkedFrameOccuTTD-method}
@@ -61,6 +63,7 @@
 \alias{[,unmarkedFrameOccuMS,numeric,missing,missing-method}
 \alias{[,unmarkedFrameOccuTTD,numeric,missing,missing-method}
 \alias{[,unmarkedFrameOccuMulti,numeric,missing,missing-method}
+\alias{[,unmarkedFrameDSO,numeric,missing,missing-method}
 
 \title{Class "unmarkedFrame" }
 \description{Methods for manipulating, summarizing and viewing

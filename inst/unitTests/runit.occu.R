@@ -88,7 +88,14 @@ test.occu.fit.covs.0 <- function() {
   siteCovs <- data.frame(x = c(0,2,3,4,1))
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  options(warn=2)
   checkException(fm <- occu(~ o1 + o2 ~ x, data = umf))
+  options(warn=0)
+  fm <- occu(~ o1 + o2 ~ x, data = umf)
+  detMat <- fm@estimates@estimates$det@covMat
+  stMat <- fm@estimates@estimates$state@covMat
+  checkEqualsNumeric(detMat, matrix(rep(NA,9),nrow=3))
+  checkEqualsNumeric(stMat, matrix(rep(NA,4),nrow=2))
 
 }
 
@@ -205,4 +212,63 @@ test.occu.cloglog <- function() {
   
   #Check error if wrong link function
   checkException(occu(~ele+wind ~ele+forest, occ.frame, linkPsi="fake"))
+}
+
+test.occu.predict.complexFormulas <- function() {
+
+  y <- matrix(rep(0:1,10),5,2)
+  siteCovs <- data.frame(x = c(0,2,3,4,1))
+  obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
+  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  fm <- occu(~ scale(o1) + o2 ~ x, data = umf)
+  
+  #Predict values should not depend on means/variance of newdata itself
+  nd1 <- obsCovs(umf[1:2,])
+  pr1 <- predict(fm, 'det', newdata=nd1)
+  nd2 <- obsCovs(umf[1:4,])
+  pr2 <- predict(fm, 'det', newdata=nd2)[1:4,]
+  
+  checkEqualsNumeric(pr1, pr2)
+
+  #Check factors
+  siteCovs$fac_cov <- factor(sample(c('a','b','c'), 5, replace=T),
+                             levels=c('b','a','c'))
+
+  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  fm <- occu(~ o1 + o2 ~ fac_cov, data = umf)
+
+  pr3 <- predict(fm, 'state', newdata=data.frame(fac_cov=c('a','b')))
+  pr4 <- predict(fm, 'state', newdata=data.frame(fac_cov=c('b','a')))
+
+  checkEqualsNumeric(as.matrix(pr3),as.matrix(pr4[2:1,]))
+  checkException(predict(fm, 'state', newdata=data.frame(fac_cov=c('a','d'))))
+
+  #Check when original covs contain factor not used in formula
+  siteCovs$fac_cov2 <- factor(sample(c('a','b','c'), 5, replace=T),
+                             levels=c('b','a','c'))
+
+  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  fm <- occu(~ o1 + o2 ~ fac_cov, data = umf)
+  #Should error if any warnings appear
+  options(warn=2)
+  pr <- predict(fm, 'state', newdata=data.frame(fac_cov=c('a','b')))
+  options(warn=0)
+
+}
+
+## Add some checks here.
+test.occu.offest <- function() {
+
+  y <- matrix(rep(0:1,10),5,2)
+  siteCovs <- data.frame(x = c(0,2,3,4,1))
+  obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
+  umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  fm <- occu(~ o1 + o2 ~ offset(x), data = umf)
+  checkEqualsNumeric(coef(fm),
+                     structure(c(9.74361, 0.44327, -0.14683, 0.44085), .Names = c("psi(Int)", 
+"p(Int)", "p(o1)", "p(o2)")), tol = 1e-5)
+  fm <- occu(~ o1 + offset(o2) ~ offset(x), data = umf)
+  checkEqualsNumeric(coef(fm), structure(c(8.59459, 0.97574, -0.3096), .Names = c("psi(Int)", 
+"p(Int)", "p(o1)")), tol=1e-5)
+
 }

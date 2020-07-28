@@ -4,9 +4,9 @@
 using namespace Rcpp;
 using namespace arma;
 
-mat inv_logit( mat inp ){
-  return(1 / (1 + exp(-1 * inp)));
-}
+//mat inv_logit( mat inp ){
+//  return(1 / (1 + exp(-1 * inp)));
+//}
 
 
 SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR, 

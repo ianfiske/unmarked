@@ -32,7 +32,7 @@ setClass("unmarkedFitDS",
         keyfun = "character",
         unitsOut = "character",
         output = "character"),
-    contains = "unmarkedFit")
+        contains = "unmarkedFit")
 
 
 
@@ -52,6 +52,20 @@ setClass("unmarkedFitPCO",
             fix = "character"),
         contains = "unmarkedFitPCount")
 
+setClass("unmarkedFitDSO",
+        representation(
+            formlist = "list",
+            dynamics = "character",
+            immigration = "logical",
+            fix = "character",
+            K="numeric",
+            mixture="character"),
+        contains = "unmarkedFitDS")
+
+setClassUnion("unmarkedFitPCOorDSO",
+              c("unmarkedFitPCO", "unmarkedFitDSO"))
+
+setClass("unmarkedFitMMO", contains = "unmarkedFitPCO")
 
 setClass("unmarkedFitOccu",
     representation(knownOcc = "logical"),
@@ -111,6 +125,8 @@ setClass("unmarkedFitMPois",
 
 
 setClass("unmarkedFitOccuRN",
+    representation(
+      K = "numeric"),
     contains = "unmarkedFit")
 
 setClass("unmarkedFitMNmix",
@@ -242,9 +258,28 @@ setMethod("names", "unmarkedFit",
 
 # ----------------------------- Prediction -----------------------------
 
+#Utility function to make model matrix and offset from newdata
+make_mod_matrix <- function(formula, data, newdata){
+  mf <- model.frame(formula, data)
+  X.terms <- stats::terms(mf)
+  fac_cols <- data[, sapply(data, is.factor), drop=FALSE]
+  xlevs <- lapply(fac_cols, levels)
+  xlevs <- xlevs[names(xlevs) %in% names(mf)]
+  X <- model.matrix(X.terms, newdata, xlev=xlevs)
+  nmf <- model.frame(X.terms, newdata)
+  offset <- model.offset(nmf)
+  list(X=X, offset=offset)
+}
 
+#Remove data in final year of yearlySiteCovs
+#then drop factor levels found only in that year
+droplevels_final_year <- function(dat, nsites, nprimary){
+  dat[seq(nprimary, nsites*nprimary, by=nprimary), ] <- NA
+  dat <- lapply(dat, function(x) x[,drop = TRUE])
+  as.data.frame(dat)
+}
 
- setMethod("predict", "unmarkedFit",
+setMethod("predict", "unmarkedFit",
      function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
          appendData = FALSE, level=0.95, ...)
  {
@@ -293,20 +328,18 @@ setMethod("names", "unmarkedFit",
      data.frame = {
          switch(type,
              state = {
-                  xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels) # https://stackoverflow.com/a/44008147/2461552
-                 mf <- model.frame(stateformula, sitedata)
-                 X.terms <- terms(mf)
-                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                 offset <- model.offset(model.frame(X.terms, newdata))
-                 },
+               pred_data <- sitedata
+               pred_form <- stateformula
+              },
              det = {
-                  xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                 mf <- model.frame(detformula, obsdata)
-                 X.terms <- terms(mf)
-                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                 offset <- model.offset(model.frame(X.terms, newdata))
-                 })
-             },
+               pred_data <- obsdata
+               pred_form <- detformula
+              }
+         )
+          mm <- make_mod_matrix(pred_form, pred_data, newdata)
+          X <- mm$X
+          offset <- mm$offset
+     },
      RasterStack = {
  #        browser()
          cd.names <- names(newdata)
@@ -583,19 +616,16 @@ setMethod("predict", "unmarkedFitPCount",
     data.frame = {
         switch(type,
                state = {
-                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(stateformula, sitedata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                 pred_data <- sitedata
+                 pred_form <- stateformula
                },
                det = {
-                    xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(detformula, obsdata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                 pred_data <- obsdata
+                 pred_form <- detformula
                })
+        mm <- make_mod_matrix(pred_form, pred_data, newdata)
+        X <- mm$X
+        offset <- mm$offset
             },
     RasterStack = {
         cd.names <- names(newdata)
@@ -781,33 +811,24 @@ setMethod("predict", "unmarkedFitOccuFP",
                    data.frame = {
                      switch(type,
                             state = {
-                                 xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                                 mf <- model.frame(stateformula, sitedata)
-                                 X.terms <- terms(mf)
-                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                                 offset <- model.offset(model.frame(X.terms, newdata))
+                              pred_data <- sitedata
+                              pred_form <- stateformula
                             },
                             det = {
-                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                                 mf <- model.frame(detformula, obsdata)
-                                 X.terms <- terms(mf)
-                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                                 offset <- model.offset(model.frame(X.terms, newdata))
+                              pred_data <- obsdata
+                              pred_form <- detformula
                             },
                             fp = {
-                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                                 mf <- model.frame(FPformula, obsdata)
-                                 X.terms <- terms(mf)
-                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                                 offset <- model.offset(model.frame(X.terms, newdata))
+                              pred_data <- obsdata
+                              pred_form <- FPformula
                             },
                             b = {
-                                 xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                                 mf <- model.frame(Bformula, obsdata)
-                                 X.terms <- terms(mf)
-                                 X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                                 offset <- model.offset(model.frame(X.terms, newdata))
+                              pred_data <- obsdata
+                              pred_form <- Bformula
                             })
+                     mm <- make_mod_matrix(pred_form, pred_data, newdata)
+                     X <- mm$X
+                     offset <- mm$offset
                    })
 
             out <- data.frame(matrix(NA, nrow(X), 4,
@@ -902,35 +923,26 @@ setMethod("predict", "unmarkedFitColExt",
         }
         obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
 
+        yearlydata <- droplevels_final_year(yearlydata, M, T)
+
         switch(type,
             psi = {
-                xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                mf <- model.frame(psiformula, sitedata)
-                X.terms <- terms(mf)
-                X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                #offset <- model.offset(mf)
+              pred_data <- sitedata
+              pred_form <- psiformula
                 },
             col = {
-                xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                mf <- model.frame(gamformula, yearlydata)
-                X.terms <- terms(mf)
-                X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                #offset <- model.offset(mf)
+              pred_data <- yearlydata
+              pred_form <- gamformula
                 },
             ext = {
-                xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                mf <- model.frame(epsformula, yearlydata)
-                X.terms <- terms(mf)
-                X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                #offset <- model.offset(mf)
+              pred_data <- yearlydata
+              pred_form <- epsformula
                 },
             det = {
-                xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                mf <- model.frame(detformula, obsdata)
-                X.terms <- terms(mf)
-                X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                #offset <- model.offset(mf)
-                })
+              pred_data <- obsdata
+              pred_form <- detformula
+        })
+        X <- make_mod_matrix(pred_form, pred_data, newdata)$X
             },
     RasterStack = {
         aschar1 <- as.character(formula)
@@ -1123,42 +1135,32 @@ setMethod("predict", "unmarkedFitPCO",
             }
             obsdata <- cbind(obsCovs, yearlydata[rep(1:(M*T), each = J), ])
 
+            yearlydata <- droplevels_final_year(yearlydata, M, T)
+
             switch(type,
                 lambda = {
-                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(lambdaformula, sitedata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- sitedata
+                  pred_form <- lambdaformula
                 },
                 gamma = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(gammaformula, yearlydata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- gammaformula
                 },
                 omega = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(omegaformula, yearlydata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- omegaformula
                 },
                 iota = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(iotaformula, yearlydata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- iotaformula
                 },
                 det = {
-                    xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(pformula, obsdata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- obsdata
+                  pred_form <- pformula
                 })
+            mm <- make_mod_matrix(pred_form, pred_data, newdata)
+            X <- mm$X
+            offset <- mm$offset
             },
         RasterStack = {
             lambdaformula <- formlist$lambdaformula
@@ -1277,6 +1279,268 @@ setMethod("predict", "unmarkedFitPCO",
 })
 
 
+setMethod("predict", "unmarkedFitDSO",
+    function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
+        appendData = FALSE, level=0.95, ...)
+{
+    if(type %in% c("psi", "alpha", "scale"))
+        stop(type, " is scalar, so use backTransform instead")
+    if(missing(newdata) || is.null(newdata))
+        newdata <- getData(object)
+    dynamics <- object@dynamics
+    immigration <- tryCatch(object@immigration, error=function(e) FALSE)
+    if(identical(dynamics, "notrend") & identical(type, "gamma"))
+        stop("gamma is a derived parameter for this model: (1-omega)*lambda")
+    if(identical(dynamics, "trend") && identical(type, "omega"))
+        stop("omega is not a parameter in the dynamics='trend' model")
+    if(!immigration && identical(type, "iota"))
+        stop("iota is not a parameter in the immigration=FALSE model")
+    formula <- object@formula
+    formlist <- object@formlist
+    if(inherits(newdata, "unmarkedFrame"))
+        cls <- "unmarkedFrame"
+    else if(identical(class(newdata)[1], "data.frame"))
+        cls <- "data.frame"
+    else if(identical(class(newdata)[1], "RasterStack"))
+        cls <- "RasterStack"
+    else
+        stop("newdata should be a data.frame, unmarkedFrame, or RasterStack")
+    if(identical(cls, "RasterStack"))
+        if(!require(raster))
+            stop("raster package must be loaded")
+    switch(cls,
+        unmarkedFrame = {
+            D <- getDesign(newdata, formula, na.rm = na.rm)
+            switch(type,
+                lambda = {
+                    X <- D$Xlam
+                    offset <- D$Xlam.offset
+                },
+                gamma = {
+                    X <- D$Xgam
+                    offset <- D$Xgam.offset
+                },
+                omega = {
+                    X <- D$Xom
+                    offset <- D$Xom.offset
+                },
+                iota = {
+                    X <- D$Xiota
+                    offset <- D$Xiota.offset
+                },
+                det = {
+                    X <- D$Xp
+                    offset <- D$Xp.offset
+                    })
+                },
+        data.frame = {
+            lambdaformula <- formlist$lambdaformula
+            gammaformula <- formlist$gammaformula
+            omegaformula <- formlist$omegaformula
+            pformula <- formlist$pformula
+            iotaformula <- formlist$iotaformula
+
+            origdata <- getData(object)
+            M <- numSites(origdata)
+            R <- obsNum(origdata)
+            T <- origdata@numPrimary
+            J <- R / T
+
+            if(is.null(siteCovs(origdata))) {
+                 sitedata <- data.frame(site = rep(1, M))
+            } else {
+                 sitedata <- siteCovs(origdata)
+            }
+            if(is.null(yearlySiteCovs(origdata))) {
+                 yearlySiteCovs <- data.frame(year = rep(1, M*T))
+            } else {
+                 yearlySiteCovs <- yearlySiteCovs(origdata)
+            }
+            yearlydata <- cbind(yearlySiteCovs, sitedata[rep(1:M, each = T), , drop = FALSE])
+            yearlydata <- droplevels_final_year(yearlydata, M, T)
+
+            switch(type,
+                lambda = {
+                  pred_data <- sitedata
+                  pred_form <- lambdaformula
+                },
+                gamma = {
+                  pred_data <- yearlydata
+                  pred_form <- gammaformula
+                },
+                omega = {
+                  pred_data <- yearlydata
+                  pred_form <- omegaformula
+                },
+                iota = {
+                  pred_data <- yearlydata
+                  pred_form <- iotaformula
+                },
+                det = {
+                  pred_data <- yearlydata
+                  pred_form <- pformula
+                })
+            mm <- make_mod_matrix(pred_form, pred_data, newdata)
+            X <- mm$X
+            offset <- mm$offset
+            },
+        RasterStack = {
+            lambdaformula <- formlist$lambdaformula
+            gammaformula <- formlist$gammaformula
+            omegaformula <- formlist$omegaformula
+            pformula <- formlist$pformula
+
+            cd.names <- names(newdata)
+            npix <- prod(dim(newdata)[1:2])
+            isfac <- is.factor(newdata)
+            if(any(isfac))
+                stop("This method currently does not handle factors")
+            z <- as.data.frame(matrix(raster::getValues(newdata), npix))
+            names(z) <- cd.names
+            switch(type,
+                   lambda = {
+                       varnames <- all.vars(lambdaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                       mf <- model.frame(lambdaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   gamma = {
+                       varnames <- all.vars(gammaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                       mf <- model.frame(gammaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   omega = {
+                       varnames <- all.vars(omegaformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                       mf <- model.frame(omegaformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   },
+                   det= {
+                       varnames <- all.vars(pformula)
+                       if(!all(varnames %in% cd.names))
+                           stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
+                       mf <- model.frame(pformula, z,
+                                         na.action="na.pass")
+                       X.terms <- attr(mf, "terms")
+                       X <- model.matrix(X.terms, mf)
+                       offset <- model.offset(mf)
+                   })
+    })
+    out <- data.frame(matrix(NA, nrow(X), 4,
+        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+    mix <- object@mixture
+    lam.mle <- coef(object, type="lambda")
+    if(identical(mix, "ZIP") & identical(type, "lambda")) {
+        psi.hat <- plogis(coef(object, type="psi"))
+        if(is.null(offset))
+            offset <- rep(0, nrow(X))
+        warning("Method to compute SE for ZIP model has not been written")
+    }
+    for(i in 1:nrow(X)) {
+        if(nrow(X) > 5000) {
+            if(i %% 1000 == 0)
+                cat("  doing row", i, "of", nrow(X), "\n")
+        }
+        if(any(is.na(X[i,])))
+            next
+        if(identical(mix, "ZIP") & identical(type, "lambda")) {
+            out$Predicted[i] <-
+                X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
+            if(backTransform)
+                out$Predicted[i] <- exp(out$Predicted[i])
+            out$SE <- NA
+            ci <- c(NA, NA)
+        } else {
+            lc <- linearComb(object, X[i,], type, offset = offset[i])
+            if(backTransform)
+                lc <- backTransform(lc)
+            out$Predicted[i] <- coef(lc)
+            out$SE[i] <- SE(lc)
+            ci <- confint(lc, level=level)
+        }
+        out$lower[i] <- ci[1]
+        out$upper[i] <- ci[2]
+    }
+    if(appendData) {
+        if(!identical(cls, "RasterStack"))
+            out <- data.frame(out, as(newdata, "data.frame"))
+        else
+            out <- data.frame(out, z)
+    }
+    if(identical(cls, "RasterStack")) {
+        E.mat <- matrix(out[,1], dim(newdata)[1], dim(newdata)[2],
+                        byrow=TRUE)
+        E.raster <- raster::raster(E.mat)
+        raster::extent(E.raster) <- raster::extent(newdata)
+        out.rasters <- list(E.raster)
+        for(i in 2:ncol(out)) {
+            i.mat <- matrix(out[,i], dim(newdata)[1], dim(newdata)[2],
+                            byrow=TRUE)
+            i.raster <- raster::raster(i.mat)
+            raster::extent(i.raster) <- raster::extent(newdata)
+            out.rasters[[i]] <- i.raster
+        }
+        out.stack <- stack(out.rasters)
+        names(out.stack) <- colnames(out)
+        out <- out.stack
+    }
+    return(out)
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 setMethod("predict", "unmarkedFitGMM",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
         appendData = FALSE, level=0.95, ...)
@@ -1342,26 +1606,20 @@ setMethod("predict", "unmarkedFitGMM",
         data.frame = {
             switch(type,
                 lambda = {
-                    xlevs <- lapply(sitedata[, sapply(sitedata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(lambdaformula, sitedata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- sitedata
+                  pred_form <- lambdaformula
                     },
                 phi = {
-                    xlevs <- lapply(yearlydata[, sapply(yearlydata, is.factor), drop = FALSE], levels)
-                    mf <- model.frame(phiformula, yearlydata)
-                    X.terms <- terms(mf)
-                    X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                    offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- yearlydata
+                  pred_form <- phiformula
                     },
                 det = {   # Note, this is p not pi
-                  xlevs <- lapply(obsdata[, sapply(obsdata, is.factor), drop = FALSE], levels)
-                  mf <- model.frame(pformula, obsdata)
-                  X.terms <- terms(mf)
-                  X <- model.matrix(X.terms, newdata, xlev = xlevs)
-                  offset <- model.offset(model.frame(X.terms, newdata))
+                  pred_data <- obsdata
+                  pred_form <- pformula
                 })
+            mm <- make_mod_matrix(pred_form, pred_data, newdata)
+            X <- mm$X
+            offset <- mm$offset
         },
         RasterStack = {
             cd.names <- names(newdata)
@@ -1500,7 +1758,8 @@ setMethod("predict", "unmarkedFitOccuMulti",
     newdata <- temp
   }
 
-  dm <- getDesign(newdata,object@detformulas,object@stateformulas,na.rm=F)
+  dm <- getDesign(newdata,object@detformulas,object@stateformulas,
+                  na.rm=F, old_fit=object)
 
   params <- coef(object)
   low_bound <- (1-level)/2
@@ -1544,7 +1803,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
       sel_col <- species
 
       if(!is.null(cond)){
-        if(sel_col %in% abs(cond)){
+        if(any(sel_col %in% abs(cond))){
           stop("Species can't be conditional on itself")
         }
         ftemp <- object@data@fDesign
@@ -1561,7 +1820,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
         }
 
       } else {
-        num_inds <- which(object@data@fDesign[,sel_col] == 1)
+        num_inds <- apply(object@data@fDesign[,sel_col,drop=FALSE] == 1,1,all)
         est <- rowSums(psi_est[,num_inds,drop=F])
         if(se.fit){
           samp <- samp[,num_inds,,drop=F]
@@ -1682,7 +1941,7 @@ setMethod("predict", "unmarkedFitOccuMS",
   S <- object@data@numStates
   gd <- getDesign(newdata,object@psiformulas,object@phiformulas,
                   object@detformulas,
-                  object@parameterization, na.rm=F)
+                  object@parameterization, na.rm=F, old_fit=object)
 
   #Index guide used to organize p values
   guide <- matrix(NA,nrow=S,ncol=S)
@@ -1866,6 +2125,73 @@ setMethod("predict", "unmarkedFitOccuTTD",
                  appendData=appendData, level=level, ...)
 
 })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ---------------------- coef, vcov, and SE ------------------------------
 
@@ -2121,9 +2447,9 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
     return(fitted)
 })
 
-
-setMethod("fitted", "unmarkedFitPCO",
-    function(object, K, na.rm = FALSE)
+#Get fitted N from Dail-Madsen type models
+#This part is the same across different detection models
+fittedOpenN <- function(object, K, na.rm=FALSE)
 {
     dynamics <- object@dynamics
     mixture <- object@mixture
@@ -2132,9 +2458,9 @@ setMethod("fitted", "unmarkedFitPCO",
     immigration <- tryCatch(object@immigration, error=function(e) FALSE)
     data <- getData(object)
     D <- getDesign(data, object@formula, na.rm = na.rm)
-    Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xp <- D$Xp; Xiota <- D$Xiota
+    Xlam <- D$Xlam; Xgam <- D$Xgam; Xom <- D$Xom; Xiota <- D$Xiota
     Xlam.offset <- D$Xlam.offset; Xgam.offset <- D$Xgam.offset
-    Xom.offset <- D$Xom.offset; Xp.offset <- D$Xp.offset
+    Xom.offset <- D$Xom.offset
     Xiota.offset <- D$Xiota.offset
     delta <- D$delta #FIXME this isn't returned propertly when na.rm=F
 
@@ -2146,7 +2472,6 @@ setMethod("fitted", "unmarkedFitPCO",
     if(is.null(Xlam.offset)) Xlam.offset <- rep(0, M)
     if(is.null(Xgam.offset)) Xgam.offset <- rep(0, M*(T-1))
     if(is.null(Xom.offset)) Xom.offset <- rep(0, M*(T-1))
-    if(is.null(Xp.offset)) Xp.offset <- rep(0, M*T*J)
     if(is.null(Xiota.offset)) Xiota.offset <- rep(0, M*(T-1))
 
     lambda <- exp(Xlam %*% coef(object, 'lambda') + Xlam.offset)
@@ -2178,7 +2503,7 @@ setMethod("fitted", "unmarkedFitPCO",
                         M, T-1, byrow=TRUE)
     else
         iota <- matrix(0, M, T-1)
-    p <- getP(object, na.rm = na.rm) # Should return MxJT
+
     N <- matrix(NA, M, T)
     for(i in 1:M) {
         N[i, 1] <- lambda[i]
@@ -2233,10 +2558,25 @@ setMethod("fitted", "unmarkedFitPCO",
             }
         }
     N <- N[,rep(1:T, each=J)]
-    fitted <- N * p
-    return(fitted)
+
+}
+
+setMethod("fitted", "unmarkedFitPCO",
+    function(object, K, na.rm = FALSE)
+{
+    N <- fittedOpenN(object, K, na.rm)
+    p <- getP(object, na.rm)
+    N * p
 })
 
+
+setMethod("fitted", "unmarkedFitDSO",
+    function(object, K, na.rm = FALSE)
+{
+    N <- fittedOpenN(object, K, na.rm)
+    p <- getP(object, na.rm)
+    N * p
+})
 
 
 setMethod("fitted", "unmarkedFitOccuRN", function(object, K, na.rm = FALSE)
@@ -2759,10 +3099,7 @@ setMethod("update", "unmarkedFitGMM",
 })
 
 
-
-
-
-setMethod("update", "unmarkedFitPCO",
+setMethod("update", "unmarkedFitPCOorDSO",
     function(object, lambdaformula., gammaformula., omegaformula.,
         pformula., iotaformula., ..., evaluate = TRUE) {
     call <- object@call
@@ -3402,11 +3739,40 @@ setMethod("getP", "unmarkedFitGDS",
 })
 
 
+setMethod("getP", "unmarkedFitDSO",
+    function(object, na.rm = TRUE)
+{
+    umf <- getData(object)
+    y <- getY(umf)
+    M <- numSites(umf)
+    T <- umf@numPrimary
+    J <- ncol(y) / T
 
+    sig <- matrix(NA, M, T)
+    if(object@keyfun != "uniform"){
+      sig <- predict(object, type="det")$Predicted
+      sig <- matrix(sig, M, T, byrow=TRUE)
+    }
 
+    scale <- 0.0
+    if(object@keyfun == "hazard"){
+      scale <- backTransform(object, type="scale")@estimate
+    }
 
+    db <- umf@dist.breaks
+    w <- diff(db)
+    ua <- getUA(umf)
+    u <- ua$u; a <- ua$a
 
-
+    cp <- array(NA, c(M, J, T))
+    for (i in 1:M){
+      for (t in 1:T){
+        cp[i,,t] <- getDistCP(object@keyfun, sig[i,t], scale, umf@survey,
+                              db, w, a[i,], u[i,])
+      }
+    }
+    matrix(cp, nrow=M)
+})
 
 
 setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
@@ -3430,6 +3796,31 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
     return(pi)
 })
 
+
+setMethod("getP", "unmarkedFitMMO", function(object, na.rm = TRUE)
+{
+
+  umf <- object@data
+
+  D <- getDesign(umf, object@formula, na.rm=na.rm)
+  beta <- coef(object, type='det')
+  off <- D$Xp.offset
+  if(is.null(off)) off <- rep(0, nrow(D$Xp))
+  plong <- plogis(D$Xp %*% beta + off)
+
+  M <- nrow(D$y)
+  T <- umf@numPrimary
+  J <- ncol(getY(umf)) / T
+
+  pmat <- aperm(array(plong, c(J,T,M)), c(3,1,2))
+
+  pout <- array(NA, c(M,J,T))
+  for (t in 1:T){
+    pout[,,t] <- do.call(umf@piFun, list(p=pmat[,,t]))
+  }
+  matrix(aperm(pout,c(2,3,1)), M, J*T, byrow=TRUE)
+
+})
 
 
 setMethod("getP", "unmarkedFitPCO", function(object, na.rm = TRUE)
@@ -3628,10 +4019,8 @@ setMethod("simulate", "unmarkedFitPCount",
 })
 
 
-
-
-setMethod("simulate", "unmarkedFitPCO",
-    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+#Simulate open-population abundance
+simOpenN <- function(object, na.rm)
 {
     mix <- object@mixture
     dynamics <- object@dynamics
@@ -3686,13 +4075,10 @@ setMethod("simulate", "unmarkedFitPCO",
         iota <- matrix(0, M, T-1)
     if(identical(mix, "ZIP"))
         psi <- plogis(coef(object, type="psi"))
-    p <- getP(object, na.rm = na.rm)
+
     N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
-    simList <- list()
-    for(s in 1:nsim) {
-        y.sim <- matrix(NA, M, J*T)
-        for(i in 1:M) {
+    for(i in 1:M) {
             switch(mix,
                    P = N[i, 1] <- rpois(1, lambda),
                    NB = N[i, 1] <- rnbinom(1, size =
@@ -3762,14 +4148,86 @@ setMethod("simulate", "unmarkedFitPCO",
                 }
             }
         }
-        y.na <- is.na(y)
+    N
+}
+
+setMethod("simulate", "unmarkedFitPCO",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+
+    umf <- object@data
+    M <- numSites(umf)
+    T <- umf@numPrimary
+    J <- ncol(getY(umf)) / T
+    D <- getDesign(umf, object@formula, na.rm = na.rm)
+    y <- D$y
+    y.na <- is.na(y)
+    p <- getP(object, na.rm = na.rm)
+    simList <- list()
+    for(s in 1:nsim) {
+        y.sim <- matrix(NA, M, J*T)
+        N <- simOpenN(object, na.rm)
         N <- N[,rep(1:T, each=J)]
         y.sim[!y.na] <- rbinom(sum(!y.na), N[!y.na], p[!y.na])
         simList[[s]] <- y.sim
-        }
+    }
     return(simList)
 })
 
+
+#Function used by both unmarkedFitDSO and MMO
+multinomOpenSim <- function(object, nsim, seed, na.rm){
+
+  umf <- object@data
+  D <- getDesign(umf, object@formula, na.rm = na.rm)
+  y <- D$y
+  y.na <- is.na(y)
+  M <- numSites(umf)
+  T <- umf@numPrimary
+  J <- ncol(getY(umf)) / T
+  simList <- list()
+  p <- getP(object, na.rm = na.rm)
+  p <- array(p, c(M,J,T))
+  cp <- array(NA, c(M,J+1,T))
+  for (i in 1:M){
+    for (t in 1:T){
+      cp[i, 1:J, t] <- p[i,,t]
+      cp[i, J+1, t] <- 1 - sum(p[i,,t], na.rm=TRUE)
+    }
+  }
+
+  for(s in 1:nsim) {
+    y.sim <- matrix(NA, M, J*T)
+    N <- simOpenN(object, na.rm)
+
+    for(i in 1:M) {
+      yst <- 1
+        for(t in 1:T) {
+          yend <- yst + J - 1
+          #rmultinom2 in utils.R
+          y.it <- as.integer(rmultinom2(1, N[i,t], prob=cp[i,,t]))
+          y.sim[i,yst:yend] <- y.it[1:J]
+          yst <- yst + J
+        }
+    }
+    y.sim[y.na] <- NA
+    simList[[s]] <- y.sim
+  }
+  return(simList)
+}
+
+setMethod("simulate", "unmarkedFitDSO",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+  multinomOpenSim(object, nsim, seed, na.rm)
+})
+
+
+setMethod("simulate", "unmarkedFitMMO",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
+  multinomOpenSim(object, nsim, seed, na.rm)
+})
 
 
 setMethod("simulate", "unmarkedFitMPois",
@@ -3871,7 +4329,7 @@ setMethod("simulate", "unmarkedFitOccuFP",
               P[,1] <- Z*rbinom(M * J, 1, prob = (1-p)) + (1-Z)*rbinom(M * J, 1, prob = (1-fp))
               P[,2] <- (1-P[,1])*(1-Z) + (1-P[,1])*rbinom(M * J, 1, prob = (1-b))*Z
               P[,3] <- 1 - P[,1]-P[,2]
-              yvec <- sapply(1:(M*J),function(x) which(as.logical(rmultinom(1,1,P[x,])))-1)
+              yvec <- sapply(1:(M*J),function(x) which(as.logical(rmultinom2(1,1,P[x,])))-1)
               simList[[i]] <- matrix(yvec, M, J, byrow = TRUE)
             }
             return(simList)
@@ -4258,7 +4716,7 @@ setMethod("simulate", "unmarkedFitGMM",
                 pi.it <- cp.arr[i,t,]
                 na.it <- is.na(pi.it)
                 pi.it[na.it] <- 0
-                y.sim[i,,t] <- drop(rmultinom(1, N[i,t], pi.it))[1:J]
+                y.sim[i,,t] <- drop(rmultinom2(1, N[i,t], pi.it))[1:J]
                 y.sim[i,na.it[1:J],t] <- NA
             }
         }
@@ -4399,7 +4857,7 @@ setMethod("simulate", "unmarkedFitGDS",
     for(s in 1:nsim) {
         for(i in 1:M) {
             switch(mixture,
-                P = Ns <- rpois(1, lambda[1]),
+                P = Ns <- rpois(1, lambda[i]),
                 NB = {
                     alpha <- exp(coef(object, type="alpha"))
                     Ns <- rnbinom(1, mu=lambda[i], size=alpha)
@@ -4408,7 +4866,7 @@ setMethod("simulate", "unmarkedFitGDS",
                 N <- rbinom(1, Ns, phi[i,t])
                 cp.it <- cpa[i,,t]
                 cp.it[J+1] <- 1-sum(cp.it)
-                y.it <- as.integer(rmultinom(1, N, prob=cp.it))
+                y.it <- as.integer(rmultinom2(1, N, prob=cp.it))
                 ysim[i,,t] <- y.it[1:J]
                 }
             }

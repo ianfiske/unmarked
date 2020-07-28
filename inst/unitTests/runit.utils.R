@@ -1,5 +1,6 @@
 test.formatLong <- function() {
-  df <- read.csv(system.file("csv","frog2001pcru.csv", package = "unmarked"))
+  df <- read.csv(system.file("csv","frog2001pcru.csv", package = "unmarked"),
+                 stringsAsFactors=TRUE)
   umf <- formatLong(df, type = "unmarkedFrameOccu")
   ## Add some assertions...
 
@@ -66,11 +67,11 @@ test.formatLong <- function() {
       -2,0,0,
       -3,1,0,
       0,0,0), nrow=R, ncol=J, byrow=TRUE),
-    x4 = matrix(c(
+    x4 = matrix(factor(c(
       'a','b','c',
       'd','b','a',
       'a','a','c',
-      'a','b','a'), nrow=R, ncol=J, byrow=TRUE))
+      'a','b','a')), nrow=R, ncol=J, byrow=TRUE))
   umf <- unmarkedFramePCount(y=y, siteCovs=site.covs,
                              obsCovs=obs.covs)          # organize data
   # Corresponding long data.frame
@@ -96,7 +97,7 @@ test.formatLong <- function() {
     0, 0, 0, 0, 0), nrow=4, ncol=5, byrow=TRUE)
 
   # Site-specific covariates
-  sc1 <- data.frame(x1 = 1:4, x2 = c('A','A','B','B'))
+  sc1 <- data.frame(x1 = 1:4, x2 = factor(c('A','A','B','B')))
 
   # Observation-specific covariates
   oc1 <- list(
@@ -118,7 +119,7 @@ test.formatLong <- function() {
                      obsnum = 1:5,
                      y = as.vector(t(y1)),
                      x1 = rep(1:4, each = 5),
-                     x2 = rep(c('A','A','B','B'), each = 5),
+                     x2 = factor(rep(c('A','A','B','B'), each = 5)),
                      x3 = 1:5,
                      x4 = letters[1:5])
   umf2 <- formatLong(test, type = "unmarkedFramePCO", numPrimary = 5,
@@ -200,4 +201,52 @@ test.formatMult <- function() {
                   obsToY = structure(c(1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
                                        0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0,
                                        0, 0, 0, 0, 1), .Dim = c(6L, 6L))))
+}
+
+test.invertHessian <- function(){
+
+  a <- 4; b <- 7; c <- 2; d <- 6
+  mat <- matrix(c(a,b,c,d), nrow=2, byrow=T)
+  mat_det <- a*d-b*c
+  inv_mat <- 1/mat_det * matrix(c(d, -b, -c, a), nrow=2, byrow=T)
+  
+  fake_opt <- list(hessian=mat)
+
+  #Successful inversion
+  checkEqualsNumeric(unmarked:::invertHessian(fake_opt, nrow(mat), TRUE), 
+                     inv_mat)
+
+  #When se=F
+  checkEqualsNumeric(unmarked:::invertHessian(fake_opt, nrow(mat), FALSE),
+                     matrix(rep(NA,4), nrow=2))
+
+  #When matrix is not invertible
+  bad_opt <- list(hessian=matrix(c(1, -2, -3, 6), nrow=2, byrow=T))
+  checkException(solve(bad_opt$hessian))
+ 
+  #Should generate warning
+  options(warn=2)
+  checkException(unmarked:::invertHessian(bad_opt, nrow(bad_opt$hessian), TRUE))
+  options(warn=0)
+
+  #Should result in matrix of NAs 
+  checkEqualsNumeric(unmarked:::invertHessian(bad_opt, nrow(bad_opt$hessian), FALSE),
+                     matrix(rep(NA,4), nrow=2))
+}
+
+test.csvToUMF <- function(){
+  
+  options(warn=2)
+  checkException(umf <- csvToUMF(system.file("csv","csv_factor_test.csv", 
+                                  package = "unmarked"), type="unmarkedFrameOccu"))
+  options(warn=0)
+
+  umf <- csvToUMF(system.file("csv","csv_factor_test.csv", 
+                  package = "unmarked"), type="unmarkedFrameOccu")
+
+  checkEquals(sapply(siteCovs(umf), class), c(elev="numeric", forest="factor"))
+  checkEquals(sapply(obsCovs(umf), class), c(wind="numeric", rain="factor"))
+  
+  df <- as(umf, "data.frame")
+  checkEqualsNumeric(dim(df), c(20,11)) 
 }

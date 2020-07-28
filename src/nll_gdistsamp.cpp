@@ -1,85 +1,11 @@
 #include "nll_gdistsamp.h"
+#include "distprob.h"
 
 using namespace Rcpp;
 using namespace arma;
 
 mat invlogit(const mat& inp ){
   return(1 / (1 + exp(-1 * inp)));
-}
-
-vec p_halfnorm(const double& sigma, const std::string& survey, 
-               const vec& db, const vec& w, const rowvec& a){
-  
-  int J = db.size() - 1;
-  vec p(J);
-
-  if(survey == "line"){
-    double f0 = 2 * R::dnorm(0.0, 0.0, sigma, 0);
-    int L = db.size();
-    vec p1(L-1);
-    vec p2(L-1);
-    for(int l=1; l<L; l++){
-      p1(l-1) = R::pnorm(db(l), 0.0, sigma, 1, 0);
-      p2(l-1) = R::pnorm(db(l-1), 0.0, sigma, 1, 0);
-    }
-    vec int_ = 2 * (p1 - p2);
-    p = int_ / f0 / w;
-
-  } else if(survey == "point"){
-    for (int j=0; j<J; j++){
-      double s2 = pow(sigma,2);
-      double p1 = 1 - exp(-pow(db(j+1),2) / (2 * s2));
-      double p2 = 1 - exp(-pow(db(j),2) / (2 * s2)); 
-      double int_ = s2 * p1 - s2 * p2;
-      p(j) = int_ * 2 * M_PI / a(j);
-    }
-  }
-  return(p);
-}
-
-vec p_exp(const double& rate, const std::string& survey, const vec& db, 
-          const vec& w, const rowvec& a, double& rel_tol){
-
-  int J = db.size() - 1;
-  vec p(J);
-
-  if(survey == "line"){
-    for(int j=0; j<J; j++){
-      double int_ = rate*(1 - exp(-db(j+1)/rate)) - rate*(1-exp(-db(j)/rate));
-      p(j) = int_ / w(j);
-    }
-
-  } else if(survey == "point"){
-    DetExp f(rate, 1);
-    for(int j=0; j<J; j++){
-      double int_ = trap_rule(f, db(j), db(j+1));
-      p(j) = int_ * 2 * M_PI / a(j);
-    }
-  }
-  return(p);
-}
-
-vec p_hazard(const double& shape, const double& scale, const std::string& survey, 
-          const vec& db, const vec& w, const rowvec& a, double& rel_tol){
-
-  int J = db.size() - 1;
-  vec p(J);
-
-  if(survey == "line"){
-    DetHaz f(shape, scale, 0);
-    for(int j=0; j<J; j++){
-      double int_ = trap_rule(f, db(j), db(j+1));
-      p(j) = int_ / w(j);
-    }
-
-  } else if(survey == "point"){
-    DetHaz f(shape, scale, 1);
-    for(int j=0; j<J; j++){
-      double int_ = trap_rule(f, db(j), db(j+1));
-      p(j) = int_ * 2 * M_PI / a(j);
-    }
-  }
-  return(p);
 }
 
 SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
@@ -125,8 +51,8 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
   int nPP = as<int>(nPP_);
   int nDP = as<int>(nDP_);
   
-  //Integration tol
-  double rel_tol = as<double>(rel_tol_);
+  //Integration tol currently unused
+  //double rel_tol = as<double>(rel_tol_);
 
   int M = Xlam.n_rows;
   vec lambda = exp( Xlam * beta.subvec(0, (nLP - 1) ) + Xlam_offset ) % A;
@@ -173,24 +99,12 @@ SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
         vec p2 = y.subvec(y_ind, y_stop);
         
         //calculate p
-        vec p(J);
-        if(keyfun == "uniform"){
-          p = ones(J); 
-        } else if (keyfun == "halfnorm"){
-          //det_param is sigma
-          p = p_halfnorm(det_param(t_ind), survey, db, w, a.row(m));
-        } else if (keyfun == "exp"){
-          //det_param is rate
-          p = p_exp(det_param(t_ind), survey, db, w, a.row(m), rel_tol);
-        } else if (keyfun == "hazard"){
-          //det_param is shape
-          double scale = exp(beta(nLP+nPP+nDP));
-          p = p_hazard(det_param(t_ind), scale, survey, db, w, a.row(m), rel_tol);
-        } else{
-          stop("invalid keyfun");
+        double scale = 0.0;
+        if(keyfun =="hazard"){
+          scale = exp(beta(nLP+nPP+nDP));
         }
-        //other keyfuns
-
+        vec p = distprob(keyfun, det_param(t_ind), scale, survey, db, 
+                          w, a.row(m));
         vec p3 = p % u.col(m) * phi(t_ind);
         //the following line causes a segfault only in R CMD check,
         //when kmyt contains NA values

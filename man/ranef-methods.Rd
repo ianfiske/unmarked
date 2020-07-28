@@ -17,6 +17,8 @@
 \alias{ranef,unmarkedFitColExt-method}
 \alias{ranef,unmarkedFitPCO-method}
 \alias{ranef,unmarkedFitOccuTTD-method}
+\alias{ranef,unmarkedFitDSO-method}
+\alias{ranef,unmarkedFitMMO-method}
 \title{ Methods for Function \code{ranef} in Package \pkg{unmarked} }
 \description{
 Estimate posterior distributions of the random variables (latent
@@ -147,6 +149,38 @@ post.df <- as(re, "data.frame")
 head(post.df)
 post.arr <- as(re, "array")
 
+#Generate posterior predictive distribution for a function
+#of random variables using predict()
+
+#First, create a function that operates on a vector of 
+#length M (if you fit a single-season model) or a matrix of 
+#dimensions MxT (if a dynamic model), where
+#M = nsites and T = n primary periods
+#Our function will generate mean abundance for sites 1-10 and sites 11-20
+myfunc <- function(x){ #x will be length 20 since M=20
+  
+  #Mean of first 10 sites
+  group1 <- mean(x[1:10])
+  #Mean of sites 11-20
+  group2 <- mean(x[11:20])
+  
+  #Naming elements of the output is optional but helpful
+  return(c(group1=group1, group2=group2))
+
+}
+
+#Get 100 samples of the values calculated in your function
+(pr <- predict(re, func=myfunc, nsims=100))
+
+#Summarize posterior
+data.frame(mean=rowMeans(pr),
+           se=apply(pr, 1, stats::sd),
+           lower=apply(pr, 1, stats::quantile, 0.025),
+           upper=apply(pr, 1, stats::quantile, 0.975))
+
+#Alternatively, you can return the posterior predictive distribution
+#and run operations on it separately
+(ppd <- posteriorSamples(re, nsims=100))
 
 }
 \keyword{methods}

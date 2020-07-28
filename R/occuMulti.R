@@ -36,7 +36,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
 
   dmF <- Matrix::Matrix(dmF, sparse=TRUE) # convert to sparse matrix
   #Only transpose once
-  t_dmF <- t(dmF)
+  t_dmF <- Matrix::t(dmF)
   #----------------------------------------------------------------------------
 
   #Likelihood function in R----------------------------------------------------
@@ -99,12 +99,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
 
   if(missing(starts)) starts <- rep(0, nP)
   fm <- optim(starts, nll, method = method, hessian = se, ...)
-
-  if(se) {
-    tryCatch(covMat <- solve(fm$hessian),
-      error=function(x) stop(simpleError("Hessian is singular.
-        Try providing starting values or using fewer covariates.")))
-  } else { covMat <- matrix(NA, nP, nP) }
+  covMat <- invertHessian(fm, nP, se)
 
   fmAIC <- 2 * fm$value + 2 * nP
   #----------------------------------------------------------------------------
