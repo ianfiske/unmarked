@@ -223,6 +223,14 @@ fit3 <- occuMulti(detFormulas,occFormulas,data)
 #order to be zero with maxOrder. This will be faster.
 occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov2+occ_cov3')
 fit4 <- occuMulti(detFormulas,occFormulas,data,maxOrder=1)
+
+#Add Bayes penalty term to likelihood. This is useful if your parameter
+#estimates are very large, eg because of separation.
+fit5 <- occuMulti(detFormulas, occFormulas, data, penalty=1)
+
+#Find optimal penalty term value from a range of possible values using
+#K-fold cross validation, and re-fit the model
+fit_opt <- optimizePenalty(fit5, penalties=c(0,1,2))
 }
 
 }

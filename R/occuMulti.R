@@ -1,12 +1,12 @@
-occuMulti <- function(detformulas, stateformulas,  data, maxOrder, 
-                      penalty=0, starts, method='BFGS', se=TRUE, 
+occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
+                      penalty=0, starts, method='BFGS', se=TRUE,
                       engine=c("C","R"), silent=FALSE, ...){
-  
+
   #Format input data-----------------------------------------------------------
   #Check data object
   if(!inherits(data, "unmarkedFrameOccuMulti"))
     stop("Data must be created with unmarkedFrameOccuMulti()")
- 
+
   #Check engine
   engine <- match.arg(engine, c("C", "R"))
 
@@ -61,19 +61,19 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
     for (i in 1:S){
       p[,i] <- plogis(dmDet[[i]] %*% params[dStart[i]:dStop[i]])
     }
-    
+
     prdProbY <- matrix(NA,nrow=N,ncol=M)
     for (i in 1:N){
       inds <- yStart[i]:yStop[i]
       #column dot product of y and log(p) at site i
       cdp <- exp(colSums(y[inds,,drop=F] * log(p[inds,,drop=F])) +
-           colSums((1-y[inds,,drop=F]) * log(1-p[inds,,drop=F])))  
-      prbSeq <- z * tcrossprod(rep(1,M),cdp) + 
+           colSums((1-y[inds,,drop=F]) * log(1-p[inds,,drop=F])))
+      prbSeq <- z * tcrossprod(rep(1,M),cdp) +
         (1-z) * tcrossprod(rep(1,M),Iy0[i,])
       #prod of all p at site i given occupancy states m
       prdProbY[i,] <- apply(prbSeq,1,prod)
     }
-    
+
     #Penalty term (defaults to 0)
     pen <- penalty * 0.5 * sum(params^2)
     #neg log likelihood
@@ -122,7 +122,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
                           invlinkGrad = "logistic.grad")
 
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
-  
+
   umfit <- new("unmarkedFitOccuMulti", fitType = "occuMulti", call = match.call(),
                 detformulas = detformulas, stateformulas = stateformulas,
                 formula = ~1, data = data,
@@ -133,9 +133,10 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
   umfit
 }
 
+# Functions for optimizing penalty value
 
 occuMultiLogLik <- function(fit, data){
-  
+
   if(!inherits(fit, "unmarkedFitOccuMulti"))
     stop("Fit must be created with occuMulti()")
   if(!inherits(data, "unmarkedFrameOccuMulti"))
@@ -144,15 +145,15 @@ occuMultiLogLik <- function(fit, data){
   maxOrder <- fit@call$maxOrder
   if(is.null(maxOrder)) maxOrder <- length(fit@data@ylist)
 
-  dm <- getDesign(data, fit@detformulas, fit@stateformulas, 
+  dm <- getDesign(data, fit@detformulas, fit@stateformulas,
                   maxOrder=maxOrder, warn=FALSE)
-  
+
   dmF <- Matrix::Matrix(dm$dmF, sparse=TRUE)
-  t_dmF <- t(dmF)
-  
+  t_dmF <- Matrix::t(dmF)
+
   out <- .Call("nll_occuMulti",
-          dm$fStart-1, dm$fStop-1, t_dmF, 
-          dm$dmOcc, coef(fit), dm$dmDet, dm$dStart-1, dm$dStop-1, dm$y, 
+          dm$fStart-1, dm$fStop-1, t_dmF,
+          dm$dmOcc, coef(fit), dm$dmDet, dm$dStart-1, dm$dStop-1, dm$y,
           dm$yStart-1, dm$yStop-1, dm$Iy0, as.matrix(dm$z), dm$fixed0, 0,
           #return site likelihoods
           1,
@@ -161,3 +162,26 @@ occuMultiLogLik <- function(fit, data){
   as.vector(out)
 
 }
+
+setGeneric("optimizePenalty",
+           function(object, penalties=c(0,2^seq(-4,4)), k = 5, ...)
+           standardGeneric("optimizePenalty"))
+
+setMethod("optimizePenalty", "unmarkedFitOccuMulti",
+          function(object, penalties=c(0,2^seq(-4,4)), k = 5, ...){
+
+  folds <- partitionKfold(object, k)
+
+  cvp <- sapply(penalties, function(p, k, fit, folds){
+    cv <- sapply(1:k, function(k){
+      refit <- update(fit, data=folds[[k]]$trainData, penalty=p)
+      sum(occuMultiLogLik(refit, folds[[k]]$testData))
+    })
+    sum(cv)
+  }, k=k, fit=object, folds=folds)
+
+  max_cvp <- penalties[which(cvp == max(cvp))]
+  cat("Optimal penalty is", max_cvp,"\n")
+  object@call$penalty <- max_cvp
+  update(object, data=object@data)
+})

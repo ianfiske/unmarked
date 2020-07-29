@@ -344,3 +344,42 @@ test.occuMulti.predict.complexFormulas <- function(){
   checkEqualsNumeric(sapply(pr_nd5, nrow), c(5,5))
   checkEqualsNumeric(pr_nd5$sp1$Predicted[1], 0.1680881)
 }
+
+test.occuMulti.penalty <- function(){
+
+  set.seed(123)
+  y <- list(matrix(rbinom(40,1,0.2),20,2),
+            matrix(rbinom(40,1,0.3),20,2))
+
+  N <- dim(y[[1]])[1]
+  J <- dim(y[[1]])[2]
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('occ_cov',1:3,sep='')
+
+  det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
+  names(det_covs) <- paste('det_cov',1:2,sep='')
+
+  stateformulas <- c('~occ_cov1','~occ_cov2','0')
+  detformulas <- c('~det_cov1','~det_cov2')
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+  fm_pen <- occuMulti(detformulas, stateformulas, data = umf, penalty=1)
+
+  checkEqualsNumeric(coef(fm_pen)[c(1,5)], c(0.1008168, -0.1138400), tol=1e-5)
+
+  #Coefs generally should have smaller absolute values than non-penalty fit
+  checkTrue(all(abs(coef(fm)) > abs(coef(fm_pen))))
+
+  set.seed(123)
+  opt_fit <- optimizePenalty(fm)
+  checkEquals(opt_fit@call$penalty, 16)
+
+  #Check manual setting penalty
+  opt_fit  <- optimizePenalty(fm, penalties=c(1))
+  checkEquals(opt_fit@call$penalty, 1)
+
+  #Check manual setting k-fold
+  opt_fit <- optimizePenalty(fm, k=3)
+}
