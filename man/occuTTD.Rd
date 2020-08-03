@@ -144,6 +144,17 @@ fit <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind, data=umf)
 #Predict psi values
 predict(fit, type='psi', newdata=data.frame(elev=0.5, forest=1))
 
+#Predict lambda values
+predict(fit, type='det', newdata=data.frame(elev=0.5, wind=0))
+
+#Calculate p, probability species is detected at a site given it is present
+#for a value of lambda. This is equivalent to eq 4 of Garrard et al. 2008
+lam <- predict(fit, type='det', newdata=data.frame(elev=0.5, wind=0))$Predicted
+pexp(Tmax, lam)
+
+#Estimated p for all observations
+head(getP(fit))
+
 ### Dynamic model
 
 N <- 1000; J <- 2; T <- 2

@@ -8,13 +8,13 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     SEXP beta_, SEXP beta_ind_,
     SEXP Xlam_offset_,
     SEXP Xgam_offset_, SEXP Xom_offset_, SEXP Xp_offset_, SEXP Xiota_offset_,
-    SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_, 
+    SEXP ytna_, SEXP yna_, SEXP lk_, SEXP mixture_,
     SEXP first_, SEXP last_, SEXP first1_,
     SEXP M_, SEXP T_, SEXP J_, SEXP delta_, SEXP dynamics_,
-    SEXP fix_, SEXP go_dims_, SEXP immigration_, 
+    SEXP fix_, SEXP go_dims_, SEXP immigration_,
     SEXP I_, SEXP I1_, SEXP Ib_, SEXP Ip_, SEXP pi_fun_,
     SEXP lfac_k_, SEXP kmyt_, SEXP lfac_kmyt_, SEXP fin_) {
-  
+
   //Indices
   int lk = as<int>(lk_);
   Rcpp::IntegerVector N = seq_len(lk)-1;
@@ -29,7 +29,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   arma::imat ytna = as<arma::imat>(ytna_); // y[i,,t] are all NA
   icube yna = as<icube>(yna_);
   arma::imat delta = as<arma::imat>(delta_);
- 
+
   vec lfac_k = as<vec>(lfac_k_);
   cube lfac_kmyt = as<cube>(lfac_kmyt_);
   cube kmyt = as<cube>(kmyt_);
@@ -53,7 +53,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   colvec Xgam_offset = as<colvec>(Xgam_offset_);
   colvec Xom_offset = as<colvec>(Xom_offset_);
   colvec Xp_offset = as<colvec>(Xp_offset_);
-  colvec Xiota_offset = as<colvec>(Xiota_offset_);  
+  colvec Xiota_offset = as<colvec>(Xiota_offset_);
 
   //Model types
   std::string mixture = as<std::string>(mixture_);
@@ -66,7 +66,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   //Parameters
   vec beta = as<vec>(beta_);
   umat bi = as<umat>(beta_ind_);
- 
+
   //Lambda
   vec beta_lam = beta.subvec(bi(0,0), bi(0,1));
   vec lam = exp(Xlam*beta_lam + Xlam_offset);
@@ -79,14 +79,14 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   } else if(mixture=="ZIP"){
     psi = 1.0 / (1.0 + exp(-1 * beta(bi(5,0))));
   }
-  
+
   //Omega
   mat omv = ones<colvec>(M*(T-1));
   if((fix != "omega") && (dynamics != "trend")) {
     vec beta_om = beta.subvec(bi(2,0), bi(2,1));
     if((dynamics == "ricker")  || (dynamics == "gompertz")){
         omv = exp(Xom*beta_om + Xom_offset);
-    } else if((dynamics == "constant")  || (dynamics == "autoreg") || 
+    } else if((dynamics == "constant")  || (dynamics == "autoreg") ||
               (dynamics == "notrend")){
         omv = 1.0/(1.0+exp(-1*(Xom*beta_om + Xom_offset)));
     }
@@ -105,18 +105,18 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     gamv.reshape(T-1, M);
     gam = trans(gamv);
   }
-  
+
   //Detection prob
   vec beta_p = beta.subvec(bi(3,0), bi(3,1));
-  vec pv = inv_logit(Xp * beta_p + Xp_offset); 
+  vec pv = inv_logit(Xp * beta_p + Xp_offset);
   //Transform into cube (J x M x T)
   cube p((const double*) pv.begin(), J, M, T);
 
   //Immigration
-  mat iota = zeros(M,T);
+  mat iota = zeros(M,T-1);
   if(immigration){
     vec beta_iota = beta.subvec(bi(4,0), bi(4,1));
-    vec iotav = exp(Xiota*beta_iota + Xiota_offset);
+    mat iotav = exp(Xiota*beta_iota + Xiota_offset);
     iotav.reshape(T-1, M);
     iota = trans(iotav);
   }
@@ -154,7 +154,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 	      continue;
       }
       if(dynamics=="constant" || dynamics=="notrend") {
-	      tp1(g3_t.slice(t), nrI, nrI1, N, I, I1, Ib, Ip, 
+	      tp1(g3_t.slice(t), nrI, nrI1, N, I, I1, Ib, Ip,
             gam(first1,t), om(first1,t));
       }
       else if(dynamics=="autoreg") {
@@ -168,20 +168,20 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 	      tp5(g3_t.slice(t), lk, gam(first1,t), om(first1,t), iota(first1,t));
     }
   }
-  
+
   // loop over sites
   for(int i=0; i<M; i++) {
     ll_i=0.0;
     first_i = first[i];
     last_i = last[i];
-    
+
     ky_slice = kmyt.slice(i); //using subcube causes segfaults
-    
+
     //Calculate g_star
     g_star.ones();
     if(last_i > first_i) {
       // loop over time periods in reverse order, up to second occasion
-      for(int t=last_i; t>first_i; t--) {	      
+      for(int t=last_i; t>first_i; t--) {
         g1_t.zeros();
         //Skip site i time t if all NA
         if(ytna(i,t)==1) {
@@ -190,11 +190,11 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 
         //Detection
         ivec na_sub = yna.subcube(span(i), span(t), span());
-        
+
         uvec ysub = y.subcube(span(i), span(t), span());
         vec lkmyt_sub = lfac_kmyt.subcube(span(i), span(t), span());
         vec psub = p.subcube(span(), span(i), span(t));
-        vec cp = piFun(psub, pi_fun); 
+        vec cp = piFun(psub, pi_fun);
 
         ivec fin_sub = fin.subcube(span(i), span(t), span());
         vec kmyt_sub = ky_slice.col(t);
@@ -229,7 +229,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 	          tp4(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
 	        else if(dynamics=="gompertz")
 	          tp5(g3, lk, gam(i,t-1), om(i,t-1), iota(i,t-1));
-        } 
+        }
         else if(go_dims == "rowvec") {
 	        g3 = g3_t.slice(t-1);
         }
@@ -241,23 +241,23 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 	        g3_d = g3_d * g3;
 	      }
 	      g_star = g3_d * g1_t_star;
-        } 
+        }
         else {
 	        g_star = g3 * g1_t_star;
         }
       }
     }
-    
+
     //Calculate g1
     int delta_i0 = delta(i,0);
     g1.zeros();
 
     ivec na_sub = yna.subcube(span(i), span(first_i), span());
-        
+
     uvec ysub = y.subcube(span(i), span(first_i), span());
     vec lkmyt_sub = lfac_kmyt.subcube(span(i), span(first_i), span());
     vec psub = p.subcube(span(), span(i), span(first_i));
-    vec cp = piFun(psub, pi_fun); 
+    vec cp = piFun(psub, pi_fun);
 
     ivec fin_sub = fin.subcube(span(i), span(first_i), span());
     vec kmyt_sub = ky_slice.col(first_i);
@@ -297,11 +297,11 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
         g2(k) = dzip(k, lam(i), psi);
       }
     }
-    
+
     //Combine g1, g2, gstar
     if(delta_i0==1) {
-      vec g12star = g1 % g2 % g_star; 
-      ll_i += sum(g12star);     
+      vec g12star = g1 % g2 % g_star;
+      ll_i += sum(g12star);
     }
     else if(delta_i0>1) {
       g3_d = g3;
@@ -310,7 +310,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
       }
       g_star = g3_d * g1_star;
       vec g2star = g2 % g_star;
-      ll_i += sum(g2star);     
+      ll_i += sum(g2star);
     }
 
     ll += log(ll_i + DOUBLE_XMIN);

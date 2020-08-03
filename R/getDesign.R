@@ -485,7 +485,7 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
   z <- expand.grid(rep(list(1:0),S))[,S:1] # z matrix
   colnames(z) <- names(umf@ylist)
   M <- nrow(z) # of possible z states
-  
+
   # f design matrix
   if(maxOrder == 1){
     dmF <- as.matrix(z)
@@ -493,7 +493,7 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
     dmF <- model.matrix(as.formula(paste0("~.^",maxOrder,"-1")),z)
   }
   nF <- ncol(dmF) # of f parameters
-  
+
   J <- ncol(umf@ylist[[1]]) # max # of samples at a site
   N <- nrow(umf@ylist[[1]]) # of sites
 
@@ -515,13 +515,16 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
     obs_covs <- obsCovs(umf)
   }
 
-  # Record future column names for obsCovs
-  col_names <- c(colnames(obs_covs), colnames(site_covs))
+  #Add site covs to obs covs if we aren't predicting
+  if(is.null(old_fit)){
+    # Record future column names for obsCovs
+    col_names <- c(colnames(obs_covs), colnames(site_covs))
 
-  # add site covariates at observation-level
-  obs_covs <- cbind(obs_covs, site_covs[rep(1:N, each = J),])
-  colnames(obs_covs) <- col_names
-  
+    # add site covariates at observation-level
+    obs_covs <- cbind(obs_covs, site_covs[rep(1:N, each = J),])
+    colnames(obs_covs) <- col_names
+  }
+
   #Re-format ylist
   index <- 1
   ylong <- lapply(umf@ylist, function(x) {
@@ -554,14 +557,14 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 
     ylong <- ylong[!navec,,drop=FALSE]
     obs_covs <- obs_covs[!navec,,drop=FALSE]
-  
+
     no_data_sites <- which(! 1:N %in% ylong$site)
     if(length(no_data_sites>0)){
       stop(paste("All detections and/or detection covariates are missing at sites:",
                   paste(no_data_sites,collapse=", ")))
     }
 
-    if(sum(naY)>0&warn){  
+    if(sum(naY)>0&warn){
       warning(paste("Missing detections at sites:",
                     paste(sites_with_missingY,collapse=", ")))
     }
@@ -577,12 +580,12 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 
   #Start-stop indices for sites
   yStart <- c(1,1+which(diff(ylong$site)!=0))
-  yStop <- c(yStart[2:length(yStart)]-1,nrow(ylong)) 
-  
+  yStop <- c(yStart[2:length(yStart)]-1,nrow(ylong))
+
   y <- as.matrix(ylong[,3:ncol(ylong)])
 
   #Indicator matrix for no detections at a site
-  Iy0 <- do.call(cbind, lapply(umf@ylist, 
+  Iy0 <- do.call(cbind, lapply(umf@ylist,
                                function(x) as.numeric(rowSums(x, na.rm=T)==0)))
 
   #Design matrices + parameter counts
@@ -602,7 +605,7 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 
   fInd <- c()
   sf_no0 <- stateformulas[!fixed0]
-  var_names <- colnames(dmF)[!fixed0] 
+  var_names <- colnames(dmF)[!fixed0]
   dmOcc <- lapply(seq_along(sf_no0),function(i){
                     fac_col <- site_ref[, sapply(site_ref, is.factor), drop=FALSE]
                     mf <- model.frame(sf_no0[[i]], site_ref)
@@ -616,10 +619,10 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
                     out
           })
   fStart <- c(1,1+which(diff(fInd)!=0))
-  fStop <- c(fStart[2:length(fStart)]-1,length(fInd)) 
+  fStop <- c(fStart[2:length(fStart)]-1,length(fInd))
   occParams <- unlist(lapply(dmOcc,colnames))
   nOP <- length(occParams)
-  
+
   #For detection
   dInd <- c()
   dmDet <- lapply(seq_along(detformulas),function(i){
@@ -635,10 +638,10 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
                     out
           })
   dStart <- c(1,1+which(diff(dInd)!=0)) + nOP
-  dStop <- c(dStart[2:length(dStart)]-1,length(dInd)+nOP) 
+  dStop <- c(dStart[2:length(dStart)]-1,length(dInd)+nOP)
   detParams <- unlist(lapply(dmDet,colnames))
   #nD <- length(detParams)
-  
+
   #Combined
   paramNames <- c(occParams,detParams)
   nP <- length(paramNames)
@@ -651,22 +654,22 @@ setMethod("getDesign", "unmarkedFrameOccuMulti",
 
 setMethod("getDesign", "unmarkedFrameOccuMS",
     function(umf, psiformulas, phiformulas, detformulas, prm, na.rm=TRUE,
-             return_frames=FALSE, old_fit=NULL) 
+             return_frames=FALSE, old_fit=NULL)
 {
-  
+
   N <- numSites(umf)
   S <- umf@numStates
   T <- umf@numPrimary
   R <- obsNum(umf)
   J <- R / T
   npsi <- S-1 #Number of free psi values
-  nphi <- S^2 - S #Number of free phi values 
-  np <- S * (S-1) / 2 #Number of free p values 
+  nphi <- S^2 - S #Number of free phi values
+  np <- S * (S-1) / 2 #Number of free p values
 
   if(length(psiformulas) != npsi){
     stop(paste(npsi,'formulas are required in psiformulas vector'))
   }
-  
+
   if(is.null(phiformulas)){
     if(prm == 'condbinom') {
       phiformulas <- rep('~1',6)
@@ -693,7 +696,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
   #Function to create list of design matrices from list of formulas
   get_dm <- function(formulas, covs, namevec, old_covs=NULL){
-    
+
     ref_covs <- covs
     if(!is.null(old_covs)) ref_covs <- old_covs
 
@@ -703,8 +706,8 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     apply_func <- function(i){
       mf <- model.frame(as.formula(formulas[i]), ref_covs)
       xlevs <- xlevs_all[names(xlevs_all) %in% names(mf)]
-      out <- model.matrix(as.formula(formulas[i]), 
-              model.frame(stats::terms(mf), covs, 
+      out <- model.matrix(as.formula(formulas[i]),
+              model.frame(stats::terms(mf), covs,
                           na.action=stats::na.pass, xlev=xlevs))
       #improve these names
       colnames(out) <- paste(namevec[i], colnames(out))
@@ -727,7 +730,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     inds <- which(inds,arr.ind=T) - 1
     paste0('p[',inds[,2],inds[,1],']')
   }
-  
+
   #Informative names for phi
   get_phi_names <- function(np, prm){
     if(prm=='condbinom'){
@@ -774,17 +777,20 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   site_covs <- get_covs(siteCovs(umf), N)
 
   y_site_covs <- get_covs(yearlySiteCovs(umf), N*T)
-  
+
   ## in order to drop factor levels that only appear in last year,
   ## replace last year with NAs and use drop=TRUE
-  y_site_covs[seq(T,N*T,by=T),] <- NA
-  y_site_covs <- as.data.frame(lapply(y_site_covs, function(x) x[,drop = TRUE]))
-  #Actually just remove last year
-  y_site_covs <- y_site_covs[-seq(T,N*T,by=T),,drop=FALSE]
-  
+  ## this should only be done when not predicting
+  if(is.null(old_fit)){
+    y_site_covs[seq(T,N*T,by=T),] <- NA
+    y_site_covs <- as.data.frame(lapply(y_site_covs, function(x) x[,drop = TRUE]))
+    #Actually just remove last year
+    y_site_covs <- y_site_covs[-seq(T,N*T,by=T),,drop=FALSE]
+  }
+
   obs_covs <- get_covs(obsCovs(umf), N*R)
   y <- getY(umf)
-  
+
   #Handle NAs
   removed.sites <- NA
   if(na.rm){
@@ -813,14 +819,14 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
     all_y_na <- which(apply(y,1, check_site_na ))
     if(length(all_y_na)>0){
-      warning("Some sites removed because all y values in a primary period were missing") 
+      warning("Some sites removed because all y values in a primary period were missing")
     }
     miss_covs <- get_na_inds(psiformulas, site_covs)
     if(length(miss_covs)>0){
-      warning("Some sites removed because site covariates were missing") 
+      warning("Some sites removed because site covariates were missing")
     }
     removed.sites <- sort(unique(c(all_y_na,miss_covs)))
-    
+
     if(T>1){
       ysc_na <- get_na_inds(phiformulas, y_site_covs)
       if(length(ysc_na) > 0){
@@ -832,7 +838,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
       ymap <- as.vector(t(matrix(rep(1:N,each=R),ncol=R,byrow=T)))
       site_covs <- site_covs[-removed.sites,,drop=FALSE]
       obs_covs <- obs_covs[!ymap%in%removed.sites,,drop=FALSE]
-      if(T>1){  
+      if(T>1){
         ysc_map <- as.vector(t(matrix(rep(1:N,each=(T-1)),ncol=(T-1),byrow=T)))
         y_site_covs <- y_site_covs[!ysc_map%in%removed.sites,,drop=FALSE]
       }
@@ -842,13 +848,13 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
 
   }
 
-  if(return_frames){ 
+  if(return_frames){
     return(list(site_covs=site_covs, y_site_covs=y_site_covs, obs_covs=obs_covs))
   }
 
   old_sc <- old_ysc <- old_oc <- NULL
   if(!is.null(old_fit)){
-    old_frames <- getDesign(old_fit@data, old_fit@psiformulas, 
+    old_frames <- getDesign(old_fit@data, old_fit@psiformulas,
                             old_fit@phiformulas, old_fit@detformulas,
                             old_fit@parameterization, return_frames=TRUE)
     old_sc <- old_frames$site_covs
@@ -856,11 +862,11 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
     old_oc <- old_frames$obs_covs
   }
 
-  dm_state <- get_dm(psiformulas, site_covs, 
-                     get_psi_names(length(psiformulas),prm), old_sc) 
+  dm_state <- get_dm(psiformulas, site_covs,
+                     get_psi_names(length(psiformulas),prm), old_sc)
   nSP <- length(get_param_names(dm_state))
   state_ind <- get_param_inds(dm_state) #generate ind matrix in function
-  
+
   nPP <- 0; dm_phi <- list(); phi_ind <- c()
   if(T>1){
     dm_phi <- get_dm(phiformulas, y_site_covs,
@@ -872,7 +878,7 @@ setMethod("getDesign", "unmarkedFrameOccuMS",
   dm_det <- get_dm(detformulas, obs_covs, get_p_names(S,prm), old_oc)
   det_ind <- get_param_inds(dm_det, offset=(nSP+nPP))
 
-  param_names <- c(get_param_names(dm_state), 
+  param_names <- c(get_param_names(dm_state),
                    get_param_names(dm_phi),
                    get_param_names(dm_det))
 
@@ -1091,20 +1097,20 @@ setMethod("getDesign", "unmarkedFrameDSO",
     Xiota.offset <- as.vector(model.offset(Xiota.mf))
     if(!is.null(Xiota.offset))
         Xiota.offset[is.na(Xiota.offset)] <- 0
-    
+
     #Detection uses yearlySiteCovs
     Xp.mf <- model.frame(pformula, yearlySiteCovs, na.action = stats::na.pass)
     Xp <- model.matrix(pformula, Xp.mf)
     Xp.offset <- as.vector(model.offset(Xp.mf))
     if(!is.null(Xp.offset))
         Xp.offset[is.na(Xp.offset)] <- 0
-    
+
     Xgam.mf <- model.frame(gamformula, transCovs, na.action = stats::na.pass)
     Xgam <- model.matrix(gamformula, Xgam.mf)
     Xgam.offset <- as.vector(model.offset(Xgam.mf))
     if(!is.null(Xgam.offset))
         Xgam.offset[is.na(Xgam.offset)] <- 0
-    
+
     Xom.mf <- model.frame(omformula, transCovs, na.action = stats::na.pass)
     Xom <- model.matrix(omformula, Xom.mf)
     Xom.offset <- as.vector(model.offset(Xom.mf))
@@ -1149,18 +1155,18 @@ setMethod("getDesign", "unmarkedFrameDSO",
         if(all(go.dims.vec == "rowvec"))
             go.dims <- "rowvec"
         else if(all(go.dims.vec == "colvec"))
-          ## NOTE: Temporary fix to the problem reported with 
+          ## NOTE: Temporary fix to the problem reported with
           ## time-only-varying covariates
-            go.dims <- "matrix" ##"colvec"  
+            go.dims <- "matrix" ##"colvec"
         else
             go.dims <- "matrix"
     }
-    
+
     if(na.rm){
       out <- handleNA(umf, Xlam, Xgam, Xom, Xp, Xiota,
-                      Xlam.offset, Xgam.offset, Xom.offset, Xp.offset, 
+                      Xlam.offset, Xgam.offset, Xom.offset, Xp.offset,
                       Xiota.offset, delta)
-    } else {   
+    } else {
       # delta needs to be formatted first
       ya <- array(y, c(M, J, T))
       yna <- apply(is.na(ya), c(1,3), all)
@@ -1312,12 +1318,12 @@ setMethod("handleNA", "unmarkedFrameDSO",
     function(umf, Xlam, Xgam, Xom, Xp, Xiota, Xlam.offset, Xgam.offset,
              Xom.offset, Xp.offset, Xiota.offset, delta)
 {
-	
+
   y <- getY(umf)
   M <- numSites(umf)
   T <- umf@numPrimary
   J <- ncol(y) / T
-  
+
   ymat <- array(y, c(M,J,T))
 
   #Apply NAs for entire observation if any intervals are NA
@@ -1334,7 +1340,7 @@ setMethod("handleNA", "unmarkedFrameDSO",
   #NAs in lambda design matrix - have to delete entire site
   site_NA <- apply(Xlam, 1, function(x) any(is.na(x)))
   ymat[site_NA,,] <- NA
-  
+
   find_na <- function(ymat, dm, M, T){
     dm <- matrix(apply(dm, 1, function(x) any(is.na(x))), M, T, byrow=TRUE)
     na_ind <- which(dm, arr.ind=TRUE)
@@ -1351,7 +1357,7 @@ setMethod("handleNA", "unmarkedFrameDSO",
   ymat <- find_na(ymat, Xom, M, T-1)
   ymat <- find_na(ymat, Xiota, M, T-1)
   ymat <- find_na(ymat, Xp, M, T)
-  
+
   if(sum(is.na(ymat)) > original_na_count){
     warning("Some observations have been discarded because corresponding covariates were missing.", call. = FALSE)
   }
@@ -1372,14 +1378,14 @@ setMethod("handleNA", "unmarkedFrameDSO",
     Xlam.offset <- Xlam.offset[-sites.to.remove]
     delta <- delta[-sites.to.remove,,drop=FALSE]
 
-    ysc_rem <- rep(1:M, each=(T-1)) %in% sites.to.remove 
+    ysc_rem <- rep(1:M, each=(T-1)) %in% sites.to.remove
     Xgam <- Xgam[!ysc_rem,, drop=FALSE]
     Xgam.offset <- Xgam.offset[!ysc_rem]
     Xom <- Xom[!ysc_rem,, drop=FALSE]
     Xom.offset <- Xom.offset[!ysc_rem]
     Xiota <- Xiota[!ysc_rem,, drop=FALSE]
     Xiota.offset <- Xiota.offset[!ysc_rem]
-    
+
     p_rem <- rep(1:M, each=T) %in% sites.to.remove
     Xp <- Xp[!p_rem,, drop=FALSE]
     Xp.offset <- Xp.offset[!p_rem]

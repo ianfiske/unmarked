@@ -6,11 +6,11 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     fix=c("none", "gamma", "omega"), immigration=FALSE, iotaformula = ~1,
     starts, method="BFGS", se=TRUE, ...)
 {
-  
+
   #Check data source
   if(!is(data, "unmarkedFrameDSO"))
     stop("Data is not of class unmarkedFrameDSO.")
-  
+
   #Check detection model arguments
   keyfun <- match.arg(keyfun)
   if(!keyfun %in% c("halfnorm", "exp", "hazard", "uniform"))
@@ -21,10 +21,10 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     }
     pformula <- ~1
   }
-  
+
   output <- match.arg(output)
   unitsOut <- match.arg(unitsOut)
-  
+
   db <- data@dist.breaks
   w <- diff(db)
   tlength <- data@tlength
@@ -34,15 +34,20 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   #Check state model arguments
   mixture <- match.arg(mixture)
   dynamics <- match.arg(dynamics)
+
+  if((identical(dynamics, "constant") || identical(dynamics, "notrend")) & immigration)
+    stop("You can not include immigration in the constant or notrend models")
+
   if(identical(dynamics, "notrend") &
    !identical(lambdaformula, omegaformula))
     stop("lambdaformula and omegaformula must be identical for notrend model")
+
   fix <- match.arg(fix)
 
   formlist <- mget(c("lambdaformula", "gammaformula", "omegaformula",
                    "pformula", "iotaformula"))
   formula <- as.formula(paste(unlist(formlist), collapse=" "))
-  
+
   D <- getDesign(data, formula)
   y <- D$y
 
@@ -63,14 +68,14 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   Xom.offset <- D$Xom.offset
   Xsig.offset <- D$Xp.offset
   Xiota.offset<- D$Xiota.offset
-  
+
   y <- array(y, c(M, J, T))
   yt <- apply(y, c(1,3), function(x) {
     if(all(is.na(x)))
         return(NA)
     else return(sum(x, na.rm=TRUE))
   })
-  
+
   ytna <- apply(is.na(y), c(1,3), all)
   ytna <- matrix(ytna, nrow=M)
   ytna[] <- as.integer(ytna)
@@ -78,7 +83,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   first <- apply(!ytna, 1, function(x) min(which(x)))
   last  <- apply(!ytna, 1, function(x) max(which(x)))
   first1 <- which(first==1)[1]
-  
+
   #K stuff
   if(missing(K)) {
     K <- max(y, na.rm=T) + 20
@@ -104,13 +109,13 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   }
 
   #Transect areas / proportions
-  ua <- getUA(data) #in utils.R  
+  ua <- getUA(data) #in utils.R
   u <- ua$u; a <- ua$a
   if(length(D$removed.sites)>0){
     u <- ua$u[-D$removed.sites,]
     a <- ua$a[-D$removed.sites,]
   }
-  
+
   switch(survey,
     line = A <- rowSums(a) * 2,
     point = A <- rowSums(a))
@@ -130,12 +135,12 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   nAP <- ncol(Xlam)
   nGP <- ncol(Xgam)
   nOP <- ncol(Xom)
-  
+
   #No parameters if uniform key function
   nDP <- ifelse(keyfun == "uniform", 0, ncol(Xsig))
   detParms <- character(0)
   if(keyfun != "uniform") detParms <- colnames(Xsig)
-  
+
   nIP <- ifelse(immigration, ncol(Xiota), 0)
   iotaParms <- character(0)
   if(immigration) iotaParms <- colnames(Xiota)
@@ -179,7 +184,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   nP <- nAP + nGP + nOP + nDP + nIP + (mixture!="P") + (keyfun == "hazard")
   if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
-  
+
   nbParm <- character(0)
   if(identical(mixture,"NB"))
     nbParm <- "alpha"
@@ -189,7 +194,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   scaleParm <- character(0)
   if(identical(keyfun, "hazard")) scaleParm <- "scale"
 
-  paramNames <- c(lamParms, gamParms, omParms, detParms, 
+  paramNames <- c(lamParms, gamParms, omParms, detParms,
                  iotaParms, scaleParm, nbParm)
 
   #Create indices, all possible combinations of survivors and recruits,
@@ -222,7 +227,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
           lk, mixture, first - 1, last - 1, first1 - 1, M, T,
           delta, dynamics, survey, fix, go.dims, immigration,
           I, I1, lik_trans$Ib, lik_trans$Ip,
-          a, u, w, db, 
+          a, u, w, db,
           keyfun, lfac.k, kmyt, lfac.kmyt, fin, A,
           PACKAGE = "unmarked")
   }
@@ -233,11 +238,11 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     if(keyfun != "uniform")
       starts[beta_ind[4,1]] <- log(mean(w))
   }
-  
+
   fm <- optim(starts, nll, method=method, hessian=se, ...)
   ests <- fm$par
   names(ests) <- paramNames
-  covMat <- invertHessian(fm, nP, se)  
+  covMat <- invertHessian(fm, nP, se)
   fmAIC <- 2*fm$value + 2*nP
 
   lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
@@ -246,7 +251,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   estimateList <- unmarkedEstimateList(list(lambda=lamEstimates))
 
   gamName <- switch(dynamics, constant = "gamConst", autoreg = "gamAR",
-                              notrend = "", trend = "gamTrend", 
+                              notrend = "", trend = "gamTrend",
                               ricker="gamRicker", gompertz = "gamGomp")
   if(!(identical(fix, "gamma") | identical(dynamics, "notrend"))){
     estimateList@estimates$gamma <- unmarkedEstimate(name =
@@ -258,7 +263,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   }
 
   if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
-    if(identical(dynamics, "constant") | identical(dynamics, "autoreg") | 
+    if(identical(dynamics, "constant") | identical(dynamics, "autoreg") |
        identical(dynamics, "notrend")){
         estimateList@estimates$omega <- unmarkedEstimate( name="Apparent Survival",
           short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
@@ -288,21 +293,21 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
                         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
       invlink = "exp", invlinkGrad = "exp")
   }
-  
+
   if(immigration) {
     estimateList@estimates$iota <- unmarkedEstimate(
-      name="Immigration", short.name = "iota", 
+      name="Immigration", short.name = "iota",
       estimates = ests[(nAP+nGP+nOP+nDP+1) :(nAP+nGP+nOP+nDP+nIP)],
       covMat = as.matrix(covMat[(nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP),
                                 (nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP)]),
       invlink = "exp", invlinkGrad = "exp")
   }
-  
+
   if(identical(keyfun, "hazard")) {
     estimateList@estimates$scale <- unmarkedEstimate(name = "Hazard-rate(scale)",
         short.name = "scale", estimates = ests[nAP+nGP+nOP+nDP+nIP+1],
         covMat = as.matrix(covMat[nAP+nGP+nOP+nDP+nIP+1,
-                                  nAP+nGP+nOP+nDP+nIP+1]), 
+                                  nAP+nGP+nOP+nDP+nIP+1]),
         invlink = "exp", invlinkGrad = "exp")
   }
 
@@ -323,7 +328,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
       call = match.call(), formula = formula, formlist = formlist, data = data,
       sitesRemoved=D$removed.sites, estimates = estimateList, AIC = fmAIC,
       opt = fm, negLogLike = fm$value, nllFun = nll, K = K, mixture = mixture,
-      dynamics = dynamics, fix = fix, immigration=immigration, keyfun=keyfun, 
+      dynamics = dynamics, fix = fix, immigration=immigration, keyfun=keyfun,
       unitsOut=unitsOut)
 
   return(umfit)

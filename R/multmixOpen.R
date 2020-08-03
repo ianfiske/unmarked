@@ -4,25 +4,30 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
     fix=c("none", "gamma", "omega"), immigration=FALSE, iotaformula = ~1,
     starts, method="BFGS", se=TRUE, ...)
 {
-  
+
   #Check data source
   if(!is(data, "unmarkedFrameMMO"))
     stop("Data is not of class unmarkedFrameMMO.")
-  
+
   piFun <- data@piFun
 
   #Check state model arguments
   mixture <- match.arg(mixture)
   dynamics <- match.arg(dynamics)
+
+  if((identical(dynamics, "constant") || identical(dynamics, "notrend")) & immigration)
+    stop("You can not include immigration in the constant or notrend models")
+
   if(identical(dynamics, "notrend") &
    !identical(lambdaformula, omegaformula))
     stop("lambdaformula and omegaformula must be identical for notrend model")
+
   fix <- match.arg(fix)
 
   formlist <- mget(c("lambdaformula", "gammaformula", "omegaformula",
                    "pformula", "iotaformula"))
   formula <- as.formula(paste(unlist(formlist), collapse=" "))
-  
+
   D <- getDesign(data, formula)
   y <- D$y
 
@@ -132,14 +137,14 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   nP <- nAP + nGP + nOP + nDP + nIP + (mixture!="P")
   if(!missing(starts) && length(starts) != nP)
     stop(paste("The number of starting values should be", nP))
-  
+
   nbParm <- character(0)
   if(identical(mixture,"NB"))
     nbParm <- "alpha"
   else if(identical(mixture, "ZIP"))
     nbParm <- "psi"
 
-  paramNames <- c(lamParms, gamParms, omParms, detParms, 
+  paramNames <- c(lamParms, gamParms, omParms, detParms,
                  iotaParms, nbParm)
 
   #Create indices, all possible combinations of survivors and recruits,
@@ -159,7 +164,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   #Adjustments to objects to facilitate use in c++
   fin <- fin*1 #convert to numeric
   yperm <- aperm(y, c(1,3,2))
-  yna <- is.na(yperm)*1 
+  yna <- is.na(yperm)*1
 
   nll <- function(parms) {
     .Call("nll_multmixOpen",
@@ -178,11 +183,11 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   if(missing(starts)){
     starts <- rep(0, nP)
   }
-  
+
   fm <- optim(starts, nll, method=method, hessian=se, ...)
   ests <- fm$par
   names(ests) <- paramNames
-  covMat <- invertHessian(fm, nP, se)  
+  covMat <- invertHessian(fm, nP, se)
   fmAIC <- 2*fm$value + 2*nP
 
   lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lam",
@@ -191,7 +196,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   estimateList <- unmarkedEstimateList(list(lambda=lamEstimates))
 
   gamName <- switch(dynamics, constant = "gamConst", autoreg = "gamAR",
-                              notrend = "", trend = "gamTrend", 
+                              notrend = "", trend = "gamTrend",
                               ricker="gamRicker", gompertz = "gamGomp")
   if(!(identical(fix, "gamma") | identical(dynamics, "notrend"))){
     estimateList@estimates$gamma <- unmarkedEstimate(name =
@@ -203,7 +208,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   }
 
   if(!(identical(fix, "omega") | identical(dynamics, "trend"))) {
-    if(identical(dynamics, "constant") | identical(dynamics, "autoreg") | 
+    if(identical(dynamics, "constant") | identical(dynamics, "autoreg") |
        identical(dynamics, "notrend")){
         estimateList@estimates$omega <- unmarkedEstimate( name="Apparent Survival",
           short.name = "omega", estimates = ests[(nAP+nGP+1) :(nAP+nGP+nOP)],
@@ -231,16 +236,16 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
       covMat = as.matrix(covMat[(nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP),
                         (nAP+nGP+nOP+1) : (nAP+nGP+nOP+nDP)]),
       invlink = "logistic", invlinkGrad = "logistic.grad")
-  
+
   if(immigration) {
     estimateList@estimates$iota <- unmarkedEstimate(
-      name="Immigration", short.name = "iota", 
+      name="Immigration", short.name = "iota",
       estimates = ests[(nAP+nGP+nOP+nDP+1) :(nAP+nGP+nOP+nDP+nIP)],
       covMat = as.matrix(covMat[(nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP),
                                 (nAP+nGP+nOP+nDP+1) : (nAP+nGP+nOP+nDP+nIP)]),
       invlink = "exp", invlinkGrad = "exp")
   }
- 
+
   if(identical(mixture, "NB")) {
     estimateList@estimates$alpha <- unmarkedEstimate(name = "Dispersion",
         short.name = "alpha", estimates = ests[nP],
