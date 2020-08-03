@@ -4,8 +4,8 @@ using namespace Rcpp;
 using namespace arma;
 
 SEXP nll_nmixTTD( SEXP beta_, SEXP y_, SEXP delta_,
-    SEXP W_, SEXP V_, SEXP pind_, SEXP dind_,
-    SEXP tdist_, SEXP N_, SEXP J_, SEXP K_, SEXP naflag_){
+    SEXP W_, SEXP V_, SEXP pinds_, SEXP mixture_, SEXP tdist_,
+    SEXP N_, SEXP J_, SEXP K_, SEXP naflag_){
 
   //Inputs
   const vec beta = as<vec>(beta_);
@@ -14,24 +14,30 @@ SEXP nll_nmixTTD( SEXP beta_, SEXP y_, SEXP delta_,
   const vec naflag = as<vec>(naflag_);
   const mat W = as<mat>(W_);
   const mat V = as<mat>(V_);
-  const vec pind = as<vec>(pind_);
-  const vec dind = as<vec>(dind_);
+  const umat pinds = as<umat>(pinds_);
   const std::string tdist = as<std::string>(tdist_);
+  const std::string mixture = as<std::string>(mixture_);
 
   int N = as<int>(N_);
   int J = as<int>(J_);
   int K = as<int>(K_);
 
   //Get abundance lambda values
-  const vec lamN = exp(W * beta.subvec(pind(0), pind(1)));
+  const vec lamN = exp(W * beta.subvec(pinds(0,0), pinds(0,1)));
 
   //Get detection lambda values
-  const vec lamP = exp(V * beta.subvec(dind(0), dind(1)));
+  const vec lamP = exp(V * beta.subvec(pinds(1,0), pinds(1,1)));
+
+  //Get alpha if negative binomial
+  double alpha = 1.0;
+  if(mixture == "NB"){
+    alpha = exp(beta(pinds(2,0)));
+  }
 
   //Get shape if weibull
   double shp = 1.0;
   if(tdist == "weibull"){
-    shp = exp(beta(beta.size() - 1));
+    shp = exp(beta(pinds(3,0)));
   }
 
   vec lik(N);
@@ -40,8 +46,14 @@ SEXP nll_nmixTTD( SEXP beta_, SEXP y_, SEXP delta_,
   for (int n=0; n<N; n++){
 
     vec pK(K+1);
-    for (int k=0; k<(K+1); k++){
-      pK(k) = R::dpois(k, lamN(n), 0);
+    if(mixture == "P"){
+      for (int k=0; k<(K+1); k++){
+        pK(k) = R::dpois(k, lamN(n), 0);
+      }
+    } else if(mixture == "NB"){
+      for (int k=0; k<(K+1); k++){
+        pK(k) = dnbinom_mu(k, alpha, lamN(n), false);
+      }
     }
 
     yend = ystart + J - 1;

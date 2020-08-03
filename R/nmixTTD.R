@@ -1,6 +1,6 @@
 
 nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
-                       ttdDist=c("exp", "weibull"),
+                       mixture=c("P","NB"), ttdDist=c("exp", "weibull"),
                        starts, method = "BFGS",
                        se = TRUE, engine = c("C","R"), ...) {
 
@@ -9,8 +9,9 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
     stop("Data is not an unmarkedFrameOccuTTD object.")
   }
 
-  engine <- match.arg(engine, c("C", "R"))
-  ttdDist <- match.arg(ttdDist, c("exp","weibull"))
+  engine <- match.arg(engine)
+  mixture <- match.arg(mixture)
+  ttdDist <- match.arg(ttdDist)
 
   formula <- list(lambdaformula, ~1, ~1, detformula)
   formula <- as.formula(paste(unlist(formula),collapse=" "))
@@ -38,11 +39,15 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   #Organize parameters---------------------------------------------------------
   detParms <- colnames(V); nDP <- ncol(V)
   abunParms <- colnames(W); nAP <- ncol(W)
-  abun_inds <- 1:nAP
 
-  det_inds <- (nAP+1):(nAP+nDP)
+  pinds <- matrix(NA, nrow=4, ncol=2)
+  pinds[1,] <- c(1, nAP)
+  pinds[2,] <- c((nAP+1):(nAP+nDP))
+  pinds[3,] <- nAP+nDP+1
+  pinds[4,] <- nAP+nDP+(mixture=="NB")+1
 
   parms <- c(abunParms, detParms)
+  if(mixture == "NB") parms <- c(parms, "alpha")
   if(ttdDist == "weibull") parms <- c(parms, "k")
   nP <- length(parms)
 
@@ -51,15 +56,20 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   nll_R <- function(params){
 
     #Get abundance and detection parameters
-    lamN <- exp(W %*% params[abun_inds])
-    lamP <- exp(V %*% params[det_inds])
+    lamN <- exp(W %*% params[pinds[1,]])
+    lamP <- exp(V %*% params[pinds[2,]])
 
-    pK <- sapply(0:K, function(k) dpois(k, lamN))
+    if(mixture == "P"){
+      pK <- sapply(0:K, function(k) dpois(k, lamN))
+    } else {
+      alpha <- exp(parms[pinds[3,1]])
+      pK <- sapply(0:K, function(k) dnbinom(k, mu=lamN, size = alpha))
+    }
 
     #Simplified version of Garrard et al. 2013 eqn 5
     #Extended to Weibull
     if(ttdDist=='weibull'){
-      shape <- exp(params[nP])
+      shape <- exp(params[pinds[4,1]])
 
       e_lamt <- sapply(0:K, function(k){
         lam <- k*lamP
@@ -99,9 +109,8 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
 
   nll_C <- function(params){
     .Call("nll_nmixTTD",
-          params, yvec, delta, W, V,
-          range(abun_inds)-1, range(det_inds)-1,
-          ttdDist, N, J, K, naflag,
+          params, yvec, delta, W, V, pinds - 1,
+          mixture, ttdDist, N, J, K, naflag,
           PACKAGE = "unmarked")
   }
 
@@ -114,40 +123,47 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   if(missing(starts)) starts <- rep(0, nP)
 
   fm <- optim(starts, nll, method = method, hessian = se, ...)
-  if(se) {
-    tryCatch(covMat <- solve(fm$hessian),
-             error=function(x) stop(simpleError(paste("Hessian is singular.",
-                                                      "Try providing starting values or using fewer covariates."))))
-  } else {
-    covMat <- matrix(NA, nP, nP)
-  }
+  covMat <- invertHessian(fm, nP, se)
 
   #Build output object---------------------------------------------------------
   ests <- fm$par
   fmAIC <- 2 * fm$value + 2 * nP #+ 2*nP*(nP + 1)/(M - nP - 1)
   names(ests) <- parms
 
+  inds <- pinds[1,1]:pinds[1,2]
   abun <- unmarkedEstimate(name = "Abundance", short.name = "lamN",
-                          estimates = ests[abun_inds],
-                          covMat = as.matrix(covMat[abun_inds,abun_inds]),
+                          estimates = ests[inds],
+                          covMat = as.matrix(covMat[inds,inds]),
                           invlink = "exp",
                           invlinkGrad = "exp")
 
+  inds <- pinds[2,1]:pinds[2,2]
   det <- unmarkedEstimate(name = "Detection", short.name = "lamP",
-                          estimates = ests[det_inds],
-                          covMat = as.matrix(covMat[det_inds,det_inds]),
+                          estimates = ests[inds],
+                          covMat = as.matrix(covMat[inds,inds]),
                           invlink = "exp",
                           invlinkGrad = "exp")
 
 
   estimateList <- unmarkedEstimateList(list(abun = abun, det=det))
 
+
+  #Add negative binomial dispersion parameter if necessary
+  if(mixture=="NB"){
+    estimateList@estimates$shape <-
+      unmarkedEstimate(name = "Dispersion",
+                       short.name = "alpha", estimates = ests[pinds[3,1]],
+                       covMat = as.matrix(covMat[pinds[3,1], pinds[3,1]]),
+                       invlink = "exp", invlinkGrad = "exp")
+  }
+
   #Add Weibull shape parameter if necessary
   if(ttdDist=="weibull"){
-    estimateList@estimates$shape <- unmarkedEstimate(name = "Weibull shape",
-                                                     short.name = "k", estimates = ests[nP],
-                                                     covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
-                                                    invlinkGrad = "exp")
+    estimateList@estimates$shape <-
+      unmarkedEstimate(name = "Weibull shape",
+                       short.name = "k", estimates = ests[pinds[4,1]],
+                       covMat = as.matrix(covMat[pinds[4,1], pinds[4,1]]),
+                       invlink = "exp", invlinkGrad = "exp")
   }
 
   umfit <- new("unmarkedFitNmixTTD", fitType = "nmixTTD",
