@@ -8,6 +8,9 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   if(!is(data, "unmarkedFrameOccuTTD")){
     stop("Data is not an unmarkedFrameOccuTTD object.")
   }
+  if(data@numPrimary > 1){
+    stop("Multi-season data not supported.")
+  }
 
   engine <- match.arg(engine)
   mixture <- match.arg(mixture)
@@ -150,7 +153,7 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
 
   #Add negative binomial dispersion parameter if necessary
   if(mixture=="NB"){
-    estimateList@estimates$shape <-
+    estimateList@estimates$alpha <-
       unmarkedEstimate(name = "Dispersion",
                        short.name = "alpha", estimates = ests[pinds[3,1]],
                        covMat = as.matrix(covMat[pinds[3,1], pinds[3,1]]),

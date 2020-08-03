@@ -4529,6 +4529,57 @@ setMethod("simulate", "unmarkedFitOccuTTD",
   simlist
 })
 
+setMethod("simulate", "unmarkedFitNmixTTD",
+          function(object,  nsim = 1, seed = NULL, na.rm = FALSE)
+{
+
+  M <- nrow(object@data@y)
+  J <- ncol(object@data@y)
+  tdist <- ifelse("shape" %in% names(object@estimates), "weibull", "exp")
+  mix <- ifelse("alpha" %in% names(object@estimates), "NB", "P")
+
+  #Get predicted values
+  abun <- predict(object, 'abun', na.rm=FALSE)$Predicted
+  lam <- predict(object, 'det', na.rm=FALSE)$Predicted
+  tmax <- as.vector(t(object@data@surveyLength))
+  not_na <- !is.na(lam)
+
+  simlist <- list()
+  for(s in 1:nsim){
+
+    if(mix=="P"){
+      N <- rpois(M, abun)
+    } else if(mix=="NB"){
+      alpha <- exp(coef(object, "shape"))
+      N <- dnbinom(M, mu=abun, size=alpha)
+    }
+
+    lamN <- lam*rep(N, each=J)
+    is_zero <- lamN==0
+    to_sim <- !is_zero & not_na
+
+    ttd <- rep(NA, length(lamN))
+    ttd[is_zero] <- tmax[is_zero]
+
+    if(tdist == "weibull"){
+      k <- exp(coef(object)['k(k)'])
+      ttd[to_sim] <- stats::rweibull(sum(to_sim),k,1/lamN[to_sim])
+    } else {
+      ttd[to_sim] <- stats::rexp(sum(to_sim), lamN[to_sim])
+    }
+    #Truncate
+    ttd[ttd>tmax] <- tmax[ttd>tmax]
+
+    ttd <- matrix(ttd, nrow=M, byrow=T)
+
+    #Add NAs
+    nas <- which(is.na(object@data@y))
+    ttd[nas] <- NA
+    simlist[[s]] <- ttd
+  }
+  simlist
+})
+
 setMethod("simulate", "unmarkedFitColExt",
     function(object, nsim = 1, seed = NULL, na.rm = TRUE)
 {
