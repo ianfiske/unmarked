@@ -34,16 +34,46 @@
 
 \details{
 
-More later.
+This model extends time-to-detection (TTD) occupancy models to estimate site 
+abundance using data from single or repeated visits. Latent abundance can be 
+modeled as Poisson (\code{mixture="P"}) or negative binomial (\code{mixture="NB"}). 
+Time-to-detection can be modeled as an exponential (\code{ttdDist="exp"}) or 
+Weibull (\code{ttdDist="weibull"}) random variable with rate parameter \eqn{\lambda} 
+and, for the Weibull, an additional shape parameter \eqn{k}. Note that 
+\code{occuTTD} puts covariates on \eqn{\lambda} and not \eqn{1/\lambda}, i.e., 
+the expected time between events. 
 
-}
+Assuming that there are \eqn{N} independent individuals a site, and all
+individuals have the same individual detection rate, the expected
+detection rate across all individuals \eqn{\lambda} is equal to the the 
+individual-level detection rate \eqn{r} multipled by the number of individuals
+present \eqn{N}.
 
-\references{
+In the case where there are no detections before the maximum sample time at
+a site (\code{surveyLength}) is reached, we are not sure if the site has 
+\eqn{N=0} or if we just didn't wait long enough for a detection. We therefore 
+must censor (\eqn{C} the exponential or Weibull distribution at the maximum survey 
+length, \eqn{Tmax}. Thus, assuming true abundance at site \eqn{i} is 
+\eqn{N_i}, and an exponential distribution for the TTD \eqn{y_i} (parameterized 
+with the rate), then:
 
-More later.
+\deqn{y_i \sim Exponential(r_i * N_i) C(Tmax)}
 
-Kery, Marc, and J. Andrew Royle. 2016. \emph{Applied Hierarchical Modeling in
-  Ecology}, Volume 1. Academic Press.
+Note that when \eqn{N_i = 0}, the exponential rate \eqn{lambda = 0} and the
+scale is therefore \eqn{1 / 0 = Inf}, and thus the value will be censored
+at \eqn{Tmax}.
+
+Because in \code{unmarked} values of \code{NA} are typically used to indicate 
+missing values that were a result of the sampling structure (e.g., lost data), 
+we indicate a censored \eqn{y_i} in \code{nmixTTD} instead by setting 
+\eqn{y_i = Tmax_i} in the \code{y} matrix provided to 
+\code{\link{unmarkedFrameOccuTTD}}. You can provide either a single value of 
+\eqn{Tmax} to the \code{surveyLength} argument of \code{unmarkedFrameOccuTTD}, 
+or provide a matrix, potentially with a unique value of \eqn{Tmax} for each 
+value of \code{y}. Note that in the latter case the value of \code{y} that will 
+be interpreted by \code{nmixTTD} as a censored observation (i.e., \eqn{Tmax}) 
+will differ between observations!
+
 }
 
 \author{Ken Kellner \email{contact@kenkellner.com}}
