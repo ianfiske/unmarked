@@ -94,7 +94,7 @@ setMethod("ranef", "unmarkedFitOccu",
 
 setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
 {
-  
+
   N <- numSites(object@data)
   S <- object@data@numStates
 
@@ -125,7 +125,7 @@ setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
         sdp[guide] <- p_raw[j,]
         sdp[,1] <- 1 - rowSums(sdp)
         for (s in 1:S){
-          g[s] <- g[s] * sdp[s, (y[i,j]+1)] 
+          g[s] <- g[s] * sdp[s, (y[i,j]+1)]
         }
       }
       fudge <- f*g
@@ -147,7 +147,7 @@ setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
         sdp[2,1:2] <- c(1-probs[1], probs[1])
         sdp[3,] <- c(1-probs[2], probs[2]*(1-probs[3]), probs[2]*probs[3])
         for (s in 1:S){
-          g[s] <- g[s] * sdp[s, (y[i,j]+1)] 
+          g[s] <- g[s] * sdp[s, (y[i,j]+1)]
         }
       }
       fudge <- f*g
@@ -774,7 +774,7 @@ setMethod("ranef", "unmarkedFitOccuTTD",
 
   #Get predicted values
   psi <- predict(object, 'psi', na.rm=FALSE)$Predicted
-  psi <- cbind(1-psi, psi)  
+  psi <- cbind(1-psi, psi)
   p_est <- getP(object)
 
   #Get y as binary
@@ -782,7 +782,7 @@ setMethod("ranef", "unmarkedFitOccuTTD",
   tmax <- object@data@surveyLength
   ybin <- as.numeric(y < tmax)
   ybin <- matrix(ybin, nrow=nrow(y), ncol=ncol(y))
-  
+
   if(T>1){
     p_col <- predict(object, 'col', na.rm=FALSE)$Predicted
     p_ext <- predict(object, 'ext', na.rm=FALSE)$Predicted
@@ -791,11 +791,11 @@ setMethod("ranef", "unmarkedFitOccuTTD",
     p_ext <- p_ext[-rem_seq]
     phi <- cbind(1-p_col, p_col, p_ext, 1-p_ext)
   }
-  
+
   ## first compute latent probs
   state <- array(NA, c(2, T, N))
   state[1:2,1,] <- t(psi)
-  
+
   if(T>1){
     phi_ind <- 1
     for(n in 1:N) {
@@ -823,7 +823,7 @@ setMethod("ranef", "unmarkedFitOccuTTD",
       post[n,,t] <- tmp/sum(tmp)
     }
   }
- 
+
   if(T==1) post <- post[,,1]
 
   new("unmarkedRanef", post=post)
@@ -851,7 +851,7 @@ postMultinomOpen <- function(object){
     T <- object@data@numPrimary
 
     p <- getP(object)
- 
+
     K <- object@K
     N <- 0:K
     y <- getY(getData(object))
@@ -919,7 +919,7 @@ postMultinomOpen <- function(object){
                    g2 <- (1-psi)*dpois(N, lam[i])
                    g2[1] <- psi + (1-psi)*exp(-lam[i])
                })
-        
+
         #DETECTION MODEL
         g1 <- rep(0, K+1)
         cp <- pa[i,,1]
@@ -927,15 +927,15 @@ postMultinomOpen <- function(object){
         ysub <- ya[i,,1]
         ysub[cp_na] <- NA
         sumy <- sum(ysub, na.rm=TRUE)
-        
+
         cp <- c(cp, 1-sum(cp, na.rm=TRUE))
         cp_na <- is.na(cp)
 
-        for(k in sumy:K){          
+        for(k in sumy:K){
           yit <- c(ysub, k-sumy)
           g1[k+1] <- dmultinom(yit[!cp_na], k, cp[!cp_na])
         }
-        
+
         g1g2 <- g1*g2
         post[i,,1] <- g1g2 / sum(g1g2)
         for(t in 2:T) {
@@ -961,15 +961,15 @@ postMultinomOpen <- function(object){
             ysub <- ya[i,,t]
             ysub[cp_na] <- NA
             sumy <- sum(ysub, na.rm=TRUE)
-        
+
             cp <- c(cp, 1-sum(cp, na.rm=TRUE))
             cp_na <- is.na(cp)
 
-            for(k in sumy:K){          
+            for(k in sumy:K){
               yit <- c(ysub, k-sumy)
               g1[k+1] <- dmultinom(yit[!cp_na], k, cp[!cp_na])
             }
-            
+
             g <- colSums(P * post[i,,t-1]) * g1
             post[i,,t] <- g / sum(g)
         }
@@ -992,6 +992,69 @@ setMethod("ranef", "unmarkedFitMMO",
 {
     post <- postMultinomOpen(object)
     new("unmarkedRanef", post=post)
+})
+
+
+setMethod("ranef", "unmarkedFitNmixTTD",
+    function(object, ...)
+{
+
+  M <- nrow(object@data@y)
+  J <- ncol(object@data@y)
+  tdist <- ifelse("shape" %in% names(object@estimates), "weibull", "exp")
+  mix <- ifelse("alpha" %in% names(object@estimates), "NB", "P")
+  K <- object@K
+
+  yvec <- as.numeric(t(object@data@y))
+  removed <- object@sitesRemoved
+  naflag <- as.numeric(is.na(yvec))
+  surveyLength <- object@data@surveyLength
+  if(length(removed>0)) surveyLength <- surveyLength[-removed,]
+  ymax <- as.numeric(t(surveyLength))
+  delta <- as.numeric(yvec<ymax)
+
+  #Get predicted values
+  abun <- predict(object, "state", na.rm=FALSE)$Predicted
+  lam <- predict(object, "det", na.rm=FALSE)$Predicted
+
+  if(mix == "P"){
+    pK <- sapply(0:K, function(k) dpois(k, abun))
+  } else {
+    alpha <- exp(coef(object, "alpha"))
+    pK <- sapply(0:K, function(k) dnbinom(k, mu=abun, size = alpha))
+  }
+
+  if(tdist=='weibull'){
+    shape <- exp(coef(object, "shape"))
+
+    e_lamt <- sapply(0:K, function(k){
+      lamK <- k*lam
+      ( shape*lamK*(lamK*yvec)^(shape-1) )^delta * exp(-1*(lamK*yvec)^shape)
+    })
+
+  } else {
+    #Exponential
+    e_lamt <- sapply(0:K, function(k) (lam*k)^delta * exp(-lam*k*yvec))
+  }
+
+  post <- array(NA, c(M, K+1, 1))
+  colnames(post) <- 0:K
+  ystart <- 1
+  for (m in 1:M){
+
+    yend <- ystart+J-1
+    pT <- rep(NA,length=K+1)
+    pT[1] <- 1 - max(delta[ystart:yend], na.rm=T)
+    for (k in 1:K){
+      elamt_sub <- e_lamt[ystart:yend, k+1]
+      pT[k+1] <- prod(elamt_sub[!is.na(elamt_sub)])
+    }
+    ystart <- ystart + J
+    probs <- pK[m,] * pT
+    post[m,,1] <- probs / sum(probs)
+  }
+
+  new("unmarkedRanef", post=post)
 })
 
 
@@ -1150,7 +1213,7 @@ setMethod("predict", "unmarkedRanef", function(object, func, nsims=100, ...)
   param <- apply(ps, 3, func)
 
   out <- array(param, out_dim)
-  
+
   if(is.vector(s1)){
     rownames(out) <- nm
   } else {

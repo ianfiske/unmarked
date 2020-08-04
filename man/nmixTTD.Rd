@@ -2,7 +2,7 @@
 \alias{nmixTTD}
 \title{Fit N-mixture Time-to-detection Models}
 
-\usage{nmixTTD(stateformula= ~1, detformula = ~1, data, K=25,
+\usage{nmixTTD(stateformula= ~1, detformula = ~1, data, K=100,
     mixture = c("P","NB"), ttdDist = c("exp", "weibull"), starts, method="BFGS", 
     se=TRUE, engine = c("C", "R"), ...)}
 

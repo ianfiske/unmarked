@@ -123,7 +123,8 @@ setClass("unmarkedFitOccuTTD",
 setClass("unmarkedFitNmixTTD",
          representation(
            stateformula = "formula",
-           detformula = "formula"),
+           detformula = "formula",
+           K = "numeric"),
          contains = "unmarkedFit")
 
 setClass("unmarkedFitMPois",
@@ -4585,7 +4586,7 @@ setMethod("simulate", "unmarkedFitNmixTTD",
     if(mix=="P"){
       N <- rpois(M, abun)
     } else if(mix=="NB"){
-      alpha <- exp(coef(object, "shape"))
+      alpha <- exp(coef(object, "alpha"))
       N <- dnbinom(M, mu=abun, size=alpha)
     }
 

@@ -1,5 +1,5 @@
 
-nmixTTD <- function(stateformula=~1, detformula=~1, data, K=25,
+nmixTTD <- function(stateformula=~1, detformula=~1, data, K=100,
                        mixture=c("P","NB"), ttdDist=c("exp", "weibull"),
                        starts, method = "BFGS",
                        se = TRUE, engine = c("C","R"), ...) {
@@ -174,6 +174,7 @@ nmixTTD <- function(stateformula=~1, detformula=~1, data, K=25,
                formula = formula,
                stateformula = stateformula,
                detformula = detformula,
+               K = K,
                data = data, sitesRemoved = removed,
                estimates = estimateList,
                AIC = fmAIC, opt = fm, negLogLike = fm$value,
