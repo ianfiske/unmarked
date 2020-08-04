@@ -122,7 +122,7 @@ setClass("unmarkedFitOccuTTD",
 
 setClass("unmarkedFitNmixTTD",
          representation(
-           lambdaformula = "formula",
+           stateformula = "formula",
            detformula = "formula"),
          contains = "unmarkedFit")
 
@@ -2160,7 +2160,7 @@ setMethod("predict", "unmarkedFitNmixTTD",
   #Allow passthrough to colext predict method
   new_obj <- object
   class(new_obj)[1] <- "unmarkedFitColExt"
-  if(type == "abun") type <- 'psi'
+  if(type == "state") type <- 'psi'
   names(new_obj@estimates@estimates)[1] <- 'psi'
   if(cls == "unmarkedFrameOccuTTD"){
     class(newdata)[1] <- "unmarkedMultFrame"
@@ -2805,6 +2805,11 @@ setMethod("fitted", "unmarkedFitOccuTTD", function(object, na.rm = FALSE)
 })
 
 
+setMethod("fitted", "unmarkedFitNmixTTD", function(object, na.rm = FALSE)
+{
+  stop("This method is not implemented for nmixTTD at this time", call.=FALSE)
+})
+
 ## # Identical to method for unmarkedFitGMM. Need to fix class structure
 ## setMethod("fitted", "unmarkedFitGPC",
 ##     function(object, na.rm = FALSE)
@@ -3001,6 +3006,36 @@ setMethod("update", "unmarkedFitOccuTTD",
     }
     if(!missing(epsilonformula)){
       call[["epsilonformula"]] <- epsilonformula
+    }
+    if(!missing(detformula)){
+      call[["detformula"]] <- detformula
+    }
+
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
+    if (length(extras) > 0) {
+        existing <- !is.na(match(names(extras), names(call)))
+        for (a in names(extras)[existing])
+            call[[a]] <- extras[[a]]
+        if (any(!existing)) {
+            call <- c(as.list(call), extras[!existing])
+            call <- as.call(call)
+            }
+        }
+    if (evaluate)
+        eval(call, parent.frame(2))
+    else call
+})
+
+setMethod("update", "unmarkedFitNmixTTD",
+    function(object, stateformula ,detformula, ..., evaluate = TRUE)
+{
+
+    call <- object@call
+    if (is.null(call))
+        stop("need an object with call slot")
+    if(!missing(stateformula)){
+      call[["stateformula"]] <- stateformula
     }
     if(!missing(detformula)){
       call[["detformula"]] <- detformula
@@ -4539,7 +4574,7 @@ setMethod("simulate", "unmarkedFitNmixTTD",
   mix <- ifelse("alpha" %in% names(object@estimates), "NB", "P")
 
   #Get predicted values
-  abun <- predict(object, 'abun', na.rm=FALSE)$Predicted
+  abun <- predict(object, 'state', na.rm=FALSE)$Predicted
   lam <- predict(object, 'det', na.rm=FALSE)$Predicted
   tmax <- as.vector(t(object@data@surveyLength))
   not_na <- !is.na(lam)

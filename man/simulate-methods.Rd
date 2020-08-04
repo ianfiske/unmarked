@@ -10,6 +10,7 @@
 \alias{simulate,unmarkedFitOccuMulti-method}
 \alias{simulate,unmarkedFitOccuMS-method}
 \alias{simulate,unmarkedFitOccuTTD-method}
+\alias{simulate,unmarkedFitNmixTTD-method}
 \alias{simulate,unmarkedFitPCount-method}
 \alias{simulate,unmarkedFitPCO-method}
 \alias{simulate,unmarkedFitGMM-method}

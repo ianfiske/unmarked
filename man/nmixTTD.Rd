@@ -2,19 +2,21 @@
 \alias{nmixTTD}
 \title{Fit N-mixture Time-to-detection Models}
 
-\usage{nmixTTD(lambdaformula= ~1, detformula = ~ 1, data, K=25,
-    ttdDist = c("exp", "weibull"), starts, method="BFGS", se=TRUE,
-    engine = c("C", "R"), ...)}
+\usage{nmixTTD(stateformula= ~1, detformula = ~1, data, K=25,
+    mixture = c("P","NB"), ttdDist = c("exp", "weibull"), starts, method="BFGS", 
+    se=TRUE, engine = c("C", "R"), ...)}
 
 \arguments{
-  \item{lambdaformula}{Right-hand sided formula for the abundance at each site.}
+  \item{stateformula}{Right-hand sided formula for the abundance at each site.}
   \item{detformula}{Right-hand sided formula for mean time-to-detection.}
   \item{data}{\code{unmarkedFrameOccuTTD} object that supplies the data
     (see \code{\link{unmarkedFrameOccuTTD}}). Note that only single-season
     models are supported by \code{occuRN.TTD}.}
   \item{K}{The upper summation index used to numerically integrate out the
-        latent abundance. This should be set high enough so that it does not
-        affect the parameter estimates. Computation time will increase with K.}
+    latent abundance. This should be set high enough so that it does not
+    affect the parameter estimates. Computation time will increase with K.}
+  \item{mixture}{String specifying mixture distribution: "P" for Poisson or 
+    "NB" for negative binomial.}
   \item{ttdDist}{Distribution to use for time-to-detection; either
     \code{"exp"} for the exponential, or \code{"weibull"} for the Weibull,
     which adds an additional shape parameter \eqn{k}.}
@@ -87,7 +89,7 @@ fit <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10)
 cbind(coef(fit), c(log(mu.dens), beta1, log(mu.lambda), alpha1))
 
 #Predict abundance/density values
-head(predict(fit, type='abun'))
+head(predict(fit, type='state'))
 
 }
 }

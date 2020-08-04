@@ -1,5 +1,5 @@
 
-nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
+nmixTTD <- function(stateformula=~1, detformula=~1, data, K=25,
                        mixture=c("P","NB"), ttdDist=c("exp", "weibull"),
                        starts, method = "BFGS",
                        se = TRUE, engine = c("C","R"), ...) {
@@ -16,7 +16,7 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   mixture <- match.arg(mixture)
   ttdDist <- match.arg(ttdDist)
 
-  formula <- list(lambdaformula, ~1, ~1, detformula)
+  formula <- list(stateformula, ~1, ~1, detformula)
   formula <- as.formula(paste(unlist(formula),collapse=" "))
 
   #Process input data----------------------------------------------------------
@@ -134,7 +134,7 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   names(ests) <- parms
 
   inds <- pinds[1,1]:pinds[1,2]
-  abun <- unmarkedEstimate(name = "Abundance", short.name = "lamN",
+  state <- unmarkedEstimate(name = "Abundance", short.name = "lamN",
                           estimates = ests[inds],
                           covMat = as.matrix(covMat[inds,inds]),
                           invlink = "exp",
@@ -148,7 +148,7 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
                           invlinkGrad = "exp")
 
 
-  estimateList <- unmarkedEstimateList(list(abun = abun, det=det))
+  estimateList <- unmarkedEstimateList(list(state = state, det=det))
 
 
   #Add negative binomial dispersion parameter if necessary
@@ -172,7 +172,7 @@ nmixTTD <- function(lambdaformula=~1, detformula=~1, data, K=25,
   umfit <- new("unmarkedFitNmixTTD", fitType = "nmixTTD",
                call = match.call(),
                formula = formula,
-               lambdaformula = lambdaformula,
+               stateformula = stateformula,
                detformula = detformula,
                data = data, sitesRemoved = removed,
                estimates = estimateList,

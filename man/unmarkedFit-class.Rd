@@ -31,6 +31,7 @@
 \alias{update,unmarkedFitOccuMulti-method}
 \alias{update,unmarkedFitOccuMS-method}
 \alias{update,unmarkedFitOccuTTD-method}
+\alias{update,unmarkedFitNmixTTD-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
