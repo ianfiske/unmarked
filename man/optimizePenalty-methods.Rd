@@ -17,13 +17,15 @@
 
 \usage{
 \S4method{optimizePenalty}{unmarkedFitOccuMulti}(
-  object, penalties = c(0, 2^seq(-4, 4)), k = 5, ...)
+  object, penalties = c(0, 2^seq(-4, 4)), k = 5, boot = 30, ...)
 }
 
 \arguments{
   \item{object}{A fitted model inheriting class \code{unmarkedFit}}
   \item{penalties}{Vector of possible penalty values, all of which must be >= 0}
   \item{k}{Number of folds to use for k-fold cross validation}
+  \item{boot}{Number of bootstrap samples to use to generate the 
+    variance-covariance matrix for the final model.}
   \item{...}{Other arguments, currently ignored}
 } 
 

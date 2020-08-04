@@ -4,7 +4,7 @@
 
 \title{Fit the Rota et al. (2016) Multi-species Occupancy Model}
 
-\usage{occuMulti(detformulas, stateformulas, data, maxOrder, penalty=0, 
+\usage{occuMulti(detformulas, stateformulas, data, maxOrder, penalty=0, boot=30, 
        starts, method="BFGS", se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
 
 \arguments{
@@ -17,6 +17,8 @@
       speed up optimization if you aren't interested in higher-order interactions.}
     \item{penalty}{Penalty term for likelihood. The total penalty is calculated
       as \code{penalty * 0.5 * sum(paramvals^2)}. Defaults to 0 (no penalty).}
+    \item{boot}{Number of bootstrap samples to use to generate the 
+      variance-covariance matrix when \code{penalty > 0}.}
     \item{starts}{Vector of parameter starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{Logical specifying whether or not to compute standard

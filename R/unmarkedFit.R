@@ -2237,6 +2237,17 @@ setMethod("vcov", "unmarkedFit",
         }
 })
 
+setMethod("vcov", "unmarkedFitOccuMulti",
+    function (object, type, altNames = TRUE, method = "hessian", ...)
+{
+
+  pen <- object@call[["penalty"]]
+  if(is.null(pen)) pen <- 0
+  if(pen>0) method <- "nonparboot"
+  callNextMethod(object, type, altNames, method=method, ...)
+
+})
+
 
 setMethod("SE", "unmarkedFit", function(obj,...)
 {

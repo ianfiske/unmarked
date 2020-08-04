@@ -1,5 +1,5 @@
 occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
-                      penalty=0, starts, method='BFGS', se=TRUE,
+                      penalty=0, boot=30, starts, method='BFGS', se=TRUE,
                       engine=c("C","R"), silent=FALSE, ...){
 
   #Format input data-----------------------------------------------------------
@@ -130,6 +130,15 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
                 estimates = estimateList, AIC = fmAIC, opt = fm,
                 negLogLike = fm$value, nllFun = nll_R)
 
+  if(penalty > 0 & se){
+    cat("Bootstraping covariance matrix\n")
+    umfit <- nonparboot(umfit, B=boot, se=FALSE)
+    #Replace covMat with covMatBS
+    for (i in 1:length(umfit@estimates@estimates)){
+      umfit@estimates@estimates[[i]]@covMat <- umfit@estimates@estimates[[i]]@covMatBS
+    }
+  }
+
   umfit
 }
 
@@ -164,17 +173,17 @@ occuMultiLogLik <- function(fit, data){
 }
 
 setGeneric("optimizePenalty",
-           function(object, penalties=c(0,2^seq(-4,4)), k = 5, ...)
+           function(object, penalties=c(0,2^seq(-4,4)), k = 5, boot = 30, ...)
            standardGeneric("optimizePenalty"))
 
 setMethod("optimizePenalty", "unmarkedFitOccuMulti",
-          function(object, penalties=c(0,2^seq(-4,4)), k = 5, ...){
+          function(object, penalties=c(0,2^seq(-4,4)), k = 5, boot = 30, ...){
 
   folds <- partitionKfold(object, k)
 
   cvp <- sapply(penalties, function(p, k, fit, folds){
     cv <- sapply(1:k, function(k){
-      refit <- update(fit, data=folds[[k]]$trainData, penalty=p)
+      refit <- update(fit, data=folds[[k]]$trainData, penalty=p, se=FALSE)
       sum(occuMultiLogLik(refit, folds[[k]]$testData))
     })
     sum(cv)
@@ -183,5 +192,5 @@ setMethod("optimizePenalty", "unmarkedFitOccuMulti",
   max_cvp <- penalties[which(cvp == max(cvp))]
   cat("Optimal penalty is", max_cvp,"\n")
   object@call$penalty <- max_cvp
-  update(object, data=object@data)
+  update(object, data=object@data, boot=boot)
 })

@@ -348,38 +348,71 @@ test.occuMulti.predict.complexFormulas <- function(){
 test.occuMulti.penalty <- function(){
 
   set.seed(123)
-  y <- list(matrix(rbinom(40,1,0.2),20,2),
-            matrix(rbinom(40,1,0.3),20,2))
+  N <- 100; nspecies <- 3; J <- 5
+  occ_covs <- as.data.frame(matrix(rnorm(N * 10),ncol=10))
+  names(occ_covs) <- paste('occ_cov',1:10,sep='')
 
-  N <- dim(y[[1]])[1]
-  J <- dim(y[[1]])[2]
-  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
-  names(occ_covs) <- paste('occ_cov',1:3,sep='')
+  det_covs <- list()
+  for (i in 1:nspecies){
+    det_covs[[i]] <- matrix(rnorm(N*J),nrow=N)
+  }
+  names(det_covs) <- paste('det_cov',1:nspecies,sep='')
 
-  det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
-  names(det_covs) <- paste('det_cov',1:2,sep='')
+  #True vals
+  beta <- c(0.5,0.2,0.4,0.5,-0.1,-0.3,0.2,0.1,-1,0.1)
+  f1 <- beta[1] + beta[2]*occ_covs$occ_cov1
+  f2 <- beta[3] + beta[4]*occ_covs$occ_cov2
+  f3 <- beta[5] + beta[6]*occ_covs$occ_cov3
+  f4 <- beta[7]
+  f5 <- beta[8]
+  f6 <- beta[9]
+  f7 <- beta[10]
+  f <- cbind(f1,f2,f3,f4,f5,f6,f7)
+  z <- expand.grid(rep(list(1:0),nspecies))[,nspecies:1]
+  colnames(z) <- paste('sp',1:nspecies,sep='')
+  dm <- model.matrix(as.formula(paste0("~.^",nspecies,"-1")),z)
+  psi <- exp(f %*% t(dm))
+  psi <- psi/rowSums(psi)
 
-  stateformulas <- c('~occ_cov1','~occ_cov2','0')
-  detformulas <- c('~det_cov1','~det_cov2')
+  #True state
+  ztruth <- matrix(NA,nrow=N,ncol=nspecies)
+  for (i in 1:N){
+    ztruth[i,] <- as.matrix(z[sample(8,1,prob=psi[i,]),])
+  }
+  p_true <- c(0.6,0.7,0.5)
 
-  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+  y <- list()
+  for (i in 1:nspecies){
+    y[[i]] <- matrix(NA,N,J)
+    for (j in 1:N){
+      for (k in 1:J){
+        y[[i]][j,k] <- rbinom(1,1,ztruth[j,i]*p_true[i])
+      }
+    }
+  }
+  names(y) <- c('coyote','tiger','bear')
 
-  fm <- occuMulti(detformulas, stateformulas, data = umf)
-  fm_pen <- occuMulti(detformulas, stateformulas, data = umf, penalty=1)
+  umf = unmarkedFrameOccuMulti(y=y,siteCovs=occ_covs,obsCovs=det_covs)
+  occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov3','~1','~1','~1','~1')
+  detFormulas <- c('~1','~1','~1')
 
-  checkEqualsNumeric(coef(fm_pen)[c(1,5)], c(0.1008168, -0.1138400), tol=1e-5)
+  fm <- occuMulti(detFormulas,occFormulas,umf)
+  fm_pen <- occuMulti(detFormulas, occFormulas, data = umf, penalty=1, boot=10)
 
-  #Coefs generally should have smaller absolute values than non-penalty fit
-  checkTrue(all(abs(coef(fm)) > abs(coef(fm_pen))))
+  checkEqualsNumeric(coef(fm_pen)[c(1,5)], c(0.5014605, -0.1078711), tol=1e-5)
+  checkEqualsNumeric(length(fm_pen@bootstrapSamples), 10)
+  checkEqualsNumeric(vcov(fm_pen), fm_pen@covMatBS)
+  checkEqualsNumeric(fm_pen@estimates@estimates$state@covMat,
+                     fm_pen@estimates@estimates$state@covMatBS)
 
   set.seed(123)
-  opt_fit <- optimizePenalty(fm)
-  checkEquals(opt_fit@call$penalty, 16)
+  opt_fit <- optimizePenalty(fm, boot=3)
+  checkEquals(opt_fit@call$penalty, 8)
 
   #Check manual setting penalty
-  opt_fit  <- optimizePenalty(fm, penalties=c(1))
+  opt_fit  <- optimizePenalty(fm, penalties=c(1), boot=3)
   checkEquals(opt_fit@call$penalty, 1)
 
   #Check manual setting k-fold
-  opt_fit <- optimizePenalty(fm, k=3)
+  opt_fit <- optimizePenalty(fm, k=3, boot=3)
 }

@@ -54,9 +54,9 @@ setMethod("parboot", "unmarkedFit",
     availcores <- detectCores()
     if(missing(ncores)) ncores <- availcores - 1
     if(ncores > availcores) ncores <- availcores
-    
+
     no_par <- ncores < 2 || nsim < 100 || !parallel
-    
+
     if (no_par) {
       for(i in 1:nsim) {
         simdata <- replaceY(simdata, simList[[i]])
@@ -90,7 +90,7 @@ setMethod("parboot", "unmarkedFit",
       colnames(t.star) <- names(t.star.parallel[[1]])
       out <- new("parboot", call = call, t0 = t0, t.star = t.star)
     }
-		
+
     return(out)
 })
 
@@ -396,7 +396,7 @@ setMethod("nonparboot", "unmarkedFitOccuPEN",
     }
     object
 
-  
+
 })
 
 
@@ -459,7 +459,7 @@ setMethod("nonparboot", "unmarkedFitOccuPEN_CV",
     }
     object
 
-  
+
 })
 
 
@@ -471,8 +471,47 @@ setMethod("nonparboot", "unmarkedFitOccuTTD",
 })
 
 
+setMethod("nonparboot", "unmarkedFitOccuMulti",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+    bsType <- "site"
+    if (identical(B, 0) && !is.null(object@bootstrapSamples)) {
+        return(object)
+    }
+    if (B <= 0 && is.null(object@bootstrapSamples)) {
+        stop("B must be greater than 0 when fit has no bootstrap samples.")
+    }
+    data <- object@data
+    M <- numSites(data)
+    boot.iter <- function() {
+      finish <- FALSE
+      while(!finish){
+        sites <- sort(sample(1:M, M, replace = TRUE))
+        data.b <- data[sites,]
+        ran <- TRUE
+        tryCatch(fm <- update(object, data = data.b, se=FALSE), error=function(e) ran <<-FALSE)
+        finish <- fm@opt$convergence == 0
+      }
+      return(fm)
+    }
+    if (!keepOldSamples) {
+        object@bootstrapSamples <- NULL
+    }
+    object@bootstrapSamples <- c(object@bootstrapSamples,
+                                 replicate(B, boot.iter(),
+                                           simplify = FALSE))
+    coefs <- t(sapply(object@bootstrapSamples,
+                      function(x) coef(x)))
+    v <- cov(coefs)
+    object@covMatBS <- v
+    inds <- .estimateInds(object)
+    for (est in names(inds)) {
+        v.est <- v[inds[[est]], inds[[est]], drop = FALSE]
+        object@estimates@estimates[[est]]@covMatBS <- v.est
+    }
+    object
 
-
+})
 
 
 
