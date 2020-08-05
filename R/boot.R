@@ -490,6 +490,7 @@ setMethod("nonparboot", "unmarkedFitOccuMulti",
         data.b <- data[sites,]
         ran <- TRUE
         tryCatch(fm <- update(object, data = data.b, se=FALSE), error=function(e) ran <<-FALSE)
+        if(!ran) next
         finish <- fm@opt$convergence == 0
       }
       return(fm)
