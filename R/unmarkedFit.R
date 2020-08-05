@@ -1791,10 +1791,10 @@ setMethod("predict", "unmarkedFitOccuMulti",
 
     if(se.fit){
       cat('Bootstrapping confidence intervals with',nsims,'samples\n')
-      ses <- SE(object)
+      Sigma <- vcov(object)
       samp <- array(NA,c(dim(psi_est),nsims))
       for (i in 1:nsims){
-        samp[,,i] <- calc_psi(stats::rnorm(length(params),params,ses))
+        samp[,,i] <- calc_psi(mvrnorm(1, coef(object), Sigma))
       }
     }
 

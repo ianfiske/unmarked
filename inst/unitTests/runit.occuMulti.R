@@ -195,7 +195,7 @@ test.occuMulti.predict <- function(){
 
   prState <- predict(fm, type='state')
   checkEqualsNumeric(sapply(prState,function(x) x[1,1]),
-                     c(0.30807707,0.23924385,0.02382635,0.85377734),tol=1e-4)
+                     c(0.30807707,0.20007250,0.04234835,0.73106618),tol=1e-4)
   prDet <- predict(fm, type='det')
   checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
                      c(0.190485,0.0945992,0.00507,0.37589566), tol=1e-4)
@@ -223,7 +223,7 @@ test.occuMulti.predict <- function(){
 
   prState <- predict(fm, type='state')
   checkEqualsNumeric(sapply(prState,function(x) x[1,1]),
-                     c(0.475928,0.24416,0.01807069,0.846532),tol=1e-4)
+                     c(0.475928,0.2548407,0.01496681,0.86713789),tol=1e-4)
   prDet <- predict(fm, type='det')
   checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
                      c(0.20494,0.17175,-0.13168,0.541579), tol=1e-4)

@@ -99,7 +99,7 @@ test.pcountOpen <- function() {
     siteCovs(umf1) <- data.frame(x=rnorm(10))
     fm4 <- pcountOpen(~x, ~1, ~1, ~1, umf1, K=40, mixture="NB")
     nd <- data.frame(x=1)
-    checkEqualsNumeric(predict(fm4, "lambda", newdata=nd)$Predicted, 
+    checkEqualsNumeric(predict(fm4, "lambda", newdata=nd)$Predicted,
                        2.427701, tol=1e-6)
 
 }
@@ -167,27 +167,27 @@ test.occuMulti <- function() {
                      c(0.34936,0.18146,0.21590,0.25327),
                      tol=1e-4)
   checkEqualsNumeric(pr_state$SE[1,],
-                     c(0.34502,0.16429,0.18929,0.21948),
+                     c(0.2023365,0.1334475,0.2009201,0.1551536),
                      tol=1e-4)
   pr_det <- predict(fit,'det')
   checkEqualsNumeric(length(pr_det),nspecies)
-  checkEqualsNumeric(sapply(pr_det,function(x) x[1,1]),c(0.59429,0.64731),tol=1e-4) 
+  checkEqualsNumeric(sapply(pr_det,function(x) x[1,1]),c(0.59429,0.64731),tol=1e-4)
 
   #marginal occupancy
   pr_marg <- predict(fit,'state',species=2)
   checkEqualsNumeric(as.numeric(pr_marg[1,1:4]),
-                     c(0.56527,0.29438,0.05898,0.99419),tol=1e-4)
+                     c(0.56527,0.1937941,0.2380479,0.9207503),tol=1e-4)
 
   #conditional occupancy
   pr_cond <- predict(fit,'state',species=1,cond=2)
   checkEqualsNumeric(as.numeric(pr_cond[1,1:4]),
-                     c(0.61805,0.33330,0.018220,0.99552),tol=1e-4)
+                     c(0.61805,0.25368,0.089551,0.96615),tol=1e-4)
 
   #check newdata
   newdata <- data.frame(occ_cov1=rnorm(1),occ_cov2=rnorm(1),occ_cov3=rnorm(1))
   pr_new <- predict(fit,'state',newdata=newdata)
   checkEqualsNumeric(sapply(pr_new,function(x) x[1,1]),
-                     c(0.307815,0.31958,0.00423,0.96391),
+                     c(0.307815,0.221529,0.0264599,0.7406483),
                      tol=1e-4)
 }
 
