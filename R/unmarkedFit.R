@@ -4587,7 +4587,7 @@ setMethod("simulate", "unmarkedFitNmixTTD",
       N <- rpois(M, abun)
     } else if(mix=="NB"){
       alpha <- exp(coef(object, "alpha"))
-      N <- dnbinom(M, mu=abun, size=alpha)
+      N <- rnbinom(M, mu=abun, size=alpha)
     }
 
     lamN <- lam*rep(N, each=J)
