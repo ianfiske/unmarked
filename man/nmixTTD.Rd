@@ -43,7 +43,7 @@ and, for the Weibull, an additional shape parameter \eqn{k}. Note that
 \code{occuTTD} puts covariates on \eqn{\lambda} and not \eqn{1/\lambda}, i.e., 
 the expected time between events. 
 
-Assuming that there are \eqn{N} independent individuals a site, and all
+Assuming that there are \eqn{N} independent individuals at a site, and all
 individuals have the same individual detection rate, the expected
 detection rate across all individuals \eqn{\lambda} is equal to the the 
 individual-level detection rate \eqn{r} multipled by the number of individuals
