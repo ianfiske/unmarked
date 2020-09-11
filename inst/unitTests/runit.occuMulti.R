@@ -234,6 +234,56 @@ test.occuMulti.predict <- function(){
   pr_nd <- predict(fm, type='state', newdata=nd, species=c(1,2))$Predicted
   checkEqualsNumeric(pr_nd,pr_all, tol=1e-4)
 
+  #Check with site cov in detection formula
+  stateformulas <- c('~occ_cov2','~1','0')
+  detformulas <- c('~occ_cov1','~det_cov2')
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+  pr_state_actual <- predict(fm, "state")
+  checkEqualsNumeric(length(pr_state_actual), 4)
+  checkEqualsNumeric(pr_state_actual$Predicted[1,1], 0.729927907, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_actual$Predicted), 20)
+
+  pr_det_actual <- predict(fm, "det")
+  checkEqualsNumeric(length(pr_det_actual), 2)
+  checkEqualsNumeric(pr_det_actual$sp1$Predicted[1], 0.1448311, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_det_actual$sp1), 20*2)
+
+  #with newdata
+  pr_state_nd <- predict(fm, "state", newdata=data.frame(occ_cov2=0))
+  checkEqualsNumeric(length(pr_state_nd), 4)
+  checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
+
+  pr_det_nd <- predict(fm, "det", newdata=data.frame(occ_cov1=0, det_cov2=0))
+  checkEqualsNumeric(length(pr_det_nd), 2)
+  checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
+
+  #With maxOrder set
+  stateformulas <- c('~occ_cov2','~1')
+  detformulas <- c('~occ_cov1','~det_cov2')
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf, maxOrder=1)
+
+  pr_state <- predict(fm, "state")
+  checkEqualsNumeric(length(pr_state), 4)
+  checkEqualsNumeric(pr_state$Predicted[1,1], 0.729927907, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state$Predicted), 20)
+
+  pr_state_nd <- predict(fm, "state", newdata=data.frame(occ_cov2=0))
+  checkEqualsNumeric(length(pr_state_nd), 4)
+  checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
+
+  pr_det <- predict(fm, "det")
+  checkEqualsNumeric(length(pr_det), 2)
+  checkEqualsNumeric(pr_det$sp1$Predicted[1], 0.1448311, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_det$sp1), 20*2)
+
+  pr_det_nd <- predict(fm, "det", newdata=data.frame(occ_cov1=0, det_cov2=0))
+  checkEqualsNumeric(length(pr_det_nd), 2)
+  checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
 }
 
 test.occuMulti.predict.NA <- function(){
