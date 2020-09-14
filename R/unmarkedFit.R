@@ -1741,25 +1741,17 @@ setMethod("predict", "unmarkedFitOccuMulti",
   cond <- name_to_ind(cond, names(object@data@ylist))
 
   if(missing(newdata)){
-    newdata <- object@data
-  }
-
-  if(! class(newdata) %in% c('unmarkedFrameOccuMulti','data.frame')){
-    stop("newdata must be a data frame or an unmarkedFrameOccuMulti object")
-  }
-
-  if (class(newdata) == 'data.frame') {
-    temp <- object@data
-    if(type=="state"){
-      temp@siteCovs <- newdata
-    } else {
-      temp@obsCovs <- newdata
+    newdata <- NULL
+  } else {
+    if(! class(newdata) %in% c('data.frame')){
+      stop("newdata must be a data frame")
     }
-    newdata <- temp
   }
 
-  dm <- getDesign(newdata,object@detformulas,object@stateformulas,
-                  na.rm=F, old_fit=object)
+  maxOrder <- object@call$maxOrder
+  if(is.null(maxOrder)) maxOrder <- length(object@data@ylist)
+  dm <- getDesign(object@data,object@detformulas,object@stateformulas,
+                  maxOrder, na.rm=F, newdata=newdata, type=type)
 
   params <- coef(object)
   low_bound <- (1-level)/2
@@ -1901,7 +1893,6 @@ setMethod("predict", "unmarkedFitOccuMulti",
   stop("type must be 'det' or 'state'")
 })
 
-
 setMethod("predict", "unmarkedFitOccuMS",
      function(object, type, newdata,
               #backTransform = TRUE, na.rm = TRUE,
@@ -1919,29 +1910,17 @@ setMethod("predict", "unmarkedFitOccuMS",
   }
 
   if(missing(newdata)){
-    newdata <- object@data
-  }
-
-  if(! class(newdata) %in% c('unmarkedFrameOccuMS','data.frame')){
-    stop("newdata must be a data frame or an unmarkedFrameOccuMS object")
-  }
-
-  if (class(newdata) == 'data.frame') {
-    temp <- object@data
-    if(type=="psi"){
-      temp@siteCovs <- newdata
-    } else if(type=="phi") {
-      temp@yearlySiteCovs <- newdata
-    } else {
-      temp@obsCovs <- newdata
+    newdata <- NULL
+  } else {
+    if(! class(newdata) %in% c('data.frame')){
+      stop("newdata must be a data frame")
     }
-    newdata <- temp
   }
 
   S <- object@data@numStates
-  gd <- getDesign(newdata,object@psiformulas,object@phiformulas,
-                  object@detformulas,
-                  object@parameterization, na.rm=F, old_fit=object)
+  gd <- getDesign(object@data,object@psiformulas,object@phiformulas,
+                  object@detformulas, object@parameterization, na.rm=F,
+                  newdata=newdata, type=type)
 
   #Index guide used to organize p values
   guide <- matrix(NA,nrow=S,ncol=S)
