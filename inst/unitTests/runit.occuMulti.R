@@ -74,6 +74,10 @@ test.occuMulti.fit.covs <- function() {
   checkEqualsNumeric(length(res),2)
   checkEqualsNumeric(sapply(res,function(x) x[1,1]),c(-0.14954,-0.30801), tol= 1e-4)
 
+  gp <- getP(fm)
+  checkEqualsNumeric(length(gp), 2)
+  checkEqualsNumeric(dim(gp[[1]]), c(N,J))
+
   #Check site cov can be used in detection formula
   detformulas <- c('~occ_cov1','~det_cov2')
   fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
@@ -122,6 +126,9 @@ test.occuMulti.fit.NA <- function() {
 
   res <- residuals(fm)
   checkTrue(is.na(res[[1]][1,1]))
+
+  gp <- getP(fm)
+  checkTrue(is.na(gp[[1]][1,1]))
 
   #Check error thrown when all detections are missing
   yna[[1]][1,] <- NA
@@ -284,6 +291,11 @@ test.occuMulti.predict <- function(){
   checkEqualsNumeric(length(pr_det_nd), 2)
   checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
   checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
+
+  #getP with maxOrder set
+  gp <- getP(fm)
+  checkEquals(length(gp), 2)
+  checkEquals(dim(gp[[1]]), c(20,2))
 }
 
 test.occuMulti.predict.NA <- function(){

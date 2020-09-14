@@ -3392,7 +3392,9 @@ setMethod("getP", "unmarkedFitOccuMulti", function(object)
   ylist <- object@data@ylist
   S <- length(ylist)
   N <- nrow(ylist[[1]])
-  dm <- getDesign(object@data,object@detformulas,object@stateformulas)
+  maxOrder <- object@call$maxOrder
+  if(is.null(maxOrder)) maxOrder <- length(object@data@ylist)
+  dm <- getDesign(object@data,object@detformulas,object@stateformulas, maxOrder=maxOrder)
   pred <- predict(object,'det',se.fit=F)
   dets <- do.call(cbind,lapply(pred,`[`,,1))
   #ugly mess
