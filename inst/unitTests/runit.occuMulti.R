@@ -406,3 +406,29 @@ test.occuMulti.predict.complexFormulas <- function(){
   checkEqualsNumeric(sapply(pr_nd5, nrow), c(5,5))
   checkEqualsNumeric(pr_nd5$sp1$Predicted[1], 0.1680881)
 }
+
+test.occuMulti.fix.NA.mismatch <- function(){
+  y1 <- matrix(rbinom(10,1,0.5), nrow=5)
+  y1[1,1] <- NA
+
+  y2 <- matrix(rbinom(10,1,0.5), nrow=5)
+  y2[1,1] <- NA
+
+  y3 <- matrix(rbinom(10,1,0.5), nrow=5)
+  y3[1,1] <- NA
+  y3[5,1] <- NA
+
+  ylist <- list(y1=y1,y2=y2,y3=y3)
+
+  umf <- unmarkedFrameOccuMulti(y=ylist)
+
+  options(warn=2)
+  checkException(unmarkedFrameOccuMulti(y=ylist))
+  options(warn=0)
+
+  pre_na <- sapply(ylist, function(x) sum(is.na(x)))
+  post_na <- sapply(umf@ylist, function(x) sum(is.na(x)))
+
+  checkTrue(any(pre_na[1] != pre_na))
+  checkTrue(!any(post_na[1] != post_na))
+}
