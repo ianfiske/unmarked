@@ -3650,6 +3650,7 @@ setMethod("getP", "unmarkedFitGDS",
             sigma <- matrix(sigma, M, T, byrow=TRUE)
             for(i in 1:M) {
                 for(t in 1:T) {
+                    if(is.na(sigma[i,t])) next
                     switch(survey,
                     line = {
                         f.0 <- 2 * dnorm(0, 0, sd=sigma[i, t])
@@ -3673,6 +3674,7 @@ setMethod("getP", "unmarkedFitGDS",
             rate <- matrix(rate, M, T, byrow=TRUE)
             for(i in 1:M) {
                 for(t in 1:T) {
+                if(is.na(rate[i,t])) next
                 switch(survey,
                 line = {
                     for(j in 1:J) {
@@ -3695,6 +3697,7 @@ setMethod("getP", "unmarkedFitGDS",
             scale <- exp(coef(object, type="scale"))
             for(i in 1:M) {
                 for(t in 1:T) {
+                if(is.na(shape[i,t])|is.na(scale)) next
                 switch(survey,
                 line = {
                     for(j in 1:J) {
