@@ -235,14 +235,14 @@ test.occuMS.condbinom.fit <- function(){
   pr <- predict(fit_C, "psi")
   checkEqualsNumeric(length(pr),2)
   checkEqualsNumeric(as.numeric(pr[[1]][1,]),
-                     c(0.33849,0.08951,0.16304,0.51393), tol=1e-4)
+                     c(0.33849,0.08951,0.18945,0.52834), tol=1e-4)
   checkEquals(names(pr),c('psi','R'))
 
   #det
   pr <- predict(fit_C, "det")
   checkEqualsNumeric(length(pr),3)
   checkEqualsNumeric(as.numeric(pr[[1]][1,]),
-                     c(0.34812,0.090899,0.169970,0.526288), tol=1e-4)
+                     c(0.34812,0.090899,0.195866,0.53936662), tol=1e-4)
   checkEquals(names(pr),c('p[1]','p[2]','delta'))
 
   #check getP

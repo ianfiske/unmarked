@@ -1940,27 +1940,29 @@ setMethod("predict", "unmarkedFitOccuMS",
     out
   }
 
-  #Get SE via delta method (for conditional binomial)
-  get_se <- function(dm_list, ind){
-    L <- length(dm_list)
-    M <- nrow(dm_list[[1]])
-    out <- matrix(NA,M,L)
-    if(!se.fit) return(out)
-
-    for (i in 1:L){
-      inds <- ind[i,1]:ind[i,2]
-      param_sub <- coef(object)[inds]
-      cov_sub <- vcov(object)[inds,inds]
-
-      for (m in 1:M){
-        x <- dm_list[[i]][m,]
-        xb <- stats::dlogis(t(x) %*% param_sub) #??? transform
-        v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
-        out[m,i] <- sqrt(v)
-      }
-    }
+  #Get SE/CIs for conditional binomial using delta method
+  split_estimate <- function(object, estimate, inds){
+    out <- estimate
+    out@estimates <- coef(object)[inds]
+    out@covMat <- vcov(object)[inds,inds,drop=FALSE]
     out
   }
+
+  lc_to_predict <- function(object, estimate, inds, dm, level){
+
+    new_est <- split_estimate(object, estimate, inds[1]:inds[2])
+
+    out <- t(apply(dm, 1, function(x){
+      bt <- backTransform(linearComb(new_est, x))
+      if(!se.fit) return(c(Predicted=bt@estimate, SE=NA, lower=NA, upper=NA))
+      ci <- confint(bt, level=level)
+      names(ci) <- c("lower", "upper")
+      c(Predicted=bt@estimate, SE=SE(bt), ci)
+    }))
+    rownames(out) <- NULL
+    as.data.frame(out)
+  }
+
 
   #Calculate row-wise multinomial logit prob
   #implemented in C++ below as it is quite slow
@@ -2004,12 +2006,15 @@ setMethod("predict", "unmarkedFitOccuMS",
   if(type=="psi"){
     dm_list <- gd$dm_state
     ind <- gd$state_ind
+    est <- object@estimates@estimates$state
   } else if(type=="phi"){
     dm_list <- gd$dm_phi
     ind <- gd$phi_ind
+    est <- object@estimates@estimates$transition
   } else {
     dm_list <- gd$dm_det
     ind <- gd$det_ind
+    est <- object@estimates@estimates$det
   }
 
   P <- length(dm_list)
@@ -2021,10 +2026,11 @@ setMethod("predict", "unmarkedFitOccuMS",
   names(out) <- names(dm_list)
 
   if(object@parameterization == 'condbinom'){
-    pred <- plogis(get_lp(coef(object), dm_list, ind))
-    se <- get_se(dm_list, ind) #delta method
-    upr <- pred + z * se
-    lwr <- pred - z * se
+    out <- lapply(1:length(dm_list), function(i){
+      lc_to_predict(object, est, ind[i,], dm_list[[i]], level)
+    })
+    names(out) <- names(dm_list)
+    return(out)
 
   } else if (object@parameterization == "multinomial"){
     lp <- get_lp(coef(object), dm_list, ind)
