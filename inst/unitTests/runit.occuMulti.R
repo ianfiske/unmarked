@@ -205,7 +205,7 @@ test.occuMulti.predict <- function(){
                      c(0.30807707,0.20007250,0.04234835,0.73106618),tol=1e-4)
   prDet <- predict(fm, type='det')
   checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
-                     c(0.190485,0.0945992,0.00507,0.37589566), tol=1e-4)
+                     c(0.190485,0.12201,0.0475270,0.525988), tol=1e-4)
 
   #Check with newdata
   nd <- siteCovs(umf)[1:2,]
@@ -233,7 +233,7 @@ test.occuMulti.predict <- function(){
                      c(0.475928,0.2548407,0.01496681,0.86713789),tol=1e-4)
   prDet <- predict(fm, type='det')
   checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
-                     c(0.20494,0.17175,-0.13168,0.541579), tol=1e-4)
+                     c(0.20494,0.11865,0.0582563,0.517888), tol=1e-4)
 
   #Check predicting co-occurrence
   nd <- siteCovs(umf)[1:2,]
@@ -323,7 +323,7 @@ test.occuMulti.predict.NA <- function(){
   prDet <- predict(fm, type='det')
   checkTrue(all(is.na(prDet$sp1[1,])))
   checkEqualsNumeric(as.numeric(prDet$sp1[2,]),
-                     c(0.49781,0.243148,0.021250,0.974375), tol=1e-4)
+                     c(0.49781,0.19621,0.175514,0.8219401), tol=1e-4)
 
   #Check that you can predict with NAs in siteCovs
   newdata <- siteCovs(umf)

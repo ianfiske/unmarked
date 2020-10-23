@@ -1853,36 +1853,32 @@ setMethod("predict", "unmarkedFitOccuMulti",
   }
 
   if(type=="det"){
-    #based on
-    #https://blog.methodsconsultants.com/posts/delta-method-standard-errors/
     S <- dm$S; dmDet <- dm$dmDet
     dStart <- dm$dStart; dStop <- dm$dStop
 
     out <- list()
-    z <- qnorm(low_bound,lower.tail=F)
-    N <- nrow(dmDet[[1]])
     for (i in 1:S){
-
+      #Subset estimate to species i
       inds <- dStart[i]:dStop[i]
-      param_sub <- params[inds]
-      est <- plogis(dmDet[[i]] %*% param_sub)
-
+      new_est <- object@estimates@estimates$det
+      new_est@estimates <- coef(object)[inds]
       if(se.fit){
-        cov_sub <- vcov(object)[inds-sum(dm$fixed0),inds-sum(dm$fixed0)]
-        se_est <- lower <- upper <- numeric(N)
-        for (j in 1:N){
-          x <- dmDet[[i]][j,]
-          xb <- stats::dlogis(t(x) %*% param_sub)
-          v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
-          se_est[j] <- sqrt(v)
-          lower[j] <- est[j] - z*se_est[j]
-          upper[j] <- est[j] + z*se_est[j]
-        }
-      } else {
-        se_est <- lower <- upper <- NA
+        new_est@covMat <- vcov(object)[inds,inds,drop=FALSE]
+      } else{
+        new_est@covMat <- matrix(NA, nrow=length(inds), ncol=length(inds))
       }
-      out[[i]] <- data.frame(Predicted=est,SE=se_est,
-                            lower=lower,upper=upper)
+
+      prmat <- t(apply(dmDet[[i]], 1, function(x){
+                    bt <- backTransform(linearComb(new_est, x))
+                    if(!se.fit){
+                      return(c(Predicted=bt@estimate, SE=NA, lower=NA, upper=NA))
+                    }
+                    ci <- confint(bt, level=level)
+                    names(ci) <- c("lower", "upper")
+                    c(Predicted=bt@estimate, SE=SE(bt), ci)
+                  }))
+      rownames(prmat) <- NULL
+      out[[i]] <- as.data.frame(prmat)
     }
     names(out) <- names(object@data@ylist)
     if(!is.null(species)){
@@ -1941,16 +1937,20 @@ setMethod("predict", "unmarkedFitOccuMS",
   }
 
   #Get SE/CIs for conditional binomial using delta method
-  split_estimate <- function(object, estimate, inds){
+  split_estimate <- function(object, estimate, inds, se.fit){
     out <- estimate
     out@estimates <- coef(object)[inds]
-    out@covMat <- vcov(object)[inds,inds,drop=FALSE]
+    if(se.fit){
+      out@covMat <- vcov(object)[inds,inds,drop=FALSE]
+    } else{
+      out@covMat <- matrix(NA, nrow=length(inds), ncol=length(inds))
+    }
     out
   }
 
-  lc_to_predict <- function(object, estimate, inds, dm, level){
+  lc_to_predict <- function(object, estimate, inds, dm, level, se.fit){
 
-    new_est <- split_estimate(object, estimate, inds[1]:inds[2])
+    new_est <- split_estimate(object, estimate, inds[1]:inds[2], se.fit)
 
     out <- t(apply(dm, 1, function(x){
       bt <- backTransform(linearComb(new_est, x))
@@ -2027,7 +2027,7 @@ setMethod("predict", "unmarkedFitOccuMS",
 
   if(object@parameterization == 'condbinom'){
     out <- lapply(1:length(dm_list), function(i){
-      lc_to_predict(object, est, ind[i,], dm_list[[i]], level)
+      lc_to_predict(object, est, ind[i,], dm_list[[i]], level, se.fit)
     })
     names(out) <- names(dm_list)
     return(out)
