@@ -698,7 +698,7 @@ rzip <- function(n, lambda, psi) {
 
 #Converts names to indices for occuMulti() and methods
 name_to_ind <- function(x,name_list){
-  
+
   if(is.null(x)) return(x)
 
   if(is.numeric(x)){
@@ -716,12 +716,12 @@ name_to_ind <- function(x,name_list){
   out <- match(clean,name_list)
 
 
-  out * absent_adjust 
+  out * absent_adjust
 }
 
 #Inverts Hessian. Returns blank matrix with a warning on a failure.
 invertHessian <- function(optimOut, nparam, SE){
-  
+
   blankMat <- matrix(NA, nparam, nparam)
   if(!SE) return(blankMat)
 
@@ -732,9 +732,9 @@ invertHessian <- function(optimOut, nparam, SE){
   })
 }
 
-#Get u and a from distance sampling data 
+#Get u and a from distance sampling data
 getUA <- function(umf){
-  
+
   M <- numSites(umf)
   J <- ncol(getY(umf)) / umf@numPrimary
   db <- umf@dist.breaks
@@ -842,7 +842,7 @@ getDistCP <- function(keyfun, param1, param2, survey, db, w, a, u){
 
 #Modified rmultinom for handling NAs
 rmultinom2 <- function(n, size, prob){
-  if(is.na(size)){
+  if(is.na(size)|any(is.na(prob))){
     return(matrix(NA, length(prob), length(n)))
   }
   stats::rmultinom(n=n, size=size, prob=prob)
@@ -867,7 +867,7 @@ umf_to_factor <- function(umf){
   umf@siteCovs <- df_to_factor(siteCovs(umf), "siteCovs")
   umf@obsCovs <- df_to_factor(obsCovs(umf), "obsCovs")
   if(methods::.hasSlot(umf, "yearlySiteCovs")){
-    umf@yearlySiteCovs <- df_to_factor(yearlySiteCovs(umf), "yearlySiteCovs") 
+    umf@yearlySiteCovs <- df_to_factor(yearlySiteCovs(umf), "yearlySiteCovs")
   }
-  umf 
+  umf
 }

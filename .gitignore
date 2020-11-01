@@ -1,16 +1,30 @@
+# Compiled objects
 *.so
 *.o
 *.dll
-runit
-bc
-.Rhistory
+
+
+# Emacs backups
 *.Rd~
 *.R~
 NAMESPACE~
+
+
+# TeX
 *.aux
 *.log
 *.blg
 *.pdf
-auto/
 *.bbl
+
+# Directories
+auto/
+src-i386/
+src-x64/
+
+# Misc
+runit
+bc
+.Rhistory
 symbols.rds
+

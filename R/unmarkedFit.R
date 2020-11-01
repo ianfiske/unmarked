@@ -1741,25 +1741,17 @@ setMethod("predict", "unmarkedFitOccuMulti",
   cond <- name_to_ind(cond, names(object@data@ylist))
 
   if(missing(newdata)){
-    newdata <- object@data
-  }
-
-  if(! class(newdata) %in% c('unmarkedFrameOccuMulti','data.frame')){
-    stop("newdata must be a data frame or an unmarkedFrameOccuMulti object")
-  }
-
-  if (class(newdata) == 'data.frame') {
-    temp <- object@data
-    if(type=="state"){
-      temp@siteCovs <- newdata
-    } else {
-      temp@obsCovs <- newdata
+    newdata <- NULL
+  } else {
+    if(! class(newdata) %in% c('data.frame')){
+      stop("newdata must be a data frame")
     }
-    newdata <- temp
   }
 
-  dm <- getDesign(newdata,object@detformulas,object@stateformulas,
-                  na.rm=F, old_fit=object)
+  maxOrder <- object@call$maxOrder
+  if(is.null(maxOrder)) maxOrder <- length(object@data@ylist)
+  dm <- getDesign(object@data,object@detformulas,object@stateformulas,
+                  maxOrder, na.rm=F, newdata=newdata, type=type)
 
   params <- coef(object)
   low_bound <- (1-level)/2
@@ -1791,10 +1783,10 @@ setMethod("predict", "unmarkedFitOccuMulti",
 
     if(se.fit){
       cat('Bootstrapping confidence intervals with',nsims,'samples\n')
-      ses <- SE(object)
+      Sigma <- vcov(object)
       samp <- array(NA,c(dim(psi_est),nsims))
       for (i in 1:nsims){
-        samp[,,i] <- calc_psi(stats::rnorm(length(params),params,ses))
+        samp[,,i] <- calc_psi(mvrnorm(1, coef(object), Sigma))
       }
     }
 
@@ -1861,36 +1853,32 @@ setMethod("predict", "unmarkedFitOccuMulti",
   }
 
   if(type=="det"){
-    #based on
-    #https://blog.methodsconsultants.com/posts/delta-method-standard-errors/
     S <- dm$S; dmDet <- dm$dmDet
     dStart <- dm$dStart; dStop <- dm$dStop
 
     out <- list()
-    z <- qnorm(low_bound,lower.tail=F)
-    N <- nrow(dmDet[[1]])
     for (i in 1:S){
-
+      #Subset estimate to species i
       inds <- dStart[i]:dStop[i]
-      param_sub <- params[inds]
-      est <- plogis(dmDet[[i]] %*% param_sub)
-
+      new_est <- object@estimates@estimates$det
+      new_est@estimates <- coef(object)[inds]
       if(se.fit){
-        cov_sub <- vcov(object)[inds-sum(dm$fixed0),inds-sum(dm$fixed0)]
-        se_est <- lower <- upper <- numeric(N)
-        for (j in 1:N){
-          x <- dmDet[[i]][j,]
-          xb <- stats::dlogis(t(x) %*% param_sub)
-          v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
-          se_est[j] <- sqrt(v)
-          lower[j] <- est[j] - z*se_est[j]
-          upper[j] <- est[j] + z*se_est[j]
-        }
-      } else {
-        se_est <- lower <- upper <- NA
+        new_est@covMat <- vcov(object)[inds,inds,drop=FALSE]
+      } else{
+        new_est@covMat <- matrix(NA, nrow=length(inds), ncol=length(inds))
       }
-      out[[i]] <- data.frame(Predicted=est,SE=se_est,
-                            lower=lower,upper=upper)
+
+      prmat <- t(apply(dmDet[[i]], 1, function(x){
+                    bt <- backTransform(linearComb(new_est, x))
+                    if(!se.fit){
+                      return(c(Predicted=bt@estimate, SE=NA, lower=NA, upper=NA))
+                    }
+                    ci <- confint(bt, level=level)
+                    names(ci) <- c("lower", "upper")
+                    c(Predicted=bt@estimate, SE=SE(bt), ci)
+                  }))
+      rownames(prmat) <- NULL
+      out[[i]] <- as.data.frame(prmat)
     }
     names(out) <- names(object@data@ylist)
     if(!is.null(species)){
@@ -1900,7 +1888,6 @@ setMethod("predict", "unmarkedFitOccuMulti",
   }
   stop("type must be 'det' or 'state'")
 })
-
 
 setMethod("predict", "unmarkedFitOccuMS",
      function(object, type, newdata,
@@ -1919,29 +1906,17 @@ setMethod("predict", "unmarkedFitOccuMS",
   }
 
   if(missing(newdata)){
-    newdata <- object@data
-  }
-
-  if(! class(newdata) %in% c('unmarkedFrameOccuMS','data.frame')){
-    stop("newdata must be a data frame or an unmarkedFrameOccuMS object")
-  }
-
-  if (class(newdata) == 'data.frame') {
-    temp <- object@data
-    if(type=="psi"){
-      temp@siteCovs <- newdata
-    } else if(type=="phi") {
-      temp@yearlySiteCovs <- newdata
-    } else {
-      temp@obsCovs <- newdata
+    newdata <- NULL
+  } else {
+    if(! class(newdata) %in% c('data.frame')){
+      stop("newdata must be a data frame")
     }
-    newdata <- temp
   }
 
   S <- object@data@numStates
-  gd <- getDesign(newdata,object@psiformulas,object@phiformulas,
-                  object@detformulas,
-                  object@parameterization, na.rm=F, old_fit=object)
+  gd <- getDesign(object@data,object@psiformulas,object@phiformulas,
+                  object@detformulas, object@parameterization, na.rm=F,
+                  newdata=newdata, type=type)
 
   #Index guide used to organize p values
   guide <- matrix(NA,nrow=S,ncol=S)
@@ -1961,27 +1936,33 @@ setMethod("predict", "unmarkedFitOccuMS",
     out
   }
 
-  #Get SE via delta method (for conditional binomial)
-  get_se <- function(dm_list, ind){
-    L <- length(dm_list)
-    M <- nrow(dm_list[[1]])
-    out <- matrix(NA,M,L)
-    if(!se.fit) return(out)
-
-    for (i in 1:L){
-      inds <- ind[i,1]:ind[i,2]
-      param_sub <- coef(object)[inds]
-      cov_sub <- vcov(object)[inds,inds]
-
-      for (m in 1:M){
-        x <- dm_list[[i]][m,]
-        xb <- stats::dlogis(t(x) %*% param_sub) #??? transform
-        v <- xb %*% t(x) %*% cov_sub %*% x %*% xb
-        out[m,i] <- sqrt(v)
-      }
+  #Get SE/CIs for conditional binomial using delta method
+  split_estimate <- function(object, estimate, inds, se.fit){
+    out <- estimate
+    out@estimates <- coef(object)[inds]
+    if(se.fit){
+      out@covMat <- vcov(object)[inds,inds,drop=FALSE]
+    } else{
+      out@covMat <- matrix(NA, nrow=length(inds), ncol=length(inds))
     }
     out
   }
+
+  lc_to_predict <- function(object, estimate, inds, dm, level, se.fit){
+
+    new_est <- split_estimate(object, estimate, inds[1]:inds[2], se.fit)
+
+    out <- t(apply(dm, 1, function(x){
+      bt <- backTransform(linearComb(new_est, x))
+      if(!se.fit) return(c(Predicted=bt@estimate, SE=NA, lower=NA, upper=NA))
+      ci <- confint(bt, level=level)
+      names(ci) <- c("lower", "upper")
+      c(Predicted=bt@estimate, SE=SE(bt), ci)
+    }))
+    rownames(out) <- NULL
+    as.data.frame(out)
+  }
+
 
   #Calculate row-wise multinomial logit prob
   #implemented in C++ below as it is quite slow
@@ -2025,12 +2006,15 @@ setMethod("predict", "unmarkedFitOccuMS",
   if(type=="psi"){
     dm_list <- gd$dm_state
     ind <- gd$state_ind
+    est <- object@estimates@estimates$state
   } else if(type=="phi"){
     dm_list <- gd$dm_phi
     ind <- gd$phi_ind
+    est <- object@estimates@estimates$transition
   } else {
     dm_list <- gd$dm_det
     ind <- gd$det_ind
+    est <- object@estimates@estimates$det
   }
 
   P <- length(dm_list)
@@ -2042,10 +2026,11 @@ setMethod("predict", "unmarkedFitOccuMS",
   names(out) <- names(dm_list)
 
   if(object@parameterization == 'condbinom'){
-    pred <- plogis(get_lp(coef(object), dm_list, ind))
-    se <- get_se(dm_list, ind) #delta method
-    upr <- pred + z * se
-    lwr <- pred - z * se
+    out <- lapply(1:length(dm_list), function(i){
+      lc_to_predict(object, est, ind[i,], dm_list[[i]], level, se.fit)
+    })
+    names(out) <- names(dm_list)
+    return(out)
 
   } else if (object@parameterization == "multinomial"){
     lp <- get_lp(coef(object), dm_list, ind)
@@ -3413,7 +3398,9 @@ setMethod("getP", "unmarkedFitOccuMulti", function(object)
   ylist <- object@data@ylist
   S <- length(ylist)
   N <- nrow(ylist[[1]])
-  dm <- getDesign(object@data,object@detformulas,object@stateformulas)
+  maxOrder <- object@call$maxOrder
+  if(is.null(maxOrder)) maxOrder <- length(object@data@ylist)
+  dm <- getDesign(object@data,object@detformulas,object@stateformulas, maxOrder=maxOrder)
   pred <- predict(object,'det',se.fit=F)
   dets <- do.call(cbind,lapply(pred,`[`,,1))
   #ugly mess
@@ -3669,6 +3656,7 @@ setMethod("getP", "unmarkedFitGDS",
             sigma <- matrix(sigma, M, T, byrow=TRUE)
             for(i in 1:M) {
                 for(t in 1:T) {
+                    if(is.na(sigma[i,t])) next
                     switch(survey,
                     line = {
                         f.0 <- 2 * dnorm(0, 0, sd=sigma[i, t])
@@ -3692,6 +3680,7 @@ setMethod("getP", "unmarkedFitGDS",
             rate <- matrix(rate, M, T, byrow=TRUE)
             for(i in 1:M) {
                 for(t in 1:T) {
+                if(is.na(rate[i,t])) next
                 switch(survey,
                 line = {
                     for(j in 1:J) {
@@ -3714,6 +3703,7 @@ setMethod("getP", "unmarkedFitGDS",
             scale <- exp(coef(object, type="scale"))
             for(i in 1:M) {
                 for(t in 1:T) {
+                if(is.na(shape[i,t])|is.na(scale)) next
                 switch(survey,
                 line = {
                     for(j in 1:J) {

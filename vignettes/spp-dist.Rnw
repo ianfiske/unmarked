@@ -27,6 +27,7 @@ options(continue=" ")
 
 \title{Modeling and mapping species distributions}
 \author{Richard Chandler}
+\date{Feb 5, 2019}
 
 
 \begin{document}
