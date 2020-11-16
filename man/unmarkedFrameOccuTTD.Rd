@@ -14,7 +14,7 @@
   This S4 class is required by the data argument of \code{\link{occuTTD}}}
 
 \arguments{
-    \item{y}{An MxR matrix of multi-state occupancy data for a species, 
+    \item{y}{An MxR matrix of time-to-detection data for a species, 
         where M is the number of sites and R is the maximum number of 
         observations per site (across all primary periods and observations, if 
         you have multi-season data). Values in \code{y} should be positive.}
@@ -42,6 +42,13 @@
 \details{
     unmarkedFrameOccuTTD is the S4 class that holds data to be passed 
     to the \code{\link{occuTTD}} model-fitting function.
+}
+
+\note{
+  If the time-to-detection values in \code{y} are very large (e.g., because
+  they are expressed as numbers of seconds) you may have issues fitting models.
+  An easy solution is to convert your units (e.g., from seconds to decimal
+  minutes) to keep the values as close to 0 as possible.
 }
 
 \value{an object of class unmarkedFrameOccuTTD}

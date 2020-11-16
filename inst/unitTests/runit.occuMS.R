@@ -43,6 +43,9 @@ test.occuMS.multinom.fit <- function(){
   N <- 50; J <- 5; S <- 3
   site_covs <- matrix(rnorm(N*2),ncol=2)
   obs_covs <- matrix(rnorm(N*J*2),ncol=2)
+  colnames(site_covs) <- paste0("sc",1:2)
+  colnames(obs_covs) <- paste0("oc", 1:2)
+
   a1 <- -0.5; b1 <- 1; a2 <- -0.6; b2 <- -0.7
   p11 <- -0.4; p12 <- -1.09; p22 <- -0.84
   truth <- c(a1,b1,a2,b2,p11,0,p12,p22)
@@ -78,8 +81,8 @@ test.occuMS.multinom.fit <- function(){
   umf <- unmarkedFrameOccuMS(y=y,siteCovs=as.data.frame(site_covs),
                            obsCovs=as.data.frame(obs_covs))
 
-  stateformulas <- c('~V1','~V2')
-  detformulas <- c('~V1','~1','~1')
+  stateformulas <- c('~sc1','~sc2')
+  detformulas <- c('~oc1','~1','~1')
   fit_R <- occuMS(detformulas, stateformulas, data=umf, engine="R")
   fit_C <- occuMS(detformulas, stateformulas, data=umf, engine="C")
   checkEqualsNumeric(coef(fit_R),coef(fit_C))
@@ -108,12 +111,35 @@ test.occuMS.multinom.fit <- function(){
                      c(0.285455,0.069013,0.168485,0.4447024), tol=1e-4)
 
   #with new data (some missing)
-  newdata <- data.frame(V1=rnorm(5),V2=rnorm(5))
+  newdata <- data.frame(oc1=rnorm(5),oc2=rnorm(5))
   newdata[1,1] <- NA
   pr <- predict(fit_C,"det",newdata=newdata)
   checkTrue(is.na(pr[[1]][1,1]))
+  checkEqualsNumeric(nrow(pr[[1]]), nrow(newdata))
   checkEqualsNumeric(as.numeric(pr[[1]][2,]),
                      c(0.343157,0.0703713,0.222039,0.488455),tol=1e-4)
+
+  newdata <- data.frame(sc1=rnorm(5),sc2=rnorm(5))
+  newdata[1,1] <- NA
+  pr <- predict(fit_C,"psi",newdata=newdata)
+  checkTrue(is.na(pr[[1]][1,1]))
+  checkEqualsNumeric(nrow(pr[[1]]), nrow(newdata))
+  checkEqualsNumeric(pr[[1]][2,1], 0.08791341,tol=1e-4)
+
+  #With site covs in obs covs
+  detformulas <- c('~sc1','~oc1','~1')
+  fit2 <- occuMS(detformulas, stateformulas, data=umf)
+
+  pr <- predict(fit2, "psi")
+  checkEqualsNumeric(nrow(pr[[1]]),N)
+  pr <- predict(fit2, "det")
+  checkEqualsNumeric(nrow(pr[[1]]), N*J)
+
+  pr_nd <- predict(fit2, "psi", newdata=data.frame(sc1=0, sc2=0))
+  checkEqualsNumeric(nrow(pr_nd[[1]]), 1)
+
+  pr_nd <- predict(fit2, "det", newdata=data.frame(sc1=0, oc1=0))
+  checkEqualsNumeric(nrow(pr_nd[[1]]), 1)
 
   #check getP
   ps <- getP(fit_C)
@@ -209,14 +235,14 @@ test.occuMS.condbinom.fit <- function(){
   pr <- predict(fit_C, "psi")
   checkEqualsNumeric(length(pr),2)
   checkEqualsNumeric(as.numeric(pr[[1]][1,]),
-                     c(0.33849,0.08951,0.16304,0.51393), tol=1e-4)
+                     c(0.33849,0.08951,0.18945,0.52834), tol=1e-4)
   checkEquals(names(pr),c('psi','R'))
 
   #det
   pr <- predict(fit_C, "det")
   checkEqualsNumeric(length(pr),3)
   checkEqualsNumeric(as.numeric(pr[[1]][1,]),
-                     c(0.34812,0.090899,0.169970,0.526288), tol=1e-4)
+                     c(0.34812,0.090899,0.195866,0.53936662), tol=1e-4)
   checkEquals(names(pr),c('p[1]','p[2]','delta'))
 
   #check getP
