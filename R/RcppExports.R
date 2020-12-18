@@ -5,6 +5,10 @@ nll_gmultmix <- function(beta, mixture, pi_fun, Xlam, Xlam_offset, Xphi, Xphi_of
     .Call(`_unmarked_nll_gmultmix`, beta, mixture, pi_fun, Xlam, Xlam_offset, Xphi, Xphi_offset, Xdet, Xdet_offset, k, lfac_k, lfac_kmyt, kmyt, y, naflag, fin, nP, nLP, nPP, nDP, threads)
 }
 
+nll_occuRN <- function(beta, n_param, y, X, V, X_offset, V_offset, K, Kmin, threads) {
+    .Call(`_unmarked_nll_occuRN`, beta, n_param, y, X, V, X_offset, V_offset, K, Kmin, threads)
+}
+
 nll_pcount <- function(beta, n_param, y, X, V, X_offset, V_offset, K, Kmin, mixture, threads) {
     .Call(`_unmarked_nll_pcount`, beta, n_param, y, X, V, X_offset, V_offset, K, Kmin, mixture, threads)
 }
