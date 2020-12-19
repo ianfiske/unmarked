@@ -16,7 +16,7 @@ double nll_gdistsamp(arma::vec beta, arma::uvec n_param, arma::vec y,
     arma::mat Xlam, arma::vec Xlam_offset, arma::vec A, arma::mat Xphi,
     arma::vec Xphi_offset, arma::mat Xdet, arma::vec Xdet_offset, arma::vec db,
     arma::mat a, arma::mat u, arma::vec w, arma::vec k, arma::vec lfac_k,
-    arma::cube lfac_kmyt, arma::cube kmyt, arma::mat fin, int threads){
+    arma::cube lfac_kmyt, arma::cube kmyt, arma::uvec Kmin, int threads){
 
   #ifdef _OPENMP
     omp_set_num_threads(threads);
@@ -49,10 +49,6 @@ double nll_gdistsamp(arma::vec beta, arma::uvec n_param, arma::vec y,
 
   #pragma omp parallel for reduction(+: loglik) if(threads > 1)
   for (int i=0; i<M; i++){
-    vec f(K+1);
-    for (int j=0; j<(K+1); j++){
-      f(j) = N_density(mixture, j, lambda(i), log_alpha);
-    }
 
     int t_ind = i * T;
     int y_ind = i * T * J;
@@ -84,16 +80,14 @@ double nll_gdistsamp(arma::vec beta, arma::uvec n_param, arma::vec y,
       y_ind += J;
     }
 
-    vec g(K+1);
-    for (int j=0; j<(K+1); j++){
-      g(j) = exp(sum(mn.row(j)));
-      if(!fin(i,j)){
-        f(j) = 0;
-        g(j) = 0;
-      }
+    double site_lp = 0.0;
+    for (int j=Kmin(i); j<(K+1); j++){
+      site_lp += N_density(mixture, j, lambda(i), log_alpha) *
+        exp(sum(mn.row(j)));
     }
 
-    loglik += log(sum(f % g) + DOUBLE_XMIN);
+    loglik += log(site_lp + DOUBLE_XMIN);
+
   }
 
   return -loglik;

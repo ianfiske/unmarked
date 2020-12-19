@@ -121,11 +121,6 @@ nll_R <- function(pars) {
     -sum(log(ll))
     }
 
-nll_C <- function(params) {
-  nll_gmultmix(params,mixture, piFun, Xlam, Xlam.offset, Xphi, Xphi.offset,
-               Xdet, Xdet.offset,k,lfac.k, lfac.kmyt,kmytC, y_long, naflag_long,
-               fin, nP,nLP,nPP,nDP,threads)
-}
 
 if(engine=="R"){
   nll <- nll_R
@@ -135,10 +130,18 @@ if(engine=="R"){
     as.vector(t(out))
   }
   y_long <- long_format(y)
-  naflag_long <- long_format(naflag)
   kmytC <- kmyt
   kmytC[which(is.na(kmyt))] <- 0
-  nll <- nll_C
+
+  mixture_code <- switch(mixture, P={1}, NB={2})
+  n_param <- c(nLP, nPP, nDP, mixture=="NB")
+  Kmin <- apply(yt, 1, max, na.rm=TRUE)
+
+  nll <- function(params) {
+    nll_gmultmix(params, n_param, y_long, mixture_code, piFun, Xlam, Xlam.offset,
+                 Xphi, Xphi.offset, Xdet, Xdet.offset, k, lfac.k, lfac.kmyt,
+                 kmytC, Kmin, threads)
+  }
 
   if(!piFun%in%c('doublePiFun','removalPiFun','depDoublePiFun')){
     warning("Custom pi functions are not supported by C engine. Using R engine instead.")

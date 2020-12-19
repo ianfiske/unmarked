@@ -392,7 +392,6 @@ if(engine =="C"){
     as.vector(t(out))
   }
   y_long <- long_format(y)
-  #naflag_long <- long_format(naflag)
   kmytC <- kmyt
   kmytC[which(is.na(kmyt))] <- 0
   if(output!='density'){
@@ -400,11 +399,12 @@ if(engine =="C"){
   }
   mixture_code <- switch(mixture, P={1}, NB={2})
   n_param <- c(nLP, nPP, nDP, nSP, nOP)
+  Kmin <- apply(yt, 1, max, na.rm=TRUE)
 
   nll <- function(params){
     nll_gdistsamp(params, n_param, y_long, mixture_code, keyfun, survey,
                   Xlam, Xlam.offset, A, Xphi, Xphi.offset, Xdet, Xdet.offset,
-                  db, a, t(u), w, k, lfac.k, lfac.kmyt, kmyt, fin, threads)
+                  db, a, t(u), w, k, lfac.k, lfac.kmyt, kmyt, Kmin, threads)
   }
 
 } else {
