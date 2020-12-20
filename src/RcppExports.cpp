@@ -66,6 +66,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// nll_gpcount
+double nll_gpcount(arma::mat ym, arma::mat Xlam, arma::mat Xphi, arma::mat Xp, arma::vec beta_lam, arma::vec beta_phi, arma::vec beta_p, double log_alpha, arma::vec Xlam_offset, arma::vec Xphi_offset, arma::vec Xp_offset, int M, std::string mixture, int T, int threads);
+RcppExport SEXP _unmarked_nll_gpcount(SEXP ymSEXP, SEXP XlamSEXP, SEXP XphiSEXP, SEXP XpSEXP, SEXP beta_lamSEXP, SEXP beta_phiSEXP, SEXP beta_pSEXP, SEXP log_alphaSEXP, SEXP Xlam_offsetSEXP, SEXP Xphi_offsetSEXP, SEXP Xp_offsetSEXP, SEXP MSEXP, SEXP mixtureSEXP, SEXP TSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type ym(ymSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Xlam(XlamSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Xphi(XphiSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Xp(XpSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type beta_lam(beta_lamSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type beta_phi(beta_phiSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type beta_p(beta_pSEXP);
+    Rcpp::traits::input_parameter< double >::type log_alpha(log_alphaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type Xlam_offset(Xlam_offsetSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type Xphi_offset(Xphi_offsetSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type Xp_offset(Xp_offsetSEXP);
+    Rcpp::traits::input_parameter< int >::type M(MSEXP);
+    Rcpp::traits::input_parameter< std::string >::type mixture(mixtureSEXP);
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(nll_gpcount(ym, Xlam, Xphi, Xp, beta_lam, beta_phi, beta_p, log_alpha, Xlam_offset, Xphi_offset, Xp_offset, M, mixture, T, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // nll_occuRN
 double nll_occuRN(const arma::vec beta, const arma::uvec n_param, const arma::mat y, const arma::mat X, const arma::mat V, const arma::vec X_offset, const arma::vec V_offset, int K, const arma::uvec Kmin, int threads);
 RcppExport SEXP _unmarked_nll_occuRN(SEXP betaSEXP, SEXP n_paramSEXP, SEXP ySEXP, SEXP XSEXP, SEXP VSEXP, SEXP X_offsetSEXP, SEXP V_offsetSEXP, SEXP KSEXP, SEXP KminSEXP, SEXP threadsSEXP) {
@@ -114,7 +139,6 @@ RcppExport SEXP getDetVecs(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP getSingleDetVec(SEXP, SEXP, SEXP);
 RcppExport SEXP nll_distsamp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_distsampOpen(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP nll_gpcount(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_multinomPois(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_multmixOpen(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_occu(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -127,6 +151,7 @@ RcppExport SEXP nll_pcountOpen(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, S
 static const R_CallMethodDef CallEntries[] = {
     {"_unmarked_nll_gdistsamp", (DL_FUNC) &_unmarked_nll_gdistsamp, 23},
     {"_unmarked_nll_gmultmix", (DL_FUNC) &_unmarked_nll_gmultmix, 17},
+    {"_unmarked_nll_gpcount", (DL_FUNC) &_unmarked_nll_gpcount, 15},
     {"_unmarked_nll_occuRN", (DL_FUNC) &_unmarked_nll_occuRN, 10},
     {"_unmarked_nll_pcount", (DL_FUNC) &_unmarked_nll_pcount, 11},
     {"get_lik_trans",    (DL_FUNC) &get_lik_trans,     2},
@@ -135,7 +160,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"getSingleDetVec",  (DL_FUNC) &getSingleDetVec,   3},
     {"nll_distsamp",     (DL_FUNC) &nll_distsamp,     11},
     {"nll_distsampOpen", (DL_FUNC) &nll_distsampOpen, 42},
-    {"nll_gpcount",      (DL_FUNC) &nll_gpcount,      14},
     {"nll_multinomPois", (DL_FUNC) &nll_multinomPois, 10},
     {"nll_multmixOpen",  (DL_FUNC) &nll_multmixOpen,  38},
     {"nll_occu",         (DL_FUNC) &nll_occu,         11},
