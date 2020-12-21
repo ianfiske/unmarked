@@ -71,7 +71,7 @@ jobs:
           remotes::install_deps(dependencies = TRUE)
           remotes::install_cran("rcmdcheck")
           remotes::install_cran("tinytex")
-          tinytex::tlmgr_install(pkgs=c("ae"))
+          tinytex::tlmgr_install(pkgs=c("ae","amssymb","color","fontenc","fullpage","graphicx","indentfirst","lineno","setspace","verbatim"))
         shell: Rscript {0}
 
       - name: Check
