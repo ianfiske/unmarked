@@ -2,7 +2,7 @@
 # Fit the Occupancy model of Royle and Nichols
 
 occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
-    se = TRUE, engine=c("C","R"), ...)
+    se = TRUE, engine=c("C","R"), threads = 1, ...)
 {
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
@@ -66,21 +66,15 @@ occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
     -sum(log(like.i))
   }
 
-
-  nll_C <- function(params) {
-      .Call("nll_occuRN",
-          params,
-          X, X.offset, V, V.offset, K,
-          yC, navecC, nP,nOP,
-          PACKAGE = "unmarked")
-  }
-
   if(engine=="R"){
     nll <- nll_R
-  }else{
-    yC <- as.numeric(t(y))
-    navecC <- is.na(yC)
-    nll <- nll_C
+  } else{
+    n_param <- c(nOP, nDP)
+    Kmin <- apply(y, 1, function(x) max(x, na.rm=TRUE))
+    nll <- function(params){
+      nll_occuRN(params, n_param, y, X, V, X.offset, V.offset,
+                 K, Kmin, threads)
+    }
   }
 
 	if(missing(starts)) starts <- rep(0, nP)

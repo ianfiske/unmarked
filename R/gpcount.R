@@ -2,7 +2,7 @@
 # data will need to be an unmarkedMultFrame
 gpcount <- function(lambdaformula, phiformula, pformula, data,
     mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE,
-    engine=c('C', 'R'), ...)
+    engine=c('C', 'R'), threads=1, ...)
 {
 if(!is(data, "unmarkedFrameGPC"))
     stop("Data is not of class unmarkedFrameGPC.")
@@ -105,13 +105,9 @@ if(identical(engine, "C")) {
         log.alpha <- 1
         if(mixture %in% c("NB", "ZIP"))
             log.alpha <- pars[nP]
-        .Call("nll_gpcount",
-              ym, Xlam, Xphi, Xdet,
-              beta.lam, beta.phi, beta.p, log.alpha,
-              Xlam.offset, Xphi.offset, Xdet.offset,
-              as.integer(K),
-              mixture, T,
-              PACKAGE = "unmarked")
+        nll_gpcount(ym, Xlam, Xphi, Xdet, beta.lam, beta.phi, beta.p,
+                    log.alpha, Xlam.offset, Xphi.offset, Xdet.offset,
+                    as.integer(K), mixture, T, threads)
     }
 }
 

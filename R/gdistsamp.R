@@ -2,9 +2,8 @@
 gdistsamp <- function(lambdaformula, phiformula, pformula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
-    mixture=c('P', 'NB'), K,
-    starts, method = "BFGS", se = TRUE, engine=c("C","R"),
-    rel.tol=1e-4, ...)
+    mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE, engine=c("C","R"),
+    rel.tol=1e-4, threads=1, ...)
 {
 if(!is(data, "unmarkedFrameGDS"))
     stop("Data is not of class unmarkedFrameGDS.")
@@ -264,7 +263,7 @@ exp = {
                         }
                     })
                 cp <- p * u[i,] * phi[i, t]
-                cp[J+1] <- 1 - sum(cp) 
+                cp[J+1] <- 1 - sum(cp)
                 if(!is.na(cp[J+1]) && cp[J+1]<0){ cp[J+1] <- 0 }
                 mn[, t] <- lfac.k - lfac.kmyt[i, t,] +
                     sum(y[i, t, ] *
@@ -393,23 +392,21 @@ if(engine =="C"){
     as.vector(t(out))
   }
   y_long <- long_format(y)
-  naflag_long <- long_format(naflag)
   kmytC <- kmyt
   kmytC[which(is.na(kmyt))] <- 0
   if(output!='density'){
     A <- rep(1, M)
   }
+  mixture_code <- switch(mixture, P={1}, NB={2})
+  n_param <- c(nLP, nPP, nDP, nSP, nOP)
+  Kmin <- apply(yt, 1, max, na.rm=TRUE)
 
-  nll <- function(params) {
-    .Call("nll_gdistsamp",
-          params,mixture,keyfun,survey,
-          Xlam, Xlam.offset, A, Xphi, Xphi.offset, Xdet, Xdet.offset, 
-          db, a, u, w,
-          k,lfac.k, lfac.kmyt,kmytC,
-          y_long, naflag_long, fin,
-          nP,nLP,nPP,nDP,rel.tol,
-          PACKAGE = "unmarked")
+  nll <- function(params){
+    nll_gdistsamp(params, n_param, y_long, mixture_code, keyfun, survey,
+                  Xlam, Xlam.offset, A, Xphi, Xphi.offset, Xdet, Xdet.offset,
+                  db, a, t(u), w, k, lfac.k, lfac.kmyt, kmyt, Kmin, threads)
   }
+
 } else {
   nll <- nll_R
 }

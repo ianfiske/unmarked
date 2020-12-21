@@ -1,114 +1,88 @@
-#include "nll_gmultmix.h"
+#include <RcppArmadillo.h>
 #include "pifun.h"
+#include "distr.h"
+#include "utils.h"
+
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 
 using namespace Rcpp;
 using namespace arma;
 
-//mat inv_logit( mat inp ){
-//  return(1 / (1 + exp(-1 * inp)));
-//}
+// [[Rcpp::export]]
+double nll_gmultmix(arma::vec beta, arma::uvec n_param, arma::vec y,
+                    int mixture, std::string pi_fun, arma::mat Xlam,
+                    arma::vec Xlam_offset, arma::mat Xphi, arma::vec Xphi_offset,
+                    arma::mat Xdet, arma::vec Xdet_offset,
+                    arma::vec k, arma::vec lfac_k, arma::cube lfac_kmyt,
+                    arma::cube kmyt, arma::vec Kmin, int threads){
 
-
-SEXP nll_gmultmix(SEXP betaR, SEXP mixtureR, SEXP pi_funR, 
-    SEXP XlamR, SEXP Xlam_offsetR, SEXP XphiR, SEXP Xphi_offsetR, SEXP XdetR, 
-    SEXP Xdet_offsetR, SEXP kR, SEXP lfac_kR, SEXP lfac_kmytR, SEXP kmytR, 
-    SEXP yR, SEXP naflagR, SEXP finR, SEXP nPr, SEXP nLPr, SEXP nPPr, SEXP nDPr){
-
-  //Inputs
-  vec beta = as<vec>(betaR);
-  std::string mixture = as<std::string>(mixtureR);
-  std::string pi_fun = as<std::string>(pi_funR);
-
-  mat Xlam = as<mat>(XlamR);
-  vec Xlam_offset = as<vec>(Xlam_offsetR);
-  mat Xphi = as<mat>(XphiR);
-  vec Xphi_offset = as<vec>(Xphi_offsetR);
-  mat Xdet = as<mat>(XdetR);
-  vec Xdet_offset = as<vec>(Xdet_offsetR);
-
-  IntegerVector k(kR);
-  vec lfac_k = as<vec>(lfac_kR);
-  cube lfac_kmyt = as<cube>(lfac_kmytR);
-  cube kmyt = as<cube>(kmytR);
-
-  vec y = as<vec>(yR);
-  vec naflag = as<vec>(naflagR);
-  mat fin = as<mat>(finR);
-
-  int nP = as<int>(nPr);
-  int nLP = as<int>(nLPr);
-  int nPP = as<int>(nPPr);
-  int nDP = as<int>(nDPr);
+  #ifdef _OPENMP
+    omp_set_num_threads(threads);
+  #endif
 
   int M = Xlam.n_rows;
-  vec lambda = exp( Xlam * beta.subvec(0, (nLP - 1) ) + Xlam_offset );
-  
   int T = Xphi.n_rows / M;
+  int J = Xdet.n_rows / (M * T);
+  int R = y.size() / (M * T);
+  int K = k.size() - 1;
+
+  vec lambda = exp(Xlam * beta_sub(beta, n_param, 0) + Xlam_offset);
+  double log_alpha = beta_sub(beta, n_param, 3)(0);
+
   vec phi = ones(M*T);
   if(T > 1){
-    phi = inv_logit( Xphi * beta.subvec(nLP, (nLP+nPP-1)) + Xphi_offset);
+    phi = inv_logit(Xphi * beta_sub(beta, n_param, 1) + Xphi_offset);
   }
-  
-  int J = Xdet.n_rows / (M * T);
-  int R = y.size() / (M * T); 
-  vec p = inv_logit( Xdet * beta.subvec((nLP+nPP),(nLP+nPP+nDP-1)) + Xdet_offset);
-  
-  int K = k.size();
-  int t_ind = 0;
-  int y_ind = 0;
-  int p_ind = 0;
-  vec ll(M);
-  for (int m=0; m<M; m++){
-    vec f(K);
-    if(mixture == "P"){
-      f = dpois(k, lambda(m));
-    } else if(mixture == "NB"){
-      f = dnbinom_mu(k, exp(beta(nP-1)), lambda(m));
-    }
 
-    mat A = zeros(K,T);
+  vec p = inv_logit(Xdet * beta_sub(beta, n_param, 2) + Xdet_offset);
+
+  double loglik = 0.0;
+  #pragma omp parallel for reduction(+: loglik) if(threads > 1)
+  for (int i=0; i<M; i++){
+
+    int y_ind = i * T * R;
+    int p_ind = i * T * J;
+    int t_ind = i * T;
+
+    mat A = zeros(K+1,T);
+    vec y_sub;
+    uvec fin;
     for(int t=0; t<T; t++){
       int y_stop = y_ind + R - 1;
       int p_stop = p_ind + J - 1;
-      vec na_sub = naflag.subvec(y_ind, y_stop); 
 
-      if( ! all(na_sub) ){
+      y_sub = y.subvec(y_ind, y_stop);
+      fin = find_finite(y_sub);
+      if(fin.size() == 0) continue;
 
-        vec p1 = lfac_kmyt.subcube(span(m),span(t),span());
-        vec p2 = y.subvec(y_ind, y_stop);
-        vec p3 = piFun( p.subvec(p_ind, p_stop), pi_fun ) * phi(t_ind);
-        //the following line causes a segfault only in R CMD check,
-        //when kmyt contains NA values
-        vec p4 = kmyt.subcube(span(m),span(t),span());
+      vec p1 = lfac_kmyt.subcube(span(i),span(t),span());
+      vec p3 = piFun( p.subvec(p_ind, p_stop), pi_fun ) * phi(t_ind);
+      //the following line causes a segfault only in R CMD check,
+      //when kmyt contains NA values
+      vec p4 = kmyt.subcube(span(i),span(t),span());
 
-        if( any(na_sub)){
-          uvec ids = find(na_sub!=1);
-          p2 = p2.elem(ids);
-          p3 = p3.elem(ids);
-        }
+      y_sub = y_sub.elem(fin);
+      p3 = p3.elem(fin);
+      double p5 = 1 - sum(p3);
 
-        double p5 = 1 - sum(p3);
-      
-        A.col(t) = lfac_k - p1 + sum(p2 % log(p3)) + p4 * log(p5);
-      }
+      A.col(t) = lfac_k - p1 + sum(y_sub % log(p3)) + p4 * log(p5);
 
       t_ind += 1;
       y_ind += R;
       p_ind += J;
     }
 
-    vec g(K);
-    for (int i=0; i<K; i++){
-      g(i) = exp(sum(A.row(i)));
-      if(!fin(m,i)){
-        f(i) = 0;
-        g(i) = 0;
-      }
+    double site_lp = 0.0;
+    for (int j=Kmin(i); j<(K+1); j++){
+      site_lp += N_density(mixture, j, lambda(i), log_alpha) *
+        exp(sum(A.row(j)));
     }
 
-    ll(m) = log(sum(f % g));
+    loglik += log(site_lp);
   }
 
-  return(wrap(-sum(ll)));
+  return(-loglik);
 
 }

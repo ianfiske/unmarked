@@ -1,136 +1,95 @@
-#include "nll_gdistsamp.h"
+#include <RcppArmadillo.h>
 #include "distprob.h"
+#include "distr.h"
+#include "utils.h"
+
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 
 using namespace Rcpp;
 using namespace arma;
 
-mat invlogit(const mat& inp ){
-  return(1 / (1 + exp(-1 * inp)));
-}
+// [[Rcpp::export]]
+double nll_gdistsamp(arma::vec beta, arma::uvec n_param, arma::vec y,
+    int mixture, std::string keyfun, std::string survey,
+    arma::mat Xlam, arma::vec Xlam_offset, arma::vec A, arma::mat Xphi,
+    arma::vec Xphi_offset, arma::mat Xdet, arma::vec Xdet_offset, arma::vec db,
+    arma::mat a, arma::mat u, arma::vec w, arma::vec k, arma::vec lfac_k,
+    arma::cube lfac_kmyt, arma::cube kmyt, arma::uvec Kmin, int threads){
 
-SEXP nll_gdistsamp(SEXP beta_, SEXP mixture_, SEXP keyfun_, SEXP survey_,
-    SEXP Xlam_, SEXP Xlam_offset_, SEXP A_, SEXP Xphi_, SEXP Xphi_offset_, 
-    SEXP Xdet_, SEXP Xdet_offset_, SEXP db_, SEXP a_, SEXP u_, SEXP w_,
-    SEXP k_, SEXP lfac_k_, SEXP lfac_kmyt_, SEXP kmyt_, 
-    SEXP y_, SEXP naflag_, SEXP fin_, 
-    SEXP nP_, SEXP nLP_, SEXP nPP_, SEXP nDP_, SEXP rel_tol_){
-
-  //Inputs
-  vec beta = as<vec>(beta_);
-  std::string mixture = as<std::string>(mixture_);
-  std::string keyfun = as<std::string>(keyfun_);
-  std::string survey = as<std::string>(survey_);
-
-  mat Xlam = as<mat>(Xlam_);
-  vec Xlam_offset = as<vec>(Xlam_offset_);
-  vec A = as<vec>(A_);
-  mat Xphi = as<mat>(Xphi_);
-  vec Xphi_offset = as<vec>(Xphi_offset_);
-  
-  mat Xdet = as<mat>(Xdet_);
-  vec Xdet_offset = as<vec>(Xdet_offset_);
-  
-  vec db = as<vec>(db_);
-  vec w = as<vec>(w_);
-  mat a = as<mat>(a_);
-  mat ut = as<mat>(u_);
-  mat u = ut.t();
-
-  //IntegerVector k(k_);
-  vec k = as<vec>(k_);
-  vec lfac_k = as<vec>(lfac_k_);
-  cube lfac_kmyt = as<cube>(lfac_kmyt_);
-  cube kmyt = as<cube>(kmyt_);
-
-  vec y = as<vec>(y_);
-  vec naflag = as<vec>(naflag_);
-  mat fin = as<mat>(fin_);
-
-  int nP = as<int>(nP_);
-  int nLP = as<int>(nLP_);
-  int nPP = as<int>(nPP_);
-  int nDP = as<int>(nDP_);
-  
-  //Integration tol currently unused
-  //double rel_tol = as<double>(rel_tol_);
+  #ifdef _OPENMP
+    omp_set_num_threads(threads);
+  #endif
 
   int M = Xlam.n_rows;
-  vec lambda = exp( Xlam * beta.subvec(0, (nLP - 1) ) + Xlam_offset ) % A;
-
   int T = Xphi.n_rows / M;
+  int R = y.size() / M;
+  unsigned J = R / T;
+  int K = k.size() - 1;
+
+  //Abundance
+  const vec lambda = exp(Xlam * beta_sub(beta, n_param, 0) + Xlam_offset) % A;
+  double log_alpha = beta_sub(beta, n_param, 4)(0); //length 1 vector
+
+  //Availability
   vec phi = ones(M*T);
   if(T > 1){
-    phi = invlogit( Xphi * beta.subvec(nLP, (nLP+nPP-1)) + Xphi_offset);
+    phi = inv_logit(Xphi * beta_sub(beta, n_param, 1) + Xphi_offset);
   }
-  
-  int R = y.size() / M;
-  int J = R / T;
-  
+
+  //Detection
   vec det_param(M*T);
   if(keyfun != "uniform"){
-    det_param = exp( Xdet * beta.subvec((nLP+nPP),(nLP+nPP+nDP-1)) + Xdet_offset);
+    det_param = exp(Xdet * beta_sub(beta, n_param, 2) + Xdet_offset);
   }
-  
-  int K = k.size();
-  int t_ind = 0;
-  int y_ind = 0;
-  vec ll(M);
-  for (int m=0; m<M; m++){
-    vec f(K);
-    if(mixture == "P"){
-      for(int l=0; l<K; l++){
-        f(l) = R::dpois(k(l), lambda(m), 0);
-      }
-    } else if(mixture == "NB"){
-      double sz = exp(beta(nP-1));
-      for(int l=0; l<K; l++){
-        f(l) = R::dnbinom_mu(k(l), sz, lambda(m), 0);
-      }
-    }
+  double scale = exp(beta_sub(beta, n_param, 3)(0));
 
-    mat mn = zeros(K,T);
+  double loglik = 0.0;
+
+  #pragma omp parallel for reduction(+: loglik) if(threads > 1)
+  for (int i=0; i<M; i++){
+
+    int t_ind = i * T;
+    int y_ind = i * T * J;
+
+    vec y_sub(J);
+
+    mat mn = zeros(K+1, T);
     for(int t=0; t<T; t++){
       int y_stop = y_ind + J - 1;
-      vec na_sub = naflag.subvec(y_ind, y_stop); 
+      y_sub = y.subvec(y_ind, y_stop);
+      uvec not_missing = find_finite(y_sub);
 
-      if( ! any(na_sub) ){
+      if(not_missing.size() == J){
 
-        vec p1 = lfac_kmyt.subcube(span(m),span(t),span());
-        vec p2 = y.subvec(y_ind, y_stop);
-        
-        //calculate p
-        double scale = 0.0;
-        if(keyfun =="hazard"){
-          scale = exp(beta(nLP+nPP+nDP));
-        }
-        vec p = distprob(keyfun, det_param(t_ind), scale, survey, db, 
-                          w, a.row(m));
-        vec p3 = p % u.col(m) * phi(t_ind);
+        vec p1 = lfac_kmyt.subcube(span(i),span(t),span());
+        vec p = distprob(keyfun, det_param(t_ind), scale, survey, db,
+                          w, a.row(i));
+        vec p3 = p % u.col(i) * phi(t_ind);
         //the following line causes a segfault only in R CMD check,
         //when kmyt contains NA values
-        vec p4 = kmyt.subcube(span(m),span(t),span());
+        vec p4 = kmyt.subcube(span(i),span(t),span());
 
         double p5 = 1 - sum(p3);
 
-        mn.col(t) = lfac_k - p1 + sum(p2 % log(p3)) + p4 * log(p5);
+        mn.col(t) = lfac_k - p1 + sum(y_sub % log(p3)) + p4 * log(p5);
       }
 
       t_ind += 1;
       y_ind += J;
     }
 
-    vec g(K);
-    for (int i=0; i<K; i++){
-      g(i) = exp(sum(mn.row(i)));
-      if(!fin(m,i)){
-        f(i) = 0;
-        g(i) = 0;
-      }
+    double site_lp = 0.0;
+    for (int j=Kmin(i); j<(K+1); j++){
+      site_lp += N_density(mixture, j, lambda(i), log_alpha) *
+        exp(sum(mn.row(j)));
     }
 
-    ll(m) = log(sum(f % g) + DOUBLE_XMIN);
+    loglik += log(site_lp + DOUBLE_XMIN);
+
   }
 
-  return(wrap(-sum(ll)));
+  return -loglik;
 
 }

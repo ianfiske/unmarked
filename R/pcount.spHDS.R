@@ -88,17 +88,7 @@ function (formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
             -sum(log(dens.i))
         }
     }
-    else {
-        nll <- function(parms) {
-            beta.lam <- parms[1:nAP]
-            beta.p <- parms[(nAP + 1):(nAP + nDP)]
-            log.alpha <- 1
-            if (mixture %in% c("NB", "ZIP"))
-                log.alpha <- parms[nP]
-            .Call("nll_pcount", y, X, V, beta.lam, beta.p, log.alpha,
-                X.offset, V.offset, NAmat, lk, mixture, PACKAGE = "unmarked")
-        }
-    }
+
     if (missing(starts))
         starts <- rep(0, nP)
     fm <- optim(starts, nll, method = method, hessian = se, ...)
