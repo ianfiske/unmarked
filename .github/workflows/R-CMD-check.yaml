@@ -41,8 +41,6 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v1
 
-      - uses: r-lib/actions/setup-tinytex@v1
-
       - name: Query dependencies
         run: |
           install.packages('remotes')
@@ -70,14 +68,12 @@ jobs:
         run: |
           remotes::install_deps(dependencies = TRUE)
           remotes::install_cran("rcmdcheck")
-          remotes::install_cran("tinytex")
-          tinytex::tlmgr_install(pkgs=c("ae","amssymb","color","fontenc","fullpage","graphicx","indentfirst","lineno","setspace","verbatim"))
         shell: Rscript {0}
 
       - name: Check
         env:
           _R_CHECK_CRAN_INCOMING_REMOTE_: false
-        run: rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")
+        run: rcmdcheck::rcmdcheck(args = c("--no-manual", "--ignore-vignettes", "--no-build-vignettes", "--as-cran"), build_args = c("--no-manual", "--ignore-vignettes", "--no-build-vignettes"), error_on = "warning", check_dir = "check")
         shell: Rscript {0}
 
       - name: Upload check results
