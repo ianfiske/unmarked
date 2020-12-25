@@ -1,14 +1,14 @@
 
 #  Fit the occupancy model of MacKenzie et al (2002).
 
-occu <- function(formula, data, knownOcc = numeric(0), 
-                 linkPsi = c("logit", "cloglog"), starts, method = "BFGS", 
-                 se = TRUE, engine = c("C", "R"), ...) {
-    
+occu <- function(formula, data, knownOcc = numeric(0),
+                 linkPsi = c("logit", "cloglog"), starts, method = "BFGS",
+                 se = TRUE, engine = c("C", "R", "TMB"), threads=1, ...) {
+
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
-    engine <- match.arg(engine, c("C", "R"))
+    engine <- match.arg(engine, c("C", "R", "TMB"))
     linkPsi <- match.arg(linkPsi, c("logit","cloglog"))
 
     designMats <- getDesign(data, formula)
@@ -47,7 +47,7 @@ occu <- function(formula, data, knownOcc = numeric(0),
 
     ## need to add offsets !!!!!!!!!!!!!!
     ## and fix bug causing crash when NAs are in V
-    
+
     linkFunc <- plogis
     invlink <- "logistic"
     linkGrad <- "logistic.grad"
@@ -66,6 +66,46 @@ occu <- function(formula, data, knownOcc = numeric(0),
                   X.offset, V.offset, linkPsi,
                   PACKAGE = "unmarked")
         }
+    } else if(identical(engine, "TMB")){
+
+      p_form <- as.formula(formula[[2]])
+      psi_form <- as.formula(paste("~", formula[3], sep=""))
+      ngv_state <- get_group_vars(psi_form)
+      nrand_state <- get_nrandom(psi_form, siteCovs(data))
+      ngv_det <- get_group_vars(p_form)
+      nrand_det <- get_nrandom(p_form, obsCovs(data))
+
+      tmb_dat <- list(y=y, no_detect=nd,
+                   X_state=X, Z_state=designMats$Z_state, offset_state=X.offset,
+                   n_group_vars_state=ngv_state, n_grouplevels_state=nrand_state,
+                   X_det=V, Z_det=designMats$Z_det, offset_det=V.offset,
+                   n_group_vars_det=ngv_det, n_grouplevels_det=nrand_det)
+
+      tmb_param <- list(beta_state=rep(0,ncol(X)), b_state=rep(0,sum(nrand_state)),
+                  lsigma_state=rep(0,ngv_state),
+                  beta_det=rep(0,ncol(V)), b_det=rep(0,sum(nrand_det)),
+                  lsigma_det=rep(0,ngv_det))
+
+      rand_ef <- NULL
+      if(has_random(psi_form)) rand_ef <- c(rand_ef, "b_state")
+      if(has_random(p_form)) rand_ef <- c(rand_ef, "b_det")
+
+      old_threads <- TMB::openmp()
+      on.exit(TMB::openmp(old_threads))
+      TMB::openmp(threads)
+
+      mod <- TMB::MakeADFun(data = c(model = "tmb_occu", tmb_dat),
+                            parameters = tmb_param,
+                            random= rand_ef,
+                            silent=TRUE,
+                            DLL = "unmarked_TMBExports")
+
+      nfixed <- length(unlist(tmb_param[c("beta_state","beta_det",
+                        "lsigma_state","lsigma_det")]))
+      opt <- optim(rep(0,nfixed), fn=mod$fn, gr=mod$gr)
+
+      return(mod)
+
     } else {
         nll <- function(params) {
             psi <- linkFunc(X %*% params[1 : nOP] + X.offset)

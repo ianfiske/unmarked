@@ -70,3 +70,4 @@ export(imputeMissing, gxhn, gxexp, gxhaz, dxhn, dxexp, dxhaz, drhn, drexp,
     drhaz, grhn, grexp, grhaz, sight2perpdist, lambda2psi, SSE, vif)
 
 useDynLib("unmarked", .registration=TRUE)
+useDynLib(unmarked_TMBExports)
