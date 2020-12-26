@@ -1,12 +1,24 @@
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR obj
 
+template<class Type>
+vector<Type> cloglog(vector<Type> inp) {
+  int sz = inp.size(); 
+  vector<Type> out(sz);
+  for (int i=0; i<sz; i++){
+    out(i) = 1 - exp(-exp(inp(i)));
+  }
+  return out;
+}
+
 // name of function below **MUST** match filename
 template <class Type>
 Type tmb_occu(objective_function<Type>* obj) {
   //Describe input data
   DATA_MATRIX(y); //observations
   DATA_VECTOR(no_detect); //Indicator for if site had no detections
+
+  DATA_INTEGER(link);
 
   DATA_MATRIX(X_state); //psi fixed effect design mat (state=psi)
   DATA_SPARSE_MATRIX(Z_state); //psi random effect design mat
@@ -49,7 +61,11 @@ Type tmb_occu(objective_function<Type>* obj) {
     }
     psi += Z_state * b_state;
   }
-  psi = invlogit(psi);
+  if(link == 1){
+    psi = cloglog(psi);
+  } else {
+    psi = invlogit(psi);
+  }
 
   //Construct p vector
   vector<Type> p = X_det * beta_det + offset_det;

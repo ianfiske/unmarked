@@ -10,7 +10,8 @@ setClass("unmarkedFit",
         negLogLike = "numeric",
         nllFun = "function",
         bootstrapSamples = "optionalList",
-        covMatBS = "optionalMatrix")) # list of bootstrap sample fits
+        covMatBS = "optionalMatrix", # list of bootstrap sample fits
+        TMB = "optionalList")) #TMB output object
 
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, formula, data, sitesRemoved,
@@ -281,8 +282,16 @@ droplevels_final_year <- function(dat, nsites, nprimary){
 
 setMethod("predict", "unmarkedFit",
      function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-         appendData = FALSE, level=0.95, ...)
+         appendData = FALSE, level=0.95, re.form=NULL, ...)
  {
+
+     if(use_tmb_bootstrap(object, type, re.form)){
+      if(missing(newdata)) newdata <- NULL
+      return(tmb_predict_bootstrap(object, type, newdata, backTransform,
+                                   level, ...))
+     }
+     object@formula <- nobars_double(object@formula)
+
      if(missing(newdata) || is.null(newdata))
          newdata <- getData(object)
      formula <- object@formula
