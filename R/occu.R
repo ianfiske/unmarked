@@ -9,7 +9,7 @@ occu <- function(formula, data, knownOcc = numeric(0),
         stop("Data is not an unmarkedFrameOccu object.")
 
     engine <- match.arg(engine, c("C", "R", "TMB"))
-    if(has_random(formula)) engine <- "TMB"
+    if(any(sapply(split_formula(formula), has_random))) engine <- "TMB"
     if(length(knownOcc)>0 & engine == "TMB"){
       stop("TMB engine does not support knownOcc argument", call.=FALSE)
     }
@@ -121,7 +121,7 @@ occu <- function(formula, data, knownOcc = numeric(0),
         state_sigmas <- grepl("lsigma_state", par_names)
         re_est <- tmb_sum$par.fixed[state_sigmas]
         names(re_est) <- sigma_names(psi_form, siteCovs(data))
-        stateRE <- unmarkedEstimate(name = "Occupancy random effects",
+        stateRE <- unmarkedEstimate(name = "Occupancy random effect variance",
                               short.name = "psiRE",
                               estimates = re_est,
                               covMat = as.matrix(tmb_sum$cov.fixed[state_sigmas,state_sigmas]),
@@ -132,7 +132,7 @@ occu <- function(formula, data, knownOcc = numeric(0),
         det_sigmas <- grepl("lsigma_det", par_names)
         re_est <- tmb_sum$par.fixed[det_sigmas]
         names(re_est) <- sigma_names(p_form, obsCovs(data))
-        detRE <- unmarkedEstimate(name = "Detection random effects",
+        detRE <- unmarkedEstimate(name = "Detection random effect variance",
                               short.name = "pRE",
                               estimates = re_est,
                               covMat = as.matrix(tmb_sum$cov.fixed[det_sigmas,det_sigmas]),
