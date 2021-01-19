@@ -23,7 +23,7 @@ library(tools)
 
 \title{Modeling variation in abundance using capture-recapture data}
 \author{Richard Chandler}
-
+\date{Feb 24, 2019}
 
 \begin{document}
 

@@ -824,8 +824,6 @@ setMethod("ranef", "unmarkedFitOccuTTD",
     }
   }
 
-  if(T==1) post <- post[,,1]
-
   new("unmarkedRanef", post=post)
 })
 

@@ -1,25 +1,25 @@
-#include "nll_gpcount.h"
+#include <RcppArmadillo.h>
 #include "distr.h"
 
-using namespace Rcpp ;
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 
-SEXP nll_gpcount( SEXP y_, SEXP Xlam_, SEXP Xphi_, SEXP Xp_, SEXP beta_lam_, SEXP beta_phi_, SEXP beta_p_, SEXP log_alpha_, SEXP Xlam_offset_, SEXP Xphi_offset_, SEXP Xp_offset_, SEXP M_, SEXP mixture_, SEXP numPrimary_ ) {
-  arma::mat ym = as<arma::mat>(y_); // Can't test for NAs if y is imat using is_finite??
+using namespace Rcpp ;
+using namespace arma ;
+
+// [[Rcpp::export]]
+double nll_gpcount(arma::mat ym, arma::mat Xlam, arma::mat Xphi, arma::mat Xp,
+    arma::vec beta_lam, arma::vec beta_phi, arma::vec beta_p, double log_alpha,
+    arma::vec Xlam_offset, arma::vec Xphi_offset, arma::vec Xp_offset,
+    int M, std::string mixture, int T, int threads){
+
+  #ifdef _OPENMP
+    omp_set_num_threads(threads);
+  #endif
+
   arma::mat yimax = max(ym, 1);
-  arma::mat Xlam = as<arma::mat>(Xlam_);
-  arma::mat Xphi = as<arma::mat>(Xphi_);
-  arma::mat Xp = as<arma::mat>(Xp_); // needs to be a cube
-  arma::colvec beta_lam = as<arma::colvec>(beta_lam_);
-  arma::colvec beta_phi = as<arma::colvec>(beta_phi_);
-  arma::colvec beta_p = as<arma::colvec>(beta_p_);
-  double log_alpha = as<double>(log_alpha_);
-  arma::colvec Xlam_offset = as<arma::colvec>(Xlam_offset_);
-  arma::colvec Xphi_offset = as<arma::colvec>(Xphi_offset_);
-  arma::colvec Xp_offset = as<arma::colvec>(Xp_offset_);
-  int M = as<int>(M_);
   int lM = M+1;
-  std::string mixture = as<std::string>(mixture_);
-  int T = as<int>(numPrimary_);
   double alpha = 0.0;
   if(mixture=="NB")
     alpha = exp(log_alpha);
@@ -43,11 +43,16 @@ SEXP nll_gpcount( SEXP y_, SEXP Xlam_, SEXP Xphi_, SEXP Xp_, SEXP beta_lam_, SEX
     p(q) = pm(q);
   }
   //  Rprintf("made it %f \\n", 1.);
-  double L=0.0, g=0.0, h=0.0;
-  arma::vec f = arma::zeros<arma::vec>(lM);
-  arma::mat gh = arma::zeros<arma::mat>(lM, lM);
-  arma::vec ghi = arma::zeros<arma::vec>(lM);
+  double loglik=0.0;
+
+  #pragma omp parallel for reduction(+: loglik) if(threads > 1)
   for(int i=0; i<R; i++) {
+
+    double g=0.0, h=0.0;
+    arma::vec f = arma::zeros<arma::vec>(lM);
+    arma::mat gh = arma::zeros<arma::mat>(lM, lM);
+    arma::vec ghi = arma::zeros<arma::vec>(lM);
+
     //    Rprintf("log-like %f \\n", L);
     for(int m=0; m<lM; m++) {
       if(m < yimax(i))
@@ -82,7 +87,7 @@ SEXP nll_gpcount( SEXP y_, SEXP Xlam_, SEXP Xphi_, SEXP Xp_, SEXP beta_lam_, SEX
 	ghi(m) += log(arma::accu(exp(gh.col(m)))); // sum over N(t)
       }
     }
-    L -= log(arma::accu(exp(f + ghi))); // sum over M
+    loglik += log(arma::accu(exp(f + ghi))); // sum over M
   }
-  return wrap(L);
+  return -loglik;
 }

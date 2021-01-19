@@ -293,7 +293,7 @@ Hence, if site $i$ is unoccupied at $t-1$ , $z_{i,t-1}=0$, and the
 success probability of the Bernoulli is
 $0*\phi_{it} + (1-0) * \gamma_{it}$, so the site is occupied
 (=colonized) in season $t$ with probability $\gamma_{it}$
-. Conversely, if site $i$ is occupied at $t-1$ , $z_{i,t-1}=0$, and
+. Conversely, if site $i$ is occupied at $t-1$ , $z_{i,t-1}=1$, and
 the success probability of the Bernoulli is given by $1*\phi_{it} +
 (1-1) * \gamma_{it}$, so the site is occupied in (=survives to) season
 $t$ with probability $\phi_{it}$.

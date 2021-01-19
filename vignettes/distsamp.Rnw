@@ -21,6 +21,7 @@ options(continue=" ")
 
 \title{Distance sampling analysis in unmarked}
 \author{Richard Chandler\\USGS Patuxent Wildlife Research Center}
+\date{March 4, 2020}
 
 
 \begin{document}

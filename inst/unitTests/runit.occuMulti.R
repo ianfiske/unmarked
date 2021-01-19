@@ -74,6 +74,10 @@ test.occuMulti.fit.covs <- function() {
   checkEqualsNumeric(length(res),2)
   checkEqualsNumeric(sapply(res,function(x) x[1,1]),c(-0.14954,-0.30801), tol= 1e-4)
 
+  gp <- getP(fm)
+  checkEqualsNumeric(length(gp), 2)
+  checkEqualsNumeric(dim(gp[[1]]), c(N,J))
+
   #Check site cov can be used in detection formula
   detformulas <- c('~occ_cov1','~det_cov2')
   fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)
@@ -122,6 +126,9 @@ test.occuMulti.fit.NA <- function() {
 
   res <- residuals(fm)
   checkTrue(is.na(res[[1]][1,1]))
+
+  gp <- getP(fm)
+  checkTrue(is.na(gp[[1]][1,1]))
 
   #Check error thrown when all detections are missing
   yna[[1]][1,] <- NA
@@ -195,10 +202,10 @@ test.occuMulti.predict <- function(){
 
   prState <- predict(fm, type='state')
   checkEqualsNumeric(sapply(prState,function(x) x[1,1]),
-                     c(0.30807707,0.23924385,0.02382635,0.85377734),tol=1e-4)
+                     c(0.30807707,0.20007250,0.04234835,0.73106618),tol=1e-4)
   prDet <- predict(fm, type='det')
   checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
-                     c(0.190485,0.0945992,0.00507,0.37589566), tol=1e-4)
+                     c(0.190485,0.12201,0.0475270,0.525988), tol=1e-4)
 
   #Check with newdata
   nd <- siteCovs(umf)[1:2,]
@@ -223,10 +230,10 @@ test.occuMulti.predict <- function(){
 
   prState <- predict(fm, type='state')
   checkEqualsNumeric(sapply(prState,function(x) x[1,1]),
-                     c(0.475928,0.24416,0.01807069,0.846532),tol=1e-4)
+                     c(0.475928,0.2548407,0.01496681,0.86713789),tol=1e-4)
   prDet <- predict(fm, type='det')
   checkEqualsNumeric(as.numeric(prDet$sp2[1,]),
-                     c(0.20494,0.17175,-0.13168,0.541579), tol=1e-4)
+                     c(0.20494,0.11865,0.0582563,0.517888), tol=1e-4)
 
   #Check predicting co-occurrence
   nd <- siteCovs(umf)[1:2,]
@@ -234,6 +241,61 @@ test.occuMulti.predict <- function(){
   pr_nd <- predict(fm, type='state', newdata=nd, species=c(1,2))$Predicted
   checkEqualsNumeric(pr_nd,pr_all, tol=1e-4)
 
+  #Check with site cov in detection formula
+  stateformulas <- c('~occ_cov2','~1','0')
+  detformulas <- c('~occ_cov1','~det_cov2')
+  fm <- occuMulti(detformulas, stateformulas, data = umf)
+  pr_state_actual <- predict(fm, "state")
+  checkEqualsNumeric(length(pr_state_actual), 4)
+  checkEqualsNumeric(pr_state_actual$Predicted[1,1], 0.729927907, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_actual$Predicted), 20)
+
+  pr_det_actual <- predict(fm, "det")
+  checkEqualsNumeric(length(pr_det_actual), 2)
+  checkEqualsNumeric(pr_det_actual$sp1$Predicted[1], 0.1448311, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_det_actual$sp1), 20*2)
+
+  #with newdata
+  pr_state_nd <- predict(fm, "state", newdata=data.frame(occ_cov2=0))
+  checkEqualsNumeric(length(pr_state_nd), 4)
+  checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
+
+  pr_det_nd <- predict(fm, "det", newdata=data.frame(occ_cov1=0, det_cov2=0))
+  checkEqualsNumeric(length(pr_det_nd), 2)
+  checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
+
+  #With maxOrder set
+  stateformulas <- c('~occ_cov2','~1')
+  detformulas <- c('~occ_cov1','~det_cov2')
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf, maxOrder=1)
+
+  pr_state <- predict(fm, "state")
+  checkEqualsNumeric(length(pr_state), 4)
+  checkEqualsNumeric(pr_state$Predicted[1,1], 0.729927907, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state$Predicted), 20)
+
+  pr_state_nd <- predict(fm, "state", newdata=data.frame(occ_cov2=0))
+  checkEqualsNumeric(length(pr_state_nd), 4)
+  checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
+
+  pr_det <- predict(fm, "det")
+  checkEqualsNumeric(length(pr_det), 2)
+  checkEqualsNumeric(pr_det$sp1$Predicted[1], 0.1448311, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_det$sp1), 20*2)
+
+  pr_det_nd <- predict(fm, "det", newdata=data.frame(occ_cov1=0, det_cov2=0))
+  checkEqualsNumeric(length(pr_det_nd), 2)
+  checkEqualsNumeric(pr_state_nd$Predicted[1,1], 0.7538309, tol=1e-5)
+  checkEqualsNumeric(nrow(pr_state_nd$Predicted), 1)
+
+  #getP with maxOrder set
+  gp <- getP(fm)
+  checkEquals(length(gp), 2)
+  checkEquals(dim(gp[[1]]), c(20,2))
 }
 
 test.occuMulti.predict.NA <- function(){
@@ -261,7 +323,7 @@ test.occuMulti.predict.NA <- function(){
   prDet <- predict(fm, type='det')
   checkTrue(all(is.na(prDet$sp1[1,])))
   checkEqualsNumeric(as.numeric(prDet$sp1[2,]),
-                     c(0.49781,0.243148,0.021250,0.974375), tol=1e-4)
+                     c(0.49781,0.19621,0.175514,0.8219401), tol=1e-4)
 
   #Check that you can predict with NAs in siteCovs
   newdata <- siteCovs(umf)
@@ -343,4 +405,30 @@ test.occuMulti.predict.complexFormulas <- function(){
   pr_nd5 <- predict(fm, type='det', newdata=nd5)
   checkEqualsNumeric(sapply(pr_nd5, nrow), c(5,5))
   checkEqualsNumeric(pr_nd5$sp1$Predicted[1], 0.1680881)
+}
+
+test.occuMulti.fix.NA.mismatch <- function(){
+  y1 <- matrix(rbinom(10,1,0.5), nrow=5)
+  y1[1,1] <- NA
+
+  y2 <- matrix(rbinom(10,1,0.5), nrow=5)
+  y2[1,1] <- NA
+
+  y3 <- matrix(rbinom(10,1,0.5), nrow=5)
+  y3[1,1] <- NA
+  y3[5,1] <- NA
+
+  ylist <- list(y1=y1,y2=y2,y3=y3)
+
+  umf <- unmarkedFrameOccuMulti(y=ylist)
+
+  options(warn=2)
+  checkException(unmarkedFrameOccuMulti(y=ylist))
+  options(warn=0)
+
+  pre_na <- sapply(ylist, function(x) sum(is.na(x)))
+  post_na <- sapply(umf@ylist, function(x) sum(is.na(x)))
+
+  checkTrue(any(pre_na[1] != pre_na))
+  checkTrue(!any(post_na[1] != post_na))
 }

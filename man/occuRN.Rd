@@ -4,7 +4,8 @@
 
 \title{Fit the occupancy model of Royle and Nichols (2003)}
 
-\usage{occuRN(formula, data, K=25, starts, method="BFGS", se=TRUE, engine=c("C","R"),...)}
+\usage{occuRN(formula, data, K=25, starts, method="BFGS", se=TRUE, 
+              engine=c("C","R"), threads=1, ...)}
 
 \arguments{
     \item{formula}{double right-hand side formula describing covariates of
@@ -20,6 +21,10 @@
       errors.}
     \item{engine}{Either "C" to use fast C++ code or "R" to use native R
       code during the optimization.}
+    \item{threads}{Set the number of threads to use for optimization in C++, if
+      OpenMP is available on your system. Increasing the number of threads
+      may speed up optimization in some cases by running the likelihood 
+      calculation in parallel. If \code{threads=1} (the default), OpenMP is disabled.} 
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
   }

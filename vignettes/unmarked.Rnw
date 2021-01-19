@@ -22,6 +22,7 @@ options(continue=" ")
 \title{Overview of Unmarked:\\
 An R Package for the Analysis of Data from Unmarked Animals}
 \author{Ian Fiske and Richard Chandler}
+\date{Feb 5, 2019}
 
 
 \begin{document}

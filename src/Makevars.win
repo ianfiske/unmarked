@@ -1,7 +1,7 @@
 
 ## Use the R_HOME indirection to support installations of multiple R version
-PKG_LIBS = $(shell "$(R_HOME)/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+PKG_LIBS = $(shell "$(R_HOME)/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SHLIB_OPENMP_CXXFLAGS)
 ##PKG_LIBS+= $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 ##PKG_LIBS+= -lRcpp
 ##PKG_LIBS+= -LC:/PROGRA~1/R/R-3.0.0/library/Rcpp/libs${R_ARCH_BIN}
-
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)

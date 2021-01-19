@@ -1,76 +1,59 @@
-#include "nll_occuRN.h"
+#include <RcppArmadillo.h>
+#include "utils.h"
+
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 
 using namespace Rcpp;
 using namespace arma;
 
-mat inv_logitRN( mat inp ){
-  return(1 / (1 + exp(-1 * inp)));
+double lp_site_occuRN(const rowvec y, double lam, const vec q, int K, int Kmin){
+
+  //y must be arma::vec for this to work (not uvec/ivec)
+  const uvec fin = find_finite(y);
+  if(fin.size() == 0) return 0.0;
+
+  double f, g, p, out = 0.0;
+
+  for (int k=Kmin; k<(K+1); k++){
+    f = Rf_dpois(k, lam, 0);
+    g = 0.0;
+    for (unsigned j=0; j<fin.size(); j++){
+      p = 1 - pow(q(fin(j)), k);
+      g += Rf_dbinom(y(fin(j)), 1, p, true);
+    }
+    out += f * exp(g);
+  }
+  return log(out + DOUBLE_XMIN);
 }
 
+// [[Rcpp::export]]
+double nll_occuRN(const arma::vec beta, const arma::uvec n_param, const arma::mat y,
+                  const arma::mat X, const arma::mat V, const arma::vec X_offset,
+                  const arma::vec V_offset, int K, const arma::uvec Kmin,
+                  int threads){
 
-SEXP nll_occuRN(SEXP betaR, 
-    SEXP XlamR, SEXP Xlam_offsetR, SEXP XdetR, SEXP Xdet_offsetR,  
-    SEXP KR, SEXP yR, SEXP navecR, SEXP nPr, SEXP nOPr){
+  int M = y.n_rows;
+  int J = y.n_cols;
 
-  //Inputs
-  vec beta = as<vec>(betaR);
+  const vec lam = exp(X*beta_sub(beta, n_param, 0) + X_offset);
+  const vec q = 1 - inv_logit(V*beta_sub(beta, n_param, 1) + V_offset);
 
-  mat Xlam = as<mat>(XlamR);
-  vec Xlam_offset = as<vec>(Xlam_offsetR);
-  mat Xdet = as<mat>(XdetR);
-  vec Xdet_offset = as<vec>(Xdet_offsetR);
+  #ifdef _OPENMP
+    omp_set_num_threads(threads);
+  #endif
 
-  int K = as<int>(KR);
-  
-  vec y = as<vec>(yR);
-  vec navec = as<vec>(navecR);
+  double loglik = 0.0;
 
-  int nP = as<int>(nPr);
-  int nOP = as<int>(nOPr);
-
-  int M = Xlam.n_rows;
-  vec lambda = exp( Xlam * beta.subvec(0, (nOP - 1) ) + Xlam_offset );
-  
-  int R = y.size();
-  int J = R / M;
-  vec p = inv_logitRN( Xdet * beta.subvec(nOP,(nP-1)) + Xdet_offset);
-  
-
-  int p_ind = 0;
-  int p_stop = 0;
-
-  mat p_mat(p.size(),(K+1));
-  mat cp_mat = ones(p.size(),(K+1));
-  mat lam_in(M,(K+1));
-  mat cp_in(M,(K+1));
-  vec subcp(J);
-  for (int i=0; i<(K+1); i++){
-
-    p_mat.col(i) = 1 - pow((1 - p),i);
-
-    for (int r=0; r<R; r++){
-      if(!navec(r)){
-        cp_mat(r,i) = pow(p_mat(r,i), y(r)) * pow((1 - p_mat(r,i)),(1-y(r)));
-      }
-    }
-
-    p_ind = 0;
-    for (int m=0; m<M; m++){
-      p_stop = p_ind + J - 1;
-      lam_in(m,i) = R::dpois(i, lambda(m), 0);
-      subcp = cp_mat.submat(span(p_ind,p_stop),span(i));
-      cp_in(m,i) = prod(subcp);
-      p_ind += J;
-    }
-
-  }
-  
-  mat cp_lam = cp_in % lam_in;
-  vec ll(M);
-  for (int m=0; m<M; m++){
-    ll(m) = log(accu(cp_lam.row(m)));
+  #pragma omp parallel for reduction(+: loglik) if(threads > 1)
+  for (int i=0; i<M; i++){
+    int pstart = i * J;
+    int pstop = i * J + J - 1;
+    loglik += lp_site_occuRN(y.row(i), lam(i), q.subvec(pstart, pstop),
+                             K, Kmin(i));
   }
 
-  return(wrap(-accu(ll)));
+  return -loglik;
 
 }

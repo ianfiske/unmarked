@@ -1,5 +1,4 @@
 
-#include <Rmath.h>
 #include "distr.h"
 
 // Zero-inflated Poisson
@@ -12,3 +11,11 @@ double dzip(int x, double lambda, double psi) {
   return den;
 }
 
+double N_density(int mixture, int x, double lambda, double alpha){
+  switch(mixture){
+    case 1: return Rf_dpois(x, lambda, false);
+    case 2: return Rf_dnbinom_mu(x, exp(alpha), lambda, false);
+    case 3: return dzip(x, lambda, inv_logit(alpha));
+  }
+  return 0.0;
+}

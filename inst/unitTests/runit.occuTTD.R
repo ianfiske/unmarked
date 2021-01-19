@@ -10,13 +10,13 @@ test.unmarkedFrameOccuTTD <- function() {
   y <- rexp(N, 1/lam)
   y[z==0] <- Tmax
   y[y>Tmax] <- Tmax
-  
+
   sc <- as.data.frame(matrix(rnorm(N*2),ncol=2))
   oc <- as.data.frame(matrix(rnorm(N*2),ncol=2))
 
   umf <- unmarkedFrameOccuTTD(y=y, surveyLength=Tmax, siteCovs=sc, obsCovs=oc)
-  
-  checkEqualsNumeric(getY(umf), y) 
+
+  checkEqualsNumeric(getY(umf), y)
   checkEqualsNumeric(dim(getY(umf)), c(100,1))
   checkEqualsNumeric(siteCovs(umf), sc)
   checkEqualsNumeric(obsCovs(umf), oc)
@@ -24,13 +24,13 @@ test.unmarkedFrameOccuTTD <- function() {
   checkEqualsNumeric(umf@numPrimary, 1)
   checkEqualsNumeric(umf@surveyLength, matrix(Tmax, 100, 1))
   checkEquals(class(umf)[1], "unmarkedFrameOccuTTD")
-  
+
   hd <- head(umf)
   checkEqualsNumeric(as(hd, 'data.frame'), as(umf, 'data.frame')[1:10,])
-  
+
   umf_sub <- umf[c(1,3),]
   checkEqualsNumeric(as(umf_sub, 'data.frame'), as(umf, 'data.frame')[c(1,3),])
-  
+
   checkException(umf[,2])
 
   sl_bad <- c(10,10)
@@ -41,8 +41,8 @@ test.unmarkedFrameOccuTTD <- function() {
   oc <- as.data.frame(matrix(rnorm(N*2*2),ncol=2))
   tm <- cbind(rep(10,N),rep(5,N))
   umf <- unmarkedFrameOccuTTD(y=y, surveyLength=tm, siteCovs=sc, obsCovs=oc)
-  
-  checkEqualsNumeric(getY(umf), y) 
+
+  checkEqualsNumeric(getY(umf), y)
   checkEqualsNumeric(dim(getY(umf)), c(100,2))
   checkEqualsNumeric(obsCovs(umf), oc)
 
@@ -51,14 +51,14 @@ test.unmarkedFrameOccuTTD <- function() {
   checkException(umf[,2])
 
   ## Multiple primary periods
-  umf <- unmarkedFrameOccuTTD(y=y, surveyLength=tm, siteCovs=sc, 
+  umf <- unmarkedFrameOccuTTD(y=y, surveyLength=tm, siteCovs=sc,
                               yearlySiteCovs=oc, numPrimary=2)
-  
+
   checkEqualsNumeric(yearlySiteCovs(umf), oc)
   checkEqualsNumeric(umf@numPrimary, 2)
   umf_sub <- umf[,2]
   checkEqualsNumeric(getY(umf_sub), y[,2,drop=F])
-  
+
   y <- rexp(N, 1/lam)
   y <- cbind(y,y,y)
   checkException(unmarkedFrameOccuTTD(y,Tmax,numPrimary=2))
@@ -103,7 +103,7 @@ test.occuTTD.singleseason <- function(){
 
   #Check weibull
   fitR <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind,
-                  data=umf, linkPsi='cloglog', 
+                  data=umf, linkPsi='cloglog',
                   ttdDist='weibull',engine="R")
 
   fitC <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind,
@@ -119,7 +119,7 @@ test.occuTTD.singleseason <- function(){
   umf_na <- unmarkedFrameOccuTTD(y=ttd_na, Tmax, siteCovs=scovs)
 
   fit_naR <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind,
-                  data=umf_na, linkPsi='cloglog', 
+                  data=umf_na, linkPsi='cloglog',
                   ttdDist='weibull',engine="R")
 
   fit_naC <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind,
@@ -134,6 +134,11 @@ test.occuTTD.singleseason <- function(){
   p <- parboot(fitC)
   checkEqualsNumeric(p@t.star[1,], 87.90704)
 
+  r <- ranef(fitC)
+  checkEqualsNumeric(dim(r@post), c(N,2,1))
+  b <- bup(r)
+  checkEqualsNumeric(length(b), N)
+
   #Two observers-----------------------------------
   set.seed(123)
   ocovs <- data.frame(obs=rep(c('A','B'),N))
@@ -145,7 +150,7 @@ test.occuTTD.singleseason <- function(){
   ttd <- matrix(ttd, nrow=N, byrow=T)
   ttd[z==0,] <- Tmax
 
-  umf <- unmarkedFrameOccuTTD(y=ttd, surveyLength=Tmax, 
+  umf <- unmarkedFrameOccuTTD(y=ttd, surveyLength=Tmax,
                               siteCovs=scovs, obsCovs=ocovs)
 
   fitR <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind+obs,
@@ -155,9 +160,9 @@ test.occuTTD.singleseason <- function(){
                   data=umf, linkPsi='cloglog', ttdDist='exp',engine="C")
 
   checkEqualsNumeric(coef(fitR), coef(fitC))
-  
+
   #Check predict
-  checkEqualsNumeric(as.numeric(predict(fitC, 'psi')[4,]), 
+  checkEqualsNumeric(as.numeric(predict(fitC, 'psi')[4,]),
                      c(0.7562,0.0407,0.6385,0.8588), tol=1e-4)
   checkEqualsNumeric(as.numeric(predict(fitC, 'det')[1,]),
                      c(0.16059,0.02349,0.12056,0.2139), tol=1e-4)
@@ -176,6 +181,11 @@ test.occuTTD.singleseason <- function(){
   r <- residuals(fitC)
   checkEqualsNumeric(dim(r),c(500,2))
   checkEqualsNumeric(r[1,], c(0.82036,0.80494), tol=1e-4)
+  #Check ranef
+  r <- ranef(fitC)
+  checkEqualsNumeric(dim(r@post), c(N,2,1))
+  b <- bup(r)
+  checkEqualsNumeric(length(b), N)
 
   #Check site is retained when only one observation is missing
   ttd_na <- ttd; ttd_na[1,1] <- NA
@@ -183,7 +193,7 @@ test.occuTTD.singleseason <- function(){
                                  obsCovs=ocovs)
 
   fit_naR <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind+obs,
-                  data=umf_na, linkPsi='cloglog', 
+                  data=umf_na, linkPsi='cloglog',
                   ttdDist='weibull',engine="R")
 
   fit_naC <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind+obs,
@@ -192,14 +202,14 @@ test.occuTTD.singleseason <- function(){
 
   checkEqualsNumeric(coef(fit_naR), coef(fit_naC), tol=1e-5)
   checkEqualsNumeric(fit_naC@sitesRemoved, numeric(0))
-  
+
   #Check site is removed when both obs are NA
   ttd_na <- ttd; ttd_na[1,] <- NA
   umf_na <- unmarkedFrameOccuTTD(y=ttd_na, Tmax, siteCovs=scovs,
                                  obsCovs=ocovs)
 
   fit_naC <- occuTTD(psiformula=~elev+forest, detformula=~elev+wind+obs,
-                  data=umf_na, linkPsi='cloglog', 
+                  data=umf_na, linkPsi='cloglog',
                   ttdDist='weibull',engine="C")
   checkEqualsNumeric(fit_naC@sitesRemoved, 1)
 
@@ -249,7 +259,7 @@ test.occuTTD.dynamic <- function(){
   z[,1] <- rbinom(N, 1, psi)
 
   #Col/ext process
-  ysc <- data.frame(forest=rep(scovs$forest, each=T), 
+  ysc <- data.frame(forest=rep(scovs$forest, each=T),
                     elev=rep(scovs$elev, each=T))
   c_b0 <- -0.4; c_b1 <- 0.3
   gam <- plogis(c_b0 + c_b1 * scovs$forest)
@@ -282,24 +292,24 @@ test.occuTTD.dynamic <- function(){
   ttd[ttd>Tmax] <- Tmax
   ttd[z[,1]==0,1:2] <- Tmax
   ttd[z[,2]==0,3:4] <- Tmax
-  
-  umf <- unmarkedFrameOccuTTD(y = ttd, surveyLength = Tmax, 
+
+  umf <- unmarkedFrameOccuTTD(y = ttd, surveyLength = Tmax,
                           siteCovs = scovs, obsCovs=ocovs,
-                          yearlySiteCovs=ysc, numPrimary=2) 
+                          yearlySiteCovs=ysc, numPrimary=2)
 
   fit <- occuTTD(psiformula=~elev+forest,detformula=~elev+wind+obs,
-                 gammaformula=~forest, epsilonformula=~elev, 
+                 gammaformula=~forest, epsilonformula=~elev,
                  data=umf,se=T,
                  linkPsi='logit',ttdDist='exp',engine="C")
 
   truth <- c(beta_psi, c_b0, c_b1, e_b0, e_b1, beta_lam, -0.5)
   checkEqualsNumeric(coef(fit), truth, tol=0.1)
   checkEqualsNumeric(fit@AIC, 45037.74,tol=1e-4)
-  
+
   umf_new <- umf[1:100,]
 
   fit <- occuTTD(psiformula=~elev+forest,detformula=~elev+wind+obs,
-                 gammaformula=~forest, epsilonformula=~elev, 
+                 gammaformula=~forest, epsilonformula=~elev,
                  data=umf_new,se=T,
                  linkPsi='logit',ttdDist='exp',engine="C")
 
@@ -308,6 +318,12 @@ test.occuTTD.dynamic <- function(){
   checkEqualsNumeric(dim(s[[1]]), c(100,4))
   r <- residuals(fit)
   checkEqualsNumeric(dim(r), c(100,4))
+
+  #Check ranef
+  r <- ranef(fit)
+  checkEqualsNumeric(dim(r@post), c(100,2,T))
+  b <- bup(r)
+  checkEqualsNumeric(dim(b), c(100,T))
 }
 
 test.occuTTD.predict.complexFormulas <- function(){
@@ -343,11 +359,11 @@ test.occuTTD.predict.complexFormulas <- function(){
   nd2 <- siteCovs(umf)[1:5,]
   pr1 <- predict(fitC, 'psi', newdata=nd1)$Predicted
   pr2 <- predict(fitC, 'psi', newdata=nd2)$Predicted[1:2]
-  
+
   checkEqualsNumeric(pr1,pr2)
 
   #Check factors
-  scovs$fac_cov <- factor(sample(c('a','b','c'), N, replace=T), 
+  scovs$fac_cov <- factor(sample(c('a','b','c'), N, replace=T),
                           levels=c('b','a','c'))
 
   umf <- unmarkedFrameOccuTTD(y=ttd, surveyLength=Tmax, siteCovs=scovs)
