@@ -47,6 +47,16 @@ test.nmixTTD.P.exp <- function(){
   checkEqualsNumeric(dim(pr4), c(1,4))
   checkEqualsNumeric(pr4$Predicted, 1.248748, tol=1e-4)
 
+  #Check with site covs in det formula
+  fit_pred <- nmixTTD(~1, ~covDens, data=umf, K=max(N)+10)
+  pr5 <- predict(fit_pred, "det")
+  checkEqualsNumeric(dim(pr5), c(M*nrep, 4))
+  checkEqualsNumeric(pr5$Predicted[1:3], rep(0.587956, 3), tol=1e-4)
+  checkEqualsNumeric(pr5$Predicted[4:6], rep(0.5769142, 3), tol=1e-4)
+  nd5 <- data.frame(covDens=c(1,2))
+  pr6 <- predict(fit_pred, "det", newdata=nd5)
+  checkEqualsNumeric(dim(pr6), c(2,4))
+
   #Simulate
   sim <- simulate(fit, 2)
   checkTrue(inherits(sim, "list"))
@@ -63,6 +73,11 @@ test.nmixTTD.P.exp <- function(){
   checkEqualsNumeric(b[2], 1.204738, tol=1e-5)
 
   checkException(residuals(fit))
+
+  #Try with threads=2
+  fit <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10)
+  fit_2 <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10, threads=2)
+  checkEqualsNumeric(coef(fit), coef(fit_2))
 }
 
 test.nmixTTD.P.weib <- function(){

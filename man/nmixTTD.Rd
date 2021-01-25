@@ -4,14 +4,14 @@
 
 \usage{nmixTTD(stateformula= ~1, detformula = ~1, data, K=100,
     mixture = c("P","NB"), ttdDist = c("exp", "weibull"), starts, method="BFGS", 
-    se=TRUE, engine = c("C", "R"), ...)}
+    se=TRUE, engine = c("C", "R"), threads = 1, ...)}
 
 \arguments{
   \item{stateformula}{Right-hand sided formula for the abundance at each site.}
   \item{detformula}{Right-hand sided formula for mean time-to-detection.}
   \item{data}{\code{unmarkedFrameOccuTTD} object that supplies the data
     (see \code{\link{unmarkedFrameOccuTTD}}). Note that only single-season
-    models are supported by \code{occuRN.TTD}.}
+    models are supported by \code{nmixTTD}.}
   \item{K}{The upper summation index used to numerically integrate out the
     latent abundance. This should be set high enough so that it does not
     affect the parameter estimates. Computation time will increase with K.}
@@ -25,6 +25,10 @@
   \item{se}{logical specifying whether or not to compute standard errors.}
   \item{engine}{Either "C" or "R" to use fast C++ code or native R
     code during the optimization.}
+  \item{threads}{Set the number of threads to use for optimization in C++, if
+      OpenMP is available on your system. Increasing the number of threads
+      may speed up optimization in some cases by running the likelihood 
+      calculation in parallel. If \code{threads=1} (the default), OpenMP is disabled.} 
   \item{\dots}{Additional arguments to optim, such as lower and upper bounds}
 }
 
@@ -74,6 +78,11 @@ value of \code{y}. Note that in the latter case the value of \code{y} that will
 be interpreted by \code{nmixTTD} as a censored observation (i.e., \eqn{Tmax}) 
 will differ between observations!
 
+}
+
+\references{
+Strebel, N., Fiss, C., Kellner, K. F., , Larkin, J. L., Kery, M., & Cohen, J (2021). 
+  Estimating abundance based on time-to-detection data. Methods in Ecology and Evolution.
 }
 
 \author{Ken Kellner \email{contact@kenkellner.com}}

@@ -2,7 +2,7 @@
 nmixTTD <- function(stateformula=~1, detformula=~1, data, K=100,
                        mixture=c("P","NB"), ttdDist=c("exp", "weibull"),
                        starts, method = "BFGS",
-                       se = TRUE, engine = c("C","R"), ...) {
+                       se = TRUE, engine = c("C","R"), threads = 1, ...) {
 
   #Check arguments-------------------------------------------------------------
   if(!is(data, "unmarkedFrameOccuTTD")){
@@ -111,10 +111,8 @@ nmixTTD <- function(stateformula=~1, detformula=~1, data, K=100,
   }
 
   nll_C <- function(params){
-    .Call("nll_nmixTTD",
-          params, yvec, delta, W, V, pinds - 1,
-          mixture, ttdDist, N, J, K, naflag,
-          PACKAGE = "unmarked")
+    nll_nmixTTD(params, yvec, delta, W, V, pinds - 1, mixture, ttdDist,
+                N, J, K, naflag, threads)
   }
 
   nll <- nll_C

@@ -1,26 +1,21 @@
-#include "nll_nmixTTD.h"
+#include <RcppArmadillo.h>
+
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 
 using namespace Rcpp;
 using namespace arma;
 
-SEXP nll_nmixTTD( SEXP beta_, SEXP y_, SEXP delta_,
-    SEXP W_, SEXP V_, SEXP pinds_, SEXP mixture_, SEXP tdist_,
-    SEXP N_, SEXP J_, SEXP K_, SEXP naflag_){
+// [[Rcpp::export]]
+double nll_nmixTTD(const arma::vec beta, const arma::vec y, const arma::vec delta,
+    const arma::mat W, const arma::mat V, const arma::umat pinds,
+    const std::string mixture, const std::string tdist, int N, int J, int K,
+    const arma::vec naflag, int threads){
 
-  //Inputs
-  const vec beta = as<vec>(beta_);
-  const vec y = as<vec>(y_);
-  const vec delta = as<vec>(delta_);
-  const vec naflag = as<vec>(naflag_);
-  const mat W = as<mat>(W_);
-  const mat V = as<mat>(V_);
-  const umat pinds = as<umat>(pinds_);
-  const std::string tdist = as<std::string>(tdist_);
-  const std::string mixture = as<std::string>(mixture_);
-
-  int N = as<int>(N_);
-  int J = as<int>(J_);
-  int K = as<int>(K_);
+  #ifdef _OPENMP
+    omp_set_num_threads(threads);
+  #endif
 
   //Get abundance lambda values
   const vec lamN = exp(W * beta.subvec(pinds(0,0), pinds(0,1)));
@@ -40,9 +35,8 @@ SEXP nll_nmixTTD( SEXP beta_, SEXP y_, SEXP delta_,
     shp = exp(beta(pinds(3,0)));
   }
 
-  vec lik(N);
-  int ystart = 0;
-  int yend;
+  double loglik = 0.0;
+  #pragma omp parallel for reduction(+: loglik) if(threads > 1)
   for (int n=0; n<N; n++){
 
     vec pK(K+1);
@@ -56,7 +50,8 @@ SEXP nll_nmixTTD( SEXP beta_, SEXP y_, SEXP delta_,
       }
     }
 
-    yend = ystart + J - 1;
+    int ystart = n * J;
+    int yend = ystart + J - 1;
     vec nasub = naflag.subvec(ystart, yend);
     vec dsub = delta.subvec(ystart, yend);
     vec lamsub = lamP.subvec(ystart, yend);
@@ -95,12 +90,10 @@ SEXP nll_nmixTTD( SEXP beta_, SEXP y_, SEXP delta_,
       }
     }
 
-    ystart += J;
-
-    lik(n) = dot(pK, pY);
+    loglik += log(dot(pK, pY));
 
   }
 
-  return(wrap(-sum(log(lik))));
+  return -loglik;
 
 }

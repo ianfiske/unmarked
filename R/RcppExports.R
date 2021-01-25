@@ -13,6 +13,10 @@ nll_gpcount <- function(ym, Xlam, Xphi, Xp, beta_lam, beta_phi, beta_p, log_alph
     .Call(`_unmarked_nll_gpcount`, ym, Xlam, Xphi, Xp, beta_lam, beta_phi, beta_p, log_alpha, Xlam_offset, Xphi_offset, Xp_offset, M, mixture, T, threads)
 }
 
+nll_nmixTTD <- function(beta, y, delta, W, V, pinds, mixture, tdist, N, J, K, naflag, threads) {
+    .Call(`_unmarked_nll_nmixTTD`, beta, y, delta, W, V, pinds, mixture, tdist, N, J, K, naflag, threads)
+}
+
 nll_occuRN <- function(beta, n_param, y, X, V, X_offset, V_offset, K, Kmin, threads) {
     .Call(`_unmarked_nll_occuRN`, beta, n_param, y, X, V, X_offset, V_offset, K, Kmin, threads)
 }
