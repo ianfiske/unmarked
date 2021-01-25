@@ -17,6 +17,7 @@
 \alias{ranef,unmarkedFitColExt-method}
 \alias{ranef,unmarkedFitPCO-method}
 \alias{ranef,unmarkedFitOccuTTD-method}
+\alias{ranef,unmarkedFitNmixTTD-method}
 \alias{ranef,unmarkedFitDSO-method}
 \alias{ranef,unmarkedFitMMO-method}
 \title{ Methods for Function \code{ranef} in Package \pkg{unmarked} }

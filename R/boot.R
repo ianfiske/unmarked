@@ -54,9 +54,9 @@ setMethod("parboot", "unmarkedFit",
     availcores <- detectCores()
     if(missing(ncores)) ncores <- availcores - 1
     if(ncores > availcores) ncores <- availcores
-    
+
     no_par <- ncores < 2 || nsim < 100 || !parallel
-    
+
     if (no_par) {
       for(i in 1:nsim) {
         simdata <- replaceY(simdata, simList[[i]])
@@ -90,7 +90,7 @@ setMethod("parboot", "unmarkedFit",
       colnames(t.star) <- names(t.star.parallel[[1]])
       out <- new("parboot", call = call, t0 = t0, t.star = t.star)
     }
-		
+
     return(out)
 })
 
@@ -396,7 +396,7 @@ setMethod("nonparboot", "unmarkedFitOccuPEN",
     }
     object
 
-  
+
 })
 
 
@@ -459,7 +459,7 @@ setMethod("nonparboot", "unmarkedFitOccuPEN_CV",
     }
     object
 
-  
+
 })
 
 
@@ -470,7 +470,12 @@ setMethod("nonparboot", "unmarkedFitOccuTTD",
                    bsType="site")
 })
 
-
+setMethod("nonparboot", "unmarkedFitNmixTTD",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="site")
+})
 
 
 
