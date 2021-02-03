@@ -285,12 +285,12 @@ setMethod("predict", "unmarkedFit",
          appendData = FALSE, level=0.95, re.form=NULL, ...)
  {
 
-     if(use_tmb_bootstrap(object, type, re.form)){
-      if(missing(newdata)) newdata <- NULL
-      return(tmb_predict_bootstrap(object, type, newdata, backTransform,
-                                   level, ...))
-     }
-     object@formula <- nobars_double(object@formula)
+     #if(use_tmb_bootstrap(object, type, re.form)){
+     # if(missing(newdata)) newdata <- NULL
+     # return(tmb_predict_bootstrap(object, type, newdata, backTransform,
+     #                              level, ...))
+     #}
+     #object@formula <- nobars_double(object@formula)
 
      if(missing(newdata) || is.null(newdata))
          newdata <- getData(object)
@@ -326,11 +326,11 @@ setMethod("predict", "unmarkedFit",
          designMats <- getDesign(newdata, formula, na.rm = na.rm)
          switch(type,
              state = {
-                 X <- designMats$X
+                 X <- cbind(designMats$X, designMats$Z_state)
                  offset <- designMats$X.offset
                  },
              det = {
-                 X <- designMats$V
+                 X <- cbind(designMats$V, designMats$Z_det)
                  offset <- designMats$V.offset
                  })
          },
@@ -2191,15 +2191,15 @@ setMethod("predict", "unmarkedFitOccuTTD",
 
 
 setMethod("coef", "unmarkedFit",
-    function(object, type, altNames = TRUE)
+    function(object, type, altNames = TRUE, fixedOnly=TRUE)
 {
     if(missing(type)) {
         co <- lapply(object@estimates@estimates,
-            function(x) coef(x, altNames=altNames))
+            function(x) coef(x, altNames=altNames, fixedOnly=fixedOnly))
         names(co) <- NULL
         co <- unlist(co)
     } else {
-        co <- coef(object[type], altNames=altNames)
+        co <- coef(object[type], altNames=altNames, fixedOnly=fixedOnly)
         }
     co
 })
@@ -2315,13 +2315,14 @@ setMethod("fitted", "unmarkedFit",
 {
     data <- object@data
     des <- getDesign(data, object@formula, na.rm = na.rm)
-    X <- des$X
+    X <- cbind(des$X, des$Z_state)
     X.offset <- des$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
         }
+    beta_state <- coef(object, 'state', fixedOnly=FALSE)
     state <- do.call(object['state']@invlink,
-        list(X %*% coef(object, 'state') + X.offset))
+        list(as.matrix(X %*% beta_state + X.offset)))
     state <- as.numeric(state)  ## E(X) for most models
     p <- getP(object, na.rm = na.rm) # P(detection | presence)
     fitted <- state * p  # true for models with E[Y] = p * E[X]
@@ -3366,14 +3367,14 @@ setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE)
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    V <- designMats$V
+    V <- cbind(designMats$V, designMats$Z_det)
     V.offset <- designMats$V.offset
     if (is.null(V.offset))
         V.offset <- rep(0, nrow(V))
     M <- nrow(y)
     J <- ncol(y)
-    ppars <- coef(object, type = "det")
-    p <- plogis(V %*% ppars + V.offset)
+    ppars <- coef(object, type = "det", fixedOnly=FALSE)
+    p <- plogis(as.matrix(V %*% ppars + V.offset))
     p <- matrix(p, M, J, byrow = TRUE)
     return(p)
 })
@@ -4265,16 +4266,15 @@ setMethod("simulate", "unmarkedFitOccu",
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    X <- designMats$X
+    X <- cbind(designMats$X, designMats$Z_state)
     X.offset <- designMats$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
         }
     M <- nrow(y)
     J <- ncol(y)
-    allParms <- coef(object, altNames = FALSE)
-    psiParms <- coef(object, type = "state")
-    psi <- as.numeric(plogis(X %*% psiParms + X.offset))
+    psiParms <- coef(object, type = "state", fixedOnly=FALSE)
+    psi <- as.numeric(plogis(as.matrix(X %*% psiParms + X.offset)))
     p <- c(t(getP(object,na.rm = na.rm)))
     simList <- list()
     for(i in 1:nsim) {

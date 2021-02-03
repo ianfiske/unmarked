@@ -41,7 +41,7 @@ get_reTrms <- function(formula, data, newdata=NULL){
 
 get_Z <- function(formula, data, newdata=NULL){
   if(is.null(lme4::findbars(formula))){
-    return(Matrix::Matrix(matrix(0,0,0),sparse=TRUE))
+    return(Matrix::Matrix(matrix(0,nrow=nrow(data),ncol=0),sparse=TRUE))
   }
   check_formula(formula, data)
   Zt <- get_reTrms(formula, data, newdata)$Zt
@@ -123,9 +123,8 @@ is_tmb_fit <- function(mod){
   !is.null(mod@TMB)
 }
 
-get_b_vector <- function(mod, type){
-  stopifnot(is_tmb_fit(mod))
-  sdr <- TMB::sdreport(mod@TMB)
+get_b_vector <- function(TMB, type){
+  sdr <- TMB::sdreport(TMB)
   bname <- paste0("b_",type)
   bpar <- sdr$par.random
   bpar <- bpar[grepl(bname, names(bpar))]
@@ -133,12 +132,14 @@ get_b_vector <- function(mod, type){
   bpar
 }
 
-get_joint_cov <- function(mod, type=NULL){
-  stopifnot(is_tmb_fit(mod))
-  full <- solve(TMB::sdreport(mod@TMB, getJointPrecision=TRUE)$jointPrecision)
+get_joint_cov <- function(TMB, type=NULL, remove_sigma=TRUE){
+  full <- solve(TMB::sdreport(TMB, getJointPrecision=TRUE)$jointPrecision)
   if(is.null(type)) return(full)
   keep <- grepl(paste0("_",type), colnames(full))
-  full[keep,keep]
+  out <- full[keep,keep,drop=FALSE]
+  if(!remove_sigma) return(out)
+  keep2 <- !grepl(paste0("lsigma_",type), colnames(out))
+  out <- out[keep2,keep2,drop=FALSE]
 }
 
 tmbfit_has_random <- function(mod, type){
@@ -149,55 +150,22 @@ use_tmb_bootstrap <- function(mod, type, re.form){
   is.null(re.form) && is_tmb_fit(mod) && tmbfit_has_random(mod, type)
 }
 
-tmb_predict_bootstrap <- function(mod, type, newdata=NULL, backTransform=TRUE,
-                                  level=0.95, nsim=100){
-  cat("Bootstrapping confidence intervals with", nsim, "samples\n")
-  qlow <- (1-level)/2
-  qup <- level+qlow
-  invlink <- mod@estimates@estimates[[type]]@invlink
-  if(invlink=="logistic") invlink <- "plogis"
+get_randvar_info <- function(names, estimates, covMat, formula, data){
+  re <- get_reTrms(formula, data)
+  list(names=names, estimates=estimates, covMat=covMat, fixed=1:length(estimates),
+       invlink="exp", invlinkGrad="exp", n_obs=nrow(data),
+       n_levels=lapply(re$flist, function(x) length(levels(x))), cnms=re$cnms)
+}
 
-  beta <- coef(mod, type)
-  b <- get_b_vector(mod, type)
+print_randvar_info <- function(object){
+  group_info <- paste0(names(object$n_levels), ", ",
+                       unlist(object$n_levels), collapse="; ")
 
-  spl_forms <- split_formula(mod@formula)
-  if(type=="state"){
-    form <- spl_forms[[2]]
-    dat <- siteCovs(getData(mod))
-  } else if(type == "det"){
-    form <- spl_forms[[1]]
-    dat <- obsCovs(getData(mod))
-  }
+  val <- do.call(object$invlink, list(object$estimates))
 
-  X <- model_matrix(form, dat, newdata)
-  Xoffset <- model_offset(form, dat, newdata)
-  Z <- get_Z(form, dat, newdata)
-  stopifnot(nrow(X)==nrow(Z))
-  est <- as.vector(X %*% beta + Z %*% b + Xoffset)
-
-  covMat <- get_joint_cov(mod, type)
-  keep <- grepl("b_|beta_", colnames(covMat))
-  covMat <- covMat[keep,keep]
-  mu <- c(beta, b)
-  samp <- MASS::mvrnorm(nsim, mu, covMat)
-  which_beta <- grepl("beta_", colnames(covMat))
-  samp_beta <- samp[,which_beta,drop=FALSE]
-  samp_b <- samp[,!which_beta,drop=FALSE]
-
-  lp_sim <- matrix(NA, nrow(X), nsim)
-  for (i in 1:nsim){
-    lp_sim[,i] <- as.vector(X %*% samp_beta[i,] + Z %*% samp_b[i,])
-  }
-
-  ci <- t(apply(lp_sim, 1, quantile, c(qlow,qup)))
-  colnames(ci) <- c("lower","upper")
-
-  if(backTransform){
-    est <- do.call(invlink, list(est))
-    ci <- do.call(invlink, list(ci))
-    lp_sim <- do.call(invlink, list(lp_sim))
-  }
-  se <- apply(lp_sim, 1, sd)
-
-  data.frame(Predicted=est, SE=se, ci)
+  disp <- data.frame(Groups=names(object$cnms), Name=unlist(object$cnms),
+                     Variance=round(val,3), Std.Dev.=round(sqrt(val),3))
+  cat("Random effects:\n")
+  print(disp, row.names=FALSE)
+  cat(paste0("Number of obs: ",object$n_obs,", groups: ",group_info,"\n"))
 }

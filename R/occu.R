@@ -43,8 +43,6 @@ occu <- function(formula, data, knownOcc = numeric(0),
     nOP <- ncol(X)
 
     nP <- nDP + nOP
-    if(!missing(starts) && length(starts) != nP)
-        stop(paste("The number of starting values should be", nP))
 
     yvec <- as.numeric(t(y))
     navec <- is.na(yvec)
@@ -107,37 +105,50 @@ occu <- function(formula, data, knownOcc = numeric(0),
 
       nfixed <- length(unlist(tmb_param[c("beta_state","beta_det",
                         "lsigma_state","lsigma_det")]))
-      fm <- optim(rep(0,nfixed), fn=tmb_mod$fn, gr=tmb_mod$gr)
+      if(missing(starts)) starts <- rep(0, nfixed)
+      if(length(starts) != nfixed){
+        stop(paste("The number of starting values should be", nfixed))
+      }
+      fm <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr)
 
       tmb_sum <- TMB::sdreport(tmb_mod)
       par_names <- names(tmb_sum$par.fixed)
       if(is.null(par_names)) par_names <- 1:length(tmb_sum$par.fixed)
+
+
       is_fixed <- !grepl("lsigma",par_names)
       ests <- tmb_sum$par.fixed[is_fixed]
+      names(ests) <- c(occParms, detParms)
       covMat <- tmb_sum$cov.fixed[is_fixed,is_fixed]
+
+      state_est <- c(ests[1:nOP], get_b_vector(tmb_mod, "state"))
+      state_cov <- get_joint_cov(tmb_mod, "state")
+      det_est <- c(ests[(nOP+1):nP], get_b_vector(tmb_mod, "det"))
+      det_cov <- get_joint_cov(tmb_mod, "det") #it is inefficient to do this twice
+
       nll <- tmb_mod$fn
+
+      fmAIC <- 2 * fm$value + 2 * nfixed #+ 2*nP*(nP + 1)/(M - nP - 1)
+
+      state_rand_info <- det_rand_info <- list()
 
       if(ngv_state > 0){
         state_sigmas <- grepl("lsigma_state", par_names)
         re_est <- tmb_sum$par.fixed[state_sigmas]
-        names(re_est) <- sigma_names(psi_form, siteCovs(data))
-        stateRE <- unmarkedEstimate(name = "Occupancy random effect variance",
-                              short.name = "psiRE",
-                              estimates = re_est,
-                              covMat = as.matrix(tmb_sum$cov.fixed[state_sigmas,state_sigmas]),
-                              invlink = "exp",
-                              invlinkGrad = "exp")
+        re_names <- sigma_names(psi_form, siteCovs(data))
+        re_covMat = as.matrix(tmb_sum$cov.fixed[state_sigmas,state_sigmas])
+
+        state_rand_info <- get_randvar_info(re_names, re_est, re_covMat,
+                                            psi_form, siteCovs(data))
       }
       if(ngv_det > 0){
         det_sigmas <- grepl("lsigma_det", par_names)
         re_est <- tmb_sum$par.fixed[det_sigmas]
-        names(re_est) <- sigma_names(p_form, obsCovs(data))
-        detRE <- unmarkedEstimate(name = "Detection random effect variance",
-                              short.name = "pRE",
-                              estimates = re_est,
-                              covMat = as.matrix(tmb_sum$cov.fixed[det_sigmas,det_sigmas]),
-                              invlink = "exp",
-                              invlinkGrad = "exp")
+        re_names <- sigma_names(p_form, obsCovs(data))
+        re_covMat = as.matrix(tmb_sum$cov.fixed[det_sigmas,det_sigmas])
+
+        det_rand_info <- get_randvar_info(re_names, re_est, re_covMat,
+                                          p_form, obsCovs(data))
       }
 
 
@@ -148,7 +159,6 @@ occu <- function(formula, data, knownOcc = numeric(0),
             pvec <- plogis(V %*% params[(nOP + 1) : nP] + V.offset)
             cp <- (pvec^yvec) * ((1 - pvec)^(1 - yvec))
             cp[navec] <- 1 # so that NA's don't modify likelihood
-        state_sigmas <- grepl("lsigma_state", par_names)
             cpmat <- matrix(cp, M, J, byrow = TRUE) #
             loglik <- log(rowProds(cpmat) * psi + nd * (1 - psi))
             -sum(loglik)
@@ -157,33 +167,42 @@ occu <- function(formula, data, knownOcc = numeric(0),
 
     if(engine != "TMB"){
       if(missing(starts)) starts <- rep(0, nP)
+      if(length(starts) != nP){
+        stop(paste("The number of starting values should be", nP))
+      }
       fm <- optim(starts, nll, method = method, hessian = se, ...)
       covMat <- invertHessian(fm, nP, se)
       ests <- fm$par
+      names(ests) <- c(occParms, detParms)
       tmb_mod <- NULL
+      state_rand_info <- det_rand_info <- list()
+      state_est <- ests[1:nOP]
+      state_cov <- as.matrix(covMat[1:nOP,1:nOP])
+      det_est <- ests[(nOP+1):nP]
+      det_cov <- as.matrix(covMat[(nOP+1):nP, (nOP+1):nP])
+      fmAIC <- 2 * fm$value + 2 * nP #+ 2*nP*(nP + 1)/(M - nP - 1)
     }
 
-    fmAIC <- 2 * fm$value + 2 * nP #+ 2*nP*(nP + 1)/(M - nP - 1)
-    names(ests) <- c(occParms, detParms)
 
     state <- unmarkedEstimate(name = "Occupancy", short.name = "psi",
-                              estimates = ests[1:nOP],
-                              covMat = as.matrix(covMat[1:nOP,1:nOP]),
+                              estimates = state_est,
+                              covMat = state_cov,
+                              fixed = 1:nOP,
                               invlink = invlink,
-                              invlinkGrad = linkGrad)
+                              invlinkGrad = linkGrad,
+                              randomVarInfo=state_rand_info
+                              )
 
     det <- unmarkedEstimate(name = "Detection", short.name = "p",
-                            estimates = ests[(nOP + 1) : nP],
-                            covMat = as.matrix(covMat[(nOP + 1) : nP,
-                                                      (nOP + 1) : nP]),
+                            estimates =det_est,
+                            covMat = det_cov,
+                            fixed = 1:nDP,
                             invlink = "logistic",
-                            invlinkGrad = "logistic.grad")
+                            invlinkGrad = "logistic.grad",
+                            randomVarInfo=det_rand_info
+                           )
 
-    submodel_list <- list(state=state)
-    if(engine == "TMB" && ngv_state > 0) submodel_list <- c(submodel_list, stateRE=stateRE)
-    submodel_list <- c(submodel_list, det=det)
-    if(engine == "TMB" && ngv_det > 0) submodel_list <- c(submodel_list, detRE=detRE)
-    estimateList <- unmarkedEstimateList(submodel_list)
+    estimateList <- unmarkedEstimateList(list(state=state, det=det))
     umfit <- new("unmarkedFitOccu", fitType = "occu", call = match.call(),
                  formula = formula, data = data,
                  sitesRemoved = designMats$removed.sites,
