@@ -172,5 +172,13 @@ print_randvar_info <- function(object){
                      Variance=round(val,3), Std.Dev.=round(sqrt(val),3))
   cat("Random effects:\n")
   print(disp, row.names=FALSE)
-  cat(paste0("Number of obs: ",object$n_obs,", groups: ",group_info,"\n"))
+  #below needs to be corrected for missing values at some point
+  #cat(paste0("Number of obs: ",object$n_obs,", groups: ",group_info,"\n"))
+}
+
+check_no_support <- function(formula_list){
+  has_bars <- any(sapply(formula_list, function(x) !is.null(lme4::findbars(x))))
+  if(has_bars){
+    stop("This function does not support random effects", call.=FALSE)
+  }
 }

@@ -5,6 +5,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
                    method = "BFGS", se = TRUE,
                    engine = c("C", "R"), threads = 1, ...)
 {
+    check_no_support(list(formula))
     mixture <- match.arg(mixture, c("P", "NB", "ZIP"))
     if(!is(data, "unmarkedFramePCount"))
         stop("Data is not an unmarkedFramePCount object.")
