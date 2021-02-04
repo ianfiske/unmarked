@@ -223,12 +223,12 @@ setMethod("summary", "unmarkedFitDS", function(object)
 # Compute linear combinations of estimates in unmarkedFit objects.
 setMethod("linearComb",
     signature(obj = "unmarkedFit", coefficients = "matrixOrVector"),
-    function(obj, coefficients, type, offset = NULL)
+    function(obj, coefficients, type, offset = NULL, re.form=NULL)
 {
     stopifnot(!missing(type))
     stopifnot(type %in% names(obj))
     estimate <- obj@estimates[type]
-    linearComb(estimate, coefficients, offset)
+    linearComb(estimate, coefficients, offset, re.form)
 })
 
 
@@ -260,8 +260,9 @@ setMethod("names", "unmarkedFit",
 # ----------------------------- Prediction -----------------------------
 
 #Utility function to make model matrix and offset from newdata
-make_mod_matrix <- function(formula, data, newdata){
-  mf <- model.frame(formula, data)
+make_mod_matrix <- function(formula, data, newdata, re.form=NULL){
+  form_nobars <- lme4::nobars(formula)
+  mf <- model.frame(form_nobars, data)
   X.terms <- stats::terms(mf)
   fac_cols <- data[, sapply(data, is.factor), drop=FALSE]
   xlevs <- lapply(fac_cols, levels)
@@ -269,6 +270,10 @@ make_mod_matrix <- function(formula, data, newdata){
   X <- model.matrix(X.terms, newdata, xlev=xlevs)
   nmf <- model.frame(X.terms, newdata)
   offset <- model.offset(nmf)
+  if(is.null(re.form)){
+    Z <- get_Z(formula, data, newdata)
+    X <- cbind(X, Z)
+  }
   list(X=X, offset=offset)
 }
 
@@ -284,14 +289,6 @@ setMethod("predict", "unmarkedFit",
      function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
          appendData = FALSE, level=0.95, re.form=NULL, ...)
  {
-
-     #if(use_tmb_bootstrap(object, type, re.form)){
-     # if(missing(newdata)) newdata <- NULL
-     # return(tmb_predict_bootstrap(object, type, newdata, backTransform,
-     #                              level, ...))
-     #}
-     #object@formula <- nobars_double(object@formula)
-
      if(missing(newdata) || is.null(newdata))
          newdata <- getData(object)
      formula <- object@formula
@@ -345,7 +342,7 @@ setMethod("predict", "unmarkedFit",
                pred_form <- detformula
               }
          )
-          mm <- make_mod_matrix(pred_form, pred_data, newdata)
+          mm <- make_mod_matrix(pred_form, pred_data, newdata, re.form)
           X <- mm$X
           offset <- mm$offset
      },
@@ -387,7 +384,7 @@ setMethod("predict", "unmarkedFit",
          }
          if(any(is.na(X[i,])))
              next
-         lc <- linearComb(object, X[i,], type, offset = offset[i])
+         lc <- linearComb(object, X[i,], type, offset = offset[i], re.form)
          if(backTransform)
              lc <- backTransform(lc)
          out$Predicted[i] <- coef(lc)

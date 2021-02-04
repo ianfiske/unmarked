@@ -83,9 +83,11 @@ unmarkedEstimateList <- function(l) {
 
 
 
-unmarkedEstimate <- function(name, short.name, estimates, covMat, fixed,
+unmarkedEstimate <- function(name, short.name, estimates, covMat, fixed=NULL,
                              invlink, invlinkGrad, randomVarInfo=list())
 {
+
+    if(is.null(fixed)) fixed <- 1:length(estimates)
     new("unmarkedEstimate",
         name = name,
         short.name = short.name,
@@ -159,15 +161,21 @@ setMethod("summary", signature(object = "unmarkedEstimate"),
 
 setMethod("linearComb",
     signature(obj = "unmarkedEstimate", coefficients = "matrixOrVector"),
-    function(obj, coefficients, offset = NULL)
+    function(obj, coefficients, offset = NULL, re.form = NULL)
 {
     if(!is(coefficients, "matrix"))
         coefficients <- t(as.matrix(coefficients))
-    stopifnot(ncol(coefficients) == length(obj@estimates))
+    est <- obj@estimates
+    covMat <- obj@covMat
+    if(!is.null(re.form) & .hasSlot(obj, "fixed")){
+      est <- est[obj@fixed]
+      covMat <- covMat[obj@fixed, obj@fixed, drop=FALSE]
+    }
+    stopifnot(ncol(coefficients) == length(est))
     if (is.null(offset))
         offset <- rep(0, nrow(coefficients))
-    e <- as.vector(coefficients %*% obj@estimates) + offset
-    v <- coefficients %*% obj@covMat %*% t(coefficients)
+    e <- as.vector(coefficients %*% est) + offset
+    v <- coefficients %*% covMat %*% t(coefficients)
     if (!is.null(obj@covMatBS)) {
         v.bs <- coefficients %*% obj@covMatBS %*% t(coefficients)
     } else {

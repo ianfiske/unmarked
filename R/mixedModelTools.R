@@ -41,7 +41,12 @@ get_reTrms <- function(formula, data, newdata=NULL){
 
 get_Z <- function(formula, data, newdata=NULL){
   if(is.null(lme4::findbars(formula))){
-    return(Matrix::Matrix(matrix(0,nrow=nrow(data),ncol=0),sparse=TRUE))
+    #return(Matrix::Matrix(matrix(0,nrow=nrow(data),ncol=0),sparse=TRUE))
+    if(is.null(newdata)){
+      return(Matrix::Matrix(matrix(0, nrow=nrow(data), ncol=0),sparse=TRUE))
+    } else{
+      return(Matrix::Matrix(matrix(0, nrow=nrow(newdata), ncol=0),sparse=TRUE))
+    }
   }
   check_formula(formula, data)
   Zt <- get_reTrms(formula, data, newdata)$Zt
@@ -112,7 +117,7 @@ split_formula <- function(formula){
 }
 
 nobars_double <- function(form){
-  spl <- unmarked:::split_formula(form)
+  spl <- split_formula(form)
   spl <- lapply(spl, lme4::nobars)
   spl <- paste(unlist(lapply(spl, as.character)),collapse="")
   as.formula(spl)
