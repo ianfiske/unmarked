@@ -93,9 +93,9 @@ occu <- function(formula, data, knownOcc = numeric(0),
       if(has_random(psi_form)) rand_ef <- c(rand_ef, "b_state")
       if(has_random(p_form)) rand_ef <- c(rand_ef, "b_det")
 
-      old_threads <- TMB::openmp()
-      on.exit(TMB::openmp(old_threads))
-      TMB::openmp(threads)
+      #old_threads <- TMB::openmp()
+      #on.exit(TMB::openmp(old_threads))
+      #TMB::openmp(threads)
 
       tmb_mod <- TMB::MakeADFun(data = c(model = "tmb_occu", tmb_dat),
                             parameters = tmb_param,
@@ -109,7 +109,7 @@ occu <- function(formula, data, knownOcc = numeric(0),
       if(length(starts) != nfixed){
         stop(paste("The number of starting values should be", nfixed))
       }
-      fm <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr)
+      fm <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
 
       tmb_sum <- TMB::sdreport(tmb_mod)
       par_names <- names(tmb_sum$par.fixed)

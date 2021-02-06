@@ -138,7 +138,14 @@ get_b_vector <- function(TMB, type){
 }
 
 get_joint_cov <- function(TMB, type=NULL, remove_sigma=TRUE){
-  full <- solve(TMB::sdreport(TMB, getJointPrecision=TRUE)$jointPrecision)
+  full <- TMB::sdreport(TMB, getJointPrecision = TRUE)$jointPrecision
+  if(is.null(full)){
+    full <- solve(TMB$he())
+    colnames(full) <- rownames(full) <- names(TMB$par)
+  } else {
+    full <- solve(full)
+  }
+
   if(is.null(type)) return(full)
   keep <- grepl(paste0("_",type), colnames(full))
   out <- full[keep,keep,drop=FALSE]
