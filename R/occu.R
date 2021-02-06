@@ -112,9 +112,7 @@ occu <- function(formula, data, knownOcc = numeric(0),
       fm <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
 
       tmb_sum <- TMB::sdreport(tmb_mod)
-      par_names <- names(tmb_sum$par.fixed)
-      if(is.null(par_names)) par_names <- 1:length(tmb_sum$par.fixed)
-
+      par_names <- get_fixed_names(tmb_sum)
 
       is_fixed <- !grepl("lsigma",par_names)
       ests <- tmb_sum$par.fixed[is_fixed]
@@ -130,27 +128,8 @@ occu <- function(formula, data, knownOcc = numeric(0),
 
       fmAIC <- 2 * fm$value + 2 * nfixed #+ 2*nP*(nP + 1)/(M - nP - 1)
 
-      state_rand_info <- det_rand_info <- list()
-
-      if(ngv_state > 0){
-        state_sigmas <- grepl("lsigma_state", par_names)
-        re_est <- tmb_sum$par.fixed[state_sigmas]
-        re_names <- sigma_names(psi_form, siteCovs(data))
-        re_covMat = as.matrix(tmb_sum$cov.fixed[state_sigmas,state_sigmas])
-
-        state_rand_info <- get_randvar_info(re_names, re_est, re_covMat,
-                                            psi_form, siteCovs(data))
-      }
-      if(ngv_det > 0){
-        det_sigmas <- grepl("lsigma_det", par_names)
-        re_est <- tmb_sum$par.fixed[det_sigmas]
-        re_names <- sigma_names(p_form, obsCovs(data))
-        re_covMat = as.matrix(tmb_sum$cov.fixed[det_sigmas,det_sigmas])
-
-        det_rand_info <- get_randvar_info(re_names, re_est, re_covMat,
-                                          p_form, obsCovs(data))
-      }
-
+      state_rand_info <- get_randvar_info(tmb_sum, "state", psi_form, siteCovs(data))
+      det_rand_info <- get_randvar_info(tmb_sum, "det", p_form, obsCovs(data))
 
     } else {
         nll <- function(params) {

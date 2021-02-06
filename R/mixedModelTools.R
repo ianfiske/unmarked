@@ -162,12 +162,34 @@ use_tmb_bootstrap <- function(mod, type, re.form){
   is.null(re.form) && is_tmb_fit(mod) && tmbfit_has_random(mod, type)
 }
 
-get_randvar_info <- function(names, estimates, covMat, formula, data){
+# Gather information about grouping variables for a given submodel
+get_randvar_info <- function(tmb_report, type, formula, data){
+  ngv <- get_group_vars(formula)
+  if(ngv == 0) return(list()) #Return blank list if there are no grouping variables
+
+  sigma_type <- paste0("lsigma_",type)
+  sigma_ind <- grepl(sigma_type, get_fixed_names(tmb_report))
+  sigma_est <- tmb_report$par.fixed[sigma_ind]
+  sigma_cov <- as.matrix(tmb_report$cov.fixed[sigma_ind,sigma_ind])
   re <- get_reTrms(formula, data)
-  list(names=names, estimates=estimates, covMat=covMat, fixed=1:length(estimates),
-       invlink="exp", invlinkGrad="exp", n_obs=nrow(data),
+
+  list(names=sigma_names(formula, data), estimates=sigma_est, covMat=sigma_cov,
+       fixed=1:length(sigma_est), invlink="exp", invlinkGrad="exp", n_obs=nrow(data),
        n_levels=lapply(re$flist, function(x) length(levels(x))), cnms=re$cnms)
 }
+
+get_fixed_names <- function(tmb_report){
+  out <- names(tmb_report$par.fixed)
+  if(is.null(out)) out <- 1:length(tmb_report$par.fixed)
+  out
+}
+
+#get_randvar_info <- function(names, estimates, covMat, formula, data){
+#re <- get_reTrms(formula, data)
+#  list(names=names, estimates=estimates, covMat=covMat, fixed=1:length(estimates),
+#       invlink="exp", invlinkGrad="exp", n_obs=nrow(data),
+#       n_levels=lapply(re$flist, function(x) length(levels(x))), cnms=re$cnms)
+#}
 
 print_randvar_info <- function(object){
   group_info <- paste0(names(object$n_levels), ", ",
