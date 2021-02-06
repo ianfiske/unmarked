@@ -114,25 +114,12 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
       if(has_random(lam_form)) rand_ef <- c(rand_ef, "b_state")
       if(has_random(p_form)) rand_ef <- c(rand_ef, "b_det")
 
-      #old_threads <- TMB::openmp()
-      #on.exit(TMB::openmp(old_threads))
-      #TMB::openmp(threads)
-
-      tmb_mod <- TMB::MakeADFun(data = c(model = "tmb_pcount", tmb_dat),
-                            parameters = tmb_param,
-                            random= rand_ef,
-                            silent=TRUE,
-                            DLL = "unmarked_TMBExports")
-
-      nfixed <- length(unlist(tmb_param[c("beta_state","beta_det",
-                        "lsigma_state","lsigma_det")]))
-      if(mixture_code > 1) nfixed <- nfixed + 1
-
-      if(missing(starts)) starts <- rep(0, nfixed)
-      if(length(starts) != nfixed){
-        stop(paste("The number of starting values should be", nfixed))
-      }
-      fm <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
+      if(missing(starts)) starts <- NULL
+      tmb_out <- fit_TMB("tmb_pcount", tmb_dat, tmb_param, rand_ef,
+                         starts=starts, method, ...)
+      tmb_mod <- tmb_out$TMB
+      fm <- tmb_out$opt
+      fmAIC <- tmb_out$AIC
 
       tmb_sum <- TMB::sdreport(tmb_mod)
       par_names <- get_fixed_names(tmb_sum)
@@ -153,8 +140,6 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
       }
 
       nll <- tmb_mod$fn
-
-      fmAIC <- 2 * fm$value + 2 * nfixed #+ 2*nP*(nP + 1)/(M - nP - 1)
 
       state_rand_info <- get_randvar_info(tmb_sum, "state", lam_form, siteCovs(data))
       det_rand_info <- get_randvar_info(tmb_sum, "det", p_form, obsCovs(data))

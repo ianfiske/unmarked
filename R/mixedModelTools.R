@@ -41,7 +41,6 @@ get_reTrms <- function(formula, data, newdata=NULL){
 
 get_Z <- function(formula, data, newdata=NULL){
   if(is.null(lme4::findbars(formula))){
-    #return(Matrix::Matrix(matrix(0,nrow=nrow(data),ncol=0),sparse=TRUE))
     if(is.null(newdata)){
       return(Matrix::Matrix(matrix(0, nrow=nrow(data), ncol=0),sparse=TRUE))
     } else{
@@ -184,13 +183,6 @@ get_fixed_names <- function(tmb_report){
   out
 }
 
-#get_randvar_info <- function(names, estimates, covMat, formula, data){
-#re <- get_reTrms(formula, data)
-#  list(names=names, estimates=estimates, covMat=covMat, fixed=1:length(estimates),
-#       invlink="exp", invlinkGrad="exp", n_obs=nrow(data),
-#       n_levels=lapply(re$flist, function(x) length(levels(x))), cnms=re$cnms)
-#}
-
 print_randvar_info <- function(object){
   group_info <- paste0(names(object$n_levels), ", ",
                        unlist(object$n_levels), collapse="; ")
@@ -210,4 +202,28 @@ check_no_support <- function(formula_list){
   if(has_bars){
     stop("This function does not support random effects", call.=FALSE)
   }
+}
+
+fit_TMB <- function(model, data, params, random,
+                    starts, method, ...){
+
+  fixed_sub <- names(params)[!names(params) %in% random]
+  nfixed <- length(unlist(params[fixed_sub]))
+
+  tmb_mod <- TMB::MakeADFun(data = c(model = model, data),
+                            parameters = params,
+                            random = random,
+                            silent=TRUE,
+                            DLL = "unmarked_TMBExports")
+
+  if(is.null(starts)) starts <- rep(0, nfixed)
+  if(length(starts) != nfixed){
+    stop(paste("The number of starting values should be", nfixed))
+  }
+
+  opt <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
+
+  AIC = 2 * opt$value + 2 * nfixed
+
+  list(opt=opt, TMB=tmb_mod, AIC=AIC)
 }
