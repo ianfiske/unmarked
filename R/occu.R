@@ -100,23 +100,15 @@ occu <- function(formula, data, knownOcc = numeric(0),
       fm <- tmb_out$opt
       fmAIC <- tmb_out$AIC
 
-      tmb_sum <- TMB::sdreport(tmb_mod)
-      par_names <- get_fixed_names(tmb_sum)
-
-      is_fixed <- !grepl("lsigma",par_names)
-      ests <- tmb_sum$par.fixed[is_fixed]
-      names(ests) <- c(occParms, detParms)
-      covMat <- tmb_sum$cov.fixed[is_fixed,is_fixed]
-
-      state_est <- c(ests[1:nOP], get_b_vector(tmb_mod, "state"))
-      state_cov <- get_joint_cov(tmb_mod, "state")
-      det_est <- c(ests[(nOP+1):nP], get_b_vector(tmb_mod, "det"))
-      det_cov <- get_joint_cov(tmb_mod, "det") #it is inefficient to do this twice
+      state_coef <- get_coef_info(tmb_out$sdr, "state", occParms, 1:nOP)
+      det_coef <- get_coef_info(tmb_out$sdr, "det", detParms, (nOP+1):nP)
 
       nll <- tmb_mod$fn
 
-      state_rand_info <- get_randvar_info(tmb_sum, "state", psi_form, siteCovs(data))
-      det_rand_info <- get_randvar_info(tmb_sum, "det", p_form, obsCovs(data))
+      state_rand_info <- get_randvar_info(tmb_out$sdr, "state", psi_form,
+                                          siteCovs(data))
+      det_rand_info <- get_randvar_info(tmb_out$sdr, "det", p_form,
+                                        obsCovs(data))
 
     } else {
         nll <- function(params) {
@@ -142,17 +134,16 @@ occu <- function(formula, data, knownOcc = numeric(0),
       names(ests) <- c(occParms, detParms)
       tmb_mod <- NULL
       state_rand_info <- det_rand_info <- list()
-      state_est <- ests[1:nOP]
-      state_cov <- as.matrix(covMat[1:nOP,1:nOP])
-      det_est <- ests[(nOP+1):nP]
-      det_cov <- as.matrix(covMat[(nOP+1):nP, (nOP+1):nP])
+      state_coef <- list(ests=ests[1:nOP], cov=as.matrix(covMat[1:nOP,1:nOP]))
+      det_coef <- list(ests=ests[(nOP+1):nP],
+                       cov=as.matrix(covMat[(nOP+1):nP, (nOP+1):nP]))
       fmAIC <- 2 * fm$value + 2 * nP #+ 2*nP*(nP + 1)/(M - nP - 1)
     }
 
 
     state <- unmarkedEstimate(name = "Occupancy", short.name = "psi",
-                              estimates = state_est,
-                              covMat = state_cov,
+                              estimates = state_coef$est,
+                              covMat = state_coef$cov,
                               fixed = 1:nOP,
                               invlink = invlink,
                               invlinkGrad = linkGrad,
@@ -160,8 +151,8 @@ occu <- function(formula, data, knownOcc = numeric(0),
                               )
 
     det <- unmarkedEstimate(name = "Detection", short.name = "p",
-                            estimates =det_est,
-                            covMat = det_cov,
+                            estimates =det_coef$est,
+                            covMat = det_coef$cov,
                             fixed = 1:nDP,
                             invlink = "logistic",
                             invlinkGrad = "logistic.grad",

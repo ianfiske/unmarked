@@ -127,20 +127,20 @@ is_tmb_fit <- function(mod){
   !is.null(mod@TMB)
 }
 
-get_b_vector <- function(TMB, type){
-  sdr <- TMB::sdreport(TMB)
+get_b_vector <- function(tmb_report, type){
+  #sdr <- TMB::sdreport(TMB)
   bname <- paste0("b_",type)
-  bpar <- sdr$par.random
+  bpar <- tmb_report$par.random
   bpar <- bpar[grepl(bname, names(bpar))]
   if(length(bpar)==0) return(NULL)
   bpar
 }
 
-get_joint_cov <- function(TMB, type=NULL, remove_sigma=TRUE){
-  full <- TMB::sdreport(TMB, getJointPrecision = TRUE)$jointPrecision
+get_joint_cov <- function(tmb_report, type=NULL, remove_sigma=TRUE){
+  full <- tmb_report$jointPrecision
   if(is.null(full)){
-    full <- solve(TMB$he())
-    colnames(full) <- rownames(full) <- names(TMB$par)
+    full <- tmb_report$cov.fixed
+    colnames(full) <- rownames(full) <- names(tmb_report$par)
   } else {
     full <- solve(full)
   }
@@ -223,7 +223,21 @@ fit_TMB <- function(model, data, params, random,
 
   opt <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
 
+  sdr <- TMB::sdreport(tmb_mod, getJointPrecision=TRUE)
+  sdr$par <- tmb_mod$par
+
   AIC = 2 * opt$value + 2 * nfixed
 
-  list(opt=opt, TMB=tmb_mod, AIC=AIC)
+  list(opt=opt, TMB=tmb_mod, sdr=sdr, AIC=AIC)
+}
+
+get_coef_info <- function(tmb_report, type, names, idx){
+  no_sigma <- !grepl("lsigma", get_fixed_names(tmb_report))
+  fixed <- tmb_report$par.fixed[no_sigma] #take out sigmas
+  fixed <- fixed[idx]
+  names(fixed) <- names
+  rand <- get_b_vector(tmb_report, type)
+  ests <- c(fixed, rand)
+  covMat <- get_joint_cov(tmb_report, type)
+  list(ests=ests, cov=covMat)
 }

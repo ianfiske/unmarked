@@ -106,7 +106,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
                         lsigma_state=rep(0,ngv_state),
                         beta_det=rep(0,ncol(V)), b_det=rep(0,sum(nrand_det)),
                         lsigma_det=rep(0,ngv_det))
-      if(mixture_code == 2){
+      if(mixture_code > 1){
         tmb_param <- c(tmb_param, list(beta_scale=0))
       }
 
@@ -121,28 +121,18 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
       fm <- tmb_out$opt
       fmAIC <- tmb_out$AIC
 
-      tmb_sum <- TMB::sdreport(tmb_mod)
-      par_names <- get_fixed_names(tmb_sum)
-
-      is_fixed <- !grepl("lsigma",par_names)
-      ests <- tmb_sum$par.fixed[is_fixed]
-      names(ests) <- c(lamParms, detParms, nbParm)
-      covMat <- tmb_sum$cov.fixed[is_fixed,is_fixed]
-
-      state_est <- c(ests[1:nAP], get_b_vector(tmb_mod, "state"))
-      state_cov <- get_joint_cov(tmb_mod, "state")
-      det_est <- c(ests[(nAP+1):(nAP+nDP)], get_b_vector(tmb_mod, "det"))
-      det_cov <- get_joint_cov(tmb_mod, "det") #it is inefficient to do this twice
+      state_coef <- get_coef_info(tmb_out$sdr, "state", lamParms, 1:nAP)
+      det_coef <- get_coef_info(tmb_out$sdr, "det", detParms, (nAP+1):(nAP+nDP))
 
       if(mixture_code > 1){
-        scale_est <- ests[nP]
-        scale_cov <- get_joint_cov(tmb_mod, "scale")
+        scale_coef <- get_coef_info(tmb_out$sdr, "scale", nbParm, nP)
       }
 
       nll <- tmb_mod$fn
 
-      state_rand_info <- get_randvar_info(tmb_sum, "state", lam_form, siteCovs(data))
-      det_rand_info <- get_randvar_info(tmb_sum, "det", p_form, obsCovs(data))
+      state_rand_info <- get_randvar_info(tmb_out$sdr, "state",
+                                          lam_form, siteCovs(data))
+      det_rand_info <- get_randvar_info(tmb_out$sdr, "det", p_form, obsCovs(data))
 
     } else {
         nll <- function(parms) {
@@ -159,14 +149,13 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
       names(ests) <- c(lamParms, detParms, nbParm)
       covMat <- invertHessian(fm, nP, se)
       fmAIC <- 2 * fm$value + 2 * nP
-      state_est <- ests[1:nAP]
-      state_cov <- as.matrix(covMat[1:nAP,1:nAP])
-      det_est <- ests[(nAP+1) : (nAP + nDP)]
-      det_cov <- as.matrix(covMat[(nAP + 1):(nAP + nDP),
-                                  (nAP + 1):(nAP + nDP)])
+
+      state_coef <- list(ests=ests[1:nAP], cov=as.matrix(covMat[1:nAP,1:nAP]))
+      det_coef <- list(ests=ests[(nAP+1):(nAP+nDP)],
+                       cov=as.matrix(covMat[(nAP+1):(nAP+nDP), (nAP+1):(nAP+nDP)]))
+
       if(mixture %in% c("NB", "ZIP")){
-        scale_est <- ests[nP]
-        scale_cov <- as.matrix(covMat[nP, nP])
+        scale_coef <- list(ests=ests[nP], cov=as.matrix(covMat[nP,nP]))
       }
       state_rand_info <- det_rand_info <- list()
       tmb_mod <- NULL
@@ -176,13 +165,13 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
 
     stateEstimates <- unmarkedEstimate(
         name=stateName, short.name="lam",
-        estimates = state_est, covMat = state_cov, fixed=1:nAP,
+        estimates = state_coef$ests, covMat = state_coef$cov, fixed=1:nAP,
         invlink = "exp", invlinkGrad = "exp",
         randomVarInfo=state_rand_info)
 
     detEstimates <- unmarkedEstimate(
         name = "Detection", short.name = "p",
-        estimates = det_est, covMat = det_cov, fixed=1:nDP,
+        estimates = det_coef$ests, covMat = det_coef$cov, fixed=1:nDP,
         invlink = "logistic", invlinkGrad = "logistic.grad",
         randomVarInfo=det_rand_info)
 
@@ -192,14 +181,14 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
     if(identical(mixture,"NB")) {
         estimateList@estimates$alpha <- unmarkedEstimate(
             name="Dispersion", short.name = "alpha",
-            estimates = scale_est, covMat = scale_cov, fixed=1,
+            estimates = scale_coef$ests, covMat = scale_coef$cov, fixed=1,
             invlink = "exp", invlinkGrad = "exp", randomVarInfo=list())
     }
 
     if(identical(mixture,"ZIP")) {
         estimateList@estimates$psi <- unmarkedEstimate(
             name="Zero-inflation", short.name = "psi",
-            estimates = scale_est, covMat = scale_cov, fixed=1,
+            estimates = scale_coef$ests, covMat = scale_coef$cov, fixed=1,
             invlink = "logistic", invlinkGrad = "logistic.grad", randomVarInfo=list())
     }
 
