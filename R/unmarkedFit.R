@@ -323,11 +323,13 @@ setMethod("predict", "unmarkedFit",
          designMats <- getDesign(newdata, formula, na.rm = na.rm)
          switch(type,
              state = {
-                 X <- cbind(designMats$X, designMats$Z_state)
+                 X <- designMats$X
+                 if(is.null(re.form)) X <- cbind(X, designMats$Z_state)
                  offset <- designMats$X.offset
                  },
              det = {
-                 X <- cbind(designMats$V, designMats$Z_det)
+                 X <- designMats$V
+                 if(is.null(re.form)) X <- cbind(X, designMats$Z_det)
                  offset <- designMats$V.offset
                  })
          },
@@ -573,7 +575,7 @@ setMethod("predict", "unmarkedFit",
 # (introduced in Section)
 setMethod("predict", "unmarkedFitPCount",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-        appendData = FALSE, level=0.95, ...)
+        appendData = FALSE, level=0.95, re.form=NULL, ...)
 {
     if(type %in% c("psi", "alpha"))
         stop(type, " is scalar, so use backTransform instead")
@@ -612,10 +614,12 @@ setMethod("predict", "unmarkedFitPCount",
         switch(type,
             state = {
                 X <- designMats$X
+                if(is.null(re.form)) X <- cbind(X, designMats$Z_state)
                 offset <- designMats$X.offset
                 },
             det = {
                 X <- designMats$V
+                if(is.null(re.form)) X <- cbind(X, designMats$Z_det)
                 offset <- designMats$V.offset
                 })
         },
@@ -629,7 +633,7 @@ setMethod("predict", "unmarkedFitPCount",
                  pred_data <- obsdata
                  pred_form <- detformula
                })
-        mm <- make_mod_matrix(pred_form, pred_data, newdata)
+        mm <- make_mod_matrix(pred_form, pred_data, newdata, re.form)
         X <- mm$X
         offset <- mm$offset
             },
@@ -718,7 +722,7 @@ ci<-exp(ci)
 }
 
         } else {
-            lc <- linearComb(object, X[i,], type, offset = offset[i])
+            lc <- linearComb(object, X[i,], type, offset = offset[i], re.form=re.form)
             if(backTransform)
                 lc <- backTransform(lc)
             out$Predicted[i] <- coef(lc)
@@ -2395,7 +2399,7 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
 {
     data <- object@data
     des <- getDesign(data, object@formula, na.rm = na.rm)
-    X <- des$X
+    X <- cbind(des$X, des$Z_state)
     X.offset <- des$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
@@ -2403,7 +2407,7 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
     y <- des$y	# getY(data) ... to be consistent w/NA handling?
     M <- nrow(X)
     J <- ncol(y)
-    state <- exp(X %*% coef(object, 'state') + X.offset)
+    state <- exp(X %*% coef(object, 'state', fixedOnly=FALSE) + X.offset)
     p <- getP(object, na.rm = na.rm)
     mix <- object@mixture
 ##    if(!is.missing(K))
@@ -3985,15 +3989,14 @@ setMethod("simulate", "unmarkedFitPCount",
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    X <- designMats$X
+    X <- cbind(designMats$X, designMats$Z_state)
     X.offset <- designMats$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
         }
     M <- nrow(y)
     J <- ncol(y)
-    allParms <- coef(object, altNames = FALSE)
-    lamParms <- coef(object, type = "state")
+    lamParms <- coef(object, type = "state", fixedOnly=FALSE)
     lam <- as.numeric(exp(X %*% lamParms + X.offset))
     lamvec <- rep(lam, each = J)
     pvec <- c(t(getP(object, na.rm = na.rm)))

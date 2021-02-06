@@ -57,13 +57,10 @@ setMethod("getDesign", "unmarkedFrame",
     }
 
     #Generate random effects indicator matrices
-    Z_state <- Z_det <- NULL
     sf_rand <- as.formula(paste("~", formula[3], sep=""))
     df_rand <- as.formula(formula[[2]])
-    #if(has_random(sf_rand) | has_random(df_rand)){
-      Z_state <- get_Z(sf_rand, siteCovs)
-      Z_det <- get_Z(df_rand, obsCovs)
-    #}
+    Z_state <- get_Z(sf_rand, siteCovs)
+    Z_det <- get_Z(df_rand, obsCovs)
 
     if (na.rm) {
         out <- handleNA(umf, X, X.offset, V, V.offset, Z_state, Z_det)
@@ -79,6 +76,9 @@ setMethod("getDesign", "unmarkedFrame",
         y=getY(umf)
         removed.sites=integer(0)
     }
+
+    if (is.null(X.offset)) X.offset <- rep(0, nrow(X))
+    if (is.null(V.offset)) V.offset <- rep(0, nrow(V))
 
     return(list(y = y, X = X, X.offset = X.offset, V = V,
                 V.offset = V.offset,

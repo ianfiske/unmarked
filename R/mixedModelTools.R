@@ -190,7 +190,7 @@ print_randvar_info <- function(object){
   val <- do.call(object$invlink, list(object$estimates))
 
   disp <- data.frame(Groups=names(object$cnms), Name=unlist(object$cnms),
-                     Variance=round(val,3), Std.Dev.=round(sqrt(val),3))
+                     Variance=round(val^2,3), Std.Dev.=round(val,3))
   cat("Random effects:\n")
   print(disp, row.names=FALSE)
   #below needs to be corrected for missing values at some point
