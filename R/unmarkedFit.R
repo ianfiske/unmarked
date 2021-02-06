@@ -668,14 +668,19 @@ setMethod("predict", "unmarkedFitPCount",
     out <- data.frame(matrix(NA, nrow(X), 4,
         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
     mix <- object@mixture
-    lam.mle <- coef(object, type="state")
+
     if(identical(mix, "ZIP") & identical(type, "state")) {
         psi.hat <- plogis(coef(object, type="psi"))
+        lamEst <- object["state"]
+        psiEst <- object["psi"]
+        fixedOnly <- !is.null(re.form)
+        lam.mle <- coef(lamEst, fixedOnly=fixedOnly)
+        lam_vcov <- vcov(lamEst, fixedOnly=fixedOnly)
         if(is.null(offset))
             offset <- rep(0, nrow(X))
-#warning("Method to compute SE for ZIP model has not been written. Scratch that.
-#Method has been written but not tested/evaluated.
-#Also, you only get a 95% confidence interval for the ZIP model. ")
+    #warning("Method to compute SE for ZIP model has not been written. Scratch that.
+    #Method has been written but not tested/evaluated.
+    #Also, you only get a 95% confidence interval for the ZIP model. ")
     }
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
@@ -685,41 +690,44 @@ setMethod("predict", "unmarkedFitPCount",
         if(any(is.na(X[i,])))
             next
         if(identical(mix, "ZIP") & identical(type, "state")) {
-## for the ZIP model the predicted values on the log scale have us add log(1-psi.hat) to
-### the normal linear prediction
-            out$Predicted[i] <-   X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
-## to compute the approximate SE, I compute the variance of the usual linear part -- that is easy
-## and to that I add the variance of log(1-psi.hat) obtained by the delta approximation
-logit.psi<-coef(object,type="psi")
-#  To do that I took derivative of log(1-psi.hat) using application of chain rule.... hopefully correctly.
-delta.approx.2ndpart<-   ( ((1/(1-psi.hat))*(exp(logit.psi)/((1+exp(logit.psi))^2)))^2 ) * (SE(object)["psi(psi)"]^2)
-## now the SE is the sqrt of the whole thing
-out$SE[i]<- sqrt( t(X[i,])%*%vcov(object)[1:ncol(X),1:ncol(X)]%*%X[i,] + delta.approx.2ndpart   )
 
-#From Mike Meredith
-alf <- (1 - level) / 2
-crit<-qnorm(c(alf, 1 - alf))
-ci <- out$Predicted[i] + crit * out$SE[i]
-## Here I use a 95% confidence interval b/c I'm not sure how to use "confint"!!!
-####   ci <- c(out$Predicted[i]-1.96*out$SE[i],out$Predicted[i] + 1.96*out$SE[i])
-##
-out$lower[i]<- ci[1]
-out$upper[i]<- ci[2]
+          ## for the ZIP model the predicted values on the log scale have us
+          ## add log(1-psi.hat) to the normal linear prediction
+          out$Predicted[i] <-   X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
+          ## to compute the approximate SE, I compute the variance of the usual
+          ## linear part -- that is easy, and to that I add the variance of
+          ## log(1-psi.hat) obtained by the delta approximation
+          logit.psi<-coef(object,type="psi")
+          #  To do that I took derivative of log(1-psi.hat) using application
+          #  of chain rule.... hopefully correctly.
+          delta.approx.2ndpart<-   ( ((1/(1-psi.hat))*(exp(logit.psi)/((1+exp(logit.psi))^2)))^2 ) * (SE(psiEst)^2)
+          ## now the SE is the sqrt of the whole thing
+          out$SE[i]<- sqrt( t(X[i,])%*% lam_vcov %*%X[i,] + delta.approx.2ndpart   )
+
+          #From Mike Meredith
+          alf <- (1 - level) / 2
+          crit<-qnorm(c(alf, 1 - alf))
+          ci <- out$Predicted[i] + crit * out$SE[i]
+          ## Here I use a 95% confidence interval b/c I'm not sure how to use "confint"!!!
+          ####   ci <- c(out$Predicted[i]-1.96*out$SE[i],out$Predicted[i] + 1.96*out$SE[i])
+          ##
+          out$lower[i]<- ci[1]
+          out$upper[i]<- ci[2]
             if(backTransform){
                 out$Predicted[i] <- exp(out$Predicted[i])
-### If back-transform, delta approx says var = (exp(linear.predictor)^2)*Var(linear.predictor)
-### also I exponentiate the confidence interval.....
-out$SE[i]<- out$Predicted[i]*out$SE[i]
-ci<-exp(ci)
-# formula from Goodman 1960 JASA.  This is the se based on "lambda*(1-psi)"
-## not sure how well it compares to what I did above.
-#part2<-  coef(object,type="psi")
-#var.psi.part<- (exp(part2)/((1+exp(part2))^2))*(SE(object)["psi(psi)"]^2)
-#part1<- X[i,]*exp(X[i,]%*%lam.mle)
-#var.lambda.part<- t(part1)%*%vcov(object)[1:ncol(X),1:ncol(X)]%*%(part1)
-#out$SE[i]<-out$Predicted[i]*out$Predicted[i]*var.psi.part + (1-psi.hat)*(1-psi.hat)*var.lambda.part - var.psi.part*var.lambda.part
-#ci<- c( NA, NA)
-}
+          ### If back-transform, delta approx says var = (exp(linear.predictor)^2)*Var(linear.predictor)
+          ### also I exponentiate the confidence interval.....
+          out$SE[i]<- out$Predicted[i]*out$SE[i]
+          ci<-exp(ci)
+          # formula from Goodman 1960 JASA.  This is the se based on "lambda*(1-psi)"
+          ## not sure how well it compares to what I did above.
+          #part2<-  coef(object,type="psi")
+          #var.psi.part<- (exp(part2)/((1+exp(part2))^2))*(SE(object)["psi(psi)"]^2)
+          #part1<- X[i,]*exp(X[i,]%*%lam.mle)
+          #var.lambda.part<- t(part1)%*%vcov(object)[1:ncol(X),1:ncol(X)]%*%(part1)
+          #out$SE[i]<-out$Predicted[i]*out$Predicted[i]*var.psi.part + (1-psi.hat)*(1-psi.hat)*var.lambda.part - var.psi.part*var.lambda.part
+          #ci<- c( NA, NA)
+        }
 
         } else {
             lc <- linearComb(object, X[i,], type, offset = offset[i], re.form=re.form)

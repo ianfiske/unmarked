@@ -15,8 +15,8 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
 
     engine <- match.arg(engine, c("C", "R", "TMB"))
     if(any(sapply(split_formula(formula), has_random))) engine <- "TMB"
-    if(identical(mixture, "ZIP") & engine %in% c("R","TMB"))
-        stop("ZIP mixture not available for R or TMB engines")
+    if(identical(mixture, "ZIP") & engine == "R")
+        stop("ZIP mixture not available for R engine")
 
     # Generate design matrices-------------------------------------------------
     designMats <- getDesign(data, formula)

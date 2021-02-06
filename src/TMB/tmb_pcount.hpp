@@ -4,12 +4,20 @@
 template<class Type>
 Type lp_site_pcount(vector<Type> y, int mixture, Type lam, vector<Type> p, 
                     Type log_alpha, int K, int Kmin){
-  Type f, g, out = 0.0;
-  Type alpha = exp(log_alpha);
-  Type var = lam + pow(lam, 2) / alpha; //translate to TMB parameterization
+  
+  Type alpha, var, f, g, out = 0.0;
+  if(mixture == 2){
+    alpha = exp(log_alpha);
+    var = lam + pow(lam, 2) / alpha; //translate to TMB parameterization
+  } else if(mixture == 3){
+    alpha = invlogit(log_alpha);
+  }
+  
   for (int k=Kmin; k<(K+1); k++){
     if(mixture == 2){
       f = dnbinom2(Type(k), lam, var, false);
+    } else if(mixture == 3){
+      f = dzipois(Type(k), lam, alpha, false); 
     } else {
       f = dpois(Type(k), lam, false);
     }
@@ -96,11 +104,10 @@ Type tmb_pcount(objective_function<Type>* obj) {
   
   //Likelihood
   
-  if(mixture == 2){ //Negative binomial
+  if(mixture == 2 | mixture == 3){ //Negative binomial / ZIP
     PARAMETER(beta_scale);
     for (int i=0; i<M; i++){
       int pstart = i * J;
-      //int pstop = i * J + J - 1;
       vector<Type> ysub = y.row(i);
       vector<Type> psub = p.segment(pstart, J);
       loglik -= lp_site_pcount(ysub, mixture, lam(i), psub, 
@@ -109,7 +116,6 @@ Type tmb_pcount(objective_function<Type>* obj) {
   } else { //Poisson
     for (int i=0; i<M; i++){
       int pstart = i * J;
-      //int pstop = i * J + J - 1;
       vector<Type> ysub = y.row(i);
       vector<Type> psub = p.segment(pstart, J);
       loglik -= lp_site_pcount(ysub, mixture, lam(i), psub,

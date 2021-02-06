@@ -230,9 +230,9 @@ setMethod("backTransform", "unmarkedEstimate", function(obj)
 
 
 # Compute standard error of an unmarkedEstimate object.
-setMethod("SE", signature(obj = "unmarkedEstimate"), function(obj)
+setMethod("SE", signature(obj = "unmarkedEstimate"), function(obj, fixedOnly=TRUE)
 {
-    sqrt(diag(vcov(obj)))
+    sqrt(diag(vcov(obj, fixedOnly=fixedOnly)))
 })
 
 
@@ -269,10 +269,16 @@ setMethod("coef", "unmarkedEstimate",
 
 
 setMethod("vcov", "unmarkedEstimate",
-    function(object,...)
+    function(object, fixedOnly=TRUE, ...)
 {
         v <- object@covMat
-        rownames(v) <- colnames(v) <- names(coef(object, fixedOnly=FALSE))
+        if(fixedOnly){
+          fixed <- 1:nrow(v)
+          if(methods::.hasSlot(object, "fixed")) fixed <- object@fixed
+          v <- as.matrix(v[fixed,fixed])
+        }
+
+        rownames(v) <- colnames(v) <- names(coef(object, fixedOnly=fixedOnly))
         v
 })
 
