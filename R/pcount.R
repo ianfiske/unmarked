@@ -45,7 +45,6 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
 
     #Minimum observed abundance at each site: Used by C++ and TMB
     Kmin <- apply(y, 1, function(x) max(x, na.rm=TRUE))
-    Kmin <- Kmin[!1:length(Kmin) %in% designMats$removed.sites]
 
     # Specify negative log likelihood functions--------------------------------
     if(identical(engine, "R")) {

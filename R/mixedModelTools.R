@@ -173,8 +173,9 @@ get_randvar_info <- function(tmb_report, type, formula, data){
   re <- get_reTrms(formula, data)
 
   list(names=sigma_names(formula, data), estimates=sigma_est, covMat=sigma_cov,
-       fixed=1:length(sigma_est), invlink="exp", invlinkGrad="exp", n_obs=nrow(data),
-       n_levels=lapply(re$flist, function(x) length(levels(x))), cnms=re$cnms)
+       invlink="exp", invlinkGrad="exp", n_obs=nrow(data),
+       n_levels=lapply(re$flist, function(x) length(levels(x))), cnms=re$cnms,
+       levels=rownames(re$Zt))
 }
 
 get_fixed_names <- function(tmb_report){
@@ -241,3 +242,91 @@ get_coef_info <- function(tmb_report, type, names, idx){
   covMat <- get_joint_cov(tmb_report, type)
   list(ests=ests, cov=covMat)
 }
+
+setMethod("sigma", "unmarkedEstimate", function(object, level=0.95, ...){
+  rinf <- object@randomVarInfo
+  if(length(rinf)==0){
+    stop("No random effects in this submodel", call.=FALSE)
+  }
+  z <- qnorm((1-level)/2, lower.tail = FALSE)
+  vals <- rinf$estimates
+  ses <- sqrt(diag(rinf$covMat))
+  lower <- vals - z*ses
+  upper <- vals + z*ses
+  Groups <- names(rinf$cnms)
+  Name <- unlist(rinf$cnms)
+  data.frame(Model=object@short.name, Groups=Groups, Name=Name, sigma=exp(vals),
+             lower=exp(lower), upper=exp(upper))
+})
+
+setMethod("sigma", "unmarkedFit", function(object, type, level=0.95, ...){
+  if(!missing(type)){
+    return(sigma(object[type], level=level))
+  }
+  ests <- object@estimates@estimates
+  has_rand <- sapply(ests, function(x) length(x@randomVarInfo)>0)
+  if(!any(has_rand)){
+    stop("No random effects in this model", call.=FALSE)
+  }
+  ests <- ests[has_rand]
+
+  out_list <- lapply(ests, sigma, level=level)
+  out <- do.call(rbind, out_list)
+  rownames(out) <- NULL
+  out
+})
+
+
+setGeneric("randomTerms", function(object, ...) standardGeneric("randomTerms"))
+
+
+setMethod("randomTerms", "unmarkedEstimate", function(object, level=0.95, ...){
+
+  rv <- object@randomVarInfo
+  if(length(rv)==0){
+    stop("No random effects in this submodel", call.=FALSE)
+  }
+
+  Groups <- lapply(1:length(rv$cnms), function(x){
+                  gn <- names(rv$cnms)[x]
+                  rep(gn, rv$n_levels[[gn]])
+          })
+  Groups <- do.call(c, Groups)
+
+  Name <-  lapply(1:length(rv$cnms), function(x){
+                  gn <- names(rv$cnms)[x]
+                  var <- rv$cnms[[x]]
+                  rep(var, rv$n_levels[[gn]])
+          })
+  Name <- do.call(c, Name)
+
+  rv_idx <- !1:length(object@estimates) %in% object@fixed
+  b_var <- object@estimates[rv_idx]
+  b_se <- sqrt(diag(object@covMat[rv_idx,rv_idx,drop=FALSE]))
+
+  z <- qnorm((1-level)/2, lower.tail = FALSE)
+  lower <- b_var - z*b_se
+  upper <- b_var + z*b_se
+
+  data.frame(Model=object@short.name, Groups=Groups, Name=Name, Level=rv$levels,
+                    Estimate=b_var, SE=b_se, lower=lower, upper=upper)
+})
+
+
+setMethod("randomTerms", "unmarkedFit", function(object, type, level=0.95, ...){
+
+  if(!missing(type)){
+    return(randomTerms(object[type], level))
+  }
+
+  has_random <- sapply(object@estimates@estimates,
+                       function(x) length(x@randomVarInfo) > 0)
+  if(!any(has_random)){
+    stop("No random effects in this model", call.=FALSE)
+  }
+  keep <- object@estimates@estimates[has_random]
+  out <- lapply(keep, randomTerms, level=level)
+  out <- do.call(rbind, out)
+  rownames(out) <- NULL
+  out
+})
