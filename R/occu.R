@@ -3,14 +3,16 @@
 
 occu <- function(formula, data, knownOcc = numeric(0),
                  linkPsi = c("logit", "cloglog"), starts, method = "BFGS",
-                 se = TRUE, engine = c("C", "R", "TMB"), threads=1, ...) {
+                 se = TRUE, engine = c("C", "R", "TMB"), threads=1, REML=FALSE, ...) {
 
   # Check arguments------------------------------------------------------------
   if(!is(data, "unmarkedFrameOccu"))
     stop("Data is not an unmarkedFrameOccu object.")
 
   engine <- match.arg(engine, c("C", "R", "TMB"))
-  if(any(sapply(split_formula(formula), has_random))) engine <- "TMB"
+  any_random <- any(sapply(split_formula(formula), has_random))
+  if(any_random) engine <- "TMB"
+  if(!any_random & REML) stop("Cannot use REML if no random effects in model", call.=FALSE)
   if(length(knownOcc)>0 & engine == "TMB"){
     stop("TMB engine does not support knownOcc argument", call.=FALSE)
   }
@@ -122,6 +124,7 @@ occu <- function(formula, data, knownOcc = numeric(0),
     rand_ef <- NULL
     if(has_random(psi_form)) rand_ef <- c(rand_ef, "b_state")
     if(has_random(p_form)) rand_ef <- c(rand_ef, "b_det")
+    if(REML) rand_ef <- c(rand_ef, "beta_state", "beta_det")
 
     # Fit model with TMB
     if(missing(starts)) starts <- NULL
@@ -133,8 +136,8 @@ occu <- function(formula, data, knownOcc = numeric(0),
     nll <- tmb_mod$fn
 
     # Organize fixed effect estimates
-    state_coef <- get_coef_info(tmb_out$sdr, "state", occParms, 1:nOP)
-    det_coef <- get_coef_info(tmb_out$sdr, "det", detParms, (nOP+1):nP)
+    state_coef <- get_coef_info(tmb_out$sdr, "state", occParms, REML, 1:nOP)
+    det_coef <- get_coef_info(tmb_out$sdr, "det", detParms, REML, (nOP+1):nP)
 
     # Organize random effect estimates
     state_rand_info <- get_randvar_info(tmb_out$sdr, "state", psi_form,

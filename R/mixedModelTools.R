@@ -136,6 +136,18 @@ get_b_vector <- function(tmb_report, type){
   bpar
 }
 
+get_beta_vector <- function(tmb_report, type, REML=FALSE, idx=NULL){
+  if(REML==FALSE){
+    no_sigma <- !grepl("lsigma", get_fixed_names(tmb_report))
+    fixed <- tmb_report$par.fixed[no_sigma] #take out sigmas
+    return(fixed[idx])
+  }
+  betaname <- paste0("beta_",type)
+  pars <- tmb_report$par.random
+  pars <- pars[grepl(betaname, names(pars))]
+  pars
+}
+
 get_joint_cov <- function(tmb_report, type=NULL, remove_sigma=TRUE){
   full <- tmb_report$jointPrecision
   if(is.null(full)){
@@ -232,10 +244,8 @@ fit_TMB <- function(model, data, params, random,
   list(opt=opt, TMB=tmb_mod, sdr=sdr, AIC=AIC)
 }
 
-get_coef_info <- function(tmb_report, type, names, idx){
-  no_sigma <- !grepl("lsigma", get_fixed_names(tmb_report))
-  fixed <- tmb_report$par.fixed[no_sigma] #take out sigmas
-  fixed <- fixed[idx]
+get_coef_info <- function(tmb_report, type, names, REML=FALSE, idx=NULL){
+  fixed <- get_beta_vector(tmb_report, type, REML, idx)
   names(fixed) <- names
   rand <- get_b_vector(tmb_report, type)
   ests <- c(fixed, rand)
@@ -330,3 +340,9 @@ setMethod("randomTerms", "unmarkedFit", function(object, type, level=0.95, ...){
   rownames(out) <- NULL
   out
 })
+
+used_REML <- function(object){
+  arg <- object@call$REML
+  if(is.null(arg)) return(FALSE)
+  arg
+}

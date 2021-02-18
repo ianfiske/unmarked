@@ -2,8 +2,8 @@
 #' Fit the N-mixture point count model
 
 pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
-                   method = "BFGS", se = TRUE,
-                   engine = c("C", "R", "TMB"), threads = 1, ...)
+                   method = "BFGS", se = TRUE, engine = c("C", "R", "TMB"),
+                   threads = 1, REML=FALSE, ...)
 {
 
     # Check argument validity--------------------------------------------------
@@ -14,7 +14,9 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
         stop("Data is not an unmarkedFramePCount object.")
 
     engine <- match.arg(engine, c("C", "R", "TMB"))
-    if(any(sapply(split_formula(formula), has_random))) engine <- "TMB"
+    any_random <- any(sapply(split_formula(formula), has_random))
+    if(any_random) engine <- "TMB"
+    if(!any_random & REML) stop("Cannot use REML if no random effects in model", call.=FALSE)
     if(identical(mixture, "ZIP") & engine == "R")
         stop("ZIP mixture not available for R engine")
 
@@ -143,6 +145,7 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
       rand_ef <- NULL
       if(has_random(lam_form)) rand_ef <- c(rand_ef, "b_state")
       if(has_random(p_form)) rand_ef <- c(rand_ef, "b_det")
+      if(REML) rand_ef <- c(rand_ef, "beta_state", "beta_det")
 
       # Fit model in TMB
       if(missing(starts)) starts <- NULL
@@ -154,8 +157,8 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
       nll <- tmb_mod$fn
 
       # Organize fixed-effect estimate from TMB output
-      state_coef <- get_coef_info(tmb_out$sdr, "state", lamParms, lamIdx)
-      det_coef <- get_coef_info(tmb_out$sdr, "det", detParms, pIdx)
+      state_coef <- get_coef_info(tmb_out$sdr, "state", lamParms, REML, lamIdx)
+      det_coef <- get_coef_info(tmb_out$sdr, "det", detParms, REML, pIdx)
 
       if(mixture_code > 1){
         scale_coef <- get_coef_info(tmb_out$sdr, "scale", nbParm, nP)
