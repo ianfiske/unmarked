@@ -5,8 +5,7 @@
 \title{Fit the N-mixture model of Royle (2004)}
 
 \usage{pcount(formula, data, K, mixture=c("P", "NB", "ZIP"),
-    starts, method="BFGS", se=TRUE, engine=c("C", "R", "TMB"), 
-    threads=1, REML=FALSE, ...)}
+    starts, method="BFGS", se=TRUE, engine=c("C", "R", "TMB"), threads=1, ...)}
 
 \description{Fit the N-mixture model of Royle (2004)}
 
@@ -27,9 +26,7 @@
     \item{threads}{Set the number of threads to use for optimization in C++, if
       OpenMP is available on your system. Increasing the number of threads
       may speed up optimization in some cases by running the likelihood 
-      calculation in parallel. If \code{threads=1} (the default), OpenMP is disabled.}
-    \item{REML}{If \code{TRUE}, use REML instead of maximum likelihood. Only works
-      if using \code{engine="TMB"} and there is at least one random effect.}
+      calculation in parallel. If \code{threads=1} (the default), OpenMP is disabled.} 
     \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
   }

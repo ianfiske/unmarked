@@ -120,7 +120,6 @@ setMethod("show", signature(object = "unmarkedEstimate"),
     cat(object@name,":\n", sep="")
 
     if(has_random){
-      cat("\n")
       print_randvar_info(object@randomVarInfo)
       cat("\nFixed effects:\n")
     }
