@@ -4347,7 +4347,9 @@ setMethod("simulate", "unmarkedFitOccuMulti",
 {
     data <- object@data
     ynames <- names(object@data@ylist)
-    dm <- getDesign(object@data, object@detformulas, object@stateformulas)
+    maxOrder <- object@call$maxOrder
+    if(is.null(maxOrder)) maxOrder <- length(object@data@ylist)
+    dm <- getDesign(object@data, object@detformulas, object@stateformulas, maxOrder)
     psi <- predict(object, "state",se.fit=F)$Predicted
     p <- getP(object)
 
