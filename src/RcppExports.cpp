@@ -91,6 +91,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// nll_nmixTTD
+double nll_nmixTTD(const arma::vec beta, const arma::vec y, const arma::vec delta, const arma::mat W, const arma::mat V, const arma::umat pinds, const std::string mixture, const std::string tdist, int N, int J, int K, const arma::vec naflag, int threads);
+RcppExport SEXP _unmarked_nll_nmixTTD(SEXP betaSEXP, SEXP ySEXP, SEXP deltaSEXP, SEXP WSEXP, SEXP VSEXP, SEXP pindsSEXP, SEXP mixtureSEXP, SEXP tdistSEXP, SEXP NSEXP, SEXP JSEXP, SEXP KSEXP, SEXP naflagSEXP, SEXP threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type W(WSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const arma::umat >::type pinds(pindsSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type mixture(mixtureSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type tdist(tdistSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type naflag(naflagSEXP);
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(nll_nmixTTD(beta, y, delta, W, V, pinds, mixture, tdist, N, J, K, naflag, threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // nll_occuRN
 double nll_occuRN(const arma::vec beta, const arma::uvec n_param, const arma::mat y, const arma::mat X, const arma::mat V, const arma::vec X_offset, const arma::vec V_offset, int K, const arma::uvec Kmin, int threads);
 RcppExport SEXP _unmarked_nll_occuRN(SEXP betaSEXP, SEXP n_paramSEXP, SEXP ySEXP, SEXP XSEXP, SEXP VSEXP, SEXP X_offsetSEXP, SEXP V_offsetSEXP, SEXP KSEXP, SEXP KminSEXP, SEXP threadsSEXP) {
@@ -152,6 +175,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_unmarked_nll_gdistsamp", (DL_FUNC) &_unmarked_nll_gdistsamp, 23},
     {"_unmarked_nll_gmultmix", (DL_FUNC) &_unmarked_nll_gmultmix, 17},
     {"_unmarked_nll_gpcount", (DL_FUNC) &_unmarked_nll_gpcount, 15},
+    {"_unmarked_nll_nmixTTD", (DL_FUNC) &_unmarked_nll_nmixTTD, 13},
     {"_unmarked_nll_occuRN", (DL_FUNC) &_unmarked_nll_occuRN, 10},
     {"_unmarked_nll_pcount", (DL_FUNC) &_unmarked_nll_pcount, 11},
     {"get_lik_trans",    (DL_FUNC) &get_lik_trans,     2},

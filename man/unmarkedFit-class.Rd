@@ -31,6 +31,7 @@
 \alias{update,unmarkedFitOccuMulti-method}
 \alias{update,unmarkedFitOccuMS-method}
 \alias{update,unmarkedFitOccuTTD-method}
+\alias{update,unmarkedFitNmixTTD-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
@@ -45,6 +46,7 @@
 \alias{unmarkedFitOccuMulti-class}
 \alias{unmarkedFitOccuMS-class}
 \alias{unmarkedFitOccuTTD-class}
+\alias{unmarkedFitNmixTTD-class}
 \alias{unmarkedFitDSO-class}
 \alias{unmarkedFitMMO-class}
 \alias{plot,profile,missing-method}
@@ -66,7 +68,7 @@
 \alias{getY,unmarkedFitOccuMulti-method}
 
 \title{Class "unmarkedFit" }
-\description{Contains fitted model information which can be manipulated or 
+\description{Contains fitted model information which can be manipulated or
 extracted using the methods described below.
 }
 \section{Slots}{
@@ -78,71 +80,71 @@ extracted using the methods described below.
     \item{\code{sitesRemoved}:}{Object of class \code{"numeric"} }
     \item{\code{estimates}:}{Object of class \code{"unmarkedEstimateList"} }
     \item{\code{AIC}:}{Object of class \code{"numeric"} }
-    \item{\code{opt}:}{Object of class \code{"list"} containing results from 
+    \item{\code{opt}:}{Object of class \code{"list"} containing results from
 		\code{\link{optim}} }
     \item{\code{negLogLike}:}{Object of class \code{"numeric"} }
     \item{\code{nllFun}:}{Object of class \code{"function"} }
     \item{\code{knownOcc}:}{unmarkedFitOccu only: sites known to be occupied}
     \item{\code{K}:}{unmarkedFitPCount only: upper bound used in integration}
     \item{\code{mixture}:}{unmarkedFitPCount only: Mixing distribution}
-    \item{\code{keyfun}:}{unmarkedFitDS only: detection function used by 
+    \item{\code{keyfun}:}{unmarkedFitDS only: detection function used by
 		\link{distsamp}}
-	\item{\code{unitsOut}:}{unmarkedFitDS only: density units}	 
+	\item{\code{unitsOut}:}{unmarkedFitDS only: density units}
   }
 }
 \section{Methods}{
   \describe{
-    \item{[}{\code{signature(x = "unmarkedFit", i = "ANY", j = "ANY", 
+    \item{[}{\code{signature(x = "unmarkedFit", i = "ANY", j = "ANY",
 		drop = "ANY")}: extract one of names(obj), eg 'state' or 'det' }
     \item{backTransform}{\code{signature(obj = "unmarkedFit")}: back-transform
 		parameters to original scale when no covariate effects are modeled }
-    \item{coef}{\code{signature(object = "unmarkedFit")}: returns parameter 
-		estimates. type can be one of names(obj), eg 'state' or 'det'. 
+    \item{coef}{\code{signature(object = "unmarkedFit")}: returns parameter
+		estimates. type can be one of names(obj), eg 'state' or 'det'.
         If altNames=TRUE estimate names are more specific. }
     \item{confint}{\code{signature(object = "unmarkedFit")}: Returns confidence
 		intervals. Must specify type and method (either "normal" or "profile") }
     \item{fitted}{\code{signature(object = "unmarkedFit")}: returns expected
 		values of Y }
     \item{getData}{\code{signature(object = "unmarkedFit")}: extracts data }
-    \item{getP}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
+    \item{getP}{\code{signature(object = "unmarkedFit")}: calculates and extracts
 		expected detection probabilities }
-    \item{getFP}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
+    \item{getFP}{\code{signature(object = "unmarkedFit")}: calculates and extracts
   	expected false positive detection probabilities }
-    \item{getB}{\code{signature(object = "unmarkedFit")}: calculates and extracts 
+    \item{getB}{\code{signature(object = "unmarkedFit")}: calculates and extracts
   	expected probabilities a true positive detection was classified as certain }
-    \item{hessian}{\code{signature(object = "unmarkedFit")}: Returns hessian 
+    \item{hessian}{\code{signature(object = "unmarkedFit")}: Returns hessian
 		matrix }
-    \item{linearComb}{\code{signature(obj = "unmarkedFit", 
-		coefficients = "matrixOrVector")}: Returns estimate and SE on original 
+    \item{linearComb}{\code{signature(obj = "unmarkedFit",
+		coefficients = "matrixOrVector")}: Returns estimate and SE on original
 		scale when covariates are present }
     \item{mle}{\code{signature(object = "unmarkedFit")}: Same as coef(fit)? }
     \item{names}{\code{signature(x = "unmarkedFit")}: Names of parameter levels }
-    \item{nllFun}{\code{signature(object = "unmarkedFit")}: returns negative 
+    \item{nllFun}{\code{signature(object = "unmarkedFit")}: returns negative
 		log-likelihood used to estimate parameters }
-    \item{parboot}{\code{signature(object = "unmarkedFit")}: Parametric 
+    \item{parboot}{\code{signature(object = "unmarkedFit")}: Parametric
 		bootstrapping method to assess goodness-of-fit }
-    \item{plot}{\code{signature(x = "unmarkedFit", y = "missing")}: Plots 
+    \item{plot}{\code{signature(x = "unmarkedFit", y = "missing")}: Plots
 		expected vs. observed values }
-    \item{predict}{\code{signature(object = "unmarkedFit")}: Returns predictions 
-		and standard errors for original data or for covariates in a new 
+    \item{predict}{\code{signature(object = "unmarkedFit")}: Returns predictions
+		and standard errors for original data or for covariates in a new
 		data.frame }
-    \item{profile}{\code{signature(fitted = "unmarkedFit")}: used by confint 
+    \item{profile}{\code{signature(fitted = "unmarkedFit")}: used by confint
 		method='profile' }
     \item{residuals}{\code{signature(object = "unmarkedFit")}: returns residuals }
-    \item{sampleSize}{\code{signature(object = "unmarkedFit")}: returns number 
+    \item{sampleSize}{\code{signature(object = "unmarkedFit")}: returns number
 		of sites in sample }
     \item{SE}{\code{signature(obj = "unmarkedFit")}: returns standard errors }
     \item{show}{\code{signature(object = "unmarkedFit")}: concise results }
-    \item{summary}{\code{signature(object = "unmarkedFit")}: results with more 
+    \item{summary}{\code{signature(object = "unmarkedFit")}: results with more
 		details }
-    \item{update}{\code{signature(object = "unmarkedFit")}: refit model with 
+    \item{update}{\code{signature(object = "unmarkedFit")}: refit model with
 		changes to one or more arguments }
-    \item{vcov}{\code{signature(object = "unmarkedFit")}: returns 
+    \item{vcov}{\code{signature(object = "unmarkedFit")}: returns
       variance-covariance matrix }
     \item{smoothed}{\code{signature(object="unmarkedFitColExt")}:
       Returns the smoothed trajectory from a colonization-extinction
       model fit.  Takes additional logical argument mean which specifies
-    whether or not to return the average over sites.} 
+    whether or not to return the average over sites.}
     \item{projected}{\code{signature(object="unmarkedFitColExt")}:
       Returns the projected trajectory from a colonization-extinction
       model fit.  Takes additional logical argument mean which specifies
@@ -151,17 +153,17 @@ extracted using the methods described below.
         Returns the log-likelihood.}
     \item{LRT}{\code{signature(m1="unmarkedFit", m2="unmarkedFit")}:
         Returns the chi-squared statistic, degrees-of-freedom, and p-value from
-        a Likelihood Ratio Test.} 
+        a Likelihood Ratio Test.}
 	 }
 }
 \note{ This is a superclass with child classes for each fit type }
 \examples{
 showClass("unmarkedFit")
 
-# Format removal data for multinomPois 
+# Format removal data for multinomPois
 data(ovendata)
 ovenFrame <- unmarkedFrameMPois(y = ovendata.list$data,
-	siteCovs = as.data.frame(scale(ovendata.list$covariates[,-1])), 
+	siteCovs = as.data.frame(scale(ovendata.list$covariates[,-1])),
 	type = "removal")
 
 # Fit a couple of models
@@ -197,7 +199,7 @@ getP(fm1)
 logLik(fm1)
 
 # Back-transform detection probability to original scale
-# backTransform only works on models with no covariates or 
+# backTransform only works on models with no covariates or
 #     in conjunction with linearComb (next example)
 backTransform(fm1, type ='det')
 

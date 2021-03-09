@@ -121,6 +121,13 @@ setClass("unmarkedFitOccuTTD",
         detformula = "formula"),
     contains = "unmarkedFit")
 
+setClass("unmarkedFitNmixTTD",
+         representation(
+           stateformula = "formula",
+           detformula = "formula",
+           K = "numeric"),
+         contains = "unmarkedFit")
+
 setClass("unmarkedFitMPois",
     contains = "unmarkedFit")
 
@@ -2130,70 +2137,44 @@ setMethod("predict", "unmarkedFitOccuTTD",
 })
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+setMethod("predict", "unmarkedFitNmixTTD",
+  function(object, type, newdata, backTransform = TRUE,
+           na.rm = TRUE, appendData = FALSE,
+           level=0.95, ...){
+
+  if(missing(newdata) || is.null(newdata)){
+    no_newdata <- TRUE
+    newdata <- getData(object)
+  } else {
+    no_newdata <- FALSE
+  }
+
+  cls <- class(newdata)[1]
+  allow <- c("unmarkedFrameOccuTTD", "data.frame", "RasterStack")
+  if(!cls %in% allow){
+    stop(paste("newdata should be class:",paste(allow, collapse=", ")))
+  }
+
+  #Check type
+  allow_types <- names(object@estimates@estimates)
+  if(!type %in% allow_types){
+    stop(paste("type must be one of",paste(allow_types, collapse=", ")))
+  }
+
+  #Allow passthrough to colext predict method
+  new_obj <- object
+  class(new_obj)[1] <- "unmarkedFitColExt"
+  if(type == "state") type <- 'psi'
+  names(new_obj@estimates@estimates)[1] <- 'psi'
+  if(cls == "unmarkedFrameOccuTTD"){
+    class(newdata)[1] <- "unmarkedMultFrame"
+  }
+
+  predict(new_obj, type=type, newdata=newdata,
+                 backTransform=backTransform, na.rm=na.rm,
+                 appendData=appendData, level=level, ...)
+
+})
 
 
 # ---------------------- coef, vcov, and SE ------------------------------
@@ -2829,6 +2810,11 @@ setMethod("fitted", "unmarkedFitOccuTTD", function(object, na.rm = FALSE)
 })
 
 
+setMethod("fitted", "unmarkedFitNmixTTD", function(object, na.rm = FALSE)
+{
+  stop("This method is not implemented for nmixTTD at this time", call.=FALSE)
+})
+
 ## # Identical to method for unmarkedFitGMM. Need to fix class structure
 ## setMethod("fitted", "unmarkedFitGPC",
 ##     function(object, na.rm = FALSE)
@@ -3025,6 +3011,36 @@ setMethod("update", "unmarkedFitOccuTTD",
     }
     if(!missing(epsilonformula)){
       call[["epsilonformula"]] <- epsilonformula
+    }
+    if(!missing(detformula)){
+      call[["detformula"]] <- detformula
+    }
+
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
+    if (length(extras) > 0) {
+        existing <- !is.na(match(names(extras), names(call)))
+        for (a in names(extras)[existing])
+            call[[a]] <- extras[[a]]
+        if (any(!existing)) {
+            call <- c(as.list(call), extras[!existing])
+            call <- as.call(call)
+            }
+        }
+    if (evaluate)
+        eval(call, parent.frame(2))
+    else call
+})
+
+setMethod("update", "unmarkedFitNmixTTD",
+    function(object, stateformula ,detformula, ..., evaluate = TRUE)
+{
+
+    call <- object@call
+    if (is.null(call))
+        stop("need an object with call slot")
+    if(!missing(stateformula)){
+      call[["stateformula"]] <- stateformula
     }
     if(!missing(detformula)){
       call[["detformula"]] <- detformula
@@ -4348,7 +4364,9 @@ setMethod("simulate", "unmarkedFitOccuMulti",
 {
     data <- object@data
     ynames <- names(object@data@ylist)
-    dm <- getDesign(object@data, object@detformulas, object@stateformulas)
+    maxOrder <- object@call$maxOrder
+    if(is.null(maxOrder)) maxOrder <- length(object@data@ylist)
+    dm <- getDesign(object@data, object@detformulas, object@stateformulas, maxOrder)
     psi <- predict(object, "state",se.fit=F)$Predicted
     p <- getP(object)
 
@@ -4552,6 +4570,57 @@ setMethod("simulate", "unmarkedFitOccuTTD",
     nas <- which(is.na(object@data@y))
     yout[nas] <- NA
     simlist[[s]] <- yout
+  }
+  simlist
+})
+
+setMethod("simulate", "unmarkedFitNmixTTD",
+          function(object,  nsim = 1, seed = NULL, na.rm = FALSE)
+{
+
+  M <- nrow(object@data@y)
+  J <- ncol(object@data@y)
+  tdist <- ifelse("shape" %in% names(object@estimates), "weibull", "exp")
+  mix <- ifelse("alpha" %in% names(object@estimates), "NB", "P")
+
+  #Get predicted values
+  abun <- predict(object, 'state', na.rm=FALSE)$Predicted
+  lam <- predict(object, 'det', na.rm=FALSE)$Predicted
+  tmax <- as.vector(t(object@data@surveyLength))
+  not_na <- !is.na(lam)
+
+  simlist <- list()
+  for(s in 1:nsim){
+
+    if(mix=="P"){
+      N <- rpois(M, abun)
+    } else if(mix=="NB"){
+      alpha <- exp(coef(object, "alpha"))
+      N <- rnbinom(M, mu=abun, size=alpha)
+    }
+
+    lamN <- lam*rep(N, each=J)
+    is_zero <- lamN==0
+    to_sim <- !is_zero & not_na
+
+    ttd <- rep(NA, length(lamN))
+    ttd[is_zero] <- tmax[is_zero]
+
+    if(tdist == "weibull"){
+      k <- exp(coef(object)['k(k)'])
+      ttd[to_sim] <- stats::rweibull(sum(to_sim),k,1/lamN[to_sim])
+    } else {
+      ttd[to_sim] <- stats::rexp(sum(to_sim), lamN[to_sim])
+    }
+    #Truncate
+    ttd[ttd>tmax] <- tmax[ttd>tmax]
+
+    ttd <- matrix(ttd, nrow=M, byrow=T)
+
+    #Add NAs
+    nas <- which(is.na(object@data@y))
+    ttd[nas] <- NA
+    simlist[[s]] <- ttd
   }
   simlist
 })
