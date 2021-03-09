@@ -45,6 +45,8 @@ test.gdistsamp.covs <- function() {
     re1 <- ranef(fm1)
     checkEqualsNumeric(bup(re1, "mode")[1:7], c(3,5,3,5,5,2,5))
 
+    # Check error when formula has random effects
+    checkException(gdistsamp(~(1|dummy), ~1, ~1, umf))
 }
 
 test.gdistsamp.halfnorm <- function(){

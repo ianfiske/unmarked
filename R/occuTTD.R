@@ -2,11 +2,11 @@
 #  Fit the time-to-detection model of Garrard et al. 2008, 2013
 #  with dynamic extension
 
-occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1, 
-                    detformula=~1, data,  ttdDist=c('exp','weibull'), 
-                    linkPsi = c("logit", "cloglog"), starts, method = "BFGS", 
+occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
+                    detformula=~1, data,  ttdDist=c('exp','weibull'),
+                    linkPsi = c("logit", "cloglog"), starts, method = "BFGS",
                     se = TRUE, engine = c("C", "R"), ...) {
-    
+
   #Check arguments-------------------------------------------------------------
   if(!is(data, "unmarkedFrameOccuTTD")){
     stop("Data is not an unmarkedFrameOccuTTD object.")
@@ -15,11 +15,12 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
   engine <- match.arg(engine, c("C", "R"))
   ttdDist <- match.arg(ttdDist, c("exp","weibull"))
   linkPsi <- match.arg(linkPsi, c("logit","cloglog"))
-    
+
   formula <- list(psiformula, gammaformula, epsilonformula, detformula)
+  check_no_support(formula)
   formula <- as.formula(paste(unlist(formula),collapse=" "))
 
-  #Psi link function 
+  #Psi link function
   linkFunc <- plogis
   invlink <- "logistic"
   linkGrad <- "logistic.grad"
@@ -49,12 +50,12 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
   if(length(removed>0)) surveyLength <- surveyLength[-removed,]
   ymax <- as.numeric(t(surveyLength))
   delta <- as.numeric(yvec<ymax)
-   
+
   #Organize parameters---------------------------------------------------------
   detParms <- colnames(V); nDP <- ncol(V)
   occParms <- colnames(W); nOP <- ncol(W)
   psi_inds <- 1:nOP
-  
+
   gamParms <- NULL; nGP <- 0; col_inds <- c(0,0)
   epsParms <- NULL; nEP <- 0; ext_inds <- c(0,0)
   if(T>1){
@@ -77,19 +78,19 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
   #Likelihood functions--------------------------------------------------------
 
   nll_R <- function(params){
-    
-    #Get occupancy and detection parameters 
+
+    #Get occupancy and detection parameters
     psi <- linkFunc(W %*% params[psi_inds])
     psi <- cbind(1-psi, psi)
     lam <- exp(V %*% params[det_inds])
-    
+
     #Simplified version of Garrard et al. 2013 eqn 5
     #Extended to Weibull
     if(ttdDist=='weibull'){
       k <- exp(params[nP])
       e_lamt <- ( k*lam*(lam*yvec)^(k-1) )^delta * exp(-1*(lam*yvec)^k)
     } else {
-      e_lamt <- lam^delta * exp(-lam*yvec)  
+      e_lamt <- lam^delta * exp(-lam*yvec)
     }
 
     #Get probability of y for each z state
@@ -97,21 +98,21 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
       sum_delt <- as.numeric(sum(delta, na.rm=T)>0)
       c(1-sum_delt, prod(e_lamt[!is.na(e_lamt)]))
     }
-    
+
     #If dynamic, get col/ext probs and transition prob matrix
     if(T>1){
       col <- plogis(X.gam %*% params[col_inds])
       ext <- plogis(X.eps %*% params[ext_inds])
       phi <- cbind(1-col, col, ext, 1-ext)
     }
-    
+
     #Begin likelihood calculation
     lik <- rep(NA,N)
     ystart <- 1
     phi_index <- 1
     for (n in 1:N){
-      
-      phi_prod <- diag(2)     
+
+      phi_prod <- diag(2)
       #If dynamic, iterate through primary periods
       if(T>1){
         for (t in 1:(T-1)){
@@ -122,12 +123,12 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
           ystart <- ystart + J
           phi_index <- phi_index + 1
         }
-      } 
+      }
 
       yend <- ystart+J-1
       p_T <- get_Py(e_lamt[ystart:yend], delta[ystart:yend])
       ystart <- ystart + J
-          
+
       lik[n] <- psi[n,] %*% phi_prod %*% p_T
     }
     -sum(log(lik))
@@ -141,10 +142,10 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
           linkPsi, ttdDist, N, T, J, naflag,
           PACKAGE = "unmarked")
   }
-  
+
   nll <- nll_C
   if(engine == "R") nll <- nll_R
-  
+
   #Run optim()-----------------------------------------------------------------
   if(!missing(starts) && length(starts) != nP)
       stop(paste("The number of starting values should be", nP))
@@ -163,7 +164,7 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
                           covMat = as.matrix(covMat[psi_inds,psi_inds]),
                           invlink = invlink,
                           invlinkGrad = linkGrad)
-  
+
   det <- unmarkedEstimate(name = "Detection", short.name = "lam",
                           estimates = ests[det_inds],
                           covMat = as.matrix(covMat[det_inds,det_inds]),
@@ -189,7 +190,7 @@ occuTTD <- function(psiformula=~1, gammaformula=~1, epsilonformula=~1,
   } else {
     estimateList <- unmarkedEstimateList(list(psi = psi, det=det))
   }
- 
+
   #Add Weibull shape parameter if necessary
   if(ttdDist=="weibull"){
     estimateList@estimates$shape <- unmarkedEstimate(name = "Weibull shape",

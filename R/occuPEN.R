@@ -174,6 +174,8 @@ occuPEN <- function(formula, data, knownOcc = numeric(0), starts,
 		 ...)
 {
 
+    check_no_support(split_formula(formula))
+
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 

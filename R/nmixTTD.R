@@ -17,6 +17,7 @@ nmixTTD <- function(stateformula=~1, detformula=~1, data, K=100,
   ttdDist <- match.arg(ttdDist)
 
   formula <- list(stateformula, ~1, ~1, detformula)
+  check_no_support(formula)
   formula <- as.formula(paste(unlist(formula),collapse=" "))
 
   #Process input data----------------------------------------------------------

@@ -1,10 +1,10 @@
 test.occuRN.fit <- function() {
-  
+
   data(birds)
   woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
 
   # survey occasion-specific detection probabilities
-  fm_C <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")   
+  fm_C <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")
   fm_R <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="R")
 
   # check that output matches
@@ -15,17 +15,19 @@ test.occuRN.fit <- function() {
     c(0.7921122,-1.8328867,0.4268205,-0.1442194,0.4634105,0.7787513,
       0.8008794,1.0569827,0.8048578,0.8779660,0.9374874,0.7064848),tol=1e-5)
 
+  # check error if random effect in formula
+  checkException(occuRN(~(1|dummy)~1, umf))
 }
 
 test.occuRN.na <- function() {
 
   data(birds)
   woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
-  
+
   #Remove one observation
   woodthrushUMF@y[1,1] <- NA
 
-  fm_C <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")   
+  fm_C <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")
   fm_R <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="R")
 
   # check that output matches
@@ -41,7 +43,7 @@ test.occuRN.na <- function() {
   woodthrush.bin_na[1,] <- NA
   woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin_na)
 
-  fm_C <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")   
+  fm_C <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")
   fm_R <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="R")
 
   # check that site was removed
@@ -58,17 +60,17 @@ test.occuRN.na <- function() {
 
 #Test that parboot works
 test.occuRN.parboot <- function(){
-  
+
   data(birds)
   woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
-  fm <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")  
-  
+  fm <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C")
+
   chisq2 <- function(fm) {
    observed <- getY(fm)
    expected <- fitted(fm)
-   sum((observed - expected)^2/expected, na.rm=T)  
+   sum((observed - expected)^2/expected, na.rm=T)
   }
-  
+
   set.seed(123)
   pb <- parboot(fm, statistic=chisq2, nsim=2)
   checkEqualsNumeric(as.numeric(pb@t.star), c(342.2285, 318.0965), tol=1e-5)

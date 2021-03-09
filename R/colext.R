@@ -19,6 +19,7 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
     fc[[1]] <- as.name("colext.fit")
     formula <- list(psiformula = psiformula, gammaformula = gammaformula,
                     epsilonformula = epsilonformula, pformula = pformula)
+    check_no_support(formula)
     fc$formula <- as.name("formula")
     fc$bootstrap.se <- fc$covdata.site <- fc$covdata.obs <- fc$data <-
         fc$B <-  fc$psiformula <- fc$gammaformula <- fc$epsilonformula <-
@@ -51,7 +52,7 @@ colext <- function(psiformula = ~ 1, gammaformula = ~ 1,
     nP <- fm$nP; M <- fm$M; nDP <- fm$nDP; nGP <- fm$nGP
     nEP <- fm$nEP; nSP <- fm$nSP
 
-    covMat <- invertHessian(opt, nP, se) 
+    covMat <- invertHessian(opt, nP, se)
     ests <- opt$par
     names(ests) <- fm$mle$names
     fmAIC <- 2 * opt$value + 2 * nP # + 2*nP*(nP + 1)/(M - nP - 1)

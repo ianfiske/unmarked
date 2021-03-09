@@ -1,11 +1,11 @@
 occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
                       method='BFGS', se=TRUE, engine=c("C","R"), silent=FALSE, ...){
-  
+
   #Format input data-----------------------------------------------------------
   #Check data object
   if(!inherits(data, "unmarkedFrameOccuMulti"))
     stop("Data must be created with unmarkedFrameOccuMulti()")
- 
+
   #Check engine
   engine <- match.arg(engine, c("C", "R"))
 
@@ -16,6 +16,9 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
     }
     detformulas <- rep('~1',length(data@ylist))
   }
+  all_forms <- c(detformulas, stateformulas)
+  all_forms <- all_forms[!all_forms %in% c("0","~0")]
+  check_no_support(lapply(all_forms, as.formula))
 
   #Get design matrices and indices
   designMats <- getDesign(data, detformulas, stateformulas, maxOrder, warn=!silent)
@@ -57,19 +60,19 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
     for (i in 1:S){
       p[,i] <- plogis(dmDet[[i]] %*% params[dStart[i]:dStop[i]])
     }
-    
+
     prdProbY <- matrix(NA,nrow=N,ncol=M)
     for (i in 1:N){
       inds <- yStart[i]:yStop[i]
       #column dot product of y and log(p) at site i
       cdp <- exp(colSums(y[inds,,drop=F] * log(p[inds,,drop=F])) +
-           colSums((1-y[inds,,drop=F]) * log(1-p[inds,,drop=F])))  
-      prbSeq <- z * tcrossprod(rep(1,M),cdp) + 
+           colSums((1-y[inds,,drop=F]) * log(1-p[inds,,drop=F])))
+      prbSeq <- z * tcrossprod(rep(1,M),cdp) +
         (1-z) * tcrossprod(rep(1,M),Iy0[i,])
       #prod of all p at site i given occupancy states m
       prdProbY[i,] <- apply(prbSeq,1,prod)
     }
-    
+
     #neg log likelihood
     -sum(log(rowSums(psi*prdProbY)))
   }
@@ -116,7 +119,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
                           invlinkGrad = "logistic.grad")
 
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
-  
+
   umfit <- new("unmarkedFitOccuMulti", fitType = "occuMulti", call = match.call(),
                 detformulas = detformulas, stateformulas = stateformulas,
                 formula = ~1, data = data,

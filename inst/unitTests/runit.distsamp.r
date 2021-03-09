@@ -25,7 +25,10 @@ test.distsamp.covs <- function() {
 
     checkEqualsNumeric(coef(backTransform(lam.lc)), 3.365655, tol = 1e-4)
     checkEqualsNumeric(coef(backTransform(det.lc)), 0.007957658, tol = 1e-4)
-    }
+    
+    # Check error when random effects in formula
+    checkException(distsamp(~x~(1|dummy), umf))
+}
 
 
 

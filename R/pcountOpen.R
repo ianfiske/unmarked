@@ -17,6 +17,7 @@ if((identical(dynamics, "constant") || identical(dynamics, "notrend")) & immigra
     stop("You can not include immigration in the constant or notrend models")
 formlist <- list(lambdaformula=lambdaformula, gammaformula=gammaformula,
     omegaformula=omegaformula, pformula=pformula, iotaformula=iotaformula)
+check_no_support(formlist)
 formula <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- getDesign(data, formula)
 y <- D$y

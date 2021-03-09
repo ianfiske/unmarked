@@ -3,6 +3,8 @@
 multinomPois <- function(formula, data, starts, method = "BFGS",
     se = TRUE, engine = c("C","R"), ...)
 {
+    check_no_support(split_formula(formula))
+
     if(!is(data, "unmarkedFrameMPois"))
 		    stop("Data is not a data frame or unmarkedFrame.")
     engine <- match.arg(engine, c("C", "R"))
@@ -44,7 +46,7 @@ multinomPois <- function(formula, data, starts, method = "BFGS",
     nll_C <- function(params) {
         .Call("nll_multinomPois",
             params,piFun,
-            X, X.offset, V, V.offset,  
+            X, X.offset, V, V.offset,
             yC, navecC, nP,nAP,
             PACKAGE = "unmarked")
     }
