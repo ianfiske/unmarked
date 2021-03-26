@@ -87,20 +87,65 @@ bootstrap_data <- function(data, nsims, design){
   lapply(1:nsims, function(i) data[M_samps[[i]], J_samps[[i]]])
 }
 
-
 check_coefs <- function(coefs, fit){
-  required_coefs <- names(fit@estimates@estimates)
-  required_lens <- sapply(fit@estimates@estimates, function(x) length(x@estimates))
-  for (i in 1:length(required_coefs)){
-    if(!required_coefs[i] %in% names(coefs)){
-      stop(paste0("Missing entry '",required_coefs[i], "' in coefs list"), call.=FALSE)
+  required_subs <- names(fit@estimates@estimates)
+  required_coefs <- lapply(fit@estimates@estimates, function(x) names(x@estimates))
+  required_lens <- lapply(required_coefs, length)
+  dummy_coefs <- lapply(required_coefs, function(x){
+                    out <- rep(0, length(x))
+                    names(out) <- x
+                    out
+                  })
+
+  if(is.null(coefs)){
+    cat("coefs argument should be a named list of named vectors, with the following structure
+        (replacing 0s with your desired coefficient values):\n\n")
+    print(dummy_coefs)
+    stop("Supply coefs argument as specified above", call.=FALSE)
+  }
+
+  for (i in 1:length(required_subs)){
+    if(!required_subs[i] %in% names(coefs)){
+      stop(paste0("Missing required list element '",required_subs[i], "' in coefs list"), call.=FALSE)
     }
-    if(length(coefs[[required_coefs[i]]]) != required_lens[i]){
-      stop(paste0("Entry '",required_coefs[i], "' in coefs list must be length ",
-                  required_lens[i]), call.=FALSE)
+
+    sub_coefs <- coefs[[i]]
+
+    if(is.null(sub_coefs)){
+      stop(paste("Required coefficients for the", required_subs[i], "submodel are:",
+                  paste(required_coefs[[i]],collapse=", ")))
+    }
+
+    is_named <- !is.null(names(sub_coefs)) & !any(names(sub_coefs)=="")
+
+    if(!is_named){
+      warning(paste("At least one coefficient in vector for submodel",required_subs[i],
+                    "is unnamed; assuming the following order:\n",
+                    paste(required_coefs[[i]], collapse=", ")))
+      if(length(sub_coefs) != required_lens[i]){
+        stop(paste0("Entry '",required_subs[[i]], "' in coefs list must be length ",
+        required_lens[[i]]), call.=FALSE)
+      }
+    } else {
+      change_int <- names(coefs[[i]])%in%c("intercept","Intercept")
+      names(coefs[[i]])[change_int] <- "(Intercept)"
+      sub_coefs <- coefs[[i]]
+
+      not_inc <- !required_coefs[[i]] %in% names(sub_coefs)
+      extra <- !names(sub_coefs) %in% required_coefs[[i]]
+
+      if(any(not_inc)){
+        stop(paste("The following required coefficients in the", required_subs[i], "submodel were not found:",
+                   paste(required_coefs[[i]][not_inc], collapse=", ")))
+      }
+      if(any(extra)){
+        warning(paste("Ignoring extra coefficients in the", required_subs[i], "submodel:",
+                      paste(names(sub_coefs)[extra], collapse=", ")))
+      }
+      coefs[[i]] <- coefs[[i]][required_coefs[[i]]]
     }
   }
-  coefs[required_coefs]
+  coefs[required_subs]
 }
 
 setMethod("summary", "unmarkedPower", function(object, ...){
