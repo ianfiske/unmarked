@@ -125,4 +125,13 @@ checkTrue(nrow(sigma(fmr2))==2)
 rt2 <- randomTerms(fmr2)
 checkTrue(all(rt2$Groups==c(rep("group",100), rep("id",3))))
 
+# Check other distributions
+fmnb <- pcount(~1~1, umf, engine="TMB", mixture="NB", K=50)
+checkTrue(inherits(fmnb@TMB, "list"))
+checkTrue(all(names(fmnb@estimates@estimates)==c("state","det","alpha")))
+
+fmzip <- pcount(~1~1, umf, engine="TMB", mixture="ZIP", K=50)
+checkTrue(inherits(fmnb@TMB, "list"))
+checkTrue(all(names(fmnb@estimates@estimates)==c("state","det","alpha")))
+
 }

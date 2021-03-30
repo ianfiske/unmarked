@@ -104,7 +104,7 @@ Type tmb_pcount(objective_function<Type>* obj) {
   
   //Likelihood
   
-  if(mixture == 2 | mixture == 3){ //Negative binomial / ZIP
+  if((mixture == 2) | (mixture == 3)){ //Negative binomial / ZIP
     PARAMETER(beta_scale);
     for (int i=0; i<M; i++){
       int pstart = i * J;
