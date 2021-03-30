@@ -6,7 +6,7 @@ importFrom(stats, confint, fitted, coef, vcov, predict, update, profile,
            model.matrix, model.offset, na.omit, optim, pchisq, plogis,
            pnorm, qchisq, qnorm, quantile, rbinom,
            reshape, rmultinom, rnbinom, rpois, runif, sd, uniroot,
-           update.formula)
+           update.formula, sigma)
 importFrom(graphics, plot, hist, abline)
 importFrom(utils, head, read.csv)
 importFrom(plyr, ldply, alply, ddply)
@@ -50,7 +50,7 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
               projection, residuals, sampleSize, SE, show, simulate, siteCovs,
               "siteCovs<-", summary, update, vcov, yearlySiteCovs,
               "yearlySiteCovs<-", "[", smoothed, projected, nonparboot, logLik,
-              LRT, ranef, bup, crossVal, posteriorSamples)
+              LRT, ranef, bup, crossVal, posteriorSamples, sigma, randomTerms)
 
 S3method("print", "unmarkedPostSamples")
 
@@ -70,3 +70,4 @@ export(imputeMissing, gxhn, gxexp, gxhaz, dxhn, dxexp, dxhaz, drhn, drexp,
     drhaz, grhn, grexp, grhaz, sight2perpdist, lambda2psi, SSE, vif)
 
 useDynLib("unmarked", .registration=TRUE)
+useDynLib(unmarked_TMBExports)

@@ -8,9 +8,11 @@ setClass("unmarkedEstimate",
 		short.name = "character",
         estimates = "numeric",
         covMat = "matrix",
+        fixed = "numeric",
         covMatBS = "optionalMatrix",
         invlink = "character",
-        invlinkGrad = "character"),
+        invlinkGrad = "character",
+        randomVarInfo= "list"),
     validity = function(object) {
         errors <- character(0)
         if(nrow(object@covMat) != length(object@estimates)) {
@@ -81,24 +83,34 @@ unmarkedEstimateList <- function(l) {
 
 
 
-unmarkedEstimate <- function(name, short.name, estimates, covMat, invlink,
-    invlinkGrad)
+unmarkedEstimate <- function(name, short.name, estimates, covMat, fixed=NULL,
+                             invlink, invlinkGrad, randomVarInfo=list())
 {
+
+    if(is.null(fixed)) fixed <- 1:length(estimates)
     new("unmarkedEstimate",
         name = name,
         short.name = short.name,
         estimates = estimates,
         covMat = covMat,
+        fixed = fixed,
         invlink = invlink,
-        invlinkGrad = invlinkGrad)
+        invlinkGrad = invlinkGrad,
+        randomVarInfo = randomVarInfo)
 }
 
 
 setMethod("show", signature(object = "unmarkedEstimate"),
     function(object)
 {
-    ests <- object@estimates
-    SEs <- SE(object)
+
+    has_random <- methods::.hasSlot(object, "randomVarInfo") &&
+      length(object@randomVarInfo) > 0
+
+    fixed <- 1:length(object@estimates)
+    if(methods::.hasSlot(object, "fixed")) fixed <- object@fixed
+    ests <- object@estimates[fixed]
+    SEs <- SE(object)[fixed]
     Z <- ests/SEs
     p <- 2*pnorm(abs(Z), lower.tail = FALSE)
     printRowNames <- !(length(ests) == 1 |
@@ -106,6 +118,12 @@ setMethod("show", signature(object = "unmarkedEstimate"),
                        identical(names(ests), "1"))
 
     cat(object@name,":\n", sep="")
+
+    if(has_random){
+      print_randvar_info(object@randomVarInfo)
+      cat("\nFixed effects:\n")
+    }
+
     outDF <- data.frame(Estimate = ests, SE = SEs, z = Z, "P(>|z|)" = p,
                         check.names = FALSE)
     print(outDF, row.names = printRowNames, digits = 3)
@@ -117,8 +135,10 @@ setMethod("show", signature(object = "unmarkedEstimate"),
 setMethod("summary", signature(object = "unmarkedEstimate"),
     function(object)
 {
-    ests <- object@estimates
-    SEs <- SE(object)
+    fixed <- 1:length(object@estimates)
+    if(methods::.hasSlot(object, "fixed")) fixed <- object@fixed
+    ests <- object@estimates[fixed]
+    SEs <- SE(object)[fixed]
     Z <- ests/SEs
     p <- 2*pnorm(abs(Z), lower.tail = FALSE)
     printRowNames <-
@@ -141,15 +161,21 @@ setMethod("summary", signature(object = "unmarkedEstimate"),
 
 setMethod("linearComb",
     signature(obj = "unmarkedEstimate", coefficients = "matrixOrVector"),
-    function(obj, coefficients, offset = NULL)
+    function(obj, coefficients, offset = NULL, re.form = NULL)
 {
     if(!is(coefficients, "matrix"))
         coefficients <- t(as.matrix(coefficients))
-    stopifnot(ncol(coefficients) == length(obj@estimates))
+    est <- obj@estimates
+    covMat <- obj@covMat
+    if(!is.null(re.form) & .hasSlot(obj, "fixed")){
+      est <- est[obj@fixed]
+      covMat <- covMat[obj@fixed, obj@fixed, drop=FALSE]
+    }
+    stopifnot(ncol(coefficients) == length(est))
     if (is.null(offset))
         offset <- rep(0, nrow(coefficients))
-    e <- as.vector(coefficients %*% obj@estimates) + offset
-    v <- coefficients %*% obj@covMat %*% t(coefficients)
+    e <- as.vector(coefficients %*% est) + offset
+    v <- coefficients %*% covMat %*% t(coefficients)
     if (!is.null(obj@covMatBS)) {
         v.bs <- coefficients %*% obj@covMatBS %*% t(coefficients)
     } else {
@@ -204,9 +230,9 @@ setMethod("backTransform", "unmarkedEstimate", function(obj)
 
 
 # Compute standard error of an unmarkedEstimate object.
-setMethod("SE", signature(obj = "unmarkedEstimate"), function(obj)
+setMethod("SE", signature(obj = "unmarkedEstimate"), function(obj, fixedOnly=TRUE)
 {
-    sqrt(diag(vcov(obj)))
+    sqrt(diag(vcov(obj, fixedOnly=fixedOnly)))
 })
 
 
@@ -225,9 +251,14 @@ setMethod("names", "unmarkedEstimateList",
 
 
 setMethod("coef", "unmarkedEstimate",
-    function(object, altNames = TRUE, ...)
+    function(object, altNames = TRUE, fixedOnly=TRUE, ...)
 {
     coefs <- object@estimates
+    if(fixedOnly){
+      fixed <- 1:length(coefs)
+      if(methods::.hasSlot(object, "fixed")) fixed <- object@fixed
+      coefs <- coefs[fixed]
+    }
     names(coefs)[names(coefs) == "(Intercept)"] <- "Int"
     if(altNames) {
         names(coefs) <- paste(object@short.name, "(", names(coefs), ")",
@@ -238,10 +269,16 @@ setMethod("coef", "unmarkedEstimate",
 
 
 setMethod("vcov", "unmarkedEstimate",
-    function(object,...)
+    function(object, fixedOnly=TRUE, ...)
 {
         v <- object@covMat
-        rownames(v) <- colnames(v) <- names(coef(object))
+        if(fixedOnly){
+          fixed <- 1:nrow(v)
+          if(methods::.hasSlot(object, "fixed")) fixed <- object@fixed
+          v <- as.matrix(v[fixed,fixed])
+        }
+
+        rownames(v) <- colnames(v) <- names(coef(object, fixedOnly=fixedOnly))
         v
 })
 

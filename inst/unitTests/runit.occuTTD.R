@@ -243,6 +243,8 @@ test.occuTTD.singleseason <- function(){
   checkEqualsNumeric(coef(fitC), c(-0.5102,0.67941,-0.88612,-2.1219,
                                    -0.41504,1.3224), tol=1e-4)
 
+  # Check error when random effect in formula
+  checkException(occuTTD(~(1|dummy), ~1, data=umf))
 }
 
 test.occuTTD.dynamic <- function(){

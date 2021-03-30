@@ -13,6 +13,7 @@ if(identical(mixture, "ZIP") & identical(engine, "R"))
 
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula,
     pformula = pformula)
+check_no_support(formlist)
 form <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- getDesign(data, formula = form)
 

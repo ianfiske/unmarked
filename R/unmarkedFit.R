@@ -10,7 +10,8 @@ setClass("unmarkedFit",
         negLogLike = "numeric",
         nllFun = "function",
         bootstrapSamples = "optionalList",
-        covMatBS = "optionalMatrix")) # list of bootstrap sample fits
+        covMatBS = "optionalMatrix", # list of bootstrap sample fits
+        TMB = "optionalList")) #TMB output object
 
 # constructor for unmarkedFit objects
 unmarkedFit <- function(fitType, call, formula, data, sitesRemoved,
@@ -229,12 +230,12 @@ setMethod("summary", "unmarkedFitDS", function(object)
 # Compute linear combinations of estimates in unmarkedFit objects.
 setMethod("linearComb",
     signature(obj = "unmarkedFit", coefficients = "matrixOrVector"),
-    function(obj, coefficients, type, offset = NULL)
+    function(obj, coefficients, type, offset = NULL, re.form=NULL)
 {
     stopifnot(!missing(type))
     stopifnot(type %in% names(obj))
     estimate <- obj@estimates[type]
-    linearComb(estimate, coefficients, offset)
+    linearComb(estimate, coefficients, offset, re.form)
 })
 
 
@@ -266,8 +267,9 @@ setMethod("names", "unmarkedFit",
 # ----------------------------- Prediction -----------------------------
 
 #Utility function to make model matrix and offset from newdata
-make_mod_matrix <- function(formula, data, newdata){
-  mf <- model.frame(formula, data)
+make_mod_matrix <- function(formula, data, newdata, re.form=NULL){
+  form_nobars <- lme4::nobars(formula)
+  mf <- model.frame(form_nobars, data)
   X.terms <- stats::terms(mf)
   fac_cols <- data[, sapply(data, is.factor), drop=FALSE]
   xlevs <- lapply(fac_cols, levels)
@@ -275,6 +277,10 @@ make_mod_matrix <- function(formula, data, newdata){
   X <- model.matrix(X.terms, newdata, xlev=xlevs)
   nmf <- model.frame(X.terms, newdata)
   offset <- model.offset(nmf)
+  if(is.null(re.form)){
+    Z <- get_Z(formula, data, newdata)
+    X <- cbind(X, Z)
+  }
   list(X=X, offset=offset)
 }
 
@@ -288,7 +294,7 @@ droplevels_final_year <- function(dat, nsites, nprimary){
 
 setMethod("predict", "unmarkedFit",
      function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-         appendData = FALSE, level=0.95, ...)
+         appendData = FALSE, level=0.95, re.form=NULL, ...)
  {
      if(missing(newdata) || is.null(newdata))
          newdata <- getData(object)
@@ -325,10 +331,12 @@ setMethod("predict", "unmarkedFit",
          switch(type,
              state = {
                  X <- designMats$X
+                 if(is.null(re.form)) X <- cbind(X, designMats$Z_state)
                  offset <- designMats$X.offset
                  },
              det = {
                  X <- designMats$V
+                 if(is.null(re.form)) X <- cbind(X, designMats$Z_det)
                  offset <- designMats$V.offset
                  })
          },
@@ -343,7 +351,7 @@ setMethod("predict", "unmarkedFit",
                pred_form <- detformula
               }
          )
-          mm <- make_mod_matrix(pred_form, pred_data, newdata)
+          mm <- make_mod_matrix(pred_form, pred_data, newdata, re.form)
           X <- mm$X
           offset <- mm$offset
      },
@@ -385,7 +393,7 @@ setMethod("predict", "unmarkedFit",
          }
          if(any(is.na(X[i,])))
              next
-         lc <- linearComb(object, X[i,], type, offset = offset[i])
+         lc <- linearComb(object, X[i,], type, offset = offset[i], re.form)
          if(backTransform)
              lc <- backTransform(lc)
          out$Predicted[i] <- coef(lc)
@@ -574,7 +582,7 @@ setMethod("predict", "unmarkedFit",
 # (introduced in Section)
 setMethod("predict", "unmarkedFitPCount",
     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-        appendData = FALSE, level=0.95, ...)
+        appendData = FALSE, level=0.95, re.form=NULL, ...)
 {
     if(type %in% c("psi", "alpha"))
         stop(type, " is scalar, so use backTransform instead")
@@ -613,10 +621,12 @@ setMethod("predict", "unmarkedFitPCount",
         switch(type,
             state = {
                 X <- designMats$X
+                if(is.null(re.form)) X <- cbind(X, designMats$Z_state)
                 offset <- designMats$X.offset
                 },
             det = {
                 X <- designMats$V
+                if(is.null(re.form)) X <- cbind(X, designMats$Z_det)
                 offset <- designMats$V.offset
                 })
         },
@@ -630,7 +640,7 @@ setMethod("predict", "unmarkedFitPCount",
                  pred_data <- obsdata
                  pred_form <- detformula
                })
-        mm <- make_mod_matrix(pred_form, pred_data, newdata)
+        mm <- make_mod_matrix(pred_form, pred_data, newdata, re.form)
         X <- mm$X
         offset <- mm$offset
             },
@@ -665,14 +675,19 @@ setMethod("predict", "unmarkedFitPCount",
     out <- data.frame(matrix(NA, nrow(X), 4,
         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
     mix <- object@mixture
-    lam.mle <- coef(object, type="state")
+
     if(identical(mix, "ZIP") & identical(type, "state")) {
         psi.hat <- plogis(coef(object, type="psi"))
+        lamEst <- object["state"]
+        psiEst <- object["psi"]
+        fixedOnly <- !is.null(re.form)
+        lam.mle <- coef(lamEst, fixedOnly=fixedOnly)
+        lam_vcov <- vcov(lamEst, fixedOnly=fixedOnly)
         if(is.null(offset))
             offset <- rep(0, nrow(X))
-#warning("Method to compute SE for ZIP model has not been written. Scratch that.
-#Method has been written but not tested/evaluated.
-#Also, you only get a 95% confidence interval for the ZIP model. ")
+    #warning("Method to compute SE for ZIP model has not been written. Scratch that.
+    #Method has been written but not tested/evaluated.
+    #Also, you only get a 95% confidence interval for the ZIP model. ")
     }
     for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
@@ -682,44 +697,47 @@ setMethod("predict", "unmarkedFitPCount",
         if(any(is.na(X[i,])))
             next
         if(identical(mix, "ZIP") & identical(type, "state")) {
-## for the ZIP model the predicted values on the log scale have us add log(1-psi.hat) to
-### the normal linear prediction
-            out$Predicted[i] <-   X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
-## to compute the approximate SE, I compute the variance of the usual linear part -- that is easy
-## and to that I add the variance of log(1-psi.hat) obtained by the delta approximation
-logit.psi<-coef(object,type="psi")
-#  To do that I took derivative of log(1-psi.hat) using application of chain rule.... hopefully correctly.
-delta.approx.2ndpart<-   ( ((1/(1-psi.hat))*(exp(logit.psi)/((1+exp(logit.psi))^2)))^2 ) * (SE(object)["psi(psi)"]^2)
-## now the SE is the sqrt of the whole thing
-out$SE[i]<- sqrt( t(X[i,])%*%vcov(object)[1:ncol(X),1:ncol(X)]%*%X[i,] + delta.approx.2ndpart   )
 
-#From Mike Meredith
-alf <- (1 - level) / 2
-crit<-qnorm(c(alf, 1 - alf))
-ci <- out$Predicted[i] + crit * out$SE[i]
-## Here I use a 95% confidence interval b/c I'm not sure how to use "confint"!!!
-####   ci <- c(out$Predicted[i]-1.96*out$SE[i],out$Predicted[i] + 1.96*out$SE[i])
-##
-out$lower[i]<- ci[1]
-out$upper[i]<- ci[2]
+          ## for the ZIP model the predicted values on the log scale have us
+          ## add log(1-psi.hat) to the normal linear prediction
+          out$Predicted[i] <-   X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
+          ## to compute the approximate SE, I compute the variance of the usual
+          ## linear part -- that is easy, and to that I add the variance of
+          ## log(1-psi.hat) obtained by the delta approximation
+          logit.psi<-coef(object,type="psi")
+          #  To do that I took derivative of log(1-psi.hat) using application
+          #  of chain rule.... hopefully correctly.
+          delta.approx.2ndpart<-   ( ((1/(1-psi.hat))*(exp(logit.psi)/((1+exp(logit.psi))^2)))^2 ) * (SE(psiEst)^2)
+          ## now the SE is the sqrt of the whole thing
+          out$SE[i]<- sqrt( t(X[i,])%*% lam_vcov %*%X[i,] + delta.approx.2ndpart   )
+
+          #From Mike Meredith
+          alf <- (1 - level) / 2
+          crit<-qnorm(c(alf, 1 - alf))
+          ci <- out$Predicted[i] + crit * out$SE[i]
+          ## Here I use a 95% confidence interval b/c I'm not sure how to use "confint"!!!
+          ####   ci <- c(out$Predicted[i]-1.96*out$SE[i],out$Predicted[i] + 1.96*out$SE[i])
+          ##
+          out$lower[i]<- ci[1]
+          out$upper[i]<- ci[2]
             if(backTransform){
                 out$Predicted[i] <- exp(out$Predicted[i])
-### If back-transform, delta approx says var = (exp(linear.predictor)^2)*Var(linear.predictor)
-### also I exponentiate the confidence interval.....
-out$SE[i]<- out$Predicted[i]*out$SE[i]
-ci<-exp(ci)
-# formula from Goodman 1960 JASA.  This is the se based on "lambda*(1-psi)"
-## not sure how well it compares to what I did above.
-#part2<-  coef(object,type="psi")
-#var.psi.part<- (exp(part2)/((1+exp(part2))^2))*(SE(object)["psi(psi)"]^2)
-#part1<- X[i,]*exp(X[i,]%*%lam.mle)
-#var.lambda.part<- t(part1)%*%vcov(object)[1:ncol(X),1:ncol(X)]%*%(part1)
-#out$SE[i]<-out$Predicted[i]*out$Predicted[i]*var.psi.part + (1-psi.hat)*(1-psi.hat)*var.lambda.part - var.psi.part*var.lambda.part
-#ci<- c( NA, NA)
-}
+          ### If back-transform, delta approx says var = (exp(linear.predictor)^2)*Var(linear.predictor)
+          ### also I exponentiate the confidence interval.....
+          out$SE[i]<- out$Predicted[i]*out$SE[i]
+          ci<-exp(ci)
+          # formula from Goodman 1960 JASA.  This is the se based on "lambda*(1-psi)"
+          ## not sure how well it compares to what I did above.
+          #part2<-  coef(object,type="psi")
+          #var.psi.part<- (exp(part2)/((1+exp(part2))^2))*(SE(object)["psi(psi)"]^2)
+          #part1<- X[i,]*exp(X[i,]%*%lam.mle)
+          #var.lambda.part<- t(part1)%*%vcov(object)[1:ncol(X),1:ncol(X)]%*%(part1)
+          #out$SE[i]<-out$Predicted[i]*out$Predicted[i]*var.psi.part + (1-psi.hat)*(1-psi.hat)*var.lambda.part - var.psi.part*var.lambda.part
+          #ci<- c( NA, NA)
+        }
 
         } else {
-            lc <- linearComb(object, X[i,], type, offset = offset[i])
+            lc <- linearComb(object, X[i,], type, offset = offset[i], re.form=re.form)
             if(backTransform)
                 lc <- backTransform(lc)
             out$Predicted[i] <- coef(lc)
@@ -2163,15 +2181,15 @@ setMethod("predict", "unmarkedFitNmixTTD",
 
 
 setMethod("coef", "unmarkedFit",
-    function(object, type, altNames = TRUE)
+    function(object, type, altNames = TRUE, fixedOnly=TRUE)
 {
     if(missing(type)) {
         co <- lapply(object@estimates@estimates,
-            function(x) coef(x, altNames=altNames))
+            function(x) coef(x, altNames=altNames, fixedOnly=fixedOnly))
         names(co) <- NULL
         co <- unlist(co)
     } else {
-        co <- coef(object[type], altNames=altNames)
+        co <- coef(object[type], altNames=altNames, fixedOnly=fixedOnly)
         }
     co
 })
@@ -2287,13 +2305,14 @@ setMethod("fitted", "unmarkedFit",
 {
     data <- object@data
     des <- getDesign(data, object@formula, na.rm = na.rm)
-    X <- des$X
+    X <- cbind(des$X, des$Z_state)
     X.offset <- des$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
         }
+    beta_state <- coef(object, 'state', fixedOnly=FALSE)
     state <- do.call(object['state']@invlink,
-        list(X %*% coef(object, 'state') + X.offset))
+        list(as.matrix(X %*% beta_state + X.offset)))
     state <- as.numeric(state)  ## E(X) for most models
     p <- getP(object, na.rm = na.rm) # P(detection | presence)
     fitted <- state * p  # true for models with E[Y] = p * E[X]
@@ -2369,7 +2388,7 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
 {
     data <- object@data
     des <- getDesign(data, object@formula, na.rm = na.rm)
-    X <- des$X
+    X <- cbind(des$X, des$Z_state)
     X.offset <- des$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
@@ -2377,7 +2396,7 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
     y <- des$y	# getY(data) ... to be consistent w/NA handling?
     M <- nrow(X)
     J <- ncol(y)
-    state <- exp(X %*% coef(object, 'state') + X.offset)
+    state <- exp(X %*% coef(object, 'state', fixedOnly=FALSE) + X.offset)
     p <- getP(object, na.rm = na.rm)
     mix <- object@mixture
 ##    if(!is.missing(K))
@@ -3373,14 +3392,14 @@ setMethod("getP", "unmarkedFit", function(object, na.rm = TRUE)
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    V <- designMats$V
+    V <- cbind(designMats$V, designMats$Z_det)
     V.offset <- designMats$V.offset
     if (is.null(V.offset))
         V.offset <- rep(0, nrow(V))
     M <- nrow(y)
     J <- ncol(y)
-    ppars <- coef(object, type = "det")
-    p <- plogis(V %*% ppars + V.offset)
+    ppars <- coef(object, type = "det", fixedOnly=FALSE)
+    p <- plogis(as.matrix(V %*% ppars + V.offset))
     p <- matrix(p, M, J, byrow = TRUE)
     return(p)
 })
@@ -3994,15 +4013,14 @@ setMethod("simulate", "unmarkedFitPCount",
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    X <- designMats$X
+    X <- cbind(designMats$X, designMats$Z_state)
     X.offset <- designMats$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
         }
     M <- nrow(y)
     J <- ncol(y)
-    allParms <- coef(object, altNames = FALSE)
-    lamParms <- coef(object, type = "state")
+    lamParms <- coef(object, type = "state", fixedOnly=FALSE)
     lam <- as.numeric(exp(X %*% lamParms + X.offset))
     lamvec <- rep(lam, each = J)
     pvec <- c(t(getP(object, na.rm = na.rm)))
@@ -4272,16 +4290,15 @@ setMethod("simulate", "unmarkedFitOccu",
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    X <- designMats$X
+    X <- cbind(designMats$X, designMats$Z_state)
     X.offset <- designMats$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
         }
     M <- nrow(y)
     J <- ncol(y)
-    allParms <- coef(object, altNames = FALSE)
-    psiParms <- coef(object, type = "state")
-    psi <- as.numeric(plogis(X %*% psiParms + X.offset))
+    psiParms <- coef(object, type = "state", fixedOnly=FALSE)
+    psi <- as.numeric(plogis(as.matrix(X %*% psiParms + X.offset)))
     p <- c(t(getP(object,na.rm = na.rm)))
     simList <- list()
     for(i in 1:nsim) {

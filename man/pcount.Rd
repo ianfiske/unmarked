@@ -5,7 +5,7 @@
 \title{Fit the N-mixture model of Royle (2004)}
 
 \usage{pcount(formula, data, K, mixture=c("P", "NB", "ZIP"),
-    starts, method="BFGS", se=TRUE, engine=c("C", "R"), threads=1, ...)}
+    starts, method="BFGS", se=TRUE, engine=c("C", "R", "TMB"), threads=1, ...)}
 
 \description{Fit the N-mixture model of Royle (2004)}
 
@@ -21,8 +21,8 @@
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{logical specifying whether or not to compute standard
       errors.}
-    \item{engine}{Either "C" or "R" to use fast C++ code or native R
-      code during the optimization.}
+    \item{engine}{Either "C", "R", or "TMB" to use fast C++ code, native R
+      code, or TMB (required for random effects) during the optimization.}
     \item{threads}{Set the number of threads to use for optimization in C++, if
       OpenMP is available on your system. Increasing the number of threads
       may speed up optimization in some cases by running the likelihood 

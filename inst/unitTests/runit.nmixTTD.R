@@ -78,6 +78,9 @@ test.nmixTTD.P.exp <- function(){
   fit <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10)
   fit_2 <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10, threads=2)
   checkEqualsNumeric(coef(fit), coef(fit_2))
+
+  #Check error when random effect in formula
+  checkException(nmixTTD(~(1|dummy), ~1, umf))
 }
 
 test.nmixTTD.P.weib <- function(){

@@ -168,6 +168,10 @@ test.occuMS.multinom.fit <- function(){
   fl <- fitList(fit_C, fit_C)
   checkEquals(class(fl)[1],"unmarkedFitList")
   checkEqualsNumeric(length(fl@fits), 2)
+
+  # Check error when random effect in formula
+  stateformulas[1] <- "~(1|dummy)"
+  checkException(occuMS(detformulas, stateformulas, data=umf))
 }
 
 

@@ -1,4 +1,4 @@
-#  Fit occupancy data where false positives oc cur 
+#  Fit occupancy data where false positives oc cur
 #  three data types are allowed
 #  1) standard occupancy data as in MacKenzie et al (2002).
 #  2) Royle-Link (2006) type
@@ -8,20 +8,22 @@
 
 occuFP <- function(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula = ~ 1, data, starts,
                  method = "BFGS", se = TRUE, engine = "R", ...) {
+    check_no_support(list(detformula,FPformula,Bformula,stateformula))
+
     if(!is(data, "unmarkedFrameOccuFP"))   stop("Data is not an unmarkedFrameOccuFP object.")
-    
+
     type <- data@type
-    
+
     if(sum(type[2:3])==0)   stop("Only type 1 data. No data types with false positives. Use occu instead.")
-    
+
     designMats <- getDesign(data, detformula,FPformula,Bformula,stateformula)
-    X <- designMats$X; V <- designMats$V; U <- designMats$U; W <- designMats$W;  
+    X <- designMats$X; V <- designMats$V; U <- designMats$U; W <- designMats$W;
     y <- designMats$y
-    
+
     if(any(type[1:2]>0)) if(any(y[,1:sum(type[1:2])]>1,na.rm = TRUE))   stop("Values of y for type 1 and type 2 data must be 0 or 1.")
     if(type[3]>0) if(any(y[,1:sum(type[3])]>2,na.rm = TRUE))   stop("Values of y for type 3 data must be 0, 1, or 2.")
-                                                    
-    
+
+
     removed <- designMats$removed.sites
     X.offset <- designMats$X.offset; V.offset <- designMats$V.offset; U.offset <- designMats$U.offset; W.offset <- designMats$W.offset
     if(is.null(X.offset)) {
@@ -36,7 +38,7 @@ occuFP <- function(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula 
     if(is.null(W.offset)) {
       W.offset <- rep(0, nrow(W))
     }
-    
+
     J <- ncol(y)
     M <- nrow(y)
 
@@ -53,7 +55,7 @@ occuFP <- function(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula 
     nP <- nDP + nOP + nFP + nBP
     if(!missing(starts) && length(starts) != nP)
         stop(paste("The number of starting values should be", nP))
-    
+
     yvec0 <- as.numeric(t(y==0))
     yvec1 <- as.numeric(t(y==1))
     yvec2 <- as.numeric(t(y==2))
@@ -65,7 +67,7 @@ occuFP <- function(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula 
             pvec <- plogis(V %*% params[(nOP + 1) : (nOP + nDP)] + V.offset)
             fvec <- plogis(U %*% params[(nOP + nDP + 1) : (nOP + nDP + nFP)] + U.offset)
             if (type[1]!=0) fvec[rep(c(rep(TRUE,type[1]),rep(FALSE,sum(type[2:3]))),M)] = 0
-            if (type[3]!=0){   
+            if (type[3]!=0){
               bvec <- plogis(W %*% params[(nOP + nDP + nFP + 1) : nP] + W.offset)
               if (type[1]!=0|type[2]!=0) bvec[rep(c(rep(TRUE,sum(type[1:2])),rep(FALSE,type[3])),M)] = 0}
             if (type[3]==0){
@@ -116,9 +118,9 @@ occuFP <- function(detformula = ~ 1,FPformula = ~ 1,Bformula = ~ 1,stateformula 
                             invlink = "logistic",
                             invlinkGrad = "logistic.grad")
     }
-    
-    
-    
+
+
+
     if (type[3]!=0) {
       estimateList <- unmarkedEstimateList(list(state=state, det=det,fp=fp,b=b))}
     if (type[3]==0) {

@@ -1,5 +1,5 @@
 test.occu.fit.simple.1 <- function() {
-  
+
   y <- matrix(rep(1,10),5,2)
   umf <- unmarkedFrameOccu(y = y)
   fm <- occuPEN(~ 1 ~ 1, data = umf)
@@ -18,6 +18,9 @@ test.occu.fit.simple.1 <- function() {
 
   bt <- backTransform(fm, type = 'det')
   checkEqualsNumeric(coef(bt), 1)
+
+  #Check error when random effect in formula
+  checkException(occuPEN(~(1|dummy)~1, umf))
 
 }
 
@@ -56,7 +59,7 @@ test.occu.fit.covs <- function() {
   fm2 <- occuPEN(~ o1 + o2 ~ x, data = umf,lambda=1,pen.type="Ridge")
   MPLEla <- computeMPLElambda(~ o1 + o2 ~ x, data = umf)
   fm3 <- occuPEN(~ o1 + o2 ~ x, data = umf,lambda=MPLEla,pen.type="MPLE")
-  
+
   occ <- fm['state']
   det <- fm['det']
 
@@ -85,7 +88,7 @@ test.occu.fit.covs <- function() {
 
   occ.lc <- linearComb(fm, type = 'state', c(1, 0.5))
   det.lc <- linearComb(fm, type = 'det', c(1, 0.3, -0.3))
-    
+
   checkEqualsNumeric(coef(occ.lc), 9.826848, tol = 1e-4)
   checkEqualsNumeric(coef(det.lc), 0.2681477, tol = 1e-4)
 
@@ -96,7 +99,7 @@ test.occu.fit.covs <- function() {
   checkException(backTransform(fm, type = "det"))
 
   fitted <- fitted(fm)
-  checkEqualsNumeric(fitted, structure(c(0.5738, 0.5014, 0.4318, 0.38581, 0.50171, 0.53764, 
+  checkEqualsNumeric(fitted, structure(c(0.5738, 0.5014, 0.4318, 0.38581, 0.50171, 0.53764,
 0.46563, 0.40283, 0.39986, 0.79928), .Dim = c(5L, 2L)), tol = 1e-5)
 
   checkException(occuPEN_CV(~ o1 + o2 ~ x, data = umf, k=15))
@@ -148,10 +151,10 @@ test.occu.offest <- function() {
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
   fm <- occuPEN(~ o1 + o2 ~ offset(x), data = umf)
   checkEqualsNumeric(coef(fm),
-                     structure(c(9.74361, 0.44327, -0.14683, 0.44085), .Names = c("psi(Int)", 
+                     structure(c(9.74361, 0.44327, -0.14683, 0.44085), .Names = c("psi(Int)",
 "p(Int)", "p(o1)", "p(o2)")), tol = 1e-5)
   fm <- occuPEN(~ o1 + offset(o2) ~ offset(x), data = umf)
-  checkEqualsNumeric(coef(fm), structure(c(8.59459, 0.97574, -0.3096), .Names = c("psi(Int)", 
+  checkEqualsNumeric(coef(fm), structure(c(8.59459, 0.97574, -0.3096), .Names = c("psi(Int)",
 "p(Int)", "p(o1)")), tol=1e-5)
 
 }

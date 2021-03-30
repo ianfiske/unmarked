@@ -24,4 +24,7 @@ test.gpcount.fit <- function()
     fm0r <- gpcount(~1, ~1, ~1, umf, K=20, engine="R")
     checkEqualsNumeric(coef(fm0c), coef(fm0r))
 
+    # Check error when random effect in formula
+    checkException(gpcount(~(1|dummy),~1,~1,umf))
+
 }
