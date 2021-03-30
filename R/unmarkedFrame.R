@@ -337,6 +337,9 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     J <- ncol(y)
 	  umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
     umf <- as(umf, "unmarkedMultFrame")
+    if(ncol(umf@y) %% numPrimary != 0){
+      stop("Unequal number of secondary periods in each primary period", call.=FALSE)
+    }
     umf@numPrimary <- numPrimary
     umf@yearlySiteCovs <- covsToDF(yearlySiteCovs, "yearlySiteCovs",
                                    numPrimary, nrow(y))
