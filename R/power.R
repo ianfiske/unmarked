@@ -93,6 +93,7 @@ check_coefs <- function(coefs, fit){
   required_lens <- lapply(required_coefs, length)
   dummy_coefs <- lapply(required_coefs, function(x){
                     out <- rep(0, length(x))
+                    x <- gsub("(Intercept)", "intercept", x, fixed=TRUE)
                     names(out) <- x
                     out
                   })
