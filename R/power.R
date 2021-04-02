@@ -130,6 +130,12 @@ check_coefs <- function(coefs, fit){
     } else {
       change_int <- names(coefs[[i]])%in%c("intercept","Intercept")
       names(coefs[[i]])[change_int] <- "(Intercept)"
+      change_int <- names(coefs[[i]])%in%c("sigmaintercept","sigmaIntercept")
+      names(coefs[[i]])[change_int] <- "sigma(Intercept)"
+      change_int <- names(coefs[[i]])%in%c("shapeintercept","shapeIntercept")
+      names(coefs[[i]])[change_int] <- "shape(Intercept)"
+      change_int <- names(coefs[[i]])%in%c("rateintercept","rateIntercept")
+      names(coefs[[i]])[change_int] <- "rate(Intercept)"
       sub_coefs <- coefs[[i]]
 
       not_inc <- !required_coefs[[i]] %in% names(sub_coefs)
@@ -161,6 +167,9 @@ setMethod("summary", "unmarkedPower", function(object, ...){
 
   out <- cbind(sum_dfs[[1]][,1:2], effect=unlist(object@coefs), power=pow)
   out <- out[out$param != "(Intercept)",,drop=FALSE]
+  out <- out[out$param != "sigma(Intercept)",,drop=FALSE]
+  out <- out[out$param != "rate(Intercept)",,drop=FALSE]
+  out <- out[out$param != "shape(Intercept)",,drop=FALSE]
   rownames(out) <- NULL
   names(out) <- c("Submodel", "Parameter", "Effect", "Power")
   out
@@ -169,7 +178,9 @@ setMethod("summary", "unmarkedPower", function(object, ...){
 setMethod("show", "unmarkedPower", function(object){
   cat(paste0("\nModel: ", deparse(object@call), "\n\n"))
   cat("Power Statistics:\n")
-  print(summary(object), row.names=FALSE)
+  sumtab <- summary(object)
+  sumtab$Power <- round(sumtab$Power, 3)
+  print(sumtab, row.names=FALSE)
 })
 
 replace_estimates <- function(object, new_ests){
