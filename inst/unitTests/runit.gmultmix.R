@@ -46,6 +46,9 @@ test.gmultmix.fit <- function()
     fm_R <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, mixture="NB", K=23, engine="R")
     fm_C <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, mixture="NB", K=23, engine="C")
     checkEqualsNumeric(coef(fm_R), coef(fm_C), tol=1e-5)
+
+    #Check error when random effect in formula
+    checkException(gmultmix(~(1|dummy), ~1, ~1, umf))
 }
 
 

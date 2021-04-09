@@ -10,8 +10,8 @@ setGeneric("handleNA", function(umf, ...) standardGeneric("handleNA"))
 setMethod("getDesign", "unmarkedFrame",
     function(umf, formula, na.rm=TRUE)
 {
-    detformula <- as.formula(formula[[2]])
-    stateformula <- as.formula(paste("~", formula[3], sep=""))
+    detformula <- lme4::nobars(as.formula(formula[[2]]))
+    stateformula <- lme4::nobars(as.formula(paste("~", formula[3], sep="")))
     detVars <- all.vars(detformula)
 
     M <- numSites(umf)
@@ -56,26 +56,39 @@ setMethod("getDesign", "unmarkedFrame",
         V.offset[is.na(V.offset)] <- 0
     }
 
+    #Generate random effects indicator matrices
+    sf_rand <- as.formula(paste("~", formula[3], sep=""))
+    df_rand <- as.formula(formula[[2]])
+    Z_state <- get_Z(sf_rand, siteCovs)
+    Z_det <- get_Z(df_rand, obsCovs)
+
     if (na.rm) {
-        out <- handleNA(umf, X, X.offset, V, V.offset)
+        out <- handleNA(umf, X, X.offset, V, V.offset, Z_state, Z_det)
         y <- out$y
         X <- out$X
         X.offset <- out$X.offset
         V <- out$V
         V.offset <- out$V.offset
+        Z_state <- out$Z_state
+        Z_det <- out$Z_det
         removed.sites <- out$removed.sites
     } else {
         y=getY(umf)
         removed.sites=integer(0)
     }
 
+    if (is.null(X.offset)) X.offset <- rep(0, nrow(X))
+    if (is.null(V.offset)) V.offset <- rep(0, nrow(V))
+
     return(list(y = y, X = X, X.offset = X.offset, V = V,
-                V.offset = V.offset, removed.sites = removed.sites))
+                V.offset = V.offset,
+                Z_state = Z_state, Z_det = Z_det,
+                removed.sites = removed.sites))
 })
 
 
 setMethod("handleNA", "unmarkedFrame",
-          function(umf, X, X.offset, V, V.offset)
+          function(umf, X, X.offset, V, V.offset, Z_state, Z_det)
 {
     obsToY <- obsToY(umf)
     if(is.null(obsToY)) stop("obsToY cannot be NULL to clean data.")
@@ -119,10 +132,13 @@ setMethod("handleNA", "unmarkedFrame",
         X.offset <- X.offset[!sites.to.remove]
         V <- V[!sites.to.remove[rep(1:M, each = R)], ,drop = FALSE]
         V.offset <- V.offset[!sites.to.remove[rep(1:M, each = R)], ]
+        if(nrow(Z_state)>0) Z_state <- Z_state[!sites.to.remove, , drop=FALSE]
+        if(nrow(Z_det)>0) Z_det <- Z_det[!sites.to.remove[rep(1:M, each = R)],,drop=FALSE]
         warning(paste(num.to.remove,"sites have been discarded because of missing data."), call. = FALSE)
         }
 
     list(y = y, X = X, X.offset = X.offset, V = V, V.offset = V.offset,
+         Z_state = Z_state, Z_det = Z_det,
         removed.sites = which(sites.to.remove))
     })
 

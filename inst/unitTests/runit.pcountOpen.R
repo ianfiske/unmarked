@@ -29,6 +29,9 @@ test.pcountOpen.null <- function()
   checkEqualsNumeric(coef(fm3), c(1.8861091, -1.3102890, -0.4934883),
       tol = 1e-5)
 
+  # Check error when random effect in formula
+  checkException(pcountOpen(~(1|dummy),~1,~1,~1, data=umf))
+
 }
 
 
@@ -398,13 +401,13 @@ test.pcountOpen.fix <- function() {
              N[,t+1] <- S[,t] + G[,t]
              }
      y[] <- rbinom(M*T, N, p)
-     
+
      umf <- unmarkedFramePCO(y = y, numPrimary=T)
 
      m1 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20)
      m1_sim <- simulate(m1)
      checkEqualsNumeric(m1_sim[[1]][1,],c(3,4,4,2,2))
-     
+
      m2 <- pcountOpen(~1, ~1, ~1, ~1, umf, K=20, fix='gamma')
      m2_sim <- simulate(m2)
      checkEqualsNumeric(m2_sim[[1]][1,],c(4,4,6,5,3))
@@ -436,24 +439,24 @@ test.pcountOpen.predict <- function(){
              N[,t+1] <- S[,t] + G[,t]
              }
      y[] <- rbinom(M*T, N, p)
-     
+
      sc <- data.frame(x1=rnorm(M), x2 = runif(M, 0, 1),
                  x3=rnorm(M), x4=rnorm(M))
 
      umf <- unmarkedFramePCO(y = y, numPrimary=T, siteCovs=sc)
-  
+
      m1 <- pcountOpen(~x1, ~x2, ~x3, ~x4, umf, K=20)
-     
+
      #Make sure predicting with newdata works
-     p1 <- predict(m1, type = "lambda", 
+     p1 <- predict(m1, type = "lambda",
             newdata = data.frame(x1 = rnorm(5), x2 = rnorm(5)))
-     p2 <- predict(m1, type = "gamma", 
+     p2 <- predict(m1, type = "gamma",
             newdata = data.frame(x1 = rnorm(5), x2 = rnorm(5)))
-     p3 <- predict(m1, type = "omega", 
+     p3 <- predict(m1, type = "omega",
             newdata = data.frame(x3 = rnorm(5), x4 = rnorm(5)))
-     p4 <- predict(m1, type = "det", 
+     p4 <- predict(m1, type = "det",
             newdata = data.frame(x3 = rnorm(5), x4 = rnorm(5)))
-     
+
      are_df <- sapply(list(p1,p2,p3,p4), function(x) inherits(x, "data.frame"))
      checkTrue(all(are_df))
 

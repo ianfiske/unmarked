@@ -4,6 +4,8 @@
 occuRN <- function(formula, data, K = 25, starts, method = "BFGS",
     se = TRUE, engine=c("C","R"), threads = 1, ...)
 {
+    check_no_support(split_formula(formula))
+
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 

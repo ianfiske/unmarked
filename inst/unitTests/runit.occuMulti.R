@@ -19,6 +19,10 @@ test.occuMulti.fit.simple.1 <- function() {
   fl <- fitList(fm, fm)
   checkEquals(class(fl)[1],"unmarkedFitList")
   checkEqualsNumeric(length(fl@fits), 2)
+
+  #Check error when random effect in formula
+  checkException(occuMulti(detformulas=rep("~1",2),
+                           stateformulas=c("~(1|group)",rep("~1",2)), umf))
 }
 
 test.occuMulti.fit.simple.0 <- function() {

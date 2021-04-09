@@ -5,6 +5,8 @@ distsamp <- function(formula, data,
     method="BFGS", se = TRUE, engine = c("C", "R"),
     rel.tol=0.001, ...)
 {
+    check_no_support(split_formula(formula))
+
     engine <- match.arg(engine)
     keyfun <- match.arg(keyfun)
 #    if(engine=="C" && !(keyfun %in% c("halfnorm", "exp", "uniform"))) {

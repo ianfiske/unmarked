@@ -23,6 +23,7 @@ mixture <- match.arg(mixture)
 
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula,
     pformula = pformula)
+check_no_support(formlist)
 form <- as.formula(paste(unlist(formlist), collapse=" "))
 D <- getDesign(data, formula = form)
 

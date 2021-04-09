@@ -46,6 +46,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
 
   formlist <- mget(c("lambdaformula", "gammaformula", "omegaformula",
                    "pformula", "iotaformula"))
+  check_no_support(formlist)
   formula <- as.formula(paste(unlist(formlist), collapse=" "))
 
   D <- getDesign(data, formula)

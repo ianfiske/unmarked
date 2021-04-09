@@ -6,8 +6,8 @@ using namespace arma;
 //namespace {
 
   vec get_Py(vec e_lamt, vec delta, vec naflag){
-    
-    //Remove NAs 
+
+    //Remove NAs
     if(any(naflag)){
       uvec ids = find(naflag != 1);
       e_lamt = e_lamt.elem(ids);
@@ -31,8 +31,8 @@ using namespace arma;
 //}
 
 SEXP nll_occuTTD( SEXP beta_, SEXP y_, SEXP delta_,
-    SEXP W_, SEXP V_, SEXP Xgam_, SEXP Xeps_, 
-    SEXP pind_, SEXP dind_, SEXP cind_, SEXP eind_, 
+    SEXP W_, SEXP V_, SEXP Xgam_, SEXP Xeps_,
+    SEXP pind_, SEXP dind_, SEXP cind_, SEXP eind_,
     SEXP lpsi_, SEXP tdist_,
     SEXP N_, SEXP T_, SEXP J_,
     SEXP naflag_){
@@ -65,14 +65,14 @@ SEXP nll_occuTTD( SEXP beta_, SEXP y_, SEXP delta_,
   if(lpsi == "cloglog"){
     raw_psi = 1 - exp(-exp(raw_psi));
   } else {
-    raw_psi = 1 / (1 + exp(-raw_psi)); 
+    raw_psi = 1 / (1 + exp(-raw_psi));
   }
   const mat psi = join_rows(1-raw_psi, raw_psi);
 
   //Get lambda values
   const vec lam = exp(V * beta.subvec(dind(0), dind(1)));
-  
-  vec e_lamt(ys); 
+
+  vec e_lamt(ys);
   if(tdist == "weibull"){
     double k = exp(beta(beta.size() - 1));
     for(int i=0; i<ys; i++){
@@ -86,7 +86,7 @@ SEXP nll_occuTTD( SEXP beta_, SEXP y_, SEXP delta_,
     }
   }
 
-  mat phi_raw(N, 4);
+  mat phi_raw(N*(T-1), 4);
   if(T > 1){
     colvec col = Xgam * beta.subvec(cind(0), cind(1));
     colvec ext = Xeps * beta.subvec(eind(0), eind(1));
@@ -103,7 +103,7 @@ SEXP nll_occuTTD( SEXP beta_, SEXP y_, SEXP delta_,
   int yend;
   int phi_index = 0;
   for (int n=0; n<N; n++){
-    
+
     mat phi_prod = eye(2,2);
     if(T > 1){
       for(int t=0; t<(T-1); t++){
@@ -125,7 +125,7 @@ SEXP nll_occuTTD( SEXP beta_, SEXP y_, SEXP delta_,
             delta.subvec(ystart,yend),
             naflag.subvec(ystart,yend));
     ystart += J;
-    
+
     rowvec psi_phi = psi.row(n) * phi_prod;
     lik(n) = dot(psi_phi, Py_T);
 
