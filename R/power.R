@@ -4,7 +4,7 @@ setClass("unmarkedPower",
                  alpha="numeric")
 )
 
-powerAnalysis <- function(object, coefs, design=NULL, alpha=0.05, nsim=100,
+powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nsim=100,
                           parallel=FALSE){
 
   stopifnot(inherits(object, "unmarkedFit"))
@@ -176,7 +176,10 @@ setMethod("summary", "unmarkedPower", function(object, ...){
 })
 
 setMethod("show", "unmarkedPower", function(object){
-  cat(paste0("\nModel: ", deparse(object@call), "\n\n"))
+  cat("\nModel:\n")
+  print(object@call)
+  cat("\n")
+
   cat("Power Statistics:\n")
   sumtab <- summary(object)
   sumtab$Power <- round(sumtab$Power, 3)

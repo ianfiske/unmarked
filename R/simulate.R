@@ -46,12 +46,13 @@ blank_umFit <- function(fit_function){
   type <- ifelse(type=="Pcount", "PCount", type)
   type <- ifelse(type=="MultinomPois", "MPois", type)
   type <- ifelse(type=="Distsamp", "DS", type)
+  type <- ifelse(type=="Colext", "ColExt", type)
   type <- paste0("unmarkedFit", type)
   new(type)
 }
 
 
-nul <- capture.output(setGeneric("get_umf_components", function(object, ...) standardGeneric("get_umf_components")))
+setGeneric("get_umf_components", function(object, ...) standardGeneric("get_umf_components"))
 
 setMethod("get_umf_components", "unmarkedFit",
           function(object, formulas, guide, design, ...){
@@ -62,7 +63,7 @@ setMethod("get_umf_components", "unmarkedFit",
 })
 
 
-nul <- capture.output(setGeneric("simulate_fit", function(object, ...) standardGeneric("simulate_fit")))
+setGeneric("simulate_fit", function(object, ...) standardGeneric("simulate_fit"))
 
 setMethod("simulate_fit", "unmarkedFitOccu",
   function(object, formulas, guide, design, ...){
@@ -93,11 +94,11 @@ setMethod("simulate_fit", "unmarkedFitOccuRN",
 
 
 setMethod("simulate", "character",
-  function(object, nsim=1, seed=NULL, formulas, coefs=NULL, design, guide, ...){
+  function(object, nsim=1, seed=NULL, formulas, coefs=NULL, design, guide=NULL, ...){
   model <- blank_umFit(object)
   fit <- suppressWarnings(simulate_fit(model, formulas, guide, design, ...))
-  coefs <- unmarked:::check_coefs(coefs, fit)
-  fit <- unmarked:::replace_estimates(fit, coefs)
+  coefs <- check_coefs(coefs, fit)
+  fit <- replace_estimates(fit, coefs)
   ysims <- simulate(fit, nsim)
   umf <- fit@data
   umfs <- lapply(ysims, function(x){
@@ -129,11 +130,11 @@ setMethod("simulate_fit", "unmarkedFitMPois",
 
 setMethod("get_umf_components", "unmarkedFitDS",
           function(object, formulas, guide, design, ...){
-  args <- list(...)
+  #args <- list(...)
   sc <- generate_data(formulas$state, guide, design$M)
   sc2 <- generate_data(formulas$det, guide, design$M)
   sc <- cbind(sc,sc2)
-  yblank <- matrix(0, design$M, J)
+  yblank <- matrix(0, design$M, design$J)
   list(y=yblank, siteCovs=sc)
 })
 
@@ -141,6 +142,7 @@ setMethod("simulate_fit", "unmarkedFitDS",
   function(object, formulas, guide, design, ...){
   parts <- get_umf_components(object, formulas, guide, design, ...)
   args <- list(...)
+  if(is.null(args$tlength)) args$tlength <- 0
   umf <- unmarkedFrameDS(y=parts$y, siteCovs=parts$siteCovs,
                          tlength=args$tlength, survey=args$survey, unitsIn=args$unitsIn,
                          dist.breaks=args$dist.breaks)
@@ -151,4 +153,26 @@ setMethod("simulate_fit", "unmarkedFitDS",
   distsamp(as.formula(paste(deparse(formulas$det), deparse(formulas$state))),
                data=umf, se=FALSE, control=list(maxit=1), keyfun=keyfun,
           output=output, unitsOut=unitsOut)
+})
+
+
+setMethod("get_umf_components", "unmarkedFitColExt",
+          function(object, formulas, guide, design, ...){
+  sc <- generate_data(formulas$psi, guide, design$M)
+  ysc <- generate_data(list(formulas$col, formulas$ext), guide, design$M*design$T)
+  oc <- generate_data(formulas$det, guide, design$J*design$M*design$T)
+  yblank <- matrix(0, design$M, design$T*design$J)
+  list(y=yblank, siteCovs=sc, yearlySiteCovs=ysc, obsCovs=oc)
+})
+
+
+setMethod("simulate_fit", "unmarkedFitColExt",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  umf <- unmarkedMultFrame(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,
+                           obsCovs=parts$obsCovs, numPrimary=design$T)
+  colext(psiformula=formulas$psi, gammaformula=formulas$col,
+         epsilonformula=formulas$ext,pformula=formulas$det,
+         data=umf, se=FALSE, control=list(maxit=1))
 })
