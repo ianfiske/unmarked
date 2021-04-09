@@ -176,3 +176,34 @@ setMethod("simulate_fit", "unmarkedFitColExt",
          epsilonformula=formulas$ext,pformula=formulas$det,
          data=umf, se=FALSE, control=list(maxit=1))
 })
+
+setMethod("get_umf_components", "unmarkedFitOccuTTD",
+          function(object, formulas, guide, design, ...){
+  sc <- generate_data(formulas$psi, guide, design$M)
+  ysc <- NULL
+  if(design$T>1){
+    ysc <- generate_data(list(formulas$col, formulas$ext), guide, design$M*design$T)
+  }
+  oc <- generate_data(formulas$det, guide, design$J*design$M*design$T)
+  yblank <- matrix(0, design$M, design$T*design$J)
+  list(y=yblank, siteCovs=sc, yearlySiteCovs=ysc, obsCovs=oc)
+})
+
+
+setMethod("simulate_fit", "unmarkedFitOccuTTD",
+  function(object, formulas, guide, design, ...){
+  if(is.null(design$T)) design$T <- 1
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  umf <- unmarkedFrameOccuTTD(y=parts$y,
+                              surveyLength=args$surveyLength,
+                              siteCovs=parts$siteCovs,
+                              yearlySiteCovs=parts$yearlySiteCovs,
+                              obsCovs=parts$obsCovs, numPrimary=design$T)
+  linkPsi <- ifelse(is.null(args$linkPsi), "logit", args$linkPsi)
+  ttdDist <- ifelse(is.null(args$ttdDist), "exp", args$ttdDist)
+  occuTTD(psiformula=formulas$psi, gammaformula=formulas$col,
+         epsilonformula=formulas$ext,detformula=formulas$det,
+         linkPsi=linkPsi, ttdDist=ttdDist,
+         data=umf, se=FALSE, control=list(maxit=1))
+})

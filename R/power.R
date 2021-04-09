@@ -110,7 +110,7 @@ check_coefs <- function(coefs, fit){
       stop(paste0("Missing required list element '",required_subs[i], "' in coefs list"), call.=FALSE)
     }
 
-    sub_coefs <- coefs[[i]]
+    sub_coefs <- coefs[[required_subs[i]]]
 
     if(is.null(sub_coefs)){
       stop(paste("Required coefficients for the", required_subs[i], "submodel are:",
@@ -128,15 +128,16 @@ check_coefs <- function(coefs, fit){
         required_lens[[i]]), call.=FALSE)
       }
     } else {
-      change_int <- names(coefs[[i]])%in%c("intercept","Intercept")
-      names(coefs[[i]])[change_int] <- "(Intercept)"
-      change_int <- names(coefs[[i]])%in%c("sigmaintercept","sigmaIntercept")
-      names(coefs[[i]])[change_int] <- "sigma(Intercept)"
-      change_int <- names(coefs[[i]])%in%c("shapeintercept","shapeIntercept")
-      names(coefs[[i]])[change_int] <- "shape(Intercept)"
-      change_int <- names(coefs[[i]])%in%c("rateintercept","rateIntercept")
-      names(coefs[[i]])[change_int] <- "rate(Intercept)"
-      sub_coefs <- coefs[[i]]
+      rsi <- required_subs[i]
+      change_int <- names(coefs[[rsi]])%in%c("intercept","Intercept")
+      names(coefs[[rsi]])[change_int] <- "(Intercept)"
+      change_int <- names(coefs[[rsi]])%in%c("sigmaintercept","sigmaIntercept")
+      names(coefs[[rsi]])[change_int] <- "sigma(Intercept)"
+      change_int <- names(coefs[[rsi]])%in%c("shapeintercept","shapeIntercept")
+      names(coefs[[rsi]])[change_int] <- "shape(Intercept)"
+      change_int <- names(coefs[[rsi]])%in%c("rateintercept","rateIntercept")
+      names(coefs[[rsi]])[change_int] <- "rate(Intercept)"
+      sub_coefs <- coefs[[rsi]]
 
       not_inc <- !required_coefs[[i]] %in% names(sub_coefs)
       extra <- !names(sub_coefs) %in% required_coefs[[i]]
@@ -149,7 +150,7 @@ check_coefs <- function(coefs, fit){
         warning(paste("Ignoring extra coefficients in the", required_subs[i], "submodel:",
                       paste(names(sub_coefs)[extra], collapse=", ")))
       }
-      coefs[[i]] <- coefs[[i]][required_coefs[[i]]]
+      coefs[[rsi]] <- coefs[[rsi]][required_coefs[[i]]]
     }
   }
   coefs[required_subs]
