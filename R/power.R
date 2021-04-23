@@ -1,11 +1,11 @@
 setClass("unmarkedPower",
   representation(call="call", data="unmarkedFrame", M="numeric",
                  J="numeric", T="numeric", coefs="list", estimates="list",
-                 alpha="numeric")
+                 alpha="numeric", nulls="list")
 )
 
-powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nsim=100,
-                          parallel=FALSE){
+powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=list(),
+                          nsim=100, parallel=FALSE){
 
   stopifnot(inherits(object, "unmarkedFit"))
 
@@ -156,23 +156,50 @@ check_coefs <- function(coefs, fit){
   coefs[required_subs]
 }
 
+wald <- function(est, se, null_hyp=NULL){
+  if(is.null(null_hyp) || is.na(null_hyp)) null_hyp <- 0
+  Z <- (est-null_hyp)/se
+  2*pnorm(abs(Z), lower.tail = FALSE)
+}
+
+diff_dir <- function(est, hyp, null_hyp=NULL){
+  if(is.null(null_hyp) || is.na(null_hyp)) null_hyp <- 0
+  dif <- est - null_hyp
+  dif_hyp <- hyp - null_hyp
+  dif * dif_hyp > 0
+}
+
 setMethod("summary", "unmarkedPower", function(object, ...){
   sum_dfs <- object@estimates
   npar <- nrow(sum_dfs[[1]])
 
   pow <- sapply(1:npar, function(ind){
-    pcrit <- sapply(sum_dfs, function(x) x$`P(>|z|)`[ind]) < object@alpha
-    direct <- sapply(sum_dfs, function(x) x$Estimate[ind]) * unlist(object@coefs)[ind]  > 0
+    #pcrit <- sapply(sum_dfs, function(x) x$`P(>|z|)`[ind]) < object@alpha
+    submod <- sum_dfs[[1]]$submodel[ind]
+    param <- sum_dfs[[1]]$param[ind]
+    ni <- nulls[[submod]][param]
+
+    pcrit <- sapply(sum_dfs, function(x) wald(x$Estimate[ind], x$SE[ind], ni)) < object@alpha
+    #direct <- sapply(sum_dfs, function(x) x$Estimate[ind]) * unlist(object@coefs)[ind]  > 0 # fix this
+    direct <- sapply(sum_dfs, function(x) diff_dir(x$Estimate[ind], unlist(object@coefs)[ind], ni))
     mean(pcrit & direct, na.rm=T)
   })
 
-  out <- cbind(sum_dfs[[1]][,1:2], effect=unlist(object@coefs), power=pow)
-  out <- out[out$param != "(Intercept)",,drop=FALSE]
-  out <- out[out$param != "sigma(Intercept)",,drop=FALSE]
-  out <- out[out$param != "rate(Intercept)",,drop=FALSE]
-  out <- out[out$param != "shape(Intercept)",,drop=FALSE]
+  all_nulls <- sapply(1:npar, function(ind){
+    submod <- sum_dfs[[1]]$submodel[ind]
+    param <- sum_dfs[[1]]$param[ind]
+    ni <- nulls[[submod]][param]
+    if(is.null(ni) || is.na(ni)) ni <- 0
+    ni
+  })
+
+  out <- cbind(sum_dfs[[1]][,1:2], effect=unlist(object@coefs), null=all_nulls,  power=pow)
+  #out <- out[out$param != "(Intercept)",,drop=FALSE]
+  #out <- out[out$param != "sigma(Intercept)",,drop=FALSE]
+  #out <- out[out$param != "rate(Intercept)",,drop=FALSE]
+  #out <- out[out$param != "shape(Intercept)",,drop=FALSE]
   rownames(out) <- NULL
-  names(out) <- c("Submodel", "Parameter", "Effect", "Power")
+  names(out) <- c("Submodel", "Parameter", "Effect", "Null", "Power")
   out
 })
 
@@ -277,4 +304,17 @@ setMethod("plot", "unmarkedPowerList", function(x, beta=NULL, param=NULL, ...){
     legend('bottomright', lwd=1, pch=19, col=cols, legend=Jlev, title="Observations")
   }
   par(mfrow=old_par)
+})
+
+setMethod("update", "unmarkedPower", function(object, ...){
+  args <- list(...)
+  if(!is.null(args$alpha)) object@alpha <- args$alpha
+  if(!is.null(args$coefs)){
+    if(!is.list(args$coefs) || all(names(args$coefs) == names(object@coefs))){
+      stop("coefs list structure is incorrect", call.=FALSE)
+      object@coefs <- args$coefs
+    }
+  }
+  if(!is.null(args$nulls)) object@nulls <- args$nulls
+  object
 })
