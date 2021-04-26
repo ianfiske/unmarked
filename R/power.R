@@ -53,7 +53,7 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
   sum_dfs <- lapply(fits, get_summary_df)
 
   new("unmarkedPower", call=object@call, data=object@data, M=M,
-      J=J, T=T, coefs=coefs, estimates=sum_dfs, alpha=alpha)
+      J=J, T=T, coefs=coefs, estimates=sum_dfs, alpha=alpha, nulls=nulls)
 }
 
 bootstrap_data <- function(data, nsims, design){
@@ -177,7 +177,7 @@ setMethod("summary", "unmarkedPower", function(object, ...){
     #pcrit <- sapply(sum_dfs, function(x) x$`P(>|z|)`[ind]) < object@alpha
     submod <- sum_dfs[[1]]$submodel[ind]
     param <- sum_dfs[[1]]$param[ind]
-    ni <- nulls[[submod]][param]
+    ni <- object@nulls[[submod]][param]
 
     pcrit <- sapply(sum_dfs, function(x) wald(x$Estimate[ind], x$SE[ind], ni)) < object@alpha
     #direct <- sapply(sum_dfs, function(x) x$Estimate[ind]) * unlist(object@coefs)[ind]  > 0 # fix this
@@ -188,7 +188,7 @@ setMethod("summary", "unmarkedPower", function(object, ...){
   all_nulls <- sapply(1:npar, function(ind){
     submod <- sum_dfs[[1]]$submodel[ind]
     param <- sum_dfs[[1]]$param[ind]
-    ni <- nulls[[submod]][param]
+    ni <- object@nulls[[submod]][param]
     if(is.null(ni) || is.na(ni)) ni <- 0
     ni
   })
