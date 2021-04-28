@@ -31,3 +31,4 @@ PKG_LIBS = $(shell "$(R_HOME)/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()
 ##PKG_LIBS+= -lRcpp
 ##PKG_LIBS+= -LC:/PROGRA~1/R/R-3.0.0/library/Rcpp/libs${R_ARCH_BIN}
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_CPPFLAGS=-DSTRICT_R_HEADERS

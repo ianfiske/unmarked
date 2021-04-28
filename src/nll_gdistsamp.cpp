@@ -1,4 +1,5 @@
 #include <RcppArmadillo.h>
+#include <float.h>
 #include "distprob.h"
 #include "distr.h"
 #include "utils.h"
@@ -86,7 +87,7 @@ double nll_gdistsamp(arma::vec beta, arma::uvec n_param, arma::vec y,
         exp(sum(mn.row(j)));
     }
 
-    loglik += log(site_lp + DOUBLE_XMIN);
+    loglik += log(site_lp + DBL_MIN);
 
   }
 

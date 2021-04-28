@@ -2,6 +2,7 @@
 #define _unmarked_NLL_MULTMIXOPEN_H
 
 #include <RcppArmadillo.h>
+#include <float.h>
 #include "tranprobs.h"
 #include "distr.h"
 #include "pifun.h"

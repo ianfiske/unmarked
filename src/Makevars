@@ -28,4 +28,4 @@ clean:
 ## Use the R_HOME indirection to support installations of multiple R version
 PKG_LIBS = $(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()" ) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SHLIB_OPENMP_CXXFLAGS)
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
-
+PKG_CPPFLAGS=-DSTRICT_R_HEADERS
