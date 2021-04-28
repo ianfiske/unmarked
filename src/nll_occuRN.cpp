@@ -1,4 +1,5 @@
 #include <RcppArmadillo.h>
+#include <float.h>
 #include "utils.h"
 
 #ifdef _OPENMP
@@ -25,7 +26,7 @@ double lp_site_occuRN(const rowvec y, double lam, const vec q, int K, int Kmin){
     }
     out += f * exp(g);
   }
-  return log(out + DOUBLE_XMIN);
+  return log(out + DBL_MIN);
 }
 
 // [[Rcpp::export]]

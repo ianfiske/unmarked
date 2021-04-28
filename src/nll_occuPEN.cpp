@@ -33,9 +33,9 @@ SEXP nll_occuPEN( SEXP yR, SEXP Xr, SEXP Vr, SEXP beta_psiR, SEXP beta_pR, SEXP 
     if(knownOcc(i))
       psi(i) = 1.0;
     if(nd(i)==0)
-      ll += log(cp * psi(i) + DOUBLE_XMIN);
+      ll += log(cp * psi(i) + DBL_MIN);
     else if(nd(i)==1)
-      ll += log(cp * psi(i) + (1-psi(i)) + DOUBLE_XMIN);
+      ll += log(cp * psi(i) + (1-psi(i)) + DBL_MIN);
   }
   ll = ll - penalty;
   return wrap(-ll);

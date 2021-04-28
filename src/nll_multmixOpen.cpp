@@ -313,7 +313,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
       ll_i += sum(g2star);
     }
 
-    ll += log(ll_i + DOUBLE_XMIN);
+    ll += log(ll_i + DBL_MIN);
 
   }
 

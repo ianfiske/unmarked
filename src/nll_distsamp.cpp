@@ -19,7 +19,7 @@ SEXP nll_distsamp( SEXP y_, SEXP lam_, SEXP sig_, SEXP scale_, SEXP a_, SEXP u_,
 
   //  double mu = 0.0;
   double ll = 0.0;
-  double lnmin = log(DOUBLE_XMIN);
+  double lnmin = log(DBL_MIN);
 
   double f0 = 0.0;
 

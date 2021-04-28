@@ -1,4 +1,5 @@
 #include <RcppArmadillo.h>
+#include <float.h>
 #include "distr.h"
 #include "utils.h"
 
@@ -25,7 +26,7 @@ double lp_site_pcount(const rowvec y, int mixture, double lam, double log_alpha,
     }
     out += f * exp(g);
   }
-  return log(out + DOUBLE_XMIN);
+  return log(out + DBL_MIN);
 }
 
 
