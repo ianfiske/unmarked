@@ -751,18 +751,8 @@ setMethod("show", "unmarkedMultFrame",
     function(object)
 {
     df <- as(object, "data.frame")
-    ysc <- yearlySiteCovs(object)
-    if(is.null(ysc)) {
-        cat("Data frame representation of unmarkedFrame object.\n")
-        print(df)
-        }
-    else {
-        T <- object@numPrimary
-        yscwide <- lapply(ysc, matrix, ncol=T, byrow=TRUE)
-        df <- data.frame(df, yscwide)
-        cat("Data frame representation of unmarkedFrame object.\n")
-        print(df)
-        }
+    cat("Data frame representation of unmarkedFrame object.\n")
+    print(df)
 })
 
 setMethod("show", "unmarkedFrameOccuMulti", function(object)
