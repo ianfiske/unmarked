@@ -31,6 +31,10 @@ test.gdistsamp.covs <- function() {
     checkException(unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
                             dist.breaks=breaks,
                             tlength=rep(transect.length, (R-1)), numPrimary=T))
+    # Throw error when length(distbreaks) != J+1
+    checkException(unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
+                            dist.breaks=breaks[-1],
+                            tlength=rep(transect.length, R), numPrimary=T))
 
     # Organize data
     umf <- unmarkedFrameGDS(y = y, survey="line", unitsIn="m",

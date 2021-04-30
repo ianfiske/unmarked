@@ -204,6 +204,9 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength,
         tlength <- rep(NA_real_, nrow(y))
     if((survey=="line") & (length(tlength) != nrow(y)))
         stop("tlength should be a vector with length(tlength)==nrow(y)")
+    if(length(dist.breaks) != ncol(y)+1){
+      stop(paste("dist.breaks should have",ncol(y)+1,"values"))
+    }
     umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
                  siteCovs = siteCovs, dist.breaks = dist.breaks,
                  tlength = tlength, survey = survey, unitsIn = unitsIn,
@@ -526,6 +529,10 @@ unmarkedFrameDSO <- function(y, siteCovs=NULL, yearlySiteCovs=NULL, numPrimary,
       }
     }
 
+    if(length(dist.breaks) != J+1){
+      stop(paste("dist.breaks should have",J+1,"values"))
+    }
+
     umf@yearlySiteCovs <- yearlySiteCovs
     umf <- as(umf, "unmarkedFrameDSO")
     umf@dist.breaks <- dist.breaks
@@ -573,6 +580,10 @@ unmarkedFrameGDS<- function(y, siteCovs, numPrimary,
       if(length(tlength) != nrow(y)) {
         stop("tlength should be a vector with length(tlength)==nrow(y)")
       }
+    }
+
+    if(length(dist.breaks) != J+1){
+      stop(paste("dist.breaks should have",J+1,"values"))
     }
 
     umf <- as(umf, "unmarkedFrameGDS")

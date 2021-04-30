@@ -109,6 +109,8 @@ test.unmarkedFrameDSO <- function(){
   checkException(unmarkedFrameDSO(y=y,numPrimary=15,
                   dist.breaks=c(0,25,50,75,100), survey="point",
                   tlength=rep(1,100)))
+  checkException(unmarkedFrameDSO(y=y, numPrimary=15, dist.breaks=c(25,50,75,100),
+                                  survey='line', unitsIn='m', tlength=rep(1,100)))
 }
 
 test.distsampOpen.halfnormal <- function()
