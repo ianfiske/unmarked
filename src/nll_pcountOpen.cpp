@@ -230,7 +230,7 @@ SEXP nll_pcountOpen( SEXP y_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_, SEXP Xp_, SEXP 
       g_star = g3_d * g1_star;
       ll_i = arma::dot(g2, g_star);
     }
-    ll += log(ll_i + DOUBLE_XMIN);
+    ll += log(ll_i + DBL_MIN);
   }
   return wrap(-ll);
 }

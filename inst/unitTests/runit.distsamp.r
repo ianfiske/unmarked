@@ -5,6 +5,10 @@ test.distsamp.covs <- function() {
     checkException(unmarkedFrameDS(y = y, siteCovs = siteCovs,
         dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, (5-1)),
         unitsIn="km"))
+    #Check error thrown when length(dist.breaks) != J+1
+    checkException(unmarkedFrameDS(y = y, siteCovs = siteCovs,
+        dist.breaks=c(5,10)/1000, survey="line", tlength=rep(1, 5),
+        unitsIn="km"))
 
     umf <- unmarkedFrameDS(y = y, siteCovs = siteCovs,
         dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, 5),
