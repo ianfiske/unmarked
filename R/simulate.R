@@ -47,6 +47,9 @@ blank_umFit <- function(fit_function){
   type <- ifelse(type=="MultinomPois", "MPois", type)
   type <- ifelse(type=="Distsamp", "DS", type)
   type <- ifelse(type=="Colext", "ColExt", type)
+  type <- ifelse(type=="Gdistsamp", "GDS", type)
+  type <- ifelse(type=="Gpcount", "GPC", type)
+  type <- ifelse(type=="Gmultmix", "GMM", type)
   type <- paste0("unmarkedFit", type)
   new(type)
 }
@@ -206,4 +209,68 @@ setMethod("simulate_fit", "unmarkedFitOccuTTD",
          epsilonformula=formulas$ext,detformula=formulas$det,
          linkPsi=linkPsi, ttdDist=ttdDist,
          data=umf, se=FALSE, control=list(maxit=1))
+})
+
+
+setMethod("get_umf_components", "unmarkedFitGMM",
+          function(object, formulas, guide, design, ...){
+  sc <- generate_data(formulas$lambda, guide, design$M)
+  ysc <- generate_data(formulas$phi, guide, design$M*design$T)
+  yblank <- matrix(0, design$M, design$T*design$J)
+  list(y=yblank, siteCovs=sc, yearlySiteCovs=ysc)
+})
+
+
+setMethod("simulate_fit", "unmarkedFitGDS",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  if(is.null(args$tlength)) args$tlength <- 0
+  umf <- unmarkedFrameGDS(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,
+                           numPrimary=design$T,
+                           tlength=args$tlength, survey=args$survey,
+                           unitsIn=args$unitsIn, dist.breaks=args$dist.breaks)
+
+  keyfun <- ifelse(is.null(args$keyfun), "halfnorm", args$keyfun)
+  output <- ifelse(is.null(args$output), "density", args$output)
+  unitsOut <- ifelse(is.null(args$unitsOut), "ha", args$unitsOut)
+  mixture <- ifelse(is.null(args$unitsOut), "P", args$mixture)
+  K <- ifelse(is.null(args$K), 100, args$K)
+
+  gdistsamp(lambdaformula=formulas$lambda, phiformula=formulas$phi,
+            pformula=formulas$det, data=umf, keyfun=keyfun, output=output,
+            unitsOut=unitsOut, mixture=mixture, K=K,
+            se=FALSE, control=list(maxit=1))
+})
+
+setMethod("simulate_fit", "unmarkedFitGPC",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  umf <- unmarkedFrameGPC(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,
+                           numPrimary=design$T)
+  K <- ifelse(is.null(args$K), 100, args$K)
+  mixture <- ifelse(is.null(args$unitsOut), "P", args$mixture)
+
+  gpcount(lambdaformula=formulas$lambda, phiformula=formulas$phi,
+          pformula=formulas$det, data=umf, mixture=mixture, K=K,
+          se=FALSE, control=list(maxit=1))
+})
+
+
+setMethod("simulate_fit", "unmarkedFitGMM",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  umf <- unmarkedFrameGMM(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,
+                           numPrimary=design$T, type=args$type)
+  K <- ifelse(is.null(args$K), 100, args$K)
+  mixture <- ifelse(is.null(args$unitsOut), "P", args$mixture)
+
+  gmultmix(lambdaformula=formulas$lambda, phiformula=formulas$phi,
+           pformula=formulas$det, data=umf, mixture=mixture, K=K,
+           se=FALSE, control=list(maxit=1))
 })
