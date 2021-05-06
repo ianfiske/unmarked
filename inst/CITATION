@@ -9,12 +9,12 @@ citEntry(entry = "Article",
   volume       = "43",
   number       = "10",
   pages        = "1--23",
-  url          = "http://www.jstatsoft.org/v43/i10/",
+  url          = "https://www.jstatsoft.org/v43/i10/",
 
   textVersion  =
   paste("Ian Fiske, Richard Chandler (2011).",
         "unmarked: An R Package for Fitting Hierarchical Models of Wildlife Occurrence and Abundance.",
         "Journal of Statistical Software, 43(10), 1-23.",
-        "URL http://www.jstatsoft.org/v43/i10/.")
+        "URL https://www.jstatsoft.org/v43/i10/.")
 )
 

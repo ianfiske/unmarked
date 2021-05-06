@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 1.0.1.9016
-Date: 2021-04-30
+Version: 1.1.0
+Date: 2021-05-05
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(
@@ -50,8 +50,8 @@ LinkingTo:
     RcppArmadillo,
     TMB
 SystemRequirements: GNU make
-URL: http://groups.google.com/group/unmarked,
+URL: http://groups.google.com/d/forum/unmarked,
      https://sites.google.com/site/unmarkedinfo/home,
-     http://github.com/ianfiske/unmarked,
-     http://github.com/rbchan/unmarked
+     https://github.com/ianfiske/unmarked,
+     https://github.com/rbchan/unmarked
 BugReports: https://github.com/rbchan/unmarked/issues
