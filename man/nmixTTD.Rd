@@ -81,8 +81,8 @@ will differ between observations!
 }
 
 \references{
-Strebel, N., Fiss, C., Kellner, K. F., , Larkin, J. L., Kery, M., & Cohen, J (2021). 
-  Estimating abundance based on time-to-detection data. Methods in Ecology and Evolution.
+Strebel, N., Fiss, C., Kellner, K. F., Larkin, J. L., Kery, M., & Cohen, J (2021). 
+  Estimating abundance based on time-to-detection data. Methods in Ecology and Evolution 12: 909-920.
 }
 
 \author{Ken Kellner \email{contact@kenkellner.com}}
