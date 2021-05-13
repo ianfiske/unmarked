@@ -50,6 +50,9 @@ blank_umFit <- function(fit_function){
   type <- ifelse(type=="Gdistsamp", "GDS", type)
   type <- ifelse(type=="Gpcount", "GPC", type)
   type <- ifelse(type=="Gmultmix", "GMM", type)
+  type <- ifelse(type=="PcountOpen", "PCO", type)
+  type <- ifelse(type=="DistsampOpen", "DSO", type)
+  type <- ifelse(type=="MultmixOpen", "MMO", type)
   type <- paste0("unmarkedFit", type)
   new(type)
 }
@@ -235,7 +238,7 @@ setMethod("simulate_fit", "unmarkedFitGDS",
   keyfun <- ifelse(is.null(args$keyfun), "halfnorm", args$keyfun)
   output <- ifelse(is.null(args$output), "density", args$output)
   unitsOut <- ifelse(is.null(args$unitsOut), "ha", args$unitsOut)
-  mixture <- ifelse(is.null(args$unitsOut), "P", args$mixture)
+  mixture <- ifelse(is.null(args$mixture), "P", args$mixture)
   K <- ifelse(is.null(args$K), 100, args$K)
 
   gdistsamp(lambdaformula=formulas$lambda, phiformula=formulas$phi,
@@ -252,7 +255,7 @@ setMethod("simulate_fit", "unmarkedFitGPC",
                            yearlySiteCovs=parts$yearlySiteCovs,
                            numPrimary=design$T)
   K <- ifelse(is.null(args$K), 100, args$K)
-  mixture <- ifelse(is.null(args$unitsOut), "P", args$mixture)
+  mixture <- ifelse(is.null(args$mixture), "P", args$mixture)
 
   gpcount(lambdaformula=formulas$lambda, phiformula=formulas$phi,
           pformula=formulas$det, data=umf, mixture=mixture, K=K,
@@ -268,9 +271,115 @@ setMethod("simulate_fit", "unmarkedFitGMM",
                            yearlySiteCovs=parts$yearlySiteCovs,
                            numPrimary=design$T, type=args$type)
   K <- ifelse(is.null(args$K), 100, args$K)
-  mixture <- ifelse(is.null(args$unitsOut), "P", args$mixture)
+  mixture <- ifelse(is.null(args$mixture), "P", args$mixture)
 
   gmultmix(lambdaformula=formulas$lambda, phiformula=formulas$phi,
            pformula=formulas$det, data=umf, mixture=mixture, K=K,
            se=FALSE, control=list(maxit=1))
 })
+
+setClassUnion("unmarkedFitOpenPop",
+              c("unmarkedFitPCO","unmarkedFitMMO"))
+
+setMethod("get_umf_components", "unmarkedFitOpenPop",
+          function(object, formulas, guide, design, ...){
+  sc <- generate_data(formulas$lambda, guide, design$M)
+  ysc <- generate_data(list(formulas$gamma, formulas$omega), guide, design$M*design$T)
+  oc <- generate_data(formulas$det, guide, design$M*design$T*design$J)
+  yblank <- matrix(0, design$M, design$T*design$J)
+  list(y=yblank, siteCovs=sc, yearlySiteCovs=ysc, obsCovs=oc)
+})
+
+setMethod("simulate_fit", "unmarkedFitPCO",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  if(is.null(args$primaryPeriod)){
+    args$primaryPeriod <- matrix(1:design$T, design$M, design$T, byrow=TRUE)
+  }
+  umf <- unmarkedFramePCO(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,
+                           numPrimary=design$T, primaryPeriod=args$primaryPeriod)
+  K <- ifelse(is.null(args$K), 100, args$K)
+  mixture <- ifelse(is.null(args$mixture), "P", args$mixture)
+  dynamics <- ifelse(is.null(args$dynamics), "constant", args$dynamics)
+  fix <- ifelse(is.null(args$fix), "none", args$fix)
+  immigration <- ifelse(is.null(args$immigration), FALSE, args$immigration)
+  iotaformula <- args$iotaformula
+  if(is.null(iotaformula)) iotaformula <- ~1
+
+  pcountOpen(lambdaformula=formulas$lambda, gammaformula=formulas$gamma,
+             omegaformula=formulas$omega, pformula=formulas$det,
+             data=umf, mixture=mixture, K=K, dynamics=dynamics, fix=fix,
+             se=FALSE, method='SANN', control=list(maxit=1), immigration=immigration,
+             iotaformula=iotaformula)
+})
+
+setMethod("simulate_fit", "unmarkedFitMMO",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  if(is.null(args$primaryPeriod)){
+    args$primaryPeriod <- matrix(1:design$T, design$M, design$T, byrow=TRUE)
+  }
+  umf <- unmarkedFrameMMO(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,
+                           type=args$type,
+                           numPrimary=design$T, primaryPeriod=args$primaryPeriod)
+  K <- ifelse(is.null(args$K), 100, args$K)
+  mixture <- ifelse(is.null(args$mixture), "P", args$mixture)
+  dynamics <- ifelse(is.null(args$dynamics), "constant", args$dynamics)
+  fix <- ifelse(is.null(args$fix), "none", args$fix)
+  immigration <- ifelse(is.null(args$immigration), FALSE, args$immigration)
+  iotaformula <- args$iotaformula
+  if(is.null(iotaformula)) iotaformula <- ~1
+
+  multmixOpen(lambdaformula=formulas$lambda, gammaformula=formulas$gamma,
+             omegaformula=formulas$omega, pformula=formulas$det,
+             data=umf, mixture=mixture, K=K, dynamics=dynamics, fix=fix,
+             se=FALSE, method='SANN', control=list(maxit=1), immigration=immigration,
+             iotaformula=iotaformula)
+})
+
+setMethod("get_umf_components", "unmarkedFitDSO",
+          function(object, formulas, guide, design, ...){
+  sc <- generate_data(formulas$lambda, guide, design$M)
+  ysc <- generate_data(list(formulas$gamma, formulas$omega, formulas$det),
+                       guide, design$M*design$T)
+  yblank <- matrix(0, design$M, design$T*design$J)
+  list(y=yblank, siteCovs=sc, yearlySiteCovs=ysc)
+})
+
+setMethod("simulate_fit", "unmarkedFitDSO",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  if(is.null(args$primaryPeriod)){
+    args$primaryPeriod <- matrix(1:design$T, design$M, design$T, byrow=TRUE)
+  }
+  if(is.null(args$tlength)) args$tlength <- 0
+  umf <- unmarkedFrameDSO(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,
+                           tlength=args$tlength, survey=args$survey,
+                           unitsIn=args$unitsIn, dist.breaks=args$dist.breaks,
+                           numPrimary=design$T, primaryPeriod=args$primaryPeriod)
+  K <- ifelse(is.null(args$K), 100, args$K)
+  keyfun <- ifelse(is.null(args$keyfun), "halfnorm", args$keyfun)
+  output <- ifelse(is.null(args$output), "density", args$output)
+  unitsOut <- ifelse(is.null(args$unitsOut), "ha", args$unitsOut)
+  mixture <- ifelse(is.null(args$mixture), "P", args$mixture)
+  dynamics <- ifelse(is.null(args$dynamics), "constant", args$dynamics)
+  fix <- ifelse(is.null(args$fix), "none", args$fix)
+  immigration <- ifelse(is.null(args$immigration), FALSE, args$immigration)
+  iotaformula <- args$iotaformula
+  if(is.null(iotaformula)) iotaformula <- ~1
+  distsampOpen(lambdaformula=formulas$lambda, gammaformula=formulas$gamma,
+             omegaformula=formulas$omega, pformula=formulas$det,
+             keyfun=keyfun, unitsOut=unitsOut, output=output,
+             data=umf, mixture=mixture, K=K, dynamics=dynamics, fix=fix,
+             se=FALSE, method='SANN', control=list(maxit=1), immigration=immigration,
+             iotaformula=iotaformula)
+})
+
+
+
