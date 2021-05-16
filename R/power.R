@@ -43,12 +43,29 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
     parallel::clusterEvalQ(cl, library(unmarked))
   }
 
+  if(!is.null(options()$unmarked_shiny)&&options()$unmarked_shiny){
+    ses <- options()$unmarked_shiny_session
+    #ses <- shiny::getDefaultReactiveDomain()
+    pb <- shiny::Progress$new(ses, min=0, max=1)
+    pb$set(message="Running simulations")
+    fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
+      if(!is.null(design)) fit@data <- bdata[[i]]
+      fit@data@y <- sims[[i]]
+      out <- update(fit, data=fit@data, se=TRUE)
+      pb$set(value=i/nsim, message=NULL, detail=NULL)
+      out
+    }, sims=sims, fit=object, bdata=bdata, cl=NULL)
+    pb$close()
 
-  fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
-    if(!is.null(design)) fit@data <- bdata[[i]]
-    fit@data@y <- sims[[i]]
-    update(fit, data=fit@data, se=TRUE)
-  }, sims=sims, fit=object, bdata=bdata, cl=cl)
+  } else {
+
+    fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
+      if(!is.null(design)) fit@data <- bdata[[i]]
+      fit@data@y <- sims[[i]]
+      update(fit, data=fit@data, se=TRUE)
+    }, sims=sims, fit=object, bdata=bdata, cl=cl)
+
+  }
 
   sum_dfs <- lapply(fits, get_summary_df)
 
@@ -87,7 +104,7 @@ bootstrap_data <- function(data, nsims, design){
   lapply(1:nsims, function(i) data[M_samps[[i]], J_samps[[i]]])
 }
 
-check_coefs <- function(coefs, fit){
+check_coefs <- function(coefs, fit, template=FALSE){
   required_subs <- names(fit@estimates@estimates)
   required_coefs <- lapply(fit@estimates@estimates, function(x) names(x@estimates))
   required_lens <- lapply(required_coefs, length)
@@ -97,6 +114,7 @@ check_coefs <- function(coefs, fit){
                     names(out) <- x
                     out
                   })
+  if(template) return(dummy_coefs)
 
   if(is.null(coefs)){
     cat("coefs argument should be a named list of named vectors, with the following structure
@@ -155,7 +173,6 @@ check_coefs <- function(coefs, fit){
   }
   coefs[required_subs]
 }
-
 wald <- function(est, se, null_hyp=NULL){
   if(is.null(null_hyp) || is.na(null_hyp)) null_hyp <- 0
   Z <- (est-null_hyp)/se
