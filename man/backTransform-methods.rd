@@ -34,6 +34,8 @@
 
 \examples{
 
+\dontrun{
+
 data(mallard)
 mallardUMF <- unmarkedFramePCount(mallard.y, siteCovs = mallard.site, 
     obsCovs = mallard.obs)
@@ -45,6 +47,7 @@ lc <- linearComb(fm, c(1, 0), type="state") # Estimate abundance on the log scal
 backTransform(lc)                           # Abundance on the original scale
 }
 
+}
 
 
 \keyword{methods}
