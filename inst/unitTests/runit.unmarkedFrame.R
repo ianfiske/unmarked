@@ -68,14 +68,14 @@ test.umf.yearlySiteCovs <- function() {
   n <- 50   # number of sites
   T <- 4    # number of primary periods
   J <- 3    # number of secondary periods
-     
+
   site <- 1:50
   years <- data.frame(matrix(rep(2010:2013, each=n), n, T))
   years <- data.frame(lapply(years, as.factor))
   dummy <- matrix(rep(c('a','b','c','d'),n),nrow=n,byrow=T)
-  occasions <- data.frame(matrix(rep(1:(J*T), each=n), n, J*T))   
+  occasions <- data.frame(matrix(rep(1:(J*T), each=n), n, J*T))
   y <- matrix(0:1, n, J*T)
-     
+
   umf <- unmarkedMultFrame(y=y,
         siteCovs = data.frame(site=site),
         obsCovs=list(occasion=occasions),
@@ -114,7 +114,7 @@ test.umf.char.to.factor <- function(){
   #Site covs
   sc <- data.frame(x=rnorm(n), y=sample(letters, 50, replace=TRUE))
   checkEquals(sapply(sc, class), c(x="numeric", y="character"))
-  
+
   options(warn=2)
   checkException(umf <- unmarkedFrame(y, siteCovs=sc))
   options(warn=0)
@@ -129,7 +129,7 @@ test.umf.char.to.factor <- function(){
   #Obs covs
   oc <- data.frame(x=rnorm(n*J*T), y=sample(letters, n*J*T, replace=TRUE))
   checkEquals(sapply(oc, class), c(x="numeric", y="character"))
-  
+
   options(warn=2)
   checkException(umf <- unmarkedFrame(y, obsCovs=oc))
   options(warn=0)
@@ -145,13 +145,13 @@ test.umf.char.to.factor <- function(){
   umf <- unmarkedFrameOccu(y, obsCovs=oc)
   checkEquals(sapply(obsCovs(umf), class), c(x="numeric", y="factor"))
   checkTrue(is.null(siteCovs(umf)))
-  
+
   #Check conversion
   df <- as(umf, "data.frame")
   checkEqualsNumeric(dim(df), c(50,36))
 
   #Yearly site covs
-  ysc <- list(x=matrix(rnorm(n*T), nrow=n), 
+  ysc <- list(x=matrix(rnorm(n*T), nrow=n),
              y=matrix(sample(letters, n*T, replace=TRUE), nrow=n))
   options(warn=2)
   checkException(umf <- unmarkedMultFrame(y, yearlySiteCovs=ysc, numPrimary=T))
@@ -162,15 +162,36 @@ test.umf.char.to.factor <- function(){
 
   #All
   options(warn=2)
-  checkException(umf <- unmarkedMultFrame(y, yearlySiteCovs=ysc, obsCovs=oc, 
+  checkException(umf <- unmarkedMultFrame(y, yearlySiteCovs=ysc, obsCovs=oc,
                                           siteCovs=sc, numPrimary=T))
   options(warn=0)
-  umf <- unmarkedMultFrame(y, yearlySiteCovs=ysc, obsCovs=oc, 
+  umf <- unmarkedMultFrame(y, yearlySiteCovs=ysc, obsCovs=oc,
                           siteCovs=sc, numPrimary=T)
   checkEquals(sapply(yearlySiteCovs(umf), class), c(x="numeric", y="factor"))
   checkEquals(sapply(obsCovs(umf), class), c(x="numeric", y="factor"))
   checkEquals(sapply(obsCovs(umf), class), c(x="numeric", y="factor"))
-  
+
   df <- as(umf, "data.frame")
-  checkEqualsNumeric(dim(df), c(50,46)) 
+  checkEqualsNumeric(dim(df), c(50,46))
+}
+
+test.unmarkedMultFrame.unequal.secondary.periods <- function()
+{
+
+  nsites <- 6
+  nyr <- 4
+  nrep <- 2
+  y <- matrix(c(
+        1,0, 1,1, 0,0, 0,0,
+        1,1, 0,0, 0,0, 0,0,
+        0,0, 0,0, 0,0, 0,0,
+        0,0, 1,1, 0,0, 0,0,
+        1,1, 1,0, 0,1, 0,0,
+        0,0, 0,0, 0,0, 1,1), nrow=nsites, ncol=nyr*nrep, byrow=TRUE)
+
+  umf1 <- unmarkedMultFrame(y=y, numPrimary=4)
+  checkTrue(inherits(umf1, "unmarkedMultFrame"))
+
+  checkException(unmarkedMultFrame(y=y[,-1], numPrimary=4))
+
 }

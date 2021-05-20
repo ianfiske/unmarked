@@ -71,7 +71,8 @@ test.colext <- function()
     fm7.1 <- colext(~1, ~1, ~ysc, ~1, umf7)
     fm7.2 <- colext(~1, ~ysc, ~1, ~1, umf7)
 
-
+    # Check error when random term in formula
+    checkException(colext(~(1|dummy), ~1, ~ysc, ~1, umf7))
 }
 
 test.colext.predict <- function(){
@@ -86,7 +87,7 @@ test.colext.predict <- function(){
         0,0, 1,1, 0,0, 0,0,
         1,1, 1,0, 0,1, 0,0,
         0,0, 0,0, 0,0, 1,1), nrow=nsites, ncol=nyr*nrep, byrow=TRUE)
-  
+
     ysc <- data.frame(year=rep(c("1","2","3","4"), 6))
 
     umf1 <- unmarkedMultFrame(y=y, numPrimary=4, yearlySiteCovs=ysc)

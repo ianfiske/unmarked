@@ -471,6 +471,7 @@ setMethod("nonparboot", "unmarkedFitOccuTTD",
 })
 
 
+
 setMethod("nonparboot", "unmarkedFitOccuMulti",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
@@ -511,8 +512,17 @@ setMethod("nonparboot", "unmarkedFitOccuMulti",
         object@estimates@estimates[[est]]@covMatBS <- v.est
     }
     object
-
 })
+
+setMethod("nonparboot", "unmarkedFitNmixTTD",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+    callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
+                   bsType="site")
+})
+
+
+
 
 
 

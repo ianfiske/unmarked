@@ -243,6 +243,8 @@ test.occuTTD.singleseason <- function(){
   checkEqualsNumeric(coef(fitC), c(-0.5102,0.67941,-0.88612,-2.1219,
                                    -0.41504,1.3224), tol=1e-4)
 
+  # Check error when random effect in formula
+  checkException(occuTTD(~(1|dummy), ~1, data=umf))
 }
 
 test.occuTTD.dynamic <- function(){
@@ -324,6 +326,62 @@ test.occuTTD.dynamic <- function(){
   checkEqualsNumeric(dim(r@post), c(100,2,T))
   b <- bup(r)
   checkEqualsNumeric(dim(b), c(100,T))
+
+  # Check T > 2 works
+  N <- 100; J <- 1; T <- 3
+  scovs <- data.frame(elev=c(scale(runif(N, 0,100))),
+                          forest=runif(N,0,1),
+                          wind=runif(N,0,1))
+  beta_psi <- c(-0.69, 0.71, -0.5)
+  psi <- plogis(cbind(1, scovs$elev, scovs$forest) %*% beta_psi)
+  z <- matrix(NA, N, T)
+  z[,1] <- rbinom(N, 1, psi)
+
+  #Col/ext process
+  ysc <- data.frame(forest=rep(scovs$forest, each=T),
+                    elev=rep(scovs$elev, each=T))
+  c_b0 <- -0.4; c_b1 <- 0.3
+  gam <- plogis(c_b0 + c_b1 * scovs$forest)
+
+  e_b0 <- -0.7; e_b1 <- 0.4
+  ext <- plogis(e_b0 + e_b1 * scovs$elev)
+
+  for (i in 1:N){
+    for (t in 1:(T-1)){
+      if(z[i,t]==1){
+        #ext
+        z[i,t+1] <- rbinom(1, 1, (1-ext[i]))
+      } else {
+        #col
+        z[i,t+1] <- rbinom(1,1, gam[i])
+      }
+    }
+  }
+
+  #Simulate detection
+  ocovs <- data.frame(obs=rep(c('A','B'),N*T))
+  Tmax <- 10
+  beta_lam <- c(-2, -0.2, 0.7)
+  rate <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam)
+  rateB <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam - 0.5)
+  #Across seasons
+  rate2 <- as.numeric(t(cbind(rate, rateB, rate, rateB)))
+  ttd <- rexp(N*T*2, rate2)
+  ttd <- matrix(ttd, nrow=N, byrow=T)
+  ttd[ttd>Tmax] <- Tmax
+  ttd[z[,1]==0,1:2] <- Tmax
+  ttd[z[,2]==0,3:4] <- Tmax
+
+  umf <- unmarkedFrameOccuTTD(y = ttd, surveyLength = Tmax,
+                          siteCovs = scovs, obsCovs=ocovs,
+                          yearlySiteCovs=ysc, numPrimary=T)
+
+  fit2 <- occuTTD(psiformula=~elev+forest,detformula=~elev+wind+obs,
+                 gammaformula=~forest, epsilonformula=~elev,
+                 data=umf,se=T,
+                 linkPsi='logit',ttdDist='exp',engine="C")
+  checkTrue(inherits(fit2, "unmarkedFitOccuTTD"))
+
 }
 
 test.occuTTD.predict.complexFormulas <- function(){

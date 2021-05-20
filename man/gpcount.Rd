@@ -11,7 +11,7 @@ population size, availability, and detection probability.
 \usage{
 gpcount(lambdaformula, phiformula, pformula, data,
 mixture = c("P", "NB"), K, starts, method = "BFGS", se = TRUE,
-engine = c("C", "R"), ...)
+engine = c("C", "R"), threads=1, ...)
 }
 \arguments{
   \item{lambdaformula}{
@@ -45,6 +45,11 @@ engine = c("C", "R"), ...)
     Either "C" or "R" for the C++ or R versions of the likelihood. The C++
     code is faster, but harder to debug.
 }
+  \item{threads}{Set the number of threads to use for optimization in C++, if
+      OpenMP is available on your system. Increasing the number of threads
+      may speed up optimization in some cases by running the likelihood 
+      calculation in parallel. If \code{threads=1} (the default), OpenMP is disabled.
+} 
   \item{\dots}{
     Additional arguments to \code{\link{optim}}, such as lower and upper
     bounds

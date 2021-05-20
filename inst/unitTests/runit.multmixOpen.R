@@ -4,7 +4,7 @@ simData <- function(lambda=1, gamma=0.5, omega=0.8, p=0.5, M=100, T=5,
     y <- array(NA, c(M, 3, T))
     N <- matrix(NA, M, T)
     S <- G <- matrix(NA, M, T-1)
-  
+
   if(type=='removal'){
     for(i in 1:M) {
       N[i,1] <- rpois(1, lambda)
@@ -26,7 +26,7 @@ simData <- function(lambda=1, gamma=0.5, omega=0.8, p=0.5, M=100, T=5,
         y[i,3,t+1] <- rbinom(1, Nleft2, p)
         }
     }
-  } else if(type == "double"){  
+  } else if(type == "double"){
     cp <- c(p*(1-p2), p2*(1-p), p*p2)
     for(i in 1:M) {
       N[i,1] <- rpois(1, lambda)
@@ -48,7 +48,7 @@ simData <- function(lambda=1, gamma=0.5, omega=0.8, p=0.5, M=100, T=5,
 test.multmixOpen.removal <- function(){
 
   set.seed(123)
-  simy <- simData(lambda=4, gamma=0.5, omega=0.8, p=0.5, 
+  simy <- simData(lambda=4, gamma=0.5, omega=0.8, p=0.5,
                 M=100, T=5)
 
   sc <- data.frame(x1=rnorm(100))
@@ -63,7 +63,7 @@ test.multmixOpen.removal <- function(){
 
   #Check predict
   pr <- predict(fit, type='lambda')
-  checkEqualsNumeric(as.numeric(pr[1,]), 
+  checkEqualsNumeric(as.numeric(pr[1,]),
                      c(3.79942,0.298279,3.25808,4.43193), tol=1e-4)
 
   #Check getP
@@ -71,7 +71,7 @@ test.multmixOpen.removal <- function(){
   checkEqualsNumeric(dim(pv), dim(umf@y))
   checkEqualsNumeric(pv[1,1:3], pv[1,4:6])
   checkEqualsNumeric(pv[1,1:3], c(0.5086598,0.2499250,0.1227982), tol=1e-5)
-  
+
   #Check residuals
   r <- residuals(fit)
   checkEqualsNumeric(r[1,1:3], c(0.067122,-0.9497006,0.533337), tol=1e-4)
@@ -87,21 +87,23 @@ test.multmixOpen.removal <- function(){
   ran <- ranef(fit)
   checkEqualsNumeric(bup(ran)[1,1], 3.450738, tol=1e-5)
 
+  #Check error when random effect in formula
+  checkException(multmixOpen(~(1|dummy), ~1, ~1, ~1, umf))
 }
 
 test.multmixOpen.NA <- function(){
-  
+
   set.seed(123)
-  simy <- simData(lambda=4, gamma=0.5, omega=0.8, p=0.5, 
+  simy <- simData(lambda=4, gamma=0.5, omega=0.8, p=0.5,
                 M=100, T=5)
 
   sc <- data.frame(x1=rnorm(100))
   oc <- data.frame(x2=rnorm(100*3*5))
-  
+
   simy$y[1,1:3] <- NA
   simy$y[2,1] <- NA
   sc$x1[3] <- NA
-  
+
   #This breaks things. I think it has to do with delta
   #probably a common issue for all open population functions
   #oc$x2[49] <- NA
@@ -127,12 +129,12 @@ test.multmixOpen.double <- function(){
   simy <- simData(lambda=4, gamma=0.5, omega=0.8, p=0.5, p2=0.5,
                 M=300, T=5, type="double")
 
-  umf <- unmarkedFrameMMO(y=simy$y, numPrimary=5, 
+  umf <- unmarkedFrameMMO(y=simy$y, numPrimary=5,
                           siteCovs=data.frame(x1=rnorm(300)),
                         type="double")
 
   fit <- multmixOpen(~x1, ~1, ~1, ~x1, K=30, data=umf)
-  
+
 
   checkEqualsNumeric(coef(fit), c(1.405123,-0.037941,-0.52361,
                                   1.321799,0.070564,-0.0150329), tol=1e-4)
@@ -140,7 +142,7 @@ test.multmixOpen.double <- function(){
   pv <- getP(fit)
   checkEqualsNumeric(dim(pv), dim(umf@y))
   checkEqualsNumeric(pv[1,1:3], pv[1,4:6])
-  
+
   checkEqualsNumeric(pv[1,1:3], c(0.2497033,0.2497033,0.26752), tol=1e-5)
 
 }
@@ -148,7 +150,7 @@ test.multmixOpen.double <- function(){
 test.multmixOpen.NB <- function(){
 
   set.seed(123)
-  simy <- simData(lambda=4, gamma=0.5, omega=0.8, p=0.5, 
+  simy <- simData(lambda=4, gamma=0.5, omega=0.8, p=0.5,
                 M=100, T=5)
 
   sc <- data.frame(x1=rnorm(100))
@@ -164,14 +166,14 @@ test.multmixOpen.NB <- function(){
 }
 
 test.multmixOpen.dynamics <- function(){
-  
+
   set.seed(123)
-  simy <- simData(lambda=4, gamma=2, omega=0.5, p=0.5, 
+  simy <- simData(lambda=4, gamma=2, omega=0.5, p=0.5,
                 M=100, T=5)
 
   sc <- data.frame(x1=rnorm(100))
   oc <- data.frame(x2=rnorm(100*3*5))
-  
+
   umf <- unmarkedFrameMMO(y=simy$y, numPrimary=5, siteCovs=sc,
                         obsCov=oc, type="removal")
 
@@ -179,11 +181,11 @@ test.multmixOpen.dynamics <- function(){
   checkEqualsNumeric(coef(fm), c(1.35929,-0.18441,-0.041613), tol=1e-4)
 
   fm <- multmixOpen(~1, ~1, ~1, ~1, data = umf, K=25, dynamics="trend")
-  checkEqualsNumeric(coef(fm), c(1.43740,-0.01538,-0.22348), tol=1e-5) 
+  checkEqualsNumeric(coef(fm), c(1.43740,-0.01538,-0.22348), tol=1e-5)
 
   fm <- multmixOpen(~1, ~1, ~1, ~1, data = umf, K=25, dynamics="autoreg")
   checkEqualsNumeric(coef(fm), c(1.45539,-0.76353,0.075356,-0.277835), tol=1e-5)
-  
+
   #Sketchy estimates
   #Maybe just because data were simulated using a different process?
   #Leaving these in for now just to make sure they run without errors

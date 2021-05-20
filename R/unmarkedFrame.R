@@ -204,6 +204,9 @@ unmarkedFrameDS <- function(y, siteCovs = NULL, dist.breaks, tlength,
         tlength <- rep(NA_real_, nrow(y))
     if((survey=="line") & (length(tlength) != nrow(y)))
         stop("tlength should be a vector with length(tlength)==nrow(y)")
+    if(length(dist.breaks) != ncol(y)+1){
+      stop(paste("dist.breaks should have",ncol(y)+1,"values"))
+    }
     umfds <- new("unmarkedFrameDS", y = y, obsCovs = NULL,
                  siteCovs = siteCovs, dist.breaks = dist.breaks,
                  tlength = tlength, survey = survey, unitsIn = unitsIn,
@@ -337,6 +340,9 @@ unmarkedMultFrame <- function(y, siteCovs = NULL, obsCovs = NULL,
     J <- ncol(y)
 	  umf <- unmarkedFrame(y, siteCovs, obsCovs, obsToY = diag(J))
     umf <- as(umf, "unmarkedMultFrame")
+    if(ncol(umf@y) %% numPrimary != 0){
+      stop("Unequal number of secondary periods in each primary period", call.=FALSE)
+    }
     umf@numPrimary <- numPrimary
     umf@yearlySiteCovs <- covsToDF(yearlySiteCovs, "yearlySiteCovs",
                                    numPrimary, nrow(y))
@@ -523,6 +529,10 @@ unmarkedFrameDSO <- function(y, siteCovs=NULL, yearlySiteCovs=NULL, numPrimary,
       }
     }
 
+    if(length(dist.breaks) != J+1){
+      stop(paste("dist.breaks should have",J+1,"values"))
+    }
+
     umf@yearlySiteCovs <- yearlySiteCovs
     umf <- as(umf, "unmarkedFrameDSO")
     umf@dist.breaks <- dist.breaks
@@ -570,6 +580,10 @@ unmarkedFrameGDS<- function(y, siteCovs, numPrimary,
       if(length(tlength) != nrow(y)) {
         stop("tlength should be a vector with length(tlength)==nrow(y)")
       }
+    }
+
+    if(length(dist.breaks) != J+1){
+      stop(paste("dist.breaks should have",J+1,"values"))
     }
 
     umf <- as(umf, "unmarkedFrameGDS")
@@ -748,18 +762,8 @@ setMethod("show", "unmarkedMultFrame",
     function(object)
 {
     df <- as(object, "data.frame")
-    ysc <- yearlySiteCovs(object)
-    if(is.null(ysc)) {
-        cat("Data frame representation of unmarkedFrame object.\n")
-        print(df)
-        }
-    else {
-        T <- object@numPrimary
-        yscwide <- lapply(ysc, matrix, ncol=T, byrow=TRUE)
-        df <- data.frame(df, yscwide)
-        cat("Data frame representation of unmarkedFrame object.\n")
-        print(df)
-        }
+    cat("Data frame representation of unmarkedFrame object.\n")
+    print(df)
 })
 
 setMethod("show", "unmarkedFrameOccuMulti", function(object)

@@ -5,6 +5,10 @@ test.distsamp.covs <- function() {
     checkException(unmarkedFrameDS(y = y, siteCovs = siteCovs,
         dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, (5-1)),
         unitsIn="km"))
+    #Check error thrown when length(dist.breaks) != J+1
+    checkException(unmarkedFrameDS(y = y, siteCovs = siteCovs,
+        dist.breaks=c(5,10)/1000, survey="line", tlength=rep(1, 5),
+        unitsIn="km"))
 
     umf <- unmarkedFrameDS(y = y, siteCovs = siteCovs,
         dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, 5),
@@ -25,7 +29,10 @@ test.distsamp.covs <- function() {
 
     checkEqualsNumeric(coef(backTransform(lam.lc)), 3.365655, tol = 1e-4)
     checkEqualsNumeric(coef(backTransform(det.lc)), 0.007957658, tol = 1e-4)
-    }
+    
+    # Check error when random effects in formula
+    checkException(distsamp(~x~(1|dummy), umf))
+}
 
 
 

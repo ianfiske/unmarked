@@ -2,6 +2,16 @@ All changes can be found here:
 https://github.com/rbchan/unmarked/commits/master.
 The following is just a summary.
 
+Version 1.1.1
+  o Fix address sanitizer problems with multmixOpen
+
+Version 1.1.0
+  o Add nmixTTD fitting function
+  o Add experimental random effects support and TMB engine to occu and pcount
+  o Add openMP support to some fitting functions (occuRN, gdistsamp, gmultmix, gpcount) for calculating likelihood in parallel
+  o Define STRICT_R_HEADERS in C++ code for compatibility with future Rcpp update
+  o Many bugfixes mainly related to predict()
+
 Version 1.0.1
   o Fix LTO mismatches
   o Automatically convert characters to factors in unmarkedFrames

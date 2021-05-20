@@ -27,7 +27,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   Rcpp::IntegerVector last(last_);
   int first1 = as<int>(first1_);
   arma::imat ytna = as<arma::imat>(ytna_); // y[i,,t] are all NA
-  icube yna = as<icube>(yna_);
+  ucube yna = as<ucube>(yna_);
   arma::imat delta = as<arma::imat>(delta_);
 
   vec lfac_k = as<vec>(lfac_k_);
@@ -135,6 +135,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
   colvec g1_star = zeros(lk);
   cube g3_t = zeros(lk,lk,T-1);
   mat ky_slice(lk, T);
+  umat y_slice(J,T);
 
   // compute g3 if there are no covariates of omega/gamma
   if(go_dims == "scalar") {
@@ -176,6 +177,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     last_i = last[i];
 
     ky_slice = kmyt.slice(i); //using subcube causes segfaults
+    y_slice = y.slice(i);
 
     //Calculate g_star
     g_star.ones();
@@ -189,9 +191,10 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
 	      }
 
         //Detection
-        ivec na_sub = yna.subcube(span(i), span(t), span());
+        uvec na_sub = yna.slice(i).col(t);
 
-        uvec ysub = y.subcube(span(i), span(t), span());
+        //vec ysub = y.subcube(span(i), span(t), span());
+        uvec ysub = y_slice.col(t);
         vec lkmyt_sub = lfac_kmyt.subcube(span(i), span(t), span());
         vec psub = p.subcube(span(), span(i), span(t));
         vec cp = piFun(psub, pi_fun);
@@ -252,9 +255,10 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
     int delta_i0 = delta(i,0);
     g1.zeros();
 
-    ivec na_sub = yna.subcube(span(i), span(first_i), span());
+    uvec na_sub = yna.slice(i).col(first_i);
 
-    uvec ysub = y.subcube(span(i), span(first_i), span());
+    //vec ysub = y.subcube(span(i), span(first_i), span());
+    uvec ysub = y_slice.col(first_i);
     vec lkmyt_sub = lfac_kmyt.subcube(span(i), span(first_i), span());
     vec psub = p.subcube(span(), span(i), span(first_i));
     vec cp = piFun(psub, pi_fun);
@@ -313,7 +317,7 @@ SEXP nll_multmixOpen( SEXP y_, SEXP yt_, SEXP Xlam_, SEXP Xgam_, SEXP Xom_,
       ll_i += sum(g2star);
     }
 
-    ll += log(ll_i + DOUBLE_XMIN);
+    ll += log(ll_i + DBL_MIN);
 
   }
 

@@ -1,4 +1,4 @@
-simData <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, scale=NULL, 
+simData <- function(lambda=1, gamma=0.5, omega=0.8, sigma=40, scale=NULL,
                     M=100, T=5, J=4,type="line", keyfun="halfnorm")
 {
     y <- array(NA, c(M, J, T))
@@ -62,16 +62,16 @@ if(type=="point"){
    a[1] <- pi*db[2]^2
    for(j in 2:J) {
       a[j] <- pi*db[j+1]^2 - sum(a[1:j])
- 
+
     }
     }
 if(type=="line"){
    L <-  1
    a[1] <- L*db[2]
- 
+
     for(j in 2:J) {
       a[j] <-  db[j+1]  - sum(a[1:j])
- 
+
     }
     }
     u <- a / sum(a)
@@ -97,37 +97,39 @@ if(type=="line"){
 }
 
 test.unmarkedFrameDSO <- function(){
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=15,type="line", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=15,type="line",
             keyfun="halfnorm")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=15,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="line", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="line",
                           unitsIn="m",tlength=rep(1, 100))
   checkException(unmarkedFrameDSO(y=y,numPrimary=15,
                   dist.breaks=c(0,25,50,75,100), survey="line", tlength=c(1,1)))
 
   checkException(unmarkedFrameDSO(y=y,numPrimary=15,
-                  dist.breaks=c(0,25,50,75,100), survey="point", 
+                  dist.breaks=c(0,25,50,75,100), survey="point",
                   tlength=rep(1,100)))
+  checkException(unmarkedFrameDSO(y=y, numPrimary=15, dist.breaks=c(25,50,75,100),
+                                  survey='line', unitsIn='m', tlength=rep(1,100)))
 }
 
 test.distsampOpen.halfnormal <- function()
 {
   set.seed(456)
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=15,type="line", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=15,type="line",
             keyfun="halfnorm")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=15,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="line", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="line",
                           unitsIn="m",tlength=rep(1, 100))
-  
+
   fm <- distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=30,keyfun="halfnorm")
 
   checkEqualsNumeric(coef(fm), c(1.38017,0.69961,0.053022,3.17838,0.0043299),
                      tol=1e-5)
 
   pr <- predict(fm, type='lambda')
-  checkEqualsNumeric(as.numeric(pr[1,]), 
+  checkEqualsNumeric(as.numeric(pr[1,]),
                      c(3.9756,0.3474,3.3497,4.7183), tol=1e-4)
 
   pval <- getP(fm)
@@ -138,10 +140,10 @@ test.distsampOpen.halfnormal <- function()
   r <- residuals(fm)
   checkEqualsNumeric(dim(r), dim(y))
   checkEqualsNumeric(r[1,1:4], c(-0.84042,-0.31240,-0.042783,-0.0021283),tol=1e-4)
-  
+
   ran <- ranef(fm)
   checkEqualsNumeric(bup(ran)[1,1], 2.777855, tol=1e-5)
- 
+
   set.seed(123)
   sim <- simulate(fm, nsim=2)
   checkEqualsNumeric(length(sim), 2)
@@ -152,22 +154,24 @@ test.distsampOpen.halfnormal <- function()
 
   #Point
   set.seed(123)
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=15,type="point", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=15,type="point",
             keyfun="halfnorm")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=15,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="point", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="point",
                           unitsIn="m")
-  
+
   fm <- distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=30,keyfun="halfnorm")
   checkEqualsNumeric(coef(fm), c(1.43259,0.82993,-0.295220,3.205348,-0.000132),
                                  tol=1e-4)
 
+  #Check error with random effects in formula
+  checkException(distsampOpen(~(1|dummy), ~1, ~1, ~1, data=umf, K=30))
 }
 
 test.distsampOpen.NA <- function(){
-  set.seed(456) 
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=30, T=5,type="line", 
+  set.seed(456)
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=30, T=5,type="line",
             keyfun="halfnorm")$y
 
   y[5,1:4] <- NA
@@ -180,7 +184,7 @@ test.distsampOpen.NA <- function(){
   umf <- unmarkedFrameDSO(y = y, numPrimary=5,
             siteCovs=sc,
             yearlySiteCovs=ysc,
-            dist.breaks = c(0, 25, 50, 75, 100), survey="line", 
+            dist.breaks = c(0, 25, 50, 75, 100), survey="line",
             unitsIn="m",tlength=rep(1, 30))
 
   fm <- distsampOpen(~x1, ~x2, ~1, ~1, data=umf, K=25, keyfun="halfnorm")
@@ -191,26 +195,26 @@ test.distsampOpen.NA <- function(){
 
 test.distsampOpen.exp <- function(){
   set.seed(123)
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="line", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="line",
             keyfun="exp")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=10,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="line", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="line",
                           unitsIn="m",tlength=rep(1, 100))
-  
+
   fm <- distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=25,keyfun="exp")
   checkEqualsNumeric(coef(fm), c(1.34009,0.69997,-0.11887,3.17950,0.029042),
                      tol=1e-4)
 
   #Point
   set.seed(456)
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="point", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="point",
             keyfun="exp")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=10,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="point", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="point",
                           unitsIn="m")
-  
+
   fm <- distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=25,keyfun="exp")
   checkEqualsNumeric(coef(fm), c(1.39598,0.64463,0.053240,3.23198,0.012271),
                      tol=1e-4)
@@ -219,25 +223,25 @@ test.distsampOpen.exp <- function(){
 
 test.distsampOpen.unif <- function(){
   set.seed(123)
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="line", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="line",
             keyfun="uniform")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=10,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="line", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="line",
                           unitsIn="m",tlength=rep(1, 100))
-  
+
   fm <- distsampOpen(~1, ~1, ~1, data = umf, K=25,keyfun="unif")
   checkEqualsNumeric(coef(fm), c(1.47853,0.7475,-0.115096),
                      tol=1e-4)
 
   set.seed(123)
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="point", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="point",
             keyfun="uniform")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=10,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="point", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="point",
                           unitsIn="m")
-  
+
   fm <- distsampOpen(~1, ~1, ~1, data = umf, K=25,keyfun="unif")
   checkEqualsNumeric(coef(fm), c(1.36098,0.69191,-0.03537),
                      tol=1e-4)
@@ -249,9 +253,9 @@ test.distsampOpen.hazard <- function(){
                M=100, T=10,type="line", keyfun="hazard")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=10,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="line", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="line",
                           unitsIn="m",tlength=rep(1, 100))
-  
+
   fm <- distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=25,keyfun="hazard")
   checkEqualsNumeric(coef(fm), c(1.40843,0.64105,-0.010841,3.297099,-0.02168,0.07719),
                      tol=1e-4)
@@ -260,13 +264,13 @@ test.distsampOpen.hazard <- function(){
 test.distsampOpen.NB <- function(){
 
   set.seed(123)
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="line", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="line",
             keyfun="exp")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=10,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="line", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="line",
                           unitsIn="m",tlength=rep(1, 100))
-  
+
   fm <- distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=25,keyfun="exp",
                  mixture="NB")
   checkEqualsNumeric(coef(fm), c(1.34009,0.699979,-0.118878,3.179589,
@@ -276,25 +280,25 @@ test.distsampOpen.NB <- function(){
 
 test.distsampOpen.dynamics <- function(){
   set.seed(123)
-  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="line", 
+  y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=10,type="line",
             keyfun="uniform")$y
   umf <- unmarkedFrameDSO(y = y, numPrimary=10,
                           siteCovs=data.frame(x1=rnorm(100)),
-                          dist.breaks = c(0, 25, 50, 75, 100), survey="line", 
+                          dist.breaks = c(0, 25, 50, 75, 100), survey="line",
                           unitsIn="m",tlength=rep(1, 100))
-  
+
   fm <- distsampOpen(~1, ~1, ~1, data = umf, K=25,keyfun="unif",
                     dynamics="notrend")
   checkEqualsNumeric(coef(fm), c(1.4080889, -0.1006024), tol=1e-5)
 
   fm <- distsampOpen(~1, ~1, ~1, data = umf, K=25, keyfun="unif",
                      dynamics="trend")
-  checkEqualsNumeric(coef(fm), c(1.518695, -0.0143889), tol=1e-5) 
+  checkEqualsNumeric(coef(fm), c(1.518695, -0.0143889), tol=1e-5)
 
   fm <- distsampOpen(~1, ~1, ~1, data = umf, K=25, keyfun="unif",
                      dynamics="autoreg")
   checkEqualsNumeric(coef(fm), c(1.518686, -0.018026, -5.628779), tol=1e-5)
-  
+
   #Sketchy estimates
   #Maybe just because data were simulated using a different process?
   #Leaving these in for now just to make sure they run without errors

@@ -15,10 +15,13 @@ test.occuFP.fitList <- function() {
   site <- data.frame(habitat = site)
   occ <- list(METH = occ)
   umf1 <- unmarkedFrameOccuFP(y,site,occ, type = type)
-     
+
   m1 <- occuFP(detformula = ~ METH, FPformula = ~1,
                stateformula = ~ habitat, data = umf1)
   fl <- fitList(m1,m1)
   checkEquals(class(fl)[1],"unmarkedFitList")
   checkEqualsNumeric(length(fl@fits), 2)
+
+  # Check error when random effect in formula
+  checkException(occuFP(~(1|dummy), ~1, ~1, data=umf1))
 }

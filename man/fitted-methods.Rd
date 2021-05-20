@@ -9,6 +9,7 @@
 \alias{fitted,unmarkedFitOccuMulti-method}
 \alias{fitted,unmarkedFitOccuMS-method}
 \alias{fitted,unmarkedFitOccuTTD-method}
+\alias{fitted,unmarkedFitNmixTTD-method}
 \alias{fitted,unmarkedFitPCount-method}
 \alias{fitted,unmarkedFitDS-method}
 \alias{fitted,unmarkedFitPCO-method}

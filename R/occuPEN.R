@@ -1,6 +1,7 @@
 #  Fit the penalized occupancy models of Hutchinson et al (2015).
 computeMPLElambda = function(formula, data, knownOcc = numeric(0), starts, method = "BFGS", engine = c("C", "R")){
 
+  engine <- match.arg(engine, c("C", "R"))
   designMats <- getDesign(data, formula)
   X <- designMats$X; V <- designMats$V; y <- designMats$y
   removed <- designMats$removed.sites
@@ -22,7 +23,7 @@ computeMPLElambda = function(formula, data, knownOcc = numeric(0), starts, metho
   LRparams = glm.fit(x=X,y=apply(y,1,max),family=binomial(),intercept=F,start=starts[1:nOP])
   naiveOcc = mean(LRparams$fitted.values)
   occuOutMLE = occu(formula,data,knownOcc = knownOcc, starts = starts,
-                 method = "BFGS", engine = c("C", "R"), se = TRUE)
+                 method = "BFGS", engine = engine, se = TRUE)
   meanDet = mean((1+exp(-occuOutMLE[2]@estimates%*%t(V)))^-1)
   MPLElambda = sqrt(sum(diag(occuOutMLE[2]@covMat)))*(1-(1-meanDet)^(dim(y)[2]))*(1-naiveOcc) # what if there are different numbers of visits to different sites?
   return(MPLElambda)
@@ -173,6 +174,8 @@ occuPEN <- function(formula, data, knownOcc = numeric(0), starts,
 		 ...)
 {
 
+    check_no_support(split_formula(formula))
+
     if(!is(data, "unmarkedFrameOccu"))
         stop("Data is not an unmarkedFrameOccu object.")
 
@@ -228,7 +231,7 @@ occuPEN <- function(formula, data, knownOcc = numeric(0), starts,
     ## compute logistic regression MPLE targets and lambda:
     if (pen.type=="MPLE") {
       LRparams = glm.fit(x=X,y=apply(y,1,max),family=binomial(),intercept=F,start=starts[1:nOP])
-      MPLElambda = computeMPLElambda(formula, data, knownOcc = numeric(0), starts, method = "BFGS", engine = c("C", "R"))
+      MPLElambda = computeMPLElambda(formula, data, knownOcc = numeric(0), starts, method = "BFGS", engine = engine)
       if (MPLElambda != lambda) warning("Supplied lambda does not match the computed value. Proceeding with the supplied lambda.")
     }
 

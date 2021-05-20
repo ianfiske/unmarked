@@ -19,6 +19,10 @@ test.occuMulti.fit.simple.1 <- function() {
   fl <- fitList(fm, fm)
   checkEquals(class(fl)[1],"unmarkedFitList")
   checkEqualsNumeric(length(fl@fits), 2)
+
+  #Check error when random effect in formula
+  checkException(occuMulti(detformulas=rep("~1",2),
+                           stateformulas=c("~(1|group)",rep("~1",2)), umf))
 }
 
 test.occuMulti.fit.simple.0 <- function() {
@@ -296,6 +300,27 @@ test.occuMulti.predict <- function(){
   gp <- getP(fm)
   checkEquals(length(gp), 2)
   checkEquals(dim(gp[[1]]), c(20,2))
+
+  #simulate with maxOrder set
+  s <- simulate(fm, 2)
+  checkTrue(inherits(s, "list"))
+  checkEquals(length(s), 2)
+  checkEquals(dim(s[[1]][[1]]), c(N, J))
+
+  #fitList with maxOrder set
+  fm2 <- occuMulti(c("~1","~1"), c("~1","~1"), umf, maxOrder=1)
+  fl2 <- fitList(fm, fm2)
+  checkTrue(inherits(fl2, "unmarkedFitList"))
+  ms <- modSel(fl2)
+  checkTrue(inherits(ms, "unmarkedModSel"))
+
+  #fitted with maxOrder set
+  ft <- fitted(fm)
+  checkEquals(length(ft), 2)
+
+  #parboot with maxOrder set
+  pb <- parboot(fm, nsim=2)
+  checkTrue(inherits(pb, "parboot"))
 }
 
 test.occuMulti.predict.NA <- function(){

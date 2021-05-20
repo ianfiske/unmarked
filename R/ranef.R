@@ -993,6 +993,69 @@ setMethod("ranef", "unmarkedFitMMO",
 })
 
 
+setMethod("ranef", "unmarkedFitNmixTTD",
+    function(object, ...)
+{
+
+  M <- nrow(object@data@y)
+  J <- ncol(object@data@y)
+  tdist <- ifelse("shape" %in% names(object@estimates), "weibull", "exp")
+  mix <- ifelse("alpha" %in% names(object@estimates), "NB", "P")
+  K <- object@K
+
+  yvec <- as.numeric(t(object@data@y))
+  removed <- object@sitesRemoved
+  naflag <- as.numeric(is.na(yvec))
+  surveyLength <- object@data@surveyLength
+  if(length(removed>0)) surveyLength <- surveyLength[-removed,]
+  ymax <- as.numeric(t(surveyLength))
+  delta <- as.numeric(yvec<ymax)
+
+  #Get predicted values
+  abun <- predict(object, "state", na.rm=FALSE)$Predicted
+  lam <- predict(object, "det", na.rm=FALSE)$Predicted
+
+  if(mix == "P"){
+    pK <- sapply(0:K, function(k) dpois(k, abun))
+  } else {
+    alpha <- exp(coef(object, "alpha"))
+    pK <- sapply(0:K, function(k) dnbinom(k, mu=abun, size = alpha))
+  }
+
+  if(tdist=='weibull'){
+    shape <- exp(coef(object, "shape"))
+
+    e_lamt <- sapply(0:K, function(k){
+      lamK <- k*lam
+      ( shape*lamK*(lamK*yvec)^(shape-1) )^delta * exp(-1*(lamK*yvec)^shape)
+    })
+
+  } else {
+    #Exponential
+    e_lamt <- sapply(0:K, function(k) (lam*k)^delta * exp(-lam*k*yvec))
+  }
+
+  post <- array(NA, c(M, K+1, 1))
+  colnames(post) <- 0:K
+  ystart <- 1
+  for (m in 1:M){
+
+    yend <- ystart+J-1
+    pT <- rep(NA,length=K+1)
+    pT[1] <- 1 - max(delta[ystart:yend], na.rm=T)
+    for (k in 1:K){
+      elamt_sub <- e_lamt[ystart:yend, k+1]
+      pT[k+1] <- prod(elamt_sub[!is.na(elamt_sub)])
+    }
+    ystart <- ystart + J
+    probs <- pK[m,] * pT
+    post[m,,1] <- probs / sum(probs)
+  }
+
+  new("unmarkedRanef", post=post)
+})
+
+
 setGeneric("bup", function(object, stat=c("mean", "mode"), ...)
     standardGeneric("bup"))
 setMethod("bup", "unmarkedRanef",

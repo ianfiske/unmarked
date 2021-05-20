@@ -1,21 +1,24 @@
-occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data, 
+occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
                    parameterization=c('multinomial','condbinom'),
-                   starts, method='BFGS', se=TRUE, engine=c("C","R"), 
+                   starts, method='BFGS', se=TRUE, engine=c("C","R"),
                    silent=FALSE, ...){
 
   #Format input data-----------------------------------------------------------
   #Check data object
   if(!inherits(data, "unmarkedFrameOccuMS"))
     stop("Data must be created with unmarkedFrameOccuMS()")
-  
+
   #Check engine
   engine <- match.arg(engine, c("C","R"))
-  
+
   #Check parameterization
-  parameterization <- match.arg(parameterization, c('multinomial','condbinom')) 
+  parameterization <- match.arg(parameterization, c('multinomial','condbinom'))
   if(parameterization=='condbinom'&data@numStates!=3){
     stop("Conditional binomial parameterization requires exactly 3 occupancy states")
   }
+
+  #Check formulas
+  check_no_support(lapply(c(detformulas,psiformulas,phiformulas), as.formula))
 
   #Get design matrices and other info
   gd <- getDesign(data,psiformulas,phiformulas,detformulas,parameterization)
@@ -27,7 +30,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
   J <- R / T
   S <- data@numStates
   npsi <- S-1 #Number of free psi values
-  nphi <- S^2 - S #Number of free phi values 
+  nphi <- S^2 - S #Number of free phi values
   np <- S * (S-1) / 2 #Number of free p values
   sind <- gd$state_ind
   dind <- gd$det_ind
@@ -40,11 +43,11 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
   guide <- matrix(NA,nrow=S,ncol=S)
   guide <- lower.tri(guide,diag=T)
   guide[,1] <- FALSE
-  guide <- which(guide,arr.ind=T) 
+  guide <- which(guide,arr.ind=T)
   #----------------------------------------------------------------------------
 
   #Likelihood function in R----------------------------------------------------
-  
+
   #Build parameter from design matrix and beta
   get_param <- function(dm_list, params, ind){
     m <- length(dm_list)
@@ -118,7 +121,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
     sdp[3,] <- c( 1-probs[2], probs[2]*(1-probs[3]), probs[2]*probs[3])
     sdp
   }
-  
+
   #Set correct function to get sdp (why did I call this sdp?)
   #To save repeated conditional checks for correct function
   get_sdp <- get_sdp_mult
@@ -129,9 +132,9 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
   }
 
   nll_R <- function(params){
-    
+
     #Get psi values
-    raw_psi <- get_param(gd$dm_state, params, sind) 
+    raw_psi <- get_param(gd$dm_state, params, sind)
     psi <- get_psi(raw_psi, parameterization)
 
     if(T>1){
@@ -146,7 +149,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
     phi_index <- 1
     for (n in 1:N){
       ystart <- 1
-      phi_prod <- diag(S) 
+      phi_prod <- diag(S)
       if(T>1){
         for (t in 1:(T-1)){
           pend <- pstart+J-1
@@ -158,19 +161,19 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
           ystart <- ystart + J
           phi_index <- phi_index + 1
         }
-      } 
+      }
 
       pend <- pstart+J-1
       yend <- ystart+J-1
       ph_T <- get_ph(y[n,ystart:yend], p[pstart:pend,])
       pstart <- pstart + J
-          
+
       lik[n] <- psi[n,] %*% phi_prod %*% ph_T
     }
     -sum(log(lik))
   }
   #----------------------------------------------------------------------------
-  
+
   #Likelihood function in C++--------------------------------------------------
   naflag <- is.na(y)
   nll_C <- function(params){
@@ -183,7 +186,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
   #----------------------------------------------------------------------------
 
   #Run optim()-----------------------------------------------------------------
-  
+
   nll <- nll_C
   #Choose function
   if(engine=="R"){
@@ -203,7 +206,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
 
   state_name <- 'Occupancy'
   if(T>1) state_name <- 'Initial Occupancy'
-  
+
   invlink <- 'multinomial'
   invlinkGrad <- 'multinomial'
   if(parameterization == 'condbinom'){
@@ -223,7 +226,7 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
                                                       (nSP + nPP + 1) : nP]),
                           invlink = "logistic",
                           invlinkGrad = "logistic.grad")
-  
+
   if(T>1){
     transition <- unmarkedEstimate(name='Transition Probabilities', short.name='phi',
                                   estimates = ests[(nSP+1):(nSP+nPP)],
@@ -232,15 +235,15 @@ occuMS <- function(detformulas, psiformulas, phiformulas=NULL, data,
                                    invlink=invlink,
                                    invlinkGrad=invlinkGrad)
 
-    estimateList <- unmarkedEstimateList(list(state=state, 
+    estimateList <- unmarkedEstimateList(list(state=state,
                                               transition=transition,
                                               det=det))
   } else {
-    
+
     estimateList <- unmarkedEstimateList(list(state=state, det=det))
     phiformulas <- NA_character_
   }
- 
+
   umfit <- new("unmarkedFitOccuMS", fitType = "occuMS", call = match.call(),
                 detformulas = detformulas, psiformulas = psiformulas,
                 phiformulas = phiformulas,

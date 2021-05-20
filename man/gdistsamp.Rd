@@ -12,7 +12,7 @@ to be modeled using the negative binomial distribution.
 gdistsamp(lambdaformula, phiformula, pformula, data, keyfun =
 c("halfnorm", "exp", "hazard", "uniform"), output = c("abund",
 "density"), unitsOut = c("ha", "kmsq"), mixture = c("P", "NB"), K,
-starts, method = "BFGS", se = TRUE, engine=c("C","R"), rel.tol=1e-4, ...)
+starts, method = "BFGS", se = TRUE, engine=c("C","R"), rel.tol=1e-4, threads=1, ...)
 }
 \arguments{
   \item{lambdaformula}{
@@ -62,6 +62,12 @@ starts, method = "BFGS", se = TRUE, engine=c("C","R"), rel.tol=1e-4, ...)
     See \link{integrate}. You might try adjusting this if you get an error
     message related to the integral. Alternatively, try providing
     different starting values.}
+
+\item{threads}{Set the number of threads to use for optimization in C++, if
+      OpenMP is available on your system. Increasing the number of threads
+      may speed up optimization in some cases by running the likelihood 
+      calculation in parallel. If \code{threads=1} (the default), OpenMP is disabled.} 
+
 \item{\dots}{Additional arguments to optim, such as lower and upper
       bounds}
 

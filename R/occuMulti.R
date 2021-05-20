@@ -1,3 +1,4 @@
+
 occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
                       penalty=0, boot=30, starts, method='BFGS', se=TRUE,
                       engine=c("C","R"), silent=FALSE, ...){
@@ -17,6 +18,9 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
     }
     detformulas <- rep('~1',length(data@ylist))
   }
+  all_forms <- c(detformulas, stateformulas)
+  all_forms <- all_forms[!all_forms %in% c("0","~0")]
+  check_no_support(lapply(all_forms, as.formula))
 
   #Check penalty
   if(penalty < 0) stop("Penalty term must be >= 0")
@@ -76,6 +80,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
 
     #Penalty term (defaults to 0)
     pen <- penalty * 0.5 * sum(params^2)
+
     #neg log likelihood
     -1 * (sum(log(rowSums(psi*prdProbY))) - pen)
   }

@@ -70,7 +70,7 @@ we indicate a censored \eqn{y_i} in \code{occuTTD} instead by setting
 \eqn{Tmax} to the \code{surveyLength} argument of \code{unmarkedFrameOccuTTD}, 
 or provide a matrix, potentially with a unique value of \eqn{Tmax} for each 
 value of \code{y}. Note that in the latter case the value of \code{y} that will 
-be interpreted by \code{occutTTD} as a censored observation (i.e., \eqn{Tmax}) 
+be interpreted by \code{occuTTD} as a censored observation (i.e., \eqn{Tmax}) 
 will differ between observations!
 
 Occupancy and detection can be estimated with only a single survey per site, 

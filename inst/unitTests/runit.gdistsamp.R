@@ -31,6 +31,10 @@ test.gdistsamp.covs <- function() {
     checkException(unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
                             dist.breaks=breaks,
                             tlength=rep(transect.length, (R-1)), numPrimary=T))
+    # Throw error when length(distbreaks) != J+1
+    checkException(unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
+                            dist.breaks=breaks[-1],
+                            tlength=rep(transect.length, R), numPrimary=T))
 
     # Organize data
     umf <- unmarkedFrameGDS(y = y, survey="line", unitsIn="m",
@@ -45,6 +49,8 @@ test.gdistsamp.covs <- function() {
     re1 <- ranef(fm1)
     checkEqualsNumeric(bup(re1, "mode")[1:7], c(3,5,3,5,5,2,5))
 
+    # Check error when formula has random effects
+    checkException(gdistsamp(~(1|dummy), ~1, ~1, umf))
 }
 
 test.gdistsamp.halfnorm <- function(){
