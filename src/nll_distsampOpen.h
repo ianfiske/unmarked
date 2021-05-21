@@ -2,6 +2,7 @@
 #define _unmarked_NLL_DISTSAMPOPEN_H
 
 #include <RcppArmadillo.h>
+#include <float.h>
 #include "tranprobs.h"
 #include "distprob.h"
 #include "distr.h"

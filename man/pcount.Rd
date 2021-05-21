@@ -81,6 +81,8 @@ Distributions, 3rd ed. Wiley.
 
 \examples{
 
+\dontrun{
+
 # Simulate data
 set.seed(35)
 nSites <- 100
@@ -116,9 +118,6 @@ plot(fm1re, subset=site \%in\% 1:25, xlim=c(-1,40))
 sum(bup(fm1re))         # Estimated population size
 sum(N)                  # Actual population size
 
-
-
-\dontrun{
 
 # Real data
 data(mallard)

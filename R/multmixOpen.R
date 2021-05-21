@@ -166,6 +166,8 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   fin <- fin*1 #convert to numeric
   yperm <- aperm(y, c(1,3,2))
   yna <- is.na(yperm)*1
+  yna <- aperm(yna, c(3,2,1)) # fix asan problem
+  yperm <- aperm(yperm, c(3,2,1)) # fix asan problem
 
   nll <- function(parms) {
     .Call("nll_multmixOpen",
