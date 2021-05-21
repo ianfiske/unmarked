@@ -207,6 +207,7 @@ that unlike the related functions \code{\link{multinomPois}} and
   #Create some random covariate data
   sc <- data.frame(x1=rnorm(100))
 
+  \dontrun{
   #Create unmarked frame
   umf <- unmarkedFrameMMO(y=y, numPrimary=5, siteCovs=sc, type="removal")
 
@@ -221,7 +222,6 @@ that unlike the related functions \code{\link{multinomPois}} and
   #Predict
   head(predict(fit, type='lambda'))
 
-  \dontrun{
   #Check fit with parametric bootstrap
   pb <- parboot(fit, nsims=15)
   plot(pb)
