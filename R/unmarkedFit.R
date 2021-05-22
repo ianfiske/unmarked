@@ -2977,7 +2977,9 @@ setMethod("update", "unmarkedFitOccuMS",
     if(!missing(phiformulas)){
       call[["phiformulas"]] <- phiformulas
     } else {
-      call[["phiformulas"]] <- object@phiformulas
+      if(!is.null(call$phiformulas)){
+        call[["phiformulas"]] <- object@phiformulas
+      }
     }
     extras <- match.call(call=sys.call(-1),
                          expand.dots = FALSE)$...

@@ -50,7 +50,11 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
     pb$set(message="Running simulations")
     fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
       if(!is.null(design)) fit@data <- bdata[[i]]
-      fit@data@y <- sims[[i]]
+      if(inherits(fit, "unmarkedFitOccuMulti")){
+        fit@data@ylist <- sims[[i]]
+      } else{
+        fit@data@y <- sims[[i]]
+      }
       out <- update(fit, data=fit@data, se=TRUE)
       pb$set(value=i/nsim, message=NULL, detail=NULL)
       out
@@ -61,7 +65,11 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
 
     fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
       if(!is.null(design)) fit@data <- bdata[[i]]
-      fit@data@y <- sims[[i]]
+      if(inherits(fit, "unmarkedFitOccuMulti")){
+        fit@data@ylist <- sims[[i]]
+      } else{
+        fit@data@y <- sims[[i]]
+      }
       update(fit, data=fit@data, se=TRUE)
     }, sims=sims, fit=object, bdata=bdata, cl=cl)
 
@@ -155,6 +163,12 @@ check_coefs <- function(coefs, fit, template=FALSE){
       names(coefs[[rsi]])[change_int] <- "shape(Intercept)"
       change_int <- names(coefs[[rsi]])%in%c("rateintercept","rateIntercept")
       names(coefs[[rsi]])[change_int] <- "rate(Intercept)"
+      change_int <- grepl(" intercept", names(coefs[[rsi]]))
+      names(coefs[[rsi]])[change_int] <- gsub(" intercept", " (Intercept)",
+                                              names(coefs[[rsi]])[change_int])
+      change_int <- grepl(" Intercept", names(coefs[[rsi]]))
+      names(coefs[[rsi]])[change_int] <- gsub(" Intercept", " (Intercept)",
+                                              names(coefs[[rsi]])[change_int])
       sub_coefs <- coefs[[rsi]]
 
       not_inc <- !required_coefs[[i]] %in% names(sub_coefs)

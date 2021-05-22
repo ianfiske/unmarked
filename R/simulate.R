@@ -107,8 +107,13 @@ setMethod("simulate", "character",
   fit <- replace_estimates(fit, coefs)
   ysims <- simulate(fit, nsim)
   umf <- fit@data
+  # fix this
   umfs <- lapply(ysims, function(x){
-    umf@y <- x
+    if(object=="occuMulti"){
+      umf@ylist <- x
+    } else {
+      umf@y <- x
+    }
     umf
   })
   if(length(umfs)==1) umfs <- umfs[[1]]
@@ -382,4 +387,50 @@ setMethod("simulate_fit", "unmarkedFitDSO",
 })
 
 
+setMethod("get_umf_components", "unmarkedFitOccuMulti",
+          function(object, formulas, guide, design, ...){
+  sc <- generate_data(lapply(formulas$state, as.formula), guide, design$M)
+  oc <- generate_data(lapply(formulas$det, as.formula), guide, design$J*design$M)
+  nspecies <- length(formulas$det)
+  yblank <- lapply(1:nspecies, function(x) matrix(0, design$M, design$J))
+  list(y=yblank, siteCovs=sc, obsCovs=oc)
+})
 
+setMethod("simulate_fit", "unmarkedFitOccuMulti",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  if(is.null(args$maxOrder)) args$maxOrder <- length(parts$y)
+  umf <- unmarkedFrameOccuMulti(y=parts$y, siteCovs=parts$siteCovs,
+                                obsCovs=parts$obsCovs, maxOrder=args$maxOrder)
+  occuMulti(formulas$det, formulas$state, data=umf, maxOrder=args$maxOrder,
+            se=FALSE, control=list(maxit=1))
+})
+
+setMethod("get_umf_components", "unmarkedFitOccuMS",
+          function(object, formulas, guide, design, ...){
+  sc <- generate_data(lapply(formulas$state, as.formula), guide, design$M)
+  ysc <- NULL
+  if(!is.null(formulas$phi)){
+    ysc <- generate_data(lapply(formulas$phi, as.formula), guide, design$M*design$T*design$J)
+  }
+  oc <- generate_data(lapply(formulas$det, as.formula), guide, design$J*design$M)
+  nspecies <- length(formulas$det)
+  yblank <- matrix(0, design$M, design$T*design$J)
+  yblank[1,1] <- 2 # To bypass sanity checker in unmarkedFrameOccuMS
+  list(y=yblank, siteCovs=sc, yearlySiteCovs=ysc, obsCovs=oc)
+})
+
+setMethod("simulate_fit", "unmarkedFitOccuMS",
+  function(object, formulas, guide, design, ...){
+  if(is.null(design$T)) design$T <- 1
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  umf <- unmarkedFrameOccuMS(y=parts$y, siteCovs=parts$siteCovs,
+                                yearlySiteCovs=parts$yearlySiteCovs,
+                                obsCovs=parts$obsCovs, numPrimary=design$T)
+  if(is.null(args$parameterization)) args$parameterization <- "multinomial"
+  occuMS(formulas$det, formulas$state, formulas$phi, data=umf,
+         parameterization=args$parameterization,
+         se=FALSE, control=list(maxit=1))
+})
