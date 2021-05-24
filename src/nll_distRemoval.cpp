@@ -1,4 +1,5 @@
 #include <RcppArmadillo.h>
+#include <float.h>
 #include "distprob.h"
 #include "pifun.h"
 #include "distr.h"
@@ -122,7 +123,7 @@ double nll_distRemoval(arma::vec beta, arma::uvec n_param, arma::vec yDistance,
         exp(sum(mn_rem.row(j)));
     }
 
-    loglik += log(site_lp + DOUBLE_XMIN);
+    loglik += log(site_lp + DBL_MIN);
 
   }
 
