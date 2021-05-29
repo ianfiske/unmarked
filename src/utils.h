@@ -11,4 +11,6 @@ double inv_logit(double x);
 
 arma::vec beta_sub(arma::vec beta, arma::uvec n_param, unsigned idx);
 
+double dmultinom(arma::vec x, arma::vec prob);
+
 #endif

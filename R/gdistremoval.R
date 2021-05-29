@@ -1,4 +1,4 @@
-setClass("unmarkedFrameDistRemoval",
+setClass("unmarkedFrameGDR",
   representation(
     yDistance = "matrix",
     yRemoval = "matrix",
@@ -9,13 +9,13 @@ setClass("unmarkedFrameDistRemoval",
   contains="unmarkedMultFrame"
 )
 
-unmarkedFrameDistRemoval <- function(yDistance, yRemoval, numPrimary=1,
+unmarkedFrameGDR <- function(yDistance, yRemoval, numPrimary=1,
                                      siteCovs=NULL, obsCovs=NULL,
                                      yearlySiteCovs=NULL, dist.breaks,
                                      unitsIn){
 
   # input checking here eventually
-  umf <- new("unmarkedFrameDistRemoval", y=yRemoval, yDistance=yDistance,
+  umf <- new("unmarkedFrameGDR", y=yRemoval, yDistance=yDistance,
              yRemoval=yRemoval, numPrimary=numPrimary, siteCovs=siteCovs,
              obsCovs=obsCovs, yearlySiteCovs=yearlySiteCovs, survey="point",
              dist.breaks=dist.breaks, unitsIn=unitsIn, obsToY=diag(ncol(yRemoval)))
@@ -23,7 +23,7 @@ unmarkedFrameDistRemoval <- function(yDistance, yRemoval, numPrimary=1,
   umf
 }
 
-setAs("unmarkedFrameDistRemoval", "data.frame", function(from){
+setAs("unmarkedFrameGDR", "data.frame", function(from){
 
 
   out <- callNextMethod(from, "data.frame")
@@ -42,7 +42,7 @@ setAs("unmarkedFrameDistRemoval", "data.frame", function(from){
  # bracketing doesn't work yet
 
 
-setMethod("getDesign", "unmarkedFrameDistRemoval",
+setMethod("getDesign", "unmarkedFrameGDR",
   function(umf, formula, na.rm=TRUE){
 
   M <- numSites(umf)
@@ -80,13 +80,12 @@ setMethod("getDesign", "unmarkedFrameDistRemoval",
   list(yDist=yDist, yRem=yRem, Xlam=Xlam, Xphi=Xphi, Xdist=Xdist, Xrem=Xrem)
 })
 
-setClass("unmarkedFitDistRemoval", contains = "unmarkedFitGDS")
+setClass("unmarkedFitGDR", contains = "unmarkedFitGDS")
 
-distRemoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
+gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
   distanceformula=~1, data, keyfun=c("halfnorm", "exp", "hazard", "uniform"),
-  output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
-  mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE, engine=c("C","R"),
-  rel.tol=1e-4, threads=1, ...){
+  output=c("abund", "density"), unitsOut=c("ha", "kmsq"), mixture=c('P', 'NB', 'ZIP'),
+  K, starts, method = "BFGS", se = TRUE, engine=c("C","R"), threads=1, ...){
 
   keyfun <- match.arg(keyfun)
   output <- match.arg(output)
@@ -102,6 +101,12 @@ distRemoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
   mixture_code <- switch(mixture, P={1}, NB={2})
 
   gd <- getDesign(data, formlist)
+
+  Jdist <- Rdist / T
+  ysum <- array(t(gd$yDist), c(Jdist, T, M))
+  ysum <- t(apply(ysum, c(2,3), sum, na.rm=T))
+
+  Kmin = apply(ysum, 1, max, na.rm=T)
 
   # Parameters-----------------------------------------------------------------
   n_param <- c(ncol(gd$Xlam), ifelse(mixture=="P",0,1),
@@ -121,7 +126,9 @@ distRemoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
   # Distance info--------------------------------------------------------------
   db <- data@dist.breaks
   w <- diff(db)
-  ua <- getUA(data) #in utils.R
+  umf_new <- data
+  umf_new@y <- umf_new@yDistance
+  ua <- getUA(umf_new) #in utils.R
   u <- ua$u; a <- ua$a
   A <- rowSums(a)
   switch(data@unitsIn, m = A <- A / 1e6, km = A <- A)
@@ -129,62 +136,19 @@ distRemoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
   if(output=='abund') A <- rep(1, numSites(data))
 
   # Get K----------------------------------------------------------------------
-  if(missing(K) || is.null(K)) K <- max(c(gd$yDist), na.rm=TRUE) + 20
-  k <- 0:K
-  lk <- length(k)
-  lfac.k <- lgamma(k+1)
-  #Kmin <- rep(0, M) # Needs to be all 0 for this to work
-
-  # Need separate k info for each part of detection model
-  # Distance
-  ytDist <- array(gd$yDist, c(Rdist/T, T, numSites(data)))
-  ytDist <- aperm(ytDist, c(3,1,2))
-  ytDist <- apply(ytDist, c(1,3), function(x) {
-      if(all(is.na(x))) return(NA)
-      else return(sum(x, na.rm=TRUE))
-  })
-
-  kmyt_dist <- array(NA, c(M, T, lk))
-  lfac_kmyt_dist <- array(0, c(M, T, lk))
-  for(i in 1:M) {
-    for(t in 1:T) {
-      kmyt_dist[i,t,] <- k - ytDist[i,t]
-      lfac_kmyt_dist[i, t, ] <- lgamma(kmyt_dist[i, t, ] + 1)
-    }
-  }
-
-  # Removal
-  ytRem <- array(gd$yRem, c(Rrem/T, T, numSites(data)))
-  ytRem <- aperm(ytRem, c(3,1,2))
-  ytRem <- apply(ytRem, c(1,3), function(x) {
-      if(all(is.na(x))) return(NA)
-      else return(sum(x, na.rm=TRUE))
-  })
-
-  kmyt_rem <- array(NA, c(M, T, lk))
-  lfac_kmyt_rem <- array(0, c(M, T, lk))
-  for(i in 1:M) {
-    for(t in 1:T) {
-      kmyt_rem[i,t,] <- k - ytRem[i,t]
-      lfac_kmyt_rem[i, t, ] <- lgamma(kmyt_rem[i, t, ] + 1)
-    }
-  }
-
-  kmyt_rem <- aperm(kmyt_rem, c(3,2,1))
-  Kmin <- apply(cbind(apply(ytDist, 1, max, na.rm=T), apply(ytRem, 1, max, na.rm=T)),1,max,na.rm=T)
+  if(missing(K) || is.null(K)) K <- max(Kmin, na.rm=TRUE) + 40
 
   if(missing(starts)){
     starts <- rep(0, nP)
-    starts[sum(n_param[1:3])+1] <- log(mean(db))
+    starts[sum(n_param[1:3])+1] <- log(median(db))
   } else if(length(starts)!=nP){
     stop(paste0("starts must be length ",sum(n_param)), call.=FALSE)
   }
 
   nll <- function(param){
-    nll_distRemoval(param, n_param, gd$yDist, gd$yRem, mixture_code, keyfun,
-                    gd$Xlam, A, gd$Xphi, gd$Xrem, gd$Xdist, db, a, t(u), w,
-                    k, lfac.k, lfac_kmyt_dist, kmyt_dist,
-                    lfac_kmyt_rem, kmyt_rem, Kmin, threads=2)
+    nll_gdistremoval(param, n_param, gd$yDist, gd$yRem, ysum, mixture_code, keyfun,
+                     gd$Xlam, A, gd$Xphi, gd$Xrem, gd$Xdist, db, a, t(u), w,
+                     K, Kmin, threads=threads)
   }
 
   opt <- optim(starts, nll, method=method, hessian=se, ...)
@@ -239,7 +203,7 @@ distRemoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
         invlinkGrad = "exp")
   }
 
-  new("unmarkedFitDistRemoval", fitType = "distRemoval",
+  new("unmarkedFitGDR", fitType = "gdistremoval",
     call = match.call(), formula = as.formula(paste(formlist, collapse="")),
     formlist = formlist, data = data, estimates = estimateList, sitesRemoved = numeric(0),
     AIC = fmAIC, opt = opt, negLogLike = opt$value, nllFun = nll,

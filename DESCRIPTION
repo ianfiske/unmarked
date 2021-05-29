@@ -44,7 +44,7 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'unmarkedCrossVal.R' 'piFun.R' 'vif.R' 'makePiFun.R' 'posteriorSamples.R'
     'nmixTTD.R'
     'mixedModelTools.R'
-    'distRemoval.R'
+    'gdistremoval.R'
     'RcppExports.R'
 LinkingTo: 
     Rcpp,
