@@ -43,7 +43,7 @@ setAs("unmarkedFrameGDR", "data.frame", function(from){
 
 
 setMethod("getDesign", "unmarkedFrameGDR",
-  function(umf, formula, na.rm=TRUE){
+  function(umf, formula, na.rm=TRUE, return.frames=FALSE){
 
   M <- numSites(umf)
   T <- umf@numPrimary
@@ -64,6 +64,8 @@ setMethod("getDesign", "unmarkedFrameGDR",
 
   ysc <- cbind(ysc, sc[rep(1:M, each=T),,drop=FALSE])
   oc <- cbind(oc, ysc[rep(1:nrow(ysc), each=Jrem),,drop=FALSE])
+
+  if(return.frames) return(list(sc=sc, ysc=ysc, oc=oc))
 
   Xlam <- model.matrix(formula$lambdaformula,
             model.frame(formula$lambdaformula, sc, na.action=NULL))
@@ -210,3 +212,34 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
     mixture=mixture, K=K, keyfun=keyfun, unitsOut=unitsOut, output=output)
 
 }
+
+# Methods
+
+setMethod("predict", "unmarkedFitGDR", function(object, type, newdata,
+                                                level=0.95, ...){
+
+  type <- match.arg(type, c("lambda", "phi", "rem", "dist"))
+  nm <- switch(type, lambda="lam", phi="phi", rem="rem", dist="dist")
+  est <- object[ifelse(nm=="lam","lambda",nm)]
+
+  if(missing(newdata)){
+    gd <- getDesign(object@data, object@formlist)
+    X <- gd[[paste0("X",nm)]]
+  } else{
+    if(!inherits(newdata, "data.frame")){
+      stop("newdata must be a data frame")
+    }
+    gd <- getDesign(object@data, object@formlist, return.frames=TRUE)
+    fname <- switch(type, lambda="lambda", phi="phi", rem="removal", dist="distance")
+    covs <- switch(type, lambda="sc", phi="ysc", rem="oc", dist="ysc")
+    X <- make_mod_matrix(object@formlist[[paste0(fname,"formula")]],
+                         gd[[covs]], newdata=newdata, re.form=NULL)$X
+  }
+
+  stats <- t(sapply(1:nrow(X), function(i){
+              bt <- backTransform(linearComb(est, X[i,]))
+              ci <- confint(bt, level=level)
+              c(Predicted=coef(bt), SE=SE(bt), lower=ci[1], upper=ci[2])
+            }))
+  as.data.frame(stats)
+})
