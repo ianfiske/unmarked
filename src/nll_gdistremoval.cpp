@@ -17,7 +17,7 @@ double nll_gdistremoval(arma::vec beta, arma::uvec n_param, arma::vec yDistance,
     arma::vec yRemoval, arma::mat ysum, int mixture, std::string keyfun,
     arma::mat Xlam, arma::vec A, arma::mat Xphi, arma::mat Xrem,
     arma::mat Xdist, arma::vec db, arma::mat a, arma::mat u, arma::vec w,
-    int K, arma::uvec Kmin, int threads){
+    arma::uvec pl, int K, arma::uvec Kmin, int threads){
 
   #ifdef _OPENMP
     omp_set_num_threads(threads);
@@ -89,7 +89,7 @@ double nll_gdistremoval(arma::vec beta, arma::uvec n_param, arma::vec yDistance,
                            db, w, a.row(i)) % u.col(i);
         pdist = sum(cpd);
 
-        cpr = piFun(remP.subvec(yr_ind, yr_stop), "removalPiFun");
+        cpr = removalPiFun(remP.subvec(yr_ind, yr_stop), pl);
         prem = sum(cpr);
 
         //if(pdist == 0 | prem == 0){

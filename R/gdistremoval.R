@@ -4,7 +4,8 @@ setClass("unmarkedFrameGDR",
     yRemoval = "matrix",
     survey = "character",
     dist.breaks = "numeric",
-    unitsIn = "character"
+    unitsIn = "character",
+    period.lengths = "numeric"
   ),
   contains="unmarkedMultFrame"
 )
@@ -12,13 +13,18 @@ setClass("unmarkedFrameGDR",
 unmarkedFrameGDR <- function(yDistance, yRemoval, numPrimary=1,
                                      siteCovs=NULL, obsCovs=NULL,
                                      yearlySiteCovs=NULL, dist.breaks,
-                                     unitsIn){
+                                     unitsIn, period.lengths=NULL){
+
+  if(is.null(period.lengths)){
+    period.lengths <- rep(1, ncol(yRemoval)/numPrimary)
+  }
 
   # input checking here eventually
   umf <- new("unmarkedFrameGDR", y=yRemoval, yDistance=yDistance,
              yRemoval=yRemoval, numPrimary=numPrimary, siteCovs=siteCovs,
              obsCovs=obsCovs, yearlySiteCovs=yearlySiteCovs, survey="point",
-             dist.breaks=dist.breaks, unitsIn=unitsIn, obsToY=diag(ncol(yRemoval)))
+             dist.breaks=dist.breaks, unitsIn=unitsIn, period.lengths=period.lengths,
+             obsToY=diag(ncol(yRemoval)))
   umf <- umf_to_factor(umf)
   umf
 }
@@ -137,6 +143,9 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
   switch(unitsOut,ha = A <- A * 100, kmsq = A <- A)
   if(output=='abund') A <- rep(1, numSites(data))
 
+  # Removal info---------------------------------------------------------------
+  pl <- data@period.lengths
+
   # Get K----------------------------------------------------------------------
   if(missing(K) || is.null(K)) K <- max(Kmin, na.rm=TRUE) + 40
 
@@ -149,7 +158,7 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
 
   nll <- function(param){
     nll_gdistremoval(param, n_param, gd$yDist, gd$yRem, ysum, mixture_code, keyfun,
-                     gd$Xlam, A, gd$Xphi, gd$Xrem, gd$Xdist, db, a, t(u), w,
+                     gd$Xlam, A, gd$Xphi, gd$Xrem, gd$Xdist, db, a, t(u), w, pl,
                      K, Kmin, threads=threads)
   }
 

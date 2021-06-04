@@ -8,7 +8,7 @@
 
 \usage{
   unmarkedFrameGDR(yDistance, yRemoval, numPrimary=1, siteCovs=NULL, obsCovs=NULL, 
-                   yearlySiteCovs=NULL, dist.breaks, unitsIn)
+                   yearlySiteCovs=NULL, dist.breaks, unitsIn, period.lengths=NULL)
 }
 
 \description{Organize data for the combined distance and removal point-count model of 
@@ -33,6 +33,11 @@
     distance classes. It must be of length J+1}
   \item{unitsIn}{Either "m" or "km" defining the measurement units for
     \code{dist.breaks}}
+  \item{period.lengths}{Optional vector of time lengths of each removal period. 
+    Each value in the vector must be a positive integer, and the total length
+    of the vector must be equal to the number of removal periods J. If this is 
+    not provided (the default), then all periods are assumed to have an equal 
+    length of 1 time unit}
 }
 
 \details{
