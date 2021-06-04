@@ -106,7 +106,7 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
   T <- data@numPrimary
   Rdist <- ncol(data@yDistance)
   Rrem <- ncol(data@yRemoval)
-  mixture_code <- switch(mixture, P={1}, NB={2})
+  mixture_code <- switch(mixture, P={1}, NB={2}, ZIP={3})
 
   gd <- getDesign(data, formlist)
 
@@ -251,4 +251,163 @@ setMethod("predict", "unmarkedFitGDR", function(object, type, newdata,
               c(Predicted=coef(bt), SE=SE(bt), lower=ci[1], upper=ci[2])
             }))
   as.data.frame(stats)
+})
+
+setMethod("getP", "unmarkedFitGDR", function(object){
+
+  M <- numSites(object@data)
+  T <- object@data@numPrimary
+  Jrem <- ncol(object@data@yRemoval)/T
+  Jdist <- ncol(object@data@yDistance)/T
+
+  rem <- predict(object, "rem")$Predicted
+  rem <- array(rem, c(Jrem, T, M))
+  rem <- aperm(rem, c(3,1,2))
+
+  pif <- array(NA, dim(rem))
+  for (t in 1:T){
+    pif[,,t] <- removalPiFun(rem[,,t])
+  }
+
+  phi <- rep(1, M*T)
+  if(T>1) phi <- predict(object, "phi")$Predicted
+  phi <- matrix(phi, M, T, byrow=TRUE)
+
+  keyfun <- object@keyfun
+  sig <- predict(object, "dist")$Predicted
+  sig <- matrix(sig, M, T, byrow=TRUE)
+  if(keyfun=="hazard") scale <- exp(coef(object, type="scale"))
+
+  db <- object@data@dist.breaks
+  a <- u <- rep(NA, Jdist)
+  a[1] <- pi*db[2]^2
+  for (j in 2:Jdist){
+    a[j] <- pi*db[j+1]^2 - sum(a[1:(j-1)])
+  }
+  u <- a/sum(a)
+
+  cp <- array(NA, c(M, Jdist, T))
+  kf <- switch(keyfun, halfnorm=grhn, exp=grexp, hazard=grhaz,
+               uniform=NULL)
+
+  for (m in 1:M){
+    for (t in 1:T){
+      if(object@keyfun == "uniform"){
+        cp[m,,t] <- u
+      } else {
+        for (j in 1:Jdist){
+          cl <- call("integrate", f=kf, lower=db[j], upper=db[j+1], sigma=sig[m])
+          names(cl)[5] <- switch(keyfun, halfnorm="sigma", exp="rate",
+                                 hazard="shape")
+          if(keyfun=="hazard") cl$scale=scale
+          cp[m,j,t] <- eval(cl)$value * 2*pi / a[j] * u[j]
+        }
+      }
+    }
+  }
+
+  #p_rem <- apply(pif, c(1,3), sum)
+  #p_dist <- apply(cp, c(1,3), sum)
+
+  out <- list(dist=cp, rem=pif)
+  if(T > 1) out$phi <- phi
+  out
+})
+
+setMethod("fitted", "unmarkedFitGDR", function(object){
+
+  T <- object@data@numPrimary
+
+  lam <- predict(object, "lambda")$Predicted
+  gp <- getP(object)
+  rem <- gp$rem
+  dist <- gp$dist
+  if(T > 1) phi <- gp$phi
+  p_rem <- apply(rem, c(1,3), sum)
+  p_dist <- apply(dist, c(1,3), sum)
+
+  for (t in 1:T){
+    rem[,,t] <- rem[,,t] * p_dist[,rep(t, ncol(rem[,,t]))]
+    dist[,,t] <- dist[,,t] * p_rem[,rep(t,ncol(dist[,,t]))]
+    if(T > 1){
+      rem[,,t] <- rem[,,t] * phi[,rep(t, ncol(rem[,,t]))]
+      det[,,t] <- dist[,,t] * phi[,rep(t, ncol(dist[,,t]))]
+    }
+  }
+
+  if(T > 1){
+    rem_final <- rem[,,t]
+    dist_final <- det[,,t]
+    for (t in 1:T){
+      rem_final <- cbind(rem_final, rem[,,t])
+      dist_final <- cbind(dist_final, dist[,,t])
+    }
+  } else {
+    rem_final <- drop(rem)
+    dist_final <- drop(dist)
+  }
+
+  ft_rem <- lam * rem_final
+  ft_dist <- lam * dist_final
+  list(dist=ft_dist, rem=ft_rem)
+})
+
+setMethod("residuals", "unmarkedFitGDR", function(object){
+  ft <- fitted(object)
+  list(dist=object@data@yDistance - ft$dist, rem=object@data@yRemoval-ft$rem)
+})
+
+# ranef
+
+setMethod("ranef", "unmarkedFitGDR", function(object){
+
+  M <- numSites(object@data)
+  T <- object@data@numPrimary
+  K <- object@K
+  mixture <- object@mixture
+
+  Rdist <- ncol(object@data@yDistance)
+  Jdist <- Rdist / T
+  ysum <- array(t(object@data@yDistance), c(Jdist, T, M))
+  ysum <- t(apply(ysum, c(2,3), sum, na.rm=T))
+  Kmin = apply(ysum, 1, max, na.rm=T)
+
+  lam <- predict(object, "lambda")$Predicted
+  if(object@mixture != "P"){
+    alpha <- backTransform(object, "alpha")@estimate
+  }
+
+  dets <- getP(object)
+  phi <- matrix(1, M, T)
+  if(T > 1){
+    phi <- dets$phi
+  }
+  cp <- dets$dist
+  pif <- dets$rem
+
+  pr <- apply(cp, c(1,3), sum)
+  prRem <- apply(pif, c(1,3), sum)
+
+  post <- array(0, c(M, K+1, T))
+  colnames(post) <- 0:K
+  for (i in 1:M){
+    if(mixture=="P"){
+      f <- dpois(0:K, lam[i])
+    } else if(mixture=="NB"){
+      f <- dnbinom(0:K, mu=lam[i], size=alpha)
+    } else if(mixture=="ZIP"){
+      f <- dzip(0:K, lam[i], alpha)
+    }
+    g <- rep(1, K+1)
+    for (t in 1:T){
+      for (k in 1:(K+1)){
+        g[k] <- g[k] * dbinom(ysum[i,t], k-1, prob=pr[i,t]*prRem[i,t]*phi[i,t],
+                              log=FALSE)
+      }
+    }
+    fg <- f*g
+    post[i,,t] <- fg/sum(fg)
+  }
+
+  new("unmarkedRanef", post=post)
 })
