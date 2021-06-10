@@ -85,6 +85,10 @@ setMethod("getDesign", "unmarkedFrameGDR",
   Xrem <- model.matrix(formula$removalformula,
             model.frame(formula$removalformula, oc, na.action=NULL))
 
+  if(any(is.na(Xlam)) | any(is.na(Xphi)) | any(is.na(Xdist)) | any(is.na(Xrem))){
+    stop("gdistremoval does not currently handle missing values in covariates", call.=FALSE)
+  }
+
   list(yDist=yDist, yRem=yRem, Xlam=Xlam, Xphi=Xphi, Xdist=Xdist, Xrem=Xrem)
 })
 
@@ -374,10 +378,16 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
   K <- object@K
   mixture <- object@mixture
 
-  Rdist <- ncol(object@data@yDistance)
-  Jdist <- Rdist / T
+  Jdist <- ncol(object@data@yDistance) / T
   ysum <- array(t(object@data@yDistance), c(Jdist, T, M))
+  dist_has_na <- t(apply(ysum, c(2,3), function(x) any(is.na(x))))
   ysum <- t(apply(ysum, c(2,3), sum, na.rm=T))
+
+  Jrem <- ncol(object@data@yRemoval) / T
+  ysum_rem <- array(t(object@data@yRemoval), c(Jrem, T, M))
+  rem_has_na <- t(apply(ysum_rem, c(2,3), function(x) any(is.na(x))))
+  has_na <- dist_has_na | rem_has_na
+
   Kmin = apply(ysum, 1, max, na.rm=T)
 
   lam <- predict(object, "lambda", level=NULL)$Predicted
@@ -408,6 +418,10 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
     }
     g <- rep(1, K+1)
     for (t in 1:T){
+      if(has_na[i,t]){
+        g <- rep(NA,K+1)
+        next
+      }
       for (k in 1:(K+1)){
         g[k] <- g[k] * dbinom(ysum[i,t], k-1, prob=pr[i,t]*prRem[i,t]*phi[i,t],
                               log=FALSE)
@@ -419,7 +433,6 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
 
   new("unmarkedRanef", post=post)
 })
-
 
 setMethod("simulate", "unmarkedFitGDR", function(object, nsim, seed=NULL, na.rm=FALSE){
 
