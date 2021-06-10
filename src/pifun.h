@@ -5,6 +5,6 @@
 
 arma::vec piFun( arma::vec p, std::string pi_fun );
 
-arma::vec removalPiFun(vec p, uvec times);
+arma::vec removalPiFun(arma::vec p, arma::uvec times);
 
 #endif

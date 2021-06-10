@@ -18,6 +18,7 @@
 \alias{simulate,unmarkedFitGPC-method}
 \alias{simulate,unmarkedFitDSO-method}
 \alias{simulate,unmarkedFitMMO-method}
+\alias{simulate,unmarkedFitGDR-method}
 \title{Methods for Function simulate in Package `unmarked'}
 \description{
 Simulate data from a fitted model.

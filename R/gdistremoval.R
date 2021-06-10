@@ -194,12 +194,6 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
         invlinkGrad = "logistic.grad")
   }
 
-  rem_ind <- (sum(n_param[1:5])+1):(sum(n_param[1:6]))
-  estimateList@estimates$rem <- unmarkedEstimate(name = "Removal",
-      short.name = "rem", estimates = ests[rem_ind],
-      covMat = as.matrix(covMat[rem_ind, rem_ind]), invlink = "logistic",
-      invlinkGrad = "logistic.grad")
-
   dist_ind <- (sum(n_param[1:3])+1):(sum(n_param[1:4]))
   estimateList@estimates$dist <- unmarkedEstimate(name = "Distance",
       short.name = "dist", estimates = ests[dist_ind],
@@ -213,6 +207,12 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
         covMat = as.matrix(covMat[sc_ind, sc_ind]), invlink = "exp",
         invlinkGrad = "exp")
   }
+
+  rem_ind <- (sum(n_param[1:5])+1):(sum(n_param[1:6]))
+  estimateList@estimates$rem <- unmarkedEstimate(name = "Removal",
+      short.name = "rem", estimates = ests[rem_ind],
+      covMat = as.matrix(covMat[rem_ind, rem_ind]), invlink = "logistic",
+      invlinkGrad = "logistic.grad")
 
   new("unmarkedFitGDR", fitType = "gdistremoval",
     call = match.call(), formula = as.formula(paste(formlist, collapse="")),
@@ -410,4 +410,161 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
   }
 
   new("unmarkedRanef", post=post)
+})
+
+
+setMethod("simulate", "unmarkedFitGDR", function(object, nsim, seed=NULL, na.rm=FALSE){
+
+  lam <- predict(object, "lambda")$Predicted
+  dets <- getP(object)
+
+  if(object@mixture != "P"){
+    alpha <- backTransform(object, "alpha")@estimate
+  }
+
+  M <- length(lam)
+  T <- object@data@numPrimary
+
+  if(T > 1){
+    phi <- dets$phi
+  } else {
+    phi <- matrix(1, M, T)
+  }
+
+  Jrem <- dim(dets$rem)[2]
+  Jdist <- dim(dets$dist)[2]
+
+  p_dist <- apply(dets$dist, c(1,3), sum)
+  p_rem <- apply(dets$rem, c(1,3), sum)
+
+  dist_scaled <- array(NA, dim(dets$dist))
+  rem_scaled <- array(NA, dim(dets$rem))
+  for (t in 1:T){
+    dist_scaled[,,t] <- dets$dist[,,t] / p_dist[,t]
+    rem_scaled[,,t] <- dets$rem[,,t] / p_rem[,t]
+  }
+
+  p_total <- p_dist * p_rem * phi
+  stopifnot(dim(p_total) == c(M, T))
+
+  out <- vector("list", nsim)
+
+  for (i in 1:nsim){
+    N <- rpois(M, lam)
+    ydist <- matrix(NA, M, T*Jdist)
+    yrem <- matrix(NA, M, T*Jrem)
+
+    for (m in 1:M){
+      ysum <- rbinom(T, N[m], p_total[m,])
+
+      ydist_m <- yrem_m <- c()
+
+      for (t in 1:T){
+        rem_class <- sample(1:Jrem, ysum[t], replace=TRUE, prob=rem_scaled[m,,t])
+        rem_class <- factor(rem_class, levels=1:Jrem)
+        yrem_m <- c(yrem_m, as.numeric(table(rem_class)))
+        dist_class <- sample(1:Jdist, ysum[t], replace=TRUE, prob=dist_scaled[m,,t])
+        dist_class <- factor(dist_class, levels=1:Jdist)
+        ydist_m <- c(ydist_m, as.numeric(table(dist_class)))
+      }
+      stopifnot(length(ydist_m)==ncol(ydist))
+      stopifnot(length(yrem_m)==ncol(yrem))
+
+      ydist[m,] <- ydist_m
+      yrem[m,] <- yrem_m
+    }
+    out[[i]] <- list(yRemoval=yrem, yDistance=ydist)
+  }
+  out
+})
+
+
+setMethod("update", "unmarkedFitGDR",
+    function(object, lambdaformula, phiformula, removalformula, distanceformula,
+             ..., evaluate = TRUE)
+{
+
+    call <- object@call
+    if (is.null(call))
+        stop("need an object with call slot")
+
+    if(!missing(lambdaformula)){
+      call$lambdaformula <- lambdaformula
+    }
+    if(!missing(phiformula)){
+      if(!is.null(call$phiformula)){
+        call$phiformula <- phiformula
+      }
+    }
+    if(!missing(removalformula)){
+      call$removalformula <- removalformula
+    }
+    if(!missing(distanceformula)){
+      call$distanceformula <- distanceformula
+    }
+
+    extras <- match.call(call=sys.call(-1),
+                         expand.dots = FALSE)$...
+    if (length(extras) > 0) {
+        existing <- !is.na(match(names(extras), names(call)))
+        for (a in names(extras)[existing])
+            call[[a]] <- extras[[a]]
+        if (any(!existing)) {
+            call <- c(as.list(call), extras[!existing])
+            call <- as.call(call)
+            }
+        }
+    if (evaluate)
+        eval(call, parent.frame(2))
+    else call
+})
+
+
+setMethod("replaceY", "unmarkedFrameGDR",
+          function(object, newY, replNA=TRUE, ...){
+
+      ydist <- newY$yDistance
+      stopifnot(dim(ydist)==dim(object@yDistance))
+      yrem <- newY$yRemoval
+      stopifnot(dim(yrem)==dim(object@yRemoval))
+
+      if(replNA){
+        ydist[is.na(object@yDistance)] <- NA
+        yrem[is.na(object@yRemoval)] <- NA
+      }
+
+      object@yDistance <- ydist
+      object@yRemoval <- yrem
+      object
+})
+
+
+setMethod("SSE", "unmarkedFitGDR", function(fit, ...){
+    r <- sapply(residuals(fit), function(x) sum(x^2, na.rm=T))
+    return(c(SSE = sum(r)))
+})
+
+setMethod("nonparboot", "unmarkedFitGDR",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+   stop("Not currently supported for unmarkedFitGDR", call.=FALSE)
+})
+
+
+setMethod("plot", c(x = "unmarkedFitGDR", y = "missing"), function(x, y, ...)
+{
+    r <- residuals(x)
+    e <- fitted(x)
+
+    old_mfrow <- graphics::par("mfrow")
+    on.exit(graphics::par(mfrow=old_mfrow))
+    graphics::par(mfrow=c(2,1))
+
+    plot(e[[1]], r[[1]], ylab="Residuals", xlab="Predicted values",
+         main="Distance")
+    abline(h = 0, lty = 3, col = "gray")
+
+    plot(e[[2]], r[[2]], ylab="Residuals", xlab="Predicted values",
+         main="Removal")
+    abline(h = 0, lty = 3, col = "gray")
 })
