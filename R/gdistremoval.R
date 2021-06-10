@@ -245,6 +245,12 @@ setMethod("predict", "unmarkedFitGDR", function(object, type, newdata,
                          gd[[covs]], newdata=newdata, re.form=NULL)$X
   }
 
+  if(is.null(level)){
+    pred <- do.call(est@invlink, list(drop(X %*% est@estimates)))
+    names(pred) <- NULL
+    return(data.frame(Predicted=pred, SE=NA, lower=NA, upper=NA))
+  }
+
   stats <- t(sapply(1:nrow(X), function(i){
               bt <- backTransform(linearComb(est, X[i,]))
               ci <- confint(bt, level=level)
@@ -260,21 +266,23 @@ setMethod("getP", "unmarkedFitGDR", function(object){
   Jrem <- ncol(object@data@yRemoval)/T
   Jdist <- ncol(object@data@yDistance)/T
 
-  rem <- predict(object, "rem")$Predicted
+  rem <- predict(object, "rem", level=NULL)$Predicted
   rem <- array(rem, c(Jrem, T, M))
   rem <- aperm(rem, c(3,1,2))
 
   pif <- array(NA, dim(rem))
+  int_times <- object@data@period.lengths
+  removalPiFun2 <- makeRemPiFun(int_times)
   for (t in 1:T){
-    pif[,,t] <- removalPiFun(rem[,,t])
+    pif[,,t] <- removalPiFun2(rem[,,t])
   }
 
   phi <- rep(1, M*T)
-  if(T>1) phi <- predict(object, "phi")$Predicted
+  if(T>1) phi <- predict(object, "phi", level=NULL)$Predicted
   phi <- matrix(phi, M, T, byrow=TRUE)
 
   keyfun <- object@keyfun
-  sig <- predict(object, "dist")$Predicted
+  sig <- predict(object, "dist", level=NULL)$Predicted
   sig <- matrix(sig, M, T, byrow=TRUE)
   if(keyfun=="hazard") scale <- exp(coef(object, type="scale"))
 
@@ -318,7 +326,7 @@ setMethod("fitted", "unmarkedFitGDR", function(object){
 
   T <- object@data@numPrimary
 
-  lam <- predict(object, "lambda")$Predicted
+  lam <- predict(object, "lambda", level=NULL)$Predicted
   gp <- getP(object)
   rem <- gp$rem
   dist <- gp$dist
@@ -372,7 +380,7 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
   ysum <- t(apply(ysum, c(2,3), sum, na.rm=T))
   Kmin = apply(ysum, 1, max, na.rm=T)
 
-  lam <- predict(object, "lambda")$Predicted
+  lam <- predict(object, "lambda", level=NULL)$Predicted
   if(object@mixture != "P"){
     alpha <- backTransform(object, "alpha")@estimate
   }
@@ -415,7 +423,7 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
 
 setMethod("simulate", "unmarkedFitGDR", function(object, nsim, seed=NULL, na.rm=FALSE){
 
-  lam <- predict(object, "lambda")$Predicted
+  lam <- predict(object, "lambda", level=NULL)$Predicted
   dets <- getP(object)
 
   if(object@mixture != "P"){
@@ -450,7 +458,13 @@ setMethod("simulate", "unmarkedFitGDR", function(object, nsim, seed=NULL, na.rm=
   out <- vector("list", nsim)
 
   for (i in 1:nsim){
-    N <- rpois(M, lam)
+
+    switch(object@mixture,
+      P = N <- rpois(M, lam),
+      NB = N <- rnbinom(M, size=alpha, mu=lam),
+      ZIP = N <- rzip(M, lam, alpha)
+    )
+
     ydist <- matrix(NA, M, T*Jdist)
     yrem <- matrix(NA, M, T*Jrem)
 
