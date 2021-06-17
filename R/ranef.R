@@ -837,10 +837,11 @@ postMultinomOpen <- function(object){
     D <- getDesign(object@data, formula)
     delta <- D$delta
     deltamax <- max(delta, na.rm=TRUE)
-    if(!.hasSlot(object, "immigration")) #For backwards compatibility
+    if(!.hasSlot(object, "immigration")){ #For backwards compatibility
       imm <- FALSE
-    else
+    } else {
       imm <- object@immigration
+    }
 
     #TODO: adjust if output = "density"
     lam <- predict(object, type="lambda")[,1] # Slow, use D$Xlam instead
@@ -861,15 +862,15 @@ postMultinomOpen <- function(object){
     if(!identical(dyn, "trend")) {
         om <- predict(object, type="omega")[,1]
         om <- matrix(om, R, T-1, byrow=TRUE)
-    }
-    else
+    } else {
         om <- matrix(0, R, T-1)
+    }
     if(imm) {
         iota <- predict(object, type="iota")[,1]
         iota <- matrix(iota, R, T-1, byrow=TRUE)
-    }
-    else
+    } else {
       iota <- matrix(0, R, T-1)
+    }
     srm <- object@sitesRemoved
     if(length(srm) > 0)
         y <- y[-object@sitesRemoved,]
@@ -905,7 +906,7 @@ postMultinomOpen <- function(object){
         }
     }
     for(i in 1:R) {
-        P <- matrix(1, K+1, K+1)
+      P <- matrix(1, K+1, K+1)
         switch(mix,
                P  = g2 <- dpois(N, lam[i]),
                NB = {
@@ -924,18 +925,25 @@ postMultinomOpen <- function(object){
         cp_na <- is.na(cp)
         ysub <- ya[i,,1]
         ysub[cp_na] <- NA
+        cp <- c(cp, 1-sum(cp, na.rm=TRUE))
         sumy <- sum(ysub, na.rm=TRUE)
 
-        cp <- c(cp, 1-sum(cp, na.rm=TRUE))
-        cp_na <- is.na(cp)
+        is_na <- c(is.na(ysub), FALSE) | is.na(cp)
 
-        for(k in sumy:K){
-          yit <- c(ysub, k-sumy)
-          g1[k+1] <- dmultinom(yit[!cp_na], k, cp[!cp_na])
+        if(all(is.na(ysub))){
+          post[i,,1] <- NA
+        } else {
+
+          for(k in sumy:K){
+            yit <- c(ysub, k-sumy)
+            g1[k+1] <- dmultinom(yit[!is_na], k, cp[!is_na])
+          }
+
+          g1g2 <- g1*g2
+          post[i,,1] <- g1g2 / sum(g1g2)
         }
 
-        g1g2 <- g1*g2
-        post[i,,1] <- g1g2 / sum(g1g2)
+
         for(t in 2:T) {
             if(!is.na(gam[i,t-1]) & !is.na(om[i,t-1])) {
                 for(n0 in N) {
@@ -958,19 +966,23 @@ postMultinomOpen <- function(object){
             cp_na <- is.na(cp)
             ysub <- ya[i,,t]
             ysub[cp_na] <- NA
+            cp <- c(cp, 1-sum(cp, na.rm=TRUE))
             sumy <- sum(ysub, na.rm=TRUE)
 
-            cp <- c(cp, 1-sum(cp, na.rm=TRUE))
-            cp_na <- is.na(cp)
+            is_na <- c(is.na(ysub), FALSE) | is.na(cp)
 
-            for(k in sumy:K){
-              yit <- c(ysub, k-sumy)
-              g1[k+1] <- dmultinom(yit[!cp_na], k, cp[!cp_na])
+            if(all(is.na(ysub))){
+              post[i,,t] <- NA
+            } else {
+              for(k in sumy:K){
+                yit <- c(ysub, k-sumy)
+                g1[k+1] <- dmultinom(yit[!is_na], k, cp[!is_na])
+              }
+
+              g <- colSums(P * post[i,,t-1]) * g1
+              post[i,,t] <- g / sum(g)
             }
-
-            g <- colSums(P * post[i,,t-1]) * g1
-            post[i,,t] <- g / sum(g)
-        }
+          }
     }
     post
 

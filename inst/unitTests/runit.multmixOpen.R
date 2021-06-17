@@ -120,6 +120,24 @@ test.multmixOpen.NA <- function(){
   checkException(multmixOpen(~x1, ~1, ~1, ~x2, K=30, data=umf))
   options(warn=0)
 
+  # Check ranef
+  set.seed(123)
+  simy <- simData(lambda=4, gamma=0.5, omega=0.8, p=0.5,
+                M=100, T=5)
+
+  sc <- data.frame(x1=rnorm(100))
+  oc <- data.frame(x2=rnorm(100*3*5))
+
+  simy$y[2,1] <- NA
+
+  umf <- unmarkedFrameMMO(y=simy$y, numPrimary=5, siteCovs=sc,
+                        obsCov=oc, type="removal")
+
+  fit <- multmixOpen(~x1, ~1, ~1, ~x2, K=30, data=umf)
+
+  r <- ranef(fit)
+  checkTrue(cor(simy$N[,1], bup(r)[,1]) > 0.9)
+
 }
 
 
