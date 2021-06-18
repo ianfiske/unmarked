@@ -19,7 +19,27 @@ unmarkedFrameGDR <- function(yDistance, yRemoval, numPrimary=1,
     period.lengths <- rep(1, ncol(yRemoval)/numPrimary)
   }
 
-  # input checking here eventually
+  M <- nrow(yDistance)
+  Jdist <- ncol(yDistance) / numPrimary
+  Jrem <- ncol(yRemoval) / numPrimary
+
+  if(length(dist.breaks) != Jdist+1){
+    stop(paste("dist.breaks must have length",Jdist+1), call.=FALSE)
+  }
+  if(length(period.lengths) != Jrem){
+    stop(paste("period.lengths must have length",Jrem), call.=FALSE)
+  }
+
+  dist_array <- array(as.vector(t(yDistance)), c(Jdist, numPrimary, M))
+  dist_sums <- apply(dist_array, c(2,3), sum, na.rm=T)
+
+  rem_array <- array(as.vector(t(yRemoval)), c(Jrem, numPrimary, M))
+  rem_sums <- apply(rem_array, c(2,3), sum, na.rm=T)
+
+  if(!all(dist_sums == rem_sums)){
+    stop("Some sites/primary periods do not have the same number of distance and removal observations", call.=FALSE)
+  }
+
   umf <- new("unmarkedFrameGDR", y=yRemoval, yDistance=yDistance,
              yRemoval=yRemoval, numPrimary=numPrimary, siteCovs=siteCovs,
              obsCovs=obsCovs, yearlySiteCovs=yearlySiteCovs, survey="point",
@@ -31,10 +51,9 @@ unmarkedFrameGDR <- function(yDistance, yRemoval, numPrimary=1,
 
 setAs("unmarkedFrameGDR", "data.frame", function(from){
 
-
   out <- callNextMethod(from, "data.frame")
   J <- obsNum(from)
-  out <- out[,5:ncol(out), drop=FALSE]
+  out <- out[,(J+1):ncol(out), drop=FALSE]
 
   yDistance <- from@yDistance
   colnames(yDistance) <- paste0("yDist.",1:ncol(yDistance))
@@ -45,7 +64,114 @@ setAs("unmarkedFrameGDR", "data.frame", function(from){
   data.frame(yDistance, yRemoval, out)
 })
 
- # bracketing doesn't work yet
+setMethod("[", c("unmarkedFrameGDR", "numeric", "missing", "missing"),
+  function(x, i) {
+  M <- numSites(x)
+  T <- x@numPrimary
+
+  if(length(i) == 0) return(x)
+  if(any(i < 0) && any(i > 0))
+    stop("i must be all positive or all negative indices.")
+  if(all(i < 0)) { # if i is negative, then convert to positive
+    i <- (1:M)[i]
+  }
+
+  yDist <- x@yDistance
+  Rdist <- ncol(yDist)
+  Jdist <- Rdist / T
+  yRem <- x@yRemoval
+  Rrem <- ncol(yRem)
+  Jrem <- Rrem / T
+  sc <- siteCovs(x)
+  oc <- obsCovs(x)
+  ysc <- NULL
+  if(T > 1){
+    ysc <- yearlySiteCovs(x)
+  }
+
+  yDist <- yDist[i,,drop=FALSE]
+  yRem <- yRem[i,,drop=FALSE]
+
+  if(!is.null(sc)){
+    sc <- sc[i,,drop=FALSE]
+  }
+
+  if(!is.null(oc)){
+    site_idx <- rep(1:M, each=Rrem)
+    keep <- site_idx %in% i
+    oc <- oc[keep,,drop=FALSE]
+  }
+
+  if(!is.null(ysc)){
+    site_idx <- rep(1:M, each=T)
+    keep <- site_idx %in% i
+    ysc <- ysc[keep,,drop=FALSE]
+  }
+
+  umf <- x
+  umf@y <- yRem
+  umf@yDistance <- yDist
+  umf@yRemoval <- yRem
+  umf@siteCovs <- sc
+  umf@obsCovs <- oc
+  umf@yearlySiteCovs <- ysc
+
+  umf
+})
+
+setMethod("[", c("unmarkedFrameGDR", "logical", "missing", "missing"),
+  function(x, i) {
+  i <- which(i)
+  x[i, ]
+})
+
+setMethod("[", c("unmarkedFrameGDR", "missing", "numeric", "missing"),
+  function(x, i, j){
+
+  M <- numSites(x)
+  T <- x@numPrimary
+  if(T == 1){
+    stop("Only possible to subset by primary period", call.=FALSE)
+  }
+  yDist <- x@yDistance
+  Rdist <- ncol(yDist)
+  Jdist <- Rdist / T
+  yRem <- x@yRemoval
+  Rrem <- ncol(yRem)
+  Jrem <- Rrem / T
+  oc <- obsCovs(x)
+  ysc <- yearlySiteCovs(x)
+
+  rem_idx <- rep(1:T, each=Jrem) %in% j
+  yRem <- yRem[,rem_idx,drop=FALSE]
+  obsToY <- x@obsToY[rem_idx, rem_idx]
+
+  dist_idx <- rep(1:T, each=Jdist) %in% j
+  yDist <- yDist[,dist_idx,drop=FALSE]
+
+  if(!is.null(oc)){
+    T_idx <- rep(rep(1:T, each=Jrem),M)
+    keep <- T_idx %in% j
+    oc <- oc[keep,,drop=FALSE]
+  }
+
+  if(!is.null(ysc)){
+    site_idx <- rep(1:T, M)
+    keep <- site_idx %in% j
+    ysc <- ysc[keep,,drop=FALSE]
+  }
+
+  umf <- x
+  umf@y <- yRem
+  umf@yDistance <- yDist
+  umf@yRemoval <- yRem
+  umf@obsCovs <- oc
+  umf@yearlySiteCovs <- ysc
+  umf@obsToY <- obsToY
+  umf@numPrimary <- length(j)
+
+  umf
+})
 
 
 setMethod("getDesign", "unmarkedFrameGDR",
@@ -198,11 +324,13 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
         invlinkGrad = "logistic.grad")
   }
 
-  dist_ind <- (sum(n_param[1:3])+1):(sum(n_param[1:4]))
-  estimateList@estimates$dist <- unmarkedEstimate(name = "Distance",
-      short.name = "dist", estimates = ests[dist_ind],
-      covMat = as.matrix(covMat[dist_ind, dist_ind]), invlink = "exp",
-      invlinkGrad = "exp")
+  if(keyfun!="uniform"){
+    dist_ind <- (sum(n_param[1:3])+1):(sum(n_param[1:4]))
+    estimateList@estimates$dist <- unmarkedEstimate(name = "Distance",
+        short.name = "dist", estimates = ests[dist_ind],
+        covMat = as.matrix(covMat[dist_ind, dist_ind]), invlink = "exp",
+        invlinkGrad = "exp")
+  }
 
   if(keyfun=="hazard"){
     sc_ind <- (sum(n_param[1:4])+1)

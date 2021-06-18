@@ -45,9 +45,6 @@ gdistremoval(lambdaformula=~1, phiformula=~1, removalformula=~1,
   \item{\dots}{Additional arguments to optim, such as lower and upper bounds}
 
 }
-\details{
-  More here later.
-}
 
 \value{An object of class unmarkedFitGDR}
 
