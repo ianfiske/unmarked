@@ -871,3 +871,16 @@ umf_to_factor <- function(umf){
   }
   umf
 }
+
+dzip <- function(x, lambda, psi) {
+  stopifnot(length(lambda)==length(x) | length(lambda)==1)
+  stopifnot(length(psi)==1)
+  stopifnot(all(x>=0))
+  if(length(lambda)==1) lambda <- rep(lambda, length(x))
+  den <- rep(NA, length(x))
+  zer <- x==0
+  gr0 <- x > 0
+  den[zer] <- psi + (1-psi)*exp(-lambda[zer])
+  den[gr0] <- (1-psi)*dpois(x[gr0], lambda[gr0])
+  den
+}

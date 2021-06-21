@@ -17,6 +17,7 @@
 \alias{parboot,unmarkedFitOccuMulti-method}
 \alias{plot,unmarkedFit,missing-method}
 \alias{plot,unmarkedFitOccuMulti,missing-method}
+\alias{plot,unmarkedFitGDR,missing-method}
 \alias{profile,unmarkedFit-method}
 \alias{residuals,unmarkedFit-method}
 \alias{residuals,unmarkedFitOccu-method}
@@ -24,6 +25,7 @@
 \alias{residuals,unmarkedFitOccuRN-method}
 \alias{residuals,unmarkedFitOccuMulti-method}
 \alias{residuals,unmarkedFitOccuTTD-method}
+\alias{residuals,unmarkedFitGDR-method}
 \alias{update,unmarkedFit-method}
 \alias{update,unmarkedFitColExt-method}
 \alias{update,unmarkedFitPCOorDSO-method}
@@ -32,6 +34,7 @@
 \alias{update,unmarkedFitOccuMS-method}
 \alias{update,unmarkedFitOccuTTD-method}
 \alias{update,unmarkedFitNmixTTD-method}
+\alias{update,unmarkedFitGDR-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}

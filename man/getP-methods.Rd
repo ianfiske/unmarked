@@ -16,6 +16,7 @@
 \alias{getP,unmarkedFitGPC-method}
 \alias{getP,unmarkedFitDSO-method}
 \alias{getP,unmarkedFitMMO-method}
+\alias{getP,unmarkedFitGDR-method}
 \title{Methods for Function getP in Package `unmarked'}
 \description{
 Methods for function \code{getP} in Package `unmarked'. These methods
