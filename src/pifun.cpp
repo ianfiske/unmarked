@@ -13,6 +13,14 @@ vec removalPiFun ( vec p ){
   return(pi);
 }
 
+vec removalPiFun(vec p, uvec times){
+  int J = p.size();
+  for (int j=0; j<J; j++){
+    p(j) = 1 - pow(1 - p(j), times(j));
+  }
+  return removalPiFun(p);
+}
+
 vec doublePiFun( vec p ){
   //p must have 2 columns
   vec pi(3);

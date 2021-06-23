@@ -3772,6 +3772,13 @@ setMethod("getP", "unmarkedFitDSO",
     umf <- getData(object)
     y <- getY(umf)
     M <- numSites(umf)
+
+    keep <- 1:M
+    if(length(object@sitesRemoved)>0){
+      keep <- keep[-object@sitesRemoved]
+    }
+
+    M <- length(keep)
     T <- umf@numPrimary
     J <- ncol(y) / T
 
@@ -3789,7 +3796,7 @@ setMethod("getP", "unmarkedFitDSO",
     db <- umf@dist.breaks
     w <- diff(db)
     ua <- getUA(umf)
-    u <- ua$u; a <- ua$a
+    u <- ua$u[keep,]; a <- ua$a[keep,]
 
     cp <- array(NA, c(M, J, T))
     for (i in 1:M){

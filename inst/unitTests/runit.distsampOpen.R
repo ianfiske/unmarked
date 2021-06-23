@@ -91,9 +91,9 @@ if(type=="line"){
         y[i,1:J,t+1] <- rmultinom(1, N[i,t+1], cp)[1:J]
         }
     }
-    cp <- array(cp, c(J, M, T))
-    cp <- matrix(aperm(cp, c(2,1,3)), M)
-    return(list(y=matrix(y, M),N=N))
+    #cp <- array(cp, c(J, M, T))
+    #cp <- matrix(aperm(cp, c(2,1,3)), M)
+    return(list(y=matrix(y, M),N=N,cp=cp))
 }
 
 test.unmarkedFrameDSO <- function(){
@@ -190,6 +190,21 @@ test.distsampOpen.NA <- function(){
   fm <- distsampOpen(~x1, ~x2, ~1, ~1, data=umf, K=25, keyfun="halfnorm")
   checkEqualsNumeric(coef(fm), c(1.497405,-0.0826876,-0.662144,
                                  0.651976,2.054032,3.1728838), tol=1e-4)
+
+  set.seed(123)
+  ysim <- simData(lambda=5, gamma=2, omega=0.5, sigma=40, M=300, T=5,type="line",
+            keyfun="halfnorm")
+  y <- ysim$y
+  y[2,1] <- NA
+
+  umf <- unmarkedFrameDSO(y = y, numPrimary=5,
+            dist.breaks = c(0, 25, 50, 75, 100), survey="line",
+            unitsIn="m",tlength=rep(1, 300))
+
+  fm <- distsampOpen(~1, ~1, ~1, ~1, data=umf, K=25, keyfun="halfnorm")
+
+  r <- ranef(fm)
+  checkEqualsNumeric(cor(bup(r)[,1],ysim$N[,1]), 0.71089, tol=1e-4)
 
 }
 
