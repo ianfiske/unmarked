@@ -53,6 +53,7 @@ blank_umFit <- function(fit_function){
   type <- ifelse(type=="PcountOpen", "PCO", type)
   type <- ifelse(type=="DistsampOpen", "DSO", type)
   type <- ifelse(type=="MultmixOpen", "MMO", type)
+  type <- ifelse(type=="Gdistremoval", "GDR", type)
   type <- paste0("unmarkedFit", type)
   new(type)
 }
@@ -111,6 +112,9 @@ setMethod("simulate", "character",
   umfs <- lapply(ysims, function(x){
     if(object=="occuMulti"){
       umf@ylist <- x
+    } else if(object=="gdistremoval"){
+      umf@yDistance=x$yDistance
+      umf@yRemoval=x$yRemoval
     } else {
       umf@y <- x
     }
@@ -433,4 +437,43 @@ setMethod("simulate_fit", "unmarkedFitOccuMS",
   occuMS(formulas$det, formulas$state, formulas$phi, data=umf,
          parameterization=args$parameterization,
          se=FALSE, control=list(maxit=1))
+})
+
+setMethod("get_umf_components", "unmarkedFitGDR",
+          function(object, formulas, guide, design, ...){
+  if(any(! c("M","Jdist","Jrem","T") %in% names(design))){
+    stop("Required design components are M, Jdist, Jrem, and T")
+  }
+  sc <- generate_data(list(formulas$lambda, formulas$dist), guide, design$M)
+  ysc <- NULL
+  if(design$T > 1){
+    ysc <- generate_data(formulas$phi, guide, design$M*design$T)
+  }
+  oc <- generate_data(formulas$rem, guide, design$M*design$T*design$Jrem)
+
+  list(yDistance=matrix(0, design$M, design$T*design$Jdist),
+       yRemoval=matrix(0, design$M, design$T*design$Jrem),
+       siteCovs=sc, yearlySiteCovs=ysc, obsCovs=oc)
+})
+
+setMethod("simulate_fit", "unmarkedFitGDR",
+  function(object, formulas, guide, design, ...){
+  parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  umf <- unmarkedFrameGDR(yDistance=parts$yDistance, yRemoval=parts$yRemoval,
+                          numPrimary=design$T, siteCovs=parts$siteCovs,
+                          obsCovs=parts$obsCovs, yearlySiteCovs=parts$yearlySiteCovs,
+                          dist.breaks=args$dist.breaks, unitsIn=args$unitsIn,
+                          period.lengths=args$period.lengths)
+
+  keyfun <- ifelse(is.null(args$keyfun), "halfnorm", args$keyfun)
+  output <- ifelse(is.null(args$output), "density", args$output)
+  unitsOut <- ifelse(is.null(args$unitsOut), "ha", args$unitsOut)
+  mixture <- ifelse(is.null(args$mixture), "P", args$mixture)
+  K <- ifelse(is.null(args$K), 100, args$K)
+
+  gdistremoval(lambdaformula=formulas$lambda, phiformula=formulas$phi,
+               removalformula=formulas$rem, distanceformula=formulas$dist,
+               data=umf, keyfun=keyfun, output=output, unitsOut=unitsOut,
+               mixture=mixture, K=K, se=FALSE, control=list(maxit=1))
 })

@@ -67,7 +67,10 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
       if(!is.null(design)) fit@data <- bdata[[i]]
       if(inherits(fit, "unmarkedFitOccuMulti")){
         fit@data@ylist <- sims[[i]]
-      } else{
+      } else if(inherits(fit, "unmarkedFitGDR")){
+        fit@data@yDistance <- sims[[i]]$yDistance
+        fit@data@yRemoval <- sims[[i]]$yRemoval
+      } else {
         fit@data@y <- sims[[i]]
       }
       update(fit, data=fit@data, se=TRUE)
