@@ -19,3 +19,8 @@ arma::vec beta_sub(arma::vec beta, arma::uvec n_param, unsigned idx){
   unsigned start = end - np + 1;
   return beta.subvec(start, end);
 }
+
+double dmultinom(arma::vec x, arma::vec prob){
+  //returns log prob
+  return lgamma(sum(x) + 1) + sum(x % log(prob) - lgamma(x + 1));
+}

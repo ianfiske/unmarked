@@ -17,6 +17,7 @@
 \alias{nonparboot,unmarkedFitOccuTTD-method}
 \alias{nonparboot,unmarkedFitOccuMulti-method}
 \alias{nonparboot,unmarkedFitNmixTTD-method}
+\alias{nonparboot,unmarkedFitGDR-method}
 
 \title{ Nonparametric bootstrapping in unmarked }
 \description{

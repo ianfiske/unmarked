@@ -24,7 +24,7 @@ importFrom(Rcpp, evalCpp)
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
        colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
        occuMS, computeMPLElambda, pcount.spHDS, occuTTD, distsampOpen,
-       multmixOpen, nmixTTD)
+       multmixOpen, nmixTTD, gdistremoval)
 export(removalPiFun, doublePiFun)
 export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 
@@ -39,7 +39,7 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
               unmarkedFrameGMM, unmarkedFrameGDS, unmarkedFramePCO,
               unmarkedFrameGPC, unmarkedEstimate, unmarkedFitList,
               unmarkedModSel, unmarkedRanef, unmarkedFrameOccuMulti,
-              unmarkedFrameOccuMS, unmarkedCrossVal,
+              unmarkedFrameOccuMS, unmarkedFrameGDR, unmarkedCrossVal,
               unmarkedPostSamples)
 
 # Methods
@@ -62,7 +62,7 @@ export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
     unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
     unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC, unmarkedFrameOccuMulti,
     unmarkedFrameOccuMS, unmarkedFrameOccuTTD, unmarkedFrameDSO, 
-    unmarkedFrameMMO)
+    unmarkedFrameMMO, unmarkedFrameGDR)
 
 # Formatting
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
