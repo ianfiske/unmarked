@@ -134,10 +134,8 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
       tmb_param <- list(beta_state=rep(0,ncol(X)), b_state=rep(0,sum(nrand_state)),
                         lsigma_state=rep(0,ngv_state),
                         beta_det=rep(0,ncol(V)), b_det=rep(0,sum(nrand_det)),
-                        lsigma_det=rep(0,ngv_det))
-      if(mixture_code > 1){
-        tmb_param <- c(tmb_param, list(beta_scale=0))
-      }
+                        lsigma_det=rep(0,ngv_det), beta_scale=rep(0, 0))
+      if(mixture_code > 1) tmb_param$beta_scale <- rep(0,1)
 
       # Specify which parameters are random effects
       rand_ef <- NULL
