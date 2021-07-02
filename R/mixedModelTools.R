@@ -330,3 +330,31 @@ setMethod("randomTerms", "unmarkedFit", function(object, type, level=0.95, ...){
   rownames(out) <- NULL
   out
 })
+
+get_ranef_inputs <- function(forms, datalist, dms, Zs){
+  stopifnot(!is.null(names(datalist)))
+  mods <- names(datalist)
+  ngv <- lapply(forms, get_group_vars)
+  names(ngv) <- paste0("n_group_vars_",mods)
+  ngroup <- mapply(get_nrandom, forms, datalist, SIMPLIFY=FALSE)
+  names(ngroup) <- paste0("n_grouplevels_",mods)
+  names(dms) <- paste0("X_", mods)
+  names(Zs) <- paste0("Z_", mods)
+
+  dat <- c(ngv, ngroup, dms, Zs)
+
+  beta <- lapply(dms, function(x) rep(0, ncol(x)))
+  names(beta) <- paste0("beta_", mods)
+  b <- lapply(ngroup, function(x) rep(0, sum(x)))
+  names(b) <- paste0("b_", mods)
+  lsigma <- lapply(ngv, function(x) rep(0, x))
+  names(lsigma) <- paste0("lsigma_", mods)
+
+  pars <- c(beta, b, lsigma)
+
+  rand_ef <- paste0(names(b))[sapply(forms, has_random)]
+  if(length(rand_ef) == 0) rand_ef <- NULL
+
+  list(data=dat, pars=pars, rand_ef=rand_ef)
+}
+
