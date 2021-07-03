@@ -52,6 +52,6 @@ vector<Type> pifun(vector<Type> p, int pifun_type){
   } else if(pifun_type == 2){
     return(pifun_dep_double(p));
   } else {
-    throw("Invalid pifun type");
+    throw(std::invalid_argument("invalid pifun"));
   }
 }

@@ -7,6 +7,7 @@
 #include "tmb_occu.hpp"
 #include "tmb_pcount.hpp"
 #include "tmb_multinomPois.hpp"
+#include "tmb_distsamp.hpp"
 
 template<class Type>
 Type objective_function<Type>::operator() () {
@@ -17,6 +18,8 @@ Type objective_function<Type>::operator() () {
     return tmb_pcount(this);
   } else if(model == "tmb_multinomPois"){
     return tmb_multinomPois(this);
+  } else if(model == "tmb_distsamp"){
+    return tmb_distsamp(this);
   } else {
     error("Unknown model.");
   }
