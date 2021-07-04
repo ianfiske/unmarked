@@ -2,24 +2,18 @@
 distsamp <- function(formula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL,
-    method="BFGS", se = TRUE, engine = c("C", "R"),
+    method="BFGS", se = TRUE, engine = c("C", "R", "TMB"),
     rel.tol=0.001, ...)
 {
-    check_no_support(split_formula(formula))
 
+    # Check arguments
     engine <- match.arg(engine)
+    if(any(sapply(split_formula(formula), has_random))) engine <- "TMB"
     keyfun <- match.arg(keyfun)
-#    if(engine=="C" && !(keyfun %in% c("halfnorm", "exp", "uniform"))) {
-#        engine <- "R"
-#        warning("C engine not available for hazard model, using R instead")
-#    }
     output <- match.arg(output)
     unitsOut <- match.arg(unitsOut)
-    db <- data@dist.breaks
-    tlength <- data@tlength
-    survey <- data@survey
-    w <- diff(db)
-    unitsIn <- data@unitsIn
+
+    #Generate design matrix
     designMats <- getDesign(data, formula)
     X <- designMats$X; V <- designMats$V; y <- designMats$y
     X.offset <- designMats$X.offset; V.offset <- designMats$V.offset
@@ -27,9 +21,16 @@ distsamp <- function(formula, data,
         X.offset <- rep(0, nrow(X))
     if(is.null(V.offset))
         V.offset <- rep(0, nrow(V))
+
     M <- nrow(y)
     J <- ncol(y)
 
+    # Distance sampling design info
+    db <- data@dist.breaks
+    tlength <- data@tlength
+    survey <- data@survey
+    w <- diff(db)
+    unitsIn <- data@unitsIn
     u <- a <- matrix(NA, M, J)
     switch(survey,
         line = {
@@ -56,59 +57,38 @@ distsamp <- function(formula, data,
         ha = A <- A * 100,
         kmsq = A <- A)
 
+    # Set up parameters
     lamParms <- colnames(X)
     detParms <- colnames(V)
+    scaleParms <- character(0)
     nAP <- length(lamParms)
     nDP <- length(detParms)
     nP <- nAP + nDP
-    cp <- matrix(NA, M, J)
-    switch(keyfun,
-           halfnorm = {
-               altdetParms <- paste("sigma", colnames(V), sep="")
-               if(is.null(starts)) {
-                   starts <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
-                   names(starts) <- c(lamParms, detParms)
-               } else {
-                   if(is.null(names(starts))) names(starts) <-
-                       c(lamParms, detParms)
-               }
-           },
-           exp = {
-               altdetParms <- paste("rate", colnames(V), sep="")
-               if(is.null(starts)) {
-                   starts <- c(rep(0, nAP), 0, rep(0, nDP-1))
-                   names(starts) <- c(lamParms, detParms)
-               } else {
-                   if(is.null(names(starts))) names(starts) <-
-                       c(lamParms, detParms)
-               }
-           },
-           hazard = {
-               nDP <- length(detParms)
-               nP <- nAP + nDP + 1
-               altdetParms <- paste("shape", colnames(V), sep="")
-               if(is.null(starts)) {
-                   starts <- c(rep(0, nAP), log(median(db)),
-                               rep(0, nDP-1), 1)
-                   names(starts) <- c(lamParms, detParms, "scale")
-               } else {
-                   if(is.null(names(starts)))
-                       names(starts) <- c(lamParms, detParms, "scale")
-               }
-           },
-           uniform = {
-               detParms <- character(0)
-               altdetParms <- character(0)
-               nDP <- 0
-               if(is.null(starts)) {
-                   starts <- rep(0, length(lamParms))
-                   names(starts) <- lamParms
-               } else {
-                   if(is.null(names(starts))) names(starts) <- lamParms
-               }
-           })
+    lamIdx <- 1:nAP
+    detIdx <- (nAP+1):nP
+    starts_default <- c(rep(0, nAP), log(max(db)), rep(0, nDP-1))
+
+    if(keyfun=="uniform"){
+      detParms <- character(0)
+      detIdx <- numeric(0)
+      starts_default <- rep(0, nAP)
+    }
+    if(keyfun=="exp"){
+      starts_default[(nAP+1)] <- 0
+      # maybe this should be default everywhere
+      if(engine == "TMB") starts_default[(nAP+1)] <- log(median(db))
+    }
+    if(keyfun=="hazard"){
+      nP <- nP + 1
+      scaleParms <- "scale"
+      starts_default[(nAP+1)] <- log(median(db))
+      starts_default <- c(starts_default, 1)
+    }
+    names(starts_default) <- c(lamParms, detParms, scaleParms)
 
     if(engine=="R") {
+
+    cp <- matrix(NA, M, J)
     switch(keyfun,
     halfnorm = {
         nll <- function(param) {
@@ -245,52 +225,107 @@ distsamp <- function(formula, data,
                   PACKAGE="unmarked")
         }
     }
-    fm <- optim(starts, nll, method=method, hessian=se, ...)
-    opt <- fm
-    ests <- fm$par
-    covMat <- invertHessian(fm, nP, se)
-    estsAP <- ests[1:nAP]
-    if(keyfun == "hazard") {
-        estsDP <- ests[(nAP+1):(nP-1)]
-        estsScale <- ests[nP]
-        }
-    else
-        estsDP <- ests[(nAP+1):nP]
-    covMatAP <- covMat[1:nAP, 1:nAP, drop=F]
-    if(keyfun=="hazard") {
-        covMatDP <- covMat[(nAP+1):(nP-1), (nAP+1):(nP-1), drop=F]
-        covMatScale <- covMat[nP, nP, drop=F]
-        }
-    else if(keyfun!="uniform")
-        covMatDP <- covMat[(nAP+1):nP, (nAP+1):nP, drop=F]
-    names(estsDP) <- altdetParms
-    fmAIC <- 2 * fm$value + 2 * nP
+
+    if(engine %in% c("C","R")){
+      if(is.null(starts)) starts <- starts_default
+      fm <- optim(starts, nll, method=method, hessian=se, ...)
+
+      ests <- fm$par
+      names(ests) <- c(lamParms, detParms, scaleParms)
+      covMat <- invertHessian(fm, nP, se)
+      fmAIC <- 2 * fm$value + 2 * nP
+      tmb_mod <- NULL
+
+      # Organize fixed-effect estimates
+      state_coef <- list(ests=ests[lamIdx], cov=as.matrix(covMat[lamIdx, lamIdx]))
+
+      if(keyfun != "uniform"){
+        det_coef <- list(ests=ests[detIdx], cov=as.matrix(covMat[detIdx, detIdx]))
+      }
+      if(keyfun == "hazard") {
+        scale_coef <- list(ests=ests[nP], cov=as.matrix(covMat[nP,nP]))
+      }
+
+      # No random effects in C or R engines
+      state_rand_info <- det_rand_info <- list()
+
+    } else if(engine == "TMB"){
+
+      # Set up TMB input data
+      if(output == "abund") A <- rep(1, length(A))
+      forms <- split_formula(formula)
+      inps <- get_ranef_inputs(forms, list(det=siteCovs(data), state=siteCovs(data)),
+                               list(V, X), designMats[c("Z_det","Z_state")])
+
+      keyfun_type <- switch(keyfun, uniform={0}, halfnorm={1}, exp={2},
+                            hazard={3})
+      survey_type <- switch(survey, line={0}, point={1})
+      tmb_dat <- c(list(y=y, survey_type=survey_type, keyfun_type=keyfun_type,
+                        A=A, db=db, a=a, w=w, u=u, offset_state=X.offset,
+                        offset_det=V.offset), inps$data)
+
+      tmb_param <- c(inps$pars, list(beta_scale=rep(0,0)))
+
+      if(is.null(starts)){
+        starts <- starts_default
+        # Have to tinker with initial values
+        if(keyfun != "uniform") tmb_param$beta_det[1] <- starts[nAP+1]
+
+        nsig <- length(unlist(tmb_param[grepl("lsigma",names(tmb_param))]))
+        starts <- c(starts, rep(0, nsig))
+      }
+
+      if(keyfun == "hazard") tmb_param$beta_scale <- rep(0,1)
+      if(keyfun == "uniform") tmb_param$beta_det <- rep(0,0)
+
+      # Fit model in TMB
+      tmb_out <- fit_TMB("tmb_distsamp", tmb_dat, tmb_param, inps$rand_ef,
+                         starts=starts, method)
+      tmb_mod <- tmb_out$TMB
+      fm <- tmb_out$opt
+      fmAIC <- tmb_out$AIC
+      nll <- tmb_mod$fn
+
+      # Organize fixed-effect estimate from TMB output
+      state_coef <- get_coef_info(tmb_out$sdr, "state", lamParms, lamIdx)
+      det_coef <- get_coef_info(tmb_out$sdr, "det", detParms, detIdx)
+
+      if(keyfun=="hazard"){
+        scale_coef <- get_coef_info(tmb_out$sdr, "scale", scaleParms, nP)
+      }
+
+      # Organize random-effect estimates from TMB output
+      state_rand_info <- get_randvar_info(tmb_out$sdr, "state", forms[[2]], siteCovs(data))
+      det_rand_info <- get_randvar_info(tmb_out$sdr, "det", forms[[1]], siteCovs(data))
+
+    }
+
     stateName <- switch(output, abund = "Abundance", density = "Density")
     stateEstimates <- unmarkedEstimate(name = stateName,
-        short.name = "lam", estimates = estsAP, covMat = covMatAP,
-        invlink = "exp", invlinkGrad = "exp")
+        short.name = "lam", estimates = state_coef$ests, covMat = state_coef$cov,
+        fixed=1:nAP, invlink = "exp", invlinkGrad = "exp", randomVarInfo=state_rand_info)
+    estimateList <- unmarkedEstimateList(list(state=stateEstimates))
+
     if(keyfun != "uniform") {
-        detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
-        estimates = estsDP, covMat = covMatDP, invlink = "exp",
-        invlinkGrad = "exp")
-        if(keyfun != "hazard")
-            estimateList <- unmarkedEstimateList(list(
-                state=stateEstimates, det=detEstimates))
-        else {
-            scaleEstimates <- unmarkedEstimate(name = "Hazard-rate(scale)",
-                short.name = "p", estimates = estsScale,
-                covMat = covMatScale, invlink = "exp", invlinkGrad = "exp")
-            estimateList <- unmarkedEstimateList(list(state=stateEstimates,
-                det=detEstimates, scale=scaleEstimates))
-            }
-        }
-    else
-        estimateList <- unmarkedEstimateList(list(state=stateEstimates))
+      detEstimates <- unmarkedEstimate(name = "Detection", short.name = "p",
+        estimates = det_coef$ests, covMat = det_coef$cov, fixed=1:nDP,
+        invlink = "exp", invlinkGrad = "exp", randomVarInfo=det_rand_info)
+      estimateList@estimates$det <- detEstimates
+
+      if(keyfun == "hazard"){
+        scaleEstimates <- unmarkedEstimate(name = "Hazard-rate(scale)",
+          short.name = "p", estimates = scale_coef$ests,
+          covMat = scale_coef$cov, fixed=1, invlink = "exp", invlinkGrad = "exp",
+          randomVarInfo=list())
+        estimateList@estimates$scale <- scaleEstimates
+      }
+    }
+
     dsfit <- new("unmarkedFitDS", fitType = "distsamp", call = match.call(),
-        opt = opt, formula = formula, data = data, keyfun=keyfun,
+        opt = fm, formula = formula, data = data, keyfun=keyfun,
         sitesRemoved = designMats$removed.sites, unitsOut=unitsOut,
         estimates = estimateList, AIC = fmAIC, negLogLike = fm$value,
-        nllFun = nll, output=output)
+        nllFun = nll, output=output, TMB=tmb_mod)
     return(dsfit)
 }
 

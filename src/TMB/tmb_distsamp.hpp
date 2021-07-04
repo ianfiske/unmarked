@@ -26,7 +26,7 @@ Type tmb_distsamp(objective_function<Type>* obj) {
   DATA_VECTOR(db); // distance breaks
   DATA_MATRIX(a);
   DATA_VECTOR(w);
-  DATA_VECTOR(u);
+  DATA_MATRIX(u);
 
   PARAMETER_VECTOR(beta_state); //Fixed effect params for lambda
   PARAMETER_VECTOR(b_state); //Random intercepts and/or slopes for lambda
@@ -66,7 +66,7 @@ Type tmb_distsamp(objective_function<Type>* obj) {
   for (int i=0; i<M; i++){
     //Not sure if defining this inside loop is necessary for parallel
     vector<Type> asub = a.row(i);
-    vector<Type> usub = u.col(i);
+    vector<Type> usub = u.row(i);
     vector<Type> cp = distance_prob(keyfun_type, dp(i), scale, survey_type, db, 
                                     w, asub, usub); 
     vector<Type> ysub = y.row(i);

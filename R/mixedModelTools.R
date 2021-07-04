@@ -217,12 +217,12 @@ fit_TMB <- function(model, data, params, random,
                             silent=TRUE,
                             DLL = "unmarked_TMBExports")
 
-  if(is.null(starts)) starts <- rep(0, nfixed)
-  if(length(starts) != nfixed){
-    stop(paste("The number of starting values should be", nfixed))
-  }
+  #if(is.null(starts)) starts <- rep(0, nfixed)
+  #if(length(starts) != nfixed){
+  #  stop(paste("The number of starting values should be", nfixed))
+  #}
 
-  opt <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
+  opt <- optim(tmb_mod$par, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
 
   sdr <- TMB::sdreport(tmb_mod, getJointPrecision=TRUE)
   sdr$par <- tmb_mod$par
