@@ -1,16 +1,6 @@
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR obj
 
-template<class Type>
-vector<Type> cloglog(vector<Type> inp) {
-  int sz = inp.size(); 
-  vector<Type> out(sz);
-  for (int i=0; i<sz; i++){
-    out(i) = 1 - exp(-exp(inp(i)));
-  }
-  return out;
-}
-
 // name of function below **MUST** match filename
 template <class Type>
 Type tmb_occu(objective_function<Type>* obj) {
@@ -48,19 +38,8 @@ Type tmb_occu(objective_function<Type>* obj) {
 
   //Construct psi vector
   vector<Type> psi = X_state * beta_state + offset_state;
-
-  //Add random effects to psi if there are any
-  if(n_group_vars_state > 0){
-    vector<Type> sigma_state = exp(lsigma_state);
-    int idx = 0;
-    for (int i=0; i<n_group_vars_state; i++){
-      for (int j=0; j<n_grouplevels_state(i); j++){
-        loglik -= dnorm(b_state(idx), Type(0.0), sigma_state(i), true);
-        idx += 1;
-      }
-    }
-    psi += Z_state * b_state;
-  }
+  psi = add_ranef(psi, loglik, b_state, Z_state, lsigma_state, 
+                  n_group_vars_state, n_grouplevels_state);
   if(link == 1){
     psi = cloglog(psi);
   } else {
@@ -69,19 +48,8 @@ Type tmb_occu(objective_function<Type>* obj) {
 
   //Construct p vector
   vector<Type> p = X_det * beta_det + offset_det;
-
-  //Add random effects to p if there are any
-  if(n_group_vars_det > 0){
-    vector<Type> sigma_det = exp(lsigma_det);
-    int idx = 0;
-    for (int i=0; i<n_group_vars_det; i++){
-      for (int j=0; j<n_grouplevels_det(i); j++){
-        loglik -= dnorm(b_det(idx), Type(0.0), sigma_det(i), true);
-        idx += 1;
-      }
-    }
-    p += Z_det * b_det;
-  }
+  p = add_ranef(p, loglik, b_det, Z_det, lsigma_det, 
+                n_group_vars_det, n_grouplevels_det);
   p = invlogit(p);
 
   //Standard occupancy likelihood calculation

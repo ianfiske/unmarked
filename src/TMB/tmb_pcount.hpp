@@ -28,7 +28,7 @@ Type lp_site_pcount(vector<Type> y, int mixture, Type lam, vector<Type> p,
     }
     out += f * exp(g);
   }
-  return log(out + DOUBLE_XMIN);
+  return log(out + DBL_MIN);
 }
 
 // name of function below **MUST** match filename
@@ -61,6 +61,10 @@ Type tmb_pcount(objective_function<Type>* obj) {
   PARAMETER_VECTOR(b_det);
   PARAMETER_VECTOR(lsigma_det);
 
+  PARAMETER_VECTOR(beta_scale);
+  Type scale = 0;
+  if(mixture > 1) scale = beta_scale(0);
+
   //Define the log likelihood so that it can be calculated in parallel over sites
   parallel_accumulator<Type> loglik(obj);
 
@@ -69,58 +73,23 @@ Type tmb_pcount(objective_function<Type>* obj) {
 
   //Construct lambda vector
   vector<Type> lam = X_state * beta_state + offset_state;
-
-  //Add random effects to psi if there are any
-  if(n_group_vars_state > 0){
-    vector<Type> sigma_state = exp(lsigma_state);
-    int idx = 0;
-    for (int i=0; i<n_group_vars_state; i++){
-      for (int j=0; j<n_grouplevels_state(i); j++){
-        loglik -= dnorm(b_state(idx), Type(0.0), sigma_state(i), true);
-        idx += 1;
-      }
-    }
-    lam += Z_state * b_state;
-  }
-  
+  lam = add_ranef(lam, loglik, b_state, Z_state, lsigma_state, 
+                  n_group_vars_state, n_grouplevels_state);
   lam = exp(lam);
 
   //Construct p vector
   vector<Type> p = X_det * beta_det + offset_det;
-
-  //Add random effects to p if there are any
-  if(n_group_vars_det > 0){
-    vector<Type> sigma_det = exp(lsigma_det);
-    int idx = 0;
-    for (int i=0; i<n_group_vars_det; i++){
-      for (int j=0; j<n_grouplevels_det(i); j++){
-        loglik -= dnorm(b_det(idx), Type(0.0), sigma_det(i), true);
-        idx += 1;
-      }
-    }
-    p += Z_det * b_det;
-  }
+  p = add_ranef(p, loglik, b_det, Z_det, lsigma_det, 
+                n_group_vars_det, n_grouplevels_det);
   p = invlogit(p);
   
   //Likelihood
-  
-  if((mixture == 2) | (mixture == 3)){ //Negative binomial / ZIP
-    PARAMETER(beta_scale);
-    for (int i=0; i<M; i++){
-      int pstart = i * J;
-      vector<Type> ysub = y.row(i);
-      vector<Type> psub = p.segment(pstart, J);
-      loglik -= lp_site_pcount(ysub, mixture, lam(i), psub, 
-                               beta_scale, K, Kmin(i));
-    }
-  } else { //Poisson
-    for (int i=0; i<M; i++){
-      int pstart = i * J;
-      vector<Type> ysub = y.row(i);
-      vector<Type> psub = p.segment(pstart, J);
-      loglik -= lp_site_pcount(ysub, mixture, lam(i), psub,
-                               Type(0.0), K, Kmin(i));
-    }
+  for (int i=0; i<M; i++){
+    int pstart = i * J;
+    vector<Type> ysub = y.row(i);
+    vector<Type> psub = p.segment(pstart, J);
+    loglik -= lp_site_pcount(ysub, mixture, lam(i), psub,
+                             scale, K, Kmin(i));
   }
 
   return loglik;
