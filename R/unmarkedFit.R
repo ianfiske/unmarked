@@ -1887,10 +1887,13 @@ setMethod("predict", "unmarkedFitOccuMulti",
       inds <- dStart[i]:dStop[i]
       new_est <- object@estimates@estimates$det
       new_est@estimates <- coef(object)[inds]
+      new_est@fixed <- 1:length(inds)
       if(se.fit){
         new_est@covMat <- vcov(object)[inds,inds,drop=FALSE]
+        new_est@covMatBS <- object@covMatBS[inds,inds,drop=FALSE]
       } else{
         new_est@covMat <- matrix(NA, nrow=length(inds), ncol=length(inds))
+        new_est@covMatBS <- matrix(NA, nrow=length(inds), ncol=length(inds))
       }
 
       prmat <- t(apply(dmDet[[i]], 1, function(x){
