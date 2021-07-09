@@ -210,19 +210,27 @@ fit_TMB <- function(model, data, params, random,
 
   fixed_sub <- names(params)[!names(params) %in% random]
   nfixed <- length(unlist(params[fixed_sub]))
+  list_fixed_only <- params[fixed_sub]
+  plengths <- sapply(list_fixed_only, length)
+  starts_order <- rep(fixed_sub, plengths)
+
+  if(!is.null(starts)){
+    if(length(starts) != nfixed){
+      stop(paste("The number of starting values should be", nfixed))
+    }
+    list_fixed_only <- params[fixed_sub]
+    list_fixed_only <- utils::relist(starts, list_fixed_only)
+    params <- replace(params, names(list_fixed_only), list_fixed_only)
+  }
 
   tmb_mod <- TMB::MakeADFun(data = c(model = model, data),
                             parameters = params,
                             random = random,
                             silent=TRUE,
                             DLL = "unmarked_TMBExports")
+  tmb_mod$starts_order <- starts_order
 
-  if(is.null(starts)) starts <- rep(0, nfixed)
-  if(length(starts) != nfixed){
-    stop(paste("The number of starting values should be", nfixed))
-  }
-
-  opt <- optim(starts, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
+  opt <- optim(tmb_mod$par, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
 
   sdr <- TMB::sdreport(tmb_mod, getJointPrecision=TRUE)
   sdr$par <- tmb_mod$par
