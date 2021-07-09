@@ -267,12 +267,7 @@ distsamp <- function(formula, data,
       tmb_param <- c(inps$pars, list(beta_scale=rep(0,0)))
 
       if(is.null(starts)){
-        starts <- starts_default
-        # Have to tinker with initial values
-        if(keyfun != "uniform") tmb_param$beta_det[1] <- starts[nAP+1]
-
-        nsig <- length(unlist(tmb_param[grepl("lsigma",names(tmb_param))]))
-        starts <- c(starts, rep(0, nsig))
+        if(keyfun != "uniform") tmb_param$beta_det[1] <- log(median(db))
       }
 
       if(keyfun == "hazard") tmb_param$beta_scale <- rep(0,1)
