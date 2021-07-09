@@ -219,7 +219,7 @@ fit_TMB <- function(model, data, params, random,
       stop(paste("The number of starting values should be", nfixed))
     }
     list_fixed_only <- params[fixed_sub]
-    list_fixed_only <- relist(starts, list_fixed_only)
+    list_fixed_only <- utils::relist(starts, list_fixed_only)
     params <- replace(params, names(list_fixed_only), list_fixed_only)
   }
 
@@ -229,16 +229,6 @@ fit_TMB <- function(model, data, params, random,
                             silent=TRUE,
                             DLL = "unmarked_TMBExports")
   tmb_mod$starts_order <- starts_order
-  #if(!is.null(starts)){
-  #  if(length(starts) != nfixed){
-  #    stop(paste("The number of starting values should be", nfixed))
-  #  }
-  #  stopifnot(length(starts)==length(tmb_mod$par))
-  #  tmb_starts <- starts
-  #  names(tmb_starts) <- names(tmb_mod$par)
-  #  tmb_mod$par <- tmb_starts
-  #  print(tmb_mod$par)
-  #}
 
   opt <- optim(tmb_mod$par, fn=tmb_mod$fn, gr=tmb_mod$gr, method=method, ...)
 
