@@ -40,6 +40,8 @@ setMethod("parboot", "unmarkedFit",
     umf <- getData(object)
     y <- getY(object)
     ests <- as.numeric(coef(object))
+    starts <- ests
+    if(methods::.hasSlot(object, "TMB") && !is.null(object@TMB)) starts <- NULL
     t0 <- statistic(object, ...)
     lt0 <- length(t0)
     t.star <- matrix(NA, nsim, lt0)
@@ -60,7 +62,7 @@ setMethod("parboot", "unmarkedFit",
     if (no_par) {
       for(i in 1:nsim) {
         simdata <- replaceY(simdata, simList[[i]])
-        fit <- update(object, data=simdata, starts=ests, se=FALSE)
+        fit <- update(object, data=simdata, starts=starts, se=FALSE)
         t.star[i,] <- statistic(fit, ...)
         if(!missing(report)) {
           if (nsim > report && i %in% seq(report, nsim, by=report))
@@ -83,7 +85,7 @@ setMethod("parboot", "unmarkedFit",
       clusterEvalQ(cl, list2env(dots))
       t.star.parallel <- parLapply(cl, 1:nsim, function(i) {
         simdata <- replaceY(simdata, simList[[i]])
-        fit <- update(object, data = simdata, starts = ests, se = FALSE)
+        fit <- update(object, data = simdata, starts = starts, se = FALSE)
         t.star <- statistic(fit, ...)
       })
       t.star <- matrix(unlist(t.star.parallel), nrow = length(t.star.parallel), byrow = TRUE)

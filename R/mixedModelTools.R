@@ -86,7 +86,7 @@ check_formula <- function(formula, data){
   rand <- lme4::findbars(formula)
   if(is.null(rand)) return(invisible())
 
-  char <- paste(deparse(formula))
+  char <- paste(formula, collapse=" ")
   if(grepl(":|/", char)){
     stop("Nested random effects (using / and :) are not supported",
          call.=FALSE)
@@ -110,8 +110,11 @@ check_newdata <- function(newdata, formula){
 
 split_formula <- function(formula){
   if(length(formula) != 3) stop("Double right-hand side formula required")
-  p1 <- as.formula(formula[[2]])
-  p2 <- as.formula(paste0(formula[[1]], deparse(formula[[3]])))
+  char <- lapply(formula, function(x){
+            paste(deparse(x), collapse="")
+          })
+  p1 <- as.formula(char[[2]])
+  p2 <- as.formula(paste("~", char[[3]]))
   list(p1, p2)
 }
 
