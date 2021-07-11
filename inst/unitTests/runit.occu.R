@@ -314,6 +314,9 @@ test.occu.randomeffects <- function(){
   ft <- fitted(fm)
   checkEqualsNumeric(dim(ft), c(n_sites*n_years, J))
 
+  pb <- parboot(fm, nsim=2)
+  checkTrue(inherits(pb, "parboot"))
+
   # Check custom initial values
   checkEquals(fm@TMB$starts_order[1], "beta_det")
   fmi <- occu(~1~cov1 + (1|site_id), umf, starts=c(10,0,0,0))
