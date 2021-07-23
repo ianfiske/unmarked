@@ -211,11 +211,17 @@ setMethod("getDesign", "unmarkedFrameGDR",
   Xrem <- model.matrix(formula$removalformula,
             model.frame(formula$removalformula, oc, na.action=NULL))
 
+  Zlam <- get_Z(formula$lambdaformula, sc)
+  Zphi <- get_Z(formula$phiformula, ysc)
+  Zdist <- get_Z(formula$distanceformula, ysc)
+  Zrem <- get_Z(formula$removalformula, oc)
+
   if(any(is.na(Xlam)) | any(is.na(Xphi)) | any(is.na(Xdist)) | any(is.na(Xrem))){
     stop("gdistremoval does not currently handle missing values in covariates", call.=FALSE)
   }
 
-  list(yDist=yDist, yRem=yRem, Xlam=Xlam, Xphi=Xphi, Xdist=Xdist, Xrem=Xrem)
+  list(yDist=yDist, yRem=yRem, Xlam=Xlam, Xphi=Xphi, Xdist=Xdist, Xrem=Xrem,
+       Zlam=Zlam, Zphi=Zphi, Zdist=Zdist, Zrem=Zrem)
 })
 
 setClass("unmarkedFitGDR", contains = "unmarkedFitGDS")
@@ -223,14 +229,16 @@ setClass("unmarkedFitGDR", contains = "unmarkedFitGDS")
 gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
   distanceformula=~1, data, keyfun=c("halfnorm", "exp", "hazard", "uniform"),
   output=c("abund", "density"), unitsOut=c("ha", "kmsq"), mixture=c('P', 'NB', 'ZIP'),
-  K, starts, method = "BFGS", se = TRUE, engine=c("C","R"), threads=1, ...){
+  K, starts, method = "BFGS", se = TRUE, engine=c("C","TMB"), threads=1, ...){
 
   keyfun <- match.arg(keyfun)
   output <- match.arg(output)
   unitsOut <- match.arg(unitsOut)
   mixture <- match.arg(mixture)
+  engine <- match.arg(engine)
 
   formlist <- mget(c("lambdaformula", "phiformula", "distanceformula", "removalformula"))
+  if(any(sapply(formlist, has_random))) engine <- "TMB"
 
   M <- numSites(data)
   T <- data@numPrimary
@@ -279,26 +287,70 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
   # Get K----------------------------------------------------------------------
   if(missing(K) || is.null(K)) K <- max(Kmin, na.rm=TRUE) + 40
 
-  if(missing(starts)){
-    starts <- rep(0, nP)
-    starts[sum(n_param[1:3])+1] <- log(median(db))
-  } else if(length(starts)!=nP){
-    stop(paste0("starts must be length ",sum(n_param)), call.=FALSE)
+  # Using C++ engine-----------------------------------------------------------
+  if(engine == "C"){
+
+    if(missing(starts)){
+      starts <- rep(0, nP)
+      starts[sum(n_param[1:3])+1] <- log(median(db))
+    } else if(length(starts)!=nP){
+      stop(paste0("starts must be length ",sum(n_param)), call.=FALSE)
+    }
+
+    nll <- function(param){
+      nll_gdistremoval(param, n_param, gd$yDist, gd$yRem, ysum, mixture_code, keyfun,
+                      gd$Xlam, A, gd$Xphi, gd$Xrem, gd$Xdist, db, a, t(u), w, pl,
+                      K, Kmin, threads=threads)
+    }
+
+    opt <- optim(starts, nll, method=method, hessian=se, ...)
+
+    covMat <- invertHessian(opt, nP, se)
+    ests <- opt$par
+    fmAIC <- 2 * opt$value + 2 * nP
+
+    names(ests) <- pnames
   }
 
-  nll <- function(param){
-    nll_gdistremoval(param, n_param, gd$yDist, gd$yRem, ysum, mixture_code, keyfun,
-                     gd$Xlam, A, gd$Xphi, gd$Xrem, gd$Xdist, db, a, t(u), w, pl,
-                     K, Kmin, threads=threads)
+  # Using TMB engine-----------------------------------------------------------
+
+  if(engine == "TMB"){
+    if(missing(starts)) starts <- NULL
+
+    dlist <- list(lambda=siteCovs(data), phi=yearlySiteCovs(data),
+                  dist=siteCovs(data), rem=obsCovs(data))
+    inps <- get_ranef_inputs(formlist, dlist,
+                             gd[c("Xlam","Xphi","Xdist","Xrem")],
+                             gd[c("Zlam","Zphi","Zdist","Zrem")])
+
+    keyfun_type <- switch(keyfun, uniform={0}, halfnorm={1}, exp={2},
+                          hazard={3})
+    tmb_dat <- c(list(y_dist=gd$yDist, y_rem=gd$yRem, y_sum=ysum,
+                      mixture=mixture_code, K=K, Kmin=Kmin, keyfun_type=keyfun_type,
+                      A=A, db=db, a=a, w=w, u=t(u), per_len=pl), inps$data)
+
+    tmb_param <- c(inps$pars, list(beta_alpha=rep(0,0), beta_scale=rep(0,0)))
+
+    if(is.null(starts)){
+      if(keyfun != "uniform") tmb_param$beta_dist[1] <- log(median(db))
+    }
+
+    if(keyfun == "hazard") tmb_param$beta_scale <- rep(0,1)
+    if(keyfun == "uniform") tmb_param$beta_dist <- rep(0,0)
+    if(mixture != "P") tmb_param$beta_alpha <- rep(0,1)
+    if(T == 1){
+      tmb_param$beta_phi <- tmb_param$b_phi <- tmb_param$lsigma_phi <- rep(0,0)
+    }
+    # Fit model in TMB
+    tmb_out <- fit_TMB("tmb_gdistremoval", tmb_dat, tmb_param, inps$rand_ef,
+                       starts=starts, method)
+    tmb_mod <- tmb_out$TMB
+    fm <- tmb_out$opt
+    fmAIC <- tmb_out$AIC
+    nll <- tmb_mod$fn
+    return(tmb_out)
+
   }
-
-  opt <- optim(starts, nll, method=method, hessian=se, ...)
-
-  covMat <- invertHessian(opt, nP, se)
-  ests <- opt$par
-  fmAIC <- 2 * opt$value + 2 * nP
-
-  names(ests) <- pnames
 
   lam_ind <- 1:n_param[1]
   lamEstimates <- unmarkedEstimate(name = "Abundance", short.name = "lambda",

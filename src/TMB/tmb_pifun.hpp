@@ -13,7 +13,7 @@ vector<Type> pifun_removal(vector<Type> p){
 
 //Removal pi function with variable time intervals
 template<class Type>
-vector<Type> pifun_removal(vector<Type> p, vector<unsigned> times){
+vector<Type> pifun_removal(vector<Type> p, vector<int> times){
   int J = p.size();
   for (int j=0; j<J; j++){
     p(j) = 1 - pow(1 - p(j), times(j));
