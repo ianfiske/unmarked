@@ -11,6 +11,7 @@ Type tmb_gdistremoval(objective_function<Type>* obj) {
   DATA_INTEGER(mixture);
   DATA_INTEGER(K);
   DATA_IVECTOR(Kmin);
+  DATA_INTEGER(T);
 
   DATA_MATRIX(X_lambda); //lambda fixed effect design mat
   DATA_SPARSE_MATRIX(Z_lambda); //psi random effect design mat
@@ -69,8 +70,7 @@ Type tmb_gdistremoval(objective_function<Type>* obj) {
   //Define the log likelihood so that it can be calculated in parallel over sites
   parallel_accumulator<Type> loglik(obj);
 
-  int M = y_dist.rows(); // # of sites
-  int T = X_phi.rows() / M; // # of primary periods
+  int M = X_lambda.rows(); // # of sites
   int Rdist = y_dist.size() / M;
   int Jdist = Rdist / T;
   int Rrem = y_rem.size() / M;
@@ -158,8 +158,8 @@ Type tmb_gdistremoval(objective_function<Type>* obj) {
 
     for (int t=0; t<T; t++){
       yd_sub = y_dist.segment(yd_ind, Jdist);
-      yd_sub = y_rem.segment(yr_ind, Jrem);
-      rp_sub = rp.segment(yr_ind, Jrem); 
+      yr_sub = y_rem.segment(yr_ind, Jrem);
+      rp_sub = rp.segment(yr_ind, Jrem);
 
       // Missing value handling
       
