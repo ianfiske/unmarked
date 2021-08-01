@@ -25,6 +25,7 @@ Imports:
     MASS,
     Matrix,
     parallel,
+    pbapply,
     plyr,
     raster,
     Rcpp (>= 0.8.0),
