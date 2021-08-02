@@ -15,7 +15,9 @@
   \item{seed}{set seed for reproducible bootstrap}
   \item{parallel}{logical (default = \code{TRUE}) indicating whether to compute 
     bootstrap on multiple cores, if present.  If \code{TRUE}, suppresses reporting
-    of bootstrapped statistics.  Defaults to serial calculation when \code{nsim} < 100.}
+    of bootstrapped statistics.  Defaults to serial calculation when \code{nsim} < 100.
+    Parallel computation is likely to be slower for simple models when \code{nsim} < ~500,
+    but should speed up the bootstrap of more complicated models.}
   \item{ncores}{integer (default = one less than number of available cores) number of cores to
     use when bootstrapping in parallel.} 
   \item{...}{Additional arguments to be passed to statistic}}
