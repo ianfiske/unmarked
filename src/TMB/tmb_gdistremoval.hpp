@@ -161,8 +161,14 @@ Type tmb_gdistremoval(objective_function<Type>* obj) {
       yr_sub = y_rem.segment(yr_ind, Jrem);
       rp_sub = rp.segment(yr_ind, Jrem);
 
-      // Missing value handling
-      
+      //If any NAs found skip site
+      for (int j=0; j<Jdist; j++){
+        if(R_IsNA(asDouble(yd_sub(j)))) goto endper; 
+      }
+      for (int j=0; j<Jrem; j++){
+        if(R_IsNA(asDouble(yr_sub(j)))) goto endper;
+      }
+
       cpd = distance_prob(keyfun_type, dp(t_ind), scale, 1, db, w, asub, usub);
       pdist = sum(cpd);
       cpd = cpd/pdist;
@@ -179,9 +185,10 @@ Type tmb_gdistremoval(objective_function<Type>* obj) {
         g(k) *= dbinom(y_sum(i,t), Type(k), pall, false);
       }
       
+      endper: ;
       t_ind += 1;
       yd_ind += Jdist;
-      yr_ind += Jrem;              
+      yr_ind += Jrem;
     }
     
     fg = f.array() * g.array();
