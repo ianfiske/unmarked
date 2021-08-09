@@ -68,14 +68,14 @@ setMethod("parboot", "unmarkedFit",
           }
         }
       } else {
-        t.star <- pbapply::pbsapply(1:nsim, function(i) {
+        t.star <- pbsapply(1:nsim, function(i) {
           simdata <- replaceY(simdata, simList[[i]])
           fit <- update(object, data=simdata, starts=starts, se=FALSE)
           t.star.tmp <- statistic(fit, ...)
         })
-        if (lt0 > 1) 
+        if (lt0 > 1)
           t.star <- t(t.star)
-        else 
+        else
           t.star <- matrix(t.star, ncol = lt0)
       }
     } else {
@@ -93,7 +93,7 @@ setMethod("parboot", "unmarkedFit",
       clusterExport(cl, varList, envir = environment())
       clusterEvalQ(cl, library(unmarked))
       clusterEvalQ(cl, list2env(dots))
-      t.star.parallel <- pbapply::pblapply(1:nsim, function(i) {
+      t.star.parallel <- pblapply(1:nsim, function(i) {
         simdata <- replaceY(simdata, simList[[i]])
         fit <- update(object, data = simdata, starts = starts, se = FALSE)
         t.star <- statistic(fit, ...)
