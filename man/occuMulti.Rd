@@ -77,11 +77,29 @@ must be provided for each species with the \code{detformulas} argument,
 which takes a character vector of individual formulas with length equal to 
 the number of species \eqn{s}.
 
+If you are having problems with separation or boundary estimates (indicated by 
+very large parameter estimates and SEs), use of penalized likelihood may
+help: see Clipp et al. (2021). \code{occuMulti} supports use of the
+Bayes-inspired penalty of Hutchinson et al. (2015). You can set the penalty
+value manually using the \code{penalty} argument, or identify the optimal
+penalty using K-fold cross validation with the \code{optimizePenalty} function.
+See example below.
+
 }
 
 \value{unmarkedFitOccuMulti object describing the model fit.}
 
 \references{
+
+Clipp, H. L., Evans, A., Kessinger, B. E., Kellner, K. F., and C. T. Rota.
+  2021. A penalized likelihood for multi-species occupancy models improves 
+  predictions of species interactions. Ecology.
+
+Hutchinson, R. A., J. V. Valente, S. C. Emerson, M. G. Betts, and
+  T. G. Dietterich. 2015. Penalized Likelihood Methods Improve Parameter
+  Estimates in Occupancy Models. Methods in Ecology and Evolution. DOI:
+  10.1111/2041-210X.12368
+  
 MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
   J. Andrew Royle, and C. A. Langtimm. 2002. Estimating Site Occupancy Rates
   When Detection Probabilities Are Less Than One. Ecology 83: 2248-2255.

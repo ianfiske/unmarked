@@ -13,6 +13,9 @@
   of the fold log-likelihoods is selected as the optimal value. Finally, the 
   model is re-fit with the full dataset using the selected penalty term.
   Right now only Bayes-inspired penalty of Hutchinson et al. (2015) is supported.
+
+  Currently the only fitting function that supports \code{optimizePenalty} is
+  \code{occuMulti} for multispecies occupancy modeling; see Clipp et al. (2021).
 }
 
 \usage{
@@ -34,6 +37,10 @@
 }
 
 \references{
+
+Clipp, H. L., Evans, A., Kessinger, B. E., Kellner, K. F., and C. T. Rota.
+  2021. A penalized likelihood for multi-species occupancy models improves 
+  predictions of species interactions. Ecology.
 
 Hutchinson, R. A., J. V. Valente, S. C. Emerson, M. G. Betts, and
   T. G. Dietterich. 2015. Penalized Likelihood Methods Improve Parameter
