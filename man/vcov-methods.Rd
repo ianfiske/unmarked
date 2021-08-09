@@ -4,6 +4,7 @@
 \alias{vcov,linCombOrBackTrans-method}
 \alias{vcov,unmarkedEstimate-method}
 \alias{vcov,unmarkedFit-method}
+\alias{vcov,unmarkedFitOccuMulti-method}
 \title{Methods for Function vcov in Package `unmarked'}
 \description{Extract variance-covariance matrix from a fitted model.}
 \section{Methods}{

@@ -1,6 +1,6 @@
 
-setGeneric("crossVal", function(object,  
-    method=c("Kfold","holdout","leaveOneOut"), folds=10, holdoutPct=0.25, 
+setGeneric("crossVal", function(object,
+    method=c("Kfold","holdout","leaveOneOut"), folds=10, holdoutPct=0.25,
     statistic=RMSE_MAE, ...) standardGeneric("crossVal"))
 
 setClass("unmarkedCrossVal",
@@ -13,17 +13,17 @@ setClass("unmarkedCrossVal",
       errors <- character(0)
       hp <- object@holdoutPct
       if(hp<0|hp>1){
-        errors <- c(errors,"holdoutPct must be between 0 and 1") 
+        errors <- c(errors,"holdoutPct must be between 0 and 1")
       }
     }
 )
 
 #Constructor of crossVal objects
-setMethod("crossVal", "unmarkedFit", 
-          function(object, method=c("Kfold","holdout","leaveOneOut"), 
-                   folds=10, holdoutPct=0.25, 
+setMethod("crossVal", "unmarkedFit",
+          function(object, method=c("Kfold","holdout","leaveOneOut"),
+                   folds=10, holdoutPct=0.25,
                    statistic=RMSE_MAE, parallel=FALSE, ...){
-  
+
   method <- match.arg(method, c('Kfold','holdout','leaveOneOut'))
 
   if(method=="Kfold" & !is.integer(folds) & folds < 0){
@@ -38,7 +38,7 @@ setMethod("crossVal", "unmarkedFit",
     holdout = partitionHoldout(object, holdoutPct=holdoutPct),
     leaveOneOut = partitionLeaveOneOut(object)
   )
-  
+
   n_reps <- length(partitions)
 
   check_stat <- statistic(object, ...)
@@ -59,13 +59,13 @@ setMethod("crossVal", "unmarkedFit",
   if(parallel){
     cl <- parallel::makeCluster(detectCores()-1)
     on.exit(parallel::stopCluster(cl))
-    stat_raw <- pbapply::pblapply(1:n_reps, do_crossval, object, 
+    stat_raw <- pblapply(1:n_reps, do_crossval, object,
                                      partitions, statistic, ..., cl = cl)
   } else {
-    stat_raw <- pbapply::pblapply(1:n_reps, do_crossval, object, 
+    stat_raw <- pblapply(1:n_reps, do_crossval, object,
                        partitions, statistic, ...)
   }
-  
+
   stats <- as.data.frame(do.call("rbind", stat_raw))
 
   summary <- data.frame(Estimate=sapply(stats, mean, na.rm=TRUE),
@@ -89,7 +89,7 @@ partitionKfold <- function(object, folds){
 
     trainInds <- shuf_site_inds[fold_inds!=i]
     testInds <- shuf_site_inds[fold_inds==i]
-  
+
     fold_list[[i]]$trainData <- object@data[trainInds,]
     fold_list[[i]]$testData <-  object@data[testInds,]
   }
@@ -98,7 +98,7 @@ partitionKfold <- function(object, folds){
 
 #Holdout partition function
 partitionHoldout <- function(object, holdoutPct){
-  
+
   site_inds <- 1:numSites(object@data)
   shuf_site_inds <- sample(site_inds,numSites(object@data))
 
@@ -115,7 +115,7 @@ partitionHoldout <- function(object, holdoutPct){
 
 #leave-one-out
 partitionLeaveOneOut <- function(object){
-  
+
   fold_list <- vector(length=numSites(object@data),"list")
   for (i in seq_along(fold_list)){
     fold_list[[i]]$trainData <- object@data[-i,]
@@ -155,18 +155,18 @@ setClass("unmarkedCrossValList",
 
 #CrossVal list constructor
 setMethod("crossVal", "unmarkedFitList",
-          function(object, method=c("Kfold","holdout","leaveOneOut"), 
-                   folds=10, holdoutPct=0.25, 
-                   statistic=RMSE_MAE, parallel=FALSE, 
+          function(object, method=c("Kfold","holdout","leaveOneOut"),
+                   folds=10, holdoutPct=0.25,
+                   statistic=RMSE_MAE, parallel=FALSE,
                    sort = c("none", "increasing", "decreasing"), ...){
-    
+
     method <- match.arg(method, c('Kfold','holdout','leaveOneOut'))
     sort <- match.arg(sort, c('none','increasing','decreasing'))
 
-    stats <- lapply(object@fits, crossVal, method, folds, 
+    stats <- lapply(object@fits, crossVal, method, folds,
                     holdoutPct, statistic, parallel, ...)
 
-    out <- new("unmarkedCrossValList", stats_list=stats, method=method, 
+    out <- new("unmarkedCrossValList", stats_list=stats, method=method,
                folds=folds, holdoutPct=holdoutPct, sort=sort)
 
 })
@@ -199,7 +199,7 @@ setMethod("show", "unmarkedCrossValList", function(object){
                        increasing = order(stat_sum$Estimate),
                        decreasing = order(stat_sum$Estimate, decreasing=TRUE))
     stat_sum <- stat_sum[sort_ind, ]
-    
+
     print(stat_sum, digits=4)
     if(i != nstats) cat('\n')
   }
@@ -209,7 +209,7 @@ setMethod("show", "unmarkedCrossValList", function(object){
 #Default function for statistic argument
 #Returns a named list
 RMSE_MAE <- function(object){
-  
+
   res <- residuals(object)
   if(is.list(res)) res <- unlist(res)
 

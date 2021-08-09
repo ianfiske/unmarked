@@ -4,8 +4,8 @@
 
 \title{Fit the Rota et al. (2016) Multi-species Occupancy Model}
 
-\usage{occuMulti(detformulas, stateformulas, data, maxOrder, starts, method="BFGS",
-    se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
+\usage{occuMulti(detformulas, stateformulas, data, maxOrder, penalty=0, boot=30, 
+       starts, method="BFGS", se=TRUE, engine=c("C","R"), silent=FALSE, ...)}
 
 \arguments{
     \item{detformulas}{Character vector of formulas for the detection models, one per species.}
@@ -15,6 +15,10 @@
     \item{maxOrder}{Optional; specify maximum interaction order. Defaults to 
       number of species (all possible interactions). Reducing this value may
       speed up optimization if you aren't interested in higher-order interactions.}
+    \item{penalty}{Penalty term for likelihood. The total penalty is calculated
+      as \code{penalty * 0.5 * sum(paramvals^2)}. Defaults to 0 (no penalty).}
+    \item{boot}{Number of bootstrap samples to use to generate the 
+      variance-covariance matrix when \code{penalty > 0}.}
     \item{starts}{Vector of parameter starting values.}
     \item{method}{Optimization method used by \code{\link{optim}}.}
     \item{se}{Logical specifying whether or not to compute standard
@@ -73,11 +77,29 @@ must be provided for each species with the \code{detformulas} argument,
 which takes a character vector of individual formulas with length equal to 
 the number of species \eqn{s}.
 
+If you are having problems with separation or boundary estimates (indicated by 
+very large parameter estimates and SEs), use of penalized likelihood may
+help: see Clipp et al. (2021). \code{occuMulti} supports use of the
+Bayes-inspired penalty of Hutchinson et al. (2015). You can set the penalty
+value manually using the \code{penalty} argument, or identify the optimal
+penalty using K-fold cross validation with the \code{optimizePenalty} function.
+See example below.
+
 }
 
 \value{unmarkedFitOccuMulti object describing the model fit.}
 
 \references{
+
+Clipp, H. L., Evans, A., Kessinger, B. E., Kellner, K. F., and C. T. Rota.
+  2021. A penalized likelihood for multi-species occupancy models improves 
+  predictions of species interactions. Ecology.
+
+Hutchinson, R. A., J. V. Valente, S. C. Emerson, M. G. Betts, and
+  T. G. Dietterich. 2015. Penalized Likelihood Methods Improve Parameter
+  Estimates in Occupancy Models. Methods in Ecology and Evolution. DOI:
+  10.1111/2041-210X.12368
+  
 MacKenzie, D. I., J. D. Nichols, G. B. Lachman, S. Droege,
   J. Andrew Royle, and C. A. Langtimm. 2002. Estimating Site Occupancy Rates
   When Detection Probabilities Are Less Than One. Ecology 83: 2248-2255.
@@ -221,6 +243,14 @@ fit3 <- occuMulti(detFormulas,occFormulas,data)
 #order to be zero with maxOrder. This will be faster.
 occFormulas <- c('~occ_cov1','~occ_cov2','~occ_cov2+occ_cov3')
 fit4 <- occuMulti(detFormulas,occFormulas,data,maxOrder=1)
+
+#Add Bayes penalty term to likelihood. This is useful if your parameter
+#estimates are very large, eg because of separation.
+fit5 <- occuMulti(detFormulas, occFormulas, data, penalty=1)
+
+#Find optimal penalty term value from a range of possible values using
+#K-fold cross validation, and re-fit the model
+fit_opt <- optimizePenalty(fit5, penalties=c(0,1,2))
 }
 
 }

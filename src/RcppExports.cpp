@@ -202,7 +202,7 @@ RcppExport SEXP nll_multinomPois(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP,
 RcppExport SEXP nll_multmixOpen(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_occu(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_occuMS(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP nll_occuMulti(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP nll_occuMulti(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_occuPEN(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_occuTTD(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP nll_pcountOpen(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -225,7 +225,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"nll_multmixOpen",  (DL_FUNC) &nll_multmixOpen,  38},
     {"nll_occu",         (DL_FUNC) &nll_occu,         11},
     {"nll_occuMS",       (DL_FUNC) &nll_occuMS,       15},
-    {"nll_occuMulti",    (DL_FUNC) &nll_occuMulti,    14},
+    {"nll_occuMulti",    (DL_FUNC) &nll_occuMulti,    16},
     {"nll_occuPEN",      (DL_FUNC) &nll_occuPEN,      11},
     {"nll_occuTTD",      (DL_FUNC) &nll_occuTTD,      17},
     {"nll_pcountOpen",   (DL_FUNC) &nll_pcountOpen,   35},

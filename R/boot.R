@@ -68,14 +68,14 @@ setMethod("parboot", "unmarkedFit",
           }
         }
       } else {
-        t.star <- pbapply::pbsapply(1:nsim, function(i) {
+        t.star <- pbsapply(1:nsim, function(i) {
           simdata <- replaceY(simdata, simList[[i]])
           fit <- update(object, data=simdata, starts=starts, se=FALSE)
           t.star.tmp <- statistic(fit, ...)
         })
-        if (lt0 > 1) 
+        if (lt0 > 1)
           t.star <- t(t.star)
-        else 
+        else
           t.star <- matrix(t.star, ncol = lt0)
       }
     } else {
@@ -93,7 +93,7 @@ setMethod("parboot", "unmarkedFit",
       clusterExport(cl, varList, envir = environment())
       clusterEvalQ(cl, library(unmarked))
       clusterEvalQ(cl, list2env(dots))
-      t.star.parallel <- pbapply::pblapply(1:nsim, function(i) {
+      t.star.parallel <- pblapply(1:nsim, function(i) {
         simdata <- replaceY(simdata, simList[[i]])
         fit <- update(object, data = simdata, starts = starts, se = FALSE)
         t.star <- statistic(fit, ...)
@@ -483,12 +483,57 @@ setMethod("nonparboot", "unmarkedFitOccuTTD",
                    bsType="site")
 })
 
+
+
+setMethod("nonparboot", "unmarkedFitOccuMulti",
+    function(object, B = 0, keepOldSamples = TRUE, ...)
+{
+    bsType <- "site"
+    if (identical(B, 0) && !is.null(object@bootstrapSamples)) {
+        return(object)
+    }
+    if (B <= 0 && is.null(object@bootstrapSamples)) {
+        stop("B must be greater than 0 when fit has no bootstrap samples.")
+    }
+    data <- object@data
+    M <- numSites(data)
+    boot.iter <- function() {
+      finish <- FALSE
+      while(!finish){
+        sites <- sort(sample(1:M, M, replace = TRUE))
+        data.b <- data[sites,]
+        ran <- TRUE
+        tryCatch(fm <- update(object, data = data.b, se=FALSE), error=function(e) ran <<-FALSE)
+        if(!ran) next
+        finish <- fm@opt$convergence == 0
+      }
+      return(fm)
+    }
+    if (!keepOldSamples) {
+        object@bootstrapSamples <- NULL
+    }
+    object@bootstrapSamples <- c(object@bootstrapSamples,
+                                 replicate(B, boot.iter(),
+                                           simplify = FALSE))
+    coefs <- t(sapply(object@bootstrapSamples,
+                      function(x) coef(x)))
+    v <- cov(coefs)
+    object@covMatBS <- v
+    inds <- .estimateInds(object)
+    for (est in names(inds)) {
+        v.est <- v[inds[[est]], inds[[est]], drop = FALSE]
+        object@estimates@estimates[[est]]@covMatBS <- v.est
+    }
+    object
+})
+
 setMethod("nonparboot", "unmarkedFitNmixTTD",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
     callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
                    bsType="site")
 })
+
 
 
 
