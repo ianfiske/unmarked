@@ -59,10 +59,10 @@ setMethod("crossVal", "unmarkedFit",
   if(parallel){
     cl <- parallel::makeCluster(detectCores()-1)
     on.exit(parallel::stopCluster(cl))
-    stat_raw <- parallel::parLapply(cl, 1:n_reps, do_crossval, object, 
-                                     partitions, statistic, ...)
+    stat_raw <- pbapply::pblapply(1:n_reps, do_crossval, object, 
+                                     partitions, statistic, ..., cl = cl)
   } else {
-    stat_raw <- lapply(1:n_reps, do_crossval, object, 
+    stat_raw <- pbapply::pblapply(1:n_reps, do_crossval, object, 
                        partitions, statistic, ...)
   }
   

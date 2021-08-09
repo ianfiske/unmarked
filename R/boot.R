@@ -40,12 +40,11 @@ setMethod("parboot", "unmarkedFit",
     umf <- getData(object)
     y <- getY(object)
     ests <- as.numeric(coef(object))
+    starts <- ests
+    if(methods::.hasSlot(object, "TMB") && !is.null(object@TMB)) starts <- NULL
     t0 <- statistic(object, ...)
     lt0 <- length(t0)
     t.star <- matrix(NA, nsim, lt0)
-    if(!is.null(names(t0)))
-        colnames(t.star) <- names(t0)
-    else colnames(t.star) <- paste("t*", 1:lt0, sep="")
     if(!missing(report))
         cat("t0 =", t0, "\n")
     simdata <- umf
@@ -58,21 +57,34 @@ setMethod("parboot", "unmarkedFit",
     no_par <- ncores < 2 || nsim < 100 || !parallel
 
     if (no_par) {
-      for(i in 1:nsim) {
-        simdata <- replaceY(simdata, simList[[i]])
-        fit <- update(object, data=simdata, starts=ests, se=FALSE)
-        t.star[i,] <- statistic(fit, ...)
-        if(!missing(report)) {
-          if (nsim > report && i %in% seq(report, nsim, by=report))
-            cat(paste(round(t.star[(i-(report-1)):i,], 1), collapse=","), fill=TRUE)
+      if (!missing(report)) {
+        for(i in 1:nsim) {
+          simdata <- replaceY(simdata, simList[[i]])
+          fit <- update(object, data=simdata, starts=starts, se=FALSE)
+          t.star[i,] <- statistic(fit, ...)
+          if(!missing(report)) {
+            if (nsim > report && i %in% seq(report, nsim, by=report))
+              cat("iter", i, ": ", t.star[i, ], "\n")
+          }
         }
-        out <- new("parboot", call=call, t0 = t0, t.star = t.star)
+      } else {
+        t.star <- pbapply::pbsapply(1:nsim, function(i) {
+          simdata <- replaceY(simdata, simList[[i]])
+          fit <- update(object, data=simdata, starts=starts, se=FALSE)
+          t.star.tmp <- statistic(fit, ...)
+        })
+        if (lt0 > 1) 
+          t.star <- t(t.star)
+        else 
+          t.star <- matrix(t.star, ncol = lt0)
       }
     } else {
-      if (!missing(report)) message("Running in parallel on ", ncores, " cores. Bootstrapped statistics not reported.")
+      message("Running parametric bootstrap in parallel on ", ncores, " cores.")
+      if (!missing(report)) message("Bootstrapped statistics not reported during parallel processing.")
       cl <- makeCluster(ncores)
+      if (!is.null(seed)) parallel::clusterSetRNGStream(cl, iseed = seed)
       on.exit(stopCluster(cl))
-      varList <- c("simList", "y", "object", "simdata", "ests", "statistic", "dots")
+      varList <- c("simList", "y", "object", "simdata", "starts", "statistic", "dots")
       # If call formula is an object, include it too
       fm.nms <- all.names(object@call)
       if (!any(grepl("~", fm.nms))) varList <- c(varList, fm.nms[2])
@@ -81,16 +93,17 @@ setMethod("parboot", "unmarkedFit",
       clusterExport(cl, varList, envir = environment())
       clusterEvalQ(cl, library(unmarked))
       clusterEvalQ(cl, list2env(dots))
-      t.star.parallel <- parLapply(cl, 1:nsim, function(i) {
+      t.star.parallel <- pbapply::pblapply(1:nsim, function(i) {
         simdata <- replaceY(simdata, simList[[i]])
-        fit <- update(object, data = simdata, starts = ests, se = FALSE)
+        fit <- update(object, data = simdata, starts = starts, se = FALSE)
         t.star <- statistic(fit, ...)
-      })
+      }, cl = cl)
       t.star <- matrix(unlist(t.star.parallel), nrow = length(t.star.parallel), byrow = TRUE)
-      colnames(t.star) <- names(t.star.parallel[[1]])
-      out <- new("parboot", call = call, t0 = t0, t.star = t.star)
     }
-
+    if (!is.null(names(t0)))
+      colnames(t.star) <- names(t0)
+    else colnames(t.star) <- paste("t*", 1:lt0, sep="")
+    out <- new("parboot", call = call, t0 = t0, t.star = t.star)
     return(out)
 })
 

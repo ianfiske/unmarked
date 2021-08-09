@@ -14,7 +14,7 @@ importFrom(grDevices, devAskNewPage, dev.interactive)
 importFrom(raster, raster, stack, extent, "extent<-", getValues)
 importFrom(MASS, mvrnorm)
 importFrom(parallel, detectCores, makeCluster, stopCluster, clusterExport,
-           clusterEvalQ, parLapply)
+           clusterEvalQ)
 importFrom(methods, is, as, new, show, slot, .hasSlot, callGeneric, 
            callNextMethod)
 importFrom(lattice, xyplot, levelplot)

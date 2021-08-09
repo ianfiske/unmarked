@@ -31,7 +31,8 @@ test.parboot.occu <- function() {
 ##    frm.obj <- as.formula(paste("~", x.2, "~", x.1))
     fm1 <- occu(~x2 ~x1, umf)
 ##    fm2 <- occu(frm.obj, umf)
-    gof <- parboot(fm1, fitstats, nsim = 100, seed = 6546)
+    gof0 <- parboot(fm1, fitstats, nsim = 100, seed = 6546, parallel = FALSE)
+    gof1 <- parboot(fm1, fitstats, nsim = 100, seed = 6546, report = 100, parallel = FALSE)
 ##    gof2 <- parboot(fm2, fitstats, nsim = 100, seed = 6546)
 
 ##    checkEquals(gof@t.star, gof2@t.star)
@@ -195,7 +196,8 @@ test.parboot.occu <- function() {
 
   #Check parallel
   gof2 <- parboot(fm1, fitstats, nsim = 100, seed = 6546, parallel=TRUE)
-  checkTrue(all(gof@t.star==gof2@t.star))
+  checkIdentical(gof0@t.star, gof1@t.star)
+  checkIdentical(gof0@t.star, gof2@t.star)
 
 }
 
