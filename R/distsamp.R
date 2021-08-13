@@ -1,7 +1,7 @@
 
 distsamp <- function(formula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
-    output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts=NULL,
+    output=c("density", "abund"), unitsOut=c("ha", "kmsq"), starts,
     method="BFGS", se = TRUE, engine = c("C", "R", "TMB"),
     rel.tol=0.001, ...)
 {
@@ -12,6 +12,8 @@ distsamp <- function(formula, data,
     keyfun <- match.arg(keyfun)
     output <- match.arg(output)
     unitsOut <- match.arg(unitsOut)
+
+    if(missing(starts)) starts <- NULL
 
     #Generate design matrix
     designMats <- getDesign(data, formula)

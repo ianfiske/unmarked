@@ -127,6 +127,82 @@ if(type=="line"){
     return(list(y=y,N=N,yRem=yRem))
 }
 
+simDataRand <- function(lambda=1, lam_sd=1, groups=10,
+                        sigma=40, remP=0.4, remJ=4,
+                        M=100, J=4, T=1, phi=1)
+{
+    y <- array(NA, c(M, T*J))
+    yRem <- matrix(NA, M, T*remJ)
+    N <- rep(NA, M)
+
+group_eff <- rnorm(groups, 0, lam_sd)
+names(group_eff) <- letters[1:groups]
+group <- sample(letters[1:groups], M, replace=T)
+rand_ef <- group_eff[group]
+lambda <- exp(log(lambda) + rand_ef)
+
+piRem <- rep(NA,remJ+1)
+piRem[1] <- remP
+for (j in 2:remJ){
+  piRem[j] <- piRem[j-1] / remP * (1-remP) * remP
+}
+piRem[remJ+1] <- 1-sum(piRem, na.rm=T)
+
+    db <- c(0, 25, 50, 75, 100)
+    if(length(db)-1 != J)
+      stop("hey, what")
+g <- function(x, sig) exp(-x^2/(2*sig^2))*x
+
+cp <- u <- a <- numeric(J)
+
+  a[1] <- pi*db[2]^2
+  cp[1] <- integrate(g, db[1], db[2], sig=sigma)$value * 2 * pi
+    for(j in 2:J) {
+      a[j] <- pi*db[j+1]^2 - sum(a[1:j])
+      cp[j] <- integrate(g, db[j], db[j+1], sig=sigma)$value * 2*pi
+    }
+    u <- a / sum(a)
+    cp <- cp / a * u
+    cp[j+1] <- 1-sum(cp)
+
+    for(i in 1:M) {
+
+      N[i] <- rpois(1, lambda[i])
+
+      yRem_sub <- y_sub <- c()
+
+      for (t in 1:T){
+
+        yRemT <- rep(0, remJ)
+        yT <- rep(0, J)
+
+        dist_class <- rem_class <- rep(NA, N[i])
+
+        prob_in <- sum(piRem[1:remJ])*sum(cp[1:J])*phi
+
+        if(N[i] > 0){
+        for (n in 1:N[i]){
+
+          keep <- rbinom(1,1,prob_in)
+          if(keep==1){
+            rem_class[n] <- sample(1:remJ, 1, prob=piRem[1:remJ]/sum(piRem[1:remJ]))
+            dist_class[n] <- sample(1:J, 1, prob=cp[1:J]/sum(cp[1:J]))
+
+            yT[dist_class[n]] <- yT[dist_class[n]] + 1
+            yRemT[rem_class[n]] <- yRemT[rem_class[n]] + 1
+          }
+        }
+        }
+        yRem_sub <- c(yRem_sub, yRemT)
+        y_sub <- c(y_sub, yT)
+      }
+      yRem[i,] <- yRem_sub
+      y[i,] <- y_sub
+    }
+
+    return(list(y=y,N=N,yRem=yRem,group=group,group_eff=group_eff))
+}
+
 test.gdistremoval.frame <- function(){
   set.seed(123)
 
@@ -357,5 +433,32 @@ test.gdistremoval.multiperiod <- function(){
   # ranef
   r <- ranef(fit)
   checkEqualsNumeric(dim(bup(r)), c(300,10))
+
+}
+
+test.gdistremoval.random <- function(){
+
+  set.seed(123)
+  dat <- simDataRand(lambda=5, lam_sd=0.4, groups=10, sigma=50, M=500, J=4, remP=0.2, remJ=5) #
+  sc <- data.frame(sc1=rnorm(500), group=dat$group)
+  oc <- data.frame(oc1=rnorm(5*500))
+  umf <- unmarkedFrameGDR(dat$y, dat$yRem, siteCovs=sc, obsCovs=oc,
+                         dist.breaks=c(0,25,50,75,100), unitsIn='m')
+  fit <- gdistremoval(~sc1+(1|group),removalformula=~oc1,distanceformula=~1, data=umf)
+
+  checkEqualsNumeric(coef(fit), c(1.5854, -0.0452, 3.8999, -1.2795, 0.08595),
+                     tol=1e-4)
+  checkEqualsNumeric(sigma(fit)$sigma, 0.4080, tol=1e-4)
+
+  pr <- predict(fit, "lambda")
+  checkTrue(inherits(pr, "data.frame"))
+  pr <- predict(fit, "lambda", newdata=umf@siteCovs[1:2,])
+  checkTrue(inherits(pr, "data.frame"))
+
+  s <- simulate(fit, 2)
+  checkTrue(inherits(s, "list"))
+
+  pb <- parboot(fit, nsim=2)
+  checkTrue(inherits(pb, "parboot"))
 
 }

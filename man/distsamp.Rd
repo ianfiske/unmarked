@@ -4,7 +4,7 @@
 \usage{distsamp(formula, data, keyfun=c("halfnorm", "exp",
   "hazard", "uniform"), output=c("density", "abund"),
   unitsOut=c("ha", "kmsq"), starts, method="BFGS", se=TRUE,
-  engine=c("C", "R"), rel.tol=0.001, ...)
+  engine=c("C", "R", "TMB"), rel.tol=0.001, ...)
 }
 
 \description{
