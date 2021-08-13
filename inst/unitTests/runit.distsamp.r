@@ -29,9 +29,7 @@ test.distsamp.covs <- function() {
 
     checkEqualsNumeric(coef(backTransform(lam.lc)), 3.365655, tol = 1e-4)
     checkEqualsNumeric(coef(backTransform(det.lc)), 0.007957658, tol = 1e-4)
-    
-    # Check error when random effects in formula
-    checkException(distsamp(~x~(1|dummy), umf))
+
 }
 
 
@@ -160,4 +158,44 @@ test.distsamp.getP <- function() {
                      tol=1e-5)
   checkEqualsNumeric(getP(haz)[1,], c(0.04946332, 0.02826854, 0.01589744), 
                      tol=1e-3)
+}
+
+test.distsamp.random <- function(){
+
+  data(linetran)
+  umf <- unmarkedFrameDS(y=as.matrix(linetran[,1:4]), siteCovs=linetran[,6:7],
+                         survey="line", tlength=linetran$Length, unitsIn='m',
+                         dist.breaks=c(0,10,20,30,40))
+
+  hn <- distsamp(~1~area+(1|habitat), umf)
+  ex <- distsamp(~1~area+(1|habitat), umf, keyfun="exp")
+  hz <- distsamp(~1~area+(1|habitat), umf, keyfun="hazard")
+  un <- distsamp(~1~area+(1|habitat), umf, keyfun="uniform")
+  mods <- list(hn=hn, ex=ex, hz=hz, un=un)
+  checkTrue(all(sapply(mods, function(x) is.list(x@TMB))))
+
+  sigs <- sapply(mods, function(x) sigma(x)$sigma)
+  checkTrue(all(sigs < 0.01) & all(sigs > 0.0001))
+
+  pr <- lapply(mods,  function(x) predict(x, "state"))
+  checkTrue(all(sapply(pr, inherits, "data.frame")))
+
+  data(pointtran)
+  umf <- unmarkedFrameDS(y=as.matrix(pointtran[,1:4]), siteCovs=pointtran[,6:7],
+                         survey="point", unitsIn='m',
+                         dist.breaks=c(0,10,20,30,40))
+
+  hn <- distsamp(~1~area+(1|habitat), umf)
+  ex <- distsamp(~1~area+(1|habitat), umf, keyfun="exp")
+  hz <- distsamp(~1~area+(1|habitat), umf, keyfun="hazard")
+  un <- distsamp(~1~area+(1|habitat), umf, keyfun="uniform")
+  mods <- list(hn=hn, ex=ex, hz=hz, un=un)
+  checkTrue(all(sapply(mods, function(x) is.list(x@TMB))))
+
+  sigs <- sapply(mods, function(x) sigma(x)$sigma)
+  checkTrue(all(sigs < 0.01) & all(sigs > 0.0001))
+
+  pr <- lapply(mods,  function(x) predict(x, "state"))
+  checkTrue(all(sapply(pr, inherits, "data.frame")))
+
 }

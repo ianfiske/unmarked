@@ -16,7 +16,7 @@ Multiple distance sampling key functions are also available.
 gdistremoval(lambdaformula=~1, phiformula=~1, removalformula=~1,
   distanceformula=~1, data, keyfun=c("halfnorm", "exp", "hazard", "uniform"),
   output=c("abund", "density"), unitsOut=c("ha", "kmsq"), mixture=c('P', 'NB', 'ZIP'), 
-  K, starts, method = "BFGS", se = TRUE, engine=c("C","R"), threads=1, ...)
+  K, starts, method = "BFGS", se = TRUE, engine=c("C","TMB"), threads=1, ...)
 }
 
 \arguments{
@@ -36,8 +36,7 @@ gdistremoval(lambdaformula=~1, phiformula=~1, removalformula=~1,
   \item{starts}{A numeric vector of starting values for the model parameters}
   \item{method}{Optimization method used by \code{\link{optim}}}
   \item{se}{logical specifying whether or not to compute standard errors}
-  \item{engine}{Either "C" to use fast C++ code or "R" to use native R code during the 
-    optimization}
+  \item{engine}{Either "C" to use C++ code or "TMB" to use TMB for optimization}
   \item{threads}{Set the number of threads to use for optimization in C++, if
       OpenMP is available on your system. Increasing the number of threads
       may speed up optimization in some cases by running the likelihood 
