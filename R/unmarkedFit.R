@@ -1887,10 +1887,13 @@ setMethod("predict", "unmarkedFitOccuMulti",
       inds <- dStart[i]:dStop[i]
       new_est <- object@estimates@estimates$det
       new_est@estimates <- coef(object)[inds]
+      new_est@fixed <- 1:length(inds)
       if(se.fit){
         new_est@covMat <- vcov(object)[inds,inds,drop=FALSE]
+        new_est@covMatBS <- object@covMatBS[inds,inds,drop=FALSE]
       } else{
         new_est@covMat <- matrix(NA, nrow=length(inds), ncol=length(inds))
+        new_est@covMatBS <- matrix(NA, nrow=length(inds), ncol=length(inds))
       }
 
       prmat <- t(apply(dmDet[[i]], 1, function(x){
@@ -2219,6 +2222,17 @@ setMethod("vcov", "unmarkedFit",
         inds <- .estimateInds(object)[[type]]
         return (v[inds, inds, drop = FALSE])
         }
+})
+
+setMethod("vcov", "unmarkedFitOccuMulti",
+    function (object, type, altNames = TRUE, method = "hessian", ...)
+{
+
+  pen <- object@call[["penalty"]]
+  if(is.null(pen)) pen <- 0
+  if(pen>0) method <- "nonparboot"
+  callNextMethod(object, type, altNames, method=method, ...)
+
 })
 
 

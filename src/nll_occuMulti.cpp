@@ -5,7 +5,8 @@ using namespace arma;
 
 SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR, 
     SEXP betaR, SEXP dmDetR, SEXP dStartR, SEXP dStopR, SEXP yR, SEXP yStartR, 
-    SEXP yStopR, SEXP Iy0r, SEXP zR, SEXP fixed0r){
+    SEXP yStopR, SEXP Iy0r, SEXP zR, SEXP fixed0r, SEXP penaltyR,
+    SEXP returnLLr){
   
   //Inputs
   IntegerVector fStart(fStartR);
@@ -36,6 +37,9 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
   mat Iy0 = as<mat>(Iy0r);
 
   mat z = as<mat>(zR);
+
+  double penalty = as<double>(penaltyR);
+  int returnLL = as<int>(returnLLr);
   
   //psi calculation
   int index = 0;
@@ -85,6 +89,11 @@ SEXP nll_occuMulti( SEXP fStartR, SEXP fStopR, SEXP dmFr, SEXP dmOccR,
     logLik(i) = log( sum( psi.row(i) % prdProbY ) );
 
   }
+  
+  if(returnLL){
+    return(wrap(logLik));
+  }
 
-  return(wrap(-1.0 * sum(logLik)));
+  double pen = penalty * 0.5 * accu(pow(beta, 2));
+  return(wrap(-1.0 * (sum(logLik) - pen)));
 }
