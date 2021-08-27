@@ -117,36 +117,19 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
     } else if(engine == "TMB"){
 
       # Set up TMB input data
-      p_form <- as.formula(formula[[2]])
-      lam_form <- as.formula(paste("~", formula[3], sep=""))
-      ngv_state <- get_group_vars(lam_form)
-      nrand_state <- get_nrandom(lam_form, siteCovs(data))
-      ngv_det <- get_group_vars(p_form)
-      nrand_det <- get_nrandom(p_form, obsCovs(data))
+      forms <- split_formula(formula)
+      inps <- get_ranef_inputs(forms, list(det=obsCovs(data), state=siteCovs(data)),
+                               list(V, X), designMats[c("Z_det","Z_state")])
 
-      tmb_dat <- list(y=y, K=K, Kmin=Kmin, mixture=mixture_code,
-                   X_state=X, Z_state=designMats$Z_state, offset_state=X.offset,
-                   n_group_vars_state=ngv_state, n_grouplevels_state=nrand_state,
-                   X_det=V, Z_det=designMats$Z_det, offset_det=V.offset,
-                   n_group_vars_det=ngv_det, n_grouplevels_det=nrand_det)
+      tmb_dat <- c(list(y=y, K=K, Kmin=Kmin, mixture=mixture_code,
+                      offset_state=X.offset, offset_det=V.offset), inps$data)
 
-      # Define TMB parameter dimensions
-      tmb_param <- list(beta_state=rep(0,ncol(X)), b_state=rep(0,sum(nrand_state)),
-                        lsigma_state=rep(0,ngv_state),
-                        beta_det=rep(0,ncol(V)), b_det=rep(0,sum(nrand_det)),
-                        lsigma_det=rep(0,ngv_det))
-      if(mixture_code > 1){
-        tmb_param <- c(tmb_param, list(beta_scale=0))
-      }
-
-      # Specify which parameters are random effects
-      rand_ef <- NULL
-      if(has_random(lam_form)) rand_ef <- c(rand_ef, "b_state")
-      if(has_random(p_form)) rand_ef <- c(rand_ef, "b_det")
+      tmb_param <- c(inps$pars, list(beta_scale=rep(0,0)))
+      if(mixture_code > 1) tmb_param$beta_scale <- rep(0,1)
 
       # Fit model in TMB
       if(missing(starts)) starts <- NULL
-      tmb_out <- fit_TMB("tmb_pcount", tmb_dat, tmb_param, rand_ef,
+      tmb_out <- fit_TMB("tmb_pcount", tmb_dat, tmb_param, inps$rand_ef,
                          starts=starts, method, ...)
       tmb_mod <- tmb_out$TMB
       fm <- tmb_out$opt
@@ -162,9 +145,8 @@ pcount <- function(formula, data, K, mixture = c("P", "NB", "ZIP"), starts,
       }
 
       # Organize random-effect estimates from TMB output
-      state_rand_info <- get_randvar_info(tmb_out$sdr, "state",
-                                          lam_form, siteCovs(data))
-      det_rand_info <- get_randvar_info(tmb_out$sdr, "det", p_form, obsCovs(data))
+      state_rand_info <- get_randvar_info(tmb_out$sdr, "state", forms[[2]], siteCovs(data))
+      det_rand_info <- get_randvar_info(tmb_out$sdr, "det", forms[[1]], obsCovs(data))
 
     }
 

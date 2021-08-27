@@ -31,7 +31,8 @@ test.parboot.occu <- function() {
 ##    frm.obj <- as.formula(paste("~", x.2, "~", x.1))
     fm1 <- occu(~x2 ~x1, umf)
 ##    fm2 <- occu(frm.obj, umf)
-    gof <- parboot(fm1, fitstats, nsim = 100, seed = 6546)
+    gof0 <- parboot(fm1, fitstats, nsim = 100, seed = 6546, parallel = FALSE)
+    gof1 <- parboot(fm1, fitstats, nsim = 100, seed = 6546, report = 100, parallel = FALSE)
 ##    gof2 <- parboot(fm2, fitstats, nsim = 100, seed = 6546)
 
 ##    checkEquals(gof@t.star, gof2@t.star)
@@ -113,7 +114,7 @@ test.parboot.occu <- function() {
     ##                         26.4219322965689, 26.974047815842, 26.5215425452644, 18.5907018551572,
     ##                         22.1663811466474), .Dim = c(100L, 3L),
     ##                       .Dimnames = list(NULL, c("SSE", "Chisq", "freemanTukey"))))
-    checkEquals(gof@t.star,
+    checkEquals(gof0@t.star,
                 structure(c(22.7233928126168, 12.3470513091314, 23.7920502079817,
                             17.562548865536, 15.8274704541987, 21.5149949042608, 18.3364213295809,
                             19.5370792522799, 23.3002776112391, 22.1362628199284, 15.5854689339351,
@@ -195,7 +196,8 @@ test.parboot.occu <- function() {
 
   #Check parallel
   gof2 <- parboot(fm1, fitstats, nsim = 100, seed = 6546, parallel=TRUE)
-  checkTrue(all(gof@t.star==gof2@t.star))
+  checkIdentical(gof0@t.star, gof1@t.star)
+  checkIdentical(gof0@t.star, gof2@t.star)
 
 }
 

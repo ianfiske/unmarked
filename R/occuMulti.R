@@ -1,5 +1,7 @@
-occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
-                      method='BFGS', se=TRUE, engine=c("C","R"), silent=FALSE, ...){
+
+occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
+                      penalty=0, boot=30, starts, method='BFGS', se=TRUE,
+                      engine=c("C","R"), silent=FALSE, ...){
 
   #Format input data-----------------------------------------------------------
   #Check data object
@@ -19,6 +21,9 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
   all_forms <- c(detformulas, stateformulas)
   all_forms <- all_forms[!all_forms %in% c("0","~0")]
   check_no_support(lapply(all_forms, as.formula))
+
+  #Check penalty
+  if(penalty < 0) stop("Penalty term must be >= 0")
 
   #Get design matrices and indices
   designMats <- getDesign(data, detformulas, stateformulas, maxOrder, warn=!silent)
@@ -73,8 +78,11 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
       prdProbY[i,] <- apply(prbSeq,1,prod)
     }
 
+    #Penalty term (defaults to 0)
+    pen <- penalty * 0.5 * sum(params^2)
+
     #neg log likelihood
-    -sum(log(rowSums(psi*prdProbY)))
+    -1 * (sum(log(rowSums(psi*prdProbY))) - pen)
   }
   #----------------------------------------------------------------------------
 
@@ -82,7 +90,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
   nll_C <- function(params) {
     .Call("nll_occuMulti",
           fStart-1, fStop-1, t_dmF, dmOcc, params, dmDet, dStart-1, dStop-1,
-          y, yStart-1, yStop-1, Iy0, as.matrix(z), fixed0,
+          y, yStart-1, yStop-1, Iy0, as.matrix(z), fixed0, penalty, 0,
           PACKAGE = "unmarked")
   }
   #----------------------------------------------------------------------------
@@ -131,5 +139,67 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder, starts,
                 estimates = estimateList, AIC = fmAIC, opt = fm,
                 negLogLike = fm$value, nllFun = nll_R)
 
+  if(penalty > 0 & se){
+    cat("Bootstraping covariance matrix\n")
+    umfit <- nonparboot(umfit, B=boot, se=FALSE)
+    #Replace covMat with covMatBS
+    for (i in 1:length(umfit@estimates@estimates)){
+      umfit@estimates@estimates[[i]]@covMat <- umfit@estimates@estimates[[i]]@covMatBS
+    }
+  }
+
   umfit
 }
+
+# Functions for optimizing penalty value
+
+occuMultiLogLik <- function(fit, data){
+
+  if(!inherits(fit, "unmarkedFitOccuMulti"))
+    stop("Fit must be created with occuMulti()")
+  if(!inherits(data, "unmarkedFrameOccuMulti"))
+    stop("Data must be created with unmarkedFrameOccuMulti()")
+
+  maxOrder <- fit@call$maxOrder
+  if(is.null(maxOrder)) maxOrder <- length(fit@data@ylist)
+
+  dm <- getDesign(data, fit@detformulas, fit@stateformulas,
+                  maxOrder=maxOrder, warn=FALSE)
+
+  dmF <- Matrix::Matrix(dm$dmF, sparse=TRUE)
+  t_dmF <- Matrix::t(dmF)
+
+  out <- .Call("nll_occuMulti",
+          dm$fStart-1, dm$fStop-1, t_dmF,
+          dm$dmOcc, coef(fit), dm$dmDet, dm$dStart-1, dm$dStop-1, dm$y,
+          dm$yStart-1, dm$yStop-1, dm$Iy0, as.matrix(dm$z), dm$fixed0, 0,
+          #return site likelihoods
+          1,
+          PACKAGE = "unmarked")
+
+  as.vector(out)
+
+}
+
+setGeneric("optimizePenalty",
+           function(object, penalties=c(0,2^seq(-4,4)), k = 5, boot = 30, ...)
+           standardGeneric("optimizePenalty"))
+
+setMethod("optimizePenalty", "unmarkedFitOccuMulti",
+          function(object, penalties=c(0,2^seq(-4,4)), k = 5, boot = 30, ...){
+
+  folds <- partitionKfold(object, k)
+
+  cvp <- sapply(penalties, function(p, k, fit, folds){
+    cv <- sapply(1:k, function(k){
+      refit <- update(fit, data=folds[[k]]$trainData, penalty=p, se=FALSE)
+      sum(occuMultiLogLik(refit, folds[[k]]$testData))
+    })
+    sum(cv)
+  }, k=k, fit=object, folds=folds)
+
+  max_cvp <- penalties[which(cvp == max(cvp))]
+  cat("Optimal penalty is", max_cvp,"\n")
+  object@call$penalty <- max_cvp
+  update(object, data=object@data, boot=boot)
+})

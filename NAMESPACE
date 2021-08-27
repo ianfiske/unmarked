@@ -14,12 +14,13 @@ importFrom(grDevices, devAskNewPage, dev.interactive, palette.colors)
 importFrom(raster, raster, stack, extent, "extent<-", getValues)
 importFrom(MASS, mvrnorm)
 importFrom(parallel, detectCores, makeCluster, stopCluster, clusterExport,
-           clusterEvalQ, parLapply)
+           clusterEvalQ)
 importFrom(methods, is, as, new, show, slot, .hasSlot, callGeneric, 
            callNextMethod)
 importFrom(lattice, xyplot, levelplot)
 importFrom(Rcpp, evalCpp)
-importFrom(pbapply, pblapply)
+importFrom(pbapply, pbsapply, pblapply)
+
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
@@ -52,7 +53,7 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
               "siteCovs<-", summary, update, vcov, yearlySiteCovs,
               "yearlySiteCovs<-", "[", smoothed, projected, nonparboot, logLik,
               LRT, ranef, bup, crossVal, posteriorSamples, sigma, randomTerms, 
-              unmarkedPowerList)
+              optimizePenalty, unmarkedPowerList)
 
 S3method("print", "unmarkedPostSamples")
 

@@ -3,17 +3,14 @@
 
 // name of function below **MUST** match filename
 template <class Type>
-Type tmb_occu(objective_function<Type>* obj) {
+Type tmb_multinomPois(objective_function<Type>* obj) {
   //Describe input data
   DATA_MATRIX(y); //observations
-  DATA_VECTOR(no_detect); //Indicator for if site had no detections
 
-  DATA_INTEGER(link);
-
-  DATA_MATRIX(X_state); //psi fixed effect design mat (state=psi)
+  DATA_MATRIX(X_state); //lambda fixed effect design mat
   DATA_SPARSE_MATRIX(Z_state); //psi random effect design mat
   DATA_VECTOR(offset_state);
-  DATA_INTEGER(n_group_vars_state); //# of grouping variables for psi
+  DATA_INTEGER(n_group_vars_state); //# of grouping variables for lambda
   DATA_IVECTOR(n_grouplevels_state); //# of levels of each grouping variable
 
   DATA_MATRIX(X_det); //same thing but for p
@@ -21,10 +18,12 @@ Type tmb_occu(objective_function<Type>* obj) {
   DATA_VECTOR(offset_det);
   DATA_INTEGER(n_group_vars_det);
   DATA_IVECTOR(n_grouplevels_det);
+  
+  DATA_INTEGER(pifun_type);
 
-  PARAMETER_VECTOR(beta_state); //Fixed effect params for psi
-  PARAMETER_VECTOR(b_state); //Random intercepts and/or slopes for psi
-  PARAMETER_VECTOR(lsigma_state); //Random effect variance(s) for psi
+  PARAMETER_VECTOR(beta_state); //Fixed effect params for lamda
+  PARAMETER_VECTOR(b_state); //Random intercepts and/or slopes for lambda
+  PARAMETER_VECTOR(lsigma_state); //Random effect variance(s) for lambda
 
   PARAMETER_VECTOR(beta_det); //Same thing but for det
   PARAMETER_VECTOR(b_det);
@@ -33,35 +32,34 @@ Type tmb_occu(objective_function<Type>* obj) {
   //Define the log likelihood so that it can be calculated in parallel over sites
   parallel_accumulator<Type> loglik(obj);
 
-  int M = y.rows(); //# of sites
-  int J = y.cols(); //# of observations per site
+  int M = y.rows(); // # of sites
+  int J = y.cols(); // # of obs per site
+  int R = X_det.rows() / M; // # of detection probs per site
 
-  //Construct psi vector
-  vector<Type> psi = X_state * beta_state + offset_state;
-  psi = add_ranef(psi, loglik, b_state, Z_state, lsigma_state, 
+  //Construct lambda vector
+  vector<Type> lam = X_state * beta_state + offset_state;
+  lam = add_ranef(lam, loglik, b_state, Z_state, lsigma_state, 
                   n_group_vars_state, n_grouplevels_state);
-  if(link == 1){
-    psi = cloglog(psi);
-  } else {
-    psi = invlogit(psi);
-  }
+  lam = exp(lam);
 
   //Construct p vector
   vector<Type> p = X_det * beta_det + offset_det;
   p = add_ranef(p, loglik, b_det, Z_det, lsigma_det, 
                 n_group_vars_det, n_grouplevels_det);
   p = invlogit(p);
-
-  //Standard occupancy likelihood calculation
+  
+  //Likelihood
   for (int i=0; i<M; i++){
-    int pind = i * J;
-    Type cp = 1.0;
+    //Not sure if defining these inside loop is necessary for parallel
+    int pstart = i * R;
+    vector<Type> ysub = y.row(i);
+    vector<Type> psub = p.segment(pstart, R);
+    vector<Type> pi_lam = pifun(psub, pifun_type) * lam(i);
+    
     for (int j=0; j<J; j++){
-      if(R_IsNA(asDouble(y(i,j)))) continue;
-      cp *= pow(p(pind), y(i,j)) * pow(1-p(pind), 1-y(i,j));
-      pind += 1;
+      if(R_IsNA(asDouble(ysub(j)))) continue;
+      loglik -= dpois(ysub(j), pi_lam(j), true);
     }
-    loglik -= log(psi(i) * cp + (1-psi(i)) * no_detect(i));
   }
 
   return loglik;
@@ -70,4 +68,3 @@ Type tmb_occu(objective_function<Type>* obj) {
 
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this
-

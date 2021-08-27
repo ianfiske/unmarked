@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 1.1.1.9001
-Date: 2021-06-21
+Version: 1.1.1.9007
+Date: 2021-08-13
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(
@@ -52,7 +52,8 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
 LinkingTo: 
     Rcpp,
     RcppArmadillo,
-    TMB
+    TMB,
+    RcppEigen
 SystemRequirements: GNU make
 URL: http://groups.google.com/d/forum/unmarked,
      https://sites.google.com/site/unmarkedinfo/home,

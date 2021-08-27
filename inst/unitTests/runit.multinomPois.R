@@ -42,9 +42,6 @@ test.removal <- function() {
         c(1.9118525, -0.4071202, 8.3569943, 0.3232485), tol=1e-5)
     checkEqualsNumeric(coef(m3_R),coef(m3_C), tol=1e-5)
 
-    #Check error when random effect in formula
-    checkException(multinomPois(~(1|dummy) ~1, umf1))
-
 }
 
 
@@ -76,4 +73,68 @@ test.double <- function() {
     checkEquals(m2@sitesRemoved, 4:6)
     }
 
+test.ranef.multinomPois <- function(){
+  set.seed(9023)
+  nSites <- 50
+  lambda <- 10
+  p1 <- 0.5
+  p2 <- 0.3
+  cp <- c(p1*(1-p2), p2*(1-p1), p1*p2)
+  N <- rpois(nSites, lambda)
+  y <- matrix(NA, nSites, 3)
+  for(i in 1:nSites) {
+    y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:3]
+  }
 
+  # Fit model
+  observer <- matrix(c('A','B'), nSites, 2, byrow=TRUE)
+  umf <- unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
+            type="double")
+  fm <- multinomPois(~observer-1 ~1, umf)
+  checkTrue(inherits(fm, "unmarkedFitMPois"))
+  checkTrue(is.null(fm@TMB))
+  pr <- predict(fm, "state")
+  checkEqualsNumeric(dim(pr), c(50,4))
+
+  set.seed(1)
+  nSites <- 100
+  lambda <- 5
+  sc <- data.frame(ref=sample(letters[1:10], nSites, replace=T),
+                   x1=rnorm(nSites))
+  observer <- matrix(c('A','B'), nSites, 2, byrow=TRUE)
+
+  ef <- rnorm(10, 0, 0.4)
+  names(ef) <- letters[1:10]
+  lambda <- exp(log(lambda) + ef[sc$ref])
+  N <- rpois(nSites, lambda)
+
+  y <- matrix(NA, nSites, 3)
+  for(i in 1:nSites) {
+    y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:3]
+  }
+  umf2 <- unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
+         type="double", siteCovs=sc)
+
+  fm <- multinomPois(~observer-1 ~x1 + (1|ref), umf2)
+
+  checkTrue(inherits(fm@TMB, "list"))
+  checkEqualsNumeric(sigma(fm)$sigma, 0.3655, tol=1e-3)
+  checkTrue(inherits(randomTerms(fm), "data.frame"))
+  pr <- predict(fm, type='state')
+  pr2 <- predict(fm, "state", newdata=umf2@siteCovs[1:5,])
+  checkEqualsNumeric(dim(pr), c(100, 4))
+  checkEqualsNumeric(dim(pr2), c(5,4))
+
+  umf2@y[1,1] <- NA
+  umf2@y[2,] <- NA
+  umf2@siteCovs$x1[3] <- NA
+  umf2@obsCovs$observer[80] <- NA
+
+  fm_na <- multinomPois(~observer-1 ~x1 + (1|ref), umf2)
+  checkTrue(inherits(fm_na, "unmarkedFitMPois"))
+
+  umf3 <- unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
+            piFun="fake", obsToY=umf@obsToY, siteCovs=sc)
+
+  checkException(multinomPois(~observer-1 ~x1 + (1|ref), umf3))
+}
