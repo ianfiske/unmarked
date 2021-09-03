@@ -312,7 +312,7 @@ setMethod("plot", "unmarkedPowerList", function(x, power=NULL, param=NULL, ...){
   if(is.null(param)) param <- dat$Parameter[1]
   dat <- dat[dat$Parameter==param,,drop=FALSE]
   ylim <- range(dat$Power, na.rm=T)
-  if(!is.null(beta)) ylim[2] <- max(1-beta, ylim[2])
+  if(!is.null(power)) ylim[2] <- max(power, ylim[2])
   xlim <- range(as.numeric(as.character(dat$M)), na.rm=T)
   cols <- palette.colors(length(levels(dat$J)), palette="Dark 2")
   old_par <- par()[c("mfrow","mar")]
