@@ -12,7 +12,7 @@ var_data <- function(var, guide, n){
   out <- rep(NA, n)
   gv <- guide[[var]]
   if(is.null(gv)){
-    out <- rnorm(n, 0, 1)
+    out <- stats::rnorm(n, 0, 1)
   } else if(inherits(gv, "factor")){
     levs <- levels(gv)
     out <- factor(sample(levs, n, replace=TRUE), levels=levs)

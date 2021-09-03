@@ -43,23 +43,24 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
     parallel::clusterEvalQ(cl, library(unmarked))
   }
 
+  # Enable this later
   if(!is.null(options()$unmarked_shiny)&&options()$unmarked_shiny){
-    ses <- options()$unmarked_shiny_session
+    #ses <- options()$unmarked_shiny_session
     #ses <- shiny::getDefaultReactiveDomain()
-    pb <- shiny::Progress$new(ses, min=0, max=1)
-    pb$set(message="Running simulations")
-    fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
-      if(!is.null(design)) fit@data <- bdata[[i]]
-      if(inherits(fit, "unmarkedFitOccuMulti")){
-        fit@data@ylist <- sims[[i]]
-      } else{
-        fit@data@y <- sims[[i]]
-      }
-      out <- update(fit, data=fit@data, se=TRUE)
-      pb$set(value=i/nsim, message=NULL, detail=NULL)
-      out
-    }, sims=sims, fit=object, bdata=bdata, cl=NULL)
-    pb$close()
+    #pb <- shiny::Progress$new(ses, min=0, max=1)
+    #pb$set(message="Running simulations")
+    #fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
+    #  if(!is.null(design)) fit@data <- bdata[[i]]
+    #  if(inherits(fit, "unmarkedFitOccuMulti")){
+    #    fit@data@ylist <- sims[[i]]
+    #  } else{
+    #    fit@data@y <- sims[[i]]
+    #  }
+    #  out <- update(fit, data=fit@data, se=TRUE)
+    #  pb$set(value=i/nsim, message=NULL, detail=NULL)
+    #  out
+    #}, sims=sims, fit=object, bdata=bdata, cl=NULL)
+    #pb$close()
 
   } else {
 
@@ -262,7 +263,7 @@ get_summary_df <- function(fit){
   #est_names <- unname(sapply(fit@estimates@estimates, function(x) x@name))
   est_names <- names(fit@estimates@estimates)
   all_est <- lapply(1:n_est, function(i){
-    capture.output(out <- summary(fit@estimates@estimates[[i]]))
+    utils::capture.output(out <- summary(fit@estimates@estimates[[i]]))
     out <- cbind(submodel=est_names[i], param=rownames(out), out)
     rownames(out) <- NULL
     out
@@ -284,7 +285,7 @@ setMethod("unmarkedPowerList", "unmarkedFit",
 
   ndesigns <- nrow(design)
   out <- lapply(1:ndesigns, function(i){
-    cat(paste0("M = ",design$M[i],", J = ",scenarios$J[i],"\n"))
+    cat(paste0("M = ",design$M[i],", J = ",design$J[i],"\n"))
     powerAnalysis(object, coefs, as.list(design[i,]), alpha=alpha, nsim=nsim,
                   parallel=FALSE)
   })
@@ -315,11 +316,11 @@ setMethod("plot", "unmarkedPowerList", function(x, power=NULL, param=NULL, ...){
   if(!is.null(power)) ylim[2] <- max(power, ylim[2])
   xlim <- range(as.numeric(as.character(dat$M)), na.rm=T)
   cols <- palette.colors(length(levels(dat$J)), palette="Dark 2")
-  old_par <- par()[c("mfrow","mar")]
+  old_par <- graphics::par()[c("mfrow","mar")]
   nT <- length(levels(dat$T))
   mar <- old_par$mar
   if(nT == 1) mar <- c(5.1, 4.1, 2.1, 2.1)
-  par(mfrow=c(length(levels(dat$T)),1), mar=mar)
+  graphics::par(mfrow=c(length(levels(dat$T)),1), mar=mar)
   for (i in levels(dat$T)){
     plot_title <- ""
     if(nT > 1) plot_title <- paste0("T = ", i)
@@ -332,12 +333,12 @@ setMethod("plot", "unmarkedPowerList", function(x, power=NULL, param=NULL, ...){
     if(!is.null(power)) abline(h=power, lty=2)
     for (j in 2:length(Jlev)){
       jsub <- tsub[tsub$J==Jlev[j],,drop=FALSE]
-      lines(as.numeric(as.character(jsub$M)), jsub$Power, type="o",
+      graphics::lines(as.numeric(as.character(jsub$M)), jsub$Power, type="o",
             col=cols[j], pch=19)
     }
-    legend('bottomright', lwd=1, pch=19, col=cols, legend=Jlev, title="Observations")
+    graphics::legend('bottomright', lwd=1, pch=19, col=cols, legend=Jlev, title="Observations")
   }
-  par(mfrow=old_par)
+  graphics::par(mfrow=old_par)
 })
 
 setMethod("update", "unmarkedPower", function(object, ...){
