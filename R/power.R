@@ -307,7 +307,7 @@ setMethod("show", "unmarkedPowerList", function(object){
   print(summary(object))
 })
 
-setMethod("plot", "unmarkedPowerList", function(x, beta=NULL, param=NULL, ...){
+setMethod("plot", "unmarkedPowerList", function(x, power=NULL, param=NULL, ...){
   dat <- summary(x)
   if(is.null(param)) param <- dat$Parameter[1]
   dat <- dat[dat$Parameter==param,,drop=FALSE]
@@ -329,7 +329,7 @@ setMethod("plot", "unmarkedPowerList", function(x, beta=NULL, param=NULL, ...){
     plot(as.numeric(as.character(jsub$M)), jsub$Power, type="o",
         col=cols[1], ylim=ylim, xlim=xlim, xlab="Sites",
         ylab="Power", pch=19, main=plot_title)
-    if(!is.null(beta)) abline(h=1-beta, lty=2)
+    if(!is.null(power)) abline(h=power, lty=2)
     for (j in 2:length(Jlev)){
       jsub <- tsub[tsub$J==Jlev[j],,drop=FALSE]
       lines(as.numeric(as.character(jsub$M)), jsub$Power, type="o",
