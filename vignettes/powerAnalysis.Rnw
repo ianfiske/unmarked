@@ -186,7 +186,7 @@ coefs <- list(state=c(intercept=0, elev=-0.4), det=c(intercept=0))
 @
 
 Finally, we need to give \code{unmarked} information about the study design.
-This is pretty simple: we just need a list containing values for \code{M}, the number of sites, and code{J} the number of surveys per site.
+This is pretty simple: we just need a list containing values for \code{M}, the number of sites, and \code{J} the number of surveys per site.
 For models with multiple primary periods, we'd also need a value of \code{T}, the number of primary periods.
 
 <<>>=

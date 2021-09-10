@@ -441,8 +441,8 @@ setMethod("simulate_fit", "unmarkedFitOccuMS",
 
 setMethod("get_umf_components", "unmarkedFitGDR",
           function(object, formulas, guide, design, ...){
-  if(any(! c("M","Jdist","Jrem","T") %in% names(design))){
-    stop("Required design components are M, Jdist, Jrem, and T")
+  if(any(! c("M","Jdist","Jrem") %in% names(design))){
+    stop("Required design components are M, Jdist, and Jrem")
   }
   sc <- generate_data(list(formulas$lambda, formulas$dist), guide, design$M)
   ysc <- NULL
@@ -458,6 +458,8 @@ setMethod("get_umf_components", "unmarkedFitGDR",
 
 setMethod("simulate_fit", "unmarkedFitGDR",
   function(object, formulas, guide, design, ...){
+  if(is.null(design$T)) design$T <- 1
+  if(is.null(formulas$phi)) formulas$phi <- ~1
   parts <- get_umf_components(object, formulas, guide, design, ...)
   args <- list(...)
   umf <- unmarkedFrameGDR(yDistance=parts$yDistance, yRemoval=parts$yRemoval,
