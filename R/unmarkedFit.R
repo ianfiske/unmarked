@@ -269,15 +269,16 @@ setMethod("names", "unmarkedFit",
 #Utility function to make model matrix and offset from newdata
 make_mod_matrix <- function(formula, data, newdata, re.form=NULL){
   form_nobars <- lme4::nobars(formula)
-  mf <- model.frame(form_nobars, data)
+  mf <- model.frame(form_nobars, data, na.action=stats::na.pass)
   X.terms <- stats::terms(mf)
   fac_cols <- data[, sapply(data, is.factor), drop=FALSE]
   xlevs <- lapply(fac_cols, levels)
   xlevs <- xlevs[names(xlevs) %in% names(mf)]
-  X <- model.matrix(X.terms, newdata, xlev=xlevs)
-  nmf <- model.frame(X.terms, newdata)
+  nmf <- model.frame(X.terms, newdata, na.action=stats::na.pass, xlev=xlevs)
+  #X <- model.matrix(X.terms, newdata, xlev=xlevs)
+  X <- model.matrix(form_nobars, nmf)
   offset <- model.offset(nmf)
-  if(is.null(re.form)){
+  if(is.null(re.form) & !is.null(lme4::findbars(formula))){
     Z <- get_Z(formula, data, newdata)
     X <- cbind(X, Z)
   }
@@ -290,6 +291,38 @@ droplevels_final_year <- function(dat, nsites, nprimary){
   dat[seq(nprimary, nsites*nprimary, by=nprimary), ] <- NA
   dat <- lapply(dat, function(x) x[,drop = TRUE])
   as.data.frame(dat)
+}
+
+# Do calculation in chunks to speed things up
+predict_by_chunk <- function(mod, type, level, xmat, offsets, chunk_size, re.form=NULL){
+  if(is.vector(xmat)) xmat <- matrix(xmat, nrow=1)
+  nr <- nrow(xmat)
+  ind <- rep(1:ceiling(nr/chunk_size), each=chunk_size, length.out=nr)
+
+  # should find a way to keep xmat sparse, but it doesn't
+  # work with linearComb
+  #x_chunk <- lapply(split(as.data.frame(xmat), ind), as.matrix)
+  x_chunk <- lapply(unique(ind),
+                    function(i) as.matrix(xmat[ind==i,,drop=FALSE]))
+
+  if(is.null(offsets)) offsets <- rep(0, nr)
+  off_chunk <- split(offsets, ind)
+  out <- mapply(function(x_i, off_i){
+    has_na <- apply(x_i, 1, function(x_i) any(is.na(x_i)))
+    x_i[has_na,] <- 0
+    off_i[has_na] <- 0
+    lc <- linearComb(mod, x_i, type, offset=off_i, re.form=re.form)
+    bt <- backTransform(lc)
+    se <- SE(bt)
+    ci <- confint(bt, level=level)
+    out <- data.frame(Predicted=coef(bt), SE=SE(bt),
+                      lower=ci[,1], upper=ci[,2])
+    out[has_na,] <- NA
+    out
+    }, x_chunk, off_chunk, SIMPLIFY=FALSE)
+  out <- do.call(rbind, out)
+  rownames(out) <- NULL
+  out
 }
 
 setMethod("predict", "unmarkedFit",
@@ -384,24 +417,10 @@ setMethod("predict", "unmarkedFit",
                     offset <- model.offset(mf)
                 })
      })
-     out <- data.frame(matrix(NA, nrow(X), 4,
-         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
-     for(i in 1:nrow(X)) {
-         if(nrow(X) > 5000) {
-             if(i %% 1000 == 0)
-                 cat("  doing row", i, "of", nrow(X), "\n")
-         }
-         if(any(is.na(X[i,])))
-             next
-         lc <- linearComb(object, X[i,], type, offset = offset[i], re.form)
-         if(backTransform)
-             lc <- backTransform(lc)
-         out$Predicted[i] <- coef(lc)
-         out$SE[i] <- SE(lc)
-         ci <- confint(lc, level=level)
-         out$lower[i] <- ci[1]
-         out$upper[i] <- ci[2]
-     }
+
+     out <- predict_by_chunk(object, type, level, X, offset,
+                             chunk_size = 70, re.form)
+
      if(appendData) {
          if(!identical(cls, "RasterStack"))
              out <- data.frame(out, as(newdata, "data.frame"))
