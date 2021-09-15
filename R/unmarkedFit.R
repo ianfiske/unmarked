@@ -691,31 +691,32 @@ setMethod("predict", "unmarkedFitPCount",
                    offset <- model.offset(mf)
                })
     })
-    out <- data.frame(matrix(NA, nrow(X), 4,
-        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+
+
+    if(is.null(offset)) offset <- rep(0, nrow(X))
     mix <- object@mixture
 
     if(identical(mix, "ZIP") & identical(type, "state")) {
+      #warning("Method to compute SE for ZIP model has not been written. Scratch that.
+      #Method has been written but not tested/evaluated.
+      #Also, you only get a 95% confidence interval for the ZIP model. ")
+
+      out <- data.frame(matrix(NA, nrow(X), 4,
+        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+
         psi.hat <- plogis(coef(object, type="psi"))
         lamEst <- object["state"]
         psiEst <- object["psi"]
         fixedOnly <- !is.null(re.form)
         lam.mle <- coef(lamEst, fixedOnly=fixedOnly)
         lam_vcov <- vcov(lamEst, fixedOnly=fixedOnly)
-        if(is.null(offset))
-            offset <- rep(0, nrow(X))
-    #warning("Method to compute SE for ZIP model has not been written. Scratch that.
-    #Method has been written but not tested/evaluated.
-    #Also, you only get a 95% confidence interval for the ZIP model. ")
-    }
-    for(i in 1:nrow(X)) {
+
+      for(i in 1:nrow(X)) {
         if(nrow(X) > 5000) {
             if(i %% 1000 == 0)
                 cat("  doing row", i, "of", nrow(X), "\n")
         }
-        if(any(is.na(X[i,])))
-            next
-        if(identical(mix, "ZIP") & identical(type, "state")) {
+        if(any(is.na(X[i,]))) next
 
           ## for the ZIP model the predicted values on the log scale have us
           ## add log(1-psi.hat) to the normal linear prediction
@@ -754,18 +755,15 @@ setMethod("predict", "unmarkedFitPCount",
           #out$SE[i]<-out$Predicted[i]*out$Predicted[i]*var.psi.part + (1-psi.hat)*(1-psi.hat)*var.lambda.part - var.psi.part*var.lambda.part
           #ci<- c( NA, NA)
         }
-
-        } else {
-            lc <- linearComb(object, X[i,], type, offset = offset[i], re.form=re.form)
-            if(backTransform)
-                lc <- backTransform(lc)
-            out$Predicted[i] <- coef(lc)
-            out$SE[i] <- SE(lc)
-            ci <- confint(lc, level=level)
-        }
         out$lower[i] <- ci[1]
         out$upper[i] <- ci[2]
+      }
+
+    } else {
+      out <- predict_by_chunk(object, type, level, X, offset,
+                              chunk_size = 70, re.form)
     }
+
     if(appendData) {
         if(!identical(cls, "RasterStack"))
             out <- data.frame(out, as(newdata, "data.frame"))
