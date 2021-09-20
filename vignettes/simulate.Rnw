@@ -157,8 +157,8 @@ simulate("occu", formulas=forms, design=design)
 try(simulate("occu", formulas=forms, design=design))
 @
 
-We can copy this provided list structure and fill in our own numeric values.
-Once we have our covariates set up properly, add them to the function call:
+We can replicate this provided list structure and fill in our own numeric values.
+Once we have our coefficients set up properly, add them to the function call:
 
 <<>>=
 occu_umf <- simulate("occu", formulas=forms, coefs=coefs, design=design)
@@ -169,7 +169,7 @@ head(occu_umf)
 We can check that it worked as expected by fitting the corresponding model to the dataset, and making sure the estimated values are similar:
 
 <<>>=
-(occu(~1~elev, occu_umf))
+(occu(~1 ~elev, occu_umf))
 @
 
 \subsection{Customizing the covariates}
@@ -218,16 +218,19 @@ forms2 <- list(state=~elev+landcover, det=~1)
 And then the new guide, including the information about factor levels:
 
 <<>>=
-guide <- list(landcover=factor(levels=c("forest","grass")))
+guide <- list(landcover=factor(levels=c("forest","grass","urban")))
 @
 
 We'd also need an updated \code{coefs} since we have a new covariate.
 Defining the \code{coefs} when you have factors in your model is a little trickier, since R names the effects as a combination of the factor name and the level name.
-The easiest way to deal with this is to let \code{unmarked} generate a template \code{coefs} for you as shown above, and then fill it in.
+There is no coefficient for the reference level (\code{"forest"} in our example), but we need to provide coefficients for both \code{"grass"} and \code{"urban"}.
+When combined with the factor name the complete coefficient names for these two will be \code{landcovergrass} and \code{landcoverurban}.
+The easiest way to make sure we get these names right is to let \code{unmarked} generate a template \code{coefs} for you as shown above, and then fill it in.
 
 <<>>=
 # forest is the reference level for landcover since it was listed first
-coefs2 <- list(state=c(intercept=0, elev=-0.4, landcovergrass=0.2), det=c(intercept=0))
+coefs2 <- list(state=c(intercept=0, elev=-0.4, landcovergrass=0.2, 
+                       landcoverurban=-0.7), det=c(intercept=0))
 @
 
 <<>>=
