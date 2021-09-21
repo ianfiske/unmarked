@@ -86,8 +86,11 @@ setMethod("simulate_fit", "unmarkedFitPCount",
   parts <- get_umf_components(object, formulas, guide, design, ...)
   umf <- unmarkedFramePCount(y=parts$y, siteCovs=parts$siteCovs,
                              obsCovs=parts$obsCovs)
+  args <- list(...)
+  K <- ifelse(is.null(args$K), 100, args$K)
+  mixture <- ifelse(is.null(args$mixture), "P", args$mixture)
   pcount(as.formula(paste(deparse(formulas$det), deparse(formulas$state))),
-       data=umf, se=FALSE, control=list(maxit=1))
+       data=umf, mixture=mixture, K=K, se=FALSE, control=list(maxit=1))
 })
 
 setMethod("simulate_fit", "unmarkedFitOccuRN",
@@ -130,15 +133,17 @@ setMethod("get_umf_components", "unmarkedFitMPois",
   sc <- generate_data(formulas$state, guide, design$M)
   oc <- generate_data(formulas$det, guide, design$J*design$M)
   J <- ifelse(args$type=="double", 3, design$J)
-  yblank <- matrix(0, design$M, J)
+  yblank <- matrix(0, design$M, design$J)
   list(y=yblank, siteCovs=sc, obsCovs=oc)
 })
 
 setMethod("simulate_fit", "unmarkedFitMPois",
   function(object, formulas, guide, design, ...){
   parts <- get_umf_components(object, formulas, guide, design, ...)
+  args <- list(...)
+  type <- ifelse(is.null(args$type), "removal", args$type)
   umf <- unmarkedFrameMPois(y=parts$y, siteCovs=parts$siteCovs,
-                           obsCovs=parts$obsCovs, type=list(...)$type)
+                           obsCovs=parts$obsCovs, type=type)
   multinomPois(as.formula(paste(deparse(formulas$det), deparse(formulas$state))),
                data=umf, se=FALSE, control=list(maxit=1))
 })
@@ -148,7 +153,10 @@ setMethod("get_umf_components", "unmarkedFitDS",
   #args <- list(...)
   sc <- generate_data(formulas$state, guide, design$M)
   sc2 <- generate_data(formulas$det, guide, design$M)
-  sc <- cbind(sc,sc2)
+  dat <- list(sc, sc2)
+  keep <- sapply(dat, function(x) !is.null(x))
+  dat <- dat[keep]
+  sc <- do.call(cbind, dat)
   yblank <- matrix(0, design$M, design$J)
   list(y=yblank, siteCovs=sc)
 })
@@ -237,12 +245,18 @@ setMethod("simulate_fit", "unmarkedFitGDS",
   function(object, formulas, guide, design, ...){
   parts <- get_umf_components(object, formulas, guide, design, ...)
   args <- list(...)
-  if(is.null(args$tlength)) args$tlength <- 0
-  umf <- unmarkedFrameGDS(y=parts$y, siteCovs=parts$siteCovs,
+  if(args$survey=="line"){
+    umf <- unmarkedFrameGDS(y=parts$y, siteCovs=parts$siteCovs,
                            yearlySiteCovs=parts$yearlySiteCovs,
                            numPrimary=design$T,
                            tlength=args$tlength, survey=args$survey,
                            unitsIn=args$unitsIn, dist.breaks=args$dist.breaks)
+  } else if(args$survey=="point"){
+    umf <- unmarkedFrameGDS(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,
+                           numPrimary=design$T, survey=args$survey,
+                           unitsIn=args$unitsIn, dist.breaks=args$dist.breaks)
+  }
 
   keyfun <- ifelse(is.null(args$keyfun), "halfnorm", args$keyfun)
   output <- ifelse(is.null(args$output), "density", args$output)
@@ -366,12 +380,18 @@ setMethod("simulate_fit", "unmarkedFitDSO",
   if(is.null(args$primaryPeriod)){
     args$primaryPeriod <- matrix(1:design$T, design$M, design$T, byrow=TRUE)
   }
-  if(is.null(args$tlength)) args$tlength <- 0
+  if(args$survey=="line"){
   umf <- unmarkedFrameDSO(y=parts$y, siteCovs=parts$siteCovs,
                            yearlySiteCovs=parts$yearlySiteCovs,
                            tlength=args$tlength, survey=args$survey,
                            unitsIn=args$unitsIn, dist.breaks=args$dist.breaks,
                            numPrimary=design$T, primaryPeriod=args$primaryPeriod)
+  } else if(args$survey == "point"){
+  umf <- unmarkedFrameDSO(y=parts$y, siteCovs=parts$siteCovs,
+                           yearlySiteCovs=parts$yearlySiteCovs,survey=args$survey,
+                           unitsIn=args$unitsIn, dist.breaks=args$dist.breaks,
+                           numPrimary=design$T, primaryPeriod=args$primaryPeriod)
+  }
   K <- ifelse(is.null(args$K), 100, args$K)
   keyfun <- ifelse(is.null(args$keyfun), "halfnorm", args$keyfun)
   output <- ifelse(is.null(args$output), "density", args$output)
