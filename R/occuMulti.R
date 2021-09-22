@@ -128,7 +128,11 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
 
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
 
-  umfit <- new("unmarkedFitOccuMulti", fitType = "occuMulti", call = match.call(),
+  if(missing(maxOrder)) maxOrder <- S
+  cl <- match.call()
+  cl$maxOrder <- maxOrder
+
+  umfit <- new("unmarkedFitOccuMulti", fitType = "occuMulti", call = cl,
                 detformulas = detformulas, stateformulas = stateformulas,
                 formula = ~1, data = data,
                 #sitesRemoved = designMats$removed.sites,

@@ -2991,7 +2991,9 @@ setMethod("update", "unmarkedFitOccuMS",
     if(!missing(phiformulas)){
       call[["phiformulas"]] <- phiformulas
     } else {
-      call[["phiformulas"]] <- object@phiformulas
+      if(!is.null(call$phiformulas)){
+        call[["phiformulas"]] <- object@phiformulas
+      }
     }
     extras <- match.call(call=sys.call(-1),
                          expand.dots = FALSE)$...
@@ -4542,6 +4544,13 @@ setMethod("simulate", "unmarkedFitOccuTTD",
   #Get predicted values
   psi <- predict(object, 'psi', na.rm=FALSE)$Predicted
   lam <- predict(object, 'det', na.rm=FALSE)$Predicted
+  if(T>1){
+    p_col <- predict(object, 'col', na.rm=FALSE)$Predicted
+    p_col <- matrix(p_col, N, T, byrow=TRUE)
+    p_ext <- predict(object, 'ext', na.rm=FALSE)$Predicted
+    p_ext <- matrix(p_ext, N, T, byrow=TRUE)
+  }
+
   tmax <- object@data@surveyLength
   not_na <- which(!is.na(lam))
 
@@ -4557,13 +4566,6 @@ setMethod("simulate", "unmarkedFitOccuTTD",
     #Truncate
     ttd <- matrix(ttd, nrow=N, byrow=T)
     ttd[which(ttd>tmax)] <- tmax[which(ttd>tmax)]
-
-    if(T>1){
-      p_col <- predict(object, 'col', na.rm=FALSE)$Predicted
-      p_col <- matrix(p_col, N, T, byrow=TRUE)
-      p_ext <- predict(object, 'ext', na.rm=FALSE)$Predicted
-      p_ext <- matrix(p_ext, N, T, byrow=TRUE)
-    }
 
     #Latent state
     z <- matrix(NA, N, T)
