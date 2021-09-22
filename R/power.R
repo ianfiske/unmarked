@@ -208,14 +208,20 @@ setMethod("summary", "unmarkedPower", function(object, ...){
   sum_dfs <- object@estimates
   npar <- nrow(sum_dfs[[1]])
 
+  nulls <- object@nulls
+  nulls <- lapply(nulls, function(x){
+    nm <- names(x)
+    nm[nm %in% c("Intercept","intercept")] <- "(Intercept)"
+    names(x) <- nm
+    x
+  })
+
   pow <- sapply(1:npar, function(ind){
-    #pcrit <- sapply(sum_dfs, function(x) x$`P(>|z|)`[ind]) < object@alpha
     submod <- sum_dfs[[1]]$submodel[ind]
     param <- sum_dfs[[1]]$param[ind]
-    ni <- object@nulls[[submod]][param]
+    ni <- nulls[[submod]][param]
 
     pcrit <- sapply(sum_dfs, function(x) wald(x$Estimate[ind], x$SE[ind], ni)) < object@alpha
-    #direct <- sapply(sum_dfs, function(x) x$Estimate[ind]) * unlist(object@coefs)[ind]  > 0 # fix this
     direct <- sapply(sum_dfs, function(x) diff_dir(x$Estimate[ind], unlist(object@coefs)[ind], ni))
     mean(pcrit & direct, na.rm=T)
   })
@@ -223,21 +229,16 @@ setMethod("summary", "unmarkedPower", function(object, ...){
   all_nulls <- sapply(1:npar, function(ind){
     submod <- sum_dfs[[1]]$submodel[ind]
     param <- sum_dfs[[1]]$param[ind]
-    ni <- object@nulls[[submod]][param]
+    ni <- nulls[[submod]][param]
     if(is.null(ni) || is.na(ni)) ni <- 0
     ni
   })
 
   out <- cbind(sum_dfs[[1]][,1:2], effect=unlist(object@coefs), null=all_nulls,  power=pow)
-  #out <- out[out$param != "(Intercept)",,drop=FALSE]
-  #out <- out[out$param != "sigma(Intercept)",,drop=FALSE]
-  #out <- out[out$param != "rate(Intercept)",,drop=FALSE]
-  #out <- out[out$param != "shape(Intercept)",,drop=FALSE]
   rownames(out) <- NULL
   names(out) <- c("Submodel", "Parameter", "Effect", "Null", "Power")
   out
 })
-
 setMethod("show", "unmarkedPower", function(object){
   cat("\nModel:\n")
   print(object@call)

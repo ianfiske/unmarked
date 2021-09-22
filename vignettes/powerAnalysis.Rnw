@@ -244,9 +244,11 @@ Our output dataset now includes a new categorical covariate, and the elevation v
 
 More complex models might require more information for simulation, such as the distribution to use for abundance with \code{pcount}.
 This information is simply added as additional arguments to \code{simulate}.
-For example, to simulate a \code{pcount} dataset using the negative binomial (\code{"NB"}) distribution:
+For example, we can simulate a \code{pcount} dataset using the negative binomial (\code{"NB"}) distribution.
+The negative binomial has an additional parameter to estimate (\code{alpha}) so we must also add an element to \code{coefs}.
 
 <<>>=
+coefs$alpha <- c(alpha=0.5)
 head(simulate("pcount", formulas=forms, coefs=coefs, design=design, mixture="NB"))
 @
 

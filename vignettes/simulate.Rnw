@@ -245,9 +245,11 @@ More complex models might require more information for simulation.
 Nearly any argument provided to either the fitting function for the model, or the corresponding \code{unmarkedFrame} constructor, can be provided as an optional argument to \code{simulate} to customize the simulation.
 For example, we may want to specify that abundance should be simulated as a negative binomial, instead of a Poisson, for \code{pcount}.
 This information is simply added as additional arguments to \code{simulate}.
-For example, to simulate a \code{pcount} dataset using the negative binomial (\code{"NB"}) distribution:
+For example, we can simulate a \code{pcount} dataset using the negative binomial (\code{"NB"}) distribution.
+The negative binomial has an additional parameter to estimate (\code{alpha}) so we must also add an element to \code{coefs}.
 
 <<>>=
+coefs$alpha <- c(alpha=0.5)
 head(simulate("pcount", formulas=forms, coefs=coefs, design=design, mixture="NB"))
 @
 
