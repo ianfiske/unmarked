@@ -152,6 +152,12 @@ test.distsampOpen.halfnormal <- function()
   fm2 <- update(fm, pformula=~1)
   checkEqualsNumeric(length(coef(fm2)), 4)
 
+  fm <- distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=30,keyfun="halfnorm",
+                     mixture="ZIP")
+  pr <- predict(fm, 'lambda')
+  checkTrue(inherits(pr, "data.frame"))
+  checkEqualsNumeric(as.numeric(pr[1,]), c(3.97566, NA,NA,NA), tol=1e-4)
+
   #Point
   set.seed(123)
   y <- simData(lambda=4, gamma=2, omega=0.5, sigma=25, M=100, T=15,type="point",

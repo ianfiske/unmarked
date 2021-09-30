@@ -294,7 +294,8 @@ droplevels_final_year <- function(dat, nsites, nprimary){
 }
 
 # Do calculation in chunks to speed things up
-predict_by_chunk <- function(mod, type, level, xmat, offsets, chunk_size, re.form=NULL){
+predict_by_chunk <- function(mod, type, level, xmat, offsets, chunk_size,
+                             backTransform=TRUE, re.form=NULL){
   if(is.vector(xmat)) xmat <- matrix(xmat, nrow=1)
   nr <- nrow(xmat)
   ind <- rep(1:ceiling(nr/chunk_size), each=chunk_size, length.out=nr)
@@ -312,10 +313,10 @@ predict_by_chunk <- function(mod, type, level, xmat, offsets, chunk_size, re.for
     x_i[has_na,] <- 0
     off_i[has_na] <- 0
     lc <- linearComb(mod, x_i, type, offset=off_i, re.form=re.form)
-    bt <- backTransform(lc)
-    se <- SE(bt)
-    ci <- confint(bt, level=level)
-    out <- data.frame(Predicted=coef(bt), SE=SE(bt),
+    if(backTransform) lc <- backTransform(lc)
+    se <- SE(lc)
+    ci <- confint(lc, level=level)
+    out <- data.frame(Predicted=coef(lc), SE=se,
                       lower=ci[,1], upper=ci[,2])
     out[has_na,] <- NA
     out
@@ -419,7 +420,7 @@ setMethod("predict", "unmarkedFit",
      })
 
      out <- predict_by_chunk(object, type, level, X, offset,
-                             chunk_size = 70, re.form)
+                             chunk_size = 70, backTransform, re.form)
 
      if(appendData) {
          if(!identical(cls, "RasterStack"))
@@ -446,146 +447,6 @@ setMethod("predict", "unmarkedFit",
      }
      return(out)
  })
-
-
-
-
-
-## setMethod("predict", "unmarkedFitPCount",
-##     function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-##         appendData = FALSE, level=0.95, ...)
-## {
-##     if(type %in% c("psi", "alpha"))
-##         stop(type, " is scalar, so use backTransform instead")
-##     if(missing(newdata) || is.null(newdata))
-##         newdata <- getData(object)
-##     formula <- object@formula
-##     detformula <- as.formula(formula[[2]])
-##     stateformula <- as.formula(paste("~", formula[3], sep=""))
-##     if(inherits(newdata, "unmarkedFrame"))
-##         class(newdata) <- "unmarkedFrame"
-##     cls <- class(newdata)[1]
-##     if(!cls %in% c("unmarkedFrame", "data.frame", "RasterStack"))
-##         stop("newdata should be an unmarkedFrame, data.frame, or RasterStack", call.=FALSE)
-##     if(identical(cls, "RasterStack"))
-##         if(!require(raster))
-##             stop("raster package is required")
-##     switch(cls,
-##     unmarkedFrame = {
-##         designMats <- getDesign(newdata, formula, na.rm = na.rm)
-##         switch(type,
-##             state = {
-##                 X <- designMats$X
-##                 offset <- designMats$X.offset
-##                 },
-##             det = {
-##                 X <- designMats$V
-##                 offset <- designMats$V.offset
-##                 })
-##         },
-##     data.frame = {
-##         switch(type,
-##             state = {
-##                 mf <- model.frame(stateformula, newdata)
-##                 X <- model.matrix(stateformula, mf)
-##                 offset <- model.offset(mf)
-##                 },
-##             det = {
-##                 mf <- model.frame(detformula, newdata)
-##                 X <- model.matrix(detformula, mf)
-##                 offset <- model.offset(mf)
-##                 })
-##             },
-##     RasterStack = {
-##         cd.names <- names(newdata)
-##         npix <- prod(dim(newdata)[1:2])
-##         isfac <- is.factor(newdata)
-##         if(any(isfac))
-##             stop("This method currently does not handle factors")
-##         z <- as.data.frame(matrix(raster::getValues(newdata), npix))
-##         names(z) <- cd.names
-##         switch(type,
-##                state = {
-##                    varnames <- all.vars(stateformula)
-##                    if(!all(varnames %in% cd.names))
-##                        stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
-##                    mf <- model.frame(stateformula, z, na.action="na.pass")
-##                    X.terms <- attr(mf, "terms")
-##                    X <- model.matrix(X.terms, mf)
-##                    offset <- model.offset(mf)
-##                },
-##                det= {
-##                    varnames <- all.vars(detformula)
-##                    if(!all(varnames %in% cd.names))
-##                        stop("At least 1 covariate in the formula is not in the raster stack.\n   You probably need to assign them using\n\t 'names(object) <- covariate.names'")
-##                    mf <- model.frame(detformula, z, na.action="na.pass")
-##                    X.terms <- attr(mf, "terms")
-##                    X <- model.matrix(X.terms, mf)
-##                    offset <- model.offset(mf)
-##                })
-##     })
-##     out <- data.frame(matrix(NA, nrow(X), 4,
-##         dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
-##     mix <- object@mixture
-##     lam.mle <- coef(object, type="state")
-##     if(identical(mix, "ZIP") & identical(type, "state")) {
-##         psi.hat <- plogis(coef(object, type="psi"))
-##         if(is.null(offset))
-##             offset <- rep(0, nrow(X))
-##         warning("Method to compute SE for ZIP model has not been written")
-##     }
-##     for(i in 1:nrow(X)) {
-##         if(nrow(X) > 5000) {
-##             if(i %% 1000 == 0)
-##                 cat("  doing row", i, "of", nrow(X), "\n")
-##         }
-##         if(any(is.na(X[i,])))
-##             next
-##         if(identical(mix, "ZIP") & identical(type, "state")) {
-##             out$Predicted[i] <-
-##                 X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
-##             if(backTransform)
-##                 out$Predicted[i] <- exp(out$Predicted[i])
-##             out$SE <- NA
-##             ci <- c(NA, NA)
-##         } else {
-##             lc <- linearComb(object, X[i,], type, offset = offset[i])
-##             if(backTransform)
-##                 lc <- backTransform(lc)
-##             out$Predicted[i] <- coef(lc)
-##             out$SE[i] <- SE(lc)
-##             ci <- confint(lc, level=level)
-##         }
-##         out$lower[i] <- ci[1]
-##         out$upper[i] <- ci[2]
-##     }
-##     if(appendData) {
-##         if(!identical(cls, "RasterStack"))
-##             out <- data.frame(out, as(newdata, "data.frame"))
-##         else
-##             out <- data.frame(out, z)
-##     }
-##     if(identical(cls, "RasterStack")) {
-##         E.mat <- matrix(out[,1], dim(newdata)[1], dim(newdata)[2],
-##                         byrow=TRUE)
-##         E.raster <- raster::raster(E.mat)
-##         raster::extent(E.raster) <- raster::extent(newdata)
-##         out.rasters <- list(E.raster)
-##         for(i in 2:ncol(out)) {
-##             i.mat <- matrix(out[,i], dim(newdata)[1], dim(newdata)[2],
-##                             byrow=TRUE)
-##             i.raster <- raster::raster(i.mat)
-##             raster::extent(i.raster) <- raster::extent(newdata)
-##             out.rasters[[i]] <- i.raster
-##         }
-##         out.stack <- stack(out.rasters)
-##         names(out.stack) <- colnames(out)
-##         out <- out.stack
-##     }
-##     return(out)
-## })
-
-
 
 
 
@@ -760,7 +621,7 @@ setMethod("predict", "unmarkedFitPCount",
       }
 
     } else {
-      out <- predict_by_chunk(object, type, level, X, offset,
+      out <- predict_by_chunk(object, type, level, X, offset, backTransform,
                               chunk_size = 70, re.form)
     }
 
@@ -872,25 +733,8 @@ setMethod("predict", "unmarkedFitOccuFP",
                      X <- mm$X
                      offset <- mm$offset
                    })
-
-            out <- data.frame(matrix(NA, nrow(X), 4,
-                                     dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
-            for(i in 1:nrow(X)) {
-              if(nrow(X) > 5000) {
-                if(i %% 1000 == 0)
-                  cat("  doing row", i, "of", nrow(X), "rows\n")
-              }
-              if(any(is.na(X[i,])))
-                next
-              lc <- linearComb(object, X[i,], type, offset = offset)
-              if(backTransform)
-                lc <- backTransform(lc)
-              out$Predicted[i] <- coef(lc)
-              out$SE[i] <- SE(lc)
-              ci <- confint(lc)
-              out$lower[i] <- ci[1]
-              out$upper[i] <- ci[2]
-            }
+            out <- predict_by_chunk(object, type, level, X, offset,
+                                    backTransform, chunk_size=70)
             if(appendData) {
               out <- data.frame(out, newdata)
             }
@@ -1041,24 +885,10 @@ setMethod("predict", "unmarkedFitColExt",
                    offset <- model.offset(mf)
                })
     })
-    out <- data.frame(matrix(NA, nrow(X), 4,
-        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
-    for(i in 1:nrow(X)) {
-        if(nrow(X) > 5000) {
-            if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "\n")
-        }
-        if(any(is.na(X[i,])))
-            next
-        lc <- linearComb(object, X[i,], type)
-        if(backTransform)
-            lc <- backTransform(lc)
-        out$Predicted[i] <- coef(lc)
-        out$SE[i] <- SE(lc)
-        ci <- confint(lc, level=level)
-        out$lower[i] <- ci[1]
-        out$upper[i] <- ci[2]
-    }
+
+    out <- predict_by_chunk(object, type, level, X, offset,
+                            backTransform, chunk_size = 70)
+
     if(appendData) {
         if(!identical(cls, "RasterStack"))
             out <- data.frame(out, as(newdata, "data.frame"))
@@ -1259,41 +1089,21 @@ setMethod("predict", "unmarkedFitPCO",
                        offset <- model.offset(mf)
                    })
     })
-    out <- data.frame(matrix(NA, nrow(X), 4,
-        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
-    mix <- object@mixture
-    lam.mle <- coef(object, type="lambda")
-    if(identical(mix, "ZIP") & identical(type, "lambda")) {
-        psi.hat <- plogis(coef(object, type="psi"))
-        if(is.null(offset))
-            offset <- rep(0, nrow(X))
-        warning("Method to compute SE for ZIP model has not been written")
+
+    if(identical(object@mixture, "ZIP") & identical(type, "lambda")) {
+      warning("Method to compute SE for ZIP model has not been written")
+      out <- data.frame(matrix(NA, nrow(X), 4,
+              dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+      lam.mle <- coef(object, type="lambda")
+      psi.hat <- plogis(coef(object, type="psi"))
+      if(is.null(offset)) offset <- rep(0, nrow(X))
+      out$Predicted <- as.numeric(X %*% lam.mle + offset + log(1 - psi.hat))
+      if(backTransform) out$Predicted <- exp(out$Predicted)
+    } else {
+      out <- predict_by_chunk(object, type, level, X, offset,
+                              chunk_size = 70, backTransform)
     }
-    for(i in 1:nrow(X)) {
-        if(nrow(X) > 5000) {
-            if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "\n")
-        }
-        if(any(is.na(X[i,])))
-            next
-        if(identical(mix, "ZIP") & identical(type, "lambda")) {
-            out$Predicted[i] <-
-                X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
-            if(backTransform)
-                out$Predicted[i] <- exp(out$Predicted[i])
-            out$SE <- NA
-            ci <- c(NA, NA)
-        } else {
-            lc <- linearComb(object, X[i,], type, offset = offset[i])
-            if(backTransform)
-                lc <- backTransform(lc)
-            out$Predicted[i] <- coef(lc)
-            out$SE[i] <- SE(lc)
-            ci <- confint(lc, level=level)
-        }
-        out$lower[i] <- ci[1]
-        out$upper[i] <- ci[2]
-    }
+
     if(appendData) {
         if(!identical(cls, "RasterStack"))
             out <- data.frame(out, as(newdata, "data.frame"))
@@ -1481,41 +1291,21 @@ setMethod("predict", "unmarkedFitDSO",
                        offset <- model.offset(mf)
                    })
     })
-    out <- data.frame(matrix(NA, nrow(X), 4,
-        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
-    mix <- object@mixture
-    lam.mle <- coef(object, type="lambda")
-    if(identical(mix, "ZIP") & identical(type, "lambda")) {
-        psi.hat <- plogis(coef(object, type="psi"))
-        if(is.null(offset))
-            offset <- rep(0, nrow(X))
-        warning("Method to compute SE for ZIP model has not been written")
+
+    if(identical(object@mixture, "ZIP") & identical(type, "lambda")) {
+      warning("Method to compute SE for ZIP model has not been written")
+      out <- data.frame(matrix(NA, nrow(X), 4,
+              dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
+      lam.mle <- coef(object, type="lambda")
+      psi.hat <- plogis(coef(object, type="psi"))
+      if(is.null(offset)) offset <- rep(0, nrow(X))
+      out$Predicted <- as.numeric(X %*% lam.mle + offset + log(1 - psi.hat))
+      if(backTransform) out$Predicted <- exp(out$Predicted)
+    } else {
+      out <- predict_by_chunk(object, type, level, X, offset,
+                              chunk_size = 70, backTransform)
     }
-    for(i in 1:nrow(X)) {
-        if(nrow(X) > 5000) {
-            if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "\n")
-        }
-        if(any(is.na(X[i,])))
-            next
-        if(identical(mix, "ZIP") & identical(type, "lambda")) {
-            out$Predicted[i] <-
-                X[i,] %*% lam.mle + offset[i] + log(1 - psi.hat)
-            if(backTransform)
-                out$Predicted[i] <- exp(out$Predicted[i])
-            out$SE <- NA
-            ci <- c(NA, NA)
-        } else {
-            lc <- linearComb(object, X[i,], type, offset = offset[i])
-            if(backTransform)
-                lc <- backTransform(lc)
-            out$Predicted[i] <- coef(lc)
-            out$SE[i] <- SE(lc)
-            ci <- confint(lc, level=level)
-        }
-        out$lower[i] <- ci[1]
-        out$upper[i] <- ci[2]
-    }
+
     if(appendData) {
         if(!identical(cls, "RasterStack"))
             out <- data.frame(out, as(newdata, "data.frame"))
@@ -1719,24 +1509,9 @@ setMethod("predict", "unmarkedFitGMM",
                    })
         }
     )
-    out <- data.frame(matrix(NA, nrow(X), 4,
-        dimnames=list(NULL, c("Predicted", "SE", "lower", "upper"))))
-    for(i in 1:nrow(X)) {
-        if(nrow(X) > 5000) {
-            if(i %% 1000 == 0)
-                cat("  doing row", i, "of", nrow(X), "\n")
-        }
-        if(any(is.na(X[i,])))
-            next
-        lc <- linearComb(object, X[i,], type, offset = offset[i])
-        if(backTransform)
-            lc <- backTransform(lc)
-        out$Predicted[i] <- coef(lc)
-        out$SE[i] <- SE(lc)
-        ci <- confint(lc, level=level)
-        out$lower[i] <- ci[1]
-        out$upper[i] <- ci[2]
-    }
+
+    out <- predict_by_chunk(object, type, level, X, offset, chunk_size = 70)
+
     if(appendData) {
         if(!identical(cls, "RasterStack"))
             out <- data.frame(out, as(newdata, "data.frame"))

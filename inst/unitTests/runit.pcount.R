@@ -34,6 +34,10 @@ test.pcount.covs <- function()
                      c(1.91984184, -0.02987393,  2.49421875, -0.23350448),
                      tol = 1e-5)
 
+  fm <- pcount(~o1~x, data=umf, K=30, mixture='ZIP')
+  pr <- predict(fm, 'state')
+  checkTrue(inherits(pr, "data.frame"))
+  checkEqualsNumeric(as.numeric(pr[1,]), c(6.8184,2.0456,3.7871,12.2760), tol=1e-4)
 }
 
 test.pcount.randomeffects <- function()
