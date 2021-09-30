@@ -659,7 +659,7 @@ setMethod("predict", "unmarkedFitPCount",
 
 setMethod("predict", "unmarkedFitOccuFP",
           function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
-                   appendData = FALSE, ...)
+                   appendData = FALSE, level=0.95, ...)
           {
             if(missing(newdata) || is.null(newdata))
               newdata <- getData(object)
