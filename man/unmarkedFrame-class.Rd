@@ -27,8 +27,6 @@
 \alias{plot,unmarkedFrame,missing-method}
 \alias{plot,unmarkedFrameOccuMulti,missing-method}
 \alias{plot,unmarkedFrameOccuTTD,missing-method}
-\alias{powerAnalysis}
-\alias{powerAnalysis,formula,unmarkedFramePCount,numeric-method}
 \alias{projection,unmarkedFrame-method}
 \alias{projection}
 \alias{siteCovs,unmarkedFrame-method}

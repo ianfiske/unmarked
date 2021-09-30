@@ -10,7 +10,7 @@ importFrom(stats, confint, fitted, coef, vcov, predict, update, profile,
 importFrom(graphics, plot, hist, abline)
 importFrom(utils, head, read.csv)
 importFrom(plyr, ldply, alply, ddply)
-importFrom(grDevices, devAskNewPage, dev.interactive)
+importFrom(grDevices, devAskNewPage, dev.interactive, palette.colors)
 importFrom(raster, raster, stack, extent, "extent<-", getValues)
 importFrom(MASS, mvrnorm)
 importFrom(parallel, detectCores, makeCluster, stopCluster, clusterExport,
@@ -20,6 +20,7 @@ importFrom(methods, is, as, new, show, slot, .hasSlot, callGeneric,
 importFrom(lattice, xyplot, levelplot)
 importFrom(Rcpp, evalCpp)
 importFrom(pbapply, pbsapply, pblapply)
+
 
 # Fitting functions
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
@@ -41,7 +42,7 @@ exportClasses(unmarkedFit, unmarkedFitOccu, unmarkedFitOccuFP, unmarkedFitDS,
               unmarkedFrameGPC, unmarkedEstimate, unmarkedFitList,
               unmarkedModSel, unmarkedRanef, unmarkedFrameOccuMulti,
               unmarkedFrameOccuMS, unmarkedFrameGDR, unmarkedCrossVal,
-              unmarkedPostSamples)
+              unmarkedPostSamples, unmarkedPower, unmarkedPowerList)
 
 # Methods
 exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
@@ -51,9 +52,8 @@ exportMethods(backTransform, coef, confint, coordinates, fitted, getData,
               projection, residuals, sampleSize, SE, show, simulate, siteCovs,
               "siteCovs<-", summary, update, vcov, yearlySiteCovs,
               "yearlySiteCovs<-", "[", smoothed, projected, nonparboot, logLik,
-              LRT, ranef, bup, crossVal, posteriorSamples, sigma, randomTerms,
-              optimizePenalty)
-
+              LRT, ranef, bup, crossVal, posteriorSamples, sigma, randomTerms, 
+              optimizePenalty, unmarkedPowerList)
 
 S3method("print", "unmarkedPostSamples")
 
@@ -70,7 +70,7 @@ export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
 
 # Misc
 export(imputeMissing, gxhn, gxexp, gxhaz, dxhn, dxexp, dxhaz, drhn, drexp,
-    drhaz, grhn, grexp, grhaz, sight2perpdist, lambda2psi, SSE, vif)
+    drhaz, grhn, grexp, grhaz, sight2perpdist, lambda2psi, SSE, vif, powerAnalysis)
 
 useDynLib("unmarked", .registration=TRUE)
 useDynLib(unmarked_TMBExports)
