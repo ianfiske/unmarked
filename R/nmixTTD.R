@@ -6,10 +6,13 @@ nmixTTD <- function(stateformula=~1, detformula=~1, data, K=100,
 
   #Check arguments-------------------------------------------------------------
   if(!is(data, "unmarkedFrameOccuTTD")){
-    stop("Data is not an unmarkedFrameOccuTTD object.")
+    stop("Data is not an unmarkedFrameOccuTTD object.", call.=FALSE)
   }
   if(data@numPrimary > 1){
-    stop("Multi-season data not supported.")
+    stop("Multi-season data not supported.", call.=FALSE)
+  }
+  if(any(grepl("offset", as.character(stateformula)))){
+    stop("Offsets not currently supported", call.=FALSE)
   }
 
   engine <- match.arg(engine)

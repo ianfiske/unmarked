@@ -886,7 +886,7 @@ setMethod("predict", "unmarkedFitColExt",
                })
     })
 
-    out <- predict_by_chunk(object, type, level, X, offset,
+    out <- predict_by_chunk(object, type, level, X, offsets=NULL,
                             backTransform, chunk_size = 70)
 
     if(appendData) {
