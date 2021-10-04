@@ -460,5 +460,9 @@ test.pcountOpen.predict <- function(){
      are_df <- sapply(list(p1,p2,p3,p4), function(x) inherits(x, "data.frame"))
      checkTrue(all(are_df))
 
+     m2 <- pcountOpen(~x1, ~x2, ~x3, ~x4, umf, K=20, mixture="ZIP")
+     pr <- predict(m2,'lambda')
+     checkTrue(inherits(pr, "data.frame"))
+     checkEqualsNumeric(as.numeric(pr[1,]), c(4.9872,NA,NA,NA), tol=1e-4)
 }
 
