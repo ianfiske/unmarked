@@ -32,6 +32,7 @@ Imports:
     stats,
     TMB (>= 1.7.18),
     utils
+Suggests: shiny
 Description: Fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates.
 License: GPL (>=3)
 LazyLoad: yes

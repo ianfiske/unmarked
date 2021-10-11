@@ -43,24 +43,23 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
     parallel::clusterEvalQ(cl, library(unmarked))
   }
 
-  # Enable this later
   if(!is.null(options()$unmarked_shiny)&&options()$unmarked_shiny){
-    #ses <- options()$unmarked_shiny_session
-    #ses <- shiny::getDefaultReactiveDomain()
-    #pb <- shiny::Progress$new(ses, min=0, max=1)
-    #pb$set(message="Running simulations")
-    #fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
-    #  if(!is.null(design)) fit@data <- bdata[[i]]
-    #  if(inherits(fit, "unmarkedFitOccuMulti")){
-    #    fit@data@ylist <- sims[[i]]
-    #  } else{
-    #    fit@data@y <- sims[[i]]
-    #  }
-    #  out <- update(fit, data=fit@data, se=TRUE)
-    #  pb$set(value=i/nsim, message=NULL, detail=NULL)
-    #  out
-    #}, sims=sims, fit=object, bdata=bdata, cl=NULL)
-    #pb$close()
+    ses <- options()$unmarked_shiny_session
+    ses <- shiny::getDefaultReactiveDomain()
+    pb <- shiny::Progress$new(ses, min=0, max=1)
+    pb$set(message="Running simulations")
+    fits <- pbapply::pblapply(1:nsim, function(i, sims, fit, bdata=NULL){
+      if(!is.null(design)) fit@data <- bdata[[i]]
+      if(inherits(fit, "unmarkedFitOccuMulti")){
+        fit@data@ylist <- sims[[i]]
+      } else{
+        fit@data@y <- sims[[i]]
+      }
+      out <- update(fit, data=fit@data, se=TRUE)
+      pb$set(value=i/nsim, message=NULL, detail=NULL)
+      out
+    }, sims=sims, fit=object, bdata=bdata, cl=NULL)
+    pb$close()
 
   } else {
 
