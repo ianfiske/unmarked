@@ -353,3 +353,18 @@ setMethod("update", "unmarkedPower", function(object, ...){
   if(!is.null(args$nulls)) object@nulls <- args$nulls
   object
 })
+
+shinyPower <- function(object, ...){
+
+  if(!inherits(object, "unmarkedFit")){
+    stop("Requires unmarkedFit object", call.=FALSE)
+  }
+  if(!require(shiny)){
+    stop("Install the shiny library to use this function", call.=FALSE)
+  }
+
+  .shiny_env$.SHINY_MODEL <- object
+
+  shiny::runApp(system.file("shinyPower", package="unmarked"))
+
+}
