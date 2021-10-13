@@ -554,7 +554,18 @@ setMethod("fitted", "unmarkedFitGDR", function(object){
 
   T <- object@data@numPrimary
 
-  lam <- predict(object, "lambda", level=NULL)$Predicted
+  # Adjust log lambda when there is a random intercept
+  loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  loglam <- E_loglam(loglam, object, "lambda")
+  lam <- exp(loglam)
+  if(object@output == "density"){
+    ua <- getUA(object@data)
+    A <- rowSums(ua$a)
+    switch(object@data@unitsIn, m = A <- A / 1e6, km = A <- A)
+    switch(object@unitsOut,ha = A <- A * 100, kmsq = A <- A)
+    lam <- lam * A
+  }
+
   gp <- getP(object)
   rem <- gp$rem
   dist <- gp$dist
@@ -614,7 +625,17 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
 
   Kmin = apply(ysum, 1, max, na.rm=T)
 
-  lam <- predict(object, "lambda", level=NULL)$Predicted
+  loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  loglam <- E_loglam(loglam, object, "lambda")
+  lam <- exp(loglam)
+  if(object@output == "density"){
+    ua <- getUA(object@data)
+    A <- rowSums(ua$a)
+    switch(object@data@unitsIn, m = A <- A / 1e6, km = A <- A)
+    switch(object@unitsOut,ha = A <- A * 100, kmsq = A <- A)
+    lam <- lam * A
+  }
+
   if(object@mixture != "P"){
     alpha <- backTransform(object, "alpha")@estimate
   }
@@ -660,7 +681,17 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
 
 setMethod("simulate", "unmarkedFitGDR", function(object, nsim, seed=NULL, na.rm=FALSE){
 
-  lam <- predict(object, "lambda", level=NULL)$Predicted
+  # Adjust log lambda when there is a random intercept
+  loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  loglam <- E_loglam(loglam, object, "lambda")
+  lam <- exp(loglam)
+  if(object@output == "density"){
+    ua <- getUA(object@data)
+    A <- rowSums(ua$a)
+    switch(object@data@unitsIn, m = A <- A / 1e6, km = A <- A)
+    switch(object@unitsOut,ha = A <- A * 100, kmsq = A <- A)
+    lam <- lam * A
+  }
   dets <- getP(object)
 
   if(object@mixture != "P"){
