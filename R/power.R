@@ -5,7 +5,9 @@ setClass("unmarkedPower",
 )
 
 powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=list(),
-                          nsim=100, parallel=FALSE){
+                          datalist=NULL,
+                          nsim=ifelse(is.null(datalist), 100, length(datalist)),
+                          parallel=FALSE){
 
   stopifnot(inherits(object, "unmarkedFit"))
 
@@ -15,6 +17,37 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
 
   T <- 1
   bdata <- NULL
+  if(!is.null(datalist)){
+    if(length(datalist) != nsim){
+      stop("Length of data list must equal value of nsim", call.=FALSE)
+    }
+    tryCatch({test <- update(object, data=datalist[[1]], se=FALSE,
+                        control=list(maxit=1))
+    }, error=function(e){
+      stop("Incorrect format of entries in datalist", call.=FALSE)
+    })
+    bdata <- datalist
+    M <- numSites(bdata[[1]])
+    sims <- lapply(bdata, function(x){
+      #fit_temp@data <- x
+      #temporary workaround - not necessary??
+      #if(methods::.hasSlot(fit_temp, "knownOcc")){
+      #  fit_temp@knownOcc <- rep(FALSE, M)
+      #}
+      #simulate(fit_temp, 1)[[1]]
+      if(inherits(x, "unmarkedFrameOccuMulti")){
+        return(x@ylist)
+      } else if(inherits(x, "unmarkedFrameGDR")){
+        return(list(yDistance=x@yDistance, yRemoval=x@yRemoval))
+      } else {
+        return(x@y)
+      }
+    })
+    if(methods::.hasSlot(bdata[[1]], "numPrimary")){
+      T <- bdata[[1]]@numPrimary
+    }
+    J <- obsNum(bdata[[1]]) / T
+  }
   if(is.null(design)){
     sims <- simulate(fit_temp, nsim)
     M <- numSites(object@data)
