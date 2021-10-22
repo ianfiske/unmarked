@@ -281,13 +281,14 @@ setMethod("unmarkedPowerList", "list", function(object, ...){
 })
 
 setMethod("unmarkedPowerList", "unmarkedFit",
-  function(object, coefs, design, alpha=0.05, nsim=100, parallel=FALSE, ...){
+  function(object, coefs, design, alpha=0.05, nulls=list(),
+           nsim=100, parallel=FALSE, ...){
 
   ndesigns <- nrow(design)
   out <- lapply(1:ndesigns, function(i){
     cat(paste0("M = ",design$M[i],", J = ",design$J[i],"\n"))
     powerAnalysis(object, coefs, as.list(design[i,]), alpha=alpha, nsim=nsim,
-                  parallel=FALSE)
+                  nulls=nulls, parallel=FALSE)
   })
   unmarkedPowerList(out)
 })
@@ -362,7 +363,8 @@ shinyPower <- function(object, ...){
   if(!require(shiny)){
     stop("Install the shiny library to use this function", call.=FALSE)
   }
-
+  options(unmarked_shiny=TRUE)
+  on.exit(options(unmarked_shiny=FALSE))
   .shiny_env$.SHINY_MODEL <- object
 
   shiny::runApp(system.file("shinyPower", package="unmarked"))
