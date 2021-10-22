@@ -10,17 +10,14 @@ inline_wrap <- function(f, ...){
   out <- f(...)
   div(style='display:inline-block; width: 100px; vertical-align:top', out)
 }
-options(unmarked_shiny=TRUE)
-#on.exit(options(unmarked_shiny=FALSE))
 
 get_coef_ui <- function(coefs, nulls=FALSE){
 
-  out <- c(list(h3("Coefficient values")))
   parbase <- "coef_"
   if(nulls){
-    out <- c(list(h3("Null hypotheses")))
     parbase <- "null_"
   }
+  out <- list()
 
   for (i in 1:length(coefs)){
     pars <- coefs[[i]]
@@ -56,36 +53,52 @@ get_coefs <- function(input, nulls=FALSE){
 }
 
 get_design_ui <- function(input, default, name){
-  #out <- c(list(h4(paste0("Number of ",name))))
-  #inp <- reactiveValuesToList(input)
   nval <- input[[paste0("ndesign_",name)]]
   inps <- lapply(1:nval, function(x){
       inp_name <- paste0("design_",name,"_",x)
       inline_wrap(numericInput, inputId=inp_name, label=NULL,
-                  value=100, min=1, step=1)
+                  value=default, min=1, step=1)
     })
   inps
-  #c(out, inps)
 }
 
 get_design <- function(input){
   pass <- reactiveValuesToList(input)
   pass$shinymanager_where <- NULL
-  inp_sub <- unlist(pass[grepl("design_sites_",names(pass),fixed=TRUE)])
-  if(length(inp_sub)==1 & inp_sub[1] == numSites(mod@data)) return(NULL)
-  #list(M=inp_sub, J=obsNum(mod@data), T=1)
-  expand.grid(M=inp_sub, J=obsNum(mod@data), T=1)
+  inp_M <- unlist(pass[grepl("design_sites_",names(pass),fixed=TRUE)])
+  inp_M <- inp_M[1:input[["ndesign_sites"]]]
+  inp_J <- unlist(pass[grepl("design_obs_",names(pass),fixed=TRUE)])
+  inp_J <- inp_J[1:input[["ndesign_obs"]]]
+  expand.grid(J=sort(inp_J), M=sort(inp_M), T=1)
 }
 
 run_analysis <- function(mod, coefs, alpha, nsim, nulls, design){
-  if(!is.null(design) && any(sapply(design, length) > 1)){
-    out <- unmarkedPowerList(mod, coefs, design, alpha, nsim)
-  } else {
-    out <- powerAnalysis(mod, coefs=coefs, alpha=alpha, nsim=nsim, nulls=nulls,
-                         design=design)
-  }
-  out
+  unmarkedPowerList(mod, coefs, design, alpha, nulls, nsim)
 }
+
+get_coef_tabset <- function(coefs){
+  tabsetPanel(
+    tabPanel("Effect sizes", get_coef_ui(coefs)),
+    tabPanel("Null hypotheses", get_coef_ui(coefs, nulls=TRUE))
+  )
+}
+
+get_power_plot <- function(object, param){
+  if(inherits(object, "unmarkedPowerList")){
+    plot(object, param=param)
+  } else {
+    plot(1, type="n",xlab="",ylab="",xaxt="n",yaxt="n")
+  }
+}
+
+get_param_selector <- function(input, object){
+  dat <- suppressWarnings(summary(object))
+  dat <- dat[dat$M==dat$M[1]&dat$J==dat$J[1]&dat$T==dat$T[1],]
+  dat <- dat[dat$Parameter != "(Intercept)",]
+  ops <- dat$Parameter
+  selectInput("plot_param", "Parameter to plot", choices=ops)
+}
+
 
 function(input, output, session){
 
@@ -99,9 +112,8 @@ function(input, output, session){
 
   options(unmarked_shiny_session=session)
   output$plot <- renderPlot(plot(mod))
-  output$coef_ui <- renderUI(get_coef_ui(coefs))
+  output$coef_ui <- renderUI(get_coef_tabset(coefs))
   output$coefs <- renderPrint(get_coefs(input))
-  output$null_ui <- renderUI(get_coef_ui(coefs, nulls=TRUE))
   output$nulls <- renderPrint(get_coefs(input, nulls=TRUE))
   output$mod <- renderUI(HTML(paste0("<b>Model:</b> ","mod")))
   output$class <- renderUI(HTML(paste0("<b>Type:</b>&nbsp&nbsp&nbsp",
@@ -109,6 +121,7 @@ function(input, output, session){
   output$sites <- renderUI(HTML(paste0("<b>Sites:</b>&nbsp&nbsp",
                                        numSites(mod@data))))
   output$design_sites <- renderUI(get_design_ui(input,numSites(mod@data),"sites"))
+  output$design_obs <- renderUI(get_design_ui(input,obsNum(mod@data),"obs"))
 
   observeEvent(input$run, {
     coefs <- isolate(get_coefs(input))
@@ -116,11 +129,12 @@ function(input, output, session){
     design <- isolate(get_design(input))
     alpha <- isolate(input$alpha)
     nsims <- isolate(input$nsims)
+    pa <- run_analysis(mod, coefs, alpha, nsims, nulls, design)
     output$summary <- renderTable(
-                      summary(run_analysis(mod, coefs, alpha, nsims, nulls, design))
-                      #summary(powerAnalysis(mod, coefs=coefs, alpha=alpha,
-                      #                      nsim=nsims, nulls=nulls, design=design))
+                      suppressWarnings(summary(pa))
                       )
+    output$param_selector <- renderUI(get_param_selector(input, pa))
+    output$plot <- renderPlot(suppressWarnings(get_power_plot(pa, input$plot_param)))
   })
 }
 
