@@ -47,14 +47,13 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
       T <- bdata[[1]]@numPrimary
     }
     J <- obsNum(bdata[[1]]) / T
-  }
-  if(is.null(design)){
-    sims <- simulate(fit_temp, nsim)
-    M <- numSites(object@data)
-    if(methods::.hasSlot(object@data, "numPrimary")){
-      T <- object@data@numPrimary
-    }
-    J <- obsNum(object@data) / T
+  } else if(is.null(design)){
+      sims <- simulate(fit_temp, nsim)
+      M <- numSites(object@data)
+      if(methods::.hasSlot(object@data, "numPrimary")){
+        T <- object@data@numPrimary
+      }
+      J <- obsNum(object@data) / T
   } else {
     bdata <- bootstrap_data(fit_temp@data, nsim, design)
     sims <- lapply(bdata, function(x){
@@ -66,6 +65,9 @@ powerAnalysis <- function(object, coefs=NULL, design=NULL, alpha=0.05, nulls=lis
       simulate(fit_temp, 1)[[1]]
     })
     M <- design$M
+    if(methods::.hasSlot(fit_temp@data, "numPrimary")){
+      T <- fit_temp@data@numPrimary
+    }
     J <- design$J
   }
 

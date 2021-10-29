@@ -41,3 +41,31 @@ test.powerAnalysis <- function(){
   pl <- unmarkedPowerList(template_model, effect_sizes, design=scenarios)
   checkTrue(inherits(pl, "unmarkedPowerList"))
 }
+
+test.customdata <- function(){
+  set.seed(123)
+  coefs <- list(state=c(intercept=0, elev=-0.3), det=c(intercept=0))
+  design <- list(M=300, J=8)
+  forms <- list(state=~elev, det=~1)
+  pco_umf <- simulate("pcount", formulas=forms, coefs=coefs, design=design, nsim=30)
+
+  # convert pcount to occu umf
+  conv_umf <- lapply(pco_umf, function(x){
+    y <- x@y
+    y[y > 0] <- 1
+    unmarkedFrameOccu(y=y, siteCovs=siteCovs(x),
+                    obsCovs=obsCovs(x))
+  })
+
+  fit <- occu(~1~elev, conv_umf[[1]])
+
+  pa <- powerAnalysis(fit, coefs=coefs, datalist=conv_umf)
+  checkEqualsNumeric(summary(pa)$Power[2], 0.96667, tol=1e-4)
+
+  pa2 <- powerAnalysis(fit, coefs=coefs, nsim=30)
+  checkEqualsNumeric(summary(pa2)$Power[2], 0.7333, tol=1e-4)
+
+  checkException(powerAnalysis(fit, coefs=coefs, datalist=pco_umf))
+  checkException(powerAnalysis(fit, coefs=coefs, datalist=conv_umf, nsim=10))
+
+}

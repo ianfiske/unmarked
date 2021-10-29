@@ -234,7 +234,7 @@ test.simulate.fromscratch <- function(){
            rem=c(intercept=log(0.2/(1-0.2)), oc1=0.4))
   design <- list(M=500, Jdist=4, Jrem=5, T=1)
   umf16 <- simulate("gdistremoval", design=design, formulas=formulas, coefs=cf,
-                 dist.breaks=c(0,25,50,75,100), unitsIn='m')
+                 dist.breaks=c(0,25,50,75,100), unitsIn='m', output='abund')
   fm <- gdistremoval(~sc1, removalformula=~oc1, distanceformula=~1,
                      data=umf16)
   checkEqualsNumeric(coef(fm), c(1.5611,0.6926,3.9466,-1.4288,0.4017),tol=1e-3)
