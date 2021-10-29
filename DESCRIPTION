@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 1.1.1.9010
-Date: 2021-10-05
+Version: 1.1.1.9011
+Date: 2021-10-29
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(

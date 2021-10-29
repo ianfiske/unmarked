@@ -17,7 +17,9 @@ examples.
 
 \usage{
   powerAnalysis(object, coefs=NULL, design=NULL, alpha=0.05, nulls=list(),
-                nsim=100, parallel=FALSE)
+                datalist=NULL, 
+                nsim=ifelse(is.null(datalist), 100, length(datalist)), 
+                parallel=FALSE)
 }
 
 \arguments{
@@ -45,6 +47,10 @@ examples.
   \item{nulls}{If provided, a list matching the structure of \code{coefs} which
     defines the null hypothesis value for each parameter. By default the null
     is 0 for all parameters.
+  }
+  \item{datalist}{An optional list of previously-simulated datasets, in the form
+    of \code{unmarkedFrames} matching the model type of \code{object}, which
+    will be used for the power analysis simulations.
   }
   \item{nsim}{Number of simulations to conduct}
   \item{parallel}{If \code{TRUE}, run folds in parallel. This may speed up 
