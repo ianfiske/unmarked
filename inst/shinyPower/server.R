@@ -69,7 +69,11 @@ get_design <- function(input){
   inp_M <- inp_M[1:input[["ndesign_sites"]]]
   inp_J <- unlist(pass[grepl("design_obs_",names(pass),fixed=TRUE)])
   inp_J <- inp_J[1:input[["ndesign_obs"]]]
+<<<<<<< HEAD
   expand.grid(J=sort(inp_J), M=sort(inp_M), T=1)
+=======
+  expand.grid(J=inp_J, M=inp_M, T=1)
+>>>>>>> 279b7be9fc69ef07d4a6d7582acc5b6876e097bb
 }
 
 run_analysis <- function(mod, coefs, alpha, nsim, nulls, design){
