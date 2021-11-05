@@ -138,4 +138,7 @@ fmzip <- pcount(~1~1, umf, engine="TMB", mixture="ZIP", K=50)
 checkTrue(inherits(fmnb@TMB, "list"))
 checkTrue(all(names(fmnb@estimates@estimates)==c("state","det","alpha")))
 
+# Site random effects in det formula
+fm <- pcount(~(1|group)~1, umf2, K=50)
+checkTrue(sigma(fm)$Model[1]=="p")
 }

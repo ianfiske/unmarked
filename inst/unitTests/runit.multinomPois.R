@@ -137,4 +137,8 @@ test.ranef.multinomPois <- function(){
             piFun="fake", obsToY=umf@obsToY, siteCovs=sc)
 
   checkException(multinomPois(~observer-1 ~x1 + (1|ref), umf3))
+
+  # Site covs in detection formula
+  fm <- multinomPois(~(1|ref)~1, umf2)
+  checkTrue(sigma(fm)$Model[1]=="p")
 }

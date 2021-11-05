@@ -369,3 +369,25 @@ get_ranef_inputs <- function(forms, datalist, dms, Zs){
   list(data=dat, pars=pars, rand_ef=rand_ef)
 }
 
+add_covariates <- function(covs_long, covs_short, n){
+
+  if(is.null(covs_short)){
+    return(covs_long)
+  }
+
+  if(is.null(covs_long)){
+    covs_long <- data.frame(.dummy=rep(1, n))
+  } else {
+    stopifnot(nrow(covs_long) == n)
+  }
+
+  exp_factor <- nrow(covs_long) / nrow(covs_short)
+  stopifnot(exp_factor > 1)
+
+  rep_idx <- rep(1:nrow(covs_short), each=exp_factor)
+
+  to_add <- covs_short[rep_idx, ]
+  stopifnot(nrow(covs_long) == nrow(to_add))
+
+  cbind(covs_long, to_add)
+}

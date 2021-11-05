@@ -323,4 +323,16 @@ test.occu.randomeffects <- function(){
   checkEqualsNumeric(fmi@TMB$par["beta_det"], 10)
   checkException(occu(~1~cov1 + (1|site_id), umf, starts=rep(0,3)))
   checkException(occu(~1~cov1 + (1|site_id), umf, starts=c(100,0,0,0)))
+
+  # Check site covs as random effects in obs model
+  fm <- occu(~(1|site_id)~1, umf)
+  checkTrue(sigma(fm)$Model[1]=="p")
+  pr <- predict(fm, 'det')
+  checkTrue(inherits(pr, 'data.frame'))
+
+  umf2 <- unmarkedFrameOccu(y=getY(umf), siteCovs=NULL,
+  obsCovs=data.frame(obs_id=factor(sample(letters[1:5], length(getY(umf)), replace=T))))
+  fm <- occu(~(1|obs_id)~1, umf2)
+  checkTrue(sigma(fm)$Model[1]=="p")
+
 }
