@@ -335,4 +335,18 @@ test.occu.randomeffects <- function(){
   fm <- occu(~(1|obs_id)~1, umf2)
   checkTrue(sigma(fm)$Model[1]=="p")
 
+  # Check vcov method
+  v1 <- vcov(fm)
+  checkEqualsNumeric(dim(v1), c(2,2))
+  checkEquals(colnames(v1), c("psi(Int)","p(Int)"))
+
+  v2 <- vcov(fm, fixedOnly=FALSE)
+  checkEqualsNumeric(dim(v2), c(7,7))
+  checkEquals(colnames(v2), c("psi(Int)","p(Int)",rep("p(b_det)", 5)))
+
+  fl <- fitList(m1=fm, m2=fm)
+  options(warn=2)
+  on.exit(options(warn=0))
+  test <- modSel(fl) # shouldn't warn
+  options(warn=0)
 }

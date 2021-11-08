@@ -391,3 +391,21 @@ add_covariates <- function(covs_long, covs_short, n){
 
   cbind(covs_long, to_add)
 }
+
+vcov_TMB <- function(object, type, fixedOnly){
+
+  if(!missing(type)){
+    return(vcov(object[type], fixedOnly=fixedOnly))
+  }
+
+  v <- get_joint_cov(TMB::sdreport(object@TMB, getJointPrecision=TRUE))
+  no_sig <- !grepl("lsigma_",colnames(v))
+  v <- v[no_sig, no_sig]
+  colnames(v) <- rownames(v) <- names(coef(object, fixedOnly=FALSE))
+
+  if(fixedOnly){
+    no_re <- !grepl("b_", colnames(v))
+    v <- v[no_re, no_re]
+  }
+  v
+}

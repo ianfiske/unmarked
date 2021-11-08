@@ -1991,9 +1991,10 @@ setMethod("coef", "unmarkedFit",
 
 
 setMethod("vcov", "unmarkedFit",
-    function (object, type, altNames = TRUE, method = "hessian", ...)
+    function (object, type, altNames = TRUE, method = "hessian", fixedOnly=TRUE, ...)
 {
     method <- match.arg(method, c("hessian", "nonparboot"))
+    if(.hasSlot(object, "TMB") && !is.null(object@TMB)) method <- "TMB"
     switch(method,
            hessian = {
             if (is.null(object@opt$hessian)) {
@@ -2006,6 +2007,9 @@ setMethod("vcov", "unmarkedFit",
                 stop("No bootstrap samples have been drawn. Use nonparboot first.")
                 }
             v <- object@covMatBS
+        },
+        TMB = {
+          return(vcov_TMB(object, type, fixedOnly))
         })
     rownames(v) <- colnames(v) <- names(coef(object, altNames=altNames))
     if (missing(type)) {
