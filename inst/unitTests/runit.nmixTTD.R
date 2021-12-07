@@ -23,8 +23,12 @@ test.nmixTTD.P.exp <- function(){
   ttd[N == 0,] <- 5 # Not observed where N = 0; ttd set to Tmax
   ttd[ttd >= Tmax] <- 5 # Crop at Tmax
   umf <- unmarkedFrameOccuTTD(y = ttd, surveyLength=5,
-                            siteCovs = data.frame(covDens=covDens),
-                            obsCovs = data.frame(covDet=as.vector(t(covDet))))
+                            siteCovs = data.frame(covDens=covDens,
+                                                  cdens2=rnorm(length(covDens)),
+                                                  cdens3=rnorm(length(covDens))),
+                            obsCovs = data.frame(covDet=as.vector(t(covDet)),
+                                                 cdet2=rnorm(length(covDet)),
+                                                 cdet3=rnorm(length(covDet))))
   fit <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10)
   checkEqualsNumeric(coef(fit), c(-0.2846,1.1224,0.2221,-1.06713), tol=1e-4)
   #with NA
@@ -81,6 +85,13 @@ test.nmixTTD.P.exp <- function(){
 
   #Check error when random effect in formula
   checkException(nmixTTD(~(1|dummy), ~1, umf))
+
+  #Check with more than 1 detection covariate
+  fit3 <- nmixTTD(~covDens, ~covDet+cdet2+cdet3, data=umf, K=max(N)+10)
+  checkEqualsNumeric(length(coef(fit3, "det")), 4)
+  fit4 <- nmixTTD(~covDens+cdens2, ~covDet+cdet2+cdet3, data=umf, K=max(N)+10)
+  checkEqualsNumeric(length(coef(fit4, "state")), 3)
+  checkEqualsNumeric(length(coef(fit4, "det")), 4)
 }
 
 test.nmixTTD.P.weib <- function(){

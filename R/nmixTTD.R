@@ -49,7 +49,7 @@ nmixTTD <- function(stateformula=~1, detformula=~1, data, K=100,
 
   pinds <- matrix(NA, nrow=4, ncol=2)
   pinds[1,] <- c(1, nAP)
-  pinds[2,] <- c((nAP+1):(nAP+nDP))
+  pinds[2,] <- c((nAP+1),(nAP+nDP))
   pinds[3,] <- nAP+nDP+1
   pinds[4,] <- nAP+nDP+(mixture=="NB")+1
 
