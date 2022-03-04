@@ -81,6 +81,11 @@ test_that("occuMulti can fit models with covariates",{
   expect_equivalent(length(gp), 2)
   expect_equivalent(dim(gp[[1]]), c(N,J))
 
+  # ranef
+  expect_error(ran <- ranef(fm))
+  ran <- ranef(fm, species=1)
+  expect_equal(bup(ran), rep(1,5))
+
   #Check site cov can be used in detection formula
   detformulas <- c('~occ_cov1','~det_cov2')
   fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE)

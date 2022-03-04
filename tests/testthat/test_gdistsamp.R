@@ -1,5 +1,56 @@
 context("gdistsamp fitting function")
 
+test_that("unmarkedFrameGDS subset works",{
+    y <- matrix(1:27, 3)
+    sc <- data.frame(x1 = 1:3)
+    ysc <- list(x2 = matrix(1:9, 3))
+
+    umf1 <- unmarkedFrameGDS(
+        y = y,
+        siteCovs = sc,
+        yearlySiteCovs = ysc,
+        numPrimary = 3,
+        survey="point",
+        dist.breaks=c(0, 10, 20, 30),
+        unitsIn="m")
+
+    dat <- as(umf1, "data.frame")
+    expect_equal(nrow(dat), nrow(y))
+
+    umf1.site1 <- umf1[1,]
+    expect_equal(umf1.site1@y, y[1,, drop=FALSE])
+    expect_equal(umf1.site1@siteCovs, sc[1,, drop=FALSE])
+    expect_equivalent(unlist(umf1.site1@yearlySiteCovs),
+        ysc$x2[1,, drop=FALSE])
+    expect_equal(umf1.site1@numPrimary, 3)
+    expect_equal(umf1.site1@survey, "point")
+
+    umf1.sites1and3 <- umf1[c(1,3),]
+
+
+    umf2 <- unmarkedFrameGDS(
+        y = y,
+        siteCovs = sc,
+        yearlySiteCovs = ysc,
+        numPrimary = 3,
+        survey="line",
+        dist.breaks=c(0, 10, 20, 30),
+        tlength=rep(1,nrow(y)),
+        unitsIn="m")
+
+    dat <- as(umf2, "data.frame")
+
+    umf2.site1 <- umf2[1,]
+    expect_equal(umf2.site1@y, y[1,, drop=FALSE])
+    expect_equal(umf2.site1@siteCovs, sc[1,, drop=FALSE])
+    expect_equivalent(unlist(umf2.site1@yearlySiteCovs),
+        ysc$x2[1,, drop=FALSE])
+    expect_equal(umf2.site1@numPrimary, 3)
+    expect_equal(umf2.site1@survey, "line")
+
+    umf2.sites1and3 <- umf2[c(1,3),]
+})
+
 test_that("gdistsamp with halfnorm keyfunction works",{
     #Line
     set.seed(343)
@@ -70,6 +121,7 @@ test_that("gdistsamp with halfnorm keyfunction works",{
     expect_equal(res[1,1], -0.07133, tol=1e-4)
     r <- ranef(fm_C)
     expect_equal(dim(r@post), c(30,108,1))
+    expect_equal(bup(r)[1], 1.94300, tol=1e-5)
     s <- simulate(fm_C, 2)
     expect_is(s, "list")
     expect_equal(length(s), 2)

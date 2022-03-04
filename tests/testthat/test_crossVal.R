@@ -1,6 +1,7 @@
 context("crossVal method")
 
-#skip_on_cran()
+skip_on_cran()
+skip_on_ci()
 
 set.seed(123)
 data(frogs)
@@ -38,7 +39,7 @@ test_that("crossVal works in parallel",{
   set.seed(123)
   kfold <- crossVal(fm, method='Kfold', folds=10)
   set.seed(123)
-  kfold_par <- crossVal(fm, method='Kfold', folds=10, parallel=TRUE)
+  kfold_par <- crossVal(fm, method='Kfold', folds=10, parallel=TRUE, ncores=2)
   expect_equal(kfold@stats, kfold_par@stats)
 
 

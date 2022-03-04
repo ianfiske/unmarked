@@ -1,5 +1,32 @@
 context("pcountOpen fitting function")
 
+test_that("unmarkedFramePCO subset works",{
+    y <- matrix(1:27, 3)
+    sc <- data.frame(x1 = 1:3)
+    ysc <- list(x2 = matrix(1:9, 3))
+    oc <- list(x3 = matrix(1:27, 3))
+
+    umf1 <- unmarkedFramePCO(
+        y = y,
+        siteCovs = sc,
+        yearlySiteCovs = ysc,
+        obsCovs = oc,
+        numPrimary = 3)
+
+    dat <- as(umf1, "data.frame")
+
+    umf1.site1 <- umf1[1,]
+    expect_equal(umf1.site1@y, y[1,, drop=FALSE])
+    expect_equal(umf1.site1@siteCovs, sc[1,, drop=FALSE])
+    expect_equivalent(unlist(umf1.site1@obsCovs), oc$x3[1,])
+    expect_equivalent(unlist(umf1.site1@yearlySiteCovs),
+        ysc$x2[1,, drop=FALSE])
+    expect_equal(umf1.site1@numPrimary, 3)
+    expect_is(umf1.site1, "unmarkedFramePCO")
+
+    umf1.sites1and3 <- umf1[c(1,3),]
+})
+
 test_that("pcountOpen can fit a null model",{
   y <- matrix(c(
       3, 2, 1, 4,
@@ -42,6 +69,8 @@ test_that("pcountOpen can fit a null model",{
 
   r <- ranef(fm1)
   expect_equal(dim(r@post), c(5,11,4))
+  expect_equal(dim(bup(r)), c(5,4))
+  expect_equal(bup(r)[1], 3.00236, tol=1e-5)
 
   pb <- parboot(fm1, nsim=1)
   expect_is(pb, "parboot")

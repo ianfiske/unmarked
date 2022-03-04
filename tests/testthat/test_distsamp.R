@@ -14,11 +14,17 @@ test_that("unmarkedFrameDS identifies problems with inputs",{
         dist.breaks=c(5,10)/1000, survey="line", tlength=rep(1, 5),
         unitsIn="km"))
 
+  #Check error when obs covs are provided
+  oc <- data.frame(z=rnorm(10))
+  expect_error(unmarkedFrameDS(y=y, siteCovs=siteCovs, obsCovs=oc))
+
   umf <- unmarkedFrameDS(y = y, siteCovs = siteCovs,
         dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, 5),
         unitsIn="km")
-
   expect_is(umf, "unmarkedFrameDS")
+
+  expect_error(obsCovs(umf) <- oc)
+
 })
 
 test_that("distsamp works with covariates", {
@@ -76,6 +82,53 @@ test_that("distsamp methods work",{
   pdf(NULL)
   plot(fm)
   dev.off()
+})
+
+test_that("distsamp ranef method works",{
+
+   set.seed(344)
+    lambda <- 10
+    sigma <- 20
+    npts <- 10
+    radius <- 50
+    breaks <- seq(0, 50, by=10)
+    A <- (2*radius)^2 / 10000 # Area (ha) of square containing circle
+    y <- matrix(0, npts, length(breaks)-1)
+    N <- integer(npts)
+    for(i in 1:npts) {
+        M <- rpois(1, lambda * A) # Individuals within the square
+        xy <- cbind(x=runif(M, -radius, radius),
+                    y=runif(M, -radius, radius))
+        d <- apply(xy, 1, function(x) sqrt(x[1]^2 + x[2]^2))
+        d <- d[d <= radius]
+        N[i] <- length(d)
+        if(length(d)) {
+            p <- exp(-d^2 / (2 * sigma^2)) # half-normal
+            d <- d[rbinom(length(d), 1, p) == 1]
+            y[i,] <- table(cut(d, breaks, include.lowest=TRUE))
+        }
+    }
+
+    umf1 <- unmarkedFrameDS(y = y, survey="point",
+                            dist.breaks=breaks, unitsIn="m")
+    m1 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)))
+    m2 <- distsamp(~1 ~1, umf1, starts=c(log(5), log(20)),
+                    output="abund")
+
+    re1 <- ranef(m1, K=20)
+    re2 <- ranef(m2, K=20)
+
+    expect_equal(mode1 <- bup(re1, stat="mode"), bup(re2, "mode"))
+    expect_equal(confint(re1), confint(re2))
+
+    ar1 <- as(re1, "array")
+
+  expect_equivalent(colSums(ar1), c(
+    0.000000e+00, 2.334960e-01, 8.517322e-01, 1.524261e+00, 1.811577e+00,
+    1.691348e+00, 1.421738e+00, 1.085003e+00, 7.119743e-01, 3.898376e-01,
+    1.782052e-01, 6.895313e-02, 2.296231e-02, 6.685198e-03, 1.725009e-03,
+    3.991224e-04, 8.362689e-05, 1.600128e-05, 2.816112e-06, 4.586885e-07,
+    6.951721e-08), tolerance=1e-6)
 })
 
 test_that("distsamp line keyfunctions work",{

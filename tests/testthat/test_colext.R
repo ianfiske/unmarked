@@ -58,6 +58,11 @@ test_that("colext model fitting works", {
   expect_equivalent(coef(fm4),
                     c(0.2662,-2.0534,-1.0579,0.2165,0.6877,1.10342), tol=1e-4)
 
+  # ranef
+  r <- ranef(fm4)
+  expect_equal(dim(r@post), c(nsites, nrep, nyr))
+  expect_equal(dim(bup(r)), c(nsites, nyr))
+
 })
 
 test_that("colext handles missing values",{

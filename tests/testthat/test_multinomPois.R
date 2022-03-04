@@ -97,6 +97,7 @@ test_that("multinomPois can fit a removal model",{
 
     expect_warning(r <- ranef(m2_C))
     expect_equal(dim(r@post), c(3,56,1))
+    expect_equal(bup(r), c(10.794,0.000,2.655), tol=1e-4)
 
     expect_warning(s <- simulate(m2_C, 2))
     expect_equal(length(s), 2)
@@ -109,6 +110,54 @@ test_that("multinomPois can fit a removal model",{
 })
 
 test_that("multinomPois can fit a double observer model",{
+  nSites <- 50
+  lambda <- 10
+  p1 <- 0.5
+  p2 <- 0.3
+  cp <- c(p1*(1-p2), p2*(1-p1), p1*p2)
+  set.seed(9023)
+  N <- rpois(nSites, lambda)
+  y <- matrix(NA, nSites, 3)
+  for(i in 1:nSites) {
+    y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:3]
+  }
+
+  observer <- matrix(c('A','B'), nSites, 2, byrow=TRUE)
+
+  umf <- expect_warning(unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
+         type="double"))
+
+  fm_C <- multinomPois(~observer-1 ~1, umf, engine="C")
+  expect_equivalent(coef(fm_C), c(2.2586622, 0.1739752, -0.5685933), tol = 1e-5)
+  expect_is(ranef(fm_C, K=30), "unmarkedRanef")
+
+})
+
+test_that("multinomPois can fit a dependent double observer model",{
+  nSites <- 50
+  lambda <- 10
+  p1 <- 0.5
+  p2 <- 0.3
+  cp <- c(p1, p2*(1-p1))
+  set.seed(9023)
+  N <- rpois(nSites, lambda)
+  y <- matrix(NA, nSites, 2)
+  for(i in 1:nSites) {
+    y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:2]
+  }
+  # Fit model
+  observer <- matrix(c('A','B'), nSites, 2, byrow=TRUE)
+  umf <- expect_warning(unmarkedFrameMPois(y=y, obsCovs=list(observer=observer),
+         type="depDouble"))
+
+  fm_C <- multinomPois(~observer-1 ~1, umf, engine="C")
+  expect_equivalent(coef(fm_C), c(2.0416086, 0.7430343, 0.4564236), tol = 1e-5)
+  expect_warning(r <- ranef(fm_C, K=30))
+  expect_is(r, "unmarkedRanef")
+})
+
+
+test_that("multinomPois handles NAs",{
     y <- matrix(c(
         1, 0, 0,
         2, 1, 0,
@@ -126,22 +175,8 @@ test_that("multinomPois can fit a double observer model",{
 
     umf <- unmarkedFrameMPois(y = y, obsCovs = list(x=oc), type="double")
 
-    #m1_R <- multinomPois(~1 ~1, umf, engine="R")
-    m1_C <- multinomPois(~1 ~1, umf, engine="C")
-    expect_equivalent(coef(m1_C), c(1.3137876, 0.2411609), tol=1e-5)
-    #expect_equivalent(coef(m1_R),coef(m1_C))
-
     expect_warning(m2 <- multinomPois(~x ~1, umf, starts=c(1.3, 0, 0.2)))
     expect_equal(m2@sitesRemoved, 4:6)
-
-    gp <- getP(m1_C)
-    expect_equal(dim(gp), c(6,3))
-
-    umf <- unmarkedFrameMPois(y = y[,1:2], type="depDouble")
-    m1_C <- multinomPois(~1 ~1, umf, engine="C")
-
-    gp <- getP(m1_C)
-    expect_equal(dim(gp), c(6,2))
 
 })
 

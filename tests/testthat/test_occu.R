@@ -85,13 +85,27 @@ test_that("occu can fit models with covariates",{
   res <- residuals(fm)
   expect_equal(dim(res), c(5,2))
   expect_equal(res[1,1], -0.57380, tol=1e-4)
+
   r <- ranef(fm)
   expect_equal(dim(r@post), c(5,2,1))
+  expect_equal(bup(r), c(1,1,1,1,1))
+
   s <- simulate(fm, 2)
   expect_equal(length(s), 2)
   expect_equal(dim(s[[1]]), dim(umf@y))
-  pb <- parboot(fm, nsim=1)
-  expect_is(pb, "parboot")
+
+  fitstats <- function(fm) {
+      observed <- getY(fm@data)
+      expected <- fitted(fm)
+      resids <- residuals(fm)
+      sse <- sum(resids^2,na.rm=TRUE)
+      chisq <- sum((observed - expected)^2 / expected,na.rm=TRUE)
+      freeTuke <- sum((sqrt(observed) - sqrt(expected))^2,na.rm=TRUE)
+      out <- c(SSE=sse, Chisq=chisq, freemanTukey=freeTuke)
+      return(out)
+  }
+  pb <- parboot(fm, fitstats, nsim=3)
+  expect_equal(dim(pb@t.star), c(3,3))
 
   y <- matrix(rep(0,10),5,2)
   siteCovs <- data.frame(x = c(0,2,3,4,1))
@@ -218,6 +232,43 @@ test_that("occu cloglog link function works",{
 
   #Check error if wrong link function
   expect_error(occu(~ele+wind ~ele+forest, occ.frame, linkPsi="fake"))
+})
+
+test_that("occu predict works",{
+  if(!require(raster))
+        stop("raster package required")
+  set.seed(55)
+  R <- 20
+  J <- 4
+  x1 <- rnorm(R)
+  x2 <- factor(c(rep('A', R/2), rep('B', R/2)))
+  x3 <- matrix(rnorm(R*J), R, J)
+  z <- rbinom(R, 1, 0.5)
+  y <- matrix(rbinom(R*J, 1, z*0.6), R, J)
+  x1[1] <- NA
+  x3[2,1] <- NA
+  x3[3,] <- NA
+  umf1 <- unmarkedFrameOccu(y=y, siteCovs=data.frame(x1=x1, x2=x2),
+                              obsCovs=list(x3=x3))
+  fm1 <- expect_warning(occu(~x3 ~x1+x2, umf1))
+  E1.1 <- expect_warning(predict(fm1, type="state"))
+  E1.2 <- expect_warning(predict(fm1, type="det"))
+
+  nd1.1 <- data.frame(x1=0, x2=factor('A', levels=c('A','B')))
+  nd1.2 <- data.frame(x3=0)
+  E1.3 <- predict(fm1, type="state", newdata=nd1.1, appendData=TRUE)
+  E1.4 <- predict(fm1, type="det", newdata=nd1.2)
+
+  r1 <- raster(matrix(rnorm(100), 10))
+  expect_error(predict(fm1, type="state", newdata=r1))
+  s1 <- stack(r1)
+  expect_error(predict(fm1, type="state", newdata=s1))
+  names(s1) <- c("x3")
+  E1.5 <- predict(fm1, type="det", newdata=s1)
+  E1.5 <- predict(fm1, type="det", newdata=s1, appendData=TRUE)
+
+  E1.6 <- expect_warning(predict(fm1, type="state", level=0.9))
+  expect_equal(as.numeric(E1.6[1,3:4]), c(0.01881844, 0.8538048))
 })
 
 test_that("occu predict can handle complex formulas",{

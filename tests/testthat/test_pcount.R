@@ -49,6 +49,13 @@ test_that("pcount can fit simple models",{
 
   r <- ranef(fm)
   expect_equal(dim(r@post), c(5,31,1))
+  expect_equal(bup(r), c(8.01, 7.01, 8.07, 5.03, 4.01), tol=1e-3)
+  fm2 <- update(fm, mixture="NB")
+  r2 <- ranef(fm2)
+  expect_is(r2, "unmarkedRanef")
+  fm3 <- update(fm, mixture="ZIP")
+  r3 <- ranef(fm3)
+  expect_is(r3, "unmarkedRanef")
 
   s <- simulate(fm, n=2)
   expect_equal(length(s), 2)
@@ -56,6 +63,30 @@ test_that("pcount can fit simple models",{
 
   pb <- parboot(fm, nsim=1)
   expect_is(pb, "parboot")
+
+})
+
+test_that("pcount predict works",{
+
+  set.seed(55)
+  R <- 20
+  J <- 4
+  N <- rpois(R, 2)
+  y <- matrix(rbinom(R*J, N, 0.7), R, J)
+  umf1 <- unmarkedFramePCount(y=y)
+
+  fm1 <- pcount(~1 ~1, umf1, K=40)
+  E1.1 <- predict(fm1, type="state")
+  E1.2 <- predict(fm1, type="det")
+
+  fm2 <- pcount(~1 ~1, umf1, K=40, mixture="NB")
+  E2.1 <- predict(fm2, type="state")
+  expect_error(predict(fm2, type="alpha"))
+
+  fm3 <- pcount(~1 ~1, umf1, K=40, mixture="ZIP")
+  E3.1 <- predict(fm3, type="state")
+  expect_error(predict(fm3, type="psi"))
+  expect_equal(E3.1[1,1], 1.818512, tol=1e-6)
 
 })
 
