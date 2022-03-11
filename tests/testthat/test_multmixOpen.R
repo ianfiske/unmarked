@@ -147,20 +147,30 @@ test_that("multmixOpen can fit double observer models",{
                 M=300, T=5, type="double")
 
   umf <- unmarkedFrameMMO(y=simy$y, numPrimary=5,
+                          obsCovs=data.frame(x2=rnorm(300*2*5)),
                           siteCovs=data.frame(x1=rnorm(300)),
                         type="double")
+
+  # Check that subset works
+  umf2 <- umf[1:10,]
+  expect_equal(numSites(umf2), 10)
 
   fit <- multmixOpen(~x1, ~1, ~1, ~x1, K=20, data=umf)
 
 
-  expect_equivalent(coef(fit), c(1.405123,-0.037941,-0.52361,
-                                  1.321799,0.070564,-0.0150329), tol=1e-4)
+  expect_equivalent(coef(fit), c(1.4051,-0.04087,-0.52504,
+                                  1.31978,0.072867,0.020069), tol=1e-4)
 
   pv <- getP(fit)
   expect_equivalent(dim(pv), dim(umf@y))
   expect_equivalent(pv[1,1:3], pv[1,4:6])
 
-  expect_equivalent(pv[1,1:3], c(0.2497033,0.2497033,0.26752), tol=1e-5)
+  expect_equivalent(pv[1,1:3], c(0.24951,0.24951,0.272669), tol=1e-5)
+
+  # Check that obs cov is handled correctly
+  fit2 <- multmixOpen(~x1, ~1, ~1, ~x2, K=20, data=umf)
+  expect_equivalent(coef(fit2), c(1.4046, -0.04114,-0.5238,1.3198,0.07129,-0.00405),
+                    tol=1e-4)
 
 })
 

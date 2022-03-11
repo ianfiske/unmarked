@@ -2,8 +2,8 @@ context("occuMulti fitting function")
 
 test_that("occuMulti can fit simple models",{
 
-  y <- list(matrix(rep(1,10),5,2),
-            matrix(rep(1,10),5,2))
+  y <- list(matrix(rep(1,10)[1:10],5,2),
+            matrix(rep(1,10)[1:10],5,2))
   umf <- unmarkedFrameOccuMulti(y = y)
   fm <- occuMulti(detformulas=rep("~1",2),
                   stateformulas=rep("~1",3), data = umf, se=FALSE)
@@ -26,8 +26,8 @@ test_that("occuMulti can fit simple models",{
   expect_error(occuMulti(detformulas=rep("~1",2),
                            stateformulas=c("~(1|group)",rep("~1",2)), umf))
 
-  y <- list(matrix(rep(0,10),5,2),
-            matrix(rep(0,10),5,2))
+  y <- list(matrix(rep(0,10)[1:10],5,2),
+            matrix(rep(0,10)[1:10],5,2))
   umf <- unmarkedFrameOccuMulti(y = y)
   fm <- occuMulti(detformulas=rep("~1",2),
                   stateformulas=rep("~1",3), data = umf, se=FALSE)
@@ -44,8 +44,8 @@ test_that("occuMulti can fit simple models",{
 
 test_that("occuMulti can fit models with covariates",{
 
-  y <- list(matrix(rep(0:1,10),5,2),
-            matrix(rep(0:1,10),5,2))
+  y <- list(matrix(rep(0:1,10)[1:10],5,2),
+            matrix(rep(0:1,10)[1:10],5,2))
 
   set.seed(123)
   N <- dim(y[[1]])[1]
@@ -94,8 +94,8 @@ test_that("occuMulti can fit models with covariates",{
 
 test_that("occuMulti can handle NAs",{
 
-  y <- list(matrix(rep(0:1,10),5,2),
-            matrix(rep(0:1,10),5,2))
+  y <- list(matrix(rep(0:1,10)[1:10],5,2),
+            matrix(rep(0:1,10)[1:10],5,2))
 
   set.seed(456)
   N <- dim(y[[1]])[1]
@@ -147,8 +147,8 @@ test_that("occuMulti can handle NAs",{
 
 test_that("occuMulti handles fixed 0 parameters",{
 
-  y <- list(matrix(rep(0:1,10),5,2),
-            matrix(rep(0:1,10),5,2))
+  y <- list(matrix(rep(0:1,10)[1:10],5,2),
+            matrix(rep(0:1,10)[1:10],5,2))
 
   set.seed(123)
   N <- dim(y[[1]])[1]

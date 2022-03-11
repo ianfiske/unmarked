@@ -155,6 +155,10 @@ test_that("gmultmix double model works",{
   expect_warning(umf <- unmarkedFrameGMM(y=y, obsCovs=list(observer=observer),
          type="double",numPrimary=1))
 
+  # check subset
+  umf2 <- umf[1:5,]
+  expect_equal(numSites(umf2), 5)
+
   fm <- gmultmix(~1,~1,~observer, umf)
   expect_equivalent(coef(fm), c(2.2586,0.17385,-0.7425), tol=1e-4)
 

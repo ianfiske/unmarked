@@ -2,7 +2,7 @@ context("occuPEN fitting function")
 
 test_that("occuPEN can fit simple models",{
 
-  y <- matrix(rep(1,10),5,2)
+  y <- matrix(rep(1,10)[1:10],5,2)
   umf <- unmarkedFrameOccu(y = y)
   fm <- occuPEN(~ 1 ~ 1, data = umf)
 
@@ -24,7 +24,7 @@ test_that("occuPEN can fit simple models",{
   #Check error when random effect in formula
   expect_error(occuPEN(~(1|dummy)~1, umf))
 
-  y <- matrix(rep(0,10),5,2)
+  y <- matrix(rep(0,10)[1:10],5,2)
   umf <- unmarkedFrameOccu(y = y)
   fm <- occuPEN(~ 1 ~ 1, data = umf)
 
@@ -47,7 +47,7 @@ test_that("occuPEN can fit simple models",{
 
 test_that("occuPEN can fit models with covariates",{
 
-  y <- matrix(rep(0:1,10),5,2)
+  y <- matrix(rep(0:1,10)[1:10],5,2)
   siteCovs <- data.frame(x = c(0,2,3,4,1))
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
@@ -105,7 +105,7 @@ test_that("occuPEN can fit models with covariates",{
   expect_equivalent(fmCV@lambdaScores, c(31.423777, 15.603297, 12.330360, 10.130768,  8.981720,  8.572523,  8.572841, 8.798436,  9.153270,  9.543802), tol = 1e-4)
 
 
-  y <- matrix(rep(0:1,10),5,2)
+  y <- matrix(rep(0:1,10)[1:10],5,2)
   siteCovs <- data.frame(x = c(0,2,3,4,1))
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
@@ -119,7 +119,7 @@ test_that("occuPEN can fit models with covariates",{
 
 test_that("occuPEN can handle NAs",{
 
-  y <- matrix(rep(0:1,10),5,2)
+  y <- matrix(rep(0:1,10)[1:10],5,2)
   siteCovs <- data.frame(x = c(0,2,3,4,1))
   siteCovs[3,1] <- NA
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
@@ -139,7 +139,7 @@ test_that("occuPEN can handle NAs",{
 
 test_that("occuPEN can handle offsets",{
 
-  y <- matrix(rep(0:1,10),5,2)
+  y <- matrix(rep(0:1,10)[1:10],5,2)
   siteCovs <- data.frame(x = c(0,2,3,4,1))
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
