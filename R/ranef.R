@@ -113,9 +113,9 @@ setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
     psi <- cbind(1-rowSums(psi), psi)
 
     guide <- matrix(NA,nrow=S,ncol=S)
-    guide <- lower.tri(guide,diag=T)
+    guide <- lower.tri(guide,diag=TRUE)
     guide[,1] <- FALSE
-    guide <- which(guide,arr.ind=T)
+    guide <- which(guide,arr.ind=TRUE)
     for (i in 1:N){
       f <- psi[i,]
       g <- rep(1, S)

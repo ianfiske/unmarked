@@ -1740,9 +1740,9 @@ setMethod("predict", "unmarkedFitOccuMS",
 
   #Index guide used to organize p values
   guide <- matrix(NA,nrow=S,ncol=S)
-  guide <- lower.tri(guide,diag=T)
+  guide <- lower.tri(guide,diag=TRUE)
   guide[,1] <- FALSE
-  guide <- which(guide,arr.ind=T)
+  guide <- which(guide,arr.ind=TRUE)
   #----------------------------------------------------------------------------
 
   #Utility functions-----------------------------------------------------------
@@ -2430,9 +2430,9 @@ setMethod("fitted", "unmarkedFitOccuMS", function(object, na.rm = FALSE)
   }
 
   guide <- matrix(NA,nrow=S,ncol=S)
-  guide <- lower.tri(guide,diag=T)
+  guide <- lower.tri(guide,diag=TRUE)
   guide[,1] <- FALSE
-  guide <- which(guide,arr.ind=T)
+  guide <- which(guide,arr.ind=TRUE)
 
   #Get predictions
   pr <- predict(object, 'psi', se.fit=F)
@@ -4231,9 +4231,9 @@ setMethod("simulate", "unmarkedFitOccuMS",
   p <- getP(object)
 
   guide <- matrix(NA,nrow=S,ncol=S)
-  guide <- lower.tri(guide,diag=T)
+  guide <- lower.tri(guide,diag=TRUE)
   guide[,1] <- FALSE
-  guide <- which(guide,arr.ind=T)
+  guide <- which(guide,arr.ind=TRUE)
 
   out <- vector("list",nsim)
 
