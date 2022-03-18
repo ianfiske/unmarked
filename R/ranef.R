@@ -98,7 +98,7 @@ setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
   N <- numSites(object@data)
   S <- object@data@numStates
 
-  psi <- predict(object, "state", se.fit=F)
+  psi <- predict(object, "psi", se.fit=F)
   psi <- sapply(psi, function(x) x$Predicted)
   z <- 0:(S-1)
 

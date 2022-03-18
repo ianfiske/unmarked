@@ -113,6 +113,10 @@ test_that("unmarkedFrameDSO build properly", {
                   tlength=rep(1,100)))
   expect_error(unmarkedFrameDSO(y=y, numPrimary=15, dist.breaks=c(25,50,75,100),
                                   survey='line', unitsIn='m', tlength=rep(1,100)))
+
+  # subset sites
+  umf_sub <- umf[1:3,]
+  expect_equal(nrow(umf_sub@y), 3)
 })
 
 test_that("dso halfnorm key function works",{

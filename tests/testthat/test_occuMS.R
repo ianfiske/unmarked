@@ -39,6 +39,59 @@ test_that("unmarkedFrameOccuMS is constructed properly",{
   expect_error(unmarkedFrameOccuMS(y=y,siteCovs=site_covs,obsCovs=obs_covs))
 })
 
+test_that("occuMS R and C engines return same results",{
+  skip_on_cran()
+  set.seed(123)
+  N <- 20; J <- 2; S <- 3
+  site_covs <- matrix(rnorm(N*2),ncol=2)
+  obs_covs <- matrix(rnorm(N*J*2),ncol=2)
+  colnames(site_covs) <- paste0("sc",1:2)
+  colnames(obs_covs) <- paste0("oc", 1:2)
+
+  a1 <- -0.5; b1 <- 1; a2 <- -0.6; b2 <- -0.7
+  p11 <- -0.4; p12 <- -1.09; p22 <- -0.84
+  truth <- c(a1,b1,a2,b2,p11,0,p12,p22)
+
+  lp <- matrix(NA,ncol=S,nrow=N)
+  for (n in 1:N){
+    lp[n,2] <- exp(a1+b1*site_covs[n,1])
+    lp[n,3] <- exp(a2+b2*site_covs[n,2])
+    lp[n,1] <- 1
+  }
+  psi_mat <- lp/rowSums(lp)
+
+  z <- rep(NA,N)
+  for (n in 1:N){
+    z[n] <- sample(0:2, 1, replace=T, prob=psi_mat[n,])
+  }
+
+  probs_raw <- matrix(c(1,0,0,1,exp(p11),0,1,exp(p12),exp(p22)),nrow=3,byrow=T)
+  probs_raw <- probs_raw/rowSums(probs_raw)
+
+  y <- matrix(0,nrow=N,ncol=J)
+  for (n in 1:N){
+
+  probs <- switch(z[n]+1,
+                  probs_raw[1,],
+                  probs_raw[2,],
+                  probs_raw[3,])
+  if(z[n]>0){
+    y[n,] <- sample(0:2, J, replace=T, probs)
+  }
+  }
+
+  umf <- unmarkedFrameOccuMS(y=y,siteCovs=as.data.frame(site_covs),
+                           obsCovs=as.data.frame(obs_covs))
+
+  stateformulas <- c('~sc1','~sc2')
+  detformulas <- c('~oc1','~1','~1')
+  fit_R <- occuMS(detformulas, stateformulas, data=umf, engine="R")
+  fit_C <- occuMS(detformulas, stateformulas, data=umf, engine="C")
+
+  expect_equal(coef(fit_R), coef(fit_C), tol=1e-5)
+
+})
+
 test_that("occuMS can fit the multinomial model",{
 
   #Simulate data
@@ -166,6 +219,11 @@ test_that("occuMS can fit the multinomial model",{
   fitvals <- fitted(fit_C)
   expect_equivalent(dim(fitvals),c(N,J))
   expect_equivalent(fitvals[1,1],0.2231388,tol=1e-4)
+
+  #check ranef
+  set.seed(123)
+  r <- ranef(fit_C)
+  expect_equivalent(r@post[1,,1], c(0,0.5222,0.4778), tol=1e-4)
 
   #Check fitList
   expect_warning(fl <- fitList(fit_C, fit_C))

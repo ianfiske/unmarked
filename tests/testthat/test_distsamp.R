@@ -22,8 +22,16 @@ test_that("unmarkedFrameDS identifies problems with inputs",{
         dist.breaks=c(0, 5, 10)/1000, survey="line", tlength=rep(1, 5),
         unitsIn="km")
   expect_is(umf, "unmarkedFrameDS")
+  s <- capture.output(summary(umf))
+  expect_equal(s[1], "unmarkedFrameDS Object")
 
   expect_error(obsCovs(umf) <- oc)
+
+  # histogram
+  pdf(NULL)
+  pl <- hist(umf)
+  expect_is(pl, "histogram")
+  dev.off()
 
 })
 
@@ -177,6 +185,8 @@ test_that("distsamp line keyfunctions work",{
                        coef(update(fm.halfnorm, engine="R")))
     expect_equivalent(coef(fm.halfnorm),
                        coef(update(fm.halfnorm, engine="R")))
+    expect_equivalent(coef(fm.unif), coef(update(fm.unif, engine="R")))
+    expect_equivalent(coef(fm.haz), coef(update(fm.haz, engine="R")), tol=1e-5)
 
 })
 

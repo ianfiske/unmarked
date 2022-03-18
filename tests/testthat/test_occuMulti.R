@@ -1,5 +1,28 @@
 context("occuMulti fitting function")
 
+test_that("unmarkedFrameOccuMulti construction and methods work",{
+
+  y <- list(matrix(1:15,5,3),
+            matrix(1:15,5,3))
+  umf <- unmarkedFrameOccuMulti(y = y)
+
+  expect_is(umf, "unmarkedFrameOccuMulti")
+  out <- capture.output(umf)
+  expect_equal(out[2], "Only showing observation matrix for species 1.")
+  s <- capture.output(summary(umf))
+  expect_equal(s[4], "2 species: sp1 sp2 ")
+
+  # Check plot
+  pdf(NULL)
+  pl <- plot(umf)
+  expect_is(pl, "trellis")
+  dev.off()
+
+  # check subset
+  umf_sub <- umf[,1:2]
+  expect_equal(umf_sub@ylist[[1]], umf@ylist[[1]][,1:2])
+})
+
 test_that("occuMulti can fit simple models",{
 
   y <- list(matrix(rep(1,10)[1:10],5,2),

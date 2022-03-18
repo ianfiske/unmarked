@@ -1,8 +1,5 @@
 context("crossVal method")
 
-skip_on_cran()
-skip_on_ci()
-
 set.seed(123)
 data(frogs)
 pferUMF <- unmarkedFrameOccu(pfer.bin)
@@ -13,18 +10,18 @@ fm <- occu(~ obsvar1 ~ 1, pferUMF[1:20,])
 
 
 test_that("crossVal works with occu models",{
-
+  set.seed(123)
   kfold <- crossVal(fm, method='Kfold', folds=10)
 
   expect_equal(nrow(kfold@stats),10)
 
   expect_equal(as.numeric(kfold@stats[1,]),
-                c(0.2100,0.20956), tolerance=1e-4)
+                c(0.3790110,0.3014053), tolerance=1e-4)
 
   holdout <- crossVal(fm, method='holdout', holdoutPct=0.25)
 
   expect_equal(as.numeric(holdout@stats[1,]),
-                       c(0.45669,0.34191), tolerance=1e-4)
+                       c(0.296829,0.262929), tolerance=1e-4)
 
   leave <- crossVal(fm, method='leaveOneOut')
 
@@ -32,9 +29,14 @@ test_that("crossVal works with occu models",{
   expect_equal(as.numeric(leave@stats[1,]),
                c(0.5985,0.5012), tolerance=1e-4)
 
+  show_output <- capture.output(leave)
+  expect_equal(show_output[1], "Method: leave-one-out")
+
 })
 
 test_that("crossVal works in parallel",{
+  skip_on_cran()
+  skip_on_ci()
 
   set.seed(123)
   kfold <- crossVal(fm, method='Kfold', folds=10)
@@ -67,6 +69,8 @@ test_that("crossValList can be constructed",{
 
   expect_is(cvlist, "unmarkedCrossValList")
   expect_equal(length(cvlist@stats_list),2)
+  show_output <- capture.output(cvlist)
+  expect_equal(show_output[1], "Method: k-fold (10 folds)")
 })
 
 test_that("crossVal works with multinomPois",{

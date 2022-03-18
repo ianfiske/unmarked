@@ -52,6 +52,8 @@ test_that("occuPEN can fit models with covariates",{
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
   fm <- occuPEN(~ o1 + o2 ~ x, data = umf)
+  fmR <- occuPEN(~o1 +o2~x, data=umf, engine="R")
+  expect_equal(coef(fm), coef(fmR))
   fm1 <- occuPEN(~ o1 + o2 ~ x, data = umf,lambda=1,pen.type="Bayes")
   fm2 <- occuPEN(~ o1 + o2 ~ x, data = umf,lambda=1,pen.type="Ridge")
   MPLEla <- computeMPLElambda(~ o1 + o2 ~ x, data = umf)

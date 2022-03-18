@@ -17,11 +17,22 @@ test_that("ranef predict method works",{
 
   re <- expect_warning(ranef(fm))
 
+  set.seed(123)
   ps <- posteriorSamples(re, nsim=10)
   expect_is(ps, "unmarkedPostSamples")
   #One is dropped bc of NA
   expect_equivalent(dim(ps@samples), c(9,1,10))
 
+  # Brackets
+  expect_equal(ps[1,1,1], ps@samples[1,1,1])
+
+  # Method for unmarkedFit objects
+  set.seed(123)
+  ps2 <- expect_warning(posteriorSamples(fm, nsim=10))
+  expect_equal(ps, ps2)
+
+  # Custom function
+  set.seed(123)
   myfunc <- function(x){
     c(gr1=mean(x[1:4]), gr2=mean(x[5:9]))
   }
@@ -29,7 +40,7 @@ test_that("ranef predict method works",{
   pr <- predict(re, fun=myfunc, nsim=10)
   expect_equivalent(dim(pr), c(2,10))
   expect_equal(rownames(pr), c("gr1","gr2"))
-  expect_equivalent(as.numeric(pr[1,1:3]), c(6.0,4.0,5.75))
+  expect_equivalent(as.numeric(pr[1,1:3]), c(7.0,5.0,4.75))
 
   #Dynamic model
   set.seed(7)
