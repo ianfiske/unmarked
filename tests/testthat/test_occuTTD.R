@@ -25,7 +25,11 @@ test_that("unmarkedFrameOccuTTD can be constructed",{
 
   expect_equivalent(umf@numPrimary, 1)
   expect_equivalent(umf@surveyLength, matrix(Tmax, 100, 1))
-  expect_equal(class(umf)[1], "unmarkedFrameOccuTTD")
+  expect_is(umf, "unmarkedFrameOccuTTD")
+  out <- capture.output(umf)
+  expect_equal(out[1], "Data frame representation of unmarkedFrame object.")
+  s <- capture.output(summary(umf))
+  expect_equal(s[3], "100 sites")
 
   hd <- head(umf)
   expect_equivalent(as(hd, 'data.frame'), as(umf, 'data.frame')[1:10,])
@@ -37,6 +41,12 @@ test_that("unmarkedFrameOccuTTD can be constructed",{
 
   sl_bad <- c(10,10)
   expect_error(unmarkedFrameOccuTTD(y, sl_bad))
+
+  # plot
+  pdf(NULL)
+  pl <- plot(umf)
+  expect_is(pl, "histogram")
+  dev.off()
 
   ## Multiple observers
   y <- cbind(y,y)
@@ -64,6 +74,41 @@ test_that("unmarkedFrameOccuTTD can be constructed",{
   y <- rexp(N, 1/lam)
   y <- cbind(y,y,y)
   expect_error(unmarkedFrameOccuTTD(y,Tmax,numPrimary=2))
+})
+
+test_that("occuTTD R and C engines return same results",{
+  skip_on_cran()
+  set.seed(123)
+  N <- 20; J <- 1
+
+  #Simulate occupancy
+  scovs <- data.frame(elev=c(scale(runif(N, 0,100))),
+                          forest=runif(N,0,1),
+                          wind=runif(N,0,1))
+  beta_N <- c(-0.69, 0.71, -0.5)
+  lambda_N <- exp(cbind(1, scovs$elev, scovs$forest) %*% beta_N)
+  abun <- rpois(N, lambda_N)
+  z <- as.numeric(abun>0)
+
+  #Simulate detection
+  Tmax <- 10
+  beta_lam <- c(-2, -0.2, 0.7)
+  rate <- exp(cbind(1, scovs$elev, scovs$wind) %*% beta_lam)
+  ttd <- rexp(N, rate)
+  ttd[z==0] <- Tmax
+  ttd[ttd>Tmax] <- Tmax
+
+  #Build UMF
+  umf <- unmarkedFrameOccuTTD(y=ttd, surveyLength=Tmax, siteCovs=scovs)
+
+  fitR <- occuTTD(psiformula=~elev, detformula=~wind,
+                  data=umf, linkPsi='cloglog', ttdDist='exp',engine="R")
+
+  fitC <- occuTTD(psiformula=~elev, detformula=~wind,
+                  data=umf, linkPsi='cloglog', ttdDist='exp',engine="C")
+
+  expect_equal(coef(fitR), coef(fitC), tol=1e-5)
+
 })
 
 test_that("occuTTD can fit a single-season 1 obs model",{

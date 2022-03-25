@@ -7,6 +7,15 @@ test_that("unmarkedFrame can be constructed",{
   siteCovs <- data.frame(a = rnorm(M), b = factor(gl(2,5)))
   umf <- unmarkedFrame(y = y, siteCovs = siteCovs)
   expect_is(umf, "unmarkedFrame")
+
+  out <- capture.output(umf)
+  expect_equal(out[1], "Data frame representation of unmarkedFrame object.")
+  s <- capture.output(summary(umf))
+  expect_equal(s[1], "unmarkedFrame Object")
+
+  # convert to data frame
+  df <- as(umf, "data.frame")
+  expect_is(df, "data.frame")
 })
 
 test_that("obsToY works", {
@@ -92,6 +101,25 @@ test_that("Characters are converted to factors when umf is constructed",{
   expect_equivalent(dim(df), c(50,46))
 })
 
+test_that("unmarkedMultFrame can be constructed",{
+    y <- matrix(1:27, 3)
+    sc <- data.frame(x1 = 1:3)
+    ysc <- list(x2 = matrix(1:9, 3))
+    oc <- list(x3 = matrix(1:27, 3))
+
+    umf1 <- unmarkedMultFrame(
+        y = y,
+        siteCovs = sc,
+        yearlySiteCovs = ysc,
+        obsCovs = oc,
+        numPrimary = 3)
+    expect_is(umf1, "unmarkedMultFrame")
+    out <- capture.output(umf1)
+    expect_equal(out[1], "Data frame representation of unmarkedFrame object.")
+
+    s <- capture.output(summary(umf1))
+    expect_equal(s[6], "Number of primary survey periods: 3 ")
+})
 
 test_that("unmarkedMultFrame subset works",{
     y <- matrix(1:27, 3)

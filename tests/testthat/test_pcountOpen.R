@@ -25,6 +25,10 @@ test_that("unmarkedFramePCO subset works",{
     expect_is(umf1.site1, "unmarkedFramePCO")
 
     umf1.sites1and3 <- umf1[c(1,3),]
+
+    # subset by primary period
+    umf_sub <- umf1[,1:2]
+    expect_equal(umf_sub@numPrimary, 2)
 })
 
 test_that("pcountOpen can fit a null model",{

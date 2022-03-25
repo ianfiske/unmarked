@@ -54,6 +54,8 @@ test_that("occu can fit models with covariates",{
   obsCovs <- data.frame(o1 = 1:10, o2 = exp(-5:4)/10)
   umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
   fm <- occu(~ o1 + o2 ~ x, data = umf)
+  fmR <- occu(~ o1 + o2 ~x, data = umf, engine="R")
+  expect_equal(coef(fm), coef(fmR))
 
   occ <- fm['state']
   det <- fm['det']
@@ -62,6 +64,12 @@ test_that("occu can fit models with covariates",{
 
   expect_equivalent(coef(occ), c(8.590737, 2.472220), tolerance = 1e-4)
   expect_equivalent(coef(det), c(0.44457, -0.14706, 0.44103), tolerance = 1e-4)
+
+  ci <- confint(occ)
+  expect_equal(dim(ci), c(2,2))
+
+  out <- capture.output(occ)
+  expect_equal(out[1], "Occupancy:")
 
   occ.lc <- linearComb(fm, type = 'state', c(1, 0.5))
   det.lc <- linearComb(fm, type = 'det', c(1, 0.3, -0.3))
@@ -345,6 +353,9 @@ test_that("occu can handle random effects",{
   fm <- occu(~1~cov1 + (1|site_id), umf)
   expect_equivalent(coef(fm), c(0.65293, 0.39965, -0.02822), tol=1e-4)
   expect_equivalent(sigma(fm)$sigma, 1.18816, tol=1e-4)
+
+  out <- capture.output(fm)
+  expect_equal(out[6], "Random effects:")
 
   pr <- predict(fm, "state", newdata=data.frame(cov1=0, site_id=factor(1:100)))
   expect_is(pr, "data.frame")
