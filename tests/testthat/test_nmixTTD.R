@@ -174,3 +174,29 @@ test_that("nmixTTD can fit a NB/weib model",{
   sim <- simulate(fit, 2)
   r <- ranef(fit)
 })
+
+test_that("R and C++ engines give identical results",{
+
+  set.seed(123)
+  dens <- exp(log(mu.dens) + beta1 * covDens)
+  N <- rpois(M, dens) # Realized density per site
+  lambda <- exp(log(mu.lambda) + alpha1 * covDet) # per-individual detection rate
+  ttd <- NULL
+  for(i in 1:nrep){
+    expect_warning(ttd <- cbind(ttd,rexp(M, N*lambda[,i])))
+  }
+  ttd[N == 0,] <- 5 # Not observed where N = 0; ttd set to Tmax
+  ttd[ttd >= Tmax] <- 5 # Crop at Tmax
+  umf <- unmarkedFrameOccuTTD(y = ttd, surveyLength=5,
+                            siteCovs = data.frame(covDens=covDens,
+                                                  cdens2=rnorm(length(covDens)),
+                                                  cdens3=rnorm(length(covDens))),
+                            obsCovs = data.frame(covDet=as.vector(t(covDet)),
+                                                 cdet2=rnorm(length(covDet)),
+                                                 cdet3=rnorm(length(covDet))))
+
+  fit <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10, control=list(maxit=2))
+  fitR <- nmixTTD(~covDens, ~covDet, data=umf, K=max(N)+10,
+                 engine="R", control=list(maxit=2))
+  expect_equal(coef(fit), coef(fitR))
+})

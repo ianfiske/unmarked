@@ -191,3 +191,21 @@ expect_true(all(names(fmnb@estimates@estimates)==c("state","det","alpha")))
 fm <- pcount(~(1|group)~1, umf2, K=19)
 expect_true(sigma(fm)$Model[1]=="p")
 })
+
+test_that("pcount R, C++ and TMB engines give same results",{
+
+  y <- matrix(c(
+      8,7,7,8,
+      6,7,7,5,
+      8,8,7,8,
+      4,5,5,5,
+      4,4,3,3), nrow=5, ncol=4, byrow=TRUE)
+  siteCovs <- data.frame(x = c(0,2,3,4,1))
+  obsCovs <- data.frame(o1 = seq(-1, 1, length=length(y)))
+  umf <- unmarkedFramePCount(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+  fmC <- pcount(~ o1 ~ x, data = umf, K=30, control=list(maxit=1))
+  fmT <- pcount(~ o1 ~ x, data = umf, K=30, control=list(maxit=1), engine="TMB")
+  fmR <- pcount(~ o1 ~ x, data = umf, K=30, control=list(maxit=1), engine="R")
+  expect_equal(coef(fmC), coef(fmR))
+  expect_equal(coef(fmC), coef(fmT), tol=1e-7)
+})

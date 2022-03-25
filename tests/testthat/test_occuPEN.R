@@ -117,6 +117,13 @@ test_that("occuPEN can fit models with covariates",{
   expect_error(fm <- occuPEN(~ 1 ~ 1, data = umf,pen.type="Ridge"))
   expect_error(fm <- occuPEN_CV(~ o1 + o2 ~ x, data = umf,lambda=c(0)))
   expect_error(fm <- occuPEN_CV(~ o1 + o2 ~ x, data = umf,foldAssignments=c(1,2,3,4,5),k=6))
+
+  # nonparboot
+  nbp <- nonparboot(fm, B=2)
+  expect_is(nbp@covMatBS, "matrix")
+  nbp_cv <- nonparboot(fmCV, B=2)
+  expect_is(nbp_cv@covMatBS, "matrix")
+
 })
 
 test_that("occuPEN can handle NAs",{

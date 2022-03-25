@@ -88,6 +88,13 @@ test_that("gdistsamp with halfnorm keyfunction works",{
                             dist.breaks=breaks,
                             tlength=rep(transect.length, R), numPrimary=T)
 
+    # R and C give same result
+    fm_R <- gdistsamp(~1, ~1, ~1, umf, output="density", se=FALSE, engine="R",
+                      control=list(maxit=1))
+    fm_C <- gdistsamp(~1, ~1, ~1, umf, output="density", se=FALSE, engine="C",
+                      control=list(maxit=1))
+    expect_equal(coef(fm_R), coef(fm_C))
+
     #When output = density
     #fm_R <- gdistsamp(~1, ~1, ~1, umf, output="density", se=FALSE, engine="R")
     fm_C <- gdistsamp(~1, ~1, ~1, umf, output="density", se=FALSE, engine="C")
@@ -199,6 +206,14 @@ test_that("gdistsamp with halfnorm keyfunction works",{
     # Check error when formula has random effects
     expect_error(gdistsamp(~(1|dummy), ~1, ~1, umf))
 
+    # R and C engines return same result
+    fm_C <- gdistsamp(~elevation, ~1, ~chaparral, jayumf, output='density',
+                      engine="C", se=F, control=list(maxit=1))
+    fm_R <- gdistsamp(~elevation, ~1, ~chaparral, jayumf, output='density',
+                      engine="R", se=F, control=list(maxit=1))
+    expect_equal(coef(fm_C), coef(fm_R))
+
+
 })
 
 test_that("gdistsamp with uniform keyfunction works",{
@@ -238,6 +253,13 @@ test_that("gdistsamp with uniform keyfunction works",{
                             survey="line", unitsIn="m",
                             dist.breaks=breaks,
                             tlength=rep(transect.length, R), numPrimary=T)
+
+    # R and C engines return same result
+    fm_R <- gdistsamp(~par1, ~par2, ~1, umf, output="density",
+                      keyfun="uniform", se=FALSE, engine="C", control=list(maxit=1))
+    fm_C <- gdistsamp(~par1, ~par2, ~1, umf, output="density",
+                      keyfun="uniform", se=FALSE, engine="R", control=list(maxit=1))
+    expect_equal(coef(fm_R), coef(fm_C))
 
     #fm_R <- gdistsamp(~par1, ~par2, ~1, umf, output="density",
     #                  keyfun="uniform", se=FALSE, engine="R")
@@ -310,6 +332,13 @@ test_that("gdistsamp with exp keyfunction works",{
                             dist.breaks=breaks,
                             tlength=rep(transect.length, R), numPrimary=T)
 
+    # R and C engines return same result
+    fm_C <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", se=FALSE,
+                      keyfun="exp",engine="C", control=list(maxit=1))
+    fm_R <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", se=FALSE,
+                      keyfun="exp",engine="R", control=list(maxit=1))
+    expect_equal(fm_C@AIC, fm_R@AIC)
+
     #fm_R <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", se=FALSE,
     #                  keyfun="exp",engine="R")
     fm_C <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", se=FALSE,
@@ -342,6 +371,13 @@ test_that("gdistsamp with exp keyfunction works",{
 
     expect_equivalent(coef(fm_C),c(-3.1952,-0.1244,3.7986,3.6574),tol=1e-4)
     #expect_equivalent(coef(fm_R),coef(fm_C),tol=1e-4)
+
+    fm_C <- gdistsamp(~elevation, ~1, ~chaparral, jayumf, output='density',
+                      keyfun="exp",engine="C", se=F,control=list(maxit=1))
+    fm_R <- gdistsamp(~elevation, ~1, ~chaparral, jayumf, output='density',
+                      keyfun="exp",engine="R", se=F, control=list(maxit=1))
+    expect_equal(fm_C@AIC, fm_R@AIC, tol=1e-5)
+
 })
 
 test_that("gdistsamp with hazard keyfunction works",{
@@ -383,6 +419,13 @@ test_that("gdistsamp with hazard keyfunction works",{
                             dist.breaks=breaks,
                             tlength=rep(transect.length, R), numPrimary=T)
 
+    # R and C engines give same result
+    fm_C <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", se=FALSE,
+                      keyfun="hazard",engine="C", control=list(maxit=1))
+    fm_R <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", se=FALSE,
+                      keyfun="hazard",engine="R", control=list(maxit=1))
+    expect_equal(fm_C@AIC, fm_R@AIC, tol=1e-5)
+
     #fm_R <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", se=FALSE,
     #                  keyfun="hazard",engine="R")
     fm_C <- gdistsamp(~par1, ~par2, ~par3, umf, output="density", se=FALSE,
@@ -415,6 +458,12 @@ test_that("gdistsamp with hazard keyfunction works",{
 
     expect_equivalent(coef(fm_C),c(0.8584,-0.04336,-0.70738,3.2762,0.1807),tol=1e-4)
     #expect_equivalent(coef(fm_R),coef(fm_C),tol=1e-3)
+
+    fm_C <- gdistsamp(~elevation, ~1, ~chaparral, jayumf, output='density',
+                      keyfun="hazard",engine="C", se=F,control=list(maxit=1))
+    fm_R <- gdistsamp(~elevation, ~1, ~chaparral, jayumf, output='density',
+                      keyfun="hazard",engine="R", se=F, control=list(maxit=1))
+    expect_equal(fm_C@AIC, fm_R@AIC, tol=1e-3)
 })
 
 test_that("predict works for gdistsamp",{

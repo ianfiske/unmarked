@@ -5,6 +5,11 @@ test_that("occuRN can fit models",{
   data(birds)
   woodthrushUMF <- unmarkedFrameOccu(woodthrush.bin)
 
+  # R and C engines give same result
+  fm_R <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="R", K=5, control=list(maxit=1))
+  fm_C <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C", K=5, control=list(maxit=1))
+  expect_equal(fm_R@AIC, fm_C@AIC)
+
   # survey occasion-specific detection probabilities
   fm_C <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="C", K=10)
   #fm_R <- occuRN(~ obsNum ~ 1, woodthrushUMF, engine="R")

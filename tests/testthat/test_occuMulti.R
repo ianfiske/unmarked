@@ -560,3 +560,29 @@ test_that("Mismatched NAs are identified in unmarkedFrameOccuMulti",{
   expect_true(any(pre_na[1] != pre_na))
   expect_true(!any(post_na[1] != post_na))
 })
+
+test_that("R and C++ engines give same results",{
+
+  y <- list(matrix(rep(0:1,10)[1:10],5,2),
+            matrix(rep(0:1,10)[1:10],5,2))
+
+  set.seed(123)
+  N <- dim(y[[1]])[1]
+  J <- dim(y[[1]])[2]
+  occ_covs <- as.data.frame(matrix(rnorm(N * 3),ncol=3))
+  names(occ_covs) <- paste('occ_cov',1:3,sep='')
+
+  det_covs <- as.data.frame(matrix(rnorm(N*J*2),ncol=2))
+  names(det_covs) <- paste('det_cov',1:2,sep='')
+
+  umf <- unmarkedFrameOccuMulti(y = y, siteCovs = occ_covs, obsCovs = det_covs)
+  stateformulas <- c('~occ_cov1','~occ_cov2','~occ_cov3')
+  detformulas <- c('~det_cov1','~det_cov2')
+
+  fm <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE,
+                  control=list(maxit=1))
+  fmR <- occuMulti(detformulas, stateformulas, data = umf, se=FALSE,
+                  engine="R",control=list(maxit=1))
+  expect_equal(coef(fm), coef(fmR))
+
+})

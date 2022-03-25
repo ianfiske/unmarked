@@ -19,6 +19,14 @@ test_that("powerAnalysis method works",{
   s <- summary(pa)$Power
   expect_true(s[2]>0.7)
 
+  # output printout
+  out <- capture.output(pa)
+  expect_equal(out[5], "Power Statistics:")
+
+  # update
+  pa_up <- update(pa, alpha=0.5)
+  expect_is(pa_up, "unmarkedPower")
+
   # fewer sites
   set.seed(123)
   pa2 <- powerAnalysis(template_model, effect_sizes, design=list(M=50, J=3), nsim=10)
@@ -39,6 +47,13 @@ test_that("powerAnalysis method works",{
   # list
   pl <- unmarkedPowerList(list(pa, pa2, pa3, pa4))
   expect_is(pl, "unmarkedPowerList")
+  s <- summary(pl)
+  expect_is(s, "data.frame")
+
+  pdf(NULL)
+  pl_plot <- plot(pl)
+  expect_is(pl_plot,"list")
+  dev.off()
 
   # generate list
   scenarios <- expand.grid(M=c(50,100), J=c(2,3))
@@ -77,4 +92,24 @@ test_that("custom datasets can be passed to powerAnalysis",{
 
   expect_error(powerAnalysis(fit, coefs=coefs, datalist=pco_umf))
   expect_error(powerAnalysis(fit, coefs=coefs, datalist=conv_umf, nsim=20))
+})
+
+test_that("powerAnalysis can be run in parallel",{
+  skip_on_cran()
+  skip_on_ci()
+  forms <- list(state=~elev, det=~1)
+  coefs <- list(state=c(intercept=0, elev=-0.4), det=c(intercept=0))
+  design <- list(M=50, J=3) # 300 sites, 8 occasions per site
+  occu_umf <- simulate("occu", formulas=forms, coefs=coefs, design=design)
+
+  template_model <- occu(~1~elev, occu_umf)
+  nul <- capture.output(expect_error(powerAnalysis(template_model)))
+
+  effect_sizes <- list(state=c(intercept=0, elev=-0.4), det=c(intercept=0))
+  set.seed(123)
+  pa <- powerAnalysis(template_model, coefs=effect_sizes, alpha=0.05, nsim=3,
+                      parallel=TRUE)
+  expect_is(pa, "unmarkedPower")
+
+
 })

@@ -96,3 +96,23 @@ test_that("gpcount function works", {
   expect_error(gpcount(~(1|dummy),~1,~1,umf))
 
 })
+
+test_that("gpcount R and C++ engines give same results",{
+
+  y <- matrix(c(0,0,0, 1,0,1, 2,2,2,
+                3,2,3, 2,2,2, 1,1,1,
+                NA,0,0, 0,0,0, 0,0,0,
+                3,3,3, 3,1,3, 2,2,1,
+                0,0,0, 0,0,0, 0,0,0), 5, 9, byrow=TRUE)
+  siteCovs <- data.frame(x = c(0,2,-1,4,-1))
+  obsCovs <- list(o1 = matrix(seq(-3, 3, length=length(y)), 5, 9))
+  yrSiteCovs <- list(yr=matrix(c('1','2','2'), 5, 3, byrow=TRUE))
+
+
+  expect_warning(umf <- unmarkedFrameGPC(y = y, siteCovs = siteCovs, obsCovs = obsCovs,
+        yearlySiteCovs = yrSiteCovs, numPrimary=3))
+
+  fm <- gpcount(~x, ~yr, ~o1, data = umf, K=23, control=list(maxit=1))
+  fmR <- gpcount(~x, ~yr, ~o1, data = umf, K=23, engine="R", control=list(maxit=1))
+  expect_equal(coef(fm), coef(fmR))
+})

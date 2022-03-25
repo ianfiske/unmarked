@@ -247,3 +247,21 @@ test_that("MRR custom piFun works",{
   expect_equal(dim(umf.cr1@obsToY)[1] , 6)
   expect_equal(dim(umf.cr1@obsToY)[2] , 14)
 })
+
+test_that("R and C++ engines give identical results",{
+  y <- matrix(0:3, 5, 4)
+  siteCovs <- data.frame(x = c(0,2,3,4,1))
+  siteCovs[3,1] <- NA
+  obsCovs <- data.frame(o1 = 1:20, o2 = exp(-5:4)/20)
+  yrSiteCovs <- data.frame(yr=factor(rep(1:2, 5)))
+
+  umf <- unmarkedFrameGMM(y = y, siteCovs = siteCovs, obsCovs = obsCovs,
+        yearlySiteCovs = yrSiteCovs, type="removal", numPrimary=2)
+  expect_warning(fm_R <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23,
+                                  engine="R", control=list(maxit=1)))
+  expect_warning(fm_C <- gmultmix(~x, ~yr, ~o1 + o2, data = umf, K=23,
+                                  engine="C", control=list(maxit=1)))
+  expect_equal(coef(fm_R), coef(fm_C))
+
+
+})
