@@ -20,6 +20,10 @@ test_that("ranef predict method works",{
   set.seed(123)
   ps <- posteriorSamples(re, nsim=10)
   expect_is(ps, "unmarkedPostSamples")
+
+  sh <- capture.output(show(ps))
+  expect_equal(sh[1], "Posterior samples from unmarked model")
+
   #One is dropped bc of NA
   expect_equivalent(dim(ps@samples), c(9,1,10))
 

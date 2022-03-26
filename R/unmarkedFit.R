@@ -1599,7 +1599,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
     psi_est <- calc_psi(params)
 
     if(se.fit){
-      cat('Bootstrapping confidence intervals with',nsims,'samples\n')
+      message('Bootstrapping confidence intervals with',nsims,'samples')
       Sigma <- vcov(object)
       samp <- array(NA,c(dim(psi_est),nsims))
       for (i in 1:nsims){
@@ -1860,7 +1860,7 @@ setMethod("predict", "unmarkedFitOccuMS",
     upr <- lwr <- se <- matrix(NA,M,P)
 
     if(se.fit){
-      cat('Bootstrapping confidence intervals with',nsims,'samples\n')
+      message('Bootstrapping confidence intervals with',nsims,'samples')
 
       sig <- vcov(object)
       param_mean <- coef(object)
