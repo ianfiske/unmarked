@@ -128,6 +128,9 @@ test_that("dso halfnorm key function works",{
                           dist.breaks = c(0, 25, 50, 75, 100), survey="line",
                           unitsIn="m",tlength=rep(1, 50))
 
+  # Check K that is too small
+  expect_error(distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=5,keyfun="halfnorm"))
+
   fm <- distsampOpen(~1, ~1, ~1, ~x1, data = umf, K=10,keyfun="halfnorm")
 
   expect_equivalent(coef(fm), c(1.4185,1.0471,-0.8275,3.1969,-0.0790),
