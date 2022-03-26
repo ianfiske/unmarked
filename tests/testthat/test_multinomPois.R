@@ -30,12 +30,17 @@ test_that("unmarkedFrameMPois can be constructed",{
                                type="double")
     expect_is(umf2, "unmarkedFrameMPois")
 
-    umf3 <- unmarkedFrameMPois(y=y, siteCovs=sc,
+    umf3 <- unmarkedFrameMPois(y=y[,1:2], siteCovs=sc,
                                obsCovs=lapply(oc, function(x) x[,1:2]),
                                type="depDouble")
     expect_is(umf3, "unmarkedFrameMPois")
 
     expect_error(umf4 <- unmarkedFrameMPois(y=y, siteCovs=sc, obsCovs=oc, type="fake"))
+
+    # error when depDouble and >2 samples
+    expect_error(unmarkedFrameMPois(y=y, siteCovs=sc,
+                               obsCovs=lapply(oc, function(x) x[,1:2]),
+                               type="depDouble"))
 
 
 })

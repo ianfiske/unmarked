@@ -15,6 +15,10 @@ test_that("unmarkedFrameGMM construction works",{
   expect_error(unmarkedFrameGMM(y = y, siteCovs = siteCovs, obsCovs = obsCovs,
         yearlySiteCovs = yrSiteCovs, type="fake", numPrimary=2))
 
+  # error when >2 sampling occasions per primary period and type depDouble
+  y2 <- cbind(y, y[,1:2])
+  expect_error(unmarkedFrameGMM(y = y2, siteCovs = siteCovs, obsCovs = obsCovs,
+        yearlySiteCovs = yrSiteCovs, type="depDouble", numPrimary=2))
 
 })
 

@@ -317,6 +317,10 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
             depDouble = {
               obsToY <- matrix(1, 2, 2)
               piFun <- "depDoublePiFun"
+              if(ncol(y) != 2){
+                stop("y must have exactly 2 columns when type = 'depDouble'",
+                     call.=FALSE)
+              }
               })
     } else {
         if(missing(obsToY))
@@ -436,6 +440,9 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
           piFun <- "doublePiFun"
           },
         depDouble = {
+          if(J!=2){
+            stop("y must have exactly 2 columns per primary period", call.=FALSE)
+          }
           obsToY <- matrix(1, 2, 2)
           obsToY <- kronecker(diag(numPrimary), obsToY)
           piFun <- "depDoublePiFun"
