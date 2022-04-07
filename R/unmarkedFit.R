@@ -1476,7 +1476,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
     psi_est <- calc_psi(params)
 
     if(se.fit){
-      message('Bootstrapping confidence intervals with',nsims,'samples')
+      message('Bootstrapping confidence intervals with ',nsims,' samples')
       Sigma <- vcov(object)
       samp <- array(NA,c(dim(psi_est),nsims))
       for (i in 1:nsims){
