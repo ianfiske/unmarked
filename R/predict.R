@@ -1,8 +1,8 @@
 # General predict method-------------------------------------------------------
 
 # Common predict function for all fit types
-setGeneric("predict2", function(object,...) standardGeneric("predict2"))
-setMethod("predict2", "unmarkedFit",
+# with exception of occuMulti and occuMS (at the end of this file)
+setMethod("predict", "unmarkedFit",
   function(object, type, newdata, backTransform = TRUE, na.rm = TRUE,
            appendData = FALSE, level=0.95, re.form=NULL, ...){
 
@@ -291,6 +291,7 @@ setMethod("predict_by_chunk", "unmarkedFitPCount",
     fixedOnly <- !is.null(re.form)
     lam.mle <- coef(lamEst, fixedOnly=fixedOnly)
     lam_vcov <- vcov(lamEst, fixedOnly=fixedOnly)
+    if(is.null(offsets)) offsets <- rep(0, nrow(xmat))
 
     for(i in 1:nrow(xmat)) {
       if(nrow(xmat) > 5000) {
@@ -415,7 +416,7 @@ setMethod("check_predict_arguments", "unmarkedFitDSO",
 pred_inp_umf_dm <- function(object, type, newdata, na.rm, re.form=NA){
   designMats <- getDesign(newdata, object@formula, na.rm=na.rm)
   X_idx <- switch(type, lambda="Xlam", gamma="Xgam", omega="Xom",
-                  iota="Xiota", det="Xdet")
+                  iota="Xiota", det="Xp")
   off_idx <- paste0(X_idx, ".offset")
   list(X=designMats[[X_idx]], offset=designMats[[off_idx]])
 }
@@ -433,7 +434,7 @@ setMethod("predict_inputs_from_umf", "unmarkedFitDSO",
 get_formula_dm <- function(object, type, ...){
   fl <- object@formlist
   switch(type, lambda=fl$lambdaformula, gamma=fl$gammaformula,
-         omega=fl$omegaformula, iota=fl$iotaformula, det=fl$detformula)
+         omega=fl$omegaformula, iota=fl$iotaformula, det=fl$pformula)
 }
 
 setMethod("get_formula", "unmarkedFitPCO", function(object, type, ...){
@@ -567,3 +568,367 @@ setMethod("get_orig_data", "unmarkedFitNmixTTD", function(object, type, ...){
   clean_covs[[datatype]]
 })
 
+
+# occuMulti--------------------------------------------------------------------
+
+# bespoke predict method since it has numerious unusual options
+# and requires bootstrapping
+
+setMethod("predict", "unmarkedFitOccuMulti",
+     function(object, type, newdata,
+              #backTransform = TRUE, na.rm = TRUE,
+              #appendData = FALSE,
+              se.fit=TRUE, level=0.95, species=NULL, cond=NULL, nsims=100,
+              ...)
+  {
+
+  type <- match.arg(type, c("state", "det"))
+
+  if(is.null(hessian(object))){
+    se.fit = FALSE
+  }
+
+  species <- name_to_ind(species, names(object@data@ylist))
+  cond <- name_to_ind(cond, names(object@data@ylist))
+
+  if(missing(newdata)){
+    newdata <- NULL
+  } else {
+    if(! class(newdata) %in% c('data.frame')){
+      stop("newdata must be a data frame")
+    }
+  }
+
+  maxOrder <- object@call$maxOrder
+  if(is.null(maxOrder)) maxOrder <- length(object@data@ylist)
+  dm <- getDesign(object@data,object@detformulas,object@stateformulas,
+                  maxOrder, na.rm=F, newdata=newdata, type=type)
+
+  params <- coef(object)
+  low_bound <- (1-level)/2
+  up_bound <- level + (1-level)/2
+
+
+  if(type=="state"){
+    N <- nrow(dm$dmOcc[[1]]); nF <- dm$nF; dmOcc <- dm$dmOcc;
+    fStart <- dm$fStart; fStop <- dm$fStop; fixed0 <- dm$fixed0
+    t_dmF <- t(dm$dmF)
+
+    calc_psi <- function(params){
+
+      f <- matrix(NA,nrow=N,ncol=nF)
+      index <- 1
+      for (i in 1:nF){
+        if(fixed0[i]){
+          f[,i] <- 0
+        } else {
+          f[,i] <- dmOcc[[index]] %*% params[fStart[index]:fStop[index]]
+          index <- index + 1
+        }
+      }
+      psi <- exp(f %*% t_dmF)
+      as.matrix(psi/rowSums(psi))
+    }
+
+    psi_est <- calc_psi(params)
+
+    if(se.fit){
+      message('Bootstrapping confidence intervals with ',nsims,' samples')
+      Sigma <- vcov(object)
+      samp <- array(NA,c(dim(psi_est),nsims))
+      for (i in 1:nsims){
+        samp[,,i] <- calc_psi(mvrnorm(1, coef(object), Sigma))
+      }
+    }
+
+    if(!is.null(species)){
+
+      sel_col <- species
+
+      if(!is.null(cond)){
+        if(any(sel_col %in% abs(cond))){
+          stop("Species can't be conditional on itself")
+        }
+        ftemp <- object@data@fDesign
+        swap <- -1*cond[which(cond<0)]
+        ftemp[,swap] <- 1 - ftemp[,swap]
+        num_inds <- apply(ftemp[,c(sel_col,abs(cond))] == 1,1,all)
+        denom_inds <- apply(ftemp[,abs(cond),drop=F] == 1,1,all)
+        est <- rowSums(psi_est[,num_inds,drop=F]) /
+          rowSums(psi_est[,denom_inds, drop=F])
+        if(se.fit){
+          samp_num <- apply(samp[,num_inds,,drop=F],3,rowSums)
+          samp_denom <- apply(samp[,denom_inds,,drop=F],3,rowSums)
+          samp <- samp_num / samp_denom
+        }
+
+      } else {
+        num_inds <- apply(object@data@fDesign[,sel_col,drop=FALSE] == 1,1,all)
+        est <- rowSums(psi_est[,num_inds,drop=F])
+        if(se.fit){
+          samp <- samp[,num_inds,,drop=F]
+          samp <- apply(samp, 3, rowSums)
+        }
+      }
+
+      if(se.fit){
+        if(!is.matrix(samp)) samp <- matrix(samp, nrow=1)
+        boot_se <- apply(samp,1,sd, na.rm=T)
+        boot_low <- apply(samp,1,quantile,low_bound, na.rm=T)
+        boot_up <- apply(samp,1,quantile,up_bound, na.rm=T)
+      } else{
+        boot_se <- boot_low <- boot_up <- NA
+      }
+      return(data.frame(Predicted=est,
+                        SE=boot_se,
+                        lower=boot_low,
+                        upper=boot_up))
+
+    } else {
+      codes <- apply(dm$z,1,function(x) paste(x,collapse=""))
+      colnames(psi_est)  <- paste('psi[',codes,']',sep='')
+      if(se.fit){
+        boot_se <- apply(samp,c(1,2),sd, na.rm=T)
+        boot_low <- apply(samp,c(1,2),quantile,low_bound, na.rm=T)
+        boot_up <- apply(samp,c(1,2),quantile,up_bound, na.rm=T)
+        colnames(boot_se) <- colnames(boot_low) <- colnames(boot_up) <-
+          colnames(psi_est)
+      } else {
+        boot_se <- boot_low <- boot_up <- NA
+      }
+      return(list(Predicted=psi_est,
+                  SE=boot_se,
+                  lower=boot_low,
+                  upper=boot_up))
+    }
+  }
+
+  if(type=="det"){
+    S <- dm$S; dmDet <- dm$dmDet
+    dStart <- dm$dStart; dStop <- dm$dStop
+
+    out <- list()
+    for (i in 1:S){
+      #Subset estimate to species i
+      inds <- dStart[i]:dStop[i]
+      new_est <- object@estimates@estimates$det
+      new_est@estimates <- coef(object)[inds]
+      new_est@fixed <- 1:length(inds)
+      if(se.fit){
+        new_est@covMat <- vcov(object)[inds,inds,drop=FALSE]
+        new_est@covMatBS <- object@covMatBS[inds,inds,drop=FALSE]
+      } else{
+        new_est@covMat <- matrix(NA, nrow=length(inds), ncol=length(inds))
+        new_est@covMatBS <- matrix(NA, nrow=length(inds), ncol=length(inds))
+      }
+
+      prmat <- t(apply(dmDet[[i]], 1, function(x){
+                    bt <- backTransform(linearComb(new_est, x))
+                    if(!se.fit){
+                      return(c(Predicted=bt@estimate, SE=NA, lower=NA, upper=NA))
+                    }
+                    ci <- confint(bt, level=level)
+                    names(ci) <- c("lower", "upper")
+                    c(Predicted=bt@estimate, SE=SE(bt), ci)
+                  }))
+      rownames(prmat) <- NULL
+      out[[i]] <- as.data.frame(prmat)
+    }
+    names(out) <- names(object@data@ylist)
+    if(!is.null(species)){
+      return(out[[species]])
+    }
+    return(out)
+  }
+  stop("type must be 'det' or 'state'")
+})
+
+
+# occuMS-----------------------------------------------------------------------
+
+# bespoke predict method since it has numerious unusual options
+# and requires bootstrapping
+
+setMethod("predict", "unmarkedFitOccuMS",
+     function(object, type, newdata,
+              #backTransform = TRUE, na.rm = TRUE,
+              #appendData = FALSE,
+              se.fit=TRUE, level=0.95, nsims=100, ...)
+{
+
+  #Process input---------------------------------------------------------------
+  if(! type %in% c("psi","phi", "det")){
+    stop("type must be 'psi', 'phi', or 'det'")
+  }
+
+  if(is.null(hessian(object))){
+    se.fit = FALSE
+  }
+
+  if(missing(newdata)){
+    newdata <- NULL
+  } else {
+    if(! class(newdata) %in% c('data.frame')){
+      stop("newdata must be a data frame")
+    }
+  }
+
+  S <- object@data@numStates
+  gd <- getDesign(object@data,object@psiformulas,object@phiformulas,
+                  object@detformulas, object@parameterization, na.rm=F,
+                  newdata=newdata, type=type)
+
+  #Index guide used to organize p values
+  guide <- matrix(NA,nrow=S,ncol=S)
+  guide <- lower.tri(guide,diag=TRUE)
+  guide[,1] <- FALSE
+  guide <- which(guide,arr.ind=TRUE)
+  #----------------------------------------------------------------------------
+
+  #Utility functions-----------------------------------------------------------
+  #Get matrix of linear predictor values
+  get_lp <- function(params, dm_list, ind){
+    L <- length(dm_list)
+    out <- matrix(NA,nrow(dm_list[[1]]),L)
+    for (i in 1:L){
+      out[,i] <- dm_list[[i]] %*% params[ind[i,1]:ind[i,2]]
+    }
+    out
+  }
+
+  #Get SE/CIs for conditional binomial using delta method
+  split_estimate <- function(object, estimate, inds, se.fit){
+    out <- estimate
+    out@estimates <- coef(object)[inds]
+    if(se.fit){
+      out@covMat <- vcov(object)[inds,inds,drop=FALSE]
+    } else{
+      out@covMat <- matrix(NA, nrow=length(inds), ncol=length(inds))
+    }
+    out
+  }
+
+  lc_to_predict <- function(object, estimate, inds, dm, level, se.fit){
+
+    new_est <- split_estimate(object, estimate, inds[1]:inds[2], se.fit)
+
+    out <- t(apply(dm, 1, function(x){
+      bt <- backTransform(linearComb(new_est, x))
+      if(!se.fit) return(c(Predicted=bt@estimate, SE=NA, lower=NA, upper=NA))
+      ci <- confint(bt, level=level)
+      names(ci) <- c("lower", "upper")
+      c(Predicted=bt@estimate, SE=SE(bt), ci)
+    }))
+    rownames(out) <- NULL
+    as.data.frame(out)
+  }
+
+
+  #Calculate row-wise multinomial logit prob
+  #implemented in C++ below as it is quite slow
+  get_mlogit_R <- function(lp_mat){
+    if(type == 'psi'){
+      out <- cbind(1,exp(lp_mat))
+      out <- out/rowSums(out)
+      out <- out[,-1]
+    } else if(type == 'phi'){ #doesn't work
+      np <- nrow(lp_mat)
+      out <- matrix(NA,np,ncol(lp_mat))
+      ins <- outer(1:S, 1:S, function(i,j) i!=j)
+      for (i in 1:np){
+        phimat <- diag(S)
+        phimat[ins] <- exp(lp_mat[i,])
+        phimat <- t(phimat)
+        phimat <- phimat/rowSums(phimat)
+        out[i,] <- phimat[ins]
+      }
+    } else {
+      R <- nrow(lp_mat)
+      out <- matrix(NA,R,ncol(lp_mat))
+      for (i in 1:R){
+        sdp <- matrix(0,nrow=S,ncol=S)
+        sdp[guide] <- exp(lp_mat[i,])
+        sdp[,1] <- 1
+        sdp <- sdp/rowSums(sdp)
+        out[i,] <- sdp[guide]
+      }
+    }
+    out
+  }
+
+  get_mlogit <- function(lp_mat){
+    .Call("get_mlogit",
+         lp_mat, type, S, guide-1)
+  }
+
+  #----------------------------------------------------------------------------
+
+  if(type=="psi"){
+    dm_list <- gd$dm_state
+    ind <- gd$state_ind
+    est <- object@estimates@estimates$state
+  } else if(type=="phi"){
+    dm_list <- gd$dm_phi
+    ind <- gd$phi_ind
+    est <- object@estimates@estimates$transition
+  } else {
+    dm_list <- gd$dm_det
+    ind <- gd$det_ind
+    est <- object@estimates@estimates$det
+  }
+
+  P <- length(dm_list)
+
+  low_bound <- (1-level)/2
+  z <- qnorm(low_bound,lower.tail=F)
+
+  out <- vector("list", P)
+  names(out) <- names(dm_list)
+
+  if(object@parameterization == 'condbinom'){
+    out <- lapply(1:length(dm_list), function(i){
+      lc_to_predict(object, est, ind[i,], dm_list[[i]], level, se.fit)
+    })
+    names(out) <- names(dm_list)
+    return(out)
+
+  } else if (object@parameterization == "multinomial"){
+    lp <- get_lp(coef(object), dm_list, ind)
+    pred <- get_mlogit(lp)
+
+    M <- nrow(pred)
+    upr <- lwr <- se <- matrix(NA,M,P)
+
+    if(se.fit){
+      message('Bootstrapping confidence intervals with',nsims,'samples')
+
+      sig <- vcov(object)
+      param_mean <- coef(object)
+      rparam <- mvrnorm(nsims, param_mean, sig)
+
+      get_pr <- function(i){
+        lp <- get_lp(rparam[i,], dm_list, ind)
+        get_mlogit(lp)
+      }
+      samp <- sapply(1:nsims, get_pr, simplify='array')
+
+      for (i in 1:M){
+        for (j in 1:P){
+          dat <- samp[i,j,]
+          se[i,j] <- sd(dat, na.rm=TRUE)
+          quants <- quantile(dat, c(low_bound, (1-low_bound)),na.rm=TRUE)
+          lwr[i,j] <- quants[1]
+          upr[i,j] <- quants[2]
+        }
+      }
+
+    }
+  }
+
+  for (i in 1:P){
+    out[[i]] <- data.frame(Predicted=pred[,i], SE=se[,i],
+                           lower=lwr[,i], upper=upr[,i])
+  }
+
+  out
+})
