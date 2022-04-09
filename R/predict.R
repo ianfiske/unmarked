@@ -13,16 +13,18 @@ setMethod("predict", "unmarkedFit",
   check_predict_arguments(object, type, newdata)
 
   # Get model matrix (X) and offset
-  # newdata is an unmarkedFrame, use getDesign
+  # If newdata is an unmarkedFrame, use getDesign via predict_inputs_from_umf()
   is_raster <- FALSE
   if(inherits(newdata, "unmarkedFrame")){
+    # Generate model matrix and offsets
     pred_inps <- predict_inputs_from_umf(object, type, newdata, na.rm, re.form)
   } else {
-    # 1. Get original data and formula
+    # If newdata is provided
+    # 1. Get original data and appropriate formula for type
     orig_data <- get_orig_data(object, type)
     orig_formula <- get_formula(object, type)
 
-    # 2. If raster, get newdata from raster as data.frame
+    # 2. If newdata is raster, get newdata from raster as data.frame
     if(inherits(newdata, c("RasterLayer","RasterStack"))){
       if(!require(raster)) stop("raster package required", call.=FALSE)
       is_raster <- TRUE
@@ -50,7 +52,9 @@ setMethod("predict", "unmarkedFit",
 
 })
 
-#Utility function to make model matrix and offset from newdata
+# Function to make model matrix and offset from formula, newdata and original data
+# This function makes sure factor levels in newdata match, and that
+# any functions in the formula are handled properly (e.g. scale)
 make_mod_matrix <- function(formula, data, newdata, re.form=NULL){
   form_nobars <- lme4::nobars(formula)
   mf <- model.frame(form_nobars, data, na.action=stats::na.pass)
@@ -75,11 +79,11 @@ make_mod_matrix <- function(formula, data, newdata, re.form=NULL){
 # Fit type-specific methods to generate different components of prediction
 # 1. check_predict_arguments(): Check arguments
 # 2. predict_inputs_from_umf(): Generating inputs from an unmarked
-#    frame (e.g. when no newdata),
+#    frame (e.g. when no newdata) using getDesign
 # 3. get_formula: Get formula for submodel type
 # 4. get_orig_data(): Get original dataset for use in building model frame
 # 5. predict_by_chunk(): Take inputs and generate predictions
-# Basic methods are shown below; fit-specific methods in their own sections
+# Basic methods are shown below; fit type-specific methods in their own sections
 
 setGeneric("check_predict_arguments", function(object, ...){
   standardGeneric("check_predict_arguments")
@@ -87,10 +91,10 @@ setGeneric("check_predict_arguments", function(object, ...){
 
 setMethod("check_predict_arguments", "unmarkedFit",
   function(object, type, newdata, ...){
-  # Check type
+  # Check if type is supported (i.e., is it in names(object)?)
   check_type(object, type)
 
-  # Check newdata
+  # Check newdata class
   if(!inherits(newdata, c("unmarkedFrame", "data.frame", "RasterLayer", "RasterStack"))){
     stop("newdata must be unmarkedFrame, data.frame, RasterLayer, or RasterStack", call.=FALSE)
   }
@@ -103,7 +107,6 @@ check_type <- function(mod, type){
   if(type %in% opts) return(invisible(TRUE))
   stop("Valid types are ", paste(opts, collapse=", "), call.=FALSE)
 }
-
 
 # Get X and offset when newdata is umf
 setGeneric("predict_inputs_from_umf", function(object, ...){
@@ -140,15 +143,20 @@ setGeneric("get_orig_data", function(object, type, ...){
   standardGeneric("get_orig_data")
 })
 
+# Note that by default, final year of yearlySiteCov data at each site is dropped
+# Because transition probabilities are not estimated for final year
+# this is appropriate for dynamic models but not temporary emigration models
+# for which the drop_final should be FALSE
 setMethod("get_orig_data", "unmarkedFit", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_factor_levels=TRUE)
+  clean_covs <- clean_up_covs(object, drop_final=TRUE)
   datatype <- switch(type, state='site_covs', det='obs_covs')
   clean_covs[[datatype]]
 })
 
-# Deal with NULL covariate data frames and add site covs to ysc,
-# ysc to obs covs, etc.
-clean_up_covs <- function(object, drop_factor_levels=FALSE){
+# Convert NULL data frames to dummy data frames of proper dimension
+# Add site covs to yearlysitecovs, ysc to obs covs, etc.
+# Drop final year of ysc if necessary
+clean_up_covs <- function(object, drop_final=FALSE){
   M <- numSites(object@data)
   R <- obsNum(object@data)
   T <- 1
@@ -181,9 +189,10 @@ clean_up_covs <- function(object, drop_factor_levels=FALSE){
   }
 
   if(is_mult & (T > 1)){
-    if(drop_factor_levels){
-      # Drop factor levels only found in last year of data
-      ysc <- droplevels_final_year(ysc, M, T)
+    if(drop_final){
+      # Drop final year of data at each site
+      # Also drop factor levels only found in last year of data
+      ysc <- drop_final_year(ysc, M, T)
     }
     out$yearly_site_covs <- ysc
   }
@@ -191,16 +200,17 @@ clean_up_covs <- function(object, drop_factor_levels=FALSE){
   out
 }
 
-#Remove data in final year of yearlySiteCovs
+#Remove data in final year of yearlySiteCovs (replacing with NAs)
 #then drop factor levels found only in that year
-droplevels_final_year <- function(dat, nsites, nprimary){
+drop_final_year <- function(dat, nsites, nprimary){
   dat[seq(nprimary, nsites*nprimary, by=nprimary), ] <- NA
   dat <- lapply(dat, function(x) x[,drop = TRUE])
   as.data.frame(dat)
 }
 
 
-# Take inputs and generate prediction, done in chunks for speed
+# Take inputs (most importantly model matrix and offsets) and generate prediction
+# done in chunks for speed, 70 was optimal after tests
 setGeneric("predict_by_chunk", function(object, ...){
   standardGeneric("predict_by_chunk")
 })
@@ -223,6 +233,7 @@ setMethod("predict_by_chunk", "unmarkedFit",
   off_chunk <- split(offsets, ind)
   out <- mapply(function(x_i, off_i){
     has_na <- apply(x_i, 1, function(x_i) any(is.na(x_i)))
+    # Work around linearComb bug where there can't be NAs in inputs
     x_i[has_na,] <- 0
     off_i[has_na] <- 0
     lc <- linearComb(object, x_i, type, offset=off_i, re.form=re.form)
@@ -239,13 +250,13 @@ setMethod("predict_by_chunk", "unmarkedFit",
   out
 })
 
-# Raster handling functions----------------------------------------------------
 
+# Raster handling functions----------------------------------------------------
 
 # Convert a raster into a data frame to use as newdata
 newdata_from_raster <- function(rst, vars){
   nd <- raster::as.data.frame(rst)
-  # Handle factors
+  # Handle factor rasters
   is_fac <- raster::is.factor(rst)
   rem_string <- paste(paste0("^",names(rst),"_"), collapse="|")
   names(nd)[is_fac] <- gsub(rem_string, "", names(nd)[is_fac])
@@ -278,7 +289,8 @@ setMethod("check_predict_arguments", "unmarkedFitPCount",
   methods::callNextMethod(object, type, newdata)
 })
 
-# Special predict stuff for ZIP distribution in pcount
+# Special predict approach for ZIP distribution in pcount
+# All other distributions use default method
 setMethod("predict_by_chunk", "unmarkedFitPCount",
   function(object, type, level, xmat, offsets, chunk_size, backTransform=TRUE,
            re.form=NULL, ...){
@@ -353,7 +365,7 @@ setMethod("get_formula", "unmarkedFitColExt", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitColExt", function(object, type, ...){
-  clean_covs <- clean_up_covs(object)
+  clean_covs <- clean_up_covs(object, drop_final=TRUE)
   datatype <- switch(type, psi='site_covs', col='yearly_site_covs',
                      ext='yearly_site_covs', det='obs_covs')
   clean_covs[[datatype]]
@@ -450,7 +462,7 @@ setMethod("get_formula", "unmarkedFitDSO", function(object, type, ...){
 
 # This method differs between PCO and DSO
 setMethod("get_orig_data", "unmarkedFitPCO", function(object, type, ...){
-  clean_covs <- clean_up_covs(object)
+  clean_covs <- clean_up_covs(object, drop_final=TRUE)
   datatype <- switch(type, lambda='site_covs', gamma='yearly_site_covs',
                      omega='yearly_site_covs', iota='yearly_site_covs',
                      det='obs_covs')
@@ -458,7 +470,7 @@ setMethod("get_orig_data", "unmarkedFitPCO", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitDSO", function(object, type, ...){
-  clean_covs <- clean_up_covs(object)
+  clean_covs <- clean_up_covs(object, drop_final=TRUE)
   datatype <- switch(type, lambda='site_covs', gamma='yearly_site_covs',
                      omega='yearly_site_covs', iota='yearly_site_covs',
                      det='yearly_site_covs')
@@ -521,7 +533,7 @@ setMethod("get_formula", "unmarkedFitGMM", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitGMM", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_factor_levels=FALSE)
+  clean_covs <- clean_up_covs(object, drop_final=FALSE)
   datatype <- switch(type, lambda='site_covs', phi='yearly_site_covs',
                      det='obs_covs')
   clean_covs[[datatype]]
@@ -545,7 +557,7 @@ setMethod("get_formula", "unmarkedFitOccuTTD", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitOccuTTD", function(object, type, ...){
-  clean_covs <- clean_up_covs(object)
+  clean_covs <- clean_up_covs(object, drop_final=TRUE)
   datatype <- switch(type, psi='site_covs', col='yearly_site_covs',
                      ext='yearly_site_covs', det='obs_covs')
   clean_covs[[datatype]]
@@ -566,7 +578,7 @@ setMethod("get_formula", "unmarkedFitNmixTTD", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitNmixTTD", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_factor_levels=FALSE)
+  clean_covs <- clean_up_covs(object, drop_final=FALSE)
   datatype <- switch(type, state='site_covs', det='obs_covs')
   clean_covs[[datatype]]
 })
