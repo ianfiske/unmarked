@@ -150,7 +150,7 @@ setMethod("get_orig_data", "unmarkedFit", function(object, type, ...){
 # ysc to obs covs, etc.
 clean_up_covs <- function(object, drop_factor_levels=FALSE){
   M <- numSites(object@data)
-  R <- ncol(object@data@y)
+  R <- obsNum(object@data)
   T <- 1
   J <- R
   is_mult <- methods::.hasSlot(object@data, "numPrimary")
@@ -166,7 +166,7 @@ clean_up_covs <- function(object, drop_factor_levels=FALSE){
   if(is_mult){
     ysc <- yearlySiteCovs(object@data)
     if(is.null(ysc)) ysc <- data.frame(.dummy2=rep(1,M*T))
-    if(!is.null(sc)) ysc <- cbind(ysc, sc[rep(1:M, each=T),,drop=FALSE])
+    ysc <- cbind(ysc, sc[rep(1:M, each=T),,drop=FALSE])
   }
 
   if(methods::.hasSlot(object@data, "obsCovs")){
@@ -174,12 +174,14 @@ clean_up_covs <- function(object, drop_factor_levels=FALSE){
     if(is.null(oc)) oc <- data.frame(.dummy3=rep(1,M*T*J))
     if(is_mult){
       oc <- cbind(oc, ysc[rep(1:(M*T), each=J),,drop=FALSE])
+    } else {
+      oc <- cbind(oc, sc[rep(1:M, each=J),,drop=FALSE])
     }
     out$obs_covs=oc
   }
 
   if(is_mult & (T > 1)){
-    if(T > 1 & drop_factor_levels){
+    if(drop_factor_levels){
       # Drop factor levels only found in last year of data
       ysc <- droplevels_final_year(ysc, M, T)
     }
@@ -386,6 +388,7 @@ setMethod("get_orig_data", "unmarkedFitOccuFP", function(object, type, ...){
 # Having problems with class unions, so defined regular functions common
 # to all D-M models and then wrapped them in methods
 # MMO inherits from PCO, so no need to write unique MMO methods here
+# Maybe DSO should also inherit from PCO
 
 check_predict_arg_dm <- function(object, type, newdata, ...){
   if(type %in% c("psi", "alpha", "scale")){
@@ -746,8 +749,7 @@ setMethod("predict", "unmarkedFitOccuMulti",
 
 # occuMS-----------------------------------------------------------------------
 
-# bespoke predict method since it has numerious unusual options
-# and requires bootstrapping
+# bespoke predict method since it requires bootstrapping
 
 setMethod("predict", "unmarkedFitOccuMS",
      function(object, type, newdata,
