@@ -43,30 +43,27 @@ setClass("unmarkedFitPCount",
         mixture = "character"),
     contains = "unmarkedFit")
 
-
-
-setClass("unmarkedFitPCO",
+# This class is not used directly, just used as a base for for PCO, MMO, DSO
+setClass("unmarkedFitDailMadsen",
         representation(
+            K = "numeric",
+            mixture = "character",
             formlist = "list",
             dynamics = "character",
             immigration = "logical",
             fix = "character"),
-        contains = "unmarkedFitPCount")
+         contains = "unmarkedFit")
+
+setClass("unmarkedFitPCO", contains = "unmarkedFitDailMadsen")
+
+setClass("unmarkedFitMMO", contains = "unmarkedFitDailMadsen")
 
 setClass("unmarkedFitDSO",
         representation(
-            formlist = "list",
-            dynamics = "character",
-            immigration = "logical",
-            fix = "character",
-            K="numeric",
-            mixture="character"),
-        contains = "unmarkedFitDS")
-
-setClassUnion("unmarkedFitPCOorDSO",
-              c("unmarkedFitPCO", "unmarkedFitDSO"))
-
-setClass("unmarkedFitMMO", contains = "unmarkedFitPCO")
+            keyfun = "character",
+            unitsOut = "character",
+            output = "character"),
+        contains = "unmarkedFitDailMadsen")
 
 setClass("unmarkedFitOccu",
     representation(knownOcc = "logical"),
@@ -534,9 +531,9 @@ setMethod("fitted", "unmarkedFitPCount", function(object, K, na.rm = FALSE)
     return(fitted)
 })
 
-#Get fitted N from Dail-Madsen type models
-#This part is the same across different detection models
-fittedOpenN <- function(object, K, na.rm=FALSE)
+
+setMethod("fitted", "unmarkedFitDailMadsen",
+    function(object, K, na.rm = FALSE)
 {
     dynamics <- object@dynamics
     mixture <- object@mixture
@@ -646,21 +643,7 @@ fittedOpenN <- function(object, K, na.rm=FALSE)
         }
     N <- N[,rep(1:T, each=J)]
 
-}
 
-setMethod("fitted", "unmarkedFitPCO",
-    function(object, K, na.rm = FALSE)
-{
-    N <- fittedOpenN(object, K, na.rm)
-    p <- getP(object, na.rm)
-    N * p
-})
-
-
-setMethod("fitted", "unmarkedFitDSO",
-    function(object, K, na.rm = FALSE)
-{
-    N <- fittedOpenN(object, K, na.rm)
     p <- getP(object, na.rm)
     N * p
 })
@@ -1223,7 +1206,7 @@ setMethod("update", "unmarkedFitGMM",
 })
 
 
-setMethod("update", "unmarkedFitPCOorDSO",
+setMethod("update", "unmarkedFitDailMadsen",
     function(object, lambdaformula., gammaformula., omegaformula.,
         pformula., iotaformula., ..., evaluate = TRUE) {
     call <- object@call
@@ -2310,9 +2293,9 @@ setMethod("simulate", "unmarkedFitPCO",
 })
 
 
-#Function used by both unmarkedFitDSO and MMO
-multinomOpenSim <- function(object, nsim, seed, na.rm){
-
+setMethod("simulate", "unmarkedFitDailMadsen",
+    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
+{
   umf <- object@data
   D <- getDesign(umf, object@formula, na.rm = na.rm)
   y <- D$y
@@ -2349,19 +2332,6 @@ multinomOpenSim <- function(object, nsim, seed, na.rm){
     simList[[s]] <- y.sim
   }
   return(simList)
-}
-
-setMethod("simulate", "unmarkedFitDSO",
-    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
-{
-  multinomOpenSim(object, nsim, seed, na.rm)
-})
-
-
-setMethod("simulate", "unmarkedFitMMO",
-    function(object, nsim = 1, seed = NULL, na.rm = TRUE)
-{
-  multinomOpenSim(object, nsim, seed, na.rm)
 })
 
 

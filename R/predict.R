@@ -397,12 +397,10 @@ setMethod("get_orig_data", "unmarkedFitOccuFP", function(object, type, ...){
 
 # Dail-Madsen model methods----------------------------------------------------
 
-# Having problems with class unions, so defined regular functions common
-# to all D-M models and then wrapped them in methods
-# MMO inherits from PCO, so no need to write unique MMO methods here
-# Maybe DSO should also inherit from PCO
+# Includes unmarkedFitPCO, unmarkedFitMMO, unmarkedFitDSO
 
-check_predict_arg_dm <- function(object, type, newdata, ...){
+setMethod("check_predict_arguments", "unmarkedFitDailMadsen",
+  function(object, type, newdata, ...){
   if(type %in% c("psi", "alpha", "scale")){
     stop(paste0(type, " is scalar. Use backTransform instead."), call.=FALSE)
   }
@@ -414,54 +412,25 @@ check_predict_arg_dm <- function(object, type, newdata, ...){
     stop("omega is not a parameter in the dynamics='trend' model")
   if(!immigration && identical(type, "iota"))
     stop("iota is not a parameter in the immigration=FALSE model")
-}
-
-setMethod("check_predict_arguments", "unmarkedFitPCO",
-  function(object, type, newdata, ...){
-  check_predict_arg_dm(object, type, newdata, ...)
   methods::callNextMethod(object, type, newdata)
 })
 
-setMethod("check_predict_arguments", "unmarkedFitDSO",
-  function(object, type, newdata, ...){
-  check_predict_arg_dm(object, type, newdata, ...)
-  methods::callNextMethod(object, type, newdata)
-})
-
-pred_inp_umf_dm <- function(object, type, newdata, na.rm, re.form=NA){
+setMethod("predict_inputs_from_umf", "unmarkedFitDailMadsen",
+  function(object, type, newdata, na.rm, re.form=NA){
   designMats <- getDesign(newdata, object@formula, na.rm=na.rm)
   X_idx <- switch(type, lambda="Xlam", gamma="Xgam", omega="Xom",
                   iota="Xiota", det="Xp")
   off_idx <- paste0(X_idx, ".offset")
   list(X=designMats[[X_idx]], offset=designMats[[off_idx]])
-}
-
-setMethod("predict_inputs_from_umf", "unmarkedFitPCO",
-  function(object, type, newdata, na.rm, re.form=NA){
-  pred_inp_umf_dm(object, type, newdata, na.rm, re.form=NA)
 })
 
-setMethod("predict_inputs_from_umf", "unmarkedFitDSO",
-  function(object, type, newdata, na.rm, re.form=NA){
-  pred_inp_umf_dm(object, type, newdata, na.rm, re.form=NA)
-})
-
-get_formula_dm <- function(object, type, ...){
+setMethod("get_formula", "unmarkedFitDailMadsen", function(object, type, ...){
   fl <- object@formlist
   switch(type, lambda=fl$lambdaformula, gamma=fl$gammaformula,
          omega=fl$omegaformula, iota=fl$iotaformula, det=fl$pformula)
-}
-
-setMethod("get_formula", "unmarkedFitPCO", function(object, type, ...){
-  get_formula_dm(object, type, ...)
 })
 
-setMethod("get_formula", "unmarkedFitDSO", function(object, type, ...){
-  get_formula_dm(object, type, ...)
-})
-
-# This method differs between PCO and DSO
-setMethod("get_orig_data", "unmarkedFitPCO", function(object, type, ...){
+setMethod("get_orig_data", "unmarkedFitDailMadsen", function(object, type, ...){
   clean_covs <- clean_up_covs(object, drop_final=TRUE)
   datatype <- switch(type, lambda='site_covs', gamma='yearly_site_covs',
                      omega='yearly_site_covs', iota='yearly_site_covs',
@@ -469,6 +438,7 @@ setMethod("get_orig_data", "unmarkedFitPCO", function(object, type, ...){
   clean_covs[[datatype]]
 })
 
+# This method differs for DSO
 setMethod("get_orig_data", "unmarkedFitDSO", function(object, type, ...){
   clean_covs <- clean_up_covs(object, drop_final=TRUE)
   datatype <- switch(type, lambda='site_covs', gamma='yearly_site_covs',
@@ -478,36 +448,19 @@ setMethod("get_orig_data", "unmarkedFitDSO", function(object, type, ...){
 })
 
 # Special handling for ZIP distribution
-pred_zip_dm <- function(object, type, level, xmat, offsets, chunk_size,
-                        backTransform, re.form, ...){
-  warning("Method to compute SE for ZIP model has not been written", call.=FALSE)
-  out <- data.frame(matrix(NA, nrow(xmat), 4))
-  names(out) <- c("Predicted", "SE", "lower", "upper")
-  lam.mle <- coef(object, type="lambda")
-  psi.hat <- plogis(coef(object, type="psi"))
-  if(is.null(offsets)) offsets <- rep(0, nrow(xmat))
-  out$Predicted <- as.numeric(xmat %*% lam.mle + offsets + log(1 - psi.hat))
-  if(backTransform) out$Predicted <- exp(out$Predicted)
-  out
-}
-
-setMethod("predict_by_chunk", "unmarkedFitPCO",
+setMethod("predict_by_chunk", "unmarkedFitDailMadsen",
   function(object, type, level, xmat, offsets, chunk_size, backTransform=TRUE,
            re.form=NULL, ...){
   if(type == "lambda" & object@mixture == "ZIP"){
-    return(pred_zip_dm(object, type, level, xmat, offsets, chunk_size, backTransform,
-                  re.form, ...))
-  }
-  methods::callNextMethod(object, type, level, xmat, offsets, chunk_size,
-                          backTransform, re.form, ...)
-})
-
-setMethod("predict_by_chunk", "unmarkedFitDSO",
-  function(object, type, level, xmat, offsets, chunk_size, backTransform=TRUE,
-           re.form=NULL, ...){
-  if(type == "lambda" & object@mixture == "ZIP"){
-    return(pred_zip_dm(object, type, level, xmat, offsets, chunk_size, backTransform,
-                  re.form, ...))
+    warning("Method to compute SE for ZIP model has not been written", call.=FALSE)
+    out <- data.frame(matrix(NA, nrow(xmat), 4))
+    names(out) <- c("Predicted", "SE", "lower", "upper")
+    lam.mle <- coef(object, type="lambda")
+    psi.hat <- plogis(coef(object, type="psi"))
+    if(is.null(offsets)) offsets <- rep(0, nrow(xmat))
+    out$Predicted <- as.numeric(xmat %*% lam.mle + offsets + log(1 - psi.hat))
+    if(backTransform) out$Predicted <- exp(out$Predicted)
+    return(out)
   }
   methods::callNextMethod(object, type, level, xmat, offsets, chunk_size,
                           backTransform, re.form, ...)
