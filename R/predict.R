@@ -148,7 +148,7 @@ setGeneric("get_orig_data", function(object, type, ...){
 # this is appropriate for dynamic models but not temporary emigration models
 # for which the drop_final should be FALSE
 setMethod("get_orig_data", "unmarkedFit", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_final=TRUE)
+  clean_covs <- clean_up_covs(object@data, drop_final=TRUE)
   datatype <- switch(type, state='site_covs', det='obs_covs')
   clean_covs[[datatype]]
 })
@@ -157,28 +157,28 @@ setMethod("get_orig_data", "unmarkedFit", function(object, type, ...){
 # Add site covs to yearlysitecovs, ysc to obs covs, etc.
 # Drop final year of ysc if necessary
 clean_up_covs <- function(object, drop_final=FALSE){
-  M <- numSites(object@data)
-  R <- obsNum(object@data)
+  M <- numSites(object)
+  R <- obsNum(object)
   T <- 1
   J <- R
-  is_mult <- methods::.hasSlot(object@data, "numPrimary")
+  is_mult <- methods::.hasSlot(object, "numPrimary")
   if(is_mult){
-    T <- object@data@numPrimary
+    T <- object@numPrimary
     J <- R/T
   }
 
-  sc <- siteCovs(object@data)
+  sc <- siteCovs(object)
   if(is.null(sc)) sc <- data.frame(.dummy=rep(1,M))
   out <- list(site_covs=sc)
 
   if(is_mult){
-    ysc <- yearlySiteCovs(object@data)
+    ysc <- yearlySiteCovs(object)
     if(is.null(ysc)) ysc <- data.frame(.dummy2=rep(1,M*T))
     ysc <- cbind(ysc, sc[rep(1:M, each=T),,drop=FALSE])
   }
 
-  if(methods::.hasSlot(object@data, "obsCovs")){
-    oc <- obsCovs(object@data)
+  if(methods::.hasSlot(object, "obsCovs")){
+    oc <- obsCovs(object)
     if(is.null(oc)) oc <- data.frame(.dummy3=rep(1,M*T*J))
     if(is_mult){
       oc <- cbind(oc, ysc[rep(1:(M*T), each=J),,drop=FALSE])
@@ -188,8 +188,8 @@ clean_up_covs <- function(object, drop_final=FALSE){
     out$obs_covs=oc
   }
 
-  if(is_mult & (T > 1)){
-    if(drop_final){
+  if(is_mult){
+    if(drop_final & (T > 1)){
       # Drop final year of data at each site
       # Also drop factor levels only found in last year of data
       ysc <- drop_final_year(ysc, M, T)
@@ -238,10 +238,14 @@ setMethod("predict_by_chunk", "unmarkedFit",
     off_i[has_na] <- 0
     lc <- linearComb(object, x_i, type, offset=off_i, re.form=re.form)
     if(backTransform) lc <- backTransform(lc)
-    se <- SE(lc)
-    ci <- confint(lc, level=level)
-    out <- data.frame(Predicted=coef(lc), SE=se,
-                      lower=ci[,1], upper=ci[,2])
+    out <- data.frame(Predicted=coef(lc))
+    if(!is.null(level)){
+      se <- SE(lc)
+      ci <- confint(lc, level=level)
+      out$SE <- se
+      out$lower <- ci[,1]
+      out$upper <- ci[,2]
+    }
     out[has_na,] <- NA
     out
     }, x_chunk, off_chunk, SIMPLIFY=FALSE)
@@ -365,7 +369,7 @@ setMethod("get_formula", "unmarkedFitColExt", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitColExt", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_final=TRUE)
+  clean_covs <- clean_up_covs(object@data, drop_final=TRUE)
   datatype <- switch(type, psi='site_covs', col='yearly_site_covs',
                      ext='yearly_site_covs', det='obs_covs')
   clean_covs[[datatype]]
@@ -431,7 +435,7 @@ setMethod("get_formula", "unmarkedFitDailMadsen", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitDailMadsen", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_final=TRUE)
+  clean_covs <- clean_up_covs(object@data, drop_final=TRUE)
   datatype <- switch(type, lambda='site_covs', gamma='yearly_site_covs',
                      omega='yearly_site_covs', iota='yearly_site_covs',
                      det='obs_covs')
@@ -440,7 +444,7 @@ setMethod("get_orig_data", "unmarkedFitDailMadsen", function(object, type, ...){
 
 # This method differs for DSO
 setMethod("get_orig_data", "unmarkedFitDSO", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_final=TRUE)
+  clean_covs <- clean_up_covs(object@data, drop_final=TRUE)
   datatype <- switch(type, lambda='site_covs', gamma='yearly_site_covs',
                      omega='yearly_site_covs', iota='yearly_site_covs',
                      det='yearly_site_covs')
@@ -486,7 +490,7 @@ setMethod("get_formula", "unmarkedFitGMM", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitGMM", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_final=FALSE)
+  clean_covs <- clean_up_covs(object@data, drop_final=FALSE)
   datatype <- switch(type, lambda='site_covs', phi='yearly_site_covs',
                      det='obs_covs')
   clean_covs[[datatype]]
@@ -510,7 +514,7 @@ setMethod("get_formula", "unmarkedFitOccuTTD", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitOccuTTD", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_final=TRUE)
+  clean_covs <- clean_up_covs(object@data, drop_final=TRUE)
   datatype <- switch(type, psi='site_covs', col='yearly_site_covs',
                      ext='yearly_site_covs', det='obs_covs')
   clean_covs[[datatype]]
@@ -531,8 +535,36 @@ setMethod("get_formula", "unmarkedFitNmixTTD", function(object, type, ...){
 })
 
 setMethod("get_orig_data", "unmarkedFitNmixTTD", function(object, type, ...){
-  clean_covs <- clean_up_covs(object, drop_final=FALSE)
+  clean_covs <- clean_up_covs(object@data, drop_final=FALSE)
   datatype <- switch(type, state='site_covs', det='obs_covs')
+  clean_covs[[datatype]]
+})
+
+
+# gdistremoval-----------------------------------------------------------------
+
+setMethod("predict_inputs_from_umf", "unmarkedFitGDR",
+  function(object, type, newdata, na.rm, re.form=NA){
+  designMats <- getDesign(newdata, object@formlist)
+  if(type == "lambda") list_els <- c("Xlam","Zlam")
+  if(type == "phi") list_els <- c("Xphi","Zphi")
+  if(type == "dist") list_els <- c("Xdist","Zdist")
+  if(type == "rem") list_els <- c("Xrem", "Zrem")
+  X <- designMats[[list_els[1]]]
+  if(is.null(re.form)) X <- cbind(X, designMats[[list_els[2]]])
+  list(X=X, offset=NULL)
+})
+
+setMethod("get_formula", "unmarkedFitGDR", function(object, type, ...){
+  fl <- object@formlist
+  switch(type, lambda=fl$lambdaformula, phi=fl$phiformula,
+         dist=fl$distanceformula, rem=fl$removalformula)
+})
+
+setMethod("get_orig_data", "unmarkedFitGDR", function(object, type, ...){
+  clean_covs <- clean_up_covs(object@data, drop_final=FALSE)
+  datatype <- switch(type, lambda='site_covs', phi='yearly_site_covs',
+                     dist='yearly_site_covs', rem='obs_covs')
   clean_covs[[datatype]]
 })
 
