@@ -277,7 +277,7 @@ newdata_from_raster <- function(rst, vars){
 raster_from_predict <- function(pr, orig_rst, appendData){
   new_rast <- data.frame(raster::coordinates(orig_rst), pr)
   new_rast <- raster::stack(raster::rasterFromXYZ(new_rast))
-  crs(new_rast) <- raster::crs(orig_rst)
+  raster::crs(new_rast) <- raster::crs(orig_rst)
   if(appendData) new_rast <- raster::stack(new_rast, orig_rst)
   new_rast
 }

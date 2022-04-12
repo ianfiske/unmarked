@@ -1,5 +1,35 @@
-
 context("predict-related functions")
+
+skip_on_cran()
+
+set.seed(123)
+cf <- list(state=c(intercept=0, elev=0.4, groupB=-0.5, groupC=0.6),
+           det=c(intercept=0))
+des <- list(M=100, J=5)
+guide <- list(group=factor(levels=c("A","B","C")))
+forms <- list(state=~elev+group, det=~1)
+
+umf <- simulate("occu", design=des, formulas=forms, coefs=cf, guide=guide)
+mod <- occu(~1~elev+group, umf)
+
+# Create rasters
+# Elevation
+r_elev <- data.frame(x=rep(1:10, 10), y=rep(1:10, each=10), z=rnorm(100))
+r_elev <- raster::rasterFromXYZ(r_elev)
+
+#Group
+r_group <- data.frame(x=rep(1:10, 10), y=rep(1:10, each=10),
+                      z=sample(1:length(levels(umf@siteCovs$group)), 100, replace=T))
+# Convert to 'factor' raster
+r_group <- raster::as.factor(raster::rasterFromXYZ(r_group))
+r_group@data@attributes <- data.frame(ID=raster::levels(r_group)[[1]], group=levels(umf@siteCovs$group))
+
+# Stack
+nd_raster <- raster::stack(r_elev, r_group)
+names(nd_raster) <- c("elev", "group")
+raster::crs(nd_raster) <- 32616
+
+
 
 test_that("clean_up_covs works with dynamic model data",{
 
@@ -17,7 +47,7 @@ test_that("clean_up_covs works with dynamic model data",{
                           yearlySiteCovs=ysc, numPrimary=2)
 
   dr <- unmarked:::clean_up_covs(umf, drop_final=TRUE)
-  expect_equal(dr$site_covs, data.frame(sc1=1:3)) 
+  expect_equal(dr$site_covs, data.frame(sc1=1:3))
   expect_equal(dr$yearly_site_covs, data.frame(ysc1=c(1,NA,3,NA,5,NA),
                                                  ysc2=factor(c("a",NA,"a",NA,"a",NA)),
                                                  sc1=c(1,NA,2,NA,3,NA)))
@@ -31,7 +61,7 @@ test_that("clean_up_covs works with dynamic model data",{
                                                     sc1=rep(1:3, each=2)))
 
   umf <- unmarkedFramePCO(y=y, numPrimary=2)
-  
+
   cc <- unmarked:::clean_up_covs(umf, drop_final=TRUE)
   expect_equivalent(cc$obs_covs,
                     data.frame(.dummy3=rep(1,12), .dummy2=rep(1,12), .dummy1=rep(1,12)))
@@ -56,10 +86,10 @@ test_that("clean_up_covs works with models with no obs covs",{
       siteCovs = data.frame(Length, area, habitat),
       dist.breaks = c(0, 5, 10, 15, 20),
       tlength = linetran$Length * 1000, survey = "line", unitsIn = "m")
-    }) 
+    })
   ltUMF
 
-  cc <- unmarked:::clean_up_covs(ltUMF)  
+  cc <- unmarked:::clean_up_covs(ltUMF)
   expect_equal(names(cc), c("site_covs", "obs_covs"))
   expect_equal(dim(cc$obs_covs), c(12,4))
 })
@@ -76,7 +106,7 @@ test_that("clean_up_covs works with models where length(y) != length(p)",{
   for(i in 1:nSites) {
     y[i,] <- rmultinom(1, N[i], c(cp, 1-sum(cp)))[1:3]
   }
- 
+
   observer <- matrix(c('A','B'), nSites, 2, byrow=TRUE)
   expect_warning(umf <- unmarkedFrameMPois(y=y,
          siteCovs <- data.frame(sc1=1:3),
@@ -90,3 +120,19 @@ test_that("clean_up_covs works with models where length(y) != length(p)",{
 
 })
 
+test_that("predicting from raster works",{
+  pr <- predict(mod, 'state', newdata=nd_raster)
+  expect_is(pr, 'RasterStack')
+  expect_equal(names(pr), c("Predicted","SE","lower","upper"))
+  expect_equal(pr[1,1][1], 0.695741, tol=1e-5)
+  expect_equal(crs(pr), crs(nd_raster))
+
+  #append data
+  pr <- predict(mod, 'state', newdata=nd_raster, appendData=TRUE)
+  expect_is(pr, 'RasterStack')
+  expect_equal(names(pr)[5:6], c("elev","group"))
+
+  # Missing levels are handled
+  nd_2 <- nd_raster[[1]]
+  expect_error(predict(mod, 'state', newdata=nd_2))
+})
