@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 1.1.1.9018
-Date: 2022-03-31
+Version: 1.1.1.9019
+Date: 2022-04-12
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(
@@ -49,7 +49,8 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'gdistremoval.R'
     'mixedModelTools.R'
     'power.R' 
-    'simulate.R' 
+    'simulate.R'
+    'predict.R'
     'RcppExports.R'
 LinkingTo: 
     Rcpp,

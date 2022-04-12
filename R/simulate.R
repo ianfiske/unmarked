@@ -301,10 +301,8 @@ setMethod("simulate_fit", "unmarkedFitGMM",
            se=FALSE, control=list(maxit=1))
 })
 
-setClassUnion("unmarkedFitOpenPop",
-              c("unmarkedFitPCO","unmarkedFitMMO"))
 
-setMethod("get_umf_components", "unmarkedFitOpenPop",
+setMethod("get_umf_components", "unmarkedFitDailMadsen",
           function(object, formulas, guide, design, ...){
   sc <- generate_data(formulas$lambda, guide, design$M)
   ysc <- generate_data(list(formulas$gamma, formulas$omega), guide, design$M*design$T)
