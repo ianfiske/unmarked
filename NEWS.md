@@ -1,3 +1,19 @@
+# unmarked 1.2.0
+
+* Add gdistremoval function to fit distance/removal models, see Amundson et al. 2014
+* Add power analysis tools (powerAnalysis)
+* Simulate datasets from scratch for any model type using simulate()
+* Add penalized likelihood option to occuMulti, see Clipp et al. 2021
+* Experimental random effects support for distsamp, multinomPois, and gdistremoval using TMB
+* Improvements to predict() speed and better error messages
+* Add vignettes for occuMulti, power analysis, simulation, and random effects
+* Overhaul package tests and move to testthat
+* New package website using pkgdown
+* Move raster package from imports to suggests
+* Fix assorted compilation warnings with newer versions of compilers on CRAN
+* Remove call in TMB code to deprecated DOUBLE_XMIN
+* Many bugfixes
+
 # unmarked 1.1.1
 
 * Fix address sanitizer problems with multmixOpen

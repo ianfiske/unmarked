@@ -1,4 +1,5 @@
 context("simulate method")
+skip_on_cran()
 
 test_that("simulate can generate new datasets from scratch",{
 

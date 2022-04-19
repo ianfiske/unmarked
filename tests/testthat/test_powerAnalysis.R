@@ -1,4 +1,5 @@
 context("powerAnalysis method")
+skip_on_cran()
 
 test_that("powerAnalysis method works",{
   forms <- list(state=~elev, det=~1)

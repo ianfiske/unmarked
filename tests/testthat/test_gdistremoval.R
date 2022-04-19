@@ -1,4 +1,5 @@
 context("gdistremoval fitting function")
+skip_on_cran()
 
 simData <- function(lambda=1, sigma=40, scale=NULL, remP=0.4, remJ=4,
                     M=100, J=4,type="point", keyfun="halfnorm", T=1, phi=1)

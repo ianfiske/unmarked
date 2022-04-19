@@ -1,4 +1,5 @@
 context("occuMS fitting function")
+skip_on_cran()
 
 test_that("unmarkedFrameOccuMS is constructed properly",{
 

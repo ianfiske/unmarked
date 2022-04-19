@@ -1,5 +1,5 @@
 context("distsamp fitting function")
-
+skip_on_cran()
 
 y <- matrix(rep(4:1, 10)[1:10], 5, 2, byrow=TRUE)
 siteCovs <- data.frame(x = c(0, 2, 3, 4, 1))

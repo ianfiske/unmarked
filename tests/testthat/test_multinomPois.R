@@ -1,4 +1,5 @@
 context("multinomPois fitting function")
+skip_on_cran()
 
 test_that("unmarkedFrameMPois can be constructed",{
     y <- matrix(c(

@@ -1,4 +1,5 @@
 context("parboot")
+skip_on_cran()
 
 y <- matrix(rep(0:1,10)[1:10],5,2)
 siteCovs <- data.frame(x = c(0,2,3,4,1))
