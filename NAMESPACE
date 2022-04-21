@@ -15,7 +15,7 @@ importFrom(MASS, mvrnorm)
 importFrom(parallel, detectCores, makeCluster, stopCluster, clusterExport,
            clusterEvalQ)
 importFrom(methods, is, as, new, show, slot, .hasSlot, callGeneric, 
-           callNextMethod)
+           callNextMethod, setMethod)
 importFrom(lattice, xyplot, levelplot)
 importFrom(Rcpp, evalCpp)
 importFrom(pbapply, pbsapply, pblapply)

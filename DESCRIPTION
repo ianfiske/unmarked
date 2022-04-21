@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 1.2.0
-Date: 2022-04-20
+Version: 1.2.1
+Date: 2022-04-21
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(
@@ -18,14 +18,13 @@ Authors@R: c(
     person("Ariel", "Muldoon", role="ctb"),
     person("Chris", "Baker", role="ctb")
     )
-Depends: R (>= 2.12.0)
+Depends: R (>= 2.12.0), methods
 Imports: 
     graphics,
     lattice,
     lme4,
     MASS,
     Matrix,
-    methods,
     parallel,
     pbapply,
     plyr,
@@ -59,7 +58,7 @@ LinkingTo:
     RcppEigen
 SystemRequirements: GNU make
 URL: https://groups.google.com/d/forum/unmarked,
-     https://sites.google.com/site/unmarkedinfo/home,
+     https://rbchan.github.io/unmarked/,
      https://github.com/ianfiske/unmarked,
      https://github.com/rbchan/unmarked
 BugReports: https://github.com/rbchan/unmarked/issues
