@@ -1,4 +1,4 @@
-# unmarked 1.2.0
+# unmarked 1.2.2
 
 * Add gdistremoval function to fit distance/removal models, see Amundson et al. 2014
 * Add power analysis tools (powerAnalysis)
