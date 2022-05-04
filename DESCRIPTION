@@ -1,14 +1,14 @@
 Package: unmarked
-Version: 1.2.3
-Date: 2022-04-25
+Version: 1.2.3.9001
+Date: 2022-05-04
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(
     person("Richard", "Chandler", role="aut"), 
-    person("Ken", "Kellner", role="aut"),
+    person("Ken", "Kellner", email="contact@kenkellner.com", role=c("cre", "aut")),
     person("Ian", "Fiske", role="aut"), 
     person("David", "Miller", role="aut"),
-    person("Andy", "Royle", email="aroyle@usgs.gov", role=c("cre", "aut")),
+    person("Andy", "Royle", role="aut"),
     person("Jeff", "Hostetler", role="aut"),
     person("Rebecca", "Hutchinson", role="aut"),
     person("Adam", "Smith", role="aut"),
@@ -18,13 +18,14 @@ Authors@R: c(
     person("Ariel", "Muldoon", role="ctb"),
     person("Chris", "Baker", role="ctb")
     )
-Depends: R (>= 2.12.0), methods
+Depends: R (>= 2.12.0)
 Imports: 
     graphics,
     lattice,
     lme4,
     MASS,
     Matrix,
+    methods,
     parallel,
     pbapply,
     plyr,
@@ -33,7 +34,7 @@ Imports:
     TMB (>= 1.7.18),
     utils
 Suggests: AHMbook, pkgdown, raster, testthat
-Description: Fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates.
+Description: Fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates. Reference: Fiske and Chandler (2011) <doi:10.18637/jss.v043.i10>.
 License: GPL (>=3)
 LazyLoad: yes
 LazyData: yes
