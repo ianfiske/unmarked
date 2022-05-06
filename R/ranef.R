@@ -98,7 +98,7 @@ setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
   N <- numSites(object@data)
   S <- object@data@numStates
 
-  psi <- predict(object, "state", se.fit=F)
+  psi <- predict(object, "psi", se.fit=F)
   psi <- sapply(psi, function(x) x$Predicted)
   z <- 0:(S-1)
 
@@ -113,9 +113,9 @@ setMethod("ranef", "unmarkedFitOccuMS", function(object, ...)
     psi <- cbind(1-rowSums(psi), psi)
 
     guide <- matrix(NA,nrow=S,ncol=S)
-    guide <- lower.tri(guide,diag=T)
+    guide <- lower.tri(guide,diag=TRUE)
     guide[,1] <- FALSE
-    guide <- which(guide,arr.ind=T)
+    guide <- which(guide,arr.ind=TRUE)
     for (i in 1:N){
       f <- psi[i,]
       g <- rep(1, S)
@@ -828,9 +828,10 @@ setMethod("ranef", "unmarkedFitOccuTTD",
 })
 
 
-#Common function for DSO and MMO
-postMultinomOpen <- function(object){
-
+# DSO and MMO
+setMethod("ranef", "unmarkedFitDailMadsen",
+    function(object, ...)
+{
     dyn <- object@dynamics
     formlist <- object@formlist
     formula <- as.formula(paste(unlist(formlist), collapse=" "))
@@ -984,23 +985,6 @@ postMultinomOpen <- function(object){
             }
           }
     }
-    post
-
-}
-
-
-setMethod("ranef", "unmarkedFitDSO",
-    function(object, ...)
-{
-    post <- postMultinomOpen(object)
-    new("unmarkedRanef", post=post)
-})
-
-
-setMethod("ranef", "unmarkedFitMMO",
-    function(object, ...)
-{
-    post <- postMultinomOpen(object)
     new("unmarkedRanef", post=post)
 })
 

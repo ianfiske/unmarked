@@ -1,29 +1,3 @@
-model_frame <- function(formula, data, newdata=NULL){
-
-  formula <- lme4::nobars(formula)
-  mf <- model.frame(formula, data, na.action=stats::na.pass)
-
-  if(is.null(newdata)){
-    return(mf)
-  }
-
-  check_newdata(newdata, formula)
-  model.frame(stats::terms(mf), newdata, na.action=stats::na.pass,
-                        xlev=get_xlev(data, mf))
-}
-
-model_matrix <- function(formula, data, newdata=NULL){
-  mf <- model_frame(formula, data, newdata)
-  model.matrix(lme4::nobars(formula), mf)
-}
-
-model_offset <- function(formula, data, newdata=NULL){
-  mf <- model_frame(formula, data, newdata)
-  out <- model.offset(mf)
-  if(is.null(out)) out <- rep(0, nrow(mf))
-  out
-}
-
 get_xlev <- function(data, model_frame){
   fac_col <- data[, sapply(data, is.factor), drop=FALSE]
   xlevs <- lapply(fac_col, levels)
@@ -98,16 +72,6 @@ check_formula <- function(formula, data){
   }
 }
 
-check_newdata <- function(newdata, formula){
-  inp_vars <- names(newdata)
-  term_vars <- all.vars(formula)
-  not_found <- ! term_vars %in% inp_vars
-  if(any(not_found)){
-    stop(paste0("Required variables not found in newdata: ",
-               paste(term_vars[not_found], collapse=", ")), call.=FALSE)
-  }
-}
-
 split_formula <- function(formula){
   if(length(formula) != 3) stop("Double right-hand side formula required")
   char <- lapply(formula, function(x){
@@ -116,13 +80,6 @@ split_formula <- function(formula){
   p1 <- as.formula(char[[2]])
   p2 <- as.formula(paste("~", char[[3]]))
   list(p1, p2)
-}
-
-nobars_double <- function(form){
-  spl <- split_formula(form)
-  spl <- lapply(spl, lme4::nobars)
-  spl <- paste(unlist(lapply(spl, as.character)),collapse="")
-  as.formula(spl)
 }
 
 is_tmb_fit <- function(mod){
@@ -369,3 +326,43 @@ get_ranef_inputs <- function(forms, datalist, dms, Zs){
   list(data=dat, pars=pars, rand_ef=rand_ef)
 }
 
+add_covariates <- function(covs_long, covs_short, n){
+
+  if(is.null(covs_short)){
+    return(covs_long)
+  }
+
+  if(is.null(covs_long)){
+    covs_long <- data.frame(.dummy=rep(1, n))
+  } else {
+    stopifnot(nrow(covs_long) == n)
+  }
+
+  exp_factor <- nrow(covs_long) / nrow(covs_short)
+  stopifnot(exp_factor > 1)
+
+  rep_idx <- rep(1:nrow(covs_short), each=exp_factor)
+
+  to_add <- covs_short[rep_idx, ]
+  stopifnot(nrow(covs_long) == nrow(to_add))
+
+  cbind(covs_long, to_add)
+}
+
+vcov_TMB <- function(object, type, fixedOnly){
+
+  if(!missing(type)){
+    return(vcov(object[type], fixedOnly=fixedOnly))
+  }
+
+  v <- get_joint_cov(TMB::sdreport(object@TMB, getJointPrecision=TRUE))
+  no_sig <- !grepl("lsigma_",colnames(v))
+  v <- v[no_sig, no_sig]
+  colnames(v) <- rownames(v) <- names(coef(object, fixedOnly=FALSE))
+
+  if(fixedOnly){
+    no_re <- !grepl("b_", colnames(v))
+    v <- v[no_re, no_re]
+  }
+  v
+}

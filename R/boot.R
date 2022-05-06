@@ -281,7 +281,7 @@ setMethod("nonparboot", "unmarkedFitGDS",
 
 
 
-setMethod("nonparboot", "unmarkedFitPCO",
+setMethod("nonparboot", "unmarkedFitDailMadsen",
     function(object, B = 0, keepOldSamples = TRUE, ...)
 {
     callNextMethod(object, B=B, keepOldSamples=keepOldSamples,
