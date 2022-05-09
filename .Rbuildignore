@@ -11,3 +11,4 @@ README.Rmd
 ^tests/testthat/_snaps$
 ^\.github$
 ^_pkgdown\.yml$
+^vignettes/Makefile
