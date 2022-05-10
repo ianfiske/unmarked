@@ -1,5 +1,5 @@
 Package: unmarked
-Version: 1.2.4
+Version: 1.2.5
 Date: 2022-05-10
 Type: Package
 Title: Models for Data from Unmarked Animals
@@ -18,14 +18,13 @@ Authors@R: c(
     person("Ariel", "Muldoon", role="ctb"),
     person("Chris", "Baker", role="ctb")
     )
-Depends: R (>= 2.12.0)
+Depends: R (>= 2.12.0), methods
 Imports: 
     graphics,
     lattice,
     lme4,
     MASS,
     Matrix,
-    methods,
     parallel,
     pbapply,
     plyr,
