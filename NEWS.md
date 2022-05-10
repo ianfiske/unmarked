@@ -1,3 +1,9 @@
+# unmarked 1.2.4
+
+* Convert vignettes to use rmarkdown
+* Handle suggested packages in vignettes
+* Remove occuMulti vignette due to AHMbook being temporarily off CRAN
+
 # unmarked 1.2.3
 
 * Add gdistremoval function to fit distance/removal models, see Amundson et al. 2014
