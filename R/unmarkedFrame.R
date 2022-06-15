@@ -1192,17 +1192,20 @@ setMethod("[", c("unmarkedFrame","list", "missing", "missing"),
     if (m != length(i)) stop("list length must be same as number of sites.")
     siteCovs <- siteCovs(x)
     y <- cbind(.site=1:m, getY(x))
-    obsCovs <- as.data.frame(cbind(.site=rep(1:m, each=R), obsCovs(x)))
+    obsCovs <- obsCovs(x)
+    site_idx <- rep(1:m, each=R)
+    stopifnot(length(site_idx) == nrow(obsCovs))
 
-    obsCovs <- ddply(obsCovs, ~.site, function(df) {
-        site <- df$.site[1]
-        obs <- i[[site]]
-        if (length(obs) > R)
-            stop("All elements of list must be less than or equal to R.")
-        obs <- c(obs, rep(NA, R-length(obs)))
-        df[obs,]
-        })
-    obsCovs$.site <- NULL
+    oc <- lapply(1:m, function(ind){
+      df <- obsCovs[site_idx==ind,,drop=FALSE]
+      obs <- i[[ind]]
+      if (length(obs) > R)
+        stop("All elements of list must be less than or equal to R.")
+      obs <- c(obs, rep(NA, R-length(obs)))
+      df[obs,,drop=FALSE]
+    })
+    obsCovs <- do.call(rbind, oc)
+    rownames(obsCovs) <- NULL
 
     y <- apply(y, 1, function(row) {
         site <- row[1]
