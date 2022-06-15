@@ -194,9 +194,7 @@ setMethod("nonparboot", "unmarkedFit",
         data.b <- data[sites,]
         y <- getY(data.b)
         if (bsType == "both") {
-            obs.per.site <- alply(y, 1, function(row) {
-                which(!is.na(row))
-            })
+            obs.per.site <- lapply(1:nrow(y), function(i) which(!is.na(y[i,])))
             obs <- lapply(obs.per.site,
                           function(obs) sample(obs, replace = TRUE))
             data.b <- data.b[obs]
@@ -382,9 +380,7 @@ setMethod("nonparboot", "unmarkedFitOccuPEN",
         data.b <- data[sites,]
         y <- getY(data.b)
         if (bsType == "both") {
-            obs.per.site <- alply(y, 1, function(row) {
-                which(!is.na(row))
-            })
+            obs.per.site <- lapply(1:nrow(y), function(i) which(!is.na(y[i,])))
             obs <- lapply(obs.per.site,
                           function(obs) sample(obs, replace = TRUE))
             data.b <- data.b[obs]
@@ -440,9 +436,7 @@ setMethod("nonparboot", "unmarkedFitOccuPEN_CV",
         data.b <- data[sites,]
         y <- getY(data.b)
         if (bsType == "both") {
-            obs.per.site <- alply(y, 1, function(row) {
-                which(!is.na(row))
-            })
+            obs.per.site <- lapply(1:nrow(y), function(i) which(!is.na(y[i,])))
             obs <- lapply(obs.per.site,
                           function(obs) sample(obs, replace = TRUE))
             data.b <- data.b[obs]
