@@ -12,25 +12,6 @@ forms <- list(state=~elev+group, det=~1)
 umf <- simulate("occu", design=des, formulas=forms, coefs=cf, guide=guide)
 mod <- occu(~1~elev+group, umf)
 
-# Create rasters
-# Elevation
-r_elev <- data.frame(x=rep(1:10, 10), y=rep(1:10, each=10), z=rnorm(100))
-r_elev <- raster::rasterFromXYZ(r_elev)
-
-#Group
-r_group <- data.frame(x=rep(1:10, 10), y=rep(1:10, each=10),
-                      z=sample(1:length(levels(umf@siteCovs$group)), 100, replace=T))
-# Convert to 'factor' raster
-r_group <- raster::as.factor(raster::rasterFromXYZ(r_group))
-r_group@data@attributes <- data.frame(ID=raster::levels(r_group)[[1]], group=levels(umf@siteCovs$group))
-
-# Stack
-nd_raster <- raster::stack(r_elev, r_group)
-names(nd_raster) <- c("elev", "group")
-raster::crs(nd_raster) <- 32616
-
-
-
 test_that("clean_up_covs works with dynamic model data",{
 
   # Dynamic data
@@ -121,10 +102,31 @@ test_that("clean_up_covs works with models where length(y) != length(p)",{
 })
 
 test_that("predicting from raster works",{
+
+  skip_if(!require(raster), "raster package unavailable")
+
+  set.seed(123)
+  # Create rasters
+  # Elevation
+  r_elev <- data.frame(x=rep(1:10, 10), y=rep(1:10, each=10), z=rnorm(100))
+  r_elev <- raster::rasterFromXYZ(r_elev)
+
+  #Group
+  r_group <- data.frame(x=rep(1:10, 10), y=rep(1:10, each=10),
+                      z=sample(1:length(levels(umf@siteCovs$group)), 100, replace=T))
+  # Convert to 'factor' raster
+  r_group <- raster::as.factor(raster::rasterFromXYZ(r_group))
+  r_group@data@attributes <- data.frame(ID=raster::levels(r_group)[[1]], group=levels(umf@siteCovs$group))
+
+  # Stack
+  nd_raster <- raster::stack(r_elev, r_group)
+  names(nd_raster) <- c("elev", "group")
+  raster::crs(nd_raster) <- 32616
+
   pr <- predict(mod, 'state', newdata=nd_raster)
   expect_is(pr, 'RasterStack')
   expect_equal(names(pr), c("Predicted","SE","lower","upper"))
-  expect_equal(pr[1,1][1], 0.695741, tol=1e-5)
+  expect_equal(pr[1,1][1], 0.3675313, tol=1e-5)
   expect_equal(crs(pr), crs(nd_raster))
 
   #append data
