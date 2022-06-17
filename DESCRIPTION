@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 1.2.5
-Date: 2022-05-10
+Version: 1.2.5.9001
+Date: 2022-06-15
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(
@@ -27,7 +27,6 @@ Imports:
     Matrix,
     parallel,
     pbapply,
-    plyr,
     Rcpp (>= 0.8.0),
     stats,
     TMB (>= 1.7.18),
