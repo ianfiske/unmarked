@@ -59,6 +59,68 @@ blank_umFit <- function(fit_function){
 }
 
 
+setMethod("simulate", "character",
+  function(object, nsim=1, seed=NULL, formulas, coefs=NULL, design, guide=NULL, ...){
+  model <- blank_umFit(object)
+  fit <- suppressWarnings(simulate_fit(model, formulas, guide, design, ...))
+  coefs <- check_coefs(coefs, fit, formulas)
+  coefs <- generate_random_effects(coefs, fit, formulas)
+  fit <- replace_estimates(fit, coefs)
+  ysims <- simulate(fit, nsim)
+  umf <- fit@data
+  # fix this
+  umfs <- lapply(ysims, function(x){
+    if(object=="occuMulti"){
+      umf@ylist <- x
+    } else if(object=="gdistremoval"){
+      umf@yDistance=x$yDistance
+      umf@yRemoval=x$yRemoval
+    } else {
+      umf@y <- x
+    }
+    umf
+  })
+  if(length(umfs)==1) umfs <- umfs[[1]]
+  umfs
+})
+
+
+generate_random_effects <- function(coefs, fit, formulas){
+  required_subs <- names(fit@estimates@estimates)
+  rand <- lapply(formulas, lme4::findbars)
+  if(!all(sapply(rand, is.null))){
+    rvar <- lapply(rand, function(x) unlist(lapply(x, all.vars)))
+    for (i in required_subs){
+      if(!is.null(rand[[i]][[1]])){
+        signame <- rvar[[i]]
+        old_coefs <- coefs[[i]]
+        new_coefs <- old_coefs[names(old_coefs)!=signame]
+
+        # Find levels of factor variable
+        if(signame %in% names(siteCovs(fit@data))){
+          lvldata <- siteCovs(fit@data)[[signame]]
+        } else if(signame %in% names(obsCovs(fit@data))){
+          lvldata <- obsCovs(fit@data)[[signame]]
+        } else if(methods::.hasSlot(fit@data, "yearlySiteCovs") && signame %in% names(yearlySiteCovs(fit@data))){
+          lvldata <- yearlySiteCovs(fit@data)[[signame]]
+        } else {
+          stop("Random effect covariate missing from data", call.=FALSE)
+        }
+
+        if(!is.factor(lvldata)){
+          stop("Random effect covariates must be specified as factors with guide argument", call.=FALSe)
+        }
+        b <- rnorm(length(levels(lvldata)), 0, old_coefs[signame])
+        names(b) <- rep(paste0("b_",i), length(b))
+        new_coefs <- c(new_coefs, b)
+        coefs[[i]] <- new_coefs
+      }
+    }
+  }
+  coefs
+}
+
+
 setGeneric("get_umf_components", function(object, ...) standardGeneric("get_umf_components"))
 
 setMethod("get_umf_components", "unmarkedFit",
@@ -102,30 +164,6 @@ setMethod("simulate_fit", "unmarkedFitOccuRN",
        data=umf, se=FALSE, control=list(maxit=1))
 })
 
-
-setMethod("simulate", "character",
-  function(object, nsim=1, seed=NULL, formulas, coefs=NULL, design, guide=NULL, ...){
-  model <- blank_umFit(object)
-  fit <- suppressWarnings(simulate_fit(model, formulas, guide, design, ...))
-  coefs <- check_coefs(coefs, fit)
-  fit <- replace_estimates(fit, coefs)
-  ysims <- simulate(fit, nsim)
-  umf <- fit@data
-  # fix this
-  umfs <- lapply(ysims, function(x){
-    if(object=="occuMulti"){
-      umf@ylist <- x
-    } else if(object=="gdistremoval"){
-      umf@yDistance=x$yDistance
-      umf@yRemoval=x$yRemoval
-    } else {
-      umf@y <- x
-    }
-    umf
-  })
-  if(length(umfs)==1) umfs <- umfs[[1]]
-  umfs
-})
 
 setMethod("get_umf_components", "unmarkedFitMPois",
           function(object, formulas, guide, design, ...){

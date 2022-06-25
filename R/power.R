@@ -151,16 +151,38 @@ bootstrap_data <- function(data, nsims, design){
   lapply(1:nsims, function(i) data[M_samps[[i]], J_samps[[i]]])
 }
 
-check_coefs <- function(coefs, fit, template=FALSE){
+check_coefs <- function(coefs, fit, formulas, template=FALSE){
   required_subs <- names(fit@estimates@estimates)
   required_coefs <- lapply(fit@estimates@estimates, function(x) names(x@estimates))
   required_lens <- lapply(required_coefs, length)
+
+  # If there are random effects, adjust the expected coefficient names
+  # to remove the b vector and add the grouping covariate name
+  rand <- lapply(formulas, lme4::findbars)
+  if(!all(sapply(rand, is.null))){
+    stopifnot(all(required_subs %in% names(formulas)))
+    rvar <- lapply(rand, function(x) unlist(lapply(x, all.vars)))
+    if(!all(sapply(rvar, length)<2)){
+      stop("Only 1 random effect per parameter is supported", call.=FALSE)
+    }
+    for (i in required_subs){
+      if(!is.null(rand[[i]][[1]])){
+        signame <- rvar[[i]]
+        old_coefs <- required_coefs[[i]]
+        new_coefs <- old_coefs[!grepl("b_", old_coefs, fixed=TRUE)]
+        new_coefs <- c(new_coefs, signame)
+        required_coefs[[i]] <- new_coefs
+      }
+    }
+  }
+
   dummy_coefs <- lapply(required_coefs, function(x){
                     out <- rep(0, length(x))
                     x <- gsub("(Intercept)", "intercept", x, fixed=TRUE)
                     names(out) <- x
                     out
                   })
+
   if(template) return(dummy_coefs)
 
   if(is.null(coefs)){
@@ -226,6 +248,7 @@ check_coefs <- function(coefs, fit, template=FALSE){
   }
   coefs[required_subs]
 }
+
 wald <- function(est, se, null_hyp=NULL){
   if(is.null(null_hyp) || is.na(null_hyp)) null_hyp <- 0
   Z <- (est-null_hyp)/se
