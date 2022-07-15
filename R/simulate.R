@@ -66,7 +66,7 @@ setMethod("simulate", "character",
   coefs <- check_coefs(coefs, fit, formulas)
   coefs <- generate_random_effects(coefs, fit, formulas)
   fit <- replace_estimates(fit, coefs)
-  ysims <- simulate(fit, nsim)
+  ysims <- suppressWarnings(simulate(fit, nsim))
   umf <- fit@data
   # fix this
   umfs <- lapply(ysims, function(x){
@@ -533,5 +533,5 @@ setMethod("simulate_fit", "unmarkedFitGDR",
   gdistremoval(lambdaformula=formulas$lambda, phiformula=formulas$phi,
                removalformula=formulas$rem, distanceformula=formulas$dist,
                data=umf, keyfun=keyfun, output=output, unitsOut=unitsOut,
-               mixture=mixture, K=K, se=FALSE, control=list(maxit=1))
+               mixture=mixture, K=K, se=FALSE, control=list(maxit=1), method='L-BFGS-B')
 })
