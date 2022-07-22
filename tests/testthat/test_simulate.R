@@ -34,6 +34,15 @@ test_that("simulate can generate new datasets from scratch",{
   expect_true(is.factor(umf2@siteCovs$landcover))
   expect_equivalent(mean(umf2@siteCovs$elev), 2.01722, tol=1e-5)
 
+  # With random effect
+  set.seed(123)
+  rguide <- list(group=factor(levels=letters[1:20]))
+  rform <- list(state=~(1|group), det=~1)
+  rcf <- list(state=c(intercept=0, group=0.7), det=c(intercept=0))
+  umfr <- simulate("occu", formulas=rform, design=design, coefs=rcf, guide=rguide)
+  fm <- occu(~1~(1|group), umfr)
+  expect_equal(sigma(fm)$sigma, 0.6903913, tol=1e-5)
+
   # pcount
   set.seed(123)
   cf$alpha <- c(alpha=0.5)

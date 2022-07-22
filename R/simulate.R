@@ -109,9 +109,9 @@ generate_random_effects <- function(coefs, fit){
         }
 
         if(!is.factor(lvldata)){
-          stop("Random effect covariates must be specified as factors with guide argument", call.=FALSe)
+          stop("Random effect covariates must be specified as factors with guide argument", call.=FALSE)
         }
-        b <- rnorm(length(levels(lvldata)), 0, old_coefs[signame])
+        b <- stats::rnorm(length(levels(lvldata)), 0, old_coefs[signame])
         names(b) <- rep(paste0("b_",i), length(b))
         new_coefs <- c(new_coefs, b)
         coefs[[i]] <- new_coefs

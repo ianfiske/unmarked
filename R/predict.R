@@ -132,9 +132,12 @@ setGeneric("get_formula", function(object, type, ...){
 })
 
 setMethod("get_formula", "unmarkedFit", function(object, type, ...){
-  if(type == "state") return(as.formula(paste("~", object@formula[3], sep="")))
-  if(type == "det") return(as.formula(object@formula[[2]]))
-  stop("Invalid type")
+  if(type == "state"){
+    return(as.formula(paste("~", object@formula[3], sep="")))
+  } else if(type == "det"){
+    return(as.formula(object@formula[[2]]))
+  }
+  NULL
 })
 
 # When newdata is data.frame/raster, get original dataset
@@ -574,6 +577,12 @@ setMethod("get_orig_data", "unmarkedFitGDR", function(object, type, ...){
 # bespoke predict method since it has numerious unusual options
 # and requires bootstrapping
 
+# This method is used by simulate but not by predict
+setMethod("get_formula", "unmarkedFitOccuMulti", function(object, type, ...){
+  switch(type, state=object@stateformulas,
+               det=object@detformulas)
+})
+
 setMethod("predict", "unmarkedFitOccuMulti",
      function(object, type, newdata,
               #backTransform = TRUE, na.rm = TRUE,
@@ -747,6 +756,12 @@ setMethod("predict", "unmarkedFitOccuMulti",
 # occuMS-----------------------------------------------------------------------
 
 # bespoke predict method since it requires bootstrapping
+
+# This method is used by simulate by not by predict
+setMethod("get_formula", "unmarkedFitOccuMS", function(object, type, ...){
+  switch(type, psi=object@psiformulas, phi=object@phiformulas,
+               det=object@detformulas)
+})
 
 setMethod("predict", "unmarkedFitOccuMS",
      function(object, type, newdata,
