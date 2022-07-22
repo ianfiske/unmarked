@@ -63,8 +63,8 @@ setMethod("simulate", "character",
   function(object, nsim=1, seed=NULL, formulas, coefs=NULL, design, guide=NULL, ...){
   model <- blank_umFit(object)
   fit <- suppressWarnings(simulate_fit(model, formulas, guide, design, ...))
-  coefs <- check_coefs(coefs, fit, formulas)
-  coefs <- generate_random_effects(coefs, fit, formulas)
+  coefs <- check_coefs(coefs, fit)
+  coefs <- generate_random_effects(coefs, fit)
   fit <- replace_estimates(fit, coefs)
   ysims <- suppressWarnings(simulate(fit, nsim))
   umf <- fit@data
@@ -85,8 +85,9 @@ setMethod("simulate", "character",
 })
 
 
-generate_random_effects <- function(coefs, fit, formulas){
+generate_random_effects <- function(coefs, fit){
   required_subs <- names(fit@estimates@estimates)
+  formulas <- sapply(names(fit), function(x) get_formula(fit, x))
   rand <- lapply(formulas, lme4::findbars)
   if(!all(sapply(rand, is.null))){
     rvar <- lapply(rand, function(x) unlist(lapply(x, all.vars)))
