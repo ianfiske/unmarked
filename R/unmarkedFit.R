@@ -2552,14 +2552,15 @@ setMethod("simulate", "unmarkedFitOccuMS",
   for (n in 1:N){
     yindex <- 1
     for (t in 1:T){
-      if (z[n,t] == 0) {
-        yindex <- yindex + J
-        next
-      }
       for (j in 1:J){
-
         if(prm == "multinomial"){
           probs_raw <- sapply(p, function(x) x[n,yindex])
+          # Make sure output is NA if probs have NA
+          if(any(is.na(probs_raw))){
+            y[n,yindex] <- NA
+            yindex <- yindex + 1
+            next
+          }
 
           sdp <- matrix(0, nrow=S, ncol=S)
           sdp[guide] <- probs_raw
@@ -2571,13 +2572,22 @@ setMethod("simulate", "unmarkedFitOccuMS",
           p11 <- p[[1]][n,yindex]
           p12 <- p[[2]][n,yindex]
           p22 <- p[[3]][n,yindex]
+          # Trap NAs in probability of detection
+          if(any(is.na(c(p11, p12, p22)))){
+            y[n,yindex] <- NA
+            next
+          }
           probs <- switch(z[n,t]+1,
                           c(1,0,0),
                           c(1-p11,p11,0),
                           c(1-p12,p12*(1-p22),p12*p22))
         }
-
-        y[n,yindex] <- sample(0:(S-1), 1, prob=probs)
+        # this NA trap probably isn't necessary but leaving it in just in case
+        if(all(!is.na(probs))){
+          y[n,yindex] <- sample(0:(S-1), 1, prob=probs)
+        } else {
+          y[n,yindex] <- NA
+        }
         yindex <- yindex + 1
       }
     }

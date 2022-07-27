@@ -182,7 +182,7 @@ test_that("simulate can generate new datasets from scratch",{
   cf <- list(state=bstate, det=bdet)
   expect_warning(umf15 <- simulate("occuMS", formulas=forms, coefs=cf, design=list(M=500, J=5, T=1)))
   fm <- occuMS(forms$det, forms$state, data=umf15, parameterization="multinomial")
-  expect_equivalent(coef(fm, 'state'), c(-0.437,0.767,-0.671,-0.595), tol=1e-3)
+  expect_equivalent(coef(fm, 'state'), c(-0.657,1.033,-0.633,-0.582), tol=1e-3)
 
   # gdistremoval
   set.seed(123)
