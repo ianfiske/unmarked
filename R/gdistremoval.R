@@ -812,3 +812,8 @@ setMethod("plot", c(x = "unmarkedFitGDR", y = "missing"), function(x, y, ...)
          main="Removal")
     abline(h = 0, lty = 3, col = "gray")
 })
+
+# Used with fitList
+setMethod("fl_getY", "unmarkedFitGDR", function(fit, ...){
+  getDesign(getData(fit), fit@formlist)$yDist
+})
