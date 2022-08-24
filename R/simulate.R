@@ -64,6 +64,7 @@ setMethod("simulate", "character",
   model <- blank_umFit(object)
   fit <- suppressWarnings(simulate_fit(model, formulas, guide, design, ...))
   coefs <- check_coefs(coefs, fit)
+  #fit <- replace_sigma(coefs, fit)
   coefs <- generate_random_effects(coefs, fit)
   fit <- replace_estimates(fit, coefs)
   ysims <- suppressWarnings(simulate(fit, nsim))
@@ -84,6 +85,25 @@ setMethod("simulate", "character",
   umfs
 })
 
+# Insert specified random effects SD into proper S4 slot in model object
+# This is mostly needed by GDR which uses the SD to calculate
+# N with E_loglam (this is currently disabled so the function is not needed)
+#replace_sigma <- function(coefs, fit){
+#  required_subs <- names(fit@estimates@estimates)
+#  formulas <- sapply(names(fit), function(x) get_formula(fit, x))
+#  rand <- lapply(formulas, lme4::findbars)
+#  if(!all(sapply(rand, is.null))){
+#    rvar <- lapply(rand, function(x) unlist(lapply(x, all.vars)))
+#    for (i in required_subs){
+#      if(!is.null(rand[[i]][[1]])){
+#        signame <- rvar[[i]]
+#        old_coefs <- coefs[[i]]
+#        fit@estimates@estimates[[i]]@randomVarInfo$estimates <- coefs[[i]][[signame]]
+#      }
+#    }
+#  }
+#  fit
+#}
 
 generate_random_effects <- function(coefs, fit){
   required_subs <- names(fit@estimates@estimates)
