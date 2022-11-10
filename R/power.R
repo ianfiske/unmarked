@@ -426,7 +426,7 @@ shinyPower <- function(object, ...){
   if(!inherits(object, "unmarkedFit")){
     stop("Requires unmarkedFit object", call.=FALSE)
   }
-  if(!require(shiny)){
+  if(!requireNamespace("shiny")){
     stop("Install the shiny library to use this function", call.=FALSE)
   }
   options(unmarked_shiny=TRUE)
