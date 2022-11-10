@@ -517,9 +517,10 @@ setMethod("fitted", "unmarkedFitGDR", function(object){
   T <- object@data@numPrimary
 
   # Adjust log lambda when there is a random intercept
-  loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
-  loglam <- E_loglam(loglam, object, "lambda")
-  lam <- exp(loglam)
+  #loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  #loglam <- E_loglam(loglam, object, "lambda")
+  #lam <- exp(loglam)
+  lam <- predict(object, "lambda", level=NULL)$Predicted
   if(object@output == "density"){
     ua <- getUA(object@data)
     A <- rowSums(ua$a)
@@ -587,9 +588,10 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
 
   Kmin = apply(ysum, 1, max, na.rm=T)
 
-  loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
-  loglam <- E_loglam(loglam, object, "lambda")
-  lam <- exp(loglam)
+  #loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  #loglam <- E_loglam(loglam, object, "lambda")
+  #lam <- exp(loglam)
+  lam <- predict(object, "lambda", level=NULL)$Predicted
   if(object@output == "density"){
     ua <- getUA(object@data)
     A <- rowSums(ua$a)
@@ -644,9 +646,10 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
 setMethod("simulate", "unmarkedFitGDR", function(object, nsim, seed=NULL, na.rm=FALSE){
 
   # Adjust log lambda when there is a random intercept
-  loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
-  loglam <- E_loglam(loglam, object, "lambda")
-  lam <- exp(loglam)
+  #loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  #loglam <- E_loglam(loglam, object, "lambda")
+  #lam <- exp(loglam)
+  lam <- predict(object, "lambda", level=NULL)$Predicted
   if(object@output == "density"){
     ua <- getUA(object@data)
     A <- rowSums(ua$a)
@@ -811,4 +814,9 @@ setMethod("plot", c(x = "unmarkedFitGDR", y = "missing"), function(x, y, ...)
     plot(e[[2]], r[[2]], ylab="Residuals", xlab="Predicted values",
          main="Removal")
     abline(h = 0, lty = 3, col = "gray")
+})
+
+# Used with fitList
+setMethod("fl_getY", "unmarkedFitGDR", function(fit, ...){
+  getDesign(getData(fit), fit@formlist)$yDist
 })

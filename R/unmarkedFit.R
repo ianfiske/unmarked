@@ -1631,13 +1631,13 @@ setMethod("getP", "unmarkedFitDS",
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    V <- designMats$V
+    V <- cbind(designMats$V, designMats$Z_det)
     V.offset <- designMats$V.offset
     if (is.null(V.offset))
         V.offset <- rep(0, nrow(V))
     M <- nrow(y)
     J <- ncol(y)
-    ppars <- coef(object, type = "det")
+    ppars <- coef(object, type = "det", fixedOnly=FALSE)
     db <- umf@dist.breaks
     w <- diff(db)
     survey <- umf@survey
@@ -1902,13 +1902,13 @@ setMethod("getP", "unmarkedFitMPois", function(object, na.rm = TRUE)
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    V <- designMats$V
+    V <- as.matrix(cbind(designMats$V, designMats$Z_det))
     V.offset <- designMats$V.offset
     if (is.null(V.offset))
         V.offset <- rep(0, nrow(V))
     M <- nrow(y)
     J <- obsNum(umf) #ncol(y)
-    ppars <- coef(object, type = "det")
+    ppars <- coef(object, type = "det", fixedOnly=FALSE)
     p <- plogis(V %*% ppars + V.offset)
     p <- matrix(p, M, J, byrow = TRUE)
     pi <- do.call(piFun, list(p = p))
@@ -2063,13 +2063,13 @@ setMethod("simulate", "unmarkedFitDS",
     w <- diff(db)
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    X <- designMats$X
+    X <- as.matrix(cbind(designMats$X, designMats$Z_state))
     X.offset <- designMats$X.offset
     if (is.null(X.offset))
         X.offset <- rep(0, nrow(X))
     M <- nrow(y)
     J <- ncol(y)
-    lamParms <- coef(object, type = "state")
+    lamParms <- coef(object, type = "state", fixedOnly=FALSE)
     lambda <- drop(exp(X %*% lamParms + X.offset))
     if(identical(object@output, "density")) {
         switch(umf@survey,
@@ -2342,14 +2342,14 @@ setMethod("simulate", "unmarkedFitMPois",
     umf <- object@data
     designMats <- getDesign(umf, formula, na.rm = na.rm)
     y <- designMats$y
-    X <- designMats$X
+    X <- as.matrix(cbind(designMats$X, designMats$Z_state))
     X.offset <- designMats$X.offset
     if (is.null(X.offset)) {
         X.offset <- rep(0, nrow(X))
         }
     M <- nrow(y)
     J <- ncol(y)
-    lamParms <- coef(object, type = "state")
+    lamParms <- coef(object, type = "state", fixedOnly=FALSE)
     lam <- as.numeric(exp(X %*% lamParms + X.offset))
     lamvec <- rep(lam, each = J)
     pivec <- as.vector(t(getP(object, na.rm = na.rm)))
@@ -2552,14 +2552,15 @@ setMethod("simulate", "unmarkedFitOccuMS",
   for (n in 1:N){
     yindex <- 1
     for (t in 1:T){
-      if (z[n,t] == 0) {
-        yindex <- yindex + J
-        next
-      }
       for (j in 1:J){
-
         if(prm == "multinomial"){
           probs_raw <- sapply(p, function(x) x[n,yindex])
+          # Make sure output is NA if probs have NA
+          if(any(is.na(probs_raw))){
+            y[n,yindex] <- NA
+            yindex <- yindex + 1
+            next
+          }
 
           sdp <- matrix(0, nrow=S, ncol=S)
           sdp[guide] <- probs_raw
@@ -2571,13 +2572,22 @@ setMethod("simulate", "unmarkedFitOccuMS",
           p11 <- p[[1]][n,yindex]
           p12 <- p[[2]][n,yindex]
           p22 <- p[[3]][n,yindex]
+          # Trap NAs in probability of detection
+          if(any(is.na(c(p11, p12, p22)))){
+            y[n,yindex] <- NA
+            next
+          }
           probs <- switch(z[n,t]+1,
                           c(1,0,0),
                           c(1-p11,p11,0),
                           c(1-p12,p12*(1-p22),p12*p22))
         }
-
-        y[n,yindex] <- sample(0:(S-1), 1, prob=probs)
+        # this NA trap probably isn't necessary but leaving it in just in case
+        if(all(!is.na(probs))){
+          y[n,yindex] <- sample(0:(S-1), 1, prob=probs)
+        } else {
+          y[n,yindex] <- NA
+        }
         yindex <- yindex + 1
       }
     }
