@@ -555,12 +555,8 @@ Next call the `shinyPower` function on our template model, which starts the Shin
 shinyPower(mod)
 ```
 
-A demo version of the app is embedded in this document below, which you can experiment with.
-The demo app is followed by a more detailed tutorial for the app.
-
-```{r, echo=FALSE, out.width="100%"}
-knitr::include_url("https://kenkellner.shinyapps.io/unmarked-power/", height="800px")
-```
+A demo version of the app you can experiment with can be found [here](https://kenkellner.shinyapps.io/unmarked-power/).
+The next section provides a more detailed tutorial for the app using screenshots.
 
 ## Tutorial
 
