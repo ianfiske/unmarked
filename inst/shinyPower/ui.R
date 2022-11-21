@@ -1,5 +1,4 @@
 library(shiny)
-library(shinymanager)
 
 inline_wrap <- function(f, ...){
   out <- f(...)
@@ -50,4 +49,3 @@ ui <- fluidPage(
 )
 
 ui
-#secure_app(ui)

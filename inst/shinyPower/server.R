@@ -37,7 +37,6 @@ get_coefs <- function(input, nulls=FALSE){
   parbase <- "coef_"
   if(nulls) parbase <- "null_"
   pass <- reactiveValuesToList(input)
-  pass$shinymanager_where <- NULL
   inp_sub <- pass[grepl(parbase,names(pass), fixed=TRUE)]
   inp_sub <- pass[!is.na(names(inp_sub))]
   names(inp_sub) <- gsub(parbase, "", names(inp_sub))
@@ -64,7 +63,6 @@ get_design_ui <- function(input, default, name){
 
 get_design <- function(input){
   pass <- reactiveValuesToList(input)
-  pass$shinymanager_where <- NULL
   inp_M <- unlist(pass[grepl("design_sites_",names(pass),fixed=TRUE)])
   inp_M <- inp_M[1:input[["ndesign_sites"]]]
   inp_J <- unlist(pass[grepl("design_obs_",names(pass),fixed=TRUE)])

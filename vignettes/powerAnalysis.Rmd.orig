@@ -581,7 +581,8 @@ It's a good idea to simulate the template model with the largest sample size you
 Next you must set the effect sizes you want to test in the power analysis.
 Each submodel has its own section.
 In this case state = occupancy and det = detection.
-Effect sizes for all parameters in the model default to 0; you'll want to change at least one of them in most cases.
+Effect sizes for all parameters in the model default to 0; you'll want to change them to reflect your expectations about the study system.
+Here we are simulating datasets with an elevation effect of 0.4 (on the logit scale), with occupancy and detection intercepts equal to 0 (equivalent to probabilities of 0.5).
 
 ![](figures/poweranalysis-effectsizes.png)
 
