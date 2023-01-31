@@ -2,7 +2,7 @@
 gdistsamp <- function(lambdaformula, phiformula, pformula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
-    mixture=c('P', 'NB'), K, starts, method = "BFGS", se = TRUE, engine=c("C","R"),
+    mixture=c('P', 'NB', 'ZIP'), K, starts, method = "BFGS", se = TRUE, engine=c("C","R"),
     rel.tol=1e-4, threads=1, ...)
 {
 if(!is(data, "unmarkedFrameGDS"))
@@ -20,6 +20,10 @@ tlength <- data@tlength
 survey <- data@survey
 unitsIn <- data@unitsIn
 mixture <- match.arg(mixture)
+
+if(mixture == "ZIP" & engine=="R"){
+  stop("R engine does not support ZIP", call.=FALSE)
+}
 
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula,
     pformula = pformula)
@@ -111,6 +115,10 @@ else {
 if(identical(mixture, "NB")) {
     nOP <- 1
     nbPar <- "alpha"
+    }
+if(identical(mixture, "ZIP")) {
+    nOP <- 1
+    nbPar <- "psi"
     }
 else {
     nOP <- 0
@@ -398,7 +406,7 @@ if(engine =="C"){
   if(output!='density'){
     A <- rep(1, M)
   }
-  mixture_code <- switch(mixture, P={1}, NB={2})
+  mixture_code <- switch(mixture, P={1}, NB={2}, ZIP={3})
   n_param <- c(nLP, nPP, nDP, nSP, nOP)
   Kmin <- apply(yt, 1, max, na.rm=TRUE)
 
@@ -452,6 +460,13 @@ if(identical(mixture, "NB"))
         short.name = "alpha", estimates = ests[nP],
         covMat = as.matrix(covMat[nP, nP]), invlink = "exp",
         invlinkGrad = "exp")
+
+if(identical(mixture,"ZIP")) {
+    estimateList@estimates$psi <- unmarkedEstimate(name="Zero-inflation",
+        short.name = "psi", estimates = ests[nP],
+        covMat=as.matrix(covMat[nP, nP]), invlink = "logistic",
+        invlinkGrad = "logistic.grad")
+}
 
 umfit <- new("unmarkedFitGDS", fitType = "gdistsamp",
     call = match.call(), formula = form, formlist = formlist,
