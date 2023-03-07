@@ -449,44 +449,6 @@ gdistremoval <- function(lambdaformula=~1, phiformula=~1, removalformula=~1,
 
 # Methods
 
-setMethod("predict", "unmarkedFitGDR", function(object, type, newdata,
-                                                level=0.95, re.form=NULL, ...){
-
-  type <- match.arg(type, c("lambda", "phi", "rem", "dist"))
-  nm <- switch(type, lambda="lam", phi="phi", rem="rem", dist="dist")
-  est <- object[ifelse(nm=="lam","lambda",nm)]
-
-  if(missing(newdata)){
-    gd <- getDesign(object@data, object@formlist)
-    X <- gd[[paste0("X",nm)]]
-    Z <- gd[[paste0("Z",nm)]]
-    if(is.null(re.form)) X <- cbind(X, Z)
-  } else{
-    if(!inherits(newdata, "data.frame")){
-      stop("newdata must be a data frame")
-    }
-    gd <- getDesign(object@data, object@formlist, return.frames=TRUE)
-    fname <- switch(type, lambda="lambda", phi="phi", rem="removal", dist="distance")
-    covs <- switch(type, lambda="sc", phi="ysc", rem="oc", dist="ysc")
-    X <- make_mod_matrix(object@formlist[[paste0(fname,"formula")]],
-                         gd[[covs]], newdata=newdata, re.form)$X
-  }
-  X <- as.matrix(X)
-
-  if(is.null(level)){
-    pred <- do.call(est@invlink, list(drop(X %*% est@estimates)))
-    names(pred) <- NULL
-    return(data.frame(Predicted=pred, SE=NA, lower=NA, upper=NA))
-  }
-
-  stats <- t(sapply(1:nrow(X), function(i){
-              bt <- backTransform(linearComb(est, X[i,], re.form=re.form))
-              ci <- confint(bt, level=level)
-              c(Predicted=coef(bt), SE=SE(bt), lower=ci[1], upper=ci[2])
-            }))
-  as.data.frame(stats)
-})
-
 setMethod("getP", "unmarkedFitGDR", function(object){
 
   M <- numSites(object@data)
@@ -554,7 +516,19 @@ setMethod("fitted", "unmarkedFitGDR", function(object){
 
   T <- object@data@numPrimary
 
+  # Adjust log lambda when there is a random intercept
+  #loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  #loglam <- E_loglam(loglam, object, "lambda")
+  #lam <- exp(loglam)
   lam <- predict(object, "lambda", level=NULL)$Predicted
+  if(object@output == "density"){
+    ua <- getUA(object@data)
+    A <- rowSums(ua$a)
+    switch(object@data@unitsIn, m = A <- A / 1e6, km = A <- A)
+    switch(object@unitsOut,ha = A <- A * 100, kmsq = A <- A)
+    lam <- lam * A
+  }
+
   gp <- getP(object)
   rem <- gp$rem
   dist <- gp$dist
@@ -614,7 +588,18 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
 
   Kmin = apply(ysum, 1, max, na.rm=T)
 
+  #loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  #loglam <- E_loglam(loglam, object, "lambda")
+  #lam <- exp(loglam)
   lam <- predict(object, "lambda", level=NULL)$Predicted
+  if(object@output == "density"){
+    ua <- getUA(object@data)
+    A <- rowSums(ua$a)
+    switch(object@data@unitsIn, m = A <- A / 1e6, km = A <- A)
+    switch(object@unitsOut,ha = A <- A * 100, kmsq = A <- A)
+    lam <- lam * A
+  }
+
   if(object@mixture != "P"){
     alpha <- backTransform(object, "alpha")@estimate
   }
@@ -660,7 +645,18 @@ setMethod("ranef", "unmarkedFitGDR", function(object){
 
 setMethod("simulate", "unmarkedFitGDR", function(object, nsim, seed=NULL, na.rm=FALSE){
 
+  # Adjust log lambda when there is a random intercept
+  #loglam <- log(predict(object, "lambda", level=NULL)$Predicted)
+  #loglam <- E_loglam(loglam, object, "lambda")
+  #lam <- exp(loglam)
   lam <- predict(object, "lambda", level=NULL)$Predicted
+  if(object@output == "density"){
+    ua <- getUA(object@data)
+    A <- rowSums(ua$a)
+    switch(object@data@unitsIn, m = A <- A / 1e6, km = A <- A)
+    switch(object@unitsOut,ha = A <- A * 100, kmsq = A <- A)
+    lam <- lam * A
+  }
   dets <- getP(object)
 
   if(object@mixture != "P"){
@@ -818,4 +814,9 @@ setMethod("plot", c(x = "unmarkedFitGDR", y = "missing"), function(x, y, ...)
     plot(e[[2]], r[[2]], ylab="Residuals", xlab="Predicted values",
          main="Removal")
     abline(h = 0, lty = 3, col = "gray")
+})
+
+# Used with fitList
+setMethod("fl_getY", "unmarkedFitGDR", function(fit, ...){
+  getDesign(getData(fit), fit@formlist)$yDist
 })

@@ -58,7 +58,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
       }
     }
     psi <- exp(f %*% t_dmF)
-    psi <- psi/rowSums(psi)
+    psi <- psi/rowSums(as.matrix(psi))
 
     #p
     p <- matrix(NA,nrow=nrow(y),ncol=S)
@@ -82,7 +82,7 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
     pen <- penalty * 0.5 * sum(params^2)
 
     #neg log likelihood
-    -1 * (sum(log(rowSums(psi*prdProbY))) - pen)
+    -1 * (sum(log(rowSums(as.matrix(psi*prdProbY)))) - pen)
   }
   #----------------------------------------------------------------------------
 
@@ -128,7 +128,11 @@ occuMulti <- function(detformulas, stateformulas,  data, maxOrder,
 
   estimateList <- unmarkedEstimateList(list(state=state, det=det))
 
-  umfit <- new("unmarkedFitOccuMulti", fitType = "occuMulti", call = match.call(),
+  if(missing(maxOrder)) maxOrder <- S
+  cl <- match.call()
+  cl$maxOrder <- maxOrder
+
+  umfit <- new("unmarkedFitOccuMulti", fitType = "occuMulti", call = cl,
                 detformulas = detformulas, stateformulas = stateformulas,
                 formula = ~1, data = data,
                 #sitesRemoved = designMats$removed.sites,

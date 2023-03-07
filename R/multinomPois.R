@@ -84,7 +84,8 @@ multinomPois <- function(formula, data, starts, method = "BFGS",
     } else if(engine == "TMB"){
 
       forms <- split_formula(formula)
-      inps <- get_ranef_inputs(forms, list(det=obsCovs(data), state=siteCovs(data)),
+      obs_all <- add_covariates(obsCovs(data), siteCovs(data), numSites(data)*obsNum(data))
+      inps <- get_ranef_inputs(forms, list(det=obs_all, state=siteCovs(data)),
                                list(V, X), designMats[c("Z_det","Z_state")])
 
       if(!piFun%in%c('doublePiFun','removalPiFun','depDoublePiFun')){
@@ -110,7 +111,7 @@ multinomPois <- function(formula, data, starts, method = "BFGS",
 
       # Organize random-effect estimates from TMB output
       state_rand_info <- get_randvar_info(tmb_out$sdr, "state", forms[[2]], siteCovs(data))
-      det_rand_info <- get_randvar_info(tmb_out$sdr, "det", forms[[1]], obsCovs(data))
+      det_rand_info <- get_randvar_info(tmb_out$sdr, "det", forms[[1]], obs_all)
 
     }
 

@@ -317,6 +317,10 @@ unmarkedFrameMPois <- function(y, siteCovs = NULL, obsCovs = NULL, type,
             depDouble = {
               obsToY <- matrix(1, 2, 2)
               piFun <- "depDoublePiFun"
+              if(ncol(y) != 2){
+                stop("y must have exactly 2 columns when type = 'depDouble'",
+                     call.=FALSE)
+              }
               })
     } else {
         if(missing(obsToY))
@@ -436,6 +440,9 @@ unmarkedFrameGMM <- function(y, siteCovs = NULL, obsCovs = NULL, numPrimary,
           piFun <- "doublePiFun"
           },
         depDouble = {
+          if(J!=2){
+            stop("y must have exactly 2 columns per primary period", call.=FALSE)
+          }
           obsToY <- matrix(1, 2, 2)
           obsToY <- kronecker(diag(numPrimary), obsToY)
           piFun <- "depDoublePiFun"
@@ -1126,9 +1133,10 @@ setMethod("[", c("unmarkedFrame", "numeric", "missing", "missing"),
     if (!is.null(obsCovs)) {
         R <- obsNum(x)
         .site <- rep(1:M, each = R)
-        obsCovs <- ldply(i, function(site) {
-            subset(obsCovs, .site == site)
-            })
+        oc <- lapply(i, function(ind){
+         obsCovs[.site==ind,,drop=FALSE]
+        })
+        obsCovs <- do.call(rbind, oc)
         }
     umf <- x
     umf@y <- y
@@ -1184,17 +1192,20 @@ setMethod("[", c("unmarkedFrame","list", "missing", "missing"),
     if (m != length(i)) stop("list length must be same as number of sites.")
     siteCovs <- siteCovs(x)
     y <- cbind(.site=1:m, getY(x))
-    obsCovs <- as.data.frame(cbind(.site=rep(1:m, each=R), obsCovs(x)))
+    obsCovs <- obsCovs(x)
+    site_idx <- rep(1:m, each=R)
+    stopifnot(length(site_idx) == nrow(obsCovs))
 
-    obsCovs <- ddply(obsCovs, ~.site, function(df) {
-        site <- df$.site[1]
-        obs <- i[[site]]
-        if (length(obs) > R)
-            stop("All elements of list must be less than or equal to R.")
-        obs <- c(obs, rep(NA, R-length(obs)))
-        df[obs,]
-        })
-    obsCovs$.site <- NULL
+    oc <- lapply(1:m, function(ind){
+      df <- obsCovs[site_idx==ind,,drop=FALSE]
+      obs <- i[[ind]]
+      if (length(obs) > R)
+        stop("All elements of list must be less than or equal to R.")
+      obs <- c(obs, rep(NA, R-length(obs)))
+      df[obs,,drop=FALSE]
+    })
+    obsCovs <- do.call(rbind, oc)
+    rownames(obsCovs) <- NULL
 
     y <- apply(y, 1, function(row) {
         site <- row[1]
@@ -1228,9 +1239,10 @@ setMethod("[", c("unmarkedFrameOccuMulti", "numeric", "missing", "missing"),
     if (!is.null(obsCovs)) {
         R <- obsNum(x)
         .site <- rep(1:M, each = R)
-        obsCovs <- ldply(i, function(site) {
-            subset(obsCovs, .site == site)
-            })
+        oc <- lapply(i, function(ind){
+         obsCovs[.site==ind,,drop=FALSE]
+        })
+        obsCovs <- do.call(rbind, oc)
         }
     umf <- x
     umf@y <- ylist[[1]]
@@ -1303,9 +1315,10 @@ setMethod("[", c("unmarkedMultFrame", "numeric", "missing", "missing"),
     if (!is.null(obsCovs)) {
         R <- obsNum(x)
         .site <- rep(1:M, each = obsNum(x)) #NULL     ## testing
-        obsCovs <- ldply(i, function(site) {
-            subset(obsCovs, .site == site)
-            })
+        oc <- lapply(i, function(ind){
+         obsCovs[.site==ind,,drop=FALSE]
+        })
+        obsCovs <- do.call(rbind, oc)
         }
     u <- unmarkedMultFrame(y=matrix(y, ncol=ncol(oldy)),
                            siteCovs=siteCovs,
@@ -1337,12 +1350,28 @@ setMethod("[", c("unmarkedFrameOccuMS", "numeric", "missing", "missing"),
 setMethod("[", c("unmarkedFrameGMM", "numeric", "missing", "missing"),
 		function(x, i, j)
 {
-    multf <- callNextMethod(x, i, j) # unmarkedMultFrame
-    unmarkedFrameGMM(y=getY(multf), siteCovs=siteCovs(multf),
-                     yearlySiteCovs=yearlySiteCovs(multf),
-                     obsCovs=obsCovs(multf),
+    M <- nrow(x@y)
+    y <- x@y[i,,drop=FALSE]
+    R <- obsNum(x)
+    T <- x@numPrimary
+
+    sc <- siteCovs(x)[i,,drop=FALSE]
+
+    ysc_ind <- rep(1:M, each=T)
+    ysc <- do.call("rbind", lapply(i, function(ind){
+      yearlySiteCovs(x)[ysc_ind == ind,,drop=FALSE]
+    }))
+
+    oc_ind <- rep(1:M, each=R)
+    oc <- do.call("rbind", lapply(i, function(ind){
+      obsCovs(x)[oc_ind == ind,,drop=FALSE]
+    }))
+
+    unmarkedFrameGMM(y=y, siteCovs=sc,
+                     yearlySiteCovs=ysc,
+                     obsCovs=oc,
                      piFun=x@piFun, type=x@samplingMethod,
-                     obsToY=multf@obsToY, numPrimary=multf@numPrimary)
+                     obsToY=x@obsToY, numPrimary=x@numPrimary)
 })
 
 

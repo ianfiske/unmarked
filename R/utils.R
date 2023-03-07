@@ -736,7 +736,11 @@ invertHessian <- function(optimOut, nparam, SE){
 getUA <- function(umf){
 
   M <- numSites(umf)
-  J <- ncol(getY(umf)) / umf@numPrimary
+  if(inherits(umf, "unmarkedFrameGDR")){
+    J <- ncol(umf@yDistance) / umf@numPrimary
+  } else{
+    J <- ncol(getY(umf)) / umf@numPrimary
+  }
   db <- umf@dist.breaks
   w <- diff(db)
 
@@ -883,4 +887,23 @@ dzip <- function(x, lambda, psi) {
   den[zer] <- psi + (1-psi)*exp(-lambda[zer])
   den[gr0] <- (1-psi)*dpois(x[gr0], lambda[gr0])
   den
+}
+
+# Expected value of log lambda when there is a random intercept
+E_loglam <- function(log_lam, object, name){
+
+  if(!methods::.hasSlot(object, "TMB") || is.null(object@TMB)){
+    return(log_lam)
+  }
+  sig <- sigma(object)
+  if(! name %in% sig$Model) return(log_lam)
+
+  sig <- sig[sig$Model==name,]
+  can_calculate <- (nrow(sig) == 1) & (sig$Name[1] == "(Intercept)")
+  if(! can_calculate){
+    stop("No support for models with > 1 random effect", call.=FALSE)
+  }
+  v <- sig$sigma^2
+  ll <- log_lam + v/2
+  ll
 }

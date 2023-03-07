@@ -100,7 +100,8 @@ occu <- function(formula, data, knownOcc = numeric(0),
 
     # Set up TMB input data
     forms <- split_formula(formula)
-    inps <- get_ranef_inputs(forms, list(det=obsCovs(data), state=siteCovs(data)),
+    obs_all <- add_covariates(obsCovs(data), siteCovs(data), length(getY(data)))
+    inps <- get_ranef_inputs(forms, list(det=obs_all, state=siteCovs(data)),
                              list(V, X), designMats[c("Z_det","Z_state")])
 
     tmb_dat <- c(list(y=y, no_detect=nd, link=ifelse(linkPsi=="cloglog",1,0),
@@ -123,7 +124,7 @@ occu <- function(formula, data, knownOcc = numeric(0),
     state_rand_info <- get_randvar_info(tmb_out$sdr, "state", forms[[2]],
                                         siteCovs(data))
     det_rand_info <- get_randvar_info(tmb_out$sdr, "det", forms[[1]],
-                                      obsCovs(data))
+                                      obs_all)
 
     }
 
