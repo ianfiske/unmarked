@@ -1,16 +1,16 @@
-type_to_covs <- function(umf, type){
-  if(type %in% c("state","psi","lam","lambda","sigma","dist")){
-    return(methods::slot(umf, "siteCovs"))
-  } else if(type %in% c("det","rem","fp","b")){
-    return(methods::slot(umf, "obsCovs"))
-  } else if(type %in% c("phi","transition","col","ext","gamma","omega","iota")){
-    return(methods::slot(umf, "yearlySiteCovs"))
-  }
-  return(NULL)
-}
+#type_to_covs <- function(umf, type){
+#  if(type %in% c("state","psi","lam","lambda","sigma","dist")){
+#    return(methods::slot(umf, "siteCovs"))
+#  } else if(type %in% c("det","rem","fp","b")){
+#    return(methods::slot(umf, "obsCovs"))
+#  } else if(type %in% c("phi","transition","col","ext","gamma","omega","iota")){
+#    return(methods::slot(umf, "yearlySiteCovs"))
+#  }
+#  return(NULL)
+#}
 
-get_base_newdata <- function(umf, type){
-  covs <- type_to_covs(umf, type)
+get_base_newdata <- function(object, type){
+  covs <- get_orig_data(object, type)
   out <- lapply(covs, function(x){
     if(is.numeric(x)){
       return(median(x, na.rm=TRUE))
@@ -23,8 +23,8 @@ get_base_newdata <- function(umf, type){
   as.data.frame(out)
 }
 
-get_cov_seq <- function(covariate, umf, type){
-  cov_values <- type_to_covs(umf, type)[[covariate]]
+get_cov_seq <- function(covariate, object, type){
+  cov_values <- get_orig_data(object, type)[[covariate]]
   if(is.numeric(cov_values)){
     rng <- range(cov_values, na.rm=TRUE)
     return(seq(rng[1], rng[2], length.out=100))
@@ -40,12 +40,12 @@ setGeneric("plotEffectsData", function(object, ...) standardGeneric("plotEffects
 setMethod("plotEffectsData", "unmarkedFit",
   function(object, type, covariate, level=0.95, ...){
 
-  umf <- umf_to_factor(object@data)
-  nd <- get_base_newdata(umf, type)
+  #umf <- umf_to_factor(object@data)
+  nd <- get_base_newdata(object, type)
   if(! covariate %in% names(nd)){
     stop("Covariate not in this submodel", call.=FALSE)
   }
-  values <- get_cov_seq(covariate, umf, type)
+  values <- get_cov_seq(covariate, object, type)
   nd <- nd[rep(1, length(values)),,drop=FALSE]
   nd[[covariate]] <- values
 

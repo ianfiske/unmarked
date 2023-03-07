@@ -385,6 +385,8 @@ test_that("occuTTD can fit a dynamic model",{
   pdf(NULL)
   plotEffects(fit, 'psi', 'elev')
   plotEffects(fit, 'col', 'forest')
+  plotEffects(fit, 'det', 'wind')
+  plotEffects(fit, 'det', 'obs')
   dev.off()
 
   #Check ranef
