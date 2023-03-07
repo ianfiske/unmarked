@@ -1,22 +1,22 @@
-\name{plotMarginal}
-\alias{plotMarginal}
-\alias{plotMarginal-methods}
-\alias{plotMarginal,unmarkedFit-method}
-\alias{plotMarginalData}
-\alias{plotMarginalData-methods}
-\alias{plotMarginalData,unmarkedFit-method}
+\name{plotEffects}
+\alias{plotEffects}
+\alias{plotEffects-methods}
+\alias{plotEffects,unmarkedFit-method}
+\alias{plotEffectsData}
+\alias{plotEffectsData-methods}
+\alias{plotEffectsData,unmarkedFit-method}
 
 \title{Plot marginal effects of covariates in unmarked models}
 
-\description{This function generates a plot visualizing the marginal effects
- of a given covariate on a parameter (e.g. occupancy, abundance) in an unmarked 
+\description{This function generates a plot visualizing the effects
+ of a single covariate on a parameter (e.g. occupancy, abundance) in an unmarked 
  model. If the covariate is numeric, the result is a line plot with an error
  ribbon where the x-axis is the range of the covariate and the y-axis is the 
  predicted parameter value. If the covariate is an R factor (i.e., categorical),
  the x-axis instead contains each unique value of the covariate. 
 
  All covariates in the model besides the one being plotted are held either at
- their mean value (if they are numeric) or at their reference level (if they
+ their median value (if they are numeric) or at their reference level (if they
  are factors).
 
  Some types of unmarked models may require additional arguments, which are passed
@@ -25,15 +25,15 @@
  call in order to work properly.
 
  If you want to customize a plot, the easiest approach is to get data 
- formatted for plotting using \code{plotMarginalData}, and use that. If
- you want to see and/or modify the code used by \code{plotMarginal} to generate
- the default plots, run \code{getMethod("plotMarginal", "unmarkedFit")} in
+ formatted for plotting using \code{plotEffectsData}, and use that. If
+ you want to see and/or modify the code used by \code{plotEffects} to generate
+ the default plots, run \code{getMethod("plotEffects", "unmarkedFit")} in
  the R console.
 }
 
 \usage{
-\S4method{plotMarginal}{unmarkedFit}(object, type, covariate, level=0.95, ...)
-\S4method{plotMarginalData}{unmarkedFit}(object, type, covariate, level=0.95, ...)
+\S4method{plotEffects}{unmarkedFit}(object, type, covariate, level=0.95, ...)
+\S4method{plotEffectsData}{unmarkedFit}(object, type, covariate, level=0.95, ...)
 }
 
 \arguments{
@@ -46,7 +46,7 @@
     for some \code{unmarkedFit} types such as \code{unmarkedFitOccuMulti}}
 } 
 
-\value{A plot (\code{plotMarginal} or a data frame (\code{plotMarginalData})
+\value{A plot (\code{plotEffects} or a data frame (\code{plotEffectsData})
   containing values to be used in a plot.
 }
 
@@ -87,14 +87,14 @@ umf <- unmarkedFrameOccu(y=y, siteCovs=dat_occ, obsCovs=dat_p)
 (fm <- occu(~x2 ~x1 + group, umf))
 
 # Plot marginal effects of various covariates
-plotMarginal(fm, "state", "x1")
-plotMarginal(fm, "state", "group")
-plotMarginal(fm, "det", "x2")
+plotEffects(fm, "state", "x1")
+plotEffects(fm, "state", "group")
+plotEffects(fm, "det", "x2")
 
 # Get raw data used for a plot
-plotMarginalData(fm, "state", "group")
+plotEffectsData(fm, "state", "group")
 
-# See code used by plotMarginal so you can edit it yourself and customize the plot
-methods::getMethod("plotMarginal", "unmarkedFit")
+# See code used by plotEffects so you can edit it yourself and customize the plot
+methods::getMethod("plotEffects", "unmarkedFit")
 }
 }

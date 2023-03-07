@@ -1,8 +1,10 @@
 type_to_covs <- function(umf, type){
-  if(type %in% c("state")){
+  if(type %in% c("state","psi","lam","lambda","sigma","dist")){
     return(methods::slot(umf, "siteCovs"))
-  } else if(type %in% c("det")){
+  } else if(type %in% c("det","rem","fp","b")){
     return(methods::slot(umf, "obsCovs"))
+  } else if(type %in% c("phi","transition","col","ext","gamma","omega","iota")){
+    return(methods::slot(umf, "yearlySiteCovs"))
   }
   return(NULL)
 }
@@ -11,7 +13,7 @@ get_base_newdata <- function(umf, type){
   covs <- type_to_covs(umf, type)
   out <- lapply(covs, function(x){
     if(is.numeric(x)){
-      return(mean(x, na.rm=TRUE))
+      return(median(x, na.rm=TRUE))
     } else if(is.factor(x)){
       return(factor(levels(x)[1], levels=levels(x)))
     }  else {
@@ -33,9 +35,9 @@ get_cov_seq <- function(covariate, umf, type){
   }
 }
 
-setGeneric("plotMarginalData", function(object, ...) standardGeneric("plotMarginalData"))
+setGeneric("plotEffectsData", function(object, ...) standardGeneric("plotEffectsData"))
 
-setMethod("plotMarginalData", "unmarkedFit",
+setMethod("plotEffectsData", "unmarkedFit",
   function(object, type, covariate, level=0.95, ...){
 
   umf <- umf_to_factor(object@data)
@@ -53,13 +55,13 @@ setMethod("plotMarginalData", "unmarkedFit",
   pr
 })
 
-setGeneric("plotMarginal", function(object, ...) standardGeneric("plotMarginal"))
+setGeneric("plotEffects", function(object, ...) standardGeneric("plotEffects"))
 
-setMethod("plotMarginal", "unmarkedFit",
+setMethod("plotEffects", "unmarkedFit",
   function(object, type, covariate, level=0.95, ...){
 
   # Get data for plot
-  plot_data <- plotMarginalData(object, type, covariate, level, ...)
+  plot_data <- plotEffectsData(object, type, covariate, level, ...)
 
   # Is covariate a factor?
   is_factor <- is.factor(plot_data$covariateValue)

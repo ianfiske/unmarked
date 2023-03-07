@@ -1,4 +1,4 @@
-context("plotMarginal")
+context("plotEffects")
 
 skip_on_cran()
 
@@ -30,15 +30,17 @@ umf <- unmarkedFrameOccu(y=y, siteCovs=dat_occ, obsCovs=dat_p)
 
 fm <- occu(~x2 ~x1 + group, umf)
 
-test_that("plotMarginal works", {
+test_that("plotEffects works", {
+  
+  pdf(NULL)
+  plotEffects(fm, "state", "x1")
+  plotEffects(fm, "state", "group")
+  plotEffects(fm, "det", "x2")
+  dev.off()
 
-  plotMarginal(fm, "state", "x1")
-  plotMarginal(fm, "state", "group")
-  plotMarginal(fm, "det", "x2")
+  expect_error(plotEffects(fm, "state", "x2"))
 
-  expect_error(plotMarginal(fm, "state", "x2"))
-
-  dat <- plotMarginalData(fm, "state", "group")
+  dat <- plotEffectsData(fm, "state", "group")
 
   expect_true(inherits(dat, "data.frame"))
   expect_equal(nrow(dat), 5)

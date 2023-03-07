@@ -382,6 +382,10 @@ test_that("occuTTD can fit a dynamic model",{
   expect_equivalent(dim(s[[1]]), c(100,4))
   r <- residuals(fit)
   expect_equivalent(dim(r), c(100,4))
+  pdf(NULL)
+  plotEffects(fit, 'psi', 'elev')
+  plotEffects(fit, 'col', 'forest')
+  dev.off()
 
   #Check ranef
   r <- ranef(fit)
