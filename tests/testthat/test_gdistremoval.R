@@ -343,6 +343,12 @@ test_that("gdistremoval can fit models",{
   expect_is(fl, "unmarkedFitList")
   ms <- modSel(fl)
   expect_is(ms, "unmarkedModSel")
+
+  #plotEffects
+  pdf(NULL)
+  plotEffects(fit, 'lambda', "sc1")
+  plotEffects(fit, 'rem', 'oc1')
+  dev.off()
 })
 
 test_that("gdistremoval predict method works",{
