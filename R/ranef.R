@@ -445,12 +445,15 @@ setMethod("ranef", "unmarkedFitGMMorGDS",
     post <- array(0, c(nSites, K+1, 1))
     colnames(post) <- M
     mix <- object@mixture
-    if(identical(mix, "NB"))
+    if(identical(mix, "NB")){
         alpha <- exp(coef(object, type="alpha"))
+    } else if(identical(mix, "ZIP")){
+        psi <- plogis(coef(object, type="psi"))
+    }
     for(i in 1:nSites) {
         switch(mix,
                P  = f <- dpois(M, lambda[i]),
-               # FIXME: Add ZIP
+               ZIP = f <- dzip(M, lambda[i], psi),
                NB = f <- dnbinom(M, mu=lambda[i], size=alpha))
         g <- rep(1, K+1) # outside t loop
         for(t in 1:T) {

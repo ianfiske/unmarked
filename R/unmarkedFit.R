@@ -3028,7 +3028,12 @@ setMethod("simulate", "unmarkedFitGDS",
                 NB = {
                     alpha <- exp(coef(object, type="alpha"))
                     Ns <- rnbinom(1, mu=lambda[i], size=alpha)
-                    })
+                    },
+                ZIP = {
+                    psi <- plogis(coef(object['psi']))
+                    Ns <- rzip(1, lambda[i], psi)
+                    }
+            )
             for(t in 1:T) {
                 N <- rbinom(1, Ns, phi[i,t])
                 cp.it <- cpa[i,,t]
