@@ -1,6 +1,6 @@
 Package: unmarked
-Version: 1.2.5.9015
-Date: 2023-06-23
+Version: 1.3.0
+Date: 2023-06-27
 Type: Package
 Title: Models for Data from Unmarked Animals
 Authors@R: c(
@@ -33,7 +33,7 @@ Imports:
     TMB (>= 1.7.18),
     utils
 Suggests: knitr, rmarkdown, pkgdown, raster, shiny, terra, testthat
-Description: Fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates. Reference: Fiske and Chandler (2011) <doi:10.18637/jss.v043.i10>.
+Description: Fits hierarchical models of animal abundance and occurrence to data collected using survey methods such as point counts, site occupancy sampling, distance sampling, removal sampling, and double observer sampling. Parameters governing the state and observation processes can be modeled as functions of covariates. References: Kellner et al. (2023) <doi:10.1111/2041-210X.14123>, Fiske and Chandler (2011) <doi:10.18637/jss.v043.i10>.
 License: GPL (>=3)
 LazyLoad: yes
 LazyData: yes
