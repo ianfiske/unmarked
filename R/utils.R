@@ -47,9 +47,11 @@ logistic.grad <- function(x) {
 }
 
 
-log.grad <- function(x) { # duh! (but for clarity)
-  1/x
-}
+# This function causes check failures on CRAN because CRAN thinks it's
+# a method for the log function. I don't think it's actually used in the package?
+#log.grad <- function(x) { # duh! (but for clarity)
+#  1/x
+#}
 
 
 explink <- function(x) exp(x)

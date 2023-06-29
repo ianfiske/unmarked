@@ -1,3 +1,7 @@
+# unmarked 1.3.1
+
+* Remove log.grad function to pass CRAN checks
+
 # unmarked 1.3.0
 
 * Add support for terra package rasters
