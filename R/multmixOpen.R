@@ -153,7 +153,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   #finding all unique likelihood transitions
   I <- cbind(rep(k, times=lk), rep(k, each=lk))
   I1 <- I[I[,1] <= I[,2],]
-  lik_trans <- .Call("get_lik_trans", I, I1, PACKAGE="unmarked")
+  lik_trans <- get_lik_trans(I, I1)
 
   beta_ind <- matrix(NA, 6, 2)
   beta_ind[1,] <- c(1, nAP) #Abundance
