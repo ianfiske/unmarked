@@ -1,4 +1,8 @@
-# unmarked 1.3.1
+# unmarked 1.3.2
+
+* Modernize some Cpp code to pass new LTO checks
+
+#unmarked 1.3.1
 
 * Remove log.grad function to pass CRAN checks
 

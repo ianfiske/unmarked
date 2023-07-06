@@ -363,6 +363,55 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// nll_occuMulti_loglik
+arma::vec nll_occuMulti_loglik(Rcpp::IntegerVector fStart, Rcpp::IntegerVector fStop, arma::sp_mat dmF, Rcpp::List dmOcc, arma::colvec beta, Rcpp::List dmDet, Rcpp::IntegerVector dStart, Rcpp::IntegerVector dStop, arma::mat y, Rcpp::IntegerVector yStart, Rcpp::IntegerVector yStop, arma::mat Iy0, arma::mat z, Rcpp::LogicalVector fixed0);
+RcppExport SEXP _unmarked_nll_occuMulti_loglik(SEXP fStartSEXP, SEXP fStopSEXP, SEXP dmFSEXP, SEXP dmOccSEXP, SEXP betaSEXP, SEXP dmDetSEXP, SEXP dStartSEXP, SEXP dStopSEXP, SEXP ySEXP, SEXP yStartSEXP, SEXP yStopSEXP, SEXP Iy0SEXP, SEXP zSEXP, SEXP fixed0SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type fStart(fStartSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type fStop(fStopSEXP);
+    Rcpp::traits::input_parameter< arma::sp_mat >::type dmF(dmFSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type dmOcc(dmOccSEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type dmDet(dmDetSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type dStart(dStartSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type dStop(dStopSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type yStart(yStartSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type yStop(yStopSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Iy0(Iy0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type z(zSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fixed0(fixed0SEXP);
+    rcpp_result_gen = Rcpp::wrap(nll_occuMulti_loglik(fStart, fStop, dmF, dmOcc, beta, dmDet, dStart, dStop, y, yStart, yStop, Iy0, z, fixed0));
+    return rcpp_result_gen;
+END_RCPP
+}
+// nll_occuMulti
+double nll_occuMulti(Rcpp::IntegerVector fStart, Rcpp::IntegerVector fStop, arma::sp_mat dmF, Rcpp::List dmOcc, arma::colvec beta, Rcpp::List dmDet, Rcpp::IntegerVector dStart, Rcpp::IntegerVector dStop, arma::mat y, Rcpp::IntegerVector yStart, Rcpp::IntegerVector yStop, arma::mat Iy0, arma::mat z, Rcpp::LogicalVector fixed0, double penalty);
+RcppExport SEXP _unmarked_nll_occuMulti(SEXP fStartSEXP, SEXP fStopSEXP, SEXP dmFSEXP, SEXP dmOccSEXP, SEXP betaSEXP, SEXP dmDetSEXP, SEXP dStartSEXP, SEXP dStopSEXP, SEXP ySEXP, SEXP yStartSEXP, SEXP yStopSEXP, SEXP Iy0SEXP, SEXP zSEXP, SEXP fixed0SEXP, SEXP penaltySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type fStart(fStartSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type fStop(fStopSEXP);
+    Rcpp::traits::input_parameter< arma::sp_mat >::type dmF(dmFSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type dmOcc(dmOccSEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type dmDet(dmDetSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type dStart(dStartSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type dStop(dStopSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type yStart(yStartSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type yStop(yStopSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Iy0(Iy0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type z(zSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fixed0(fixed0SEXP);
+    Rcpp::traits::input_parameter< double >::type penalty(penaltySEXP);
+    rcpp_result_gen = Rcpp::wrap(nll_occuMulti(fStart, fStop, dmF, dmOcc, beta, dmDet, dStart, dStop, y, yStart, yStop, Iy0, z, fixed0, penalty));
+    return rcpp_result_gen;
+END_RCPP
+}
 // nll_occuPEN
 double nll_occuPEN(arma::icolvec y, arma::mat X, arma::mat V, arma::colvec beta_psi, arma::colvec beta_p, Rcpp::IntegerVector nd, Rcpp::LogicalVector knownOcc, Rcpp::LogicalVector navec, arma::colvec X_offset, arma::colvec V_offset, double penalty);
 RcppExport SEXP _unmarked_nll_occuPEN(SEXP ySEXP, SEXP XSEXP, SEXP VSEXP, SEXP beta_psiSEXP, SEXP beta_pSEXP, SEXP ndSEXP, SEXP knownOccSEXP, SEXP navecSEXP, SEXP X_offsetSEXP, SEXP V_offsetSEXP, SEXP penaltySEXP) {
@@ -500,7 +549,6 @@ END_RCPP
 
 RcppExport SEXP getDetVecs(void *, void *, void *, void *, void *);
 RcppExport SEXP getSingleDetVec(void *, void *, void *);
-RcppExport SEXP nll_occuMulti(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 
 static const R_CallMethodDef CallEntries[] = {
     {"_unmarked_get_lik_trans", (DL_FUNC) &_unmarked_get_lik_trans, 2},
@@ -516,14 +564,15 @@ static const R_CallMethodDef CallEntries[] = {
     {"_unmarked_nll_nmixTTD", (DL_FUNC) &_unmarked_nll_nmixTTD, 13},
     {"_unmarked_nll_occu", (DL_FUNC) &_unmarked_nll_occu, 11},
     {"_unmarked_nll_occuMS", (DL_FUNC) &_unmarked_nll_occuMS, 15},
+    {"_unmarked_nll_occuMulti_loglik", (DL_FUNC) &_unmarked_nll_occuMulti_loglik, 14},
+    {"_unmarked_nll_occuMulti", (DL_FUNC) &_unmarked_nll_occuMulti, 15},
     {"_unmarked_nll_occuPEN", (DL_FUNC) &_unmarked_nll_occuPEN, 11},
     {"_unmarked_nll_occuRN", (DL_FUNC) &_unmarked_nll_occuRN, 10},
     {"_unmarked_nll_occuTTD", (DL_FUNC) &_unmarked_nll_occuTTD, 17},
     {"_unmarked_nll_pcount", (DL_FUNC) &_unmarked_nll_pcount, 11},
     {"_unmarked_nll_pcountOpen", (DL_FUNC) &_unmarked_nll_pcountOpen, 35},
-    {"getDetVecs",      (DL_FUNC) &getDetVecs,       5},
-    {"getSingleDetVec", (DL_FUNC) &getSingleDetVec,  3},
-    {"nll_occuMulti",   (DL_FUNC) &nll_occuMulti,   16},
+    {"getDetVecs",      (DL_FUNC) &getDetVecs,      5},
+    {"getSingleDetVec", (DL_FUNC) &getSingleDetVec, 3},
     {NULL, NULL, 0}
 };
 

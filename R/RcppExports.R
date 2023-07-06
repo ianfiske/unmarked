@@ -53,6 +53,14 @@ nll_occuMS <- function(beta, y, dm_state, dm_phi, dm_det, sind, pind, dind, prm,
     .Call(`_unmarked_nll_occuMS`, beta, y, dm_state, dm_phi, dm_det, sind, pind, dind, prm, S, T, J, N, naflag, guide)
 }
 
+nll_occuMulti_loglik <- function(fStart, fStop, dmF, dmOcc, beta, dmDet, dStart, dStop, y, yStart, yStop, Iy0, z, fixed0) {
+    .Call(`_unmarked_nll_occuMulti_loglik`, fStart, fStop, dmF, dmOcc, beta, dmDet, dStart, dStop, y, yStart, yStop, Iy0, z, fixed0)
+}
+
+nll_occuMulti <- function(fStart, fStop, dmF, dmOcc, beta, dmDet, dStart, dStop, y, yStart, yStop, Iy0, z, fixed0, penalty) {
+    .Call(`_unmarked_nll_occuMulti`, fStart, fStop, dmF, dmOcc, beta, dmDet, dStart, dStop, y, yStart, yStop, Iy0, z, fixed0, penalty)
+}
+
 nll_occuPEN <- function(y, X, V, beta_psi, beta_p, nd, knownOcc, navec, X_offset, V_offset, penalty) {
     .Call(`_unmarked_nll_occuPEN`, y, X, V, beta_psi, beta_p, nd, knownOcc, navec, X_offset, V_offset, penalty)
 }
