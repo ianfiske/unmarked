@@ -13,6 +13,10 @@ nll_distsamp <- function(y, lam, sig, scale, a, u, w, db, keyfun, survey) {
     .Call(`_unmarked_nll_distsamp`, y, lam, sig, scale, a, u, w, db, keyfun, survey)
 }
 
+nll_distsampOpen <- function(y, yt, Xlam, Xgam, Xom, Xsig, Xiota, beta, bi, Xlam_offset, Xgam_offset, Xom_offset, Xsig_offset, Xiota_offset, ytna, lk, mixture, first, last, first1, M, T, delta, dynamics, survey, fix, go_dims, immigration, I, I1, Ib, Ip, a, u, w, db, keyfun, lfac_k, kmyt, lfac_kmyt, fin, A) {
+    .Call(`_unmarked_nll_distsampOpen`, y, yt, Xlam, Xgam, Xom, Xsig, Xiota, beta, bi, Xlam_offset, Xgam_offset, Xom_offset, Xsig_offset, Xiota_offset, ytna, lk, mixture, first, last, first1, M, T, delta, dynamics, survey, fix, go_dims, immigration, I, I1, Ib, Ip, a, u, w, db, keyfun, lfac_k, kmyt, lfac_kmyt, fin, A)
+}
+
 nll_gdistremoval <- function(beta, n_param, yDistance, yRemoval, ysum, mixture, keyfun, Xlam, A, Xphi, Xrem, Xdist, db, a, u, w, pl, K, Kmin, threads) {
     .Call(`_unmarked_nll_gdistremoval`, beta, n_param, yDistance, yRemoval, ysum, mixture, keyfun, Xlam, A, Xphi, Xrem, Xdist, db, a, u, w, pl, K, Kmin, threads)
 }
@@ -31,6 +35,10 @@ nll_gpcount <- function(ym, Xlam, Xphi, Xp, beta_lam, beta_phi, beta_p, log_alph
 
 nll_multinomPois <- function(beta, pi_fun, Xlam, Xlam_offset, Xdet, Xdet_offset, y, navec, nP, nAP) {
     .Call(`_unmarked_nll_multinomPois`, beta, pi_fun, Xlam, Xlam_offset, Xdet, Xdet_offset, y, navec, nP, nAP)
+}
+
+nll_multmixOpen <- function(y, yt, Xlam, Xgam, Xom, Xp, Xiota, beta, bi, Xlam_offset, Xgam_offset, Xom_offset, Xp_offset, Xiota_offset, ytna, yna, lk, mixture, first, last, first1, M, T, J, R, delta, dynamics, fix, go_dims, immigration, I, I1, Ib, Ip, pi_fun, lfac_k, kmyt, lfac_kmyt, fin) {
+    .Call(`_unmarked_nll_multmixOpen`, y, yt, Xlam, Xgam, Xom, Xp, Xiota, beta, bi, Xlam_offset, Xgam_offset, Xom_offset, Xp_offset, Xiota_offset, ytna, yna, lk, mixture, first, last, first1, M, T, J, R, delta, dynamics, fix, go_dims, immigration, I, I1, Ib, Ip, pi_fun, lfac_k, kmyt, lfac_kmyt, fin)
 }
 
 nll_nmixTTD <- function(beta, y, delta, W, V, pinds, mixture, tdist, N, J, K, naflag, threads) {

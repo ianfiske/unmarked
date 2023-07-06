@@ -229,7 +229,7 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   yperm <- aperm(y, c(1,3,2))
 
   nll <- function(parms) {
-    .Call("nll_distsampOpen",
+    nll_distsampOpen(
           yperm, yt,
           Xlam, Xgam, Xom, Xsig, Xiota,
           parms, beta_ind - 1,
@@ -239,8 +239,8 @@ distsampOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
           delta, dynamics, survey, fix, go.dims, immigration,
           I, I1, lik_trans$Ib, lik_trans$Ip,
           a, u, w, db,
-          keyfun, lfac.k, kmyt, lfac.kmyt, fin, A,
-          PACKAGE = "unmarked")
+          keyfun, lfac.k, kmyt, lfac.kmyt, fin, A
+          )
   }
 
   if(missing(starts)){

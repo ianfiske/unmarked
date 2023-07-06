@@ -171,7 +171,7 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
   yperm <- aperm(yperm, c(3,2,1)) # fix asan problem
 
   nll <- function(parms) {
-    .Call("nll_multmixOpen",
+    nll_multmixOpen(
           yperm, yt,
           D$Xlam, D$Xgam, D$Xom, D$Xp, D$Xiota,
           parms, beta_ind - 1,
@@ -180,8 +180,8 @@ multmixOpen <- function(lambdaformula, gammaformula, omegaformula, pformula,
           lk, mixture, first - 1, last - 1, first1 - 1, M, T, J, R,
           D$delta, dynamics, fix, D$go.dims, immigration,
           I, I1, lik_trans$Ib, lik_trans$Ip,
-          piFun, lfac.k, kmyt, lfac.kmyt, fin,
-          PACKAGE = "unmarked")
+          piFun, lfac.k, kmyt, lfac.kmyt, fin
+          )
   }
 
   if(missing(starts)){
