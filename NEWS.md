@@ -1,3 +1,23 @@
+# unmarked 1.3.2
+
+* Modernize some Cpp code to pass new LTO checks
+
+#unmarked 1.3.1
+
+* Remove log.grad function to pass CRAN checks
+
+# unmarked 1.3.0
+
+* Add support for terra package rasters
+* Add plotEffects function for plotting marginal effects
+* Better default names in fitLists
+* Optional Shiny app for power analysis
+* parboot now more robust to errors
+* Add back temporarily removed occuMulti and colext vignettes
+* Remove dependency on plyr package and move methods to imports
+* Expand powerAnalysis vignette
+* Many small bugfixes
+
 # unmarked 1.2.4
 
 * Convert vignettes to use rmarkdown
