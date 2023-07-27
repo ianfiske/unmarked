@@ -2,7 +2,7 @@
 gdistsamp <- function(lambdaformula, phiformula, pformula, data,
     keyfun=c("halfnorm", "exp", "hazard", "uniform"),
     output=c("abund", "density"), unitsOut=c("ha", "kmsq"),
-    mixture=c('P', 'NB', 'ZIP'), K, starts, method = "BFGS", se = TRUE, engine=c("C","R"),
+    mixture=c("P", "NB", 'ZIP'), K, starts, method = "BFGS", se = TRUE, engine=c("C","R"),
     rel.tol=1e-4, threads=1, ...)
 {
 if(!is(data, "unmarkedFrameGDS"))
@@ -111,15 +111,13 @@ else {
 if(identical(mixture, "NB")) {
     nOP <- 1
     nbPar <- "alpha"
-    }
-if(identical(mixture, "ZIP")) {
+} else if(identical(mixture, "ZIP")) {
     nOP <- 1
     nbPar <- "psi"
-    }
-else {
+} else {
     nOP <- 0
     nbPar <- character(0)
-    }
+}
 
 nLP <- ncol(Xlam)
 nP  <- nLP + nPP + nDP + nSP + nOP
