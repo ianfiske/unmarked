@@ -2874,7 +2874,12 @@ setMethod("simulate", "unmarkedFitGMM",
         switch(mixture,
             P = M <- rpois(n=n, lambda=lam),
             NB = M <- rnbinom(n=n, mu=lam,
-                size=exp(coef(object, type="alpha"))))
+                size=exp(coef(object, type="alpha"))),
+            ZIP = {
+              psi <- plogis(coef(object['psi']))
+              M <- rzip(n, lambda=lam, psi=psi)
+            }
+        )
 
         N <- rbinom(n*T, size=M, prob=phi.mat)
         # bug fix 3/16/2010
