@@ -826,6 +826,11 @@ setMethod("fitted", "unmarkedFitGMM",
     T <- data@numPrimary
     J <- ncol(y) / T
     lambda <- drop(exp(Xlam %*% coef(object, 'lambda') + Xlam.offset))
+    if(identical(object@mixture, "ZIP")) {
+        psi <- plogis(coef(object, type="psi"))
+        lambda <- (1-psi)*lambda
+    }
+
     if(T==1)
         phi <- 1
     else

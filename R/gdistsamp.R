@@ -21,10 +21,6 @@ survey <- data@survey
 unitsIn <- data@unitsIn
 mixture <- match.arg(mixture)
 
-if(mixture == "ZIP" & engine=="R"){
-  stop("R engine does not support ZIP", call.=FALSE)
-}
-
 formlist <- list(lambdaformula = lambdaformula, phiformula = phiformula,
     pformula = pformula)
 check_no_support(formlist)
@@ -171,8 +167,9 @@ halfnorm = {
 
         switch(mixture,
             P = f <- sapply(k, function(x) dpois(x, lambda)),
-            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda,
-                size=exp(pars[nP]))))
+            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, size=exp(pars[nP]))),
+            ZIP = f <- sapply(k, function(x) dzip(rep(x, length(lambda)), lambda=lambda, psi=plogis(pars[nP])))
+        )
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
@@ -239,8 +236,9 @@ exp = {
 
         switch(mixture,
             P = f <- sapply(k, function(x) dpois(x, lambda)),
-            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda,
-                size=exp(pars[nP]))))
+            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, size=exp(pars[nP]))),
+            ZIP = f <- sapply(k, function(x) dzip(rep(x, length(lambda)), lambda=lambda, psi=plogis(pars[nP])))
+        )
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
@@ -309,8 +307,9 @@ hazard = {
 
         switch(mixture,
             P = f <- sapply(k, function(x) dpois(x, lambda)),
-            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda,
-                size=exp(pars[nP]))))
+            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, size=exp(pars[nP]))),
+            ZIP = f <- sapply(k, function(x) dzip(rep(x, length(lambda)), lambda=lambda, psi=plogis(pars[nP])))
+        )
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
@@ -372,8 +371,9 @@ uniform = {
         p <- 1
         switch(mixture,
             P = f <- sapply(k, function(x) dpois(x, lambda)),
-            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda,
-                size=exp(pars[nP]))))
+            NB = f <- sapply(k, function(x) dnbinom(x, mu=lambda, size=exp(pars[nP]))),
+            ZIP = f <- sapply(k, function(x) dzip(rep(x, length(lambda)), lambda=lambda, psi=plogis(pars[nP])))
+        )
         for(i in 1:M) {
             mn <- matrix(0, lk, T)
             for(t in 1:T) {
