@@ -2945,10 +2945,15 @@ setMethod("simulate", "unmarkedFitGPC",
     simList <- list()
     for(s in 1:nsim) {
         switch(mixture,
-               P = M <- rpois(n=R, lambda=lam),
+            P = M <- rpois(n=R, lambda=lam),
                #               FIXME: Add ZIP
-               NB = M <- rnbinom(n=R, mu=lam,
-               size=exp(coef(object, type="alpha"))))
+            NB = M <- rnbinom(n=R, mu=lam,
+               size=exp(coef(object, type="alpha"))),   
+            ZIP = {
+              psi <- plogis(coef(object['psi']))
+              M <- rzip(R, lambda=lam, psi=psi)
+            }
+        )
 
         N <- rbinom(R*T, size=M, prob=phi.mat)
         N <- matrix(N, nrow=R, ncol=T, byrow=FALSE)

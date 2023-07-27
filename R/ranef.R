@@ -531,11 +531,15 @@ setMethod("ranef", "unmarkedFitGPC",
     mix <- object@mixture
     if(identical(mix, "NB"))
         alpha <- exp(coef(object, type="alpha"))
+    if(identical(mix, "ZIP"))
+        psi <- plogis(coef(object, type="psi"))
+
     for(i in 1:R) {
         switch(mix,
                P  = f <- dpois(M, lambda[i]),
-               # FIXME: Add ZIP
-               NB = f <- dnbinom(M, mu=lambda[i], size=alpha))
+               NB = f <- dnbinom(M, mu=lambda[i], size=alpha),
+               ZIP = f <- dzip(M, lambda=lambda[i], psi=psi)
+        )
         ghi <- rep(0, lM)
         for(t in 1:T) {
             gh <- matrix(-Inf, lM, lM)
