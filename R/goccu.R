@@ -13,6 +13,16 @@ setMethod("getDesign", "unmarkedFrameGOccu",
   out
 })
 
+unmarkedFrameGOccu <- function(y, siteCovs=NULL, obsCovs=NULL, numPrimary,
+                             yearlySiteCovs=NULL) {
+  y[y > 1] <- 1
+  if(numPrimary < 2) stop("numPrimary < 2, use occu instead")
+  umf <- unmarkedFrameGPC(y, siteCovs=siteCovs, obsCovs=obsCovs, 
+                          numPrimary=numPrimary, yearlySiteCovs=NULL)
+  class(umf) <- "unmarkedFrameGOccu"
+  umf
+}
+
 goccu <- function(psiformula, phiformula, pformula, data,
                   linkPsi = c("logit", "cloglog"), starts, method = "BFGS",
                   se = TRUE, ...){
@@ -63,6 +73,7 @@ goccu <- function(psiformula, phiformula, pformula, data,
   for (i in 1:M){
     for (t in 1:T){
       for (j in 1:J){
+        if(is.na(y_array[j,t,i])) next
         if(y_array[j, t, i] == 1){
           known_present[i] <- 1
           known_available[i,t] <- 1
@@ -95,7 +106,7 @@ goccu <- function(psiformula, phiformula, pformula, data,
                             DLL = "unmarked_TMBExports", silent = TRUE)
 
   # Optimize TMB object, print and save results
-  if(missing(starts)) starts <- tmb_mod$par
+  if(missing(starts) || is.null(starts)) starts <- tmb_mod$par
   opt <- optim(starts, fn = tmb_mod$fn, gr = tmb_mod$gr, method = method,
                hessian = se, ...)
 
@@ -170,9 +181,11 @@ setMethod("get_orig_data", "unmarkedFitGOccu", function(object, type, ...){
 })
 
 setMethod("getP", "unmarkedFitGOccu",
-  function(object){
-  p <- predict(object, "det", level=NULL)$Predicted
-  p <- matrix(p, nrow=numSites(object@data), ncol=obsNum(object@data), 
+  function(object, na.rm=FALSE){
+  gd <- getDesign(object@data, object@formula, na.rm=na.rm)
+  p <- drop(plogis(gd$Xdet %*% coef(object, "det")))
+  M <- numSites(object@data)
+  p <- matrix(p, nrow=M, ncol=obsNum(object@data), 
               byrow=TRUE)
   p
 })
@@ -181,12 +194,13 @@ setMethod("fitted", "unmarkedFitGOccu",
   function(object, na.rm= FALSE){
 
   M <- numSites(object@data)
-  JT <- obsNum(object@data)
+  JT <- obsNum(object@data)  
+  gd <- getDesign(object@data, object@formula, na.rm=na.rm)
 
-  psi <- predict(object, "psi", level=NULL)$Predicted
+  psi <- drop(plogis(gd$Xpsi %*% coef(object, "psi")))
   psi <- matrix(psi, nrow=M, ncol=JT)
 
-  phi <- predict(object, "phi", level=NULL)$Predicted
+  phi <- drop(plogis(gd$Xphi %*% coef(object, "phi")))
   phi <- rep(phi, each = JT / object@data@numPrimary)
   phi <- matrix(phi, nrow=M, ncol=JT, byrow=TRUE)
 
@@ -194,6 +208,7 @@ setMethod("fitted", "unmarkedFitGOccu",
 
   psi * phi * p
 })
+
 
 # based on ranef for GPC
 setMethod("ranef", "unmarkedFitGOccu", function(object, ...){
@@ -203,11 +218,11 @@ setMethod("ranef", "unmarkedFitGOccu", function(object, ...){
   T <- object@data@numPrimary
   J <- JT / T
 
-  gd <- getDesign(object@data, object@formula)
+  gd <- getDesign(object@data, object@formula, na.rm=FALSE)
   y_array <- array(t(gd$y), c(J, T, M)) 
 
-  psi <- predict(object, "psi", level=NULL)$Predicted
-  phi <- predict(object, "phi", level=NULL)$Predicted
+  psi <- drop(plogis(gd$Xpsi %*% coef(object, "psi")))
+  phi <- drop(plogis(gd$Xphi %*% coef(object, "phi")))
   phi <- matrix(phi, nrow=M, ncol=T, byrow=TRUE)
   p <- getP(object)
   p_array <- array(t(p), c(J, T, M))
@@ -253,36 +268,35 @@ setMethod("ranef", "unmarkedFitGOccu", function(object, ...){
 
 
 setMethod("simulate", "unmarkedFitGOccu", 
-          function(object, nsim = 1, seed = NULL, na.rm = TRUE){
+          function(object, nsim = 1, seed = NULL, na.rm = FALSE){
   
-  M <- numSites(object@data)
-  JT <- obsNum(object@data)
+  gd <- getDesign(object@data, object@formula, na.rm=FALSE)
+  M <- nrow(gd$y)
   T <- object@data@numPrimary
+  JT <- ncol(gd$y)
   J <- JT / T
-
-  gd <- unmarked:::getDesign(object@data, object@formula)
   y_array <- array(t(gd$y), c(J, T, M)) 
 
-  psi <- predict(object, "psi", level=NULL)$Predicted
-  phi <- predict(object, "phi", level=NULL)$Predicted
+  psi <- drop(plogis(gd$Xpsi %*% coef(object, "psi")))
+  phi <- drop(plogis(gd$Xphi %*% coef(object, "phi")))
   phi <- matrix(phi, nrow=M, ncol=T, byrow=TRUE)
   p <- getP(object)
 
   sim_list <- list()
 
   for (i in 1:nsim){
-    z <- rbinom(M, 1, psi)
+    z <- suppressWarnings(rbinom(M, 1, psi))
     z <- matrix(z, nrow=M, ncol=T) 
     
-    zz <- rbinom(M*T, 1, phi*z)
+    zz <- suppressWarnings(rbinom(M*T, 1, phi*z))
     zz <- matrix(zz, M, T)
     
     colrep <- rep(1:T, each=J)
     zz <- zz[,colrep]
 
-    y <- rbinom(M*T*J, 1, zz*p)
+    y <- suppressWarnings(rbinom(M*T*J, 1, zz*p))
     y <- matrix(y, M, JT)
-    if(na.rm) y[which(is.na(object@data@y))] <- NA 
+    if(na.rm) y[which(is.na(gd$y))] <- NA 
     sim_list[[i]] <- y
   }
 

@@ -61,7 +61,7 @@ export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
     unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
     unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC, unmarkedFrameOccuMulti,
     unmarkedFrameOccuMS, unmarkedFrameOccuTTD, unmarkedFrameDSO, 
-    unmarkedFrameMMO, unmarkedFrameGDR)
+    unmarkedFrameMMO, unmarkedFrameGDR, unmarkedFrameGOccu)
 
 # Formatting
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
