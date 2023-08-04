@@ -8,6 +8,7 @@
 \alias{unmarkedFrameGMM}
 \alias{unmarkedFrameGDS}
 \alias{unmarkedFrameGPC}
+\alias{unmarkedFrameGOccu}
 
 \title{Create an unmarkedMultFrame, unmarkedFrameGMM, unmarkedFrameGDS,
   or unmarkedFrameGPC object}

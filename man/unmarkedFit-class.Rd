@@ -35,6 +35,7 @@
 \alias{update,unmarkedFitNmixTTD-method}
 \alias{update,unmarkedFitGDR-method}
 \alias{update,unmarkedFitDailMadsen-method}
+\alias{update,unmarkedFitGOccu-method}
 \alias{sampleSize}
 \alias{sampleSize,unmarkedFit-method}
 \alias{unmarkedFitOccu-class}
