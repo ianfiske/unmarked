@@ -51,6 +51,7 @@ Collate: 'classes.R' 'unmarkedEstimate.R' 'mapInfo.R' 'unmarkedFrame.R'
     'power.R' 
     'simulate.R'
     'predict.R'
+    'goccu.R'
     'RcppExports.R'
     'zzz.R'
 LinkingTo: 
