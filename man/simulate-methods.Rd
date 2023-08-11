@@ -18,6 +18,7 @@
 \alias{simulate,unmarkedFitGPC-method}
 \alias{simulate,unmarkedFitGDR-method}
 \alias{simulate,unmarkedFitDailMadsen-method}
+\alias{simulate,unmarkedFitGOccu-method}
 \alias{simulate,character-method}
 \title{Methods for Function simulate in Package `unmarked'}
 \description{

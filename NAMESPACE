@@ -24,7 +24,7 @@ importFrom(pbapply, pbsapply, pblapply)
 export(occu, occuFP, occuRN, pcount, pcountOpen, multinomPois, distsamp,
        colext, gmultmix, gdistsamp, gpcount, occuPEN, occuPEN_CV, occuMulti,
        occuMS, computeMPLElambda, pcount.spHDS, occuTTD, distsampOpen,
-       multmixOpen, nmixTTD, gdistremoval)
+       multmixOpen, nmixTTD, gdistremoval, goccu)
 export(removalPiFun, doublePiFun)
 export(makeRemPiFun, makeCrPiFun, makeCrPiFunMb, makeCrPiFunMh)
 
@@ -61,7 +61,7 @@ export(unmarkedEstimate, fitList, mapInfo, unmarkedFrame,
     unmarkedFrameDS, unmarkedMultFrame, unmarkedFrameGMM,
     unmarkedFramePCO, unmarkedFrameGDS, unmarkedFrameGPC, unmarkedFrameOccuMulti,
     unmarkedFrameOccuMS, unmarkedFrameOccuTTD, unmarkedFrameDSO, 
-    unmarkedFrameMMO, unmarkedFrameGDR)
+    unmarkedFrameMMO, unmarkedFrameGDR, unmarkedFrameGOccu)
 
 # Formatting
 export(csvToUMF, formatLong, formatWide, formatMult, formatDistData)
