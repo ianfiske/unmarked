@@ -21,16 +21,6 @@ y <- rbinom(M*T*J, 1, zzmat*p)
 y <- matrix(y, M, J*T)
 umf <- unmarkedMultFrame(y=y, numPrimary=T)
 
-unmarkedFrameGOccu <- function(y, siteCovs=NULL, obsCovs=NULL, numPrimary,
-                             yearlySiteCovs=NULL) {
-  y[y > 1] <- 1
-  if(numPrimary < 2) stop("numPrimary < 2, use occu instead")
-  umf <- unmarkedFrameGPC(y, siteCovs=siteCovs, obsCovs=obsCovs, 
-                          numPrimary=numPrimary, yearlySiteCovs=NULL)
-  class(umf) <- "unmarkedFrameGOccu"
-  umf
-}
-
 test_that("unmarkedFrameGOccu can be constructed", {
   set.seed(123)
   sc <- data.frame(x=rnorm(M))
@@ -40,6 +30,7 @@ test_that("unmarkedFrameGOccu can be constructed", {
   umf2 <- unmarkedFrameGOccu(y, siteCovs=sc, obsCovs=list(x2=oc),
                            yearlySiteCovs=list(x3=ysc), numPrimary=T)
   expect_is(umf2, "unmarkedFrameGOccu")
+  expect_equal(names(umf2@yearlySiteCovs), "x3")
 })
 
 test_that("goccu can fit models", {

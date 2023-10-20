@@ -18,7 +18,7 @@ unmarkedFrameGOccu <- function(y, siteCovs=NULL, obsCovs=NULL, numPrimary,
   y[y > 1] <- 1
   if(numPrimary < 2) stop("numPrimary < 2, use occu instead")
   umf <- unmarkedFrameGPC(y, siteCovs=siteCovs, obsCovs=obsCovs, 
-                          numPrimary=numPrimary, yearlySiteCovs=NULL)
+                          numPrimary=numPrimary, yearlySiteCovs=yearlySiteCovs)
   class(umf) <- "unmarkedFrameGOccu"
   umf
 }
