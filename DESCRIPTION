@@ -18,7 +18,7 @@ Authors@R: c(
     person("Ariel", "Muldoon", role="ctb"),
     person("Chris", "Baker", role="ctb")
     )
-Depends: R (>= 2.12.0)
+Depends: R (>= 4.0)
 Imports: 
     graphics,
     lattice,
