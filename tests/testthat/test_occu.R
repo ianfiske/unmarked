@@ -250,7 +250,8 @@ test_that("occu cloglog link function works",{
 
 test_that("occu predict works",{
   skip_on_cran()
-  skip_if(!require(raster), "raster package unavailable")
+  skip_if(!requireNamespace("raster", quietly=TRUE), 
+          "raster package unavailable")
   set.seed(55)
   R <- 20
   J <- 4

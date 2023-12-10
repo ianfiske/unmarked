@@ -103,7 +103,8 @@ test_that("clean_up_covs works with models where length(y) != length(p)",{
 
 test_that("predicting from raster works",{
 
-  skip_if(!require(raster), "raster package unavailable")
+  skip_if(!requireNamespace("raster", quietly=TRUE), 
+          "raster package unavailable")
 
   set.seed(123)
   # Create rasters
@@ -141,7 +142,8 @@ test_that("predicting from raster works",{
 
 test_that("predicting from terra::rast works",{
 
-  skip_if(!require(terra), "terra package unavailable")
+  skip_if(!requireNamespace("terra", quietly=TRUE), 
+          "terra package unavailable")
 
   set.seed(123)
   # Create rasters
