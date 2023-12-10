@@ -274,9 +274,9 @@ test_that("occu predict works",{
   E1.3 <- predict(fm1, type="state", newdata=nd1.1, appendData=TRUE)
   E1.4 <- predict(fm1, type="det", newdata=nd1.2)
 
-  r1 <- raster(matrix(rnorm(100), 10))
+  r1 <- raster::raster(matrix(rnorm(100), 10))
   expect_error(predict(fm1, type="state", newdata=r1))
-  s1 <- stack(r1)
+  s1 <- raster::stack(r1)
   expect_error(predict(fm1, type="state", newdata=s1))
   names(s1) <- c("x3")
   E1.5 <- predict(fm1, type="det", newdata=s1)
