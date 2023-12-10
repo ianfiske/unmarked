@@ -22,7 +22,6 @@ Depends: R (>= 4.0)
 Imports: 
     graphics,
     lattice,
-    lme4,
     MASS,
     Matrix,
     methods,
