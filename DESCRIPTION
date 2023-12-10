@@ -27,12 +27,12 @@ Imports:
     Matrix,
     methods,
     parallel,
-    pbapply,
     Rcpp (>= 0.8.0),
     stats,
     TMB (>= 1.7.18),
     utils
 Suggests:
+    pbapply,
     knitr,
     rmarkdown,
     raster,

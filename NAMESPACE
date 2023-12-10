@@ -17,7 +17,6 @@ importFrom(methods, is, as, new, show, slot, .hasSlot, callGeneric,
            callNextMethod, setMethod)
 importFrom(lattice, xyplot, levelplot)
 importFrom(Rcpp, evalCpp)
-importFrom(pbapply, pbsapply, pblapply)
 
 
 # Fitting functions

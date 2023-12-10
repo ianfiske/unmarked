@@ -128,7 +128,7 @@ test_that("predicting from raster works",{
   expect_is(pr, 'RasterStack')
   expect_equal(names(pr), c("Predicted","SE","lower","upper"))
   expect_equal(pr[1,1][1], 0.3675313, tol=1e-5)
-  expect_equal(crs(pr), crs(nd_raster))
+  expect_equal(raster::crs(pr), raster::crs(nd_raster))
 
   #append data
   pr <- predict(mod, 'state', newdata=nd_raster, appendData=TRUE)
@@ -167,7 +167,7 @@ test_that("predicting from terra::rast works",{
   expect_is(pr, 'SpatRaster')
   expect_equal(names(pr), c("Predicted","SE","lower","upper"))
   expect_equivalent(pr[1,1][1], 0.3675313, tol=1e-5)
-  expect_equal(crs(pr), crs(nd_raster))
+  expect_equal(terra::crs(pr), terra::crs(nd_raster))
 
   #append data
   pr <- predict(mod, 'state', newdata=nd_raster, appendData=TRUE)

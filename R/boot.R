@@ -77,7 +77,8 @@ setMethod("parboot", "unmarkedFit",  function(object, statistic=SSE, nsim=10,
     })
   }
 
-  t.star <- t(pbapply::pbsapply(simList, run_sim, object=object,
+  # Uses pbapply if available, or parSapply if not (see utils.R)
+  t.star <- t(sapply2(simList, run_sim, object=object,
                               statistic=statistic, starts=starts, t0=t0,
                               cl=cl, ...))
   if(length(t0) == 1) t.star <- matrix(t.star, ncol=1)

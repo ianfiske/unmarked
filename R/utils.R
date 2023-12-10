@@ -909,3 +909,21 @@ E_loglam <- function(log_lam, object, name){
   ll <- log_lam + v/2
   ll
 }
+
+sapply2 <- function(X, FUN, ..., cl = NULL){
+  if(requireNamespace("pbapply", quietly=TRUE)){
+    return(pbapply::pbsapply(X=X, FUN=FUN, ..., cl = cl))
+  } else if(!is.null(cl)){
+    return(parallel::parSapply(cl=cl, X=X, FUN=FUN, ...))
+  }
+  sapply(X=X, FUN=FUN, ...)
+}
+
+lapply2 <- function(X, FUN, ..., cl = NULL){
+  if(requireNamespace("pbapply", quietly=TRUE)){
+    return(pbapply::pblapply(X=X, FUN=FUN, ..., cl = cl))
+  } else if(!is.null(cl)){
+    return(parallel::parLapply(cl=cl, X=X, fun=FUN, ...))
+  }
+  lapply(X=X, FUN=FUN, ...)
+}
