@@ -28,11 +28,10 @@ get_Z <- function(formula, data, newdata=NULL){
   
   # Get new formula
   bars <- find_bars(formula)
-  new_form <- bars_to_formula(bars)
-
+  check_duplicate_terms(bars)
+  
   # Get partial Z for each bar expression
-  form_list <- lapply(1:length(bars), function(x) bars_to_formula(bars[x]))
-  Z_parts <- lapply(form_list, get_partial_Z, data=data, newdata=newdata)
+  Z_parts <- lapply(bars, get_partial_Z, data=data, newdata=newdata)
 
   # Create model frame
   #mf <- model.frame(new_form, data, na.action=stats::na.pass)
@@ -42,7 +41,7 @@ get_Z <- function(formula, data, newdata=NULL){
   #}
 
   # Create sparse Z matrix
-  #Z <- model.matrix(new_form, mf)
+  #Z <- model.matrix(new_form, mf, contrasts.arg=cont)
   Z <- do.call(cbind, Z_parts)
   colnames(Z) <- Z_colnames(formula, data)
   Matrix::Matrix(Z, sparse=TRUE)
@@ -56,26 +55,25 @@ has_random <- function(form){
 # Find 'bar' random effect parts of formula (i.e., the (x|y) structures)-------
 # Operates recursively
 find_bars <- function(form){
-  out <- NULL
+  if(is.null(form)) return(NULL)
   if(is.name(form)) return(NULL)
   if(form[[1]] == as.name("(")) return(form)
   if(is.call(form)){
-    out <- lapply(form, find_bars)
+    out <- return(unlist(lapply(form, find_bars)))
   }
-  unlist(out)
+  NULL
 }
 
 # Convert bar components into new formula--------------------------------------
-# E.g. ~x + (1|g) becomes ~g - 1
-bars_to_formula <- function(bars){
-  bar_terms <- lapply(bars, bars_to_terms)
-  check_duplicate_terms(bar_terms)
+# E.g. (1|g) becomes ~g - 1
+bar_to_formula <- function(bar){
+  bar_terms <- bar_to_terms(bar)
   as.formula(str2lang(paste("~", paste(bar_terms, collapse = " + "), "- 1")))
 }
 
 # Translate bar components into standard formula terms-------------------------
-bars_to_terms <- function(bars){
-  info <- get_bar_info(bars)
+bar_to_terms <- function(bar){
+  info <- get_bar_info(bar)
   new_terms <- sapply(info$LHS, function(x){
     if(x == "1") return(info$RHS)
     paste0(x, ":", info$RHS)
@@ -119,7 +117,8 @@ check_bar_info <- function(info){
 # Check terms to make sure there aren't any duplicates-------------------------
 # E.g. as a result of a formula like ~ (1|g) + (x||) where the intercept
 # is also implied in the second bar expression
-check_duplicate_terms <- function(bar_terms){
+check_duplicate_terms <- function(bars){
+  bar_terms <- lapply(bars, bar_to_terms)
   all_terms <- lapply(bar_terms, function(x){
     unlist(strsplit(x, " + ", fixed=TRUE))
   })
@@ -132,14 +131,22 @@ check_duplicate_terms <- function(bar_terms){
   invisible()
 }
 
+
 # Get partial Z for a given bar expression-------------------------------------
-get_partial_Z <- function(formula, data, newdata){
+get_partial_Z <- function(bar, data, newdata){
+  info <- get_bar_info(bar)
+  formula <- bar_to_formula(bar)
   mf <- model.frame(formula, data, na.action=stats::na.pass)
   if(!is.null(newdata)){
     mf <- model.frame(stats::terms(mf), newdata, na.action=stats::na.pass,
                       xlev=get_xlev(data, mf))
   }
-  model.matrix(formula, mf)
+  has_fac <- any(sapply(info$LHS[info$LHS != "1"], function(x) is.factor(data[[x]])))
+  if(has_fac){
+    stop("unmarked does not support random slopes for R factors.\n",
+         "Try converting the variable to a series of indicator variables instead.", call.=FALSE)
+  }
+  out <- model.matrix(formula, mf)
 }
 
 # Get levels of factor---------------------------------------------------------
